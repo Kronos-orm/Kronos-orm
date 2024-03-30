@@ -1,3 +1,4 @@
+![logo](https://cdn.leinbo.com/assets/images/koto_logo_dark.png)
 ## Koto 是一个数据持久层框架，设计用于 Kotlin，轻量级，现代化。
 
 Koto 2.0旨在通过编写kotlin k2编译器插件，实现更加强大且语义化的orm功能。

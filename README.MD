@@ -113,4 +113,4 @@ val affectRowNumber: Int =
 ```
 
 ------
-[https://github.com/ousc/kotoframework-v2](Read%20more%20on%20GitHub)
+[Read more on GitHub](https://github.com/ousc/kotoframework-v2)

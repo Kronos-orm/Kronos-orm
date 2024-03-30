@@ -1,0 +1,23 @@
+plugins {
+    kotlin("jvm") version "1.9.20"
+}
+
+group = "com.kotoframework"
+version = file("koto.version").readText().trim()
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation(kotlin("test"))
+    testImplementation(project(":koto-core"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(8)
+}

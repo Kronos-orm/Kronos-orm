@@ -1,5 +1,6 @@
 package test
 
+import beans.User
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.orm.delete.delete
 import com.kotoframework.orm.insert.insert
@@ -15,8 +16,6 @@ class Main {
 
     @Test
     fun testUpdate() {
-        data class User(var id: Int? = null, var username: String? = null, var gender: Int? = null) : KPojo
-
         val user = User(1)
         val testUser = User(1, "test")
 
@@ -116,7 +115,7 @@ class Main {
         //delete from tb_user where id = 1
 
         user.delete().logic().where {
-            it.id > 10 && it.id < 100 && it.username > 100
+            it.id > 10 && it.id < 100
         }.execute()
         //delete from tb_user where id > 10 and id < 100
     }
@@ -126,6 +125,7 @@ class Main {
         data class User(var id: Int? = null, var username: String? = null, var gender: Int? = null) : KPojo
 
         val user = User(1)
+
         val list = user.select { it.id + it.username + it.gender }.query()
 
         val (total, listOfUser) = user.select { it.id }.page(1, 10).withTotal().query()

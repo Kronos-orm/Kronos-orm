@@ -3,6 +3,13 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.namespace == "org.jetbrains.kotlin") {
+                useVersion(file("kotlin.version").readText().trim())
+            }
+        }
+    }
 }
 
 plugins {

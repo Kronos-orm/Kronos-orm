@@ -119,6 +119,7 @@ val affectRowNumber: Int =
 val affectRowNumber: Int = 
 		User(id = 1, status = 1).remove()
 			.by { it.id + it.status }
+            //.where()
 			.execute()
 				
 val affectRowNumber: Int = 

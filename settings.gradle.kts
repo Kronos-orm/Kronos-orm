@@ -14,3 +14,4 @@ rootProject.children.forEach { project ->
     project.buildFileName = "${project.name}.gradle.kts"
 }
 include("koto-core")
+include("koto-logging")

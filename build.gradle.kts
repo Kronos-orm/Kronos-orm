@@ -12,6 +12,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     testImplementation(project(":koto-core"))
+    testImplementation(project(":koto-logging"))
 }
 
 tasks.test {

@@ -11,8 +11,8 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(project(":koto-core"))
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.20")
 }
 
 tasks.test {

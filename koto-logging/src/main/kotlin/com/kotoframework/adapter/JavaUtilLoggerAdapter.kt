@@ -16,52 +16,54 @@
 
 package com.kotoframework.adapter
 
-import com.kotoframework.interfaces.Logger
+import com.kotoframework.beans.KLogMessage
+import com.kotoframework.beans.KLogMessage.Companion.formatted
+import com.kotoframework.interfaces.KLogger
 import java.util.logging.Level
 
 /**
- * Adapter [Logger] implementation integrating [java.util.logging] with Ktorm.
+ * Adapter [KLogger] implementation integrating [java.util.logging] with Kotoframework.
  */
-public class JdkLoggerAdapter(loggerName: String) : Logger {
+class JavaUtilLoggerAdapter(loggerName: String) : KLogger {
     private val logger = java.util.logging.Logger.getLogger(loggerName)
 
     override fun isTraceEnabled(): Boolean {
         return logger.isLoggable(Level.FINEST)
     }
 
-    override fun trace(msg: String, e: Throwable?) {
-        logger.log(Level.FINEST, msg, e)
+    override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
+        logger.log(Level.FINEST, messages.formatted(), e)
     }
 
     override fun isDebugEnabled(): Boolean {
         return logger.isLoggable(Level.FINE)
     }
 
-    override fun debug(msg: String, e: Throwable?) {
-        logger.log(Level.FINE, msg, e)
+    override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
+        logger.log(Level.FINE, messages.formatted(), e)
     }
 
     override fun isInfoEnabled(): Boolean {
         return logger.isLoggable(Level.INFO)
     }
 
-    override fun info(msg: String, e: Throwable?) {
-        logger.log(Level.INFO, msg, e)
+    override fun info(messages: Array<KLogMessage>, e: Throwable?) {
+        logger.log(Level.INFO, messages.formatted(), e)
     }
 
     override fun isWarnEnabled(): Boolean {
         return logger.isLoggable(Level.WARNING)
     }
 
-    override fun warn(msg: String, e: Throwable?) {
-        logger.log(Level.WARNING, msg, e)
+    override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
+        logger.log(Level.WARNING, messages.formatted(), e)
     }
 
     override fun isErrorEnabled(): Boolean {
         return logger.isLoggable(Level.SEVERE)
     }
 
-    override fun error(msg: String, e: Throwable?) {
-        logger.log(Level.SEVERE, msg, e)
+    override fun error(messages: Array<KLogMessage>, e: Throwable?) {
+        logger.log(Level.SEVERE, messages.formatted(), e)
     }
 }

@@ -1,12 +1,10 @@
 package com.kotoframework.enums
 
-enum class LoggerType {
+enum class KLoggerType {
 
     ANDROID_LOGGER,
 
     COMMONS_LOGGER,
-
-    CONSOLE_LOGGER,
 
     JDK_LOGGER,
 

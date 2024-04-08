@@ -1,6 +1,7 @@
 package test
 
 import beans.User
+import com.kotoframework.KotoApp
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.orm.delete.delete
 import com.kotoframework.orm.insert.insert
@@ -10,12 +11,17 @@ import com.kotoframework.orm.update.update
 import com.kotoframework.orm.update.updateExcept
 import com.kotoframework.orm.upsert.upsert
 import com.kotoframework.orm.upsert.upsertExcept
+import com.kotoframework.utils.LineHumpNamingStrategy
 import org.junit.jupiter.api.Test
 
 class Main {
 
     @Test
     fun testUpdate() {
+        KotoApp.apply {
+            defaultNamingStrategy = LineHumpNamingStrategy()
+        }
+
         val user = User(1)
         val testUser = User(1, "test")
 
@@ -26,7 +32,7 @@ class Main {
 
         // update tb_user set username = '123' where id = 1
 
-        testUser.update { it.username }
+        testUser.update { it.username + it.gender }
             .by { it.id }
             .execute()
 
@@ -159,7 +165,7 @@ class Main {
                 UserRelation(1, "123", 1, 1)
             ) { user, relation ->
                 leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
-                select { user + relation.gender }
+                select { user + relation.gender + user.select { it.gender }.where { it.id == 1 } }
                 where { user.id == 1 }
                 orderBy { user.id.desc }
                 page(1, 10)

@@ -1,6 +1,5 @@
 package com.kotoframework.orm.insert
 
-import com.kotoframework.bean.KTable
 import com.kotoframework.interfaces.KPojo
 
 

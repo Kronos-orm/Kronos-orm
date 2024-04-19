@@ -1,6 +1,6 @@
 package com.kotoframework.interfaces
 
-import com.kotoframework.beans.KLogMessage
+import com.kotoframework.beans.logging.KLogMessage
 
 public interface KLogger {
 

@@ -1,8 +1,8 @@
-package com.kotoframework.beans
+package com.kotoframework.beans.logging
 
+import com.kotoframework.beans.logging.BundledSimpleLoggerAdapter.Companion.format
 import com.kotoframework.enums.ColorPrintCode
 import com.kotoframework.enums.KLogLevel
-import com.kotoframework.utils.BundledSimpleLoggerAdapter.Companion.format
 import java.io.File
 import java.io.FileWriter
 
@@ -68,7 +68,15 @@ class KLogMessage(
         writer.close()
     }
 
+    fun toArray(): Array<KLogMessage> {
+        return arrayOf(this)
+    }
+
     companion object {
+        fun logMessageOf(text: String, codes: Array<ColorPrintCode> = arrayOf()): KLogMessage {
+            return KLogMessage(text, codes)
+        }
+
         fun Array<KLogMessage>.formatted(): String {
             val sb = StringBuilder()
             this.forEach {

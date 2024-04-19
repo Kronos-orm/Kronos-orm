@@ -1,8 +1,8 @@
 package com.kotoframework.types
 
-import com.kotoframework.bean.KTableConditional
-import com.kotoframework.bean.KTableSortable
-import com.kotoframework.bean.KTable
+import com.kotoframework.beans.dsl.KTableConditional
+import com.kotoframework.beans.dsl.KTableSortable
+import com.kotoframework.beans.dsl.KTable
 
 typealias KTableField<T, R> = (KTable<T>.() -> R)?
 typealias KTableSortableField<T, R> = (KTableSortable<T>.() -> R)?

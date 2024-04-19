@@ -1,4 +1,4 @@
-package com.kotoframework.bean
+package com.kotoframework.beans.dsl
 
 import com.kotoframework.enums.ASC
 import com.kotoframework.enums.DESC

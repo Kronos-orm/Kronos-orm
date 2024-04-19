@@ -1,6 +1,5 @@
-package com.kotoframework.utils
+package com.kotoframework.beans.logging
 
-import com.kotoframework.beans.KLogMessage
 import com.kotoframework.enums.ColorPrintCode
 import com.kotoframework.enums.KLogLevel
 import com.kotoframework.interfaces.KLogger
@@ -55,7 +54,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.TRACE,
                 messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [trace] [$tagName]"))
+                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [trace] [$tagName] "))
                 }
             )
         )
@@ -71,7 +70,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.TRACE,
                 messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [debug] [$tagName]"))
+                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [debug] [$tagName] "))
                 }
             )
         )
@@ -87,7 +86,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.TRACE,
                 messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [info] [$tagName]"))
+                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [info] [$tagName] "))
                 }
             )
         )
@@ -103,7 +102,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.TRACE,
                 messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [warn] [$tagName]"))
+                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [warn] [$tagName] "))
                 }
             )
         )
@@ -119,7 +118,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.TRACE,
                 messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [error] [$tagName]"))
+                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [error] [$tagName] "))
                 }
             )
         )

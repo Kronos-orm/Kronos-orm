@@ -1,6 +1,6 @@
 package com.kotoframework.orm.delete
 
-import com.kotoframework.bean.KTable
+import com.kotoframework.beans.dsl.KTable
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.types.KTableConditionalField
 

@@ -1,8 +1,8 @@
 package com.kotoframework.adapter
 
 import com.kotoframework.KotoLoggerApp.invoke0
-import com.kotoframework.beans.KLogMessage
-import com.kotoframework.beans.KLogMessage.Companion.formatted
+import com.kotoframework.beans.logging.KLogMessage
+import com.kotoframework.beans.logging.KLogMessage.Companion.formatted
 import com.kotoframework.enums.KLogLevel
 import com.kotoframework.interfaces.KLogger
 import java.lang.reflect.Method

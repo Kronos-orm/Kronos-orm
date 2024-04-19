@@ -99,4 +99,8 @@ enum class ColorPrintCode(val code: Int) {
      * Underline text.
      */
     UNDERLINE(4);
+
+    fun toArray(): Array<ColorPrintCode> {
+        return arrayOf(this)
+    }
 }

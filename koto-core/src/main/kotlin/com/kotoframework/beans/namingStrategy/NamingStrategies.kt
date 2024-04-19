@@ -1,4 +1,4 @@
-package com.kotoframework.utils
+package com.kotoframework.beans.namingStrategy
 
 import com.kotoframework.interfaces.KotoNamingStrategy
 

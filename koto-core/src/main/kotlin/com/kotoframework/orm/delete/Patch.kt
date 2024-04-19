@@ -1,6 +1,5 @@
 package com.kotoframework.orm.delete
 
-import com.kotoframework.bean.KTable
 import com.kotoframework.interfaces.KPojo
 
 

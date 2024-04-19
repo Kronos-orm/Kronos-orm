@@ -1,6 +1,6 @@
 package com.kotoframework.orm.upsert
 
-import com.kotoframework.bean.KTable
+import com.kotoframework.beans.dsl.KTable
 import com.kotoframework.interfaces.KPojo
 
 

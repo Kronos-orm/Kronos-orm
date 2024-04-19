@@ -11,7 +11,7 @@ import com.kotoframework.orm.update.update
 import com.kotoframework.orm.update.updateExcept
 import com.kotoframework.orm.upsert.upsert
 import com.kotoframework.orm.upsert.upsertExcept
-import com.kotoframework.utils.LineHumpNamingStrategy
+import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import org.junit.jupiter.api.Test
 
 class Main {
@@ -19,7 +19,8 @@ class Main {
     @Test
     fun testUpdate() {
         KotoApp.apply {
-            defaultNamingStrategy = LineHumpNamingStrategy()
+            fieldNamingStrategy = LineHumpNamingStrategy()
+            tableNamingStrategy = LineHumpNamingStrategy()
         }
 
         val user = User(1)

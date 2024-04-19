@@ -1,23 +1,93 @@
 package com.kotoframework.orm.update
 
+import com.kotoframework.beans.dsl.Criteria
+import com.kotoframework.beans.dsl.KTable
+import com.kotoframework.beans.dsl.KTableConditional
+import com.kotoframework.enums.AND
+import com.kotoframework.enums.Equal
+import com.kotoframework.exceptions.NoFieldsToUpdateException
+import com.kotoframework.i18n.Noun.noFieldsToUpdateMessage
 import com.kotoframework.interfaces.KPojo
+import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
+import com.kotoframework.utils.DataSourceUtil.orDefault
+import com.kotoframework.utils.Extensions.javaInstance
+import com.kotoframework.utils.Extensions.toMap
 
-class UpdateClause<T : KPojo>(kPojo: T, fields: KTableField<T, Unit> = null) {
-    fun set(lambda: KTableField<T, Unit>): UpdateClause<T> {
-        TODO()
+class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<T, Unit> = null) {
+    private var toUpdateFields: List<String>? = null
+    private var condition: Criteria? = null
+    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    private var paramMapNew: MutableMap<String, Any?> = mutableMapOf()
+
+    init {
+        paramMap.putAll(pojo.toMap())
+        if (setUpdateFields != null) {
+            KTable<T>(pojo::class.javaInstance()).apply {
+                setUpdateFields.invoke(this)
+                if (fields.isEmpty()) {
+//                    throw NoFieldsToUpdateException(noFieldsToUpdateMessage)
+                } else {
+                    toUpdateFields = fields
+                }
+            }
+        }
     }
 
-    fun by(lambda: KTableField<T, Unit>): UpdateClause<T> {
-        TODO()
+    fun set(rowData: KTableField<T, Unit>): UpdateClause<T> {
+        KTable<T>(pojo::class.javaInstance()).apply {
+            rowData?.invoke(this)
+            if (fields.isEmpty()) {
+//                throw NoFieldsToUpdateException(noFieldsToUpdateMessage)
+            }
+            fields.let { toUpdateFields = it }
+            paramMapNew = this.map
+        }
+        return this
     }
 
-    fun where(lambda: KTableConditionalField<T, Boolean?> = null): UpdateClause<T> {
-        TODO()
+    fun by(someFields: KTableField<T, Unit>): UpdateClause<T> {
+        KTable<T>(pojo::class.javaInstance()).apply {
+            someFields?.invoke(this)
+            if (fields.isEmpty()) {
+//                throw NeedUpdateConditionException(needUpdateConditionMessage)
+            } else {
+                condition = Criteria(
+                    type = AND,
+                ).apply {
+                    children = fields.map {
+                        Criteria(
+                            type = Equal,
+                            parameterName = it,
+                            value = paramMap[it]
+                        )
+                    }.toMutableList()
+                }
+            }
+        }
+        return this
     }
 
-    fun execute() {
-        TODO()
+    fun where(updateCondition: KTableConditionalField<T, Boolean?> = null): UpdateClause<T> {
+        KTableConditional<T>(pojo::class.javaInstance()).apply {
+            updateCondition?.invoke(this)
+            condition = criteria ?: Criteria(
+                type = AND
+            ).apply {
+                children = paramMap.keys.map {
+                    Criteria(
+                        type = Equal,
+                        parameterName = it,
+                        value = paramMap[it]
+                    )
+                }.toMutableList()
+            }
+        }
+        return this
+    }
+
+    fun execute(wrapper: KotoDataSourceWrapper? = null) {
+//        wrapper.orDefault().update("update xxx set xxx where xxx", paramMap)
     }
 }

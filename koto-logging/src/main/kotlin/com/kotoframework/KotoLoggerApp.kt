@@ -1,13 +1,12 @@
 package com.kotoframework
 
-import com.kotoframework.KotoApp.defaultDataSource
 import com.kotoframework.adapter.*
 import com.kotoframework.enums.KLoggerType
 import com.kotoframework.exceptions.KotoNoLoggerException
 import com.kotoframework.i18n.Noun
 import com.kotoframework.interfaces.KLogger
-import com.kotoframework.interfaces.KotoDataSourceWrapper
-import com.kotoframework.utils.BundledSimpleLoggerAdapter
+import com.kotoframework.beans.logging.BundledSimpleLoggerAdapter
+import com.kotoframework.utils.DataSourceUtil.javaName
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
@@ -24,8 +23,8 @@ object KotoLoggerApp {
         }
     }
 
-    fun getKotoLoggerInstance(kdsWrapper: KotoDataSourceWrapper? = defaultDataSource): KLogger {
-        val tag = kdsWrapper!!::class.java.name
+    private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
+        val tag = loggingClazz.javaName
         return when (KotoApp.defaultLoggerType) {
             KLoggerType.ANDROID_LOGGER -> AndroidUtilLoggerAdapter(tag)
             KLoggerType.COMMONS_LOGGER -> ApacheCommonsLoggerAdapter(tag)

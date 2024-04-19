@@ -1,4 +1,4 @@
-package com.kotoframework.bean
+package com.kotoframework.beans.dsl
 
 import com.kotoframework.annotations.UnsafeCriteria
 import com.kotoframework.interfaces.KPojo

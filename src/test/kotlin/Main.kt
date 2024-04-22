@@ -27,7 +27,12 @@ class Main {
         val testUser = User(1, "test")
 
         user.update()
-            .set { it.username = "123" }
+            .set {
+                it.username = "123"
+                setValue(it::username, "123")
+                setValue("username", "123")
+                it::username.set(123.toString())
+            }
             .by { it.id }
             .execute()
 
@@ -146,7 +151,7 @@ class Main {
             .where { it.id > 10 }
             .distinct()
             .groupBy { it.id }
-            .orderBy { it.id.desc }
+            .orderBy { it.id.desc + it.username.asc }
             .having { it.id.eq }
             .query()
     }

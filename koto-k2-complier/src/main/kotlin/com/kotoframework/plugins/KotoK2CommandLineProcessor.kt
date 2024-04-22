@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
 @OptIn(ExperimentalCompilerApi::class)
 @AutoService(CommandLineProcessor::class)
-class CriteriaCommandLineProcessor : CommandLineProcessor {
+class KotoK2CommandLineProcessor : CommandLineProcessor {
     companion object {
         private const val OPTION_IGNORE_WARNING = "ignoreWarning"
 

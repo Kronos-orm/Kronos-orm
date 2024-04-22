@@ -25,7 +25,7 @@ class KotoK2GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
-        val extension = project.extensions.getByType(CriteriaParserExtension::class.java) as CriteriaParserExtension
+        val extension = project.extensions.getByType(KotoK2ParserExtension::class.java) as KotoK2ParserExtension
         return project.provider {
             listOf(
                 SubpluginOption(key = "ignoreWarnings", value = extension.ignoreWarnings.toString()),

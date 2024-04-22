@@ -1,17 +1,17 @@
 package com.kotoframework.plugins
 
-import com.kotoframework.plugins.transformer.CriteriaParserTransformer
+import com.kotoframework.plugins.transformer.KotoParserTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.*
 
-class CriteriaParserExtension(
+class KotoK2ParserExtension(
     val ignoreWarnings: Boolean
 ) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        moduleFragment.transform(CriteriaParserTransformer(pluginContext), null)
+        moduleFragment.transform(KotoParserTransformer(pluginContext), null)
         print(
             moduleFragment.dumpKotlinLike(
                 KotlinLikeDumpOptions(

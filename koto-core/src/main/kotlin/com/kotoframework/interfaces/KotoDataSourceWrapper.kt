@@ -1,6 +1,7 @@
 package com.kotoframework.interfaces
 
 import com.kotoframework.enums.DBType
+import com.kotoframework.exceptions.NoDataSourceException
 import kotlin.reflect.KClass
 
 interface KotoDataSourceWrapper {
@@ -51,6 +52,7 @@ interface KotoDataSourceWrapper {
      *         empty list.
      * @throws SqlExecutionException If there is an error executing the SQL query, such as a syntax error in the SQL
      *                               statement, issues with the database connection, or other underlying database errors.
+     * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forList(sql: String, paramMap: Map<String, Any?> = mapOf()): List<Map<String, Any>>
 
@@ -74,6 +76,7 @@ interface KotoDataSourceWrapper {
      * @throws InstantiationException If there is an error instantiating objects of the specified type from the query
      *                                results, such as due to a mismatch between the query result structure and the
      *                                expected class fields or constructor parameters.
+     * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forList(
         sql: String,
@@ -95,6 +98,7 @@ interface KotoDataSourceWrapper {
      *         value is the value of that column for that row. If the query returns no rows, this method returns `null`.
      * @throws SqlExecutionException If there is an error executing the SQL query, such as a syntax error in the SQL
      *                               statement, issues with the database connection, or other underlying database errors.
+     * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forMap(sql: String, paramMap: Map<String, Any?> = mapOf()): Map<String, Any>?
 
@@ -118,6 +122,7 @@ interface KotoDataSourceWrapper {
      * @throws DataMappingException If the conversion of the result set to the specified class fails. This can occur if the result set
      *                              contains columns that cannot be mapped to the fields of the class, either because of name discrepancies,
      *                              type incompatibilities, or other mapping issues.
+     * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forObject(
         sql: String,
@@ -138,6 +143,7 @@ interface KotoDataSourceWrapper {
      *         update operation, with a return value of 0 indicating that no rows were affected.
      * @throws SqlExecutionException If an error occurs during the execution of the SQL update. This could be due to issues with the SQL syntax,
      *                               problems with the database connection, or other underlying issues related to the database or execution environment.
+     * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun update(sql: String, paramMap: Map<String, Any?> = mapOf()): Int
 
@@ -156,6 +162,7 @@ interface KotoDataSourceWrapper {
      *         This can be used to verify the success and impact of each update operation within the batch.
      * @throws SqlExecutionException If an error occurs during the execution of any batch update. This could be due to issues with the SQL syntax,
      *                               problems with the database connection, or other underlying issues related to the database or execution environment.
+     * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>> = arrayOf()): IntArray
 }

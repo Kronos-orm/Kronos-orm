@@ -1,6 +1,6 @@
 package com.kotoframework
 
-import com.kotoframework.plugins.CriteriaParserCompilerPluginRegistrar
+import com.kotoframework.plugins.KotoK2ParserCompilerPluginRegistrar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -38,8 +38,12 @@ class UpdateParserTest {
         val user = User(1)
         val testUser = User(1, "test")
 
-        user.update()
-            .set { it.username = "123" }
+        user.update {
+              it.username
+          }
+            .set { 
+                it.username = "123" + 456
+            }
             .by { it.id }
             .execute()
       }
@@ -55,7 +59,7 @@ class UpdateParserTest {
   @OptIn(ExperimentalCompilerApi::class)
   fun compile(
     sourceFiles: List<SourceFile>,
-    plugin: CompilerPluginRegistrar = CriteriaParserCompilerPluginRegistrar(),
+    plugin: CompilerPluginRegistrar = KotoK2ParserCompilerPluginRegistrar(),
   ): JvmCompilationResult {
     return KotlinCompilation().apply {
       sources = sourceFiles
@@ -67,7 +71,7 @@ class UpdateParserTest {
   @OptIn(ExperimentalCompilerApi::class)
   fun compile(
     sourceFile: SourceFile,
-    plugin: CompilerPluginRegistrar = CriteriaParserCompilerPluginRegistrar(),
+    plugin: CompilerPluginRegistrar = KotoK2ParserCompilerPluginRegistrar(),
   ): JvmCompilationResult {
     return compile(listOf(sourceFile), plugin)
   }

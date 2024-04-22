@@ -1,6 +1,7 @@
 package com.kotoframework.plugins.transformer.kTable
 
 import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.useKotoBuildScope
+import com.kotoframework.plugins.transformer.CommonTransformer
 import com.kotoframework.plugins.utils.kTable.putFieldParamMap
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext

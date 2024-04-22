@@ -1,4 +1,4 @@
-package com.kotoframework.plugins.transformer.kTable
+package com.kotoframework.plugins.transformer
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrFunction

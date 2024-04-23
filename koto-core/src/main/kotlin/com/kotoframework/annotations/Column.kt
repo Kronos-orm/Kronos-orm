@@ -3,8 +3,8 @@ package com.kotoframework.annotations
 /**
  * Table
  */
-@Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
 annotation class Column(
     val name: String
 )

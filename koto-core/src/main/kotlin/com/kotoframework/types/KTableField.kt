@@ -7,3 +7,5 @@ import com.kotoframework.beans.dsl.KTable
 typealias KTableField<T, R> = (KTable<T>.() -> R)?
 typealias KTableSortableField<T, R> = (KTableSortable<T>.() -> R)?
 typealias KTableConditionalField<T, R> = (KTableConditional<T>.() -> R)?
+
+typealias Field = Any

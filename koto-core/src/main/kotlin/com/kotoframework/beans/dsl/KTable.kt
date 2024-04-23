@@ -1,6 +1,7 @@
 package com.kotoframework.beans.dsl
 
 import com.kotoframework.interfaces.KPojo
+import com.kotoframework.types.Field
 import com.kotoframework.utils.Extensions.columnName
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
@@ -15,7 +16,7 @@ open class KTable<T : KPojo>(open val it: T) {
 
     fun Any?.alias(alias: String): String = alias
 
-    fun addField(property: Any){
+    fun addField(property: Field) {
         when(property) {
             is KProperty<*> -> {
                 fields += property.columnName()
@@ -25,14 +26,21 @@ open class KTable<T : KPojo>(open val it: T) {
         }
     }
 
-    fun setValue(property: Any, value: Any?) {
-        addField(property)
+    /**
+     * Sets the value for the specified property in the fieldParamMap.
+     *
+     * @param property The property for which the value is being set.
+     * @param value The value to be set for the property.
+     * @throws IllegalArgumentException if the property type is unknown.
+     */
+    fun setValue(property: Field, value: Any?) {
+        addField(property) // Add the property to the field list
         when(property) {
             is KProperty<*> -> {
-                fieldParamMap[property.columnName()] = value
+                fieldParamMap[property.columnName()] = value // Set value for KProperty
             }
-            is String -> fieldParamMap[property] = value
-            else -> throw IllegalArgumentException("Unknown property type: $property")
+            is String -> fieldParamMap[property] = value // Set value for String property
+            else -> throw IllegalArgumentException("Unknown property type: $property") // Throw exception for unknown property type
         }
     }
 

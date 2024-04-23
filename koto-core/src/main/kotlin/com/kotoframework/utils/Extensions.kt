@@ -1,5 +1,6 @@
 package com.kotoframework.utils
 
+import com.kotoframework.KotoApp.tableNamingStrategy
 import com.kotoframework.interfaces.KPojo
 import java.beans.BeanInfo
 import java.beans.Introspector
@@ -33,6 +34,10 @@ object Extensions {
     /* It's an extension function of KPojo. It will return a map of the object. */
     fun KPojo?.toMap(vararg patch: Pair<String, Any?>): Map<String, Any?> {
         return this.toMutableMap(*patch)
+    }
+
+    inline fun <reified T : KPojo> T.tableName(): String {
+        return tableNamingStrategy.k2db(this::class.simpleName!!)
     }
 
 }

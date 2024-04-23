@@ -27,13 +27,11 @@ class Update {
         val (sql, paramMap) = user.update()
             .set {
                 it.username = "123"
-//                setValue(it::username, "123")
-//                setValue("username", "123")
-//                it::username.set(123.toString())
             }
             .by { it.id }
+            .build()
 
-        assertEquals("update tb_user set username = :username where id = :id and delete = 0", sql)
+        assertEquals("update tb_user set username = :username where id = :id", sql)
         assertEquals(mapOf("id" to 1, "username" to "123"), paramMap)
         // Update tb_user set username = '123' where id = 1
 

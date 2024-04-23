@@ -5,13 +5,10 @@ import com.kotoframework.beans.dsl.KTable
 import com.kotoframework.beans.dsl.KTableConditional
 import com.kotoframework.enums.AND
 import com.kotoframework.enums.Equal
-import com.kotoframework.exceptions.NeedUpdateConditionException
-import com.kotoframework.i18n.Noun.needUpdateConditionMessage
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
-import com.kotoframework.utils.DataSourceUtil.orDefault
 import com.kotoframework.utils.Extensions.javaInstance
 import com.kotoframework.utils.Extensions.toMap
 
@@ -78,6 +75,10 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
             }
         }
         return this
+    }
+
+    fun build(): Pair<String, Map<String, Any?>> {
+        TODO()
     }
 
     fun execute(wrapper: KotoDataSourceWrapper? = null) {

@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        mavenLocal()
         mavenCentral()
         gradlePluginPortal()
     }
@@ -22,4 +23,4 @@ rootProject.children.forEach { project ->
 }
 include("koto-core")
 include("koto-logging")
-include("koto-k2-complier")
+include("koto-k2-compiler-plugin")

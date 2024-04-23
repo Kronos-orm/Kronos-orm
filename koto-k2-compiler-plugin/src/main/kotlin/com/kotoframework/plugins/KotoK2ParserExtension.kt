@@ -6,9 +6,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.*
 
-class KotoK2ParserExtension(
-    val ignoreWarnings: Boolean
-) : IrGenerationExtension {
+open class KotoK2ParserExtension() : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment.transform(KotoParserTransformer(pluginContext), null)

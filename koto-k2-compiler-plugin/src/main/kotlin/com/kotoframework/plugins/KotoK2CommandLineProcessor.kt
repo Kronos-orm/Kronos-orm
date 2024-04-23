@@ -16,7 +16,7 @@ class KotoK2CommandLineProcessor : CommandLineProcessor {
         val ARG_OPTION_IGNORE_WARNING = CompilerConfigurationKey<Boolean>(OPTION_IGNORE_WARNING)
     }
 
-    override val pluginId: String = "com.kotoframework.plugins.koto-k2-plugin"
+    override val pluginId: String = "koto-k2-compiler-plugin"
 
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption(

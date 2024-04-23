@@ -3,16 +3,23 @@ package com.kotoframework.plugins.transformer
 import com.kotoframework.plugins.transformer.kTable.KTableFieldAddReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableParamPutBlockTransformer
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.irCall
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * `KotoParserTransformer` manipulates function declarations in Kotlin's Intermediate Representation (IR) based on specific type conditions.
@@ -26,6 +33,12 @@ class KotoParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotoframework.beans.dsl.KTable"
+
+    @OptIn(FirIncompatiblePluginAPI::class)
+    fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions(FqName("kotlin.io.println")).single {
+        val parameters = it.owner.valueParameters
+        parameters.size == 1 && parameters[0].type == irBuiltIns.anyNType
+    }
 
     /**
      * Checks each function's extension receiver type during its creation.
@@ -56,6 +69,9 @@ class KotoParserTransformer(
                     +statement.apply {
                         transform(KTableFieldAddReturnTransformer(pluginContext, irFunction), null)
                     }
+                }
+                +irCall(pluginContext.printlnFunc()).also { //调用 println()
+                    it.putValueArgument(0, irString(irFunction.body!!.dumpKotlinLike()))
                 }
             }.transform(KTableParamPutBlockTransformer(pluginContext, irFunction), null)
         }

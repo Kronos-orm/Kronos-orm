@@ -15,7 +15,7 @@ class KotoK2ParserCompilerPluginRegistrar : CompilerPluginRegistrar() {
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         val ignoreWarning = configuration.get(KotoK2CommandLineProcessor.ARG_OPTION_IGNORE_WARNING, true)
-        IrGenerationExtension.registerExtension(KotoK2ParserExtension(ignoreWarning))
+        IrGenerationExtension.registerExtension(KotoK2ParserExtension())
     }
 
 }

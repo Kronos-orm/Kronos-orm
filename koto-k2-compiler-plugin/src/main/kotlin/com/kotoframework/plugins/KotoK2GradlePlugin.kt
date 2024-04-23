@@ -17,19 +17,18 @@ class KotoK2GradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project) {
         super.apply(target)
         project = target
-        pluginId = target.extensions.getByName("kotlin_plugin_id") as String
-        group = target.extensions.getByName("group") as String
-        artifactId = target.extensions.getByName("artifactId") as String
-        version = target.extensions.getByName("version") as String
+        pluginId = "com.kotoframework.koto-k2-compiler-plugin"
+        group = "com.kotoframework"
+        artifactId = "koto-k2-compiler-plugin"
+        version = "2.0.0-SNAPSHOT"
+        project.extensions.create("kotoK2Parser", KotoK2ParserExtension::class.java)
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
         val extension = project.extensions.getByType(KotoK2ParserExtension::class.java) as KotoK2ParserExtension
         return project.provider {
-            listOf(
-                SubpluginOption(key = "ignoreWarnings", value = extension.ignoreWarnings.toString()),
-            )
+            listOf()
         }
     }
 

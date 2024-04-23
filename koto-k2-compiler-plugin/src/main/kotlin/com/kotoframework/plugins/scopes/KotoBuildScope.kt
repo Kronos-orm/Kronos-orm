@@ -85,7 +85,7 @@ class KotoBuildScope {
      * Simplified method to apply an IR function call using only expressions as parameters.
      * IrCall.apply{ ... }的简化方法，只使用表达式作为参数来应用IrCall。
      */
-    fun applyIrCall(
+    internal fun applyIrCall(
         irCall: IrFunctionSymbol,
         vararg values: Pair<Int, IrExpression?>,
         receivers: Receivers = Receivers()
@@ -101,7 +101,7 @@ class KotoBuildScope {
      * Simplified method to apply an IR function call using only expressions as parameters.
      * IrCall.apply{ ... }的简化方法，只使用表达式作为参数来应用IrCall。
      */
-    fun applyIrCall(
+    internal fun applyIrCall(
         irCall: IrFunctionSymbol,
         vararg values: IrExpression?,
         receivers: Receivers = Receivers()

@@ -25,4 +25,12 @@ class UpsertClause<T : KPojo>(t: T, fields: (KTable<T>.() -> Unit)? = null) {
     fun execute() {
         TODO()
     }
+
+    operator fun component1(): String {
+        TODO()
+    }
+
+    operator fun component2(): Map<String, Any?> {
+        TODO()
+    }
 }

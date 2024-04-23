@@ -20,4 +20,12 @@ class DeleteClause<T : KPojo>(t: T) {
     fun execute() {
         TODO()
     }
+
+    operator fun component1(): String {
+        TODO()
+    }
+
+    operator fun component2(): Map<String, Any?> {
+        TODO()
+    }
 }

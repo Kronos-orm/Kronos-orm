@@ -44,7 +44,7 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
         KTable<T>(pojo::class.javaInstance()).apply {
             someFields?.invoke(this)
             if (fields.isEmpty()) {
-                throw NeedUpdateConditionException(needUpdateConditionMessage)
+//                throw NeedUpdateConditionException(needUpdateConditionMessage)
             } else {
                 condition = Criteria(
                     type = AND,
@@ -81,6 +81,14 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
     }
 
     fun execute(wrapper: KotoDataSourceWrapper? = null) {
-        wrapper.orDefault().update("update xxx set xxx where xxx", paramMap)
+//        wrapper.orDefault().update("update xxx set xxx where xxx", paramMap)
+    }
+
+    operator fun component1(): String {
+        TODO()
+    }
+
+    operator fun component2(): Map<String, Any?> {
+        TODO()
     }
 }

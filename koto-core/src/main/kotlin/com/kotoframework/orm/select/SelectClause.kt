@@ -51,7 +51,11 @@ class SelectClause<T : KPojo>(kPojo: T, fields: KTableField<T, Unit> = null) {
         TODO()
     }
 
-    fun count(): List<Map<String, Any>> {
+    operator fun component1(): String {
+        TODO()
+    }
+
+    operator fun component2(): Map<String, Any?> {
         TODO()
     }
 }

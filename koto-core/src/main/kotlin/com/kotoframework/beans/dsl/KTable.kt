@@ -13,6 +13,8 @@ open class KTable<T : KPojo>(open val it: T) {
     operator fun Any?.plus(other: Any?): Int = 1
     operator fun Any?.unaryPlus(): Int = 1
 
+    fun Any?.alias(alias: String): String = alias
+
     fun addField(property: Any){
         when(property) {
             is KProperty<*> -> {

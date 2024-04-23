@@ -65,4 +65,12 @@ public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     fun count(): List<Map<String, Any>> {
         TODO()
     }
+
+    operator fun component1(): String {
+        TODO()
+    }
+
+    operator fun component2(): Map<String, Any?> {
+        TODO()
+    }
 }

@@ -1,11 +1,15 @@
 package com.kotoframework.utils
 
-import com.kotoframework.KotoApp.tableNamingStrategy
+import com.kotoframework.KotoApp.fieldNamingStrategy
+import com.kotoframework.annotations.Column
+import com.kotoframework.annotations.Table
 import com.kotoframework.interfaces.KPojo
 import java.beans.BeanInfo
 import java.beans.Introspector
 import java.beans.PropertyDescriptor
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.findAnnotation
 
 object Extensions {
     @Suppress("UNCHECKED_CAST")
@@ -36,8 +40,16 @@ object Extensions {
         return this.toMutableMap(*patch)
     }
 
+    inline fun <reified T : KPojo> KClass<out T>.tableName(): String {
+        return this.findAnnotation<Table>()?.name ?: fieldNamingStrategy.k2db(this.simpleName!!)
+    }
+
     inline fun <reified T : KPojo> T.tableName(): String {
-        return tableNamingStrategy.k2db(this::class.simpleName!!)
+        return this::class.tableName()
+    }
+
+    fun KProperty<*>.columnName(): String {
+        return this.findAnnotation<Column>()?.name ?: fieldNamingStrategy.k2db(this.name)
     }
 
 }

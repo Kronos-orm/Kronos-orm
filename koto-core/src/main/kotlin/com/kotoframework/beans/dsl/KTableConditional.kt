@@ -5,6 +5,7 @@ import com.kotoframework.interfaces.KPojo
 import java.util.*
 
 open class KTableConditional<T : KPojo>(override val it: T): KTable<T>(it) {
+    public val criteria: Criteria? = null
     operator fun <T> Collection<T>?.contains(
         other: @Suppress(
             "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"

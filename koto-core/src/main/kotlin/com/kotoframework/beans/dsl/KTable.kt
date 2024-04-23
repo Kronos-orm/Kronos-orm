@@ -1,12 +1,12 @@
 package com.kotoframework.beans.dsl
 
 import com.kotoframework.interfaces.KPojo
+import com.kotoframework.utils.Extensions.columnName
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
 open class KTable<T : KPojo>(open val it: T) {
-    public val criteria: Criteria? = null
     public val fields: MutableList<String> = mutableListOf()
     public val fieldParamMap: MutableMap<String, Any?> = mutableMapOf()
 
@@ -39,10 +39,6 @@ open class KTable<T : KPojo>(open val it: T) {
     fun <K> KProperty1<T, K>.set(value: K?) {
         addField(this)
         fieldParamMap[columnName()] = value
-    }
-
-    internal fun KProperty<*>.columnName(): String {
-        return this.name
     }
 
     fun KPojo.getKProperty(columnName: String): KProperty<*> {

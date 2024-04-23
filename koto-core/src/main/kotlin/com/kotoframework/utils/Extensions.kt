@@ -40,8 +40,9 @@ object Extensions {
         return this.toMutableMap(*patch)
     }
 
-    inline fun <reified T : KPojo> KClass<out T>.tableName(): String {
-        return this.findAnnotation<Table>()?.name ?: fieldNamingStrategy.k2db(this.simpleName!!)
+    fun KClass<*>.tableName(): String {
+        return findAnnotation<Table>()?.name
+            ?: fieldNamingStrategy.k2db(this.simpleName!!)
     }
 
     inline fun <reified T : KPojo> T.tableName(): String {

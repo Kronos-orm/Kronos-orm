@@ -21,8 +21,10 @@ class UpdateParserTest {
       import com.kotoframework.KotoApp
       import com.kotoframework.interfaces.KPojo
       import com.kotoframework.orm.update.update
+      import com.kotoframework.annotations.Table
       import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 
+      @Table(name = "tb_user")
       data class User(
           var id: Int? = null,
           var username: String? = null,

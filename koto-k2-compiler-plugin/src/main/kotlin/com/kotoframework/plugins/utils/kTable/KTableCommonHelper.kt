@@ -10,9 +10,8 @@ import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.resolve.descriptorUtil.classId
+import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 
 /**
  * Defines various Kotlin IR extensions to handle specific methods of `KTable` during the IR transformation process in Kotlin compiler plugins.
@@ -61,7 +60,7 @@ fun KotoBuildScope.getColumnName(expression: IrExpression): IrExpression {
             val annotations =
                 expression.dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.annotations
             val columnAnnotation =
-                annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.classId == ClassId.fromString("com/kotoframework/annotations/Column") }
+                annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == FqName("com.kotoframework.annotations.Column") }
             val columnName =columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, builder.irString(propertyName))
             applyIrCall(fieldSymbol.constructors.first(), columnName, builder.irString(propertyName))
         }

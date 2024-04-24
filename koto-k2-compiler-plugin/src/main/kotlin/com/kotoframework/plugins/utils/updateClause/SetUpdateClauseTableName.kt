@@ -10,10 +10,9 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.resolve.descriptorUtil.classId
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getArguments
+import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 
 @OptIn(FirIncompatiblePluginAPI::class, ObsoleteDescriptorBasedAPI::class)
 fun setUpdateClauseTableName(pluginContext: IrPluginContext, expression: IrCall): IrExpression {
@@ -22,10 +21,10 @@ fun setUpdateClauseTableName(pluginContext: IrPluginContext, expression: IrCall)
         pluginContext.referenceFunctions(FqName("com.kotoframework.orm.update.setUpdateClauseTableName"))
             .first(),
     ).apply {
-        val irClass = (expression.type.getArguments().first() as IrSimpleType).getClass()!!
+        val irClass = (expression.type as IrSimpleType).arguments[0].typeOrFail.getClass()!!
         val annotations = irClass.annotations
         val tableAnnotation =
-            annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.classId == ClassId.fromString("com/kotoframework/annotations/Table") }
+            annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == FqName("com.kotoframework.annotations.Table") }
         putValueArgument(0, expression)
         putValueArgument(
             1,

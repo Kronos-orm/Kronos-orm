@@ -1,14 +1,16 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm")
     id("com.kotoframework.koto-k2-compiler-plugin") version "2.0.0-SNAPSHOT"
 }
 
-group = "com.kotoframework"
-version = file("koto.version").readText().trim()
+allprojects {
+    group = "com.kotoframework"
+    version = "2.0.0-SNAPSHOT"
 
-repositories {
-    mavenLocal()
-    mavenCentral()
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
 }
 
 dependencies {

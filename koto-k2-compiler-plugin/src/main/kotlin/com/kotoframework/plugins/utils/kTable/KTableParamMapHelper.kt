@@ -40,22 +40,14 @@ fun KotoBuildScope.putParamMapStatements(receiver: IrExpression, element: IrElem
             // Handle assignment operations (EQ origin) to map field parameters.
             // 处理赋值操作（EQ 原点）以映射字段参数。
             if (element.origin == IrStatementOrigin.EQ) { // Assignment statement
-                element.correspondingName?.asString()?.let { property ->
-                    // Create and add a statement that sets a field value by calling `setValue`.
-                    // 创建并添加通过调用 `setValue` 设置字段值的语句。
-                    statements.add(
-                        applyIrCall(
-                            setValueSymbol,
-                            applyIrCall(
-                                getKPropertySymbol,
-                                builder.irString(property),
-                                receivers = KotoBuildScope.Receivers(receiver, element.dispatchReceiver)
-                            ),
-                            element.valueArguments[0],
-                            receivers = KotoBuildScope.Receivers(receiver)
-                        )
+                statements.add(
+                    applyIrCall(
+                        setValueSymbol,
+                        getColumnName(element),
+                        element.valueArguments[0],
+                        receivers = KotoBuildScope.Receivers(receiver)
                     )
-                }
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.kotoframework.orm.update
 
 import com.kotoframework.beans.dsl.Criteria
+import com.kotoframework.beans.dsl.Field
 import com.kotoframework.beans.dsl.KTable
 import com.kotoframework.beans.dsl.KTableConditional
 import com.kotoframework.enums.AND
@@ -9,19 +10,19 @@ import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
-import com.kotoframework.utils.Extensions.javaInstance
 import com.kotoframework.utils.Extensions.toMap
+import kotlin.reflect.full.createInstance
 
 class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<T, Any?> = null) {
-    private var toUpdateFields: MutableSet<String> = mutableSetOf()
+    private var toUpdateFields: MutableSet<Field> = mutableSetOf()
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-    private var paramMapNew: MutableMap<String, Any?> = mutableMapOf()
+    private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
 
     init {
         paramMap.putAll(pojo.toMap())
         if (setUpdateFields != null) {
-            KTable<T>(pojo::class.javaInstance()).apply {
+            KTable(pojo::class.createInstance()).apply {
                 setUpdateFields.invoke(this)
                 toUpdateFields.addAll(fields)
             }
@@ -29,7 +30,7 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
     }
 
     fun set(rowData: KTableField<T, Unit>): UpdateClause<T> {
-        KTable<T>(pojo::class.javaInstance()).apply {
+        KTable(pojo::class.createInstance()).apply {
             rowData?.invoke(this)
             fields.let { toUpdateFields.addAll(it) }
             paramMapNew.putAll(this.fieldParamMap)
@@ -38,7 +39,7 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
     }
 
     fun by(someFields: KTableField<T, Any?>): UpdateClause<T> {
-        KTable<T>(pojo::class.javaInstance()).apply {
+        KTable(pojo::class.createInstance()).apply {
             someFields?.invoke(this)
             if (fields.isEmpty()) {
 //                throw NeedUpdateConditionException(needUpdateConditionMessage)
@@ -49,8 +50,8 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
                     children = fields.map {
                         Criteria(
                             type = Equal,
-                            parameterName = it,
-                            value = paramMap[it]
+                            parameterName = it.propertyName,
+                            value = paramMap[it.propertyName]
                         )
                     }.toMutableList()
                 }
@@ -60,7 +61,7 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
     }
 
     fun where(updateCondition: KTableConditionalField<T, Boolean?> = null): UpdateClause<T> {
-        KTableConditional<T>(pojo::class.javaInstance()).apply {
+        KTableConditional(pojo::class.createInstance()).apply {
             updateCondition?.invoke(this)
             condition = criteria ?: Criteria(
                 type = AND

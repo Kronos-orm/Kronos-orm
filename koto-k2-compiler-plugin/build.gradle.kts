@@ -20,13 +20,6 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
 }
 
-
-group = "com.kotoframework"
-version = file("../koto.version").readText().trim()
-
-repositories {
-    mavenCentral()
-}
 base.archivesName = "koto-k2-compiler-plugin"
 
 dependencies {
@@ -44,6 +37,7 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(8)
 }

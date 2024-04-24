@@ -2,14 +2,8 @@ plugins {
     kotlin("jvm")
 }
 
-group = "com.kotoframework"
-version = file("../koto.version").readText().trim()
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
+    implementation("com.google.code.gson:gson:2.8.9")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }

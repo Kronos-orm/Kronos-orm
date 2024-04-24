@@ -54,11 +54,7 @@ fun KotoBuildScope.addFieldsNames(element: IrElement): MutableList<IrExpression>
                 }
 
                 is IrStatementOrigin.GET_PROPERTY -> {
-                    // Add the property name directly as a string expression if the origin is GET_PROPERTY.
-                    // 如果起源是 GET_PROPERTY，直接将属性名作为字符串表达式添加。
-                    element.correspondingName?.let {
-                        fieldNames.add(builder.irString(it.asString()))
-                    }
+                    getColumnName(element).let { fieldNames.add(it) }
                 }
             }
         }

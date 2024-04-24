@@ -12,7 +12,6 @@ import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.interfaces.KotoNamingStrategy
 import com.kotoframework.interfaces.KotoSerializeResolver
 import com.kotoframework.utils.DataSourceUtil.javaName
-import kotlin.reflect.full.functions
 
 object KotoApp {
     var defaultDataSource: () -> KotoDataSourceWrapper = { NoneDataSourceWrapper() }
@@ -28,12 +27,9 @@ object KotoApp {
      */
     private fun detectLoggerImplementation() {
         try {
-            Class.forName("com.kotoframework.KotoLoggerApp")
-                .kotlin.apply {
-                    functions
-                        .firstOrNull { it.name == "detectLoggerImplementation" }
-                        ?.call(objectInstance)
-                }
+            Class.forName("com.kotoframework.KotoLoggerApp").apply {
+                getMethod("detectLoggerImplementation", Any::class.java).invoke(this)
+            }
         } catch (e: ClassNotFoundException) {
             defaultLogger(this).info(
                 logMessageOf("Koto-logging is not used.", ColorPrintCode.YELLOW.toArray()).endl().toArray()

@@ -14,6 +14,7 @@ import com.kotoframework.utils.Extensions.toMap
 import kotlin.reflect.full.createInstance
 
 class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<T, Any?> = null) {
+    lateinit var tableName: String
     private var toUpdateFields: MutableSet<Field> = mutableSetOf()
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()

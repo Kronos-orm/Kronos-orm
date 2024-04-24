@@ -2,6 +2,7 @@ package com.kotoframework.plugins.transformer
 
 import com.kotoframework.plugins.transformer.kTable.KTableFieldAddReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableParamPutBlockTransformer
+import com.kotoframework.plugins.utils.updateClause.setUpdateClauseTableName
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -14,9 +15,10 @@ import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-import org.jetbrains.kotlin.ir.util.irCall
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
@@ -33,6 +35,7 @@ class KotoParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotoframework.beans.dsl.KTable"
+    private val updateClauseClass = "com.kotoframework.orm.update.UpdateClause"
 
     @OptIn(FirIncompatiblePluginAPI::class)
     fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions(FqName("kotlin.io.println")).single {
@@ -54,6 +57,16 @@ class KotoParserTransformer(
             }
         }
         return super.visitFunctionNew(declaration)
+    }
+
+    @OptIn(ObsoleteDescriptorBasedAPI::class)
+    override fun visitCall(expression: IrCall): IrExpression {
+        when (expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false)) {
+            updateClauseClass -> {
+                return setUpdateClauseTableName(pluginContext, expression)
+            }
+        }
+        return super.visitCall(expression)
     }
 
     /**

@@ -2,6 +2,7 @@ package com.kotoframework.plugins.scopes
 
 import com.kotoframework.plugins.transformer.CommonTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.declarations.IrFunction

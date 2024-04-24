@@ -1,6 +1,7 @@
 package com.kotoframework.plugins.scopes
 
 import com.kotoframework.plugins.transformer.CommonTransformer
+import com.kotoframework.plugins.utils.kTableConditional.createCriteria
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
@@ -57,6 +58,9 @@ class KotoBuildScope {
         var tableName: IrExpression? = null,
     )
 
+    fun CriteriaIR.toIrVariable(): IrVariable {
+        return createCriteria(parameterName, type, not, value, children, tableName)
+    }
     companion object {
         // Creating a scope which can be used to construct the IR
         // 创建KotoBuildScope，该scope用于构建IR

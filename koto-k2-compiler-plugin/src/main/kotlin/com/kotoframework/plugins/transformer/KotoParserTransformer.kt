@@ -1,5 +1,6 @@
 package com.kotoframework.plugins.transformer
 
+import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableFieldAddReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableParamPutBlockTransformer
 import com.kotoframework.plugins.utils.updateClause.setUpdateClauseTableName
@@ -36,6 +37,7 @@ class KotoParserTransformer(
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotoframework.beans.dsl.KTable"
     private val updateClauseClass = "com.kotoframework.orm.update.UpdateClause"
+    private val kTableConditionalClazz = "com.kotoframework.beans.dsl.KTableConditional"
 
     @OptIn(FirIncompatiblePluginAPI::class)
     fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions(FqName("kotlin.io.println")).single {
@@ -54,6 +56,9 @@ class KotoParserTransformer(
         when (declaration.extensionReceiverParameter?.symbol?.descriptor?.returnType?.getKotlinTypeFqName(false)) {
             kTableClass -> {
                 declaration.body = transformKTable(declaration)
+            }
+            kTableConditionalClazz -> {
+                declaration.body = transformKTableConditional(declaration)
             }
         }
         return super.visitFunctionNew(declaration)
@@ -87,6 +92,23 @@ class KotoParserTransformer(
                     it.putValueArgument(0, irString(irFunction.body!!.dumpKotlinLike()))
                 }
             }.transform(KTableParamPutBlockTransformer(pluginContext, irFunction), null)
+        }
+    }
+
+    private fun transformKTableConditional(
+        irFunction: IrFunction
+    ): IrBlockBody {
+        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
+            +irBlock(resultType = irFunction.returnType) {
+                for (statement in irFunction.body!!.statements) { // Preserve the original method body expressions
+                    +statement.apply {
+                        transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
+                    }
+                }
+                +irCall(pluginContext.printlnFunc()).also { //调用 println()
+                    it.putValueArgument(0, irString(irFunction.body!!.dumpKotlinLike()))
+                }
+            }
         }
     }
 }

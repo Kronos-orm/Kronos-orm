@@ -1,6 +1,7 @@
 package com.kotoframework.plugins.utils.kTable
 
 import com.kotoframework.plugins.scopes.KotoBuildScope
+import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.irGet
@@ -44,9 +45,9 @@ fun KotoBuildScope.putParamMapStatements(receiver: IrExpression, element: IrElem
                     applyIrCall(
                         setValueSymbol,
                         getColumnName(element),
-                        element.valueArguments[0],
-                        receivers = KotoBuildScope.Receivers(receiver)
-                    )
+                        element.valueArguments[0]){
+                        dispatchBy(receiver)
+                    }
                 )
             }
         }

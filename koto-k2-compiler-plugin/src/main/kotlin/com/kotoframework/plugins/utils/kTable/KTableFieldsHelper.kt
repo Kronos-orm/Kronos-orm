@@ -1,6 +1,7 @@
 package com.kotoframework.plugins.utils.kTable
 
 import com.kotoframework.plugins.scopes.KotoBuildScope
+import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.irGet
@@ -20,7 +21,7 @@ fun KotoBuildScope.addFieldList(): List<IrExpression> {
     return addFieldsNames(function.body!!).map {
         // Apply the `addField` operation to each field name gathered, passing the receiver.
         // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
-        applyIrCall(addFieldSymbol, it, receivers = KotoBuildScope.Receivers(receiver))
+        applyIrCall(addFieldSymbol, it){ dispatchBy(receiver) }
     }
 }
 

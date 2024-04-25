@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 buildscript {
     repositories {
         google()
@@ -18,6 +20,12 @@ plugins {
     id("maven-publish")
     id("java-gradle-plugin")
     id("org.jetbrains.kotlin.kapt")
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+    }
 }
 
 base.archivesName = "koto-k2-compiler-plugin"

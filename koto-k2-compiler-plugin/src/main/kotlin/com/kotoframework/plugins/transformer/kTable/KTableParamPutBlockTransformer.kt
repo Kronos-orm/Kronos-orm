@@ -45,6 +45,8 @@ class KTableParamPutBlockTransformer(
                 // Append the custom transformation to add field-parameter mappings
                 // 附加自定义转换以添加字段参数映射
                 .putFieldParamMap()
+
+            super.visitBlock(expression)
         }
     }
 }

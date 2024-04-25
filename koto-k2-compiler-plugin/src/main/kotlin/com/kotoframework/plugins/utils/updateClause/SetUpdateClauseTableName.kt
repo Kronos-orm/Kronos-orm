@@ -15,7 +15,7 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 
 @OptIn(FirIncompatiblePluginAPI::class, ObsoleteDescriptorBasedAPI::class)
-fun setUpdateClauseTableName(pluginContext: IrPluginContext, expression: IrCall): IrExpression {
+fun setUpdateClauseTableName(pluginContext: IrPluginContext, expression: IrCall): IrCall {
     val irBuilder = DeclarationIrBuilder(pluginContext, expression.symbol)
     return irBuilder.irCall(
         pluginContext.referenceFunctions(FqName("com.kotoframework.orm.update.setUpdateClauseTableName"))

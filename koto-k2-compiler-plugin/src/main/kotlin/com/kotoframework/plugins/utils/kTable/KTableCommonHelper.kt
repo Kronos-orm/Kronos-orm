@@ -6,7 +6,9 @@ import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
@@ -63,6 +65,25 @@ fun KotoBuildScope.getColumnName(expression: IrExpression): IrExpression {
                 annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == FqName("com.kotoframework.annotations.Column") }
             val columnName =columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, builder.irString(propertyName))
             applyIrCall(fieldSymbol.constructors.first(), columnName, builder.irString(propertyName))
+        }
+
+        else -> builder.irString("")
+    }
+}
+
+@OptIn(ObsoleteDescriptorBasedAPI::class)
+fun KotoBuildScope.getTableName(expression: IrExpression): IrExpression {
+    return when (expression) {
+        is IrCall -> {
+            val irClass = (expression.type as IrSimpleType).arguments[0].typeOrFail.getClass()!!
+            val annotations = irClass.annotations
+            val tableAnnotation =
+                annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == FqName("com.kotoframework.annotations.Table") }
+            tableAnnotation?.getValueArgument(0) ?: applyIrCall(
+                tableK2dbSymbol, builder.irString(
+                    irClass.name.asString()
+                )
+            )
         }
 
         else -> builder.irString("")

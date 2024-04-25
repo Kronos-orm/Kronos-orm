@@ -13,15 +13,11 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
-import org.jetbrains.kotlin.ir.builders.irCall
-import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.impl.IrBlockImpl
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
@@ -69,7 +65,7 @@ class KotoParserTransformer(
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         when {
-            expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass && expression.funcName == "update" -> {
+            expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass && expression.funcName() == "update" -> {
                 return setUpdateClauseTableName(pluginContext, super.visitCall(expression) as IrCall)
             }
         }
@@ -84,16 +80,11 @@ class KotoParserTransformer(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
-            +irBlock(resultType = irFunction.returnType) {
-                for (statement in irFunction.body!!.statements) { // Preserve the original method body expressions
-                    +statement.apply {
-                        transform(KTableFieldAddReturnTransformer(pluginContext, irFunction), null)
-                    }
-                }
-                +irCall(pluginContext.printlnFunc()).also { //调用 println()
-                    it.putValueArgument(0, irString(irFunction.body!!.dumpKotlinLike()))
-                }
-            }.transform(KTableParamPutBlockTransformer(pluginContext, irFunction), null)
+            +irBlock {
+                +irFunction.body!!.statements
+            }
+                .transform(KTableFieldAddReturnTransformer(pluginContext, irFunction), null)
+                .transform(KTableParamPutBlockTransformer(pluginContext, irFunction), null)
         }
     }
 
@@ -102,13 +93,9 @@ class KotoParserTransformer(
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock(resultType = irFunction.returnType) {
-                for (statement in irFunction.body!!.statements) { // Preserve the original method body expressions
-                    +(statement.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null) as IrBlockImpl).statements
-                }
-                +irCall(pluginContext.printlnFunc()).also { //调用 println()
-                    it.putValueArgument(0, irString(irFunction.body!!.dumpKotlinLike()))
-                }
+                +irFunction.body!!.statements
             }
+                .transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

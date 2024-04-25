@@ -3,7 +3,7 @@ package com.kotoframework.beans.dsl
 import com.kotoframework.enums.*
 
 class Criteria(
-    var parameterName: String = "", // original parameter name
+    var parameterName: Field = Field("", ""), // original parameter name
     var type: ConditionType, // condition type
     var not: Boolean = false, // whether the condition is not
     var value: Any? = null, // value

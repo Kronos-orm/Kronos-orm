@@ -51,7 +51,7 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
                     children = fields.map {
                         Criteria(
                             type = Equal,
-                            parameterName = it.propertyName,
+                            parameterName = it,
                             value = paramMap[it.propertyName]
                         )
                     }.toMutableList()
@@ -67,11 +67,11 @@ class UpdateClause<T : KPojo>(private val pojo: T, setUpdateFields: KTableField<
             condition = criteria ?: Criteria(
                 type = AND
             ).apply {
-                children = paramMap.keys.map {
+                children = paramMap.keys.map { propName ->
                     Criteria(
                         type = Equal,
-                        parameterName = it,
-                        value = paramMap[it]
+                        parameterName = toUpdateFields.first { it.propertyName == propName },
+                        value = paramMap[propName]
                     )
                 }.toMutableList()
             }

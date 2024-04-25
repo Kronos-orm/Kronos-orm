@@ -3,6 +3,7 @@ package com.kotoframework.plugins.transformer
 import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableFieldAddReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableParamPutBlockTransformer
+import com.kotoframework.plugins.utils.kTableConditional.funcName
 import com.kotoframework.plugins.utils.updateClause.setUpdateClauseTableName
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
@@ -66,9 +67,9 @@ class KotoParserTransformer(
 
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
-        when (expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false)) {
-            updateClauseClass -> {
-                return setUpdateClauseTableName(pluginContext, expression)
+        when {
+            expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass && expression.funcName == "update" -> {
+                return setUpdateClauseTableName(pluginContext, super.visitCall(expression) as IrCall)
             }
         }
         return super.visitCall(expression)

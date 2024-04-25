@@ -22,7 +22,7 @@ class Criteria(
     internal val valueAcceptable: Boolean
         get() = type != ISNULL && type != SQL && type != AND && type != OR
 
-    fun addCriteria(criteria: Criteria?) {
+    fun addChild(criteria: Criteria?) {
         children.add(criteria)
     }
 }

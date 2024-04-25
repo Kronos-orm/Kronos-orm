@@ -46,7 +46,7 @@ class UpdateParserTest {
             .set {
                 it.username = "123" + 456
             }
-            .by { it.id }
+            .where { it.id < 2 }
             .execute()
       }
       """.trimIndent())

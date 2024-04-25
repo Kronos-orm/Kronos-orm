@@ -72,7 +72,7 @@ class Update {
     @Test
     fun testUpdate5() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id < 1 && it.id > 0 }
+            .where { it.id < 1 && it.id > 0 }.build()
 
         assertEquals("update tb_user set id = id + username where id < 1 and id > 0 and delete = 0", sql)
         assertEquals(mapOf(), paramMap)

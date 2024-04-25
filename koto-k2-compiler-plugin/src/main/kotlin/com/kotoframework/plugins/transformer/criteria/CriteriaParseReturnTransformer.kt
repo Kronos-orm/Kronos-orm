@@ -2,16 +2,13 @@ package com.kotoframework.plugins.transformer.criteria
 
 import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.useKotoBuildScope
 import com.kotoframework.plugins.transformer.CommonTransformer
-import com.kotoframework.plugins.utils.kTable.addFieldList
-import com.kotoframework.plugins.utils.kTableConditional.buildCritercia
+import com.kotoframework.plugins.utils.kTableConditional.setCriteriaIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
-import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 
 /**
  *@program: kotoframework
@@ -36,7 +33,7 @@ class CriteriaParseReturnTransformer(
         val transformer = this
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
             +useKotoBuildScope(transformer)
-                .buildCritercia(expression)!!
+                .setCriteriaIr()
         }
     }
 }

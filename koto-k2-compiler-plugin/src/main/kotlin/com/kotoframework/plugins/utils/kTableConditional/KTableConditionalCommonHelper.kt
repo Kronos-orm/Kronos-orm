@@ -1,7 +1,6 @@
 package com.kotoframework.plugins.utils.kTableConditional
 
 import com.kotoframework.plugins.scopes.KotoBuildScope
-import com.kotoframework.plugins.utils.kTable.correspondingName
 import com.kotoframework.plugins.utils.kTable.fieldK2dbSymbol
 import com.kotoframework.plugins.utils.kTable.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
@@ -13,10 +12,12 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.toKotlinType
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.getArguments
+import org.jetbrains.kotlin.ir.util.getPropertySetter
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.descriptorUtil.classId
@@ -42,25 +43,44 @@ private val KotoBuildScope.criteriaSetterSymbol
     get() = pluginContext.referenceClass(FqName("com.kotoframework.beans.dsl.KTableConditional"))!!.getPropertySetter("criteria")!!
 
 @OptIn(FirIncompatiblePluginAPI::class)
-fun KotoBuildScope.criteriaClassSymbol() =
-    pluginContext.referenceClass(FqName("com.kotoframework.beans.dsl.Criteria"))!!
+private val KotoBuildScope.criteriaClassSymbol
+    get() =
+        pluginContext.referenceClass(FqName("com.kotoframework.beans.dsl.Criteria"))!!
+
+//Criteria类的addi函数
+private val KotoBuildScope.addCriteriaChild
+    get() = criteriaClassSymbol.getSimpleFunction("addChild")!!
 
 @OptIn(FirIncompatiblePluginAPI::class)
 fun KotoBuildScope.string2ConditionTypeSymbol() =
     pluginContext.referenceFunctions(FqName("com.kotoframework.enums.toConditionType")).first()
 
-fun KotoBuildScope.buildCritercia(element: IrElement , setNot: Boolean = false): IrVariable? {
+/**
+ * Adds IR for setting simple criteria. example: criteriaField.setCriteria(tmp)
+ *
+ * @receiver KotoBuildScope instance.
+ * @author OUSC
+ */
+fun KotoBuildScope.setCriteriaIr() =
+    applyIrCall(
+        criteriaSetterSymbol,
+        builder.irGet(buildCriteria(function.body!!)!!),
+        receivers = KotoBuildScope.Receivers(builder.irGet(function.extensionReceiverParameter!!))
+    )
+
+
+fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
     var paramName: IrExpression = builder.irString("")
     var type = "ROOT"
     var not = setNot
     var value:IrExpression? = null
-    var children: MutableList<IrVariable?> = mutableListOf()
+    val children: MutableList<IrVariable?> = mutableListOf()
     var tableName: IrExpression? = null
 
     when(element) {
         is IrBlockBody -> {
             element.statements.forEach { statement ->
-                children.add(buildCritercia(statement))
+                children.add(buildCriteria(statement))
             }
         }
 
@@ -68,8 +88,8 @@ fun KotoBuildScope.buildCritercia(element: IrElement , setNot: Boolean = false):
             val origin = element.origin.toString()
             type = map[origin] ?: origin
             element.branches.forEach {
-                children.add(buildCritercia(it.condition))
-                children.add(buildCritercia(it.result))
+                children.add(buildCriteria(it.condition))
+                children.add(buildCriteria(it.result))
             }
         }
 
@@ -79,10 +99,10 @@ fun KotoBuildScope.buildCritercia(element: IrElement , setNot: Boolean = false):
             val args = element.argumentsNot("KTableConditional")
             if ("not" == funcName) {
                 if (args.size == 1) {
-                    return buildCritercia(args[0] , true)
+                    return buildCriteria(args[0], true)
                 }
                 args.forEach {
-                    children.add(buildCritercia(it))
+                    children.add(buildCriteria(it))
                 }
             } else {
                 when (funcName) {
@@ -123,7 +143,7 @@ fun KotoBuildScope.buildCritercia(element: IrElement , setNot: Boolean = false):
         }
 
         is IrReturn -> {
-            return buildCritercia(element.value)
+            return buildCriteria(element.value)
         }
 
         is IrConstImpl<*> -> {
@@ -210,7 +230,7 @@ fun KotoBuildScope.createCriteria(
     children: List<IrVariable> = listOf(),
     tableName: IrExpression? = null
 ): IrVariable {
-    val irCall = builder.irCall(criteriaClassSymbol().constructors.first())
+    val irCall = builder.irCall(criteriaClassSymbol.constructors.first())
     irCall.putValueArgument(0 , parameterName)
     irCall.putValueArgument(1 , string2ConditionType(type))
     irCall.putValueArgument(2 , builder.irBoolean(not))
@@ -224,9 +244,11 @@ fun KotoBuildScope.createCriteria(
     val irVariable = builder.irTemporary(irCall)
     builder.apply {
         children.forEach {
-            +applyIrCall(criteriaSetterSymbol , irGet(irVariable)).apply {
-                putValueArgument(0 , builder.irGet(it))
-            }
+            +applyIrCall(
+                addCriteriaChild,
+                builder.irGet(it),
+                receivers = KotoBuildScope.Receivers(irGet(irVariable))
+            )
         }
     }
     return irVariable

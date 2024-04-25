@@ -1,12 +1,13 @@
 package com.kotoframework.utils
 
-import com.google.gson.Gson
+import com.kotoframework.beans.serializeResolver.MoshiResolver
 import com.kotoframework.interfaces.KPojo
 
 object Extensions {
-    private val gson = Gson()
+    private val resolver = MoshiResolver()
+    @Suppress("UNCHECKED_CAST")
     fun KPojo?.toMutableMap(vararg patch: Pair<String, Any?>): MutableMap<String, Any?> {
-        return gson.fromJson<MutableMap<String, Any?>>(gson.toJson(this), MutableMap::class.java).apply {
+        return (resolver.moshi.adapter(this!!.javaClass).toJsonValue(this) as MutableMap<String, Any?>).apply {
             patch.forEach { this[it.first] = it.second }
         }
     }

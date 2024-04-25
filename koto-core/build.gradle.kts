@@ -4,8 +4,8 @@ plugins {
 }
 
 dependencies {
-    implementation("com.squareup.moshi:moshi:1.15.1")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+    implementation("com.alibaba.fastjson2:fastjson2:2.0.49")
+    implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.49")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }

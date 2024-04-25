@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.impl.IrBlockImpl
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.statements
@@ -102,9 +103,7 @@ class KotoParserTransformer(
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock(resultType = irFunction.returnType) {
                 for (statement in irFunction.body!!.statements) { // Preserve the original method body expressions
-                    +statement.apply {
-                        transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
-                    }
+                    +(statement.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null) as IrBlockImpl).statements
                 }
                 +irCall(pluginContext.printlnFunc()).also { //调用 println()
                     it.putValueArgument(0, irString(irFunction.body!!.dumpKotlinLike()))

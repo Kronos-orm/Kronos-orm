@@ -40,7 +40,8 @@ class UpdateParserTest {
         val user = User(1)
         val testUser = User(1, "test")
 
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        testUser.update { it.id + it.username }
+            .set { it.gender = 1 }
             .where { it.id < 1 }
             .execute()
       }

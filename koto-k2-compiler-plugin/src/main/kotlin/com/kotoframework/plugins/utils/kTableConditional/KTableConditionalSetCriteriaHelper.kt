@@ -92,7 +92,6 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         not = true
                         paramName = getColumnName(args[0]!!)
                         value = args[1]
-                        tableName = getTableName(args[0]!!)
                     }
                 }
             }

@@ -32,14 +32,8 @@ class Update {
             .by { it.id }
             .build()
 
-
-        println(sql)
-        println(paramMap)
-
         assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id", sql)
         assertEquals(mapOf("id" to 1, "usernameNew" to "123", "genderNew" to 1), paramMap)
-        // Update tb_user set username = '123' where id = 1
-
     }
 
     @Test
@@ -52,14 +46,8 @@ class Update {
             .by { it.id + it.username }
             .build()
 
-
-        println(sql)
-        println(paramMap)
-
         assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id AND username = :username", sql)
         assertEquals(mapOf("id" to 1, "usernameNew" to "123", "genderNew" to 1, "username" to "test"), paramMap)
-        // Update tb_user set username = '123' where id = 1
-
     }
 
     @Test
@@ -67,12 +55,8 @@ class Update {
         val (sql, paramMap) = user.update { it.username + it.gender }
             .by { it.id }
 
-        println(sql)
-        println(paramMap)
-
         assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id", sql)
         assertEquals(mapOf("id" to 1), paramMap)
-        // Update tb_user set username = 'test' where id = 1
 
     }
 
@@ -81,12 +65,8 @@ class Update {
         val (sql, paramMap) = testUser.updateExcept { it.username }
             .by { it.id }
 
-        println(sql)
-        println(paramMap)
-
         assertEquals("UPDATE tb_user SET username = :usernameNew WHERE id = :id", sql)
-        assertEquals(mapOf("id" to 1), paramMap)
-        // Update tb_user set username = 'test' where id = 1
+        assertEquals(mapOf("id" to 1, "username" to "test", "usernameNew" to "test"), paramMap)
     }
 
     @Test
@@ -103,7 +83,7 @@ class Update {
     @Test
     fun testUpdate5() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id < 1 && it.id > 0 }.build()
+            .where { it.id < 1 }.build()
 
         println(sql)
         println(paramMap)

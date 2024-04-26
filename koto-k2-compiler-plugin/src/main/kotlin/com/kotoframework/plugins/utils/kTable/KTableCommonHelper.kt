@@ -64,7 +64,6 @@ fun KotoBuildScope.getColumnName(expression: IrExpression): IrExpression {
     return when (expression) {
         is IrCall -> {
             val propertyName = expression.correspondingName!!.asString()
-            val tmp = expression.dispatchReceiver!!.type.getClass()!!
             val annotations =
                 expression.dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.annotations
             val columnAnnotation =

@@ -78,12 +78,13 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         val compareToIrCall = args[0] as IrCall
                         paramName = getColumnName(compareToIrCall.extensionReceiver!!)
                         value = compareToIrCall.valueArguments[0]
+                        tableName = getTableName(compareToIrCall.dispatchReceiver!!)
                     }
 
                     "equal" , "like" , "between" -> {
                         paramName = getColumnName(args[0]!!)
                         value = args[1]
-                        tableName = getTableName(args[0]!!)
+                        tableName = getTableName((args[0] as IrCall).dispatchReceiver!!)
                     }
 
                     "notLike" , "notBetween" -> {

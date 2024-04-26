@@ -6,14 +6,19 @@ import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.types.toKotlinType
 import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
+import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.asSimpleType
+import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getArguments
+import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getType
 
 /**
  * Defines various Kotlin IR extensions to handle specific methods of `KTable` during the IR transformation process in Kotlin compiler plugins.
@@ -59,6 +64,7 @@ fun KotoBuildScope.getColumnName(expression: IrExpression): IrExpression {
     return when (expression) {
         is IrCall -> {
             val propertyName = expression.correspondingName!!.asString()
+            val tmp = expression.dispatchReceiver!!.type.getClass()!!
             val annotations =
                 expression.dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.annotations
             val columnAnnotation =
@@ -74,7 +80,7 @@ fun KotoBuildScope.getColumnName(expression: IrExpression): IrExpression {
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 fun KotoBuildScope.getTableName(expression: IrExpression): IrExpression {
     return when (expression) {
-        is IrCall -> {
+        is IrGetValue -> {
             val irClass = (expression.type as IrSimpleType).arguments[0].typeOrFail.getClass()!!
             val annotations = irClass.annotations
             val tableAnnotation =
@@ -86,6 +92,19 @@ fun KotoBuildScope.getTableName(expression: IrExpression): IrExpression {
             )
         }
 
+        is IrCall -> {
+            val irClass = expression.type.getClass()
+            val annotations = irClass!!.annotations
+            val tableAnnotation =
+                annotations.firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == FqName("com.kotoframework.annotations.Table") }
+            tableAnnotation?.getValueArgument(0) ?: applyIrCall(
+                tableK2dbSymbol, builder.irString(
+                    irClass.name.asString()
+                )
+            )
+        }
+
         else -> builder.irString("")
     }
+
 }

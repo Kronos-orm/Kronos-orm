@@ -12,12 +12,12 @@ import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 /**
- * `KTableParamPutBlockTransformer` is designed to manipulate block expressions in Kotlin's Intermediate Representation (IR) during the compilation process.
+ * `KTableAddParamTransformer` is designed to manipulate block expressions in Kotlin's Intermediate Representation (IR) during the compilation process.
  * It focuses on enriching blocks by adding field parameter mappings, specifically tailored for transformations that require parameter context.
- * `KTableParamPutBlockTransformer` 旨在编译过程中操作 Kotlin 中间表示 (IR) 的块表达式。
+ * `KTableAddParamTransformer` 旨在编译过程中操作 Kotlin 中间表示 (IR) 的块表达式。
  * 它专注于通过添加字段参数映射来丰富块，特别适用于需要参数上下文的转换。
  */
-class KTableParamPutBlockTransformer(
+class KTableAddParamTransformer(
     // Plugin context, includes essential information for the compilation process
     // 插件上下文，包含编译过程中的必要信息
     override val pluginContext: IrPluginContext,

@@ -2,6 +2,7 @@ package tests
 
 import tests.beans.User
 import com.kotoframework.KotoApp
+import com.kotoframework.beans.dsl.Field
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.update.update
 import com.kotoframework.orm.update.updateExcept
@@ -26,6 +27,7 @@ class Update {
     fun testUpdate() {
         val (sql, paramMap) = user.update()
             .set {
+                Field("username").setValue("123")
                 it.username = "123"
                 it.gender = 1
             }
@@ -96,7 +98,7 @@ class Update {
     @Test
     fun testUpdate6() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { "id < 1".asSql()  }.build()
+            .where { it.id.neq  }.build()
 
         println(sql)
         println(paramMap)

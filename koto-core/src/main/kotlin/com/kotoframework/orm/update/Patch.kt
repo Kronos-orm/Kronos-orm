@@ -1,5 +1,6 @@
 package com.kotoframework.orm.update
 
+import com.kotoframework.beans.dsl.Field
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.types.KTableField
 
@@ -11,8 +12,9 @@ inline fun <reified T : KPojo> T.updateExcept(noinline setUpdateFields: KTableFi
     return UpdateClause(this, setUpdateFields)
 }
 
-fun setUpdateClauseTableName(clause: UpdateClause<*>, name: String): UpdateClause<*> {
+fun initUpdateClause(clause: UpdateClause<*>, name: String, vararg fields: Field): UpdateClause<*> {
     return clause.apply {
         tableName = name
+        allFields.addAll(fields)
     }
 }

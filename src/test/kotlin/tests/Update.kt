@@ -92,4 +92,16 @@ class Update {
         assertEquals(mapOf(), paramMap)
         // Update tb_user set id = 1, username = 1 where id < 1 and id > 0
     }
+
+    @Test
+    fun testUpdate6() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { "id < 1".asSql()  }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("update tb_user set id = :id, username = :username where id < 1", sql)
+        assertEquals(mapOf(), paramMap)
+    }
 }

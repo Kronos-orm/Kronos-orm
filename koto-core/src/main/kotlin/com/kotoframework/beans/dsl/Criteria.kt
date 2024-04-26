@@ -27,7 +27,7 @@ class Criteria(
     }
 
     override fun toString(): String {
-        return "Criteria(parameterName='$field', type=$type, not=$not, value=$value, tableName=$tableName, pos=$pos, sql='$sql', noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
+        return "Criteria(field='$field', type=$type, not=$not, value=$value, tableName=$tableName, pos=$pos, sql='$sql', noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
     }
 
 }

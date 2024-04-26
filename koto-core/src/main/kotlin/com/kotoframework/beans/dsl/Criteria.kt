@@ -25,4 +25,9 @@ class Criteria(
     fun addChild(criteria: Criteria?) {
         children.add(criteria)
     }
+
+    override fun toString(): String {
+        return "Criteria(parameterName='$parameterName', type=$type, not=$not, value=$value, tableName=$tableName, pos=$pos, sql='$sql', noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
+    }
+
 }

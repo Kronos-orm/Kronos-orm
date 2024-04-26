@@ -4,11 +4,11 @@ import com.kotoframework.interfaces.KotoNamingStrategy
 
 class LineHumpNamingStrategy : KotoNamingStrategy {
     override fun k2db(name: String): String {
-        return lineToHump(name)
+        return humpToLine(name)
     }
 
     override fun db2k(name: String): String {
-        return humpToLine(name)
+        return lineToHump(name)
     }
     companion object {
         fun lineToHump(line: String): String {

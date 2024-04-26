@@ -3,8 +3,8 @@ package com.kotoframework.beans.dsl
 import com.kotoframework.interfaces.KPojo
 
 open class KTable<T : KPojo>(open val it: T) {
-    public val fields: MutableList<Field> = mutableListOf()
-    public val fieldParamMap: MutableMap<Field, Any?> = mutableMapOf()
+     val fields: MutableList<Field> = mutableListOf()
+     val fieldParamMap: MutableMap<Field, Any?> = mutableMapOf()
 
     operator fun Any?.plus(other: Any?): Int = 1
     operator fun Any?.unaryPlus(): Int = 1

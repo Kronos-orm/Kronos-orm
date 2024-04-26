@@ -65,7 +65,8 @@ class KotoParserTransformer(
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         when {
-            expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass && expression.funcName() == "update" -> {
+            expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass &&
+                    expression.funcName() in listOf("update", "updateExcept") -> {
                 return setUpdateClauseTableName(pluginContext, super.visitCall(expression) as IrCall)
             }
         }

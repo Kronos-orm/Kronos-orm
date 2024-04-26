@@ -40,9 +40,14 @@ class UpdateParserTest {
         val user = User(1)
         val testUser = User(1, "test")
 
-        testUser.update { it.id + it.username }
-            .set { it.gender = 1 }
-            .where { (it.id between 1..2 || it.id == 3) && it.username like "%test%" && it.username notLike "%qq" }
+        user.update {
+              it.username
+          }
+            .set {
+                it.username = "123" + 456
+            }
+            .where { it.id != 1 }
+//           .where {  !(it.gender.notNull && it.id == 1 OR (it.username like "aa" OR it.gender != 1)) }
             .execute()
       }
       """.trimIndent())

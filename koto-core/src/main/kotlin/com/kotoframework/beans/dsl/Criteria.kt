@@ -3,7 +3,7 @@ package com.kotoframework.beans.dsl
 import com.kotoframework.enums.*
 
 class Criteria(
-    var parameterName: Field = Field("", ""), // original parameter name
+    var field: Field = Field("", ""), // original parameter name
     var type: ConditionType, // condition type
     var not: Boolean = false, // whether the condition is not
     var value: Any? = null, // value
@@ -25,4 +25,9 @@ class Criteria(
     fun addChild(criteria: Criteria?) {
         children.add(criteria)
     }
+
+    override fun toString(): String {
+        return "Criteria(parameterName='$field', type=$type, not=$not, value=$value, tableName=$tableName, pos=$pos, sql='$sql', noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
+    }
+
 }

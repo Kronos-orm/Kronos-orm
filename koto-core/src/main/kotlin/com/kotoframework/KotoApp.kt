@@ -3,10 +3,12 @@ package com.kotoframework
 import com.kotoframework.beans.dsw.NoneDataSourceWrapper
 import com.kotoframework.beans.logging.BundledSimpleLoggerAdapter
 import com.kotoframework.beans.logging.KLogMessage.Companion.logMessageOf
+import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.beans.namingStrategy.NoneNamingStrategy
 import com.kotoframework.beans.serializeResolver.NoneSerializeResolver
 import com.kotoframework.enums.ColorPrintCode
 import com.kotoframework.enums.KLoggerType
+import com.kotoframework.enums.NoValueStrategy
 import com.kotoframework.interfaces.KLogger
 import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.interfaces.KotoNamingStrategy
@@ -22,6 +24,8 @@ object KotoApp {
     var defaultLogger: (Any) -> KLogger =
         { BundledSimpleLoggerAdapter(it.javaName) }
     var defaultSerializeResolver: KotoSerializeResolver = NoneSerializeResolver()
+    internal var defaultNoValueStrategy = NoValueStrategy.Ignore
+    internal var hump2line: Boolean = true
 
     /**
      * detect logger implementation if Koto-logging is used

@@ -53,7 +53,7 @@ class UpdateClause<T : KPojo>(
                     children = fields.map {
                         Criteria(
                             type = Equal,
-                            parameterName = it,
+                            field = it,
                             value = paramMap[it.name]
                         )
                     }.toMutableList()
@@ -72,7 +72,7 @@ class UpdateClause<T : KPojo>(
                 children = paramMap.keys.map { propName ->
                     Criteria(
                         type = Equal,
-                        parameterName = toUpdateFields.first { it.name == propName },
+                        field = toUpdateFields.first { it.name == propName },
                         value = paramMap[propName]
                     )
                 }.toMutableList()
@@ -116,35 +116,35 @@ class UpdateClause<T : KPojo>(
             return null
         }
         return when (condition.type) {
-            ConditionType.EQUAL -> "${condition.parameterName} = :${condition.parameterName}"
-            ConditionType.ISNULL -> "${condition.parameterName} IS NULL"
+            ConditionType.EQUAL -> "${condition.field} = :${condition.field}"
+            ConditionType.ISNULL -> "${condition.field} IS NULL"
             ConditionType.SQL -> condition.sql
 
             // 处理 LIKE 条件类型，支持左右匹配、完全匹配和不匹配
             ConditionType.LIKE ->
                 when (condition.pos) {
-                    MatchPosition.Left -> "%${condition.parameterName}"
-                    MatchPosition.Right -> "${condition.parameterName}%"
-                    MatchPosition.Both -> "%${condition.parameterName}%"
-                    MatchPosition.Never -> condition.parameterName.name
+                    MatchPosition.Left -> "%${condition.field}"
+                    MatchPosition.Right -> "${condition.field}%"
+                    MatchPosition.Both -> "%${condition.field}%"
+                    MatchPosition.Never -> condition.field.name
                     else -> throw IllegalArgumentException("Invalid MatchPosition: ${condition.pos}")
                 }
 
-            ConditionType.IN -> "${condition.parameterName} IN (${
+            ConditionType.IN -> "${condition.field} IN (${
                 condition.value.let { it as List<*> }.joinToString(", ")
             })"
 
-            ConditionType.GT -> "${condition.parameterName} > :${condition.parameterName}"
-            ConditionType.GE -> "${condition.parameterName} >= :${condition.parameterName}"
-            ConditionType.LT -> "${condition.parameterName} < :${condition.parameterName}"
-            ConditionType.LE -> "${condition.parameterName} <= :${condition.parameterName}"
+            ConditionType.GT -> "${condition.field} > :${condition.field}"
+            ConditionType.GE -> "${condition.field} >= :${condition.field}"
+            ConditionType.LT -> "${condition.field} < :${condition.field}"
+            ConditionType.LE -> "${condition.field} <= :${condition.field}"
             ConditionType.BETWEEN -> {
                 // 处理 BETWEEN 条件类型，将范围值存储为参数，供 SQL 使用
                 val rangeValue = condition.value.let { it as ClosedRange<*> }
-                paramMap["${condition.parameterName}Min"] = rangeValue.start
-                paramMap["${condition.parameterName}Max"] = rangeValue.endInclusive
+                paramMap["${condition.field}Min"] = rangeValue.start
+                paramMap["${condition.field}Max"] = rangeValue.endInclusive
 
-                "${condition.parameterName} BETWEEN :${condition.parameterName}Min AND :${condition.parameterName}Max"
+                "${condition.field} BETWEEN :${condition.field}Min AND :${condition.field}Max"
             }
 
             ConditionType.AND -> {

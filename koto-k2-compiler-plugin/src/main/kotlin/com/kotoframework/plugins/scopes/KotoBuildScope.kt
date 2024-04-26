@@ -76,9 +76,10 @@ class KotoBuildScope {
         vararg values: Pair<Int, IrExpression?>,
         receivers: ()->Receivers = { Receivers() }
     ): IrFunctionAccessExpression {
+        val receiver = receivers()
         return builder.irCall(irCall).apply {
-            dispatchReceiver = receivers().dispatchReceiver
-            extensionReceiver = receivers().extensionReceiver
+            dispatchReceiver = receiver.dispatchReceiver
+            extensionReceiver = receiver.extensionReceiver
             values.forEach { putValueArgument(it.first, it.second) }
         }
     }

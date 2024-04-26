@@ -54,7 +54,7 @@ class UpdateClause<T : KPojo>(
                         Criteria(
                             type = Equal,
                             parameterName = it,
-                            value = paramMap[it.propertyName]
+                            value = paramMap[it.name]
                         )
                     }.toMutableList()
                 }
@@ -72,7 +72,7 @@ class UpdateClause<T : KPojo>(
                 children = paramMap.keys.map { propName ->
                     Criteria(
                         type = Equal,
-                        parameterName = toUpdateFields.first { it.propertyName == propName },
+                        parameterName = toUpdateFields.first { it.name == propName },
                         value = paramMap[propName]
                     )
                 }.toMutableList()
@@ -84,7 +84,7 @@ class UpdateClause<T : KPojo>(
     fun build(): Pair<String, Map<String, Any?>> {
         val updateFields =
             toUpdateFields.joinToString(", ")
-            { "${it.propertyName} = :${it.propertyName + "New"}" }
+            { "${it.name} = :${it.name + "New"}" }
         var conditionSql = buildConditionSql(condition)
         if (conditionSql != null) {
             conditionSql = "WHERE $conditionSql"
@@ -92,7 +92,7 @@ class UpdateClause<T : KPojo>(
         val sql = listOfNotNull("UPDATE", tableName, "SET", updateFields, conditionSql).joinToString(" ")
         // 合并 paramMap和paramMapNew
         paramMap.apply {
-            putAll(paramMapNew.map { it.key.propertyName + "New" to it.value })
+            putAll(paramMapNew.map { it.key.name + "New" to it.value })
         }
         return Pair(sql, paramMap)
     }
@@ -126,7 +126,7 @@ class UpdateClause<T : KPojo>(
                     MatchPosition.Left -> "%${condition.parameterName}"
                     MatchPosition.Right -> "${condition.parameterName}%"
                     MatchPosition.Both -> "%${condition.parameterName}%"
-                    MatchPosition.Never -> condition.parameterName.propertyName
+                    MatchPosition.Never -> condition.parameterName.name
                     else -> throw IllegalArgumentException("Invalid MatchPosition: ${condition.pos}")
                 }
 

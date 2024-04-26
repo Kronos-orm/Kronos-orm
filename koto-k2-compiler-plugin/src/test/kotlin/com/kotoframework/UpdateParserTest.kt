@@ -40,13 +40,8 @@ class UpdateParserTest {
         val user = User(1)
         val testUser = User(1, "test")
 
-        user.update {
-              it.username
-          }
-            .set {
-                it.username = "123" + 456
-            }
-            .where { it.id < 2 }
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id < 1 }
             .execute()
       }
       """.trimIndent())

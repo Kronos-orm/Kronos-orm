@@ -67,7 +67,7 @@ fun KotoBuildScope.getColumnName(expression: IrExpression): IrExpression {
             applyIrCall(fieldSymbol.constructors.first(), columnName, builder.irString(propertyName))
         }
 
-        else -> builder.irString("")
+        else -> applyIrCall(fieldSymbol.constructors.first(), builder.irString(""), builder.irString(""))
     }
 }
 

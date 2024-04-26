@@ -42,7 +42,7 @@ class UpdateParserTest {
 
         testUser.update { it.id + it.username }
             .set { it.gender = 1 }
-            .where { it.id < 1 }
+            .where { (it.id between 1..2 || it.id == 3) && it.username like "%test%" && it.username notLike "%qq" }
             .execute()
       }
       """.trimIndent())

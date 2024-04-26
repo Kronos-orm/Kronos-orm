@@ -8,9 +8,11 @@ import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrWhen
+import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
@@ -39,20 +41,26 @@ fun KotoBuildScope.string2ConditionTypeSymbol() =
     pluginContext.referenceFunctions(FqName("com.kotoframework.enums.toConditionType")).first()
 
 // 获取koto函数名
-fun IrCall.funcName(): String {
-    val map = mapOf(
-        "EQEQ" to "equal",
-        "ANDAND" to "and",
-        "OROR" to "or",
-        "greater" to "gt",
-        "less" to "lt",
-        "greaterOrEqual" to "ge",
-        "lessOrEqual" to "le",
-        "contains" to "isIn",
-    )
+fun IrExpression.funcName(): String {
+    return when (this) {
+        is IrFunctionAccessExpression -> when (origin) {
+            is IrStatementOrigin.EQEQ -> "equal"
+            is IrStatementOrigin.GT -> "gt"
+            is IrStatementOrigin.LT -> "lt"
+            is IrStatementOrigin.GTEQ -> "ge"
+            is IrStatementOrigin.LTEQ -> "le"
+            else -> symbol.owner.name.asString()
+        }
 
-    val name = this.symbol.owner.name.asString()
-    return map[name] ?: name
+        is IrWhen -> when (origin) {
+            is IrStatementOrigin.OROR -> "OR"
+            is IrStatementOrigin.ANDAND -> "AND"
+            else -> origin.toString()
+        }
+
+        else -> ""
+    }
+
 }
 
 // 创建Criteria语句

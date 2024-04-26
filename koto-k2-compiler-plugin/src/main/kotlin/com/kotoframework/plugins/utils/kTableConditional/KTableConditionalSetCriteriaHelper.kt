@@ -7,10 +7,8 @@ import com.kotoframework.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 
@@ -43,7 +41,7 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
         }
 
         is IrIfThenElseImpl -> {
-            type = element.origin.toString()
+            type = element.funcName()
             element.branches.forEach {
                 children.add(buildCriteria(it.condition))
                 children.add(buildCriteria(it.result))
@@ -52,7 +50,6 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
 
         is IrCall -> {
             val funcName = element.funcName()
-            type = funcName
             val args = element.valueArguments
             if ("not" == funcName) {
                 if (args.size == 1) {
@@ -64,34 +61,50 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
             } else {
                 when (funcName) {
                     "isIn" -> {
+                        type = funcName
                         value = args[0]
                         paramName = getColumnName(args[1]!!)
                         tableName = getTableName(args[1]!!)
                     }
 
                     "isNull" , "notNull" -> {
+                        type = funcName
                         paramName = getColumnName(args[0]!!)
                         tableName = getTableName(args[0]!!)
                     }
 
                     "lt" , "gt" , "le" , "ge" -> {
-                        val compareToIrCall = args[0] as IrCall
-                        paramName = getColumnName(compareToIrCall.extensionReceiver!!)
-                        value = compareToIrCall.valueArguments[0]
-                        tableName = getTableName(compareToIrCall.dispatchReceiver!!)
+                        type = funcName
+                        val irCall = args[0] as IrCall
+                        paramName = getColumnName(irCall.extensionReceiver!!)
+                        value = irCall.valueArguments[0]
+                        tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 
-                    "equal" , "like" , "between" -> {
-                        paramName = getColumnName(args[0]!!)
+                    "equal" -> {
+                        type = funcName
+                        val irCall = args[0] as IrCall
+                        paramName = getColumnName(irCall)
                         value = args[1]
-                        tableName = getTableName((args[0] as IrCall).dispatchReceiver!!)
+                        tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 
-                    "notLike" , "notBetween" -> {
-                        type = funcName.replaceFirst("not" , "").replaceFirstChar { it.lowercase() }
+                    "between", "like" -> {
+                        type = funcName
+                        paramName = getColumnName(element.extensionReceiver!!)
+                        value = args[0]
+                        tableName = getTableName(element.dispatchReceiver!!)
+                    }
+
+                    "notBetween", "notLike" -> {
+                        type = when (funcName) {
+                            "notBetween" -> "between"
+                            else -> "like"
+                        }
                         not = true
-                        paramName = getColumnName(args[0]!!)
-                        value = args[1]
+                        paramName = getColumnName(element.extensionReceiver!!)
+                        value = args[0]
+                        tableName = getTableName(element.dispatchReceiver!!)
                     }
                 }
             }

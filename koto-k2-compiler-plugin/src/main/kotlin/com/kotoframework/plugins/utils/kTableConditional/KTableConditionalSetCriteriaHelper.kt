@@ -41,10 +41,19 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
         }
 
         is IrIfThenElseImpl -> {
-            type = element.funcName()
+            type = if (setNot) {
+                when (element.funcName()) {
+                    "AND" -> "OR"
+                    "OR" -> "AND"
+                    else -> ""
+                }
+            } else {
+                element.funcName()
+            }
+
             element.branches.forEach {
-                children.add(buildCriteria(it.condition))
-                children.add(buildCriteria(it.result))
+                children.add(buildCriteria(it.condition , setNot))
+                children.add(buildCriteria(it.result , setNot))
             }
         }
 
@@ -52,12 +61,7 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
             val funcName = element.funcName()
             val args = element.valueArguments
             if ("not" == funcName) {
-                if (args.size == 1) {
-                    return buildCriteria(args[0]!!, true)
-                }
-                args.forEach {
-                    children.add(buildCriteria(it!!))
-                }
+                return buildCriteria(element.dispatchReceiver!! , !setNot)
             } else {
                 when (funcName) {
                     "isIn" -> {
@@ -67,10 +71,17 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         tableName = getTableName(args[1]!!)
                     }
 
-                    "isNull" , "notNull" -> {
+                    "isNull" -> {
                         type = funcName
-                        paramName = getColumnName(args[0]!!)
-                        tableName = getTableName(args[0]!!)
+                        paramName = getColumnName(element.extensionReceiver!!)
+                        tableName = getTableName(element.dispatchReceiver!!)
+                    }
+
+                    "notNull" -> {
+                        type = "isNull"
+                        not = !not
+                        paramName = getColumnName(element.extensionReceiver!!)
+                        tableName = getTableName(element.dispatchReceiver!!)
                     }
 
                     "lt" , "gt" , "le" , "ge" -> {
@@ -101,7 +112,7 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                             "notBetween" -> "between"
                             else -> "like"
                         }
-                        not = true
+                        not = !not
                         paramName = getColumnName(element.extensionReceiver!!)
                         value = args[0]
                         tableName = getTableName(element.dispatchReceiver!!)

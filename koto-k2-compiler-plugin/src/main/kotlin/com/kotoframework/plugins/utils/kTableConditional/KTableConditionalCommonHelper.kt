@@ -2,16 +2,14 @@ package com.kotoframework.plugins.utils.kTableConditional
 
 import com.kotoframework.plugins.scopes.KotoBuildScope
 import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
+import com.kotoframework.plugins.utils.kTable.correspondingName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
-import org.jetbrains.kotlin.ir.expressions.IrWhen
+import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
@@ -43,13 +41,13 @@ fun KotoBuildScope.string2ConditionTypeSymbol() =
 // 获取koto函数名
 fun IrExpression.funcName(): String {
     return when (this) {
-        is IrFunctionAccessExpression -> when (origin) {
+        is IrCall -> when (origin) {
             is IrStatementOrigin.EQEQ -> "equal"
             is IrStatementOrigin.GT -> "gt"
             is IrStatementOrigin.LT -> "lt"
             is IrStatementOrigin.GTEQ -> "ge"
             is IrStatementOrigin.LTEQ -> "le"
-            else -> symbol.owner.name.asString()
+            else -> correspondingName?.asString() ?: symbol.owner.name.asString()
         }
 
         is IrWhen -> when (origin) {

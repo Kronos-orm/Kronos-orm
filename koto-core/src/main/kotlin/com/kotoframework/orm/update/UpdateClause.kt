@@ -17,6 +17,7 @@ class UpdateClause<T : KPojo>(
     setUpdateFields: KTableField<T, Any?> = null
 ) {
     lateinit var tableName: String
+    var allFields: MutableSet<Field> = mutableSetOf()
     private var toUpdateFields: MutableSet<Field> = mutableSetOf()
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()

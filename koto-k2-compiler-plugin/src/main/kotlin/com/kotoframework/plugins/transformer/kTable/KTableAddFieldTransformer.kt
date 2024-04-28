@@ -13,12 +13,12 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 
 /**
- * `KTableFieldAddReturnTransformer` class is a Kotlin compiler plugin transformer that manipulates IR elements related to table fields.
+ * `KTableAddFieldTransformer` class is a Kotlin compiler plugin transformer that manipulates IR elements related to table fields.
  * It overrides the `visitCall` method to transform specific IR calls within the Kotlin Intermediate Representation (IR).
- * `KTableFieldAddReturnTransformer` 类是一个 Kotlin 编译器插件转换器，用于操作与表字段相关的 IR 元素。
+ * `KTableAddFieldTransformer` 类是一个 Kotlin 编译器插件转换器，用于操作与表字段相关的 IR 元素。
  * 它重写了 `visitCall` 方法，以转换 Kotlin 中间表示（IR）中的特定 IR 调用。
  */
-class KTableFieldAddReturnTransformer(
+class KTableAddFieldTransformer(
     // Plugin context, includes necessary information for the compilation process
     // 插件上下文，包含编译过程所需的信息
     override val pluginContext: IrPluginContext,

@@ -1,10 +1,10 @@
 package com.kotoframework.plugins.transformer
 
 import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransformer
-import com.kotoframework.plugins.transformer.kTable.KTableFieldAddReturnTransformer
-import com.kotoframework.plugins.transformer.kTable.KTableParamPutBlockTransformer
+import com.kotoframework.plugins.transformer.kTable.KTableAddFieldTransformer
+import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
 import com.kotoframework.plugins.utils.kTableConditional.funcName
-import com.kotoframework.plugins.utils.updateClause.setUpdateClauseTableName
+import com.kotoframework.plugins.utils.updateClause.initUpdateClause
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -67,7 +67,7 @@ class KotoParserTransformer(
         when {
             expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass &&
                     expression.funcName() in listOf("update", "updateExcept") -> {
-                return setUpdateClauseTableName(pluginContext, super.visitCall(expression) as IrCall)
+                return initUpdateClause(pluginContext, super.visitCall(expression) as IrCall)
             }
         }
         return super.visitCall(expression)
@@ -84,8 +84,8 @@ class KotoParserTransformer(
             +irBlock {
                 +irFunction.body!!.statements
             }
-                .transform(KTableFieldAddReturnTransformer(pluginContext, irFunction), null)
-                .transform(KTableParamPutBlockTransformer(pluginContext, irFunction), null)
+                .transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
+                .transform(KTableAddParamTransformer(pluginContext, irFunction), null)
         }
     }
 

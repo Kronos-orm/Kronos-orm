@@ -136,8 +136,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != 1", sql)
-        assertEquals(mapOf(), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != :id", sql)
+        assertEquals(mapOf("id" to 1,"idNew" to 1,"usernameNew" to "test","username" to "test"), paramMap)
     }
 
     @Test
@@ -148,8 +148,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != 1", sql)
-        assertEquals(mapOf(), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != :id", sql)
+        assertEquals(mapOf("id" to 1,"idNew" to 1,"usernameNew" to "test","username" to "test"), paramMap)
     }
 
     @Test

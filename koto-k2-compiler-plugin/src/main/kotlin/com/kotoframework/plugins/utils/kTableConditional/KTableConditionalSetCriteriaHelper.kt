@@ -59,10 +59,11 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
 
         is IrCall -> {
             val funcName = element.funcName()
-//            val args = element.valueArguments
-            val args = element.valueArguments.ifEmpty {
-                (element.dispatchReceiver as IrCall).valueArguments
+            var args = element.valueArguments
+            if (args.isEmpty() && element.dispatchReceiver is IrCall) {
+                args = (element.dispatchReceiver as IrCall).valueArguments
             }
+
             if ("not" == funcName) {
                 return buildCriteria(element.dispatchReceiver!! , !setNot)
             } else {

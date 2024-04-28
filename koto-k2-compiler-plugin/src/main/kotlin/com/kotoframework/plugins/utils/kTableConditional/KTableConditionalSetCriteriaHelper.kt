@@ -93,16 +93,33 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
 
                     "lt" , "gt" , "le" , "ge" -> {
                         type = funcName
-                        val irCall = (args[0] as IrCall)
-                        if (irCall.extensionReceiver is IrCall) {
-                            paramName = getColumnName(irCall.extensionReceiver!!)
-                            value = irCall.valueArguments[0]
+                        if (args.isEmpty()) {
+                            // 形如it.<property>.lt的写法
+                            val receiver =
+                                builder.irGet(function.extensionReceiverParameter!!)
+                            paramName = getColumnName(element.extensionReceiver!!)
+                            tableName = getTableName(element.dispatchReceiver!!)
+                            value = applyIrCall(
+                                propParamSymbol!!,
+                                builder.irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
+                            ) {
+                                dispatchBy(
+                                    receiver
+                                )
+                            }
                         } else {
-                            paramName = getColumnName(irCall.valueArguments[0]!!)
-                            value = irCall.extensionReceiver
+                            val irCall = (args[0] as IrCall)
+                            if (irCall.extensionReceiver is IrCall) {
+                                // 形如it.<property> < 100的写法
+                                paramName = getColumnName(irCall.extensionReceiver!!)
+                                value = irCall.valueArguments[0]
+                            } else if (irCall.extensionReceiver is IrConstImpl<*>) {
+                                // 形如100 < it.<property> 的写法
+                                paramName = getColumnName(irCall.valueArguments[0]!!)
+                                value = irCall.extensionReceiver
+                            }
+                            tableName = getTableName(irCall.dispatchReceiver!!)
                         }
-
-                        tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 
                     "equal" -> {
@@ -112,7 +129,7 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         val irCall = args[index] as IrCall
                         paramName = getColumnName(irCall)
                         value = args[1 - index]
-                        tableName = getTableName(irCall.dispatchReceiver!!)
+//                        tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 
                     "between", "like" -> {

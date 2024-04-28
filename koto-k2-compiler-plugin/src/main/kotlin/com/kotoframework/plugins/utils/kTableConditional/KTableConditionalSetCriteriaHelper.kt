@@ -1,17 +1,22 @@
 package com.kotoframework.plugins.utils.kTableConditional
 
-import com.kotoframework.plugins.scopes.KotoBuildScope
-import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
+import com.kotoframework.plugins.utils.*
 import com.kotoframework.plugins.utils.kTable.correspondingName
 import com.kotoframework.plugins.utils.kTable.getColumnName
 import com.kotoframework.plugins.utils.kTable.getTableName
 import com.kotoframework.plugins.utils.kTable.propParamSymbol
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 
@@ -21,14 +26,16 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
  * @receiver KotoBuildScope instance.
  * @author OUSC
  */
-fun KotoBuildScope.setCriteriaIr() =
+context(IrBlockBuilder, IrPluginContext, IrFunction)
+fun setCriteriaIr() =
     applyIrCall(
-        criteriaSetterSymbol,
-        builder.irGet(buildCriteria(function.body!!)!!)){
-        dispatchBy(builder.irGet(function.extensionReceiverParameter!!))
+        criteriaSetterSymbol, irGet(buildCriteria(body!!)!!)
+    ) {
+        dispatchBy(irGet(extensionReceiverParameter!!))
     }
 
-fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
+context(IrBlockBuilder, IrPluginContext, IrFunction)
+fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
     var paramName: IrExpression? = null
     var type = "ROOT"
     var not = setNot
@@ -44,16 +51,7 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
         }
 
         is IrIfThenElseImpl -> {
-            type = if (setNot) {
-                when (element.funcName()) {
-                    "AND" -> "OR"
-                    "OR" -> "AND"
-                    else -> ""
-                }
-            } else {
-                element.funcName()
-            }
-
+            type = element.funcName(setNot)
             element.branches.forEach {
                 children.add(buildCriteria(it.condition , setNot))
                 children.add(buildCriteria(it.result , setNot))
@@ -68,16 +66,9 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
             }
 
             if ("not" == funcName) {
-                return buildCriteria(element.dispatchReceiver!! , !setNot)
-            } else {
-                when (funcName) {
-                    "isIn" -> {
-                        type = funcName
-                        value = args[0]
-                        paramName = getColumnName(args[1]!!)
-                        tableName = getTableName(args[1]!!)
-                    }
-
+                return buildCriteria(element.dispatchReceiver!!, !not)
+            }
+            when (funcName) {
                     "isNull" -> {
                         type = funcName
                         paramName = getColumnName(element.extensionReceiver!!)
@@ -95,27 +86,24 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         type = funcName
                         if (args.isEmpty()) {
                             // 形如it.<property>.lt的写法
-                            val receiver =
-                                builder.irGet(function.extensionReceiverParameter!!)
+                            val receiver = irGet(extensionReceiverParameter!!)
                             paramName = getColumnName(element.extensionReceiver!!)
                             tableName = getTableName(element.dispatchReceiver!!)
                             value = applyIrCall(
                                 propParamSymbol!!,
-                                builder.irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
+                                irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
                             ) {
-                                dispatchBy(
-                                    receiver
-                                )
+                                dispatchBy(receiver)
                             }
                         } else {
-                            val irCall = (args[0] as IrCall)
+                            val irCall = args.first()!!.asIrCall()
                             if (irCall.extensionReceiver is IrCall) {
                                 // 形如it.<property> < 100的写法
                                 paramName = getColumnName(irCall.extensionReceiver!!)
-                                value = irCall.valueArguments[0]
+                                value = irCall.valueArguments.first()!!
                             } else if (irCall.extensionReceiver is IrConstImpl<*>) {
                                 // 形如100 < it.<property> 的写法
-                                paramName = getColumnName(irCall.valueArguments[0]!!)
+                                paramName = getColumnName(irCall.valueArguments.first()!!)
                                 value = irCall.extensionReceiver
                             }
                             tableName = getTableName(irCall.dispatchReceiver!!)
@@ -125,11 +113,11 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                     "equal" -> {
                         type = funcName
                         not = if (element.valueArguments.isEmpty()) !not else not
-                        val index = if (args[0] is IrConstImpl<*>) 1 else 0
-                        val irCall = args[index] as IrCall
+                        val index = if (args.first() is IrConstImpl<*>) 1 else 0
+                        val irCall = args[index]!!.asIrCall()
                         paramName = getColumnName(irCall)
                         value = args[1 - index]
-//                        tableName = getTableName(irCall.dispatchReceiver!!)
+                        tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 
                     "between", "like" -> {
@@ -154,15 +142,11 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         type = "equal"
                         not = !not
                         paramName = getColumnName(element.extensionReceiver!!)
-                        val receiver =
-                            builder.irGet(function.extensionReceiverParameter!!)
                         value = applyIrCall(
                             propParamSymbol!!,
-                            builder.irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
+                            irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
-                            dispatchBy(
-                                receiver
-                            )
+                            dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                         tableName = getTableName(element.dispatchReceiver!!)
                     }
@@ -171,7 +155,6 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         type = "sql"
                         value = element.extensionReceiver
                     }
-                }
             }
         }
 

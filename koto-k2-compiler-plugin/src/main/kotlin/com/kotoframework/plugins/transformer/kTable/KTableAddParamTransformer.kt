@@ -1,7 +1,5 @@
 package com.kotoframework.plugins.transformer.kTable
 
-import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.useKotoBuildScope
-import com.kotoframework.plugins.transformer.CommonTransformer
 import com.kotoframework.plugins.utils.kTable.putFieldParamMap
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -20,12 +18,12 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 class KTableAddParamTransformer(
     // Plugin context, includes essential information for the compilation process
     // 插件上下文，包含编译过程中的必要信息
-    override val pluginContext: IrPluginContext,
+    private val pluginContext: IrPluginContext,
 
     // The current IR function being transformed
     // 当前正在转换的 IR 函数
-    override val irFunction: IrFunction
-) : IrElementTransformerVoidWithContext(), CommonTransformer {
+    private val irFunction: IrFunction
+) : IrElementTransformerVoidWithContext() {
 
     /**
      * Overrides the visitBlock method to apply transformations to IR blocks.
@@ -34,19 +32,19 @@ class KTableAddParamTransformer(
      * 该方法通过在块的末尾附加一个字段参数映射来丰富块。
      */
     override fun visitBlock(expression: IrBlock): IrExpression {
-        val transformer = this
-        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-            // Preserve existing statements in the block
-            // 保留块中的现有语句
-            +expression.statements
-            // Use a scoped builder to add custom transformations
-            // 使用范围构建器添加自定义转换
-            +useKotoBuildScope(transformer)
-                // Append the custom transformation to add field-parameter mappings
-                // 附加自定义转换以添加字段参数映射
-                .putFieldParamMap()
+        with(pluginContext) {
+            with(irFunction) {
+                return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                    // Preserve existing statements in the block
+                    // 保留块中的现有语句
+                    +expression.statements
+                    // add field-parameter mappings
+                    // 添加字段参数映射
+                    +putFieldParamMap()
 
-            super.visitBlock(expression)
+                    super.visitBlock(expression)
+                }
+            }
         }
     }
 }

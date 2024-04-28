@@ -3,6 +3,7 @@ package com.kotoframework.plugins.transformer
 import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
+import com.kotoframework.plugins.utils.asIrCall
 import com.kotoframework.plugins.utils.kTableConditional.funcName
 import com.kotoframework.plugins.utils.updateClause.initUpdateClause
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -35,7 +36,7 @@ class KotoParserTransformer(
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotoframework.beans.dsl.KTable"
     private val updateClauseClass = "com.kotoframework.orm.update.UpdateClause"
-    private val kTableConditionalClazz = "com.kotoframework.beans.dsl.KTableConditional"
+    private val kTableConditionalClass = "com.kotoframework.beans.dsl.KTableConditional"
 
     @OptIn(FirIncompatiblePluginAPI::class)
     fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions(FqName("kotlin.io.println")).single {
@@ -55,7 +56,7 @@ class KotoParserTransformer(
             kTableClass -> {
                 declaration.body = transformKTable(declaration)
             }
-            kTableConditionalClazz -> {
+            kTableConditionalClass -> {
                 declaration.body = transformKTableConditional(declaration)
             }
         }
@@ -64,13 +65,17 @@ class KotoParserTransformer(
 
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
-        when {
-            expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass &&
-                    expression.funcName() in listOf("update", "updateExcept") -> {
-                return initUpdateClause(pluginContext, super.visitCall(expression) as IrCall)
+        with(pluginContext) {
+            when {
+                expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass &&
+                        expression.funcName() in listOf("update", "updateExcept") -> {
+                    return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                        initUpdateClause(super.visitCall(expression).asIrCall())
+                    }
+                }
             }
+            return super.visitCall(expression)
         }
-        return super.visitCall(expression)
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.kotoframework.plugins.utils.kTableConditional
 
-import com.kotoframework.plugins.scopes.KotoBuildScope
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
@@ -11,24 +13,24 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 class CriteriaIR(
     // The name of the parameter
     // 参数的名称
-    var parameterName: IrExpression? = null,
+    private var parameterName: IrExpression? = null,
     // The type of the criterion
     // 条件的类型
-    var type: String,
+    private var type: String,
     // Whether the condition is negated
     // 是否对条件进行否定
     var not: Boolean,
     // The value to compare with, optional
     // 用于比较的值，可选
-    val value: IrExpression? = null,
+    private val value: IrExpression? = null,
     // List of child variables, optional
     // 子变量列表，可选
-    val children: List<IrVariable> = listOf(),
+    private val children: List<IrVariable> = listOf(),
     // The name of the table, optional
     // 表的名称，可选
-    var tableName: IrExpression? = null,
+    private var tableName: IrExpression? = null,
 ) {
-    context(KotoBuildScope)
+    context(IrBlockBuilder, IrPluginContext)
     fun toIrVariable(): IrVariable {
         return createCriteria(parameterName, type, not, value, children, tableName)
     }

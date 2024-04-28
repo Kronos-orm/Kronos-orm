@@ -1,7 +1,5 @@
 package com.kotoframework.plugins.transformer.kTable
 
-import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.useKotoBuildScope
-import com.kotoframework.plugins.transformer.CommonTransformer
 import com.kotoframework.plugins.utils.kTable.addFieldList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -21,12 +19,12 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 class KTableAddFieldTransformer(
     // Plugin context, includes necessary information for the compilation process
     // 插件上下文，包含编译过程所需的信息
-    override val pluginContext: IrPluginContext,
+    private val pluginContext: IrPluginContext,
 
     // The current IR function being transformed
     // 当前正在转换的 IR 函数
-    override val irFunction: IrFunction
-) : IrElementTransformerVoidWithContext(), CommonTransformer {
+    private val irFunction: IrFunction
+) : IrElementTransformerVoidWithContext() {
 
     /**
      * Overrides the visitCall method to apply transformations based on the origin of the IR call.
@@ -35,11 +33,13 @@ class KTableAddFieldTransformer(
      * 如果调用源自 PLUS 操作，它通过添加字段来修改 IR 结构。
      */
     override fun visitCall(expression: IrCall): IrExpression {
-        val transformer = this
-        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-            if (expression.origin in arrayOf(IrStatementOrigin.PLUS, IrStatementOrigin.GET_PROPERTY)) {
-                +useKotoBuildScope(transformer)
-                    .addFieldList()
+        with(pluginContext) {
+            with(irFunction) {
+                return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                    if (expression.origin in arrayOf(IrStatementOrigin.PLUS, IrStatementOrigin.GET_PROPERTY)) {
+                        +addFieldList()
+                    }
+                }
             }
         }
     }

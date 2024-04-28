@@ -1,11 +1,12 @@
 package com.kotoframework.plugins.utils.kTable
 
-import com.kotoframework.plugins.scopes.KotoBuildScope
-import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
+import com.kotoframework.plugins.utils.*
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 
 
@@ -13,15 +14,12 @@ import org.jetbrains.kotlin.ir.expressions.*
  * Creates a list of IR expressions that represent field additions, using a predefined symbol to generate `addField` calls.
  * 使用预定义符号生成 `addField` 调用，创建表示字段添加的 IR 表达式列表。
  */
-fun KotoBuildScope.addFieldList(): List<IrExpression> {
-    // Obtain the receiver for the current function context.
-    // 获取当前函数上下文的接收者。
-    val receiver =
-        builder.irGet(function.extensionReceiverParameter!!)
-    return addFieldsNames(function.body!!).map {
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
+fun addFieldList(): List<IrExpression> {
+    return addFieldsNames(body!!).map {
         // Apply the `addField` operation to each field name gathered, passing the receiver.
         // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
-        applyIrCall(addFieldSymbol, it){ dispatchBy(receiver) }
+        applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
     }
 }
 
@@ -29,7 +27,8 @@ fun KotoBuildScope.addFieldList(): List<IrExpression> {
  * Recursively extracts field names from an IR element, handling different kinds of IR nodes.
  * 从 IR 元素递归提取字段名，处理不同类型的 IR 节点。
  */
-fun KotoBuildScope.addFieldsNames(element: IrElement): MutableList<IrExpression> {
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
+fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。
     val fieldNames = mutableListOf<IrExpression>()

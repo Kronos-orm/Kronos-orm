@@ -1,16 +1,13 @@
 package com.kotoframework.plugins.utils.kTableConditional
 
-import com.kotoframework.plugins.scopes.KotoBuildScope
-import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
+import com.kotoframework.plugins.utils.applyIrCall
+import com.kotoframework.plugins.utils.dispatchBy
 import com.kotoframework.plugins.utils.kTable.correspondingName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
-import org.jetbrains.kotlin.ir.builders.irBoolean
-import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irString
-import org.jetbrains.kotlin.ir.builders.irTemporary
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
@@ -21,25 +18,29 @@ import org.jetbrains.kotlin.name.FqName
  * 定义多个 Kotlin IR 扩展，用于在 Kotlin 编译器插件的 IR 转换过程中处理 `KTable` 类的特定方法。
  */
 //KTableConditional类的setCriteria函数
+context(IrBuilderWithScope, IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
-internal val KotoBuildScope.criteriaSetterSymbol
-    get() = pluginContext.referenceClass(FqName("com.kotoframework.beans.dsl.KTableConditional"))!!.getPropertySetter("criteria")!!
+internal val criteriaSetterSymbol
+    get() = referenceClass(FqName("com.kotoframework.beans.dsl.KTableConditional"))!!.getPropertySetter("criteria")!!
 
+context(IrBuilderWithScope, IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
-private val KotoBuildScope.criteriaClassSymbol
-    get() =
-        pluginContext.referenceClass(FqName("com.kotoframework.beans.dsl.Criteria"))!!
+private val criteriaClassSymbol
+    get() = referenceClass(FqName("com.kotoframework.beans.dsl.Criteria"))!!
 
-//Criteria类的addi函数
-private val KotoBuildScope.addCriteriaChild
+//Criteria类的add函数
+context(IrBuilderWithScope, IrPluginContext)
+private val addCriteriaChild
     get() = criteriaClassSymbol.getSimpleFunction("addChild")!!
 
+context(IrBuilderWithScope, IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
-fun KotoBuildScope.string2ConditionTypeSymbol() =
-    pluginContext.referenceFunctions(FqName("com.kotoframework.enums.toConditionType")).first()
+private val string2ConditionTypeSymbol
+    get() = referenceFunctions(FqName("com.kotoframework.enums.toConditionType")).first()
 
 // 获取koto函数名
-fun IrExpression.funcName(): String {
+context(IrPluginContext)
+fun IrExpression.funcName(setNot: Boolean = false): String {
     return when (this) {
         is IrCall -> when (origin) {
             is IrStatementOrigin.EQEQ , IrStatementOrigin.EXCLEQ -> "equal"
@@ -50,9 +51,11 @@ fun IrExpression.funcName(): String {
             else -> correspondingName?.asString() ?: symbol.owner.name.asString()
         }
 
-        is IrWhen -> when (origin) {
-            is IrStatementOrigin.OROR -> "OR"
-            is IrStatementOrigin.ANDAND -> "AND"
+        is IrWhen -> when {
+            origin == IrStatementOrigin.OROR && !setNot -> "OR"
+            origin == IrStatementOrigin.ANDAND && !setNot -> "AND"
+            origin == IrStatementOrigin.OROR && setNot -> "AND"
+            origin == IrStatementOrigin.ANDAND && setNot -> "OR"
             else -> origin.toString()
         }
 
@@ -62,7 +65,8 @@ fun IrExpression.funcName(): String {
 }
 
 // 创建Criteria语句
-fun KotoBuildScope.createCriteria(
+context(IrBlockBuilder, IrPluginContext)
+fun createCriteria(
     parameterName: IrExpression? = null,
     type: String,
     not: Boolean,
@@ -71,29 +75,29 @@ fun KotoBuildScope.createCriteria(
     tableName: IrExpression? = null
 ): IrVariable {
     //创建Criteria
-    val irVariable = builder.irTemporary(
+    val irVariable = irTemporary(
         applyIrCall(
             criteriaClassSymbol.constructors.first(),
             parameterName,
             string2ConditionType(type),
-            builder.irBoolean(not),
+            irBoolean(not),
             value,
             tableName
         )
     )
-    builder.apply {
-        //添加子条件
-        children.forEach {
-            +applyIrCall(
-                addCriteriaChild,
-                builder.irGet(it)){
-                dispatchBy(irGet(irVariable))
-            }
+    //添加子条件
+    children.forEach {
+        +applyIrCall(
+            addCriteriaChild,
+            irGet(it)
+        ) {
+            dispatchBy(irGet(irVariable))
         }
     }
     return irVariable
 }
 
-fun KotoBuildScope.string2ConditionType(str: String): IrFunctionAccessExpression {
-    return applyIrCall(string2ConditionTypeSymbol(), builder.irString(str))
+context(IrBuilderWithScope, IrPluginContext)
+fun string2ConditionType(str: String): IrFunctionAccessExpression {
+    return applyIrCall(string2ConditionTypeSymbol, irString(str))
 }

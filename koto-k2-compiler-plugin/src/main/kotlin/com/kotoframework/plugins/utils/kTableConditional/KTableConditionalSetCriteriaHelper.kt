@@ -2,11 +2,14 @@ package com.kotoframework.plugins.utils.kTableConditional
 
 import com.kotoframework.plugins.scopes.KotoBuildScope
 import com.kotoframework.plugins.scopes.KotoBuildScope.Companion.dispatchBy
+import com.kotoframework.plugins.utils.kTable.correspondingName
 import com.kotoframework.plugins.utils.kTable.getColumnName
 import com.kotoframework.plugins.utils.kTable.getTableName
+import com.kotoframework.plugins.utils.kTable.propParamSymbol
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
@@ -127,6 +130,23 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         not = !not
                         paramName = getColumnName(element.extensionReceiver!!)
                         value = args[0]
+                        tableName = getTableName(element.dispatchReceiver!!)
+                    }
+
+                    "neq" -> {
+                        type = "equal"
+                        not = !not
+                        paramName = getColumnName(element.extensionReceiver!!)
+                        val receiver =
+                            builder.irGet(function.extensionReceiverParameter!!)
+                        value = applyIrCall(
+                            propParamSymbol!!,
+                            builder.irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
+                        ) {
+                            dispatchBy(
+                                receiver
+                            )
+                        }
                         tableName = getTableName(element.dispatchReceiver!!)
                     }
                 }

@@ -9,16 +9,12 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.toKotlinType
 import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.asSimpleType
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getArguments
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getType
 
 /**
  * Defines various Kotlin IR extensions to handle specific methods of `KTable` during the IR transformation process in Kotlin compiler plugins.
@@ -39,6 +35,9 @@ internal val KotoBuildScope.setValueSymbol
 // 获取 `KTable` 的 `addField` 方法的引用。
 internal val KotoBuildScope.addFieldSymbol
     get() = kTableSymbol.getSimpleFunction("addField")!!
+
+internal val KotoBuildScope.propParamSymbol
+    get() = kTableSymbol.getSimpleFunction("getValueByFieldName")
 
 // Extension property to get the name associated with a property from an `IrCall`.
 // 扩展属性，用于从 `IrCall` 获取与属性相关联的名称。

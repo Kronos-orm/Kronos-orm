@@ -42,7 +42,7 @@ fun KotoBuildScope.string2ConditionTypeSymbol() =
 fun IrExpression.funcName(): String {
     return when (this) {
         is IrCall -> when (origin) {
-            is IrStatementOrigin.EQEQ -> "equal"
+            is IrStatementOrigin.EQEQ , IrStatementOrigin.EXCLEQ -> "equal"
             is IrStatementOrigin.GT -> "gt"
             is IrStatementOrigin.LT -> "lt"
             is IrStatementOrigin.GTEQ -> "ge"

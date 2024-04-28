@@ -59,7 +59,10 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
 
         is IrCall -> {
             val funcName = element.funcName()
-            val args = element.valueArguments
+//            val args = element.valueArguments
+            val args = element.valueArguments.ifEmpty {
+                (element.dispatchReceiver as IrCall).valueArguments
+            }
             if ("not" == funcName) {
                 return buildCriteria(element.dispatchReceiver!! , !setNot)
             } else {
@@ -86,17 +89,25 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
 
                     "lt" , "gt" , "le" , "ge" -> {
                         type = funcName
-                        val irCall = args[0] as IrCall
-                        paramName = getColumnName(irCall.extensionReceiver!!)
-                        value = irCall.valueArguments[0]
+                        val irCall = (args[0] as IrCall)
+                        if (irCall.extensionReceiver is IrCall) {
+                            paramName = getColumnName(irCall.extensionReceiver!!)
+                            value = irCall.valueArguments[0]
+                        } else {
+                            paramName = getColumnName(irCall.valueArguments[0]!!)
+                            value = irCall.extensionReceiver
+                        }
+
                         tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 
                     "equal" -> {
                         type = funcName
-                        val irCall = args[0] as IrCall
+                        not = if (element.valueArguments.isEmpty()) !not else not
+                        val index = if (args[0] is IrConstImpl<*>) 1 else 0
+                        val irCall = args[index] as IrCall
                         paramName = getColumnName(irCall)
-                        value = args[1]
+                        value = args[1 - index]
                         tableName = getTableName(irCall.dispatchReceiver!!)
                     }
 

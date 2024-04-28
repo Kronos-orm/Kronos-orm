@@ -149,6 +149,11 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         }
                         tableName = getTableName(element.dispatchReceiver!!)
                     }
+
+                    "asSql" -> {
+                        type = "sql"
+                        value = element.extensionReceiver
+                    }
                 }
             }
         }

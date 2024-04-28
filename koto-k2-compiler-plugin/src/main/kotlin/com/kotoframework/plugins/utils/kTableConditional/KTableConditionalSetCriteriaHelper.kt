@@ -94,6 +94,7 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                     "lt" , "gt" , "le" , "ge" -> {
                         type = funcName
                         if (args.isEmpty()) {
+                            // 形如it.<property>.lt的写法
                             val receiver =
                                 builder.irGet(function.extensionReceiverParameter!!)
                             paramName = getColumnName(element.extensionReceiver!!)
@@ -109,9 +110,11 @@ fun KotoBuildScope.buildCriteria(element: IrElement, setNot: Boolean = false): I
                         } else {
                             val irCall = (args[0] as IrCall)
                             if (irCall.extensionReceiver is IrCall) {
+                                // 形如it.<property> < 100的写法
                                 paramName = getColumnName(irCall.extensionReceiver!!)
                                 value = irCall.valueArguments[0]
                             } else if (irCall.extensionReceiver is IrConstImpl<*>) {
+                                // 形如100 < it.<property> 的写法
                                 paramName = getColumnName(irCall.valueArguments[0]!!)
                                 value = irCall.extensionReceiver
                             }

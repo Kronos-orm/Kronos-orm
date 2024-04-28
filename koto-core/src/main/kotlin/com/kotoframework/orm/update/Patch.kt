@@ -9,7 +9,9 @@ inline fun <reified T : KPojo> T.update(noinline setUpdateFields: KTableField<T,
     return UpdateClause(this, setUpdateFields)
 }
 inline fun <reified T : KPojo> T.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, setUpdateFields)
+    return UpdateClause(this, setUpdateFields).apply {
+        isExcept = true
+    }
 }
 
 fun initUpdateClause(clause: UpdateClause<*>, name: String, vararg fields: Field): UpdateClause<*> {

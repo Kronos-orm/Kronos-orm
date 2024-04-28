@@ -16,6 +16,7 @@ class UpdateClause<T : KPojo>(
     private val pojo: T,
     setUpdateFields: KTableField<T, Any?> = null
 ) {
+    var isExcept: Boolean = false
     lateinit var tableName: String
     var allFields: MutableSet<Field> = mutableSetOf()
     private var toUpdateFields: MutableSet<Field> = mutableSetOf()
@@ -29,6 +30,14 @@ class UpdateClause<T : KPojo>(
             KTable(pojo::class.createInstance()).apply {
                 setUpdateFields.invoke(this)
                 toUpdateFields.addAll(fields)
+                toUpdateFields.forEach {
+                    paramMapNew[
+                        Field(
+                            it.columnName,
+                            it.name + "New"
+                        )
+                    ] = paramMap[it.name]
+                }
             }
         }
     }
@@ -84,9 +93,25 @@ class UpdateClause<T : KPojo>(
     }
 
     fun build(): Pair<String, Map<String, Any?>> {
+
+        // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
+        if (isExcept) {
+            toUpdateFields =
+                allFields.filter { !toUpdateFields.any { f -> f.columnName == it.columnName } }.toMutableSet()
+            toUpdateFields.forEach {
+                paramMapNew[
+                    Field(
+                        it.columnName,
+                        it.name + "New"
+                    )
+                ] = paramMap[it.name]
+            }
+        }
+
         val updateFields =
             toUpdateFields.joinToString(", ")
             { "${it.name} = :${it.name + "New"}" }
+
         var conditionSql = buildConditionSql(condition)
         if (conditionSql != null) {
             conditionSql = "WHERE $conditionSql"
@@ -94,7 +119,11 @@ class UpdateClause<T : KPojo>(
         val sql = listOfNotNull("UPDATE", tableName, "SET", updateFields, conditionSql).joinToString(" ")
         // 合并 paramMap和paramMapNew
         paramMap.apply {
-            putAll(paramMapNew.map { it.key.name + "New" to it.value })
+            putAll(paramMapNew.map { entry ->
+                // 如果 key 不以 "New" 结尾，则添加 "New" 后缀
+                val keyWithSuffix = if (!entry.key.name.endsWith("New")) entry.key.name + "New" else entry.key.name
+                keyWithSuffix to entry.value
+            })
         }
         return Pair(sql, paramMap)
     }
@@ -118,7 +147,22 @@ class UpdateClause<T : KPojo>(
             return null
         }
         return when (condition.type) {
-            ConditionType.EQUAL -> "${condition.field} = :${condition.field}"
+            ConditionType.ROOT -> {
+                val childrenSql = condition.children.map { buildConditionSql(it) }
+                    .joinToString(" AND ")
+                if (childrenSql.isEmpty()) {
+                    null
+                } else {
+                    childrenSql
+                }
+            }
+
+            ConditionType.EQUAL -> "${condition.field} " + if (condition.not) {
+                "!"
+            } else {
+                null
+            } + "= :${condition.field}"
+
             ConditionType.ISNULL -> "${condition.field} IS NULL"
             ConditionType.SQL -> condition.sql
 
@@ -136,10 +180,28 @@ class UpdateClause<T : KPojo>(
                 condition.value.let { it as List<*> }.joinToString(", ")
             })"
 
-            ConditionType.GT -> "${condition.field} > :${condition.field}"
-            ConditionType.GE -> "${condition.field} >= :${condition.field}"
-            ConditionType.LT -> "${condition.field} < :${condition.field}"
-            ConditionType.LE -> "${condition.field} <= :${condition.field}"
+
+            ConditionType.GT -> "${condition.field} > " + ":${condition.field}Min"
+                .apply {
+                    paramMap.put("${condition.field}Min", condition.value)
+                }
+
+            ConditionType.GE -> "${condition.field} >= " + ":${condition.field}Min"
+                .apply {
+                    paramMap.put("${condition.field}Min", condition.value)
+                }
+
+            ConditionType.LT -> "${condition.field} < " + ":${condition.field}Max"
+                .apply {
+                    paramMap.put("${condition.field}Max", condition.value)
+                }
+
+            ConditionType.LE -> "${condition.field} <= " + ":${condition.field}Max"
+                .apply {
+                    paramMap.put("${condition.field}Max", condition.value)
+                }
+
+
             ConditionType.BETWEEN -> {
                 // 处理 BETWEEN 条件类型，将范围值存储为参数，供 SQL 使用
                 val rangeValue = condition.value.let { it as ClosedRange<*> }

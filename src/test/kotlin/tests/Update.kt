@@ -27,7 +27,7 @@ class Update {
     fun testUpdate() {
         val (sql, paramMap) = user.update()
             .set {
-                Field("username").setValue("123")
+                // use Field("username").setValue("123")
                 it.username = "123"
                 it.gender = 1
             }

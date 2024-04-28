@@ -33,8 +33,8 @@ class UpdateParserTest {
 
       fun main() {
         KotoApp.apply {
-            fieldNamingStrategy = LineHumpNamingStrategy()
-            tableNamingStrategy = LineHumpNamingStrategy()
+          fieldNamingStrategy = LineHumpNamingStrategy
+          tableNamingStrategy = LineHumpNamingStrategy
         }
 
         val user = User(1)
@@ -47,7 +47,7 @@ class UpdateParserTest {
                 it.username = "123" + 456
             }
             .where { it.id != 1 }
-//           .where {  !(it.gender.notNull && it.id == 1 OR (it.username like "aa" OR it.gender != 1)) }
+//           .where {  !(it.gender.notNull && it.id == 1 || (it.username like "aa" }} || it.gender != 1)) }
             .execute()
       }
       """.trimIndent())

@@ -10,10 +10,8 @@ import kotlin.test.assertEquals
 class Delete {
     init {
         KotoApp.apply {
-            LineHumpNamingStrategy().let {
-                fieldNamingStrategy = it
-                tableNamingStrategy = it
-            }
+            fieldNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = LineHumpNamingStrategy
         }
     }
     private val user = User(1)

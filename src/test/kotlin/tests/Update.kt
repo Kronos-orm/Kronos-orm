@@ -1,22 +1,19 @@
 package tests
 
-import tests.beans.User
 import com.kotoframework.KotoApp
-import com.kotoframework.beans.dsl.Field
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.update.update
 import com.kotoframework.orm.update.updateExcept
 import org.junit.jupiter.api.Test
+import tests.beans.User
 import kotlin.test.assertEquals
 
 class Update {
 
     init {
         KotoApp.apply {
-            LineHumpNamingStrategy().let {
-                fieldNamingStrategy = it
-                tableNamingStrategy = it
-            }
+            fieldNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = LineHumpNamingStrategy
         }
     }
 
@@ -25,7 +22,8 @@ class Update {
 
     @Test
     fun testUpdate() {
-        val (sql, paramMap) = user.update()
+        val (sql, paramMap) =
+            user.update()
             .set {
                 // use Field("username").setValue("123")
                 it.username = "123"

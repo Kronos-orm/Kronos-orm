@@ -15,8 +15,8 @@ data class User(
 
 fun main() {
     KotoApp.apply {
-        fieldNamingStrategy = LineHumpNamingStrategy()
-        tableNamingStrategy = LineHumpNamingStrategy()
+        fieldNamingStrategy = LineHumpNamingStrategy
+        tableNamingStrategy = LineHumpNamingStrategy
     }
 
     val user = User(1)

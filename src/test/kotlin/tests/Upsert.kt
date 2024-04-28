@@ -11,10 +11,8 @@ import kotlin.test.assertEquals
 class Upsert {
     init {
         KotoApp.apply {
-            LineHumpNamingStrategy().let {
-                fieldNamingStrategy = it
-                tableNamingStrategy = it
-            }
+            fieldNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = LineHumpNamingStrategy
         }
     }
 

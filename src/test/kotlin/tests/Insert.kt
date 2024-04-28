@@ -10,10 +10,8 @@ import kotlin.test.assertEquals
 class Insert {
     init {
         KotoApp.apply {
-            LineHumpNamingStrategy().let {
-                fieldNamingStrategy = it
-                tableNamingStrategy = it
-            }
+            fieldNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = LineHumpNamingStrategy
         }
     }
     val user = User(1)

@@ -25,7 +25,6 @@ object KotoApp {
         { BundledSimpleLoggerAdapter(it.javaName) }
     var defaultSerializeResolver: KotoSerializeResolver = NoneSerializeResolver()
     internal var defaultNoValueStrategy = NoValueStrategy.Ignore
-    internal var hump2line: Boolean = true
 
     /**
      * detect logger implementation if Koto-logging is used

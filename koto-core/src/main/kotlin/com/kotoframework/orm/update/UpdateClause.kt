@@ -66,6 +66,7 @@ class UpdateClause<T : KPojo>(
 
     fun where(updateCondition: KTableConditionalField<T, Boolean?> = null): UpdateClause<T> {
         KTableConditional(pojo::class.createInstance()).apply {
+            this.propParamMap = paramMap
             updateCondition?.invoke(this)
             condition = criteria ?: Criteria(
                 type = AND

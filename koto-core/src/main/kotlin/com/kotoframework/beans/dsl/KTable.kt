@@ -8,8 +8,13 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 
 open class KTable<T : KPojo>(open val it: T) {
-     val fields: MutableList<Field> = mutableListOf()
-     val fieldParamMap: MutableMap<Field, Any?> = mutableMapOf()
+    val fields: MutableList<Field> = mutableListOf()
+    var propParamMap: MutableMap<String, Any?> = mutableMapOf()
+    val fieldParamMap: MutableMap<Field, Any?> = mutableMapOf()
+
+    fun getValueByFieldName(fieldName: String): Any? {
+        return propParamMap[fieldName]
+    }
 
     operator fun Any?.plus(other: Any?): Int = 1
     operator fun Any?.unaryPlus(): Int = 1

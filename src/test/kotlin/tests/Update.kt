@@ -34,8 +34,14 @@ class Update {
             .by { it.id }
             .build()
 
+
+        println(sql)
+        println(paramMap)
+
         assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id", sql)
         assertEquals(mapOf("id" to 1, "usernameNew" to "123", "genderNew" to 1), paramMap)
+        // Update tb_user set username = '123' where id = 1
+
     }
 
     @Test
@@ -48,17 +54,27 @@ class Update {
             .by { it.id + it.username }
             .build()
 
+
+        println(sql)
+        println(paramMap)
+
         assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id AND username = :username", sql)
         assertEquals(mapOf("id" to 1, "usernameNew" to "123", "genderNew" to 1, "username" to "test"), paramMap)
+        // Update tb_user set username = '123' where id = 1
+
     }
 
     @Test
     fun testUpdate2() {
         val (sql, paramMap) = user.update { it.username + it.gender }
             .by { it.id }
+            .build()
+
+        println(sql)
+        println(paramMap)
 
         assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id", sql)
-        assertEquals(mapOf("id" to 1), paramMap)
+        assertEquals(mapOf("id" to 1, "usernameNew" to null, "genderNew" to null), paramMap)
 
     }
 
@@ -66,9 +82,14 @@ class Update {
     fun testUpdate3() {
         val (sql, paramMap) = testUser.updateExcept { it.username }
             .by { it.id }
+            .build()
 
-        assertEquals("UPDATE tb_user SET username = :usernameNew WHERE id = :id", sql)
-        assertEquals(mapOf("id" to 1, "username" to "test", "usernameNew" to "test"), paramMap)
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET gender = :genderNew, id = :idNew WHERE id = :id", sql)
+        assertEquals(mapOf("idNew" to 1,"genderNew" to null,"username" to "test","usernameNew" to "test", "id" to 1), paramMap)
+        // Update tb_user set username = 'test' where id = 1
     }
 
     @Test
@@ -83,15 +104,27 @@ class Update {
     }
 
     @Test
+    fun testUpdate4_1() {
+        val (sql, paramMap) = user.update()
+            .set { it.gender = 1 }
+            .where { it.id == 1 }
+            .build()
+
+        assertEquals("UPDATE tb_user SET gender = :genderNew WHERE id = :id", sql)
+        assertEquals(mapOf("id" to 1, "genderNew" to 1), paramMap)
+        // Update tb_user set gender = 1 where id = 1
+    }
+
+    @Test
     fun testUpdate5() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id < 1 }.build()
-
+            .where { it.id < 1 && it.id > 0}.build()
+                /*it.id < 1 && it.id > 0*/
         println(sql)
         println(paramMap)
 
-        assertEquals("update tb_user set id = :id, username = :username where id < 1 and id > 0", sql)
-        assertEquals(mapOf(), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id < :idMax AND id > :idMin", sql)
+        assertEquals(mapOf("id" to 1,"idNew" to 1,"usernameNew" to "test","username" to "test","idMin" to 0,"idMax" to 1), paramMap)
         // Update tb_user set id = 1, username = 1 where id < 1 and id > 0
     }
 
@@ -103,7 +136,31 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("update tb_user set id = :id, username = :username where id < 1", sql)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != 1", sql)
+        assertEquals(mapOf(), paramMap)
+    }
+
+    @Test
+    fun testUpdate6_1() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id != 1 }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != 1", sql)
+        assertEquals(mapOf(), paramMap)
+    }
+
+    @Test
+    fun testUpdate7() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.username like "%t"  }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE username LIKE \"%t\"", sql)
         assertEquals(mapOf(), paramMap)
     }
 }

@@ -13,9 +13,6 @@ import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
 // A helper class for specifying the receiver of an IR function call
 // applyIrCall的辅助类，用于指定IR函数调用的接收器
@@ -83,7 +80,7 @@ internal fun IrType.asSimpleType(): IrSimpleType = this as IrSimpleType
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 internal fun Collection<IrConstructorCall>.findByFqName(fqName: FqName): IrConstructorCall? =
-    firstOrNull { it.symbol.descriptor.fqNameSafe == fqName }
+    firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == fqName }
 
 fun <T, R> withMultiple(obj1: T, obj2: T, block: (T, T) -> R): R {
     return block(obj1, obj2)

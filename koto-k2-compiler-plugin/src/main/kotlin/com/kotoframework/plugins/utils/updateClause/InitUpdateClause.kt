@@ -16,13 +16,13 @@ import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.name.FqName
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val initUpdateClauseSymbol
     get() = referenceFunctions(FqName("com.kotoframework.orm.update.initUpdateClause"))
         .first()
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotoframework.beans.dsl.Field"))!!

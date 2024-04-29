@@ -70,8 +70,8 @@ object Extensions {
         val beanInfo: BeanInfo = Introspector.getBeanInfo(this::class.java)
         val propertyDescriptors = beanInfo.propertyDescriptors
         for (i in propertyDescriptors.indices) {
-            val descriptor: PropertyDescriptor = propertyDescriptors[i]
-            val propertyName: String = descriptor.name
+            val descriptor = propertyDescriptors[i]
+            val propertyName = descriptor.name
             if (propertyName != "class") {
                 map[propertyName] = descriptor.readMethod.invoke(this)
             }

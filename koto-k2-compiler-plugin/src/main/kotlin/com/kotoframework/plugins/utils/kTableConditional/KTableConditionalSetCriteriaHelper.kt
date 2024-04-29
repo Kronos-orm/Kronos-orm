@@ -258,7 +258,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                 "contains" -> {
                     type = "in"
                     paramName = getColumnName(args[0]!!)
-                    value = (element.extensionReceiver as IrCall).valueArguments[0]
+                    value = (element.extensionReceiver as IrCall)
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 

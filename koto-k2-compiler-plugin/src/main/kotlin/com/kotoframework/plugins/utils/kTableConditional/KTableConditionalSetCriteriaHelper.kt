@@ -43,7 +43,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
     val children: MutableList<IrVariable?> = mutableListOf()
     var tableName: IrExpression? = null
 
-    when(element) {
+    when (element) {
         is IrBlockBody -> {
             element.statements.forEach { statement ->
                 children.add(buildCriteria(statement))
@@ -53,8 +53,8 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
         is IrIfThenElseImpl -> {
             type = element.funcName(setNot)
             element.branches.forEach {
-                children.add(buildCriteria(it.condition , setNot))
-                children.add(buildCriteria(it.result , setNot))
+                children.add(buildCriteria(it.condition, setNot))
+                children.add(buildCriteria(it.result, setNot))
             }
         }
 
@@ -69,92 +69,129 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                 return buildCriteria(element.dispatchReceiver!!, !not)
             }
             when (funcName) {
-                    "isNull" -> {
-                        type = funcName
+                "isNull" -> {
+                    type = funcName
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "notNull" -> {
+                    type = "isNull"
+                    not = !not
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "lt", "gt", "le", "ge" -> {
+                    type = funcName
+                    if (args.isEmpty()) {
+                        // 形如it.<property>.lt的写法
+                        val receiver = irGet(extensionReceiverParameter!!)
                         paramName = getColumnName(element.extensionReceiver!!)
                         tableName = getTableName(element.dispatchReceiver!!)
-                    }
-
-                    "notNull" -> {
-                        type = "isNull"
-                        not = !not
-                        paramName = getColumnName(element.extensionReceiver!!)
-                        tableName = getTableName(element.dispatchReceiver!!)
-                    }
-
-                    "lt" , "gt" , "le" , "ge" -> {
-                        type = funcName
-                        if (args.isEmpty()) {
-                            // 形如it.<property>.lt的写法
-                            val receiver = irGet(extensionReceiverParameter!!)
-                            paramName = getColumnName(element.extensionReceiver!!)
-                            tableName = getTableName(element.dispatchReceiver!!)
-                            value = applyIrCall(
-                                propParamSymbol!!,
-                                irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
-                            ) {
-                                dispatchBy(receiver)
-                            }
-                        } else {
-                            val irCall = args.first()!!.asIrCall()
-                            if (irCall.extensionReceiver is IrCall) {
-                                // 形如it.<property> < 100的写法
-                                paramName = getColumnName(irCall.extensionReceiver!!)
-                                value = irCall.valueArguments.first()!!
-                            } else if (irCall.extensionReceiver is IrConstImpl<*>) {
-                                // 形如100 < it.<property> 的写法
-                                paramName = getColumnName(irCall.valueArguments.first()!!)
-                                value = irCall.extensionReceiver
-                            }
-                            tableName = getTableName(irCall.dispatchReceiver!!)
+                        value = applyIrCall(
+                            propParamSymbol!!,
+                            irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
+                        ) {
+                            dispatchBy(receiver)
                         }
-                    }
-
-                    "equal" -> {
-                        type = funcName
-                        not = if (element.valueArguments.isEmpty()) !not else not
-                        val index = if (args.first() is IrConstImpl<*>) 1 else 0
-                        val irCall = args[index]!!.asIrCall()
-                        paramName = getColumnName(irCall)
-                        value = args[1 - index]
+                    } else {
+                        val irCall = args.first()!!.asIrCall()
+                        if (irCall.extensionReceiver is IrCall) {
+                            // 形如it.<property> < 100的写法
+                            paramName = getColumnName(irCall.extensionReceiver!!)
+                            value = irCall.valueArguments.first()!!
+                        } else if (irCall.extensionReceiver is IrConstImpl<*>) {
+                            // 形如100 < it.<property> 的写法
+                            paramName = getColumnName(irCall.valueArguments.first()!!)
+                            value = irCall.extensionReceiver
+                        }
                         tableName = getTableName(irCall.dispatchReceiver!!)
                     }
+                }
 
-                    "between", "like" -> {
-                        type = funcName
-                        paramName = getColumnName(element.extensionReceiver!!)
-                        value = args[0]
-                        tableName = getTableName(element.dispatchReceiver!!)
+                "equal" -> {
+                    type = funcName
+                    not = if (element.valueArguments.isEmpty()) !not else not
+                    val index = if (args.first() is IrConstImpl<*>) 1 else 0
+                    val irCall = args[index]!!.asIrCall()
+                    paramName = getColumnName(irCall)
+                    value = args[1 - index]
+                    tableName = getTableName(irCall.dispatchReceiver!!)
+                }
+
+                "eq" -> {
+                    type = "equal"
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = applyIrCall(
+                        propParamSymbol!!,
+                        irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                    ) {
+                        dispatchBy(irGet(extensionReceiverParameter!!))
                     }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
 
-                    "notBetween", "notLike" -> {
-                        type = when (funcName) {
-                            "notBetween" -> "between"
-                            else -> "like"
-                        }
-                        not = !not
-                        paramName = getColumnName(element.extensionReceiver!!)
-                        value = args[0]
-                        tableName = getTableName(element.dispatchReceiver!!)
+                "neq" -> {
+                    type = "equal"
+                    not = !not
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = applyIrCall(
+                        propParamSymbol!!,
+                        irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                    ) {
+                        dispatchBy(irGet(extensionReceiverParameter!!))
                     }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
 
-                    "neq" -> {
-                        type = "equal"
-                        not = !not
-                        paramName = getColumnName(element.extensionReceiver!!)
-                        value = applyIrCall(
+                "between", "like" -> {
+                    type = funcName
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = if (args.isEmpty()) {
+                        applyIrCall(
                             propParamSymbol!!,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
-                        tableName = getTableName(element.dispatchReceiver!!)
+                    } else {
+                        args[0]
                     }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
 
-                    "asSql" -> {
-                        type = "sql"
-                        value = element.extensionReceiver
+                "notBetween", "notLike" -> {
+                    type = when (funcName) {
+                        "notBetween" -> "between"
+                        else -> "like"
                     }
+                    not = !not
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = if (args.isEmpty()) {
+                        applyIrCall(
+                            propParamSymbol!!,
+                            irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                        ) {
+                            dispatchBy(irGet(extensionReceiverParameter!!))
+                        }
+                    } else {
+                        args[0]
+                    }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "contains" -> {
+                    type = "in"
+                    paramName = getColumnName(args[0]!!)
+                    value = (element.extensionReceiver as IrCall).valueArguments[0]
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "asSql" -> {
+                    type = "sql"
+                    value = element.extensionReceiver
+                }
             }
         }
 
@@ -168,5 +205,5 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
 
     }
 
-    return CriteriaIR(paramName , type , not , value , children.filterNotNull() , tableName).toIrVariable()
+    return CriteriaIR(paramName, type, not, value, children.filterNotNull(), tableName).toIrVariable()
 }

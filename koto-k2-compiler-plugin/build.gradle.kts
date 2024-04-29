@@ -90,6 +90,11 @@ publishing {
                         name.set("ousc")
                         email.set("sundaiyue@foxmail.com")
                     }
+                    developer {
+                        id.set("FOYU")
+                        name.set("FOYU")
+                        email.set("2456416562@qq.com")
+                    }
                 }
             }
         }

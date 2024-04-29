@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
+import kotlin.jvm.internal.Intrinsics.Kotlin
 
 /**
  * Adds IR for setting simple criteria. example: criteriaField.setCriteria(tmp)
@@ -177,6 +178,77 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                         }
                     } else {
                         args[0]
+                    }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "matchLeft" -> {
+                    type = "like"
+                    val str = if (args.isEmpty()) {
+                        applyIrCall(
+                            propParamSymbol!!,
+                            irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                        ) {
+                            dispatchBy(irGet(extensionReceiverParameter!!))
+                        }
+                    } else {
+                        args[0]
+                    }
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = applyIrCall(
+                        stringPlusSymbol,
+                        irString("%")
+                    ){
+                        dispatchBy(str)
+                    }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "matchRight" -> {
+                    type = "like"
+                    val str = if (args.isEmpty()) {
+                        applyIrCall(
+                            propParamSymbol!!,
+                            irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                        ) {
+                            dispatchBy(irGet(extensionReceiverParameter!!))
+                        }
+                    } else {
+                        args[0]
+                    }
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = applyIrCall(
+                        stringPlusSymbol,
+                        str
+                    ) {
+                        dispatchBy(irString("%"))
+                    }
+                    tableName = getTableName(element.dispatchReceiver!!)
+                }
+
+                "matchBoth" -> {
+                    type = "like"
+                    val str = if (args.isEmpty()) {
+                        applyIrCall(
+                            propParamSymbol!!,
+                            irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                        ) {
+                            dispatchBy(irGet(extensionReceiverParameter!!))
+                        }
+                    } else {
+                        args[0]
+                    }
+                    paramName = getColumnName(element.extensionReceiver!!)
+                    value = applyIrCall(
+                        stringPlusSymbol,
+                        applyIrCall(
+                            stringPlusSymbol,
+                            irString("%")
+                        ) {
+                            dispatchBy(str)
+                        }
+                    ) {
+                        dispatchBy(irString("%"))
                     }
                     tableName = getTableName(element.dispatchReceiver!!)
                 }

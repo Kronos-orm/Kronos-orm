@@ -18,12 +18,12 @@ import org.jetbrains.kotlin.name.FqName
  * 定义多个 Kotlin IR 扩展，用于在 Kotlin 编译器插件的 IR 转换过程中处理 `KTable` 类的特定方法。
  */
 //KTableConditional类的setCriteria函数
-context(IrBuilderWithScope, IrPluginContext)
+context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 internal val criteriaSetterSymbol
     get() = referenceClass(FqName("com.kotoframework.beans.dsl.KTableConditional"))!!.getPropertySetter("criteria")!!
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val criteriaClassSymbol
     get() = referenceClass(FqName("com.kotoframework.beans.dsl.Criteria"))!!
@@ -33,10 +33,15 @@ context(IrBuilderWithScope, IrPluginContext)
 private val addCriteriaChild
     get() = criteriaClassSymbol.getSimpleFunction("addChild")!!
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val string2ConditionTypeSymbol
     get() = referenceFunctions(FqName("com.kotoframework.enums.toConditionType")).first()
+
+context(IrPluginContext)
+@OptIn(FirIncompatiblePluginAPI::class)
+internal val stringPlusSymbol
+    get() = referenceFunctions(FqName("kotlin.String.plus")).first()
 
 // 获取koto函数名
 context(IrPluginContext)

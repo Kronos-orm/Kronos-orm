@@ -33,36 +33,39 @@ object ConditionSqlBuilder {
 
                 ConditionType.EQUAL -> "${condition.field} ${if (condition.not) "!=" else "="} :${condition.field}"
                     .apply { paramMap.put("${condition.field}", condition.value) }
+
                 ConditionType.ISNULL -> "${condition.field} IS${if (condition.not) " NOT " else " "}NULL"
+
                 ConditionType.SQL -> condition.value.toString()
+
                 ConditionType.LIKE -> {
-                    condition.value?.let { paramMap.put(condition.field.toString(), it) }
                     "${condition.field}${if (condition.not) " NOT" else ""} LIKE :${condition.field}"
+                        .apply { paramMap.put("${condition.field}", condition.value) }
                 }
 
                 ConditionType.IN -> {
-                    condition.value?.let { paramMap.put("${condition.field}List", it as Collection<*>) }
                     "${condition.field} ${if (condition.not) "NOT IN" else "IN"} (:${condition.field}List)"
+                        .apply { paramMap.put("${condition.field}List", condition.value) }
                 }
 
                 ConditionType.GT -> {
-                    condition.value?.let { paramMap.put("${condition.field}Min", it) }
                     "${condition.field} > :${condition.field}Min"
+                        .apply { paramMap.put("${condition.field}Min", condition.value) }
                 }
 
                 ConditionType.GE -> {
-                    condition.value?.let { paramMap.put("${condition.field}Min", it) }
                     "${condition.field} >= :${condition.field}Min"
+                        .apply { paramMap.put("${condition.field}Min", condition.value) }
                 }
 
                 ConditionType.LT -> {
-                    condition.value?.let { paramMap.put("${condition.field}Max", it) }
                     "${condition.field} < :${condition.field}Max"
+                        .apply { paramMap.put("${condition.field}Max", condition.value) }
                 }
 
                 ConditionType.LE -> {
-                    condition.value?.let { paramMap.put("${condition.field}Max", it) }
                     "${condition.field} <= :${condition.field}Max"
+                        .apply { paramMap.put("${condition.field}Max", condition.value) }
                 }
 
                 ConditionType.BETWEEN -> {

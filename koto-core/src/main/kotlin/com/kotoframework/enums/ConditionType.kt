@@ -13,7 +13,6 @@ enum class ConditionType {
     BETWEEN,
     AND,
     OR,
-    NOT,
     ROOT
 }
 

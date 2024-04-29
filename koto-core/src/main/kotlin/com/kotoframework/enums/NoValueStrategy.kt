@@ -4,7 +4,6 @@ enum class NoValueStrategy {
     Ignore,
     False,
     True,
-    IsNull,
-    NotNull,
+    JudgeNull,
     Smart
 }

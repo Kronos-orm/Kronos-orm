@@ -8,9 +8,7 @@ class Criteria(
     var not: Boolean = false, // whether the condition is not
     var value: Any? = null, // value
     val tableName: String? = "", // table name
-    var pos: MatchPosition? = MatchPosition.Never, // like position
-    var sql: String = "", // sql
-    private var noValueStrategy: NoValueStrategy = smart, // when the value is null, whether to generate sql,
+    var noValueStrategy: NoValueStrategy = smart, // when the value is null, whether to generate sql,
     var children: MutableList<Criteria?> = mutableListOf()
 ) {
     init {
@@ -27,7 +25,7 @@ class Criteria(
     }
 
     override fun toString(): String {
-        return "Criteria(field='$field', type=$type, not=$not, value=$value, tableName=$tableName, pos=$pos, sql='$sql', noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
+        return "Criteria(field='$field', type=$type, not=$not, value=$value, tableName=$tableName, noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
     }
 
 }

@@ -6,14 +6,7 @@ import com.kotoframework.enums.*
  * Created by ousc on 2022/4/18 10:49
  */
 
-/*
-* when use like, you can use this to set the position of the like
-* */
-val Left = MatchPosition.Left
-val Right = MatchPosition.Right
-val Both = MatchPosition.Both
-val Never = MatchPosition.Never
-
+val Root = ConditionType.ROOT
 val Like = ConditionType.LIKE
 val Equal = ConditionType.EQUAL
 val In = ConditionType.IN

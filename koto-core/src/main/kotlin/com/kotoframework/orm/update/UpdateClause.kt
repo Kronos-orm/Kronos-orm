@@ -8,7 +8,7 @@ import com.kotoframework.enums.*
 import com.kotoframework.exceptions.NeedUpdateConditionException
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KotoDataSourceWrapper
-import com.kotoframework.orm.utils.ConditionSqlBuilder
+import com.kotoframework.utils.ConditionSqlBuilder
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
 import com.kotoframework.utils.Extensions.toMap

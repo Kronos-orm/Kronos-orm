@@ -37,7 +37,7 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id", sql)
+        assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1, "usernameNew" to "123", "genderNew" to 1), paramMap)
         // Update tb_user set username = '123' where id = 1
 
@@ -57,7 +57,10 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id AND username = :username", sql)
+        assertEquals(
+            "UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE `id` = :id AND `username` = :username",
+            sql
+        )
         assertEquals(mapOf("id" to 1, "usernameNew" to "123", "genderNew" to 1, "username" to "test"), paramMap)
         // Update tb_user set username = '123' where id = 1
 
@@ -72,7 +75,7 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE id = :id", sql)
+        assertEquals("UPDATE tb_user SET username = :usernameNew, gender = :genderNew WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1, "usernameNew" to null, "genderNew" to null), paramMap)
 
     }
@@ -86,8 +89,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET gender = :genderNew, id = :idNew WHERE id = :id", sql)
-        assertEquals(mapOf("idNew" to 1,"genderNew" to null,"username" to "test","usernameNew" to "test", "id" to 1), paramMap)
+        assertEquals("UPDATE tb_user SET gender = :genderNew, id = :idNew WHERE `id` = :id", sql)
+        assertEquals(mapOf("idNew" to 1, "genderNew" to null, "usernameNew" to "test", "id" to 1), paramMap)
         // Update tb_user set username = 'test' where id = 1
     }
 
@@ -97,7 +100,7 @@ class Update {
             .set { it.gender = 1 }
             .by { it.id }
 
-        assertEquals("UPDATE tb_user SET gender = :genderNew WHERE id = :id", sql)
+        assertEquals("UPDATE tb_user SET gender = :genderNew WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1, "genderNew" to 1), paramMap)
         // Update tb_user set gender = 1 where id = 1
     }
@@ -109,7 +112,7 @@ class Update {
             .where { it.id == 1 }
             .build()
 
-        assertEquals("UPDATE tb_user SET gender = :genderNew WHERE id = :id", sql)
+        assertEquals("UPDATE tb_user SET gender = :genderNew WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1, "genderNew" to 1), paramMap)
         // Update tb_user set gender = 1 where id = 1
     }
@@ -118,12 +121,13 @@ class Update {
     fun testUpdate5() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id < 1 && it.id > 0}.build()
-                /*it.id < 1 && it.id > 0*/
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id < :idMax AND id > :idMin", sql)
-        assertEquals(mapOf("id" to 1,"idNew" to 1,"usernameNew" to "test","username" to "test","idMin" to 0,"idMax" to 1), paramMap)
+        assertEquals(
+            "UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` < :idMax AND `id` > :idMin", sql
+        )
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMin" to 0, "idMax" to 1), paramMap)
         // Update tb_user set id = 1, username = 1 where id < 1 and id > 0
     }
 
@@ -135,8 +139,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != :id", sql)
-        assertEquals(mapOf("id" to 1,"idNew" to 1,"usernameNew" to "test","username" to "test"), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` != :id", sql)
+        assertEquals(mapOf("id" to 1, "idNew" to 1, "usernameNew" to "test"), paramMap)
     }
 
     @Test
@@ -147,8 +151,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id != :id", sql)
-        assertEquals(mapOf("id" to 1,"idNew" to 1,"usernameNew" to "test","username" to "test"), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` != :id", sql)
+        assertEquals(mapOf("id" to 1, "idNew" to 1, "usernameNew" to "test"), paramMap)
     }
 
     @Test
@@ -159,8 +163,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE username LIKE :username", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t", "id" to 1), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t"), paramMap)
     }
 
     @Test
@@ -171,8 +175,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE username LIKE :username", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t", "id" to 1), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t"), paramMap)
     }
 
     @Test
@@ -183,8 +187,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE username NOT LIKE :username", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t", "id" to 1), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` NOT LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t"), paramMap)
     }
 
     @Test
@@ -195,8 +199,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE username NOT LIKE :username", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t", "id" to 1), paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` NOT LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%t"), paramMap)
     }
 
     // 再写两个 一个是 between 一个是 notBetween //     infix fun Comparable<*>?.between(other: ClosedRange<*>?): Boolean = true
@@ -209,13 +213,13 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id BETWEEN :idMin AND :idMax", sql)
+        assertEquals(
+            "UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` BETWEEN :idMin AND :idMax", sql
+        )
         assertEquals(
             mapOf(
                 "idNew" to 1,
                 "usernameNew" to "test",
-                "username" to "test",
-                "id" to 1,
                 "idMin" to 1,
                 "idMax" to 2
             ), paramMap
@@ -231,15 +235,13 @@ class Update {
         println(paramMap)
 
         assertEquals(
-            "UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id NOT BETWEEN :idMin AND :idMax",
+            "UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` NOT BETWEEN :idMin AND :idMax",
             sql
         )
         assertEquals(
             mapOf(
                 "idNew" to 1,
-                "id" to 1,
                 "usernameNew" to "test",
-                "username" to "test",
                 "idMin" to 1,
                 "idMax" to 2
             ),
@@ -259,8 +261,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id IS NULL", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test", "id" to 1),paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IS NULL", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test"), paramMap)
     }
 
     @Test
@@ -294,9 +296,44 @@ class Update {
             }.build()
 
         assertEquals(
-            "UPDATE movie SET vote = :voteNew, score = :scoreNew, favorite = :favoriteNew WHERE id = :id", sql
+            "UPDATE movie SET actor = :actorNew, country = :countryNew, description = :descriptionNew, director = :directorNew, favorite = :favoriteNew, id = :idNew, language = :languageNew, name = :nameNew, poster = :posterNew, score = :scoreNew, summary = :summaryNew, tags = :tagsNew, type = :typeNew, video = :videoNew, vote = :voteNew, year = :yearNew WHERE xxxxxxx AND `id` = :id AND `name` LIKE :name AND `score` BETWEEN :scoreMin AND :scoreMax AND `tags` = :tags AND `description` LIKE :description AND (`year` IN (:yearList) OR `vote` < :voteMax OR `favorite` = :favorite) AND `director` = :director AND `actor` = :actor AND (`country` NOT IN (:countryList) OR `language` = :language OR (`poster` IS NOT NULL AND `video` IS NOT NULL AND `summary` NOT LIKE :summary))",
+            sql
         )
-        assertEquals(mapOf(), paramMap)
+        val expectedMap = mapOf(
+            "id" to 1L,
+            "name" to "%testMovie%",
+            "scoreMin" to 1,
+            "scoreMax" to 2,
+            "tags" to "test, testMovie",
+            "description" to "%A test movie%",
+            "yearList" to listOf(2021, 2022),
+            "voteMax" to 10,
+            "favorite" to 1,
+            "director" to "testDirector",
+            "actor" to "testActor",
+            "countryList" to listOf("China", "Japan"),
+            "language" to "English",
+            "summary" to "%test%",
+            "actorNew" to "testActor",
+            "countryNew" to "America",
+            "descriptionNew" to "A test movie",
+            "directorNew" to "testDirector",
+            "favoriteNew" to 1,
+            "idNew" to 1L,
+            "languageNew" to "English",
+            "nameNew" to "testMovie",
+            "posterNew" to "http://test.com/test.jpg",
+            "scoreNew" to 1.5,
+            "summaryNew" to "This is a test movie",
+            "tagsNew" to "test, testMovie",
+            "typeNew" to "Comedy",
+            "videoNew" to "http://test.com/test.mp4",
+            "voteNew" to 1,
+            "yearNew" to 2021,
+        )
+        assertEquals(
+            expectedMap, paramMap
+        )
     }
 
     @Test
@@ -307,8 +344,8 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id IS NOT NULL", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test", "id" to 1),paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IS NOT NULL", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test"), paramMap)
     }
 
     // in
@@ -330,12 +367,10 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id IN (:idList)", sql)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
         assertEquals( mapOf(
-            "id" to 1,
             "idNew" to 1,
             "usernameNew" to "test",
-            "username" to "test",
             "idList" to listOf(1, 2, 3)
         ), paramMap)
     }
@@ -348,12 +383,10 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id NOT IN (:idList)", sql)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` NOT IN (:idList)", sql)
         assertEquals( mapOf(
-            "id" to 1,
             "idNew" to 1,
             "usernameNew" to "test",
-            "username" to "test",
             "idList" to listOf(1, 2, 3)
         ), paramMap)
     }
@@ -366,12 +399,10 @@ class Update {
         println(sql)
         println(paramMap)
 
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE id IN (:idList)", sql)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
         assertEquals( mapOf(
-            "id" to 1,
             "idNew" to 1,
             "usernameNew" to "test",
-            "username" to "test",
             "idList" to listOf(1, 2, 3)
         ), paramMap)
     }

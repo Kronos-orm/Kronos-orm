@@ -33,8 +33,7 @@ val DESC = SortType.DESC
 val ignore = NoValueStrategy.Ignore
 val alwaysFalse = NoValueStrategy.False
 val alwaysTrue = NoValueStrategy.True
-val isNull = NoValueStrategy.IsNull
-val notNull = NoValueStrategy.NotNull
+val judgeNull = NoValueStrategy.JudgeNull
 val smart = NoValueStrategy.Smart
 
 //val INNER_JOIN = JoinType.INNER_JOIN

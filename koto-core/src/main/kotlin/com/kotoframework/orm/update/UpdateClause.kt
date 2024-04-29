@@ -8,9 +8,9 @@ import com.kotoframework.enums.*
 import com.kotoframework.exceptions.NeedUpdateConditionException
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KotoDataSourceWrapper
-import com.kotoframework.utils.ConditionSqlBuilder
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
+import com.kotoframework.utils.ConditionSqlBuilder
 import com.kotoframework.utils.Extensions.toMap
 import kotlin.reflect.full.createInstance
 
@@ -107,14 +107,19 @@ class UpdateClause<T : KPojo>(
             }
         }
 
-        if (toUpdateFields.size == 0) {
+        if (toUpdateFields.isEmpty()) {
             // 全都更新
             toUpdateFields = allFields.toMutableSet()
+            toUpdateFields.forEach {
+                paramMapNew[Field(
+                    it.columnName, it.name + "New"
+                )] = paramMap[it.name]
+            }
         }
 
         val updateFields = toUpdateFields.joinToString(", ") { "${it.name} = :${it.name + "New"}" }
 
-        var (conditionSql,paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, paramMap)
+        var (conditionSql,paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         if (conditionSql != null) {
             conditionSql = "WHERE $conditionSql"
         }

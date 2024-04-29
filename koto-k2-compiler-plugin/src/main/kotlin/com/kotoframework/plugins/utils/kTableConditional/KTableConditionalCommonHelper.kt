@@ -69,6 +69,25 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
 
 }
 
+context(IrPluginContext)
+fun parseConditionType(funcName: String): Pair<String, Boolean> {
+    return when (funcName) {
+        "isNull" -> funcName to false
+        "notNull" -> "isNull" to true
+        "lt", "gt", "le", "ge" -> funcName to false
+        "equal" -> "equal" to false
+        "eq" -> "equal" to false
+        "neq" -> "equal" to true
+        "between" -> "between" to false
+        "notBetween" -> "between" to true
+        "like", "matchLeft", "matchRight", "matchBoth" -> "like" to false
+        "notLike" -> "like" to true
+        "contains" -> "in" to false
+        "asSql" -> "sql" to false
+        else -> throw IllegalArgumentException("Unknown condition type: $funcName")
+    }
+}
+
 // 创建Criteria语句
 context(IrBlockBuilder, IrPluginContext)
 fun createCriteria(

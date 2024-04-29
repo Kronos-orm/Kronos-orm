@@ -285,10 +285,10 @@ class Update {
         )
 
         val (sql, paramMap) = movie.update().where {
-                it.id.eq && it.name.matchBoth && it.score.between(1..2) && it.tags.eq && it.description.matchBoth && (it.year in listOf(
-                    2021,
-                    2022
-                ) || it.vote < 10 || it.favorite == 1) && it.director.eq && it.actor.eq && (it.country !in listOf(
+            "xxxxxxx".asSql() && it.id.eq && it.name.matchBoth && it.score.between(1..2) && it.tags.eq && it.description.matchBoth && (it.year in listOf(
+                        2021,
+            2022
+            ) || it.vote < 10 || it.favorite == 1) && it.director.eq && it.actor.eq && (it.country !in listOf(
                     "China", "Japan"
                 ) || it.language.eq || (it.poster.notNull && it.video.notNull && it.summary.notLike("%test%")))
             }.build()

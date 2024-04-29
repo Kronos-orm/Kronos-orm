@@ -13,7 +13,7 @@ import java.lang.reflect.Method
 class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
     // Access Android Log API by reflection, because Android SDK is not a JDK 9 module,
     // we are not able to require it in module-info.java.
-    private val logClass = Class.forName("android.util.Log")
+    private val logClass = Class.forName("android.utils.Log")
     private val isLoggableMethod = logClass.getMethod("isLoggable", String::class.java, Int::class.javaPrimitiveType)
     private val methodCache = mutableMapOf<String, Method>()
     private val getLoggerMethod =

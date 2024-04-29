@@ -32,8 +32,9 @@ object ConditionSqlBuilder {
                 }
 
                 ConditionType.EQUAL -> "${condition.field} ${if (condition.not) "!=" else "="} :${condition.field}"
+                    .apply { paramMap.put("${condition.field}", condition.value) }
                 ConditionType.ISNULL -> "${condition.field} IS${if (condition.not) " NOT " else " "}NULL"
-                ConditionType.SQL -> condition.sql
+                ConditionType.SQL -> condition.value.toString()
                 ConditionType.LIKE -> {
                     condition.value?.let { paramMap.put(condition.field.toString(), it) }
                     "${condition.field}${if (condition.not) " NOT" else ""} LIKE :${condition.field}"

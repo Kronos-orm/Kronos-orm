@@ -1,3 +1,5 @@
 package com.kotoframework.exceptions
 
-class NeedUpdateConditionException(message: String) : RuntimeException(message)
+import com.kotoframework.i18n.Noun.needUpdateConditionMessage
+
+class NeedUpdateConditionException(message: String = needUpdateConditionMessage) : RuntimeException(message)

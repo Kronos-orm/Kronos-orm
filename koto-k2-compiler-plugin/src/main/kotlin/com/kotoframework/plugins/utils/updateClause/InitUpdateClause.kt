@@ -33,7 +33,7 @@ fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
     return applyIrCall(
         initUpdateClauseSymbol,
         expression,
-        getTableName(expression),
+        getTableName(irClass),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }

@@ -23,6 +23,6 @@ fun main() {
     val testUser = User(1, "test")
 
     testUser.update { it.id + it.username }
-        .where { it.id < 1 }
+        .where { it.id between 123..456 }
         .execute()
 }

@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -99,9 +100,13 @@ fun getTableName(expression: IrExpression): IrExpression {
         is IrCall -> expression.type.getClass()
         else -> throw IllegalStateException("Unexpected expression type: $expression")
     }!!
-    val annotations = irClass.annotations
+    return getTableName(irClass)
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun getTableName(irClass: IrClass): IrExpression {
     val tableAnnotation =
-        annotations.findByFqName(FqName("com.kotoframework.annotations.Table"))
+        irClass.annotations.findByFqName(FqName("com.kotoframework.annotations.Table"))
     return tableAnnotation?.getValueArgument(0) ?: applyIrCall(
         tableK2dbSymbol, irString(
             irClass.name.asString()

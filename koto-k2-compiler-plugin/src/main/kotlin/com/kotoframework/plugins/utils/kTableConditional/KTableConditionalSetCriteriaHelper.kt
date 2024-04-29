@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.irConcat
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -57,6 +58,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                 children.add(buildCriteria(it.condition, setNot))
                 children.add(buildCriteria(it.result, setNot))
             }
+            irConcat()
         }
 
         is IrCall -> {

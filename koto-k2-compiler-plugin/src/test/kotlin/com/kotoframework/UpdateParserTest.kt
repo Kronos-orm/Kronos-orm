@@ -46,7 +46,7 @@ class UpdateParserTest {
             .set {
                 it.username = "123" + 456
             }
-            .where { it.id != 1 }
+            .where { it.id in listOf(1,2,3) }
 //           .where {  !(it.gender.notNull && it.id == 1 || (it.username like "aa" }} || it.gender != 1)) }
             .execute()
       }

@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(project(":koto-core"))
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    implementation(kotlin("reflect"))
+    testImplementation(kotlin("test"))
 }
 
 tasks.test {

@@ -43,7 +43,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
 
         is IrCall -> {
             when (element.origin) {
-                is IrStatementOrigin.PLUS -> {
+                IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
                     fieldNames.addAll(addFieldsNames(element.extensionReceiver!!))
@@ -53,7 +53,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                     }
                 }
 
-                is IrStatementOrigin.GET_PROPERTY -> {
+                IrStatementOrigin.GET_PROPERTY -> {
                     getColumnName(element).let { fieldNames.add(it) }
                 }
             }

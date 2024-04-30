@@ -48,11 +48,11 @@ context(IrPluginContext)
 fun IrExpression.funcName(setNot: Boolean = false): String {
     return when (this) {
         is IrCall -> when (origin) {
-            is IrStatementOrigin.EQEQ , IrStatementOrigin.EXCLEQ -> "equal"
-            is IrStatementOrigin.GT -> "gt"
-            is IrStatementOrigin.LT -> "lt"
-            is IrStatementOrigin.GTEQ -> "ge"
-            is IrStatementOrigin.LTEQ -> "le"
+            IrStatementOrigin.EQEQ , IrStatementOrigin.EXCLEQ -> "equal"
+            IrStatementOrigin.GT -> "gt"
+            IrStatementOrigin.LT -> "lt"
+            IrStatementOrigin.GTEQ -> "ge"
+            IrStatementOrigin.LTEQ -> "le"
             else -> correspondingName?.asString() ?: symbol.owner.name.asString()
         }
 

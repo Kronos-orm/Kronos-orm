@@ -1,11 +1,11 @@
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.kotlin.kapt")
+    kotlin("kapt")
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    implementation(kotlin("reflect"))
+    testImplementation(kotlin("test"))
 }
 
 tasks.test {

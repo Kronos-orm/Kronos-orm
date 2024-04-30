@@ -2,7 +2,6 @@ package com.kotoframework.plugins.utils.kTableConditional
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
-import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
@@ -29,9 +28,11 @@ class CriteriaIR(
     // The name of the table, optional
     // 表的名称，可选
     private var tableName: IrExpression? = null,
+
+    private var noValueStrategy: IrExpression? = null
 ) {
     context(IrBlockBuilder, IrPluginContext)
     fun toIrVariable(): IrVariable {
-        return createCriteria(parameterName, type, not, value, children, tableName)
+        return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategy)
     }
 }

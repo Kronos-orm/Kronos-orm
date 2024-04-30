@@ -25,3 +25,4 @@ rootProject.children.forEach { project ->
 include("koto-core")
 include("koto-logging")
 include("koto-k2-compiler-plugin")
+include("koto-basic-wrapper")

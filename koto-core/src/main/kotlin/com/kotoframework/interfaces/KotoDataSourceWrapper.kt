@@ -127,7 +127,7 @@ interface KotoDataSourceWrapper {
     fun forObject(
         sql: String,
         paramMap: Map<String, Any?>,
-        javaClass: Class<*>
+        kClass: KClass<*>
     ): Any?
 
     /**

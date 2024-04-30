@@ -10,5 +10,9 @@ enum class DBType {
     Sybase,
     H2,
     OceanBase,
-    DM8
+    DM8;
+
+    companion object {
+        fun fromName(name: String) = entries.firstOrNull { it.name.uppercase() == name.uppercase() }
+    }
 }

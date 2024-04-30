@@ -17,6 +17,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(project(":koto-core"))
     testImplementation(project(":koto-logging"))
+    testImplementation(project(":koto-basic-wrapper"))
 }
 
 tasks.test {

@@ -6,12 +6,11 @@ import com.kotoframework.types.KTableField
 
 
 inline fun <reified T : KPojo> T.update(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, setUpdateFields)
+    return UpdateClause(this, false, setUpdateFields)
 }
+
 inline fun <reified T : KPojo> T.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, setUpdateFields).apply {
-        isExcept = true
-    }
+    return UpdateClause(this, true, setUpdateFields)
 }
 
 fun initUpdateClause(clause: UpdateClause<*>, name: String, vararg fields: Field): UpdateClause<*> {

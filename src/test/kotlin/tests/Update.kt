@@ -18,6 +18,7 @@ class Update {
         }
     }
 
+
     private val user = User(1)
     private val testUser = User(1, "test")
 
@@ -25,13 +26,13 @@ class Update {
     fun testUpdate() {
         val (sql, paramMap) =
             user.update()
-            .set {
-                // use Field("username").setValue("123")
-                it.username = "123"
-                it.gender = 1
-            }
-            .by { it.id }
-            .build()
+                .set {
+                    // use Field("username").setValue("123")
+                    it.username = "123"
+                    it.gender = 1
+                }
+                .by { it.id }
+                .build()
 
 
         println(sql)
@@ -99,6 +100,7 @@ class Update {
         val (sql, paramMap) = user.update()
             .set { it.gender = 1 }
             .by { it.id }
+            .build()
 
         assertEquals("UPDATE tb_user SET gender = :genderNew WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1, "genderNew" to 1), paramMap)
@@ -120,7 +122,7 @@ class Update {
     @Test
     fun testUpdate5() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id < 1 && it.id > 0}.build()
+            .where { it.id < 1 && it.id > 0 }.build()
         println(sql)
         println(paramMap)
 
@@ -134,7 +136,7 @@ class Update {
     @Test
     fun testUpdate6() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id.neq  }.build()
+            .where { it.id.neq }.build()
 
         println(sql)
         println(paramMap)
@@ -158,7 +160,7 @@ class Update {
     @Test
     fun testUpdate7() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.username like "%t"  }.build()
+            .where { it.username like "%t" }.build()
 
         println(sql)
         println(paramMap)
@@ -277,8 +279,8 @@ class Update {
             country = "America",
             language = "English",
             description = "A test movie",
-            poster = "http://test.com/test.jpg",
-            video = "http://test.com/test.mp4",
+            poster = "https://test.com/test.jpg",
+            video = "https://test.com/test.mp4",
             summary = "This is a test movie",
             tags = "test, testMovie",
             score = 1.5,
@@ -288,12 +290,12 @@ class Update {
 
         val (sql, paramMap) = movie.update().where {
             "xxxxxxx".asSql() && it.id.eq && it.name.matchBoth && it.score.between(1..2) && it.tags.eq && it.description.matchBoth &&
-                    (it.year in listOf(2021,2022) || it.vote < 10 || it.favorite == 1) &&
+                    (it.year in listOf(2021, 2022) || it.vote < 10 || it.favorite == 1) &&
                     it.director.eq && it.actor.eq &&
                     (it.country !in listOf("China", "Japan") || it.language.eq ||
                             (it.poster.notNull && it.video.notNull && it.summary.notLike("%test%"))
                             )
-            }.build()
+        }.build()
 
         assertEquals(
             "UPDATE movie SET actor = :actorNew, country = :countryNew, description = :descriptionNew, director = :directorNew, favorite = :favoriteNew, id = :idNew, language = :languageNew, name = :nameNew, poster = :posterNew, score = :scoreNew, summary = :summaryNew, tags = :tagsNew, type = :typeNew, video = :videoNew, vote = :voteNew, year = :yearNew WHERE xxxxxxx AND `id` = :id AND `name` LIKE :name AND `score` BETWEEN :scoreMin AND :scoreMax AND `tags` = :tags AND `description` LIKE :description AND (`year` IN (:yearList) OR `vote` < :voteMax OR `favorite` = :favorite) AND `director` = :director AND `actor` = :actor AND (`country` NOT IN (:countryList) OR `language` = :language OR (`poster` IS NOT NULL AND `video` IS NOT NULL AND `summary` NOT LIKE :summary))",
@@ -322,12 +324,12 @@ class Update {
             "idNew" to 1L,
             "languageNew" to "English",
             "nameNew" to "testMovie",
-            "posterNew" to "http://test.com/test.jpg",
+            "posterNew" to "https://test.com/test.jpg",
             "scoreNew" to 1.5,
             "summaryNew" to "This is a test movie",
             "tagsNew" to "test, testMovie",
             "typeNew" to "Comedy",
-            "videoNew" to "http://test.com/test.mp4",
+            "videoNew" to "https://test.com/test.mp4",
             "voteNew" to 1,
             "yearNew" to 2021,
         )
@@ -368,11 +370,13 @@ class Update {
         println(paramMap)
 
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
-        assertEquals( mapOf(
-            "idNew" to 1,
-            "usernameNew" to "test",
-            "idList" to listOf(1, 2, 3)
-        ), paramMap)
+        assertEquals(
+            mapOf(
+                "idNew" to 1,
+                "usernameNew" to "test",
+                "idList" to listOf(1, 2, 3)
+            ), paramMap
+        )
     }
 
     @Test
@@ -384,11 +388,13 @@ class Update {
         println(paramMap)
 
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` NOT IN (:idList)", sql)
-        assertEquals( mapOf(
-            "idNew" to 1,
-            "usernameNew" to "test",
-            "idList" to listOf(1, 2, 3)
-        ), paramMap)
+        assertEquals(
+            mapOf(
+                "idNew" to 1,
+                "usernameNew" to "test",
+                "idList" to listOf(1, 2, 3)
+            ), paramMap
+        )
     }
 
     @Test
@@ -400,10 +406,12 @@ class Update {
         println(paramMap)
 
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
-        assertEquals( mapOf(
-            "idNew" to 1,
-            "usernameNew" to "test",
-            "idList" to listOf(1, 2, 3)
-        ), paramMap)
+        assertEquals(
+            mapOf(
+                "idNew" to 1,
+                "usernameNew" to "test",
+                "idList" to listOf(1, 2, 3)
+            ), paramMap
+        )
     }
 }

@@ -27,7 +27,7 @@ class NoneDataSourceWrapper : KotoDataSourceWrapper {
     override fun forObject(
         sql: String,
         paramMap: Map<String, Any?>,
-        javaClass: Class<*>
+        kClass: KClass<*>
     ): Any {
         throw NoDataSourceException(noDataSourceMessage)
     }

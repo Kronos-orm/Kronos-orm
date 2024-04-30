@@ -1,6 +1,7 @@
 package com.kotoframework.beans.dsl
 
 import com.kotoframework.annotations.UnsafeCriteria
+import com.kotoframework.enums.NoValueStrategy
 import com.kotoframework.interfaces.KPojo
 import java.util.*
 
@@ -14,6 +15,7 @@ open class KTableConditional<T : KPojo>(override val it: T): KTable<T>(it) {
 
     operator fun Number?.compareTo(other: Number?): Int = 1
     operator fun Date?.compareTo(other: Date?): Int = 1
+    fun Boolean?.ifNoValue(strategy: NoValueStrategy): Boolean = true
 
     @UnsafeCriteria("It's not safe to compare String with other Type.")
     operator fun <T> String?.compareTo(other: T?): Int = 1

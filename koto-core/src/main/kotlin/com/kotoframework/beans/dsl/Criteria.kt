@@ -11,11 +11,6 @@ class Criteria(
     var noValueStrategy: NoValueStrategy = smart, // when the value is null, whether to generate sql,
     var children: MutableList<Criteria?> = mutableListOf()
 ) {
-    init {
-        if (type != ConditionType.EQUAL && noValueStrategy == ignore) {
-            noValueStrategy = smart
-        }
-    }
 
     internal val valueAcceptable: Boolean
         get() = type != ISNULL && type != AND && type != OR && type != Root

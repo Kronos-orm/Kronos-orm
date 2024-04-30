@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 
@@ -95,11 +96,11 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                         }
                     } else {
                         val irCall = args.first()!!.asIrCall()
-                        if (irCall.extensionReceiver is IrCall) {
+                        if (irCall.extensionReceiver is IrCall && null != (irCall.extensionReceiver as IrCall).origin) {
                             // 形如it.<property> < 100的写法
                             paramName = getColumnName(irCall.extensionReceiver!!)
                             value = irCall.valueArguments.first()!!
-                        } else if (irCall.extensionReceiver is IrConstImpl<*>) {
+                        } else {
                             // 形如100 < it.<property> 的写法
                             paramName = getColumnName(irCall.valueArguments.first()!!)
                             value = irCall.extensionReceiver
@@ -109,9 +110,8 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                 }
 
                 "equal" -> {
-                    // TODO: 这里不对，比较的另一个属性不一定是IrConst
                     not = not xor element.valueArguments.isEmpty()
-                    val index = if (args.first() is IrConstImpl<*>) 1 else 0
+                    val index = if (args.first() is IrCall && null != (args.first()!! as IrCall).origin) 0 else 1
                     val irCall = args[index]!!.asIrCall()
                     paramName = getColumnName(irCall)
                     value = args[1 - index]

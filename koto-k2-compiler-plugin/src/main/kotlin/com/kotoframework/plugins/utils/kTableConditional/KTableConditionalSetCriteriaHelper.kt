@@ -39,13 +39,14 @@ fun setCriteriaIr() =
     }
 
 context(IrBlockBuilder, IrPluginContext, IrFunction)
-fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
+fun buildCriteria(element: IrElement, setNot: Boolean = false , noValueStrategy: IrExpression? = null): IrVariable? {
     var paramName: IrExpression? = null
     var type = "ROOT"
     var not = setNot
     var value: IrExpression? = null
     val children: MutableList<IrVariable?> = mutableListOf()
     var tableName: IrExpression? = null
+    var strategy = noValueStrategy
 
     when (element) {
         is IrBlockBody -> {
@@ -221,6 +222,11 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
                 "asSql" -> {
                     value = element.extensionReceiver
                 }
+
+                "ifNoValue" -> {
+                    strategy = args[0]
+                    return buildCriteria(element.extensionReceiver!! , not , strategy)
+                }
             }
         }
 
@@ -234,5 +240,5 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false): IrVariable? {
 
     }
 
-    return CriteriaIR(paramName, type, not, value, children.filterNotNull(), tableName).toIrVariable()
+    return CriteriaIR(paramName, type, not, value, children.filterNotNull(), tableName , strategy).toIrVariable()
 }

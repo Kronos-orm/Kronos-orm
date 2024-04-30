@@ -84,6 +84,7 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
         "notLike" -> "like" to true
         "contains" -> "in" to false
         "asSql" -> "sql" to false
+        "ifNoValue" -> "ifNoValue" to false
         else -> throw IllegalArgumentException("Unknown condition type: $funcName")
     }
 }
@@ -96,7 +97,8 @@ fun createCriteria(
     not: Boolean,
     value: IrExpression? = null,
     children: List<IrVariable> = listOf(),
-    tableName: IrExpression? = null
+    tableName: IrExpression? = null,
+    noValueStrategy: IrExpression? = null
 ): IrVariable {
     //创建Criteria
     val irVariable = irTemporary(
@@ -106,7 +108,8 @@ fun createCriteria(
             string2ConditionType(type),
             irBoolean(not),
             value,
-            tableName
+            tableName,
+            noValueStrategy
         )
     )
     //添加子条件

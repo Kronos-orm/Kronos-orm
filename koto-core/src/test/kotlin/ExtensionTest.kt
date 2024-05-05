@@ -15,7 +15,7 @@ class ExtensionTest {
         birthday = "2020-08-02",
         telephone = "13888888888",
         sex = "male",
-        avatar = "http://cdn.leinbo.com/avatar.png"
+        avatar = "https://cdn.leinbo.com/avatar.png"
     )
 
     private val map = mapOf(
@@ -28,7 +28,7 @@ class ExtensionTest {
         "birthday" to "2020-08-02",
         "telephone" to "13888888888",
         "sex" to "male",
-        "avatar" to "http://cdn.leinbo.com/avatar.png",
+        "avatar" to "https://cdn.leinbo.com/avatar.png",
         "updateTime" to null
     )
 

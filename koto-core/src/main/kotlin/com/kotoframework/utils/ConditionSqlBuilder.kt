@@ -18,13 +18,14 @@ object ConditionSqlBuilder {
         var initialized: Boolean = false,
         var metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
     )
-
     /**
-     * 构建 SQL 查询中的 WHERE 条件部分，并返回 SQL 字符串及对应的参数映射。
+     * 根据给定的条件类型构建对应的SQL查询条件。这里处理的是逻辑操作符（AND, OR）的情况。
      *
-     * @param condition 条件对象，可能为 null。如果非 null，则根据条件类型构建相应的 SQL 条件语句。
-     * @return Pair<String?, MutableMap<String, Any?>>，第一个元素是 SQL 条件字符串，第二个元素是参数映射。
-     *         如果输入条件为 null，则返回 Pair(null, emptyMap()).
+     * @param condition 当前处理的条件对象，包含逻辑操作类型和子条件。
+     * @param paramMap 查询参数映射表。
+     * @param needBrackets 判断是否需要在子条件周围添加括号。当子条件为逻辑操作符且与当前条件类型不同时，需要添加括号。
+     * @param keyCounters 用于生成唯一键名的计数器。
+     * @return 返回构建好的SQL条件字符串，如果条件为空则返回null。
      */
     fun buildConditionSqlWithParams(
         condition: Criteria?,
@@ -165,15 +166,6 @@ object ConditionSqlBuilder {
                     condition.field.quotedColumnName(), "NOT".takeIf { condition.not }, "BETWEEN", ":${safeKeyMin}", "AND", ":${safeKeyMax}"
                 )
             }
-
-            /**
-             * 根据给定的条件类型构建对应的SQL查询条件。这里处理的是逻辑操作符（AND, OR）的情况。
-             *
-             * @param condition 当前处理的条件对象，包含逻辑操作类型和子条件。
-             * @param paramMap 查询参数映射表。
-             * @param needBrackets 判断是否需要在子条件周围添加括号。当子条件为逻辑操作符且与当前条件类型不同时，需要添加括号。
-             * @return 返回构建好的SQL条件字符串，如果条件为空则返回null。
-             */
             AND, OR -> {
                 // 将子条件转换为SQL字符串，并根据需要添加括号。
                 val branches = condition.children.mapNotNull { child ->

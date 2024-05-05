@@ -35,7 +35,7 @@ public interface KLogger {
     public fun info(messages: Array<KLogMessage>, e: Throwable? = null)
 
     /**
-     * Check if the logger instance enabled for the [WARN] level.
+     * Check if the logger instance enabled for the 'WARN' level.
      */
     public fun isWarnEnabled(): Boolean
 

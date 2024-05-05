@@ -36,7 +36,7 @@ class NoneDataSourceWrapper : KotoDataSourceWrapper {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>): IntArray {
+    override fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray {
         throw NoDataSourceException(noDataSourceMessage)
     }
 }

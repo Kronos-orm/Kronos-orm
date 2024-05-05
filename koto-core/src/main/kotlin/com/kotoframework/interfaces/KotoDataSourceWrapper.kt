@@ -50,8 +50,6 @@ interface KotoDataSourceWrapper {
      * @return A list of maps, where each map represents a row of the result set. Each key in the map is a column name, and the
      *         associated value is the value of that column for that row. If the query returns no rows, this method returns an
      *         empty list.
-     * @throws SqlExecutionException If there is an error executing the SQL query, such as a syntax error in the SQL
-     *                               statement, issues with the database connection, or other underlying database errors.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forList(sql: String, paramMap: Map<String, Any?> = mapOf()): List<Map<String, Any>>
@@ -71,8 +69,6 @@ interface KotoDataSourceWrapper {
      * @return A list of objects of the type specified by `kClass`, where each object represents a row of the result set.
      *         If the query returns no rows, or if instantiation/conversion to the specified type fails, this method
      *         returns an empty list.
-     * @throws SqlExecutionException If there is an error executing the SQL query, such as a syntax error in the SQL
-     *                               statement, issues with the database connection, or other underlying database errors.
      * @throws InstantiationException If there is an error instantiating objects of the specified type from the query
      *                                results, such as due to a mismatch between the query result structure and the
      *                                expected class fields or constructor parameters.
@@ -96,8 +92,6 @@ interface KotoDataSourceWrapper {
      *                 dynamic query execution with variable conditions. Defaults to an empty map if not provided.
      * @return A map representing a single row of the result set, where each key is a column name and the associated
      *         value is the value of that column for that row. If the query returns no rows, this method returns `null`.
-     * @throws SqlExecutionException If there is an error executing the SQL query, such as a syntax error in the SQL
-     *                               statement, issues with the database connection, or other underlying database errors.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forMap(sql: String, paramMap: Map<String, Any?> = mapOf()): Map<String, Any>?
@@ -111,17 +105,9 @@ interface KotoDataSourceWrapper {
      * @param paramMap A map of parameters to be bound to the query. The map's keys should correspond to the named parameters
      *                 within the SQL statement, and the values should be the actual values to bind to these parameters.
      *                 This approach facilitates the execution of dynamic queries with varying conditions.
-     * @param javaClass The Java `Class` object that represents the type to which the result set's row will be converted.
-     *                  The class should have fields that correspond to the columns expected in the result set, allowing
-     *                  for an automatic mapping of column values to field values.
      * @return An object of the specified type that represents the converted row of the result set. If the query results in no rows,
      *         or if the conversion cannot be successfully performed (due to type mismatches, missing fields, etc.), this method
      *         may return `null` or throw a relevant exception.
-     * @throws SqlExecutionException If there is an error during the execution of the SQL query. This could be due to a syntax error
-     *                               in the query, connectivity issues with the database, or other problems related to the execution environment.
-     * @throws DataMappingException If the conversion of the result set to the specified class fails. This can occur if the result set
-     *                              contains columns that cannot be mapped to the fields of the class, either because of name discrepancies,
-     *                              type incompatibilities, or other mapping issues.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forObject(
@@ -141,8 +127,6 @@ interface KotoDataSourceWrapper {
      *                 empty map, allowing for SQL statements without parameters to be executed directly.
      * @return The number of database rows affected by the execution of the SQL statement. This can be used to verify the success and impact of the
      *         update operation, with a return value of 0 indicating that no rows were affected.
-     * @throws SqlExecutionException If an error occurs during the execution of the SQL update. This could be due to issues with the SQL syntax,
-     *                               problems with the database connection, or other underlying issues related to the database or execution environment.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun update(sql: String, paramMap: Map<String, Any?> = mapOf()): Int
@@ -160,8 +144,6 @@ interface KotoDataSourceWrapper {
      *                  without parameters to be executed in batch mode.
      * @return An array of integers, where each element represents the number of rows affected by the corresponding update operation in the batch.
      *         This can be used to verify the success and impact of each update operation within the batch.
-     * @throws SqlExecutionException If an error occurs during the execution of any batch update. This could be due to issues with the SQL syntax,
-     *                               problems with the database connection, or other underlying issues related to the database or execution environment.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray

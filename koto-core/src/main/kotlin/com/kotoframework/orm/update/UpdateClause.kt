@@ -4,6 +4,7 @@ import com.kotoframework.beans.dsl.Criteria
 import com.kotoframework.beans.dsl.Field
 import com.kotoframework.beans.dsl.KTable
 import com.kotoframework.beans.dsl.KTableConditional
+import com.kotoframework.beans.task.KotoAtomicBatchTask
 import com.kotoframework.beans.task.KotoAtomicTask
 import com.kotoframework.beans.task.KotoOperationResult
 import com.kotoframework.enums.AND
@@ -160,9 +161,9 @@ class UpdateClause<T : KPojo>(
             return map { it.where(updateCondition) }
         }
 
-        fun <T : KPojo> List<UpdateClause<T>>.build(): KotoAtomicTask {
+        fun <T : KPojo> List<UpdateClause<T>>.build(): KotoAtomicBatchTask {
             val tasks = this.map { it.build() }
-            return KotoAtomicTask(
+            return KotoAtomicBatchTask(
                 sql = tasks.first().sql,
                 paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
                 operationType = KotoAtomicOperationType.UPDATE

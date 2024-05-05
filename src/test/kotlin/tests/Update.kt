@@ -3,11 +3,11 @@ package tests
 import com.kotoframework.KotoApp
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.update.UpdateClause.Companion.build
-import com.kotoframework.orm.update.UpdateClause.Companion.by
-import com.kotoframework.orm.update.UpdateClause.Companion.set
 import com.kotoframework.orm.update.UpdateClause.Companion.where
 import com.kotoframework.orm.update.update
 import com.kotoframework.orm.update.updateExcept
+import com.kotoframework.utils.execute
+import com.kotoframework.utils.toAsyncTask
 import org.junit.jupiter.api.Test
 import tests.beans.Movie
 import tests.beans.User
@@ -417,5 +417,22 @@ class Update {
                 "idList" to listOf(1, 2, 3)
             ), paramMap
         )
+    }
+
+    @Test
+    fun testNew(){
+        // 组批和任务队列，此测试未来需拆开
+        listOf(
+            listOf(user, testUser).update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build(),
+            testUser.update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build(),
+            testUser.update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build(),
+            testUser.update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build()
+        )
+            .toAsyncTask()
+            .execute()
     }
 }

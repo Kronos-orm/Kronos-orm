@@ -1,6 +1,5 @@
 package com.kotoframework.beans.task
 
-import com.kotoframework.enums.KotoAtomicOperationType
 import com.kotoframework.interfaces.KotoSQLTask
 
 /**

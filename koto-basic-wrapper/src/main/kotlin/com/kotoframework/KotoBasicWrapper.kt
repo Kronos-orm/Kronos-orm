@@ -1,6 +1,6 @@
 package com.kotoframework
 
-import com.kotoframework.NamedParameterUtils.parseSqlStatement
+import com.kotoframework.beans.dsw.NamedParameterUtils.parseSqlStatement
 import com.kotoframework.beans.UnsupportedTypeException
 import com.kotoframework.enums.DBType
 import com.kotoframework.interfaces.KPojo

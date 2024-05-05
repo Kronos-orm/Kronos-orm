@@ -1,4 +1,4 @@
-package com.kotoframework
+package com.kotoframework.beans.dsw
 
 /**
  * Created by sundaiyue on 2022/11/4 14:09

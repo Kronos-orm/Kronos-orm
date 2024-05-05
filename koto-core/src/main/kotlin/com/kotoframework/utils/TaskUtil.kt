@@ -1,11 +1,12 @@
 package com.kotoframework.utils
 
 import com.kotoframework.beans.task.KotoAsyncOperationTask
-import com.kotoframework.beans.task.KotoAtomicTask
 import com.kotoframework.beans.task.KotoOperationResult
 import com.kotoframework.beans.task.KotoOperationTask
 import com.kotoframework.enums.DBType
 import com.kotoframework.enums.KotoAtomicOperationType
+import com.kotoframework.interfaces.KAtomicTask
+import com.kotoframework.interfaces.KBatchTask
 import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.interfaces.KotoSQLTask
 import com.kotoframework.utils.DataSourceUtil.orDefault
@@ -24,11 +25,19 @@ fun lastInsertIdObtainSql(dbType: DBType): String {
     }
 }
 
-fun Collection<KotoAtomicTask>.toTask(): KotoOperationTask {
+fun Iterable<KAtomicTask>.toTask(): KotoOperationTask {
     return KotoOperationTask(this.toList())
 }
 
-fun Collection<KotoAtomicTask>.toAsyncTask(): KotoAsyncOperationTask {
+fun Iterable<KAtomicTask>.toAsyncTask(): KotoAsyncOperationTask {
+    return KotoAsyncOperationTask(this.toList())
+}
+
+fun Array<KAtomicTask>.toTask(): KotoOperationTask {
+    return KotoOperationTask(this.toList())
+}
+
+fun Array<KAtomicTask>.toAsyncTask(): KotoAsyncOperationTask {
     return KotoAsyncOperationTask(this.toList())
 }
 
@@ -40,8 +49,8 @@ fun KotoAsyncOperationTask.toSyncTask(): KotoOperationTask {
     return KotoOperationTask(this.tasks)
 }
 
-fun KotoAtomicTask.execute(wrapper: KotoDataSourceWrapper?): KotoOperationResult {
-    val affectRows = if (batchExecute) {
+fun KAtomicTask.execute(wrapper: KotoDataSourceWrapper?): KotoOperationResult {
+    val affectRows = if (this is KBatchTask) {
         wrapper.orDefault().batchUpdate(sql, paramMapArr).sum()
     } else {
         wrapper.orDefault().update(sql, paramMap)

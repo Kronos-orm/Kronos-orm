@@ -1,6 +1,6 @@
-package com.kotoframework
+package com.kotoframework.beans.dsw
 
-import com.kotoframework.beans.InvalidParameterException
+import com.kotoframework.beans.exceptions.InvalidParameterException
 
 /**
  * Created by ousc on 2022/11/4 11:32
@@ -44,7 +44,7 @@ object NamedParameterUtils {
      * Parse the SQL statement and locate any placeholders or named parameters.
      * Named parameters are substituted for a JDBC placeholder.
      * @param sql the SQL statement
-     * @return the parsed statement, represented as com.kotoframework.ParsedSql instance
+     * @return the parsed statement, represented as com.kotoframework.beans.dsw.ParsedSql instance
      */
     fun parseSqlStatement(sql: String, paramMap: Map<String, Any?>): ParsedSql {
         val namedParameters: MutableSet<String> = HashSet()

@@ -13,6 +13,22 @@ inline fun <reified T : KPojo> T.updateExcept(noinline setUpdateFields: KTableFi
     return UpdateClause(this, true, setUpdateFields)
 }
 
+inline fun <reified T : KPojo> Iterable<T>.update(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, false, setUpdateFields) }
+}
+
+inline fun <reified T : KPojo> Iterable<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, true, setUpdateFields) }
+}
+
+inline fun <reified T : KPojo> Array<T>.update(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, false, setUpdateFields) }
+}
+
+inline fun <reified T : KPojo> Array<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, true, setUpdateFields) }
+}
+
 fun initUpdateClause(clause: UpdateClause<*>, name: String, vararg fields: Field): UpdateClause<*> {
     return clause.apply {
         tableName = name

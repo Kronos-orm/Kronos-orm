@@ -146,8 +146,8 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         return result
     }
 
-    override fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>): IntArray {
-        val (newSql, newParamList) = convertSql(sql, paramMaps)
+    override fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray {
+        val (newSql, newParamList) = convertSql(sql, paramMaps ?: arrayOf())
         val conn = dataSource.connection
         val ps = conn.prepareStatement(newSql)
         newParamList.forEach { paramMap ->

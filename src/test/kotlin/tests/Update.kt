@@ -2,6 +2,10 @@ package tests
 
 import com.kotoframework.KotoApp
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotoframework.orm.update.UpdateClause.Companion.build
+import com.kotoframework.orm.update.UpdateClause.Companion.by
+import com.kotoframework.orm.update.UpdateClause.Companion.set
+import com.kotoframework.orm.update.UpdateClause.Companion.where
 import com.kotoframework.orm.update.update
 import com.kotoframework.orm.update.updateExcept
 import org.junit.jupiter.api.Test

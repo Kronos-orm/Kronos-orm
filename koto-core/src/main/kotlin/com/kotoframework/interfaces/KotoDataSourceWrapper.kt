@@ -164,5 +164,5 @@ interface KotoDataSourceWrapper {
      *                               problems with the database connection, or other underlying issues related to the database or execution environment.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
-    fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>> = arrayOf()): IntArray
+    fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray
 }

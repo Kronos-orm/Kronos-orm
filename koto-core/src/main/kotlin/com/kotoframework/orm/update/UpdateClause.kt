@@ -1,15 +1,22 @@
 package com.kotoframework.orm.update
 
-import com.kotoframework.beans.dsl.*
-import com.kotoframework.enums.*
+import com.kotoframework.beans.dsl.Criteria
+import com.kotoframework.beans.dsl.Field
+import com.kotoframework.beans.dsl.KTable
+import com.kotoframework.beans.dsl.KTableConditional
+import com.kotoframework.beans.task.KotoAtomicTask
+import com.kotoframework.beans.task.KotoOperationResult
+import com.kotoframework.enums.AND
+import com.kotoframework.enums.Equal
+import com.kotoframework.enums.KotoAtomicOperationType
 import com.kotoframework.exceptions.NeedUpdateConditionException
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KotoDataSourceWrapper
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
 import com.kotoframework.utils.ConditionSqlBuilder
-import com.kotoframework.utils.DataSourceUtil.orDefault
 import com.kotoframework.utils.Extensions.toMap
+import com.kotoframework.utils.execute
 import kotlin.reflect.full.createInstance
 
 class UpdateClause<T : KPojo>(
@@ -92,7 +99,7 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
-    fun build(): KotoOperationSet<UpdateClause<T>, T> {
+    fun build(): KotoAtomicTask {
         // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
         if (isExcept) {
             toUpdateFields =
@@ -129,11 +136,41 @@ class UpdateClause<T : KPojo>(
                 keyWithSuffix to entry.value
             })
         }
-        return KotoOperationSet(sql, paramMap)
+        return KotoAtomicTask(
+            sql,
+            paramMap,
+            operationType = KotoAtomicOperationType.UPDATE
+        )
     }
 
-    fun execute(wrapper: KotoDataSourceWrapper? = null): Int {
-        val (sql, paramMap) = build()
-        return wrapper.orDefault().update(sql, paramMap)
+    fun execute(wrapper: KotoDataSourceWrapper? = null): KotoOperationResult {
+        return build().execute(wrapper)
+    }
+
+    companion object {
+        fun <T : KPojo> List<UpdateClause<T>>.set(rowData: KTableField<T, Unit>): List<UpdateClause<T>> {
+            return map { it.set(rowData) }
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.by(someFields: KTableField<T, Any?>): List<UpdateClause<T>> {
+            return map { it.by(someFields) }
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<UpdateClause<T>> {
+            return map { it.where(updateCondition) }
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.build(): KotoAtomicTask {
+            val tasks = this.map { it.build() }
+            return KotoAtomicTask(
+                sql = tasks.first().sql,
+                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
+                operationType = KotoAtomicOperationType.UPDATE
+            )
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.execute(wrapper: KotoDataSourceWrapper? = null): KotoOperationResult {
+            return build().execute(wrapper)
+        }
     }
 }

@@ -1,14 +1,11 @@
 package com.kotoframework
 
-import com.kotoframework.adapter.AndroidUtilLoggerAdapter
-import com.kotoframework.adapter.ApacheCommonsLoggerAdapter
-import com.kotoframework.adapter.JavaUtilLoggerAdapter
-import com.kotoframework.adapter.Slf4jLoggerAdapter
-import com.kotoframework.beans.logging.BundledSimpleLoggerAdapter
+import com.kotoframework.adapter.*
 import com.kotoframework.enums.KLoggerType
 import com.kotoframework.exceptions.KotoNoLoggerException
 import com.kotoframework.i18n.Noun
 import com.kotoframework.interfaces.KLogger
+import com.kotoframework.beans.logging.BundledSimpleLoggerAdapter
 import com.kotoframework.utils.DataSourceUtil.javaName
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -48,10 +45,10 @@ object KotoLoggerApp {
                 try {
                     result = init()
                     Kronos.defaultLoggerType = this
-                } catch (e: Throwable) {
-                    if (!(e is ClassNotFoundException || e is NoClassDefFoundError)) {
-                        throw e
-                    }
+                } catch (_: ClassNotFoundException) {
+                    // ignored
+                } catch (_: NoClassDefFoundError) {
+                    // ignored
                 }
             }
         }

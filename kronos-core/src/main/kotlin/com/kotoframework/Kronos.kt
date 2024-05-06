@@ -33,14 +33,10 @@ object Kronos {
             val kronosClass = Class.forName("com.kotoframework.KotoLoggerApp").kotlin
             val kotoAppInstance = kronosClass.objectInstance
             kronosClass.declaredFunctions.first { it.name == "detectLoggerImplementation" }.call(kotoAppInstance)
-        } catch (e: Exception) {
-            if (e is ClassNotFoundException) {
-                defaultLogger(this).info(
-                    logMessageOf("Kronos-logging is not used.", ColorPrintCode.YELLOW.toArray()).endl().toArray()
-                )
-            } else {
-                throw e
-            }
+        } catch (e: ClassNotFoundException) {
+            defaultLogger(this).info(
+                logMessageOf("Kronos-logging is not used.", ColorPrintCode.YELLOW.toArray()).endl().toArray()
+            )
         }
     }
 

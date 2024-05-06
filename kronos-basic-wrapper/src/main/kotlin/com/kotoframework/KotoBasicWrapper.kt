@@ -129,7 +129,9 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KronosDataSourceWra
             try {
                 map?.values?.firstOrNull()?.toString()?.let { clazz.cast(it) }
             } catch (e: Exception) {
-                throw UnsupportedTypeException("Unsupported type: ${clazz.name}")
+                throw UnsupportedTypeException("Unsupported type: ${clazz.name}").apply {
+                    addSuppressed(e)
+                }
             }
         }
     }

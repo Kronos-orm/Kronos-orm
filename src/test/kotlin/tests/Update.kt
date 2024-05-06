@@ -421,6 +421,10 @@ class Update {
 
     @Test
     fun testNew(){
+        arrayOf(user, testUser).update { it.id + it.username }
+            .where { listOf(1, 2, 3).contains(it.id) }
+
+
         // 组批和任务队列，此测试未来需拆开
         listOf(
             listOf(user, testUser).update { it.id + it.username }

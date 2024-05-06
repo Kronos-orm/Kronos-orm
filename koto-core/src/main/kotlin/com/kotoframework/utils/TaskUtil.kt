@@ -1,8 +1,6 @@
 package com.kotoframework.utils
 
-import com.kotoframework.beans.task.KotoAsyncOperationTask
-import com.kotoframework.beans.task.KotoOperationResult
-import com.kotoframework.beans.task.KotoOperationTask
+import com.kotoframework.beans.task.*
 import com.kotoframework.enums.DBType
 import com.kotoframework.enums.KotoAtomicOperationType
 import com.kotoframework.interfaces.KAtomicTask
@@ -51,14 +49,16 @@ fun KotoAsyncOperationTask.toSyncTask(): KotoOperationTask {
 
 fun KAtomicTask.execute(wrapper: KotoDataSourceWrapper?): KotoOperationResult {
     val affectRows = if (this is KBatchTask) {
-        wrapper.orDefault().batchUpdate(sql, paramMapArr).sum()
+        wrapper.orDefault().batchUpdate(this as KotoAtomicBatchTask).sum()
     } else {
-        wrapper.orDefault().update(sql, paramMap)
+        wrapper.orDefault().update(this as KotoAtomicTask)
     }
     var lastInsertId: Long? = null
     if (operationType == KotoAtomicOperationType.INSERT) {
         lastInsertId = wrapper.orDefault()
-            .forObject(lastInsertIdObtainSql(wrapper.orDefault().dbType), mapOf(), kClass = Long::class) as Long
+            .forObject(
+                KotoAtomicTask(lastInsertIdObtainSql(wrapper.orDefault().dbType))
+            , kClass = Long::class) as Long
     }
     return KotoOperationResult(affectRows, lastInsertId)
 }

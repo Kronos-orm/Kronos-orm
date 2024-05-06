@@ -7,7 +7,7 @@ import com.kotoframework.interfaces.KAtomicTask
 data class KotoAtomicTask(
     override val sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
-    override val operationType: KotoAtomicOperationType
+    override val operationType: KotoAtomicOperationType = KotoAtomicOperationType.SELECT
 ) : KAtomicTask {
     fun parsed() = parseSqlStatement(sql, paramMap)
 }

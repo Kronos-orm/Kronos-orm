@@ -1,4 +1,4 @@
-![logo](https://cdn.leinbo.com/assets/images/koto_logo_dark.png)
+![logo](https://cdn.leinbo.com/assets/images/kronos/logo_dark.png)
 ##### Kronos ORM(Kotlin Reactive Object-Relational-Mapping)是一款前所未有的、开创性的、现代化的kotlin ORM框架。
 
 *Kronos*是一个轻量级的框架，为开发者提供了一种高效的数据持久化解决方案。

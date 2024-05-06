@@ -1,4 +1,4 @@
-import com.kotoframework.KotoApp
+import com.kotoframework.Kronos
 import com.kotoframework.KotoBasicWrapper
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import org.apache.commons.dbcp.BasicDataSource
@@ -14,7 +14,7 @@ class BasicWrapperTest {
     }
 
     init {
-        KotoApp.apply {
+        Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
             defaultDataSource = { KotoBasicWrapper(dataSource) }

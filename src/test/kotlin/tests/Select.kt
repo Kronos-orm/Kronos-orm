@@ -1,6 +1,6 @@
 package tests
 
-import com.kotoframework.KotoApp
+import com.kotoframework.Kronos
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.select.select
 import org.junit.jupiter.api.Test
@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 
 class Select {
     init {
-        KotoApp.apply {
+        Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
         }

@@ -60,8 +60,6 @@ object Extensions {
             } else {
                 throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is ${this[mismatchedArgument.name]!!.javaClass.typeName} but expected ${mismatchedArgument.type.javaType.typeName}.")
             }
-        } catch (e: Exception) {
-            throw e
         }
     }
 

@@ -1,6 +1,6 @@
 //package tests
 //
-//import com.kotoframework.KotoApp
+//import com.kotoframework.Kronos
 //import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 //import com.kotoframework.orm.join.join
 //import com.kotoframework.orm.select.select
@@ -11,7 +11,7 @@
 //
 //class Join {
 //    init {
-//        KotoApp.apply {
+//        Kronos.apply {
 //            LineHumpNamingStrategy().let {
 //                fieldNamingStrategy = it
 //                tableNamingStrategy = it

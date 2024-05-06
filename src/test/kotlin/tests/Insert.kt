@@ -1,6 +1,6 @@
 package test.tests
 
-import com.kotoframework.KotoApp
+import com.kotoframework.Kronos
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.insert.insert
 import org.junit.jupiter.api.Test
@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 
 class Insert {
     init {
-        KotoApp.apply {
+        Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
         }

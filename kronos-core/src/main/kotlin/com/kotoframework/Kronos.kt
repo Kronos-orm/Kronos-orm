@@ -15,7 +15,7 @@ import com.kotoframework.interfaces.KronosSerializeResolver
 import com.kotoframework.utils.DataSourceUtil.javaName
 import kotlin.reflect.full.declaredFunctions
 
-object KotoApp {
+object Kronos {
     var defaultDataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper() }
     var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
     var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
@@ -30,15 +30,13 @@ object KotoApp {
      */
     private fun detectLoggerImplementation() {
         try {
-            val kotoAppClass = Class.forName("com.kotoframework.KotoLoggerApp").kotlin
-            val kotoAppInstance = kotoAppClass.objectInstance
-            kotoAppClass.declaredFunctions.first { it.name == "detectLoggerImplementation" }.call(kotoAppInstance)
+            val kronosClass = Class.forName("com.kotoframework.KotoLoggerApp").kotlin
+            val kotoAppInstance = kronosClass.objectInstance
+            kronosClass.declaredFunctions.first { it.name == "detectLoggerImplementation" }.call(kotoAppInstance)
         } catch (e: ClassNotFoundException) {
             defaultLogger(this).info(
                 logMessageOf("Kronos-logging is not used.", ColorPrintCode.YELLOW.toArray()).endl().toArray()
             )
-        } catch (e: Exception) {
-            throw e
         }
     }
 

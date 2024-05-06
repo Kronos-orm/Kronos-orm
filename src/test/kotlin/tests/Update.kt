@@ -1,6 +1,6 @@
 package tests
 
-import com.kotoframework.KotoApp
+import com.kotoframework.Kronos
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.update.UpdateClause.Companion.build
 import com.kotoframework.orm.update.UpdateClause.Companion.where
@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 class Update {
 
     init {
-        KotoApp.apply {
+        Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
         }

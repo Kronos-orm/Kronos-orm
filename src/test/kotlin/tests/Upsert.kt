@@ -1,6 +1,6 @@
 package tests
 
-import com.kotoframework.KotoApp
+import com.kotoframework.Kronos
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.upsert.upsert
 import com.kotoframework.orm.upsert.upsertExcept
@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 
 class Upsert {
     init {
-        KotoApp.apply {
+        Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
         }

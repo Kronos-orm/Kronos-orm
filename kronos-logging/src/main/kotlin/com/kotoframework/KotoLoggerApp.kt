@@ -25,7 +25,7 @@ object KotoLoggerApp {
 
     private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
         val tag = loggingClazz.javaName
-        return when (KotoApp.defaultLoggerType) {
+        return when (Kronos.defaultLoggerType) {
             KLoggerType.ANDROID_LOGGER -> AndroidUtilLoggerAdapter(tag)
             KLoggerType.COMMONS_LOGGER -> ApacheCommonsLoggerAdapter(tag)
             KLoggerType.JDK_LOGGER -> JavaUtilLoggerAdapter(tag)
@@ -36,7 +36,7 @@ object KotoLoggerApp {
     }
 
     fun detectLoggerImplementation() {
-        KotoApp.defaultLogger = { getKotoLoggerInstance(it) }
+        Kronos.defaultLogger = { getKotoLoggerInstance(it) }
         val tag = "com.kotoframework.jdbcWrapper"
         var result: KLogger? = null
 
@@ -44,11 +44,9 @@ object KotoLoggerApp {
             if (result == null) {
                 try {
                     result = init()
-                    KotoApp.defaultLoggerType = this
+                    Kronos.defaultLoggerType = this
                 } catch (_: ClassNotFoundException) {
                 } catch (_: NoClassDefFoundError) {
-                } catch (e: Exception) {
-                    throw e
                 }
             }
         }

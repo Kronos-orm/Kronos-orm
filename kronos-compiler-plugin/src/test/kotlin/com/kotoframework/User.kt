@@ -1,6 +1,5 @@
 package com.kotoframework
 
-import com.kotoframework.KotoApp
 import com.kotoframework.annotations.Table
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.interfaces.KPojo
@@ -14,7 +13,7 @@ data class User(
 ) : KPojo
 
 fun main() {
-    KotoApp.apply {
+    Kronos.apply {
         fieldNamingStrategy = LineHumpNamingStrategy
         tableNamingStrategy = LineHumpNamingStrategy
     }

@@ -18,7 +18,7 @@ class UpdateParserTest {
 //    )
     val result = compile(
       sourceFile = SourceFile.kotlin("main.kt", """
-      import com.kotoframework.KotoApp
+      import com.kotoframework.Kronos
       import com.kotoframework.interfaces.KPojo
       import com.kotoframework.orm.update.update
       import com.kotoframework.annotations.Table
@@ -32,7 +32,7 @@ class UpdateParserTest {
       ) : KPojo
 
       fun main() {
-        KotoApp.apply {
+        Kronos.apply {
           fieldNamingStrategy = LineHumpNamingStrategy
           tableNamingStrategy = LineHumpNamingStrategy
         }

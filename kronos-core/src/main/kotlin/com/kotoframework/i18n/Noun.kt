@@ -4,6 +4,6 @@ object Noun {
     var noDataSourceMessage = "No DataSource wrapper setting found!"
     var noKLoggerMessage = "No logger detected in project!"
     var noneJsonResolverMessage = "No JsonResolver detected in project!"
-    var noFieldsToUpdateMessage = "No fields to update!"
-    var needUpdateConditionMessage = "Need update condition!"
+    var needFieldsMessage = "At least one field must be provided!"
+    var needConditionMessage = "A condition lambda must be provided!"
 }

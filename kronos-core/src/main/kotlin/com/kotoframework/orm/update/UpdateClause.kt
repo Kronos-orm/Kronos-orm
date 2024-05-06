@@ -10,7 +10,7 @@ import com.kotoframework.beans.task.KronosOperationResult
 import com.kotoframework.enums.AND
 import com.kotoframework.enums.Equal
 import com.kotoframework.enums.KOperationType
-import com.kotoframework.exceptions.NeedUpdateConditionException
+import com.kotoframework.exceptions.NeedFieldsException
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KronosDataSourceWrapper
 import com.kotoframework.types.KTableConditionalField
@@ -63,7 +63,7 @@ class UpdateClause<T : KPojo>(
         with(KTable(pojo::class.createInstance())) {
             someFields()
             if (fields.isEmpty()) {
-                throw NeedUpdateConditionException()
+                throw NeedFieldsException()
             }
             condition = Criteria(
                 type = AND,

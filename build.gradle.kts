@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.fir.declarations.builder.buildScript
-
 allprojects {
     group = "com.kotoframework"
     version = File(rootDir, "kronos.version").readText().trim()
@@ -12,7 +10,7 @@ allprojects {
 
 plugins {
     kotlin("jvm")
-   id("com.kotoframework.kronos-compiler-plugin")
+    id("com.kotoframework.kronos-compiler-plugin")
 }
 
 dependencies {

@@ -1,4 +1,4 @@
-package com.kotoframework.beans.exceptions
+package com.kotoframework.exceptions
 
 /**
  * Created by sundaiyue on 2022/11/30 00:21

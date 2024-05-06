@@ -358,7 +358,7 @@ class Update {
 
     // in
     //it.<property> in listOf(1,2,3)
-    //collection类型的contains函数
+    //Iterable类型的contains函数
     //IN
     //
     //listOf(1, 2, 3).contains(it.<property>)
@@ -422,23 +422,8 @@ class Update {
     }
 
     @Test
-    fun testNew(){
+    fun testBatch() {
         arrayOf(user, testUser).insert().build()
-
-
-        // 组批和任务队列，此测试未来需拆开
-        listOf(
-            listOf(user, testUser).update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build(),
-            testUser.update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build(),
-            testUser.update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build(),
-            testUser.update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build()
-        )
-            .toAsyncTask() // 还没实现 后面再拆
-            .execute()
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { listOf(1, 2, 3).contains(it.id) }.build()
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
@@ -451,5 +436,31 @@ class Update {
         )
     }
 
+    fun testAsync() {
+        listOf(
+            listOf(user, testUser).update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build(),
+            testUser.update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build(),
+            testUser.update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build(),
+            testUser.update { it.id + it.username }
+                .where { listOf(1, 2, 3).contains(it.id) }.build()
+        )
+            .toAsyncTask() // 还没实现 后面再拆
+            .execute()
+    }
+
+    @Test
+    fun testAutoWhere() {
+        val (sql, paramMap) = testUser.update().set {
+            it.username = "ZhangSan"
+        }.where().build()
+        assertEquals(
+            "UPDATE tb_user SET id = :idNew, username = :usernameNew where id = :id and username = :username",
+            sql
+        )
+        assertEquals(mapOf("id" to 1, "username" to "test", "usernameNew" to "ZhangSan"), paramMap)
+    }
 
 }

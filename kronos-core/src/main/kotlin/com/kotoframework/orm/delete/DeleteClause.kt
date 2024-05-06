@@ -1,7 +1,6 @@
 package com.kotoframework.orm.delete
 
 import com.kotoframework.beans.dsl.Criteria
-import com.kotoframework.beans.dsl.Field
 import com.kotoframework.beans.dsl.KTable
 import com.kotoframework.beans.dsl.KTableConditional
 import com.kotoframework.beans.task.KronosAtomicTask
@@ -9,10 +8,10 @@ import com.kotoframework.beans.task.KronosOperationResult
 import com.kotoframework.enums.AND
 import com.kotoframework.enums.Equal
 import com.kotoframework.enums.KOperationType
-import com.kotoframework.exceptions.NeedUpdateConditionException
+import com.kotoframework.exceptions.NeedConditionException
+import com.kotoframework.exceptions.NeedFieldsException
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KronosDataSourceWrapper
-import com.kotoframework.orm.update.UpdateClause
 import com.kotoframework.types.KTableConditionalField
 import com.kotoframework.types.KTableField
 import com.kotoframework.utils.ConditionSqlBuilder
@@ -21,18 +20,16 @@ import com.kotoframework.utils.execute
 import kotlin.reflect.full.createInstance
 
 class DeleteClause<T : KPojo>(private val pojo:  T) {
-
     internal lateinit var tableName: String
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-
 
     init {
         paramMap.putAll(pojo.toMap().filter { it.value != null })
     }
 
     fun logic(): DeleteClause<T> {
-       return this
+        TODO("not implemented")
     }
 
     fun by(someFields: KTableField<T, Any?>): DeleteClause<T> {
@@ -40,7 +37,7 @@ class DeleteClause<T : KPojo>(private val pojo:  T) {
         with(KTable(pojo::class.createInstance())) {
             someFields()
             if (fields.isEmpty()) {
-                throw NeedUpdateConditionException()
+                throw NeedFieldsException()
             }
             condition = Criteria(
                 type = AND,
@@ -57,11 +54,11 @@ class DeleteClause<T : KPojo>(private val pojo:  T) {
         return this
     }
 
-    fun where(updateCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
-        if (updateCondition == null) return this
+    fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
+        if (deleteCondition == null) return this
         with(KTableConditional(pojo::class.createInstance())) {
             propParamMap = paramMap
-            updateCondition()
+            deleteCondition()
             condition = criteria ?: Criteria(
                 type = AND
             ).apply {
@@ -80,7 +77,7 @@ class DeleteClause<T : KPojo>(private val pojo:  T) {
     fun build(): KronosAtomicTask {
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         if (conditionSql == null) {
-            throw RuntimeException("Delete operation requires a condition.")
+            throw NeedConditionException()
         }
         val sql = "DELETE FROM $tableName WHERE $conditionSql"
         return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
@@ -88,17 +85,5 @@ class DeleteClause<T : KPojo>(private val pojo:  T) {
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         return build().execute(wrapper)
-    }
-
-    operator fun component1(): String {
-        // 返回构建好的SQL语句
-        val (conditionSql, _) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
-        return "DELETE FROM $tableName WHERE $conditionSql"
-    }
-
-    operator fun component2(): Map<String, Any?> {
-        // 返回用于执行SQL的参数映射
-        val (_, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
-        return paramMap
     }
 }

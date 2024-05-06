@@ -26,7 +26,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
-        val extension = project.extensions.getByType(KronosParserExtension::class.java) as KronosParserExtension
+//        val extension = project.extensions.getByType(KronosParserExtension::class.java) as KronosParserExtension
         return project.provider {
             listOf()
         }

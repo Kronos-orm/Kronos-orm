@@ -5,7 +5,6 @@ import com.kotoframework.interfaces.KPojo
 import com.kotoframework.utils.fieldK2db
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.memberProperties
 
 open class KTable<T : KPojo>(open val it: T) {
     val fields: MutableList<Field> = mutableListOf()
@@ -16,7 +15,7 @@ open class KTable<T : KPojo>(open val it: T) {
         return propParamMap[fieldName]
     }
 
-    operator fun Any?.plus(other: Any?): Int = 1
+    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Int = 1
     operator fun Any?.unaryPlus(): Int = 1
 
     @JvmName("KPropertySetValue")

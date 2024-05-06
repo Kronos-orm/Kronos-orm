@@ -2,11 +2,17 @@ package com.kotoframework.orm.delete
 
 import com.kotoframework.beans.dsl.Field
 import com.kotoframework.interfaces.KPojo
-import com.kotoframework.orm.update.UpdateClause
 
 
 inline fun <reified T : KPojo> T.delete(): DeleteClause<T> {
     return DeleteClause(this)
+}
+inline fun <reified T : KPojo> Array<T>.delete(): List<DeleteClause<T>> {
+    return map { DeleteClause(it) }
+}
+
+inline fun <reified T : KPojo> Iterable<T>.delete(): List<DeleteClause<T>> {
+    return map { DeleteClause(it) }
 }
 
 fun initDeleteClause(clause: DeleteClause<*>, name: String, vararg fields: Field): DeleteClause<*> {

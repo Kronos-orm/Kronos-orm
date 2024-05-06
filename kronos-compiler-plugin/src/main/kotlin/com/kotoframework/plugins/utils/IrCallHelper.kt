@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 
@@ -77,9 +78,10 @@ internal fun IrExpression.asIrCall(): IrCall {
 }
 
 internal fun IrType.asSimpleType(): IrSimpleType = this as IrSimpleType
+internal fun IrType.subType(): IrSimpleType = this.asSimpleType().arguments[0].typeOrFail.asSimpleType()
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
-internal fun Collection<IrConstructorCall>.findByFqName(fqName: FqName): IrConstructorCall? =
+internal fun Iterable<IrConstructorCall>.findByFqName(fqName: FqName): IrConstructorCall? =
     firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == fqName }
 
 fun <T, R> withMultiple(obj1: T, obj2: T, block: (T, T) -> R): R {

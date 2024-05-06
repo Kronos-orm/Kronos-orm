@@ -4,12 +4,12 @@ import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransfo
 import com.kotoframework.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
 import com.kotoframework.plugins.utils.asIrCall
-import com.kotoframework.plugins.utils.asSimpleType
 import com.kotoframework.plugins.utils.deleteClause.initDeleteClause
 import com.kotoframework.plugins.utils.deleteClause.initDeleteClauseList
 import com.kotoframework.plugins.utils.insertClause.initInsertClause
 import com.kotoframework.plugins.utils.insertClause.initInsertClauseList
 import com.kotoframework.plugins.utils.kTableConditional.funcName
+import com.kotoframework.plugins.utils.subType
 import com.kotoframework.plugins.utils.updateClause.initUpdateClause
 import com.kotoframework.plugins.utils.updateClause.initUpdateClauseList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -18,7 +18,6 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -26,9 +25,6 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
-import org.jetbrains.kotlin.ir.types.typeOrFail
-import org.jetbrains.kotlin.ir.types.typeOrNull
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
@@ -102,9 +98,9 @@ class KronosParserTransformer(
                     }
                 }
 
-                fqName == "kotlin.collections.List" -> {
+                fqName == "kotlin.Iterables.List" -> {
                     val subTypeFqName =
-                        expression.type.asSimpleType().arguments.first().typeOrFail.asSimpleType().originalKotlinType?.getKotlinTypeFqName(false)
+                        expression.type.subType().kotlinType?.getKotlinTypeFqName(false)
                     when {
                         subTypeFqName == updateClauseClass &&
                                 expression.funcName() in listOf("update", "updateExcept") -> {

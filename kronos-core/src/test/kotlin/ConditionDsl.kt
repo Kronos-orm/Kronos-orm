@@ -44,7 +44,7 @@ infix fun Field.notBetween(value: ClosedRange<*>): Criteria {
     return Criteria(this, ConditionType.BETWEEN, true, value)
 }
 
-infix fun Field.isIn(value: Collection<*>): Criteria {
+infix fun Field.isIn(value: Iterable<*>): Criteria {
     return Criteria(this, ConditionType.IN, false, value)
 }
 
@@ -52,7 +52,7 @@ fun Field.isIn(vararg values: Any): Criteria {
     return Criteria(this, ConditionType.IN, false, values)
 }
 
-infix fun Field.notIn(value: Collection<*>): Criteria {
+infix fun Field.notIn(value: Iterable<*>): Criteria {
     return Criteria(this, ConditionType.IN, true, value)
 }
 
@@ -120,7 +120,7 @@ infix fun String.notBetween(value: ClosedRange<*>): Criteria {
     return Criteria(Field(this), ConditionType.BETWEEN, true, value)
 }
 
-infix fun String.isIn(value: Collection<*>?): Criteria {
+infix fun String.isIn(value: Iterable<*>?): Criteria {
     return Criteria(Field(this), ConditionType.IN, false, value)
 }
 
@@ -128,7 +128,7 @@ fun String.isIn(vararg values: Any): Criteria {
     return Criteria(Field(this), ConditionType.IN, false, values)
 }
 
-infix fun String.notIn(value: Collection<*>?): Criteria {
+infix fun String.notIn(value: Iterable<*>?): Criteria {
     return Criteria(Field(this), ConditionType.IN, true, value)
 }
 

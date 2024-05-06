@@ -1,6 +1,6 @@
 package com.kotoframework.beans.dsw
 
-import com.kotoframework.beans.exceptions.InvalidParameterException
+import com.kotoframework.exceptions.InvalidParameterException
 
 /**
  * Created by ousc on 2022/11/4 11:32

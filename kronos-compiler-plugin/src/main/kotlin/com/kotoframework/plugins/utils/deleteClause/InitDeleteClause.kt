@@ -1,9 +1,9 @@
 package com.kotoframework.plugins.utils.deleteClause
 
 import com.kotoframework.plugins.utils.applyIrCall
-import com.kotoframework.plugins.utils.asSimpleType
 import com.kotoframework.plugins.utils.kTable.getColumnName
 import com.kotoframework.plugins.utils.kTable.getTableName
+import com.kotoframework.plugins.utils.subType
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
@@ -35,7 +34,7 @@ private val fieldSymbol
 
 context(IrBuilderWithScope, IrPluginContext)
 fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
-    val irClass = expression.type.asSimpleType().arguments[0].typeOrFail.getClass()!!
+    val irClass = expression.type.subType().getClass()!!
     return applyIrCall(
         initDeleteClauseSymbol,
         expression,
@@ -49,7 +48,7 @@ fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
 
 context(IrBuilderWithScope, IrPluginContext)
 fun initDeleteClauseList(expression: IrCall): IrFunctionAccessExpression {
-    val irClass = expression.type.asSimpleType().arguments.first().typeOrFail.asSimpleType().type.asSimpleType().arguments[0].typeOrFail.getClass()!!
+    val irClass = expression.type.subType().subType().getClass()!!
     return applyIrCall(
         initDeleteClauseListSymbol,
         expression,

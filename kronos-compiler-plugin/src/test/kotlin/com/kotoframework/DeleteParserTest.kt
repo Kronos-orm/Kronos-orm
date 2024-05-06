@@ -26,8 +26,9 @@ class DeleteParserTest {
         val result = compile(
             sourceFile = SourceFile.kotlin(
                 "main.kt", """
+            import com.kotoframework.Kronos
             import com.kotoframework.annotations.Table
-//            import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
+            import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
             import com.kotoframework.interfaces.KPojo
             import com.kotoframework.orm.delete.delete
                     
@@ -39,15 +40,15 @@ class DeleteParserTest {
             ) : KPojo
                     
             fun main() {
-//                Kronos.apply {
-//                     fieldNamingStrategy = LineHumpNamingStrategy
-//                     tableNamingStrategy = LineHumpNamingStrategy
-//                }
+                Kronos.apply {
+                     fieldNamingStrategy = LineHumpNamingStrategy
+                     tableNamingStrategy = LineHumpNamingStrategy
+                }
                     
                 val user = User(1)
                 val testUser = User(1, "test")
                     
-                val (sql, paramMap) = user.delete().by { it.id }
+                val (sql, paramMap) = user.delete().by { it.id }.build()
             }        
       """.trimIndent()
             )

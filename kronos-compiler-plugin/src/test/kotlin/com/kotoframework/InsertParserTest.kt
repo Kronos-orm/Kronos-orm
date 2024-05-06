@@ -25,11 +25,11 @@ class InsertParserTest {
         val result = compile(
             sourceFile = SourceFile.kotlin("main.kt", """
       import com.kotoframework.Kronos
-import com.kotoframework.annotations.Table
-import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotoframework.interfaces.KPojo
-import com.kotoframework.orm.insert.InsertClause.Companion.execute
-import com.kotoframework.orm.insert.insert
+      import com.kotoframework.annotations.Table
+      import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
+      import com.kotoframework.interfaces.KPojo
+      import com.kotoframework.orm.insert.InsertClause.Companion.execute
+      import com.kotoframework.orm.insert.insert
 
       @Table(name = "tb_user")
       data class User(

@@ -35,3 +35,10 @@ fun initUpdateClause(clause: UpdateClause<*>, name: String, vararg fields: Field
         allFields.addAll(fields)
     }
 }
+
+fun initUpdateClauseList(clauses: List<UpdateClause<*>>, name: String, vararg fields: Field): List<UpdateClause<*>> {
+    return clauses.onEach {
+        it.tableName = name
+        it.allFields.addAll(fields)
+    }
+}

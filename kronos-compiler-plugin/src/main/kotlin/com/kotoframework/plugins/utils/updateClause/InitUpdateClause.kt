@@ -6,6 +6,7 @@ import com.kotoframework.plugins.utils.kTable.getColumnName
 import com.kotoframework.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -24,6 +25,13 @@ private val initUpdateClauseSymbol
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
+private val initUpdateClauseListSymbol
+    get() = referenceFunctions(FqName("com.kotoframework.orm.update.initUpdateClauseList"))
+        .first()
+
+
+context(IrPluginContext)
+@OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotoframework.beans.dsl.Field"))!!
 
@@ -32,6 +40,20 @@ fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.asSimpleType().arguments[0].typeOrFail.getClass()!!
     return applyIrCall(
         initUpdateClauseSymbol,
+        expression,
+        getTableName(irClass),
+        irVararg(
+            fieldSymbol.defaultType,
+            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+        )
+    )
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun initUpdateClauseList(expression: IrCall): IrFunctionAccessExpression {
+    val irClass = expression.type.asSimpleType().arguments.first().typeOrFail.asSimpleType().type.asSimpleType().arguments[0].typeOrFail.getClass()!!
+    return applyIrCall(
+        initUpdateClauseListSymbol,
         expression,
         getTableName(irClass),
         irVararg(

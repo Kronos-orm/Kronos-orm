@@ -3,6 +3,8 @@ package com.kotoframework
 import com.kotoframework.annotations.Table
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.interfaces.KPojo
+import com.kotoframework.orm.update.UpdateClause.Companion.by
+import com.kotoframework.orm.update.UpdateClause.Companion.execute
 import com.kotoframework.orm.update.update
 
 @Table(name = "tb_user")
@@ -21,7 +23,6 @@ fun main() {
     val user = User(1)
     val testUser = User(1, "test")
 
-    testUser.update { it.id + it.username }
-        .where { it.id between 123..456 }
-        .execute()
+    arrayOf(user, testUser).update { it.username }
+        .by{ it.id }.execute()
 }

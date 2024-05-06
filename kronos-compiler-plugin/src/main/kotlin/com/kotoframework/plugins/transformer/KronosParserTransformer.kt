@@ -4,15 +4,18 @@ import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransfo
 import com.kotoframework.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
 import com.kotoframework.plugins.utils.asIrCall
+import com.kotoframework.plugins.utils.asSimpleType
 import com.kotoframework.plugins.utils.insertClause.initInsertClause
 import com.kotoframework.plugins.utils.kTableConditional.funcName
 import com.kotoframework.plugins.utils.updateClause.initUpdateClause
+import com.kotoframework.plugins.utils.updateClause.initUpdateClauseList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
+import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -20,6 +23,9 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
+import org.jetbrains.kotlin.ir.types.typeOrFail
+import org.jetbrains.kotlin.ir.types.typeOrNull
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
@@ -58,6 +64,7 @@ class KronosParserTransformer(
             kTableClass -> {
                 declaration.body = transformKTable(declaration)
             }
+
             kTableConditionalClass -> {
                 declaration.body = transformKTableConditional(declaration)
             }
@@ -68,17 +75,32 @@ class KronosParserTransformer(
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         with(pluginContext) {
+            val fqName = expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false)
             when {
-                expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == updateClauseClass &&
+                fqName == updateClauseClass &&
                         expression.funcName() in listOf("update", "updateExcept") -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                         initUpdateClause(super.visitCall(expression).asIrCall())
                     }
                 }
-                expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == insertClauseClass &&
+
+                fqName == insertClauseClass &&
                         expression.funcName() == "insert" -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                         initInsertClause(super.visitCall(expression).asIrCall())
+                    }
+                }
+
+                fqName == "kotlin.collections.List" -> {
+                    val subTypeFqName =
+                        expression.type.asSimpleType().arguments.first().typeOrFail.asSimpleType().originalKotlinType?.getKotlinTypeFqName(false)
+                    when {
+                        subTypeFqName == updateClauseClass &&
+                                expression.funcName() in listOf("update", "updateExcept") -> {
+                            return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                                initUpdateClauseList(super.visitCall(expression).asIrCall())
+                            }
+                        }
                     }
                 }
             }

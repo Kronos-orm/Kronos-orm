@@ -437,7 +437,19 @@ class Update {
             testUser.update { it.id + it.username }
                 .where { listOf(1, 2, 3).contains(it.id) }.build()
         )
-            .toAsyncTask()
+            .toAsyncTask() // 还没实现 后面再拆
             .execute()
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { listOf(1, 2, 3).contains(it.id) }.build()
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
+        assertEquals(
+            mapOf(
+                "idNew" to 1,
+                "usernameNew" to "test",
+                "idList" to listOf(1, 2, 3)
+            ), paramMap
+        )
     }
+
+
 }

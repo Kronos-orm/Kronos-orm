@@ -12,7 +12,7 @@ allprojects {
 
 plugins {
     kotlin("jvm")
-    id("com.kotoframework.kronos-compiler-plugin")
+   id("com.kotoframework.kronos-compiler-plugin")
 }
 
 dependencies {

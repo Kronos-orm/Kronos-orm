@@ -18,17 +18,17 @@ class Delete {
 
     @Test
     fun testDelete() {
-        val (sql, paramMap) = user.delete().by { it.id }
+        val (sql, paramMap) = user.delete().by { it.id }.build()
         //delete from tb_user where id = 1
-        assertEquals("delete from tb_user where id = :id", sql)
+        assertEquals("DELETE FROM tb_user WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1), paramMap)
     }
 
     @Test
     fun testDelete2() {
-        val (sql, paramMap) = user.delete().logic().where()
+        val (sql, paramMap) = user.delete().logic().where().build()
         //delete from tb_user where id = 1 and deleted = 0
-        assertEquals("delete from tb_user where id = :id and deleted = 0", sql)
+        assertEquals("DELETE FROM tb_user WHERE `id` = :id and `deleted` = 0", sql)
         assertEquals(mapOf("id" to 1), paramMap)
     }
 

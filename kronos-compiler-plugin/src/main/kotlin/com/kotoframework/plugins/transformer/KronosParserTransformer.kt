@@ -6,6 +6,7 @@ import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
 import com.kotoframework.plugins.utils.asIrCall
 import com.kotoframework.plugins.utils.asSimpleType
 import com.kotoframework.plugins.utils.insertClause.initInsertClause
+import com.kotoframework.plugins.utils.insertClause.initInsertClauseList
 import com.kotoframework.plugins.utils.kTableConditional.funcName
 import com.kotoframework.plugins.utils.updateClause.initUpdateClause
 import com.kotoframework.plugins.utils.updateClause.initUpdateClauseList
@@ -99,6 +100,12 @@ class KronosParserTransformer(
                                 expression.funcName() in listOf("update", "updateExcept") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                                 initUpdateClauseList(super.visitCall(expression).asIrCall())
+                            }
+                        }
+                        subTypeFqName == insertClauseClass &&
+                                expression.funcName() in listOf("update", "updateExcept") -> {
+                            return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                                initInsertClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
                     }

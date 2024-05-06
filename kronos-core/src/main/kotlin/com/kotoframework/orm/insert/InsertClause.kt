@@ -2,11 +2,15 @@ package com.kotoframework.orm.insert
 
 import com.kotoframework.beans.dsl.Criteria
 import com.kotoframework.beans.dsl.Field
+import com.kotoframework.beans.task.KronosAtomicBatchTask
 import com.kotoframework.beans.task.KronosAtomicTask
 import com.kotoframework.beans.task.KronosOperationResult
 import com.kotoframework.enums.KOperationType
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KronosDataSourceWrapper
+import com.kotoframework.orm.update.UpdateClause
+import com.kotoframework.types.KTableConditionalField
+import com.kotoframework.types.KTableField
 import com.kotoframework.utils.Extensions.toMap
 import com.kotoframework.utils.execute
 
@@ -37,5 +41,21 @@ class InsertClause<T : KPojo>(t: T) {
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         return build().execute(wrapper)
+    }
+
+    companion object {
+
+        fun <T : KPojo> List<InsertClause<T>>.build(): KronosAtomicBatchTask {
+            val tasks = this.map { it.build() }
+            return KronosAtomicBatchTask(
+                sql = tasks.first().sql,
+                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
+                operationType = KOperationType.INSERT
+            )
+        }
+
+        fun <T : KPojo> List<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+            return build().execute(wrapper)
+        }
     }
 }

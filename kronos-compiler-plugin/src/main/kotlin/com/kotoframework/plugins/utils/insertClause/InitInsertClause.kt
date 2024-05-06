@@ -24,6 +24,12 @@ private val initInsertClauseSymbol
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
+private val initInsertClauseListSymbol
+    get() = referenceFunctions(FqName("com.kotoframework.orm.insert.initInsertClauseList"))
+        .first()
+
+context(IrPluginContext)
+@OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotoframework.beans.dsl.Field"))!!
 
@@ -32,6 +38,20 @@ fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.asSimpleType().arguments[0].typeOrFail.getClass()!!
     return applyIrCall(
         initInsertClauseSymbol,
+        expression,
+        getTableName(irClass),
+        irVararg(
+            fieldSymbol.defaultType,
+            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+        )
+    )
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun initInsertClauseList(expression: IrCall): IrFunctionAccessExpression {
+    val irClass = expression.type.asSimpleType().arguments.first().typeOrFail.asSimpleType().type.asSimpleType().arguments[0].typeOrFail.getClass()!!
+    return applyIrCall(
+        initInsertClauseListSymbol,
         expression,
         getTableName(irClass),
         irVararg(

@@ -2,6 +2,8 @@ package tests
 
 import com.kotoframework.Kronos
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotoframework.orm.insert.InsertClause.Companion.build
+import com.kotoframework.orm.insert.insert
 import com.kotoframework.orm.update.UpdateClause.Companion.build
 import com.kotoframework.orm.update.UpdateClause.Companion.where
 import com.kotoframework.orm.update.update
@@ -421,8 +423,7 @@ class Update {
 
     @Test
     fun testNew(){
-        arrayOf(user, testUser).update { it.id + it.username }
-            .where { it.id in listOf(1, 2, 3) }.build()
+        arrayOf(user, testUser).insert().build()
 
 
         // 组批和任务队列，此测试未来需拆开

@@ -13,7 +13,10 @@ data class KotoAtomicBatchTask(
 
     @Deprecated("Please use 'paramMapArr' instead.")
     override val paramMap: Map<String, Any?> = mapOf()
-    fun parsed() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }
+    fun parsed() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }.let {
+        Pair(it.firstOrNull()?.jdbcSql, it.map { parsedSql ->  parsedSql.jdbcParamList })
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

@@ -1,5 +1,7 @@
 package com.kotoframework.beans.dsw
 
+import com.kotoframework.beans.task.KotoAtomicBatchTask
+import com.kotoframework.beans.task.KotoAtomicTask
 import com.kotoframework.enums.DBType
 import com.kotoframework.exceptions.NoDataSourceException
 import com.kotoframework.i18n.Noun.noDataSourceMessage
@@ -12,31 +14,27 @@ class NoneDataSourceWrapper : KotoDataSourceWrapper {
     override val dbType: DBType
         get() = throw NoDataSourceException(noDataSourceMessage)
 
-    override fun forList(sql: String, paramMap: Map<String, Any?>): List<Map<String, Any>> {
+    override fun forList(task: KotoAtomicTask): List<Map<String, Any>> {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forList(sql: String, paramMap: Map<String, Any?>, kClass: KClass<*>): List<Any> {
+    override fun forList(task: KotoAtomicTask, kClass: KClass<*>): List<Any> {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forMap(sql: String, paramMap: Map<String, Any?>): Map<String, Any>? {
+    override fun forMap(task: KotoAtomicTask): Map<String, Any>? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forObject(
-        sql: String,
-        paramMap: Map<String, Any?>,
-        kClass: KClass<*>
-    ): Any {
+    override fun forObject(task: KotoAtomicTask, kClass: KClass<*>): Any? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun update(sql: String, paramMap: Map<String, Any?>): Int {
+    override fun update(task: KotoAtomicTask): Int {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray {
+    override fun batchUpdate(task: KotoAtomicBatchTask): IntArray {
         throw NoDataSourceException(noDataSourceMessage)
     }
 }

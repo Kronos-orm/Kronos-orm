@@ -1,5 +1,7 @@
 package com.kotoframework.interfaces
 
+import com.kotoframework.beans.task.KotoAtomicBatchTask
+import com.kotoframework.beans.task.KotoAtomicTask
 import com.kotoframework.enums.DBType
 import com.kotoframework.exceptions.NoDataSourceException
 import kotlin.reflect.KClass
@@ -52,7 +54,7 @@ interface KotoDataSourceWrapper {
      *         empty list.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
-    fun forList(sql: String, paramMap: Map<String, Any?> = mapOf()): List<Map<String, Any>>
+    fun forList(task: KotoAtomicTask): List<Map<String, Any>>
 
     /**
      * Executes a SQL query and returns the results as a list of objects. The type of objects in the list is determined
@@ -75,8 +77,7 @@ interface KotoDataSourceWrapper {
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forList(
-        sql: String,
-        paramMap: Map<String, Any?>,
+        task: KotoAtomicTask,
         kClass: KClass<*>
     ): List<Any>
 
@@ -94,7 +95,7 @@ interface KotoDataSourceWrapper {
      *         value is the value of that column for that row. If the query returns no rows, this method returns `null`.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
-    fun forMap(sql: String, paramMap: Map<String, Any?> = mapOf()): Map<String, Any>?
+    fun forMap(task: KotoAtomicTask): Map<String, Any>?
 
     /**
      * Executes a SQL query and attempts to convert the result set's single row into an instance of the specified Java class.
@@ -111,8 +112,7 @@ interface KotoDataSourceWrapper {
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun forObject(
-        sql: String,
-        paramMap: Map<String, Any?>,
+        task: KotoAtomicTask,
         kClass: KClass<*>
     ): Any?
 
@@ -129,7 +129,7 @@ interface KotoDataSourceWrapper {
      *         update operation, with a return value of 0 indicating that no rows were affected.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
-    fun update(sql: String, paramMap: Map<String, Any?> = mapOf()): Int
+    fun update(task: KotoAtomicTask): Int
 
     /**
      * Executes a batch of SQL update operations (such as INSERT, UPDATE, or DELETE) using a single SQL string and an array of parameter maps.
@@ -146,5 +146,5 @@ interface KotoDataSourceWrapper {
      *         This can be used to verify the success and impact of each update operation within the batch.
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
-    fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray
+    fun batchUpdate(task: KotoAtomicBatchTask): IntArray
 }

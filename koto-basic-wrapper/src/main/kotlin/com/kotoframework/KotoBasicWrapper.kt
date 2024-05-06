@@ -1,7 +1,8 @@
 package com.kotoframework
 
-import com.kotoframework.beans.dsw.NamedParameterUtils.parseSqlStatement
 import com.kotoframework.beans.UnsupportedTypeException
+import com.kotoframework.beans.task.KotoAtomicBatchTask
+import com.kotoframework.beans.task.KotoAtomicTask
 import com.kotoframework.enums.DBType
 import com.kotoframework.interfaces.KPojo
 import com.kotoframework.interfaces.KotoDataSourceWrapper
@@ -27,11 +28,11 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         conn.close()
     }
 
-    override fun forList(sql: String, paramMap: Map<String, Any?>): List<Map<String, Any>> {
-        val (jdbcSql, jdbcParamList) = parseSqlStatement(sql, paramMap)
+    override fun forList(task: KotoAtomicTask): List<Map<String, Any>> {
+        val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
-        val ps = conn.prepareStatement(jdbcSql)
-        jdbcParamList.forEachIndexed { index, any ->
+        val ps = conn.prepareStatement(sql)
+        paramList.forEachIndexed { index, any ->
             ps.setObject(index + 1, any)
         }
         val rs = ps.executeQuery()
@@ -53,14 +54,14 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         return list
     }
 
-    override fun forList(sql: String, paramMap: Map<String, Any?>, kClass: KClass<*>): List<Any> {
+    override fun forList(task: KotoAtomicTask, kClass: KClass<*>): List<Any> {
         return if (kClass.java.isAssignableFrom(KPojo::class.java)) {
-            forList(sql, paramMap).map { it.toKPojo(kClass) }
+            forList(task).map { it.toKPojo(kClass) }
         } else {
-            val (jdbcSql, jdbcParamList) = parseSqlStatement(sql, paramMap)
+            val (sql, paramList) = task.parsed()
             val conn = dataSource.connection
-            val ps = conn.prepareStatement(jdbcSql)
-            jdbcParamList.forEachIndexed { index, any ->
+            val ps = conn.prepareStatement(sql)
+            paramList.forEachIndexed { index, any ->
                 ps.setObject(index + 1, any)
             }
             val rs = ps.executeQuery()
@@ -75,11 +76,11 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         }
     }
 
-    override fun forMap(sql: String, paramMap: Map<String, Any?>): Map<String, Any>? {
-        val (jdbcSql, jdbcParamList) = parseSqlStatement(sql, paramMap)
+    override fun forMap(task: KotoAtomicTask): Map<String, Any>? {
+        val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
-        val ps = conn.prepareStatement(jdbcSql)
-        jdbcParamList.forEachIndexed { index, any ->
+        val ps = conn.prepareStatement(sql)
+        paramList.forEachIndexed { index, any ->
             ps.setObject(index + 1, any)
         }
         val rs = ps.executeQuery()
@@ -99,8 +100,8 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         return list.firstOrNull()
     }
 
-    override fun forObject(sql: String, paramMap: Map<String, Any?>, kClass: KClass<*>): Any? {
-        val map = forMap(sql, paramMap)
+    override fun forObject(task: KotoAtomicTask, kClass: KClass<*>): Any? {
+        val map = forMap(task)
         val clazz = kClass.java
         return if (String::class.java == kClass.java) {
             map?.values?.firstOrNull()?.toString()
@@ -133,11 +134,11 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         }
     }
 
-    override fun update(sql: String, paramMap: Map<String, Any?>): Int {
-        val (jdbcSql, jdbcParamList) = parseSqlStatement(sql, paramMap)
+    override fun update(task: KotoAtomicTask): Int {
+        val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
-        val ps = conn.prepareStatement(jdbcSql)
-        jdbcParamList.forEachIndexed { index, any ->
+        val ps = conn.prepareStatement(sql)
+        paramList.forEachIndexed { index, any ->
             ps.setObject(index + 1, any)
         }
         val result = ps.executeUpdate()
@@ -146,11 +147,11 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
         return result
     }
 
-    override fun batchUpdate(sql: String, paramMaps: Array<Map<String, Any?>>?): IntArray {
-        val (newSql, newParamList) = convertSql(sql, paramMaps ?: arrayOf())
+    override fun batchUpdate(task: KotoAtomicBatchTask): IntArray {
+        val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
-        val ps = conn.prepareStatement(newSql)
-        newParamList.forEach { paramMap ->
+        val ps = conn.prepareStatement(sql)
+        paramList.forEach { paramMap ->
             paramMap.forEachIndexed { index, any ->
                 ps.setObject(index + 1, any)
             }
@@ -163,15 +164,6 @@ class KotoBasicWrapper(private val dataSource: DataSource) : KotoDataSourceWrapp
     }
 
     companion object {
-        private fun convertSql(sql: String, paramMaps: Array<Map<String, Any?>>): Pair<String, List<List<Any?>>> {
-            val (jdbcSql) = parseSqlStatement(sql, paramMaps.first())
-            val newParamList = mutableListOf<List<Any?>>()
-            paramMaps.forEach {
-                newParamList.add(parseSqlStatement(sql, it).jdbcParamList)
-            }
-            return Pair(jdbcSql, newParamList)
-        }
-
         inline fun <reified T> transact(dataSource: DataSource, block: (DataSource) -> T): T {
             val res: T?
             val conn = dataSource.connection

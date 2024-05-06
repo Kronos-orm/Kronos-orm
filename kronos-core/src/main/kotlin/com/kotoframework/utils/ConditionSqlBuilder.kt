@@ -195,5 +195,4 @@ object ConditionSqlBuilder {
 
     // 辅助扩展函数，用于判断是否为逻辑操作符类型
     private fun ConditionType?.isLogicalOperator(): Boolean = this == AND || this == OR
-    private fun Field.quotedColumnName(): String = "`$columnName`"
 }

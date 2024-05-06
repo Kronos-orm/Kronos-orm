@@ -103,7 +103,7 @@ class KronosParserTransformer(
                             }
                         }
                         subTypeFqName == insertClauseClass &&
-                                expression.funcName() in listOf("update", "updateExcept") -> {
+                                expression.funcName() in listOf("insert") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                                 initInsertClauseList(super.visitCall(expression).asIrCall())
                             }

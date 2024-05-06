@@ -47,9 +47,7 @@ import com.kotoframework.orm.insert.insert
         val user = User(1)
         val testUser = User(1, "test")
 
-        listOf(user, testUser).insert().build()
-//           .where {  !(it.gender.notNull && it.id == 1 || (it.username like "aa" }} || it.gender != 1)) }
-            .execute()
+        arrayOf(user, testUser).insert().execute()
       }
       """.trimIndent())
         )

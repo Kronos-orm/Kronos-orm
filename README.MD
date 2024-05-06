@@ -1,11 +1,12 @@
 ![logo](https://cdn.leinbo.com/assets/images/koto_logo_dark.png)
-##### Koto是一款前所未有的、开创性的、现代化的kotlin ORM框架。
+##### Kronos ORM(Kotlin Reactive Object-Relational-Mapping)是一款前所未有的、开创性的、现代化的kotlin ORM框架。
 
-它基于K2编译器插件分析表达式树，实现了简洁而又语义化的数据持久层框架，让使用者在开发过程中可以更加高效地操作数据。
+*Kronos*是一个轻量级的框架，为开发者提供了一种高效的数据持久化解决方案。
 
-Koto的设计初衷是为了弥补现有ORM框架中不足之处，并针对kotlin后端开发、移动端开发以及KMM多平台开发做了特别的优化。不仅如此，它还支持多种常见关系型数据库，包括Mysql、Oracle、Postgres、Mssql、SQLite、DB2、Sybase和H2，以及国产数据库OceanBase和DM8。
+*Kronos*使用Kotlin K2编译器插件分析Kotlin Ir表达式树，实现了简洁而又语义化的数据持久层框架，让使用者在开发过程中可以更加高效地操作数据。
 
-通过编写kotlin k2编译器插件，Koto 2.0实现了更加强大和语义化的ORM功能。它是一个轻量级的框架，为开发者提供了一种高效的数据持久化解决方案。
+*Kronos*的设计初衷是为了弥补现有ORM框架中不足之处，并基于协程和任务机制对数据操作提供更加便捷和高效的编写体验.
+不仅如此，它还支持多种常见关系型数据库，包括Mysql、Oracle、Postgres、Mssql、SQLite、DB2、Sybase和H2，以及国产数据库OceanBase和DM8。
 
 -------
 > 查询示例：

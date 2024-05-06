@@ -10,6 +10,9 @@ pluginManagement {
             if (requested.id.namespace == "org.jetbrains.kotlin") {
                 useVersion(file("kotlin.version").readText().trim())
             }
+            if (requested.id.namespace == "com.kotoframework") {
+                useVersion(file("kronos.version").readText().trim())
+            }
         }
     }
 }
@@ -18,11 +21,11 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
 }
 
-rootProject.name = "kotoframework"
+rootProject.name = "kronos-orm"
 rootProject.children.forEach { project ->
     project.buildFileName = "${project.name}.gradle.kts"
 }
-include("koto-core")
-include("koto-logging")
-include("koto-k2-compiler-plugin")
-include("koto-basic-wrapper")
+include("kronos-core")
+include("kronos-logging")
+include("kronos-compiler-plugin")
+include("kronos-basic-wrapper")

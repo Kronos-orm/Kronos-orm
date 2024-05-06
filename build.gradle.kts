@@ -1,11 +1,8 @@
-plugins {
-    kotlin("jvm")
-    id("com.kotoframework.koto-k2-compiler-plugin") version "2.0.0-SNAPSHOT"
-}
+import org.jetbrains.kotlin.fir.declarations.builder.buildScript
 
 allprojects {
     group = "com.kotoframework"
-    version = "2.0.0-SNAPSHOT"
+    version = File(rootDir, "kronos.version").readText().trim()
 
     repositories {
         mavenLocal()
@@ -13,11 +10,16 @@ allprojects {
     }
 }
 
+plugins {
+    kotlin("jvm")
+    id("com.kotoframework.kronos-compiler-plugin")
+}
+
 dependencies {
     testImplementation(kotlin("test"))
-    testImplementation(project(":koto-core"))
-    testImplementation(project(":koto-logging"))
-    testImplementation(project(":koto-basic-wrapper"))
+    testImplementation(project(":kronos-core"))
+    testImplementation(project(":kronos-logging"))
+    testImplementation(project(":kronos-basic-wrapper"))
 }
 
 tasks.test {

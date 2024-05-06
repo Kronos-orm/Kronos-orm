@@ -46,19 +46,23 @@ object Extensions {
                     this[it.name] ?: this[fieldDb2k(it.name!!)]
                 }
             })
-        } catch (e: IllegalArgumentException) {
-            // compare the argument type of constructor and the given value, print which argument is mismatched
-            val mismatchedArgument = constructor.parameters.first {
-                if (this[it.name] == null) {
-                    !it.isOptional
-                } else {
-                    it.type.javaType.typeName != this[it.name]!!.javaClass.typeName
+        } catch (e: Exception) {
+            if (e is IllegalArgumentException) {
+                // compare the argument type of constructor and the given value, print which argument is mismatched
+                val mismatchedArgument = constructor.parameters.first {
+                    if (this[it.name] == null) {
+                        !it.isOptional
+                    } else {
+                        it.type.javaType.typeName != this[it.name]!!.javaClass.typeName
+                    }
                 }
-            }
-            if (this[mismatchedArgument.name] == null) {
-                throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is null, but it's not optional.")
+                if (this[mismatchedArgument.name] == null) {
+                    throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is null, but it's not optional.")
+                } else {
+                    throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is ${this[mismatchedArgument.name]!!.javaClass.typeName} but expected ${mismatchedArgument.type.javaType.typeName}.")
+                }
             } else {
-                throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is ${this[mismatchedArgument.name]!!.javaClass.typeName} but expected ${mismatchedArgument.type.javaType.typeName}.")
+                throw e
             }
         }
     }

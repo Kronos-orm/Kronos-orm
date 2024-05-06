@@ -4,6 +4,7 @@ import com.kotoframework.plugins.transformer.criteria.CriteriaParseReturnTransfo
 import com.kotoframework.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
 import com.kotoframework.plugins.utils.asIrCall
+import com.kotoframework.plugins.utils.insertClause.initInsertClause
 import com.kotoframework.plugins.utils.kTableConditional.funcName
 import com.kotoframework.plugins.utils.updateClause.initUpdateClause
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -36,6 +37,7 @@ class KronosParserTransformer(
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotoframework.beans.dsl.KTable"
     private val updateClauseClass = "com.kotoframework.orm.update.UpdateClause"
+    private val insertClauseClass = "com.kotoframework.orm.insert.InsertClause"
     private val kTableConditionalClass = "com.kotoframework.beans.dsl.KTableConditional"
 
     @OptIn(FirIncompatiblePluginAPI::class)
@@ -71,6 +73,12 @@ class KronosParserTransformer(
                         expression.funcName() in listOf("update", "updateExcept") -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                         initUpdateClause(super.visitCall(expression).asIrCall())
+                    }
+                }
+                expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false) == insertClauseClass &&
+                        expression.funcName() == "insert" -> {
+                    return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                        initInsertClause(super.visitCall(expression).asIrCall())
                     }
                 }
             }

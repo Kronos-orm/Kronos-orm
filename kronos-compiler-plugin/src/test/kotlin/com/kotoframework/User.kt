@@ -3,8 +3,7 @@ package com.kotoframework
 import com.kotoframework.annotations.Table
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.interfaces.KPojo
-import com.kotoframework.orm.insert.InsertClause.Companion.execute
-import com.kotoframework.orm.insert.insert
+import com.kotoframework.orm.delete.delete
 
 @Table(name = "tb_user")
 data class User(
@@ -22,5 +21,6 @@ fun main() {
     val user = User(1)
     val testUser = User(1, "test")
 
-    arrayOf(user, testUser).insert().execute()
+
+    val (sql, paramMap) = user.delete().by { it.id }
 }

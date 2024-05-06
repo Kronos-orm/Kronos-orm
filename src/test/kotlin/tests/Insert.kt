@@ -4,9 +4,6 @@ import com.kotoframework.Kronos
 import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotoframework.orm.insert.InsertClause.Companion.build
 import com.kotoframework.orm.insert.insert
-import com.kotoframework.orm.update.UpdateClause.Companion.build
-import com.kotoframework.orm.update.UpdateClause.Companion.where
-import com.kotoframework.orm.update.update
 import com.kotoframework.utils.execute
 import com.kotoframework.utils.toAsyncTask
 import org.junit.jupiter.api.Test

@@ -5,6 +5,8 @@ import com.kotoframework.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotoframework.plugins.transformer.kTable.KTableAddParamTransformer
 import com.kotoframework.plugins.utils.asIrCall
 import com.kotoframework.plugins.utils.asSimpleType
+import com.kotoframework.plugins.utils.deleteClause.initDeleteClause
+import com.kotoframework.plugins.utils.deleteClause.initDeleteClauseList
 import com.kotoframework.plugins.utils.insertClause.initInsertClause
 import com.kotoframework.plugins.utils.insertClause.initInsertClauseList
 import com.kotoframework.plugins.utils.kTableConditional.funcName
@@ -45,6 +47,7 @@ class KronosParserTransformer(
     private val kTableClass = "com.kotoframework.beans.dsl.KTable"
     private val updateClauseClass = "com.kotoframework.orm.update.UpdateClause"
     private val insertClauseClass = "com.kotoframework.orm.insert.InsertClause"
+    private val deleteClauseClass = "com.kotoframework.orm.delete.DeleteClause"
     private val kTableConditionalClass = "com.kotoframework.beans.dsl.KTableConditional"
 
     @OptIn(FirIncompatiblePluginAPI::class)
@@ -92,6 +95,13 @@ class KronosParserTransformer(
                     }
                 }
 
+                fqName == deleteClauseClass &&
+                        expression.funcName() == "delete" -> {
+                    return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                        initDeleteClause(super.visitCall(expression).asIrCall())
+                    }
+                }
+
                 fqName == "kotlin.collections.List" -> {
                     val subTypeFqName =
                         expression.type.asSimpleType().arguments.first().typeOrFail.asSimpleType().originalKotlinType?.getKotlinTypeFqName(false)
@@ -106,6 +116,12 @@ class KronosParserTransformer(
                                 expression.funcName() in listOf("insert") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                                 initInsertClauseList(super.visitCall(expression).asIrCall())
+                            }
+                        }
+                        subTypeFqName == deleteClauseClass &&
+                                expression.funcName() == "delete" -> {
+                            return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                                initDeleteClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
                     }

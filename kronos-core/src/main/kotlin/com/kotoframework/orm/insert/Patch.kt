@@ -13,8 +13,8 @@ inline fun <reified T : KPojo> Array<T>.insert(): List<InsertClause<T>> {
     return map { InsertClause(it) }
 }
 
-inline fun <reified T : KPojo> Iterable<T>.insert(): List<UpdateClause<T>> {
-    return map { UpdateClause(it) }
+inline fun <reified T : KPojo> Iterable<T>.insert(): List<InsertClause<T>> {
+    return map { InsertClause(it) }
 }
 
 fun initInsertClause(clause: InsertClause<*>, name: String, vararg fields: Field): InsertClause<*> {

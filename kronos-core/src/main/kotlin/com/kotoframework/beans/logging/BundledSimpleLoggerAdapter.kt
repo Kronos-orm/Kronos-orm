@@ -17,7 +17,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
 
         var logPath = mutableListOf("console")
         var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss"
-        var colorPrintEnabled = false
+        var colorPrintEnabled = true
         var traceEnabled = true
         var debugEnabled = true
         var infoEnabled = true
@@ -45,6 +45,10 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
 
     data class LogTask(val level: KLogLevel, val messages: List<KLogMessage>)
 
+    private fun Array<KLogMessage>.attachCodes(codes: Array<ColorPrintCode>): MutableList<KLogMessage> {
+        return this.onEach { if (it.codes.isEmpty()) it.codes = codes }.toMutableList()
+    }
+
     override fun isTraceEnabled(): Boolean {
         return traceEnabled
     }
@@ -53,8 +57,15 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         logTaskList.add(
             LogTask(
                 KLogLevel.TRACE,
-                messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [trace] [$tagName] "))
+                messages.attachCodes(ColorPrintCode.BLUE.toArray())
+                    .apply {
+                        add(
+                            0,
+                            KLogMessage(
+                                "[${currentDateTime(logDateTimeFormat)}] [trace] [$tagName] ",
+                                ColorPrintCode.BLUE.toArray()
+                            )
+                        )
                 }
             )
         )
@@ -68,9 +79,16 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
             LogTask(
-                KLogLevel.TRACE,
-                messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [debug] [$tagName] "))
+                KLogLevel.DEBUG,
+                messages.attachCodes(ColorPrintCode.MAGENTA.toArray())
+                    .apply {
+                        add(
+                            0,
+                            KLogMessage(
+                                "[${currentDateTime(logDateTimeFormat)}] [debug] [$tagName] ",
+                                ColorPrintCode.MAGENTA.toArray()
+                            )
+                        )
                 }
             )
         )
@@ -84,9 +102,16 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
             LogTask(
-                KLogLevel.TRACE,
-                messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [info] [$tagName] "))
+                KLogLevel.INFO,
+                messages.attachCodes(ColorPrintCode.CYAN.toArray())
+                    .apply {
+                        add(
+                            0,
+                            KLogMessage(
+                                "[${currentDateTime(logDateTimeFormat)}] [info] [$tagName] ",
+                                ColorPrintCode.CYAN.toArray()
+                            )
+                        )
                 }
             )
         )
@@ -100,9 +125,16 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
             LogTask(
-                KLogLevel.TRACE,
-                messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [warn] [$tagName] "))
+                KLogLevel.WARN,
+                messages.attachCodes(ColorPrintCode.YELLOW.toArray())
+                    .apply {
+                        add(
+                            0,
+                            KLogMessage(
+                                "[${currentDateTime(logDateTimeFormat)}] [warn] [$tagName] ",
+                                ColorPrintCode.YELLOW.toArray()
+                            )
+                        )
                 }
             )
         )
@@ -116,9 +148,16 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
             LogTask(
-                KLogLevel.TRACE,
-                messages.toMutableList().apply {
-                    add(0, KLogMessage("[${currentDateTime(logDateTimeFormat)}] [error] [$tagName] "))
+                KLogLevel.ERROR,
+                messages.attachCodes(ColorPrintCode.RED.toArray())
+                    .apply {
+                        add(
+                            0,
+                            KLogMessage(
+                                "[${currentDateTime(logDateTimeFormat)}] [error] [$tagName] ",
+                                ColorPrintCode.RED.toArray()
+                            )
+                        )
                 }
             )
         )

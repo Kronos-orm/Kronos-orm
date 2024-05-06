@@ -42,7 +42,7 @@ object Kronos {
 
     init {
         defaultLogger(this).info(
-            logMessageOf("KotoFramework started.", ColorPrintCode.GREEN.toArray()).endl().toArray()
+            logMessageOf("KotoFramework started successfully.", ColorPrintCode.GREEN.toArray()).endl().toArray()
         )
         detectLoggerImplementation()
     }

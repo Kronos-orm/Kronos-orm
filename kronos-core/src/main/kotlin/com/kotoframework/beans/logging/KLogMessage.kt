@@ -20,7 +20,7 @@ import java.io.FileWriter
  */
 class KLogMessage(
     private val text: String,
-    private val codes: Array<ColorPrintCode> = arrayOf(),
+    internal var codes: Array<ColorPrintCode> = arrayOf(),
     private var endLine: Boolean = false,
 ) {
 

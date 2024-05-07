@@ -601,4 +601,19 @@ class Update {
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` >= :idMin", sql)
         assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMin" to 1), paramMap)
     }
+
+    @Test
+    fun testUpdateExceptWithSet() {
+        val (sql, paramMap) = testUser.updateExcept { it.username }
+            .set { it.id = 1 }
+            .by { it.id }
+            .build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET gender = :genderNew, id = :idNew WHERE `id` = :id", sql)
+        assertEquals(mapOf("idNew" to 1, "genderNew" to null, "usernameNew" to "test", "id" to 1), paramMap)
+        // Update tb_user set username = 'test' where id = 1
+    }
 }

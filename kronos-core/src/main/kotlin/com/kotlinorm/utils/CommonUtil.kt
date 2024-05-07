@@ -1,9 +1,8 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.enums.KOperationType
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 
 /**
  *@program: kronos-orm
@@ -11,26 +10,19 @@ import java.time.format.DateTimeFormatter
  *@description:
  *@create: 2024/5/7 16:01
  **/
-object CommonUtil {
 
-    fun setAuditStrategy(
-        strategy: KronosCommonStrategy,
-        fields: MutableList<String>,
-        paramMap: MutableMap<String, Any?>,
-        timeStrategy: Boolean,
-        deleted: Boolean = true,
-    ) {
-        if (strategy.enabled) {
-
-            if (timeStrategy) {
-                val format = (strategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
-                fields.add(strategy.field.columnName)
-                paramMap[strategy.field.name] = DateTimeFormatter.ofPattern(format).format(LocalDateTime.now())
-            } else {
-                fields.add(strategy.field.columnName)
-                paramMap[strategy.field.name] = 1.takeIf { deleted } ?: 0
-            }
+fun setCommonStrategy(
+    strategy: KronosCommonStrategy,
+    timeStrategy: Boolean = false,
+    deleted: Boolean = false,
+    callBack: (field: Field, value: Any?) -> Unit
+) {
+    if (strategy.enabled) {
+        if (timeStrategy) {
+            val format = (strategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
+            callBack(strategy.field, currentDateTime(format))
+        } else {
+            callBack(strategy.field, 1.takeIf { deleted } ?: 0)
         }
     }
-
 }

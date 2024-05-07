@@ -8,9 +8,6 @@ import com.kotlinorm.beans.dsl.KTableConditional
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.enums.AND
-import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.enums.Equal
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -18,10 +15,12 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.Extensions.asSql
+import com.kotlinorm.utils.Extensions.eq
+import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import com.kotlinorm.utils.setCommonStrategy
 import kotlin.reflect.full.createInstance
 
 class UpdateClause<T : KPojo>(
@@ -42,28 +41,23 @@ class UpdateClause<T : KPojo>(
             with(KTable(pojo::class.createInstance())) {
                 setUpdateFields()
                 toUpdateFields.addAll(fields)
-                toUpdateFields.distinct().forEach {
-                    paramMapNew[
-                        Field(
-                            it.columnName,
-                            it.name + "New"
-                        )
-                    ] = paramMap[it.name]
-                }
+            }
+            toUpdateFields.distinct().forEach {
+                paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
     }
 
-    fun set(rowData: KTableField<T, Unit>): UpdateClause<T> {
-        if (rowData == null) throw NeedFieldsException()
+    fun set(newValue: KTableField<T, Unit>): UpdateClause<T> {
+        if (newValue == null) throw NeedFieldsException()
         with(KTable(pojo::class.createInstance())) {
-            rowData()
+            newValue()
             if (isExcept) {
                 toUpdateFields.removeAll(fields)
             } else {
                 toUpdateFields.addAll(fields)
             }
-            paramMapNew.putAll(fieldParamMap)
+            paramMapNew.putAll(fieldParamMap.map { it.key + "New" to it.value })
         }
         return this
     }
@@ -72,20 +66,7 @@ class UpdateClause<T : KPojo>(
         if (someFields == null) throw NeedFieldsException()
         with(KTable(pojo::class.createInstance())) {
             someFields()
-            if (fields.isEmpty()) {
-                throw NeedFieldsException()
-            }
-            condition = Criteria(
-                type = AND,
-            ).apply {
-                children = fields.map {
-                    Criteria(
-                        type = Equal,
-                        field = it,
-                        value = paramMap[it.name]
-                    )
-                }.toMutableList()
-            }
+            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this
     }
@@ -94,18 +75,9 @@ class UpdateClause<T : KPojo>(
         if (updateCondition == null) return this
             .apply {
                 // 获取所有字段 且去除null
-                condition = Criteria(
-                    type = AND,
-                    children = paramMap.keys.map { propName ->
-                        Criteria(
-                            type = Equal,
-                            field = allFields.first { it.name == propName },
-                            value = paramMap[propName]
-                        ).let {
-                            if (it.value == null) null else it
-                        }
-                    }.toMutableList()
-                )
+                condition = paramMap.keys.mapNotNull { propName ->
+                    allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
+                }.toCriteria()
             }
         with(KTableConditional(pojo::class.createInstance())) {
             propParamMap = paramMap
@@ -118,13 +90,9 @@ class UpdateClause<T : KPojo>(
     fun build(): KronosAtomicTask {
         // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
         if (isExcept) {
-            toUpdateFields =
-                allFields.apply { removeIf { it.columnName in toUpdateFields.map { f -> f.columnName } } }
-                    .toMutableList()
+            toUpdateFields = (allFields - toUpdateFields.toSet()).toMutableList()
             toUpdateFields.forEach {
-                paramMapNew[Field(
-                    it.columnName, it.name + "New"
-                )] = paramMap[it.name]
+                paramMapNew[it + "new"] = paramMap[it.name]
             }
         }
 
@@ -132,54 +100,39 @@ class UpdateClause<T : KPojo>(
             // 全都更新
             toUpdateFields = allFields.toMutableList()
             toUpdateFields.forEach {
-                if (logicDeleteStrategy.enabled && logicDeleteStrategy.field != it) {
-                    paramMapNew[Field(
-                        it.columnName, it.name + "New"
-                    )] = paramMap[it.name]
-                }
+                paramMapNew[it + "new"] = paramMap[it.name]
             }
         }
 
         // 设置逻辑删除
-        if (logicDeleteStrategy.enabled) {
-            val logicDeleteField = logicDeleteStrategy.field
-            toUpdateFields.remove(logicDeleteField)
-            condition = Criteria(
-                type = AND,
-                children = mutableListOf(
-                    condition,
-                    Criteria(type = ConditionType.SQL, value = "${logicDeleteField.quotedColumnName()} = 0")
-                )
-            )
+        setCommonStrategy(logicDeleteStrategy) { field, value ->
+            toUpdateFields.remove(field)
+            paramMapNew.remove(field + "new")
+            condition = listOfNotNull(
+                condition, "${logicDeleteStrategy.field.quotedColumnName()} = $value".asSql()
+            ).toCriteria()
         }
 
         // 设置更新时间
-        paramMapNew.apply {
-            if (updateTimeStrategy.enabled) {
-                val format = (updateTimeStrategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
-                put(
-                    Field(updateTimeStrategy.field.columnName, updateTimeStrategy.field.name),
-                    DateTimeFormatter.ofPattern(format).format(LocalDateTime.now())
-                )
-            }
+        setCommonStrategy(updateTimeStrategy, true) { field, value ->
+            paramMapNew[field + "new"] = value
         }
 
-        val updateFields = toUpdateFields.joinToString(", ") { "${it.name} = :${it.name + "New"}" }
+        val updateFields = toUpdateFields.joinToString(", ") { "$it = :${it.name + "New"}" }
 
-        var (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
-        if (!conditionSql.isNullOrEmpty()) {
-            conditionSql = "WHERE $conditionSql"
-        }
+        val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 
-        val sql = listOfNotNull("UPDATE", tableName, "SET", updateFields, conditionSql).joinToString(" ")
+        val sql = listOfNotNull(
+            "UPDATE",
+            tableName,
+            "SET",
+            updateFields,
+            "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
+            conditionSql?.ifEmpty { null }
+        ).joinToString(" ")
+
         // 合并
-        paramMap.apply {
-            putAll(paramMapNew.map { entry ->
-                // 如果 key 不以 "New" 结尾，则添加 "New" 后缀
-                val keyWithSuffix = if (!entry.key.name.endsWith("New")) entry.key.name + "New" else entry.key.name
-                keyWithSuffix to entry.value
-            })
-        }
+        paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
         return KronosAtomicTask(
             sql,
             paramMap,

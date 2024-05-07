@@ -3,7 +3,6 @@ package com.kotlinorm.utils
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.utils.ConditionSqlBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

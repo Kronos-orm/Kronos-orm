@@ -29,7 +29,6 @@ data class KronosAtomicBatchTask(
             if (!paramMapArr.contentEquals(other.paramMapArr)) return false
         } else if (other.paramMapArr != null) return false
         if (operationType != other.operationType) return false
-        if (paramMap != other.paramMap) return false
 
         return true
     }
@@ -38,7 +37,6 @@ data class KronosAtomicBatchTask(
         var result = sql.hashCode()
         result = 31 * result + (paramMapArr?.contentHashCode() ?: 0)
         result = 31 * result + operationType.hashCode()
-        result = 31 * result + paramMap.hashCode()
         return result
     }
 }

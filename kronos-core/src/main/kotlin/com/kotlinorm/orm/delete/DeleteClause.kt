@@ -1,10 +1,10 @@
 package com.kotlinorm.orm.delete
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable
 import com.kotlinorm.beans.dsl.KTableConditional
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy.db2k
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.AND
@@ -19,12 +19,13 @@ import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.fieldDb2k
 import kotlin.reflect.full.createInstance
 
 class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
+    internal lateinit var updateTimeStrategy: KronosCommonStrategy
+    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     internal var allFields: MutableList<Field> = mutableListOf()

@@ -1,10 +1,12 @@
 package com.kotlinorm.utils
 
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.enums.AND
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.interfaces.KPojo
 import java.beans.BeanInfo
 import java.beans.Introspector
-import java.beans.PropertyDescriptor
-import java.util.HashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.javaType
 
@@ -81,5 +83,17 @@ object Extensions {
             }
         }
         return map.apply { putAll(pairs) }
+    }
+
+    internal fun List<Criteria>.toCriteria(): Criteria {
+        return Criteria(type = AND, children = this.toMutableList())
+    }
+
+    internal infix fun Field.eq(value: Any?): Criteria {
+        return Criteria(this, ConditionType.EQUAL, false, value)
+    }
+
+    internal fun String.asSql(): Criteria {
+        return Criteria(type = ConditionType.SQL, value = this)
     }
 }

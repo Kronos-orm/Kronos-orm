@@ -27,4 +27,9 @@ class Field(
         result = 31 * result + name.hashCode()
         return result
     }
+
+    operator fun plus(@Suppress("UNUSED_PARAMETER") other: String?): Field = Field(
+        columnName,
+        name + "New"
+    )
 }

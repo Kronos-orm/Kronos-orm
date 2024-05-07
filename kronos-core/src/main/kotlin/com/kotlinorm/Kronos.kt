@@ -48,7 +48,7 @@ object Kronos {
 
     init {
         defaultLogger(this).info(
-            logMessageOf("kotlinorm started.", ColorPrintCode.GREEN.toArray()).endl().toArray()
+            logMessageOf("Kronos ORM Framework started.", ColorPrintCode.GREEN.toArray()).endl().toArray()
         )
         detectLoggerImplementation()
     }

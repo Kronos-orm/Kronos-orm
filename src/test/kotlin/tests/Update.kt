@@ -1,15 +1,16 @@
 package tests
 
-import com.kotoframework.Kronos
-import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotoframework.orm.insert.InsertClause.Companion.build
-import com.kotoframework.orm.insert.insert
-import com.kotoframework.orm.update.UpdateClause.Companion.build
-import com.kotoframework.orm.update.UpdateClause.Companion.where
-import com.kotoframework.orm.update.update
-import com.kotoframework.orm.update.updateExcept
-import com.kotoframework.utils.execute
-import com.kotoframework.utils.toAsyncTask
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.orm.insert.InsertClause.Companion.build
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.update.UpdateClause.Companion.build
+import com.kotlinorm.orm.update.UpdateClause.Companion.by
+import com.kotlinorm.orm.update.UpdateClause.Companion.where
+import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.update.updateExcept
+import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.toAsyncTask
 import org.junit.jupiter.api.Test
 import tests.beans.Movie
 import tests.beans.User
@@ -423,16 +424,13 @@ class Update {
 
     @Test
     fun testBatch() {
-        arrayOf(user, testUser).insert().build()
-        val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { listOf(1, 2, 3).contains(it.id) }.build()
-        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` IN (:idList)", sql)
+        val (sql, paramMapArr) = arrayOf(user, testUser).update { it.username }.by { it.id }.build()
+        assertEquals("UPDATE tb_user SET username = :usernameNew WHERE `id` = :id", sql)
         assertEquals(
-            mapOf(
-                "idNew" to 1,
-                "usernameNew" to "test",
-                "idList" to listOf(1, 2, 3)
-            ), paramMap
+            arrayOf(
+                mapOf("usernameNew" to null, "id" to 1),
+                mapOf("usernameNew" to "test", "id" to 1)
+            ).toList(), paramMapArr!!.toList()
         )
     }
 

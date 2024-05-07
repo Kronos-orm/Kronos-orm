@@ -1,8 +1,8 @@
-import com.kotoframework.beans.dsl.Criteria
-import com.kotoframework.beans.dsl.Field
-import com.kotoframework.enums.ConditionType
-import com.kotoframework.orm.update.UpdateClause
-import com.kotoframework.utils.ConditionSqlBuilder
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.orm.update.UpdateClause
+import com.kotlinorm.utils.ConditionSqlBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

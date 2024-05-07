@@ -1,8 +1,8 @@
-import com.kotoframework.beans.dsl.Criteria
-import com.kotoframework.beans.dsl.Field
-import com.kotoframework.enums.AND
-import com.kotoframework.enums.ConditionType
-import com.kotoframework.enums.OR
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.enums.AND
+import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.enums.OR
 
 infix fun Field.eq(value: Any?): Criteria {
     return Criteria(this, ConditionType.EQUAL, false, value)

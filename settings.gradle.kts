@@ -10,7 +10,7 @@ pluginManagement {
             if (requested.id.namespace == "org.jetbrains.kotlin") {
                 useVersion(file("kotlin.version").readText().trim())
             }
-            if (requested.id.namespace == "com.kotoframework") {
+            if (requested.id.namespace == "com.kotlinorm") {
                 useVersion(file("kronos.version").readText().trim())
             }
         }

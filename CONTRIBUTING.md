@@ -1,6 +1,6 @@
-# Contributing to Kotoframework
+# Contributing to kotlinorm
 
-We would love for you to contribute to kotoframework and help make it even better than it is
+We would love for you to contribute to kotlinorm and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
 
 - [Code of Conduct](#coc)
@@ -12,11 +12,11 @@ today! As a contributor, here are the guidelines we would like you to follow:
 - [Commit Message Guidelines](#commit)
 
 ## <a name="coc"></a> Code of Conduct
-Help us keep kotoframework open and inclusive. Please read and follow our [Code of Conduct][coc].
+Help us keep kotlinorm open and inclusive. Please read and follow our [Code of Conduct][coc].
 
 ## <a name="question"></a> Got a Question or Problem?
 
-Do not open issues for general support questions as we want to keep GitHub issues for bug reports and feature requests. You've got much better chances of getting your question answered on [Segmentfault](https://segmentfault.com/t/kotoframework) or [Stack Overflow](https://stackoverflow.com/tags/kotoframework) where the questions should be tagged with tag `kotoframework`.
+Do not open issues for general support questions as we want to keep GitHub issues for bug reports and feature requests. You've got much better chances of getting your question answered on [Segmentfault](https://segmentfault.com/t/kotlinorm) or [Stack Overflow](https://stackoverflow.com/tags/kotlinorm) where the questions should be tagged with tag `kotlinorm`.
 
 Segmentfault / Stack Overflow is a much better place to ask questions since:
 
@@ -50,7 +50,7 @@ Before you submit an issue, please search the issue tracker, maybe an issue for 
 
 We want to fix all the issues as soon as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will systematically ask you to provide a minimal reproduction scenario using http://plnkr.co. Having a live, reproducible scenario gives us wealth of important information without going back & forth to you with additional questions like:
 
-- version of kotoframework used
+- version of kotlinorm used
 - 3rd-party libraries and their versions
 - and most importantly - a use-case that fails
 
@@ -60,13 +60,13 @@ We will be insisting on a minimal reproduce scenario in order to save maintainer
 
 Unfortunately we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that don't have enough info to be reproduced.
 
-You can file new issues by filling out our [new issue form](https://github.com/kotoframework/kotoframework/issues/new).
+You can file new issues by filling out our [new issue form](https://github.com/kotlinorm/kotlinorm/issues/new).
 
 
 ### <a name="submit-pr"></a> Submitting a Pull Request (PR)
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-* Search [GitHub](https://github.com/kotoframework/kotoframework/pulls) for an open or closed PR
+* Search [GitHub](https://github.com/kotlinorm/kotlinorm/pulls) for an open or closed PR
   that relates to your submission. You don't want to duplicate effort.
 * Make your changes in a new git branch:
 
@@ -76,7 +76,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 
 * Create your patch, **including appropriate test cases**.
 * Follow our [Coding Rules](#rules).
-* Run the full kotoframework test suite <!-- , as described in the [developer documentation][dev-doc] -->, and ensure that all tests pass.
+* Run the full kotlinorm test suite <!-- , as described in the [developer documentation][dev-doc] -->, and ensure that all tests pass.
 * Commit your changes using a descriptive commit message that follows our
   [commit message conventions](#commit). Adherence to these conventions
   is necessary because release notes are automatically generated from these messages.
@@ -92,10 +92,10 @@ Before you submit your Pull Request (PR) consider the following guidelines:
     git push origin my-fix-branch
     ```
 
-* In GitHub, send a pull request to `kotoframework:master`.
+* In GitHub, send a pull request to `kotlinorm:master`.
 * If we suggest changes then:
     * Make the required updates.
-    * Re-run the kotoframework test suites to ensure tests are still passing.
+    * Re-run the kotlinorm test suites to ensure tests are still passing.
     * Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
 
       ```shell
@@ -144,7 +144,7 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 
 We have very precise rules over how our git commit messages can be formatted.  This leads to **more
 readable messages** that are easy to follow when looking through the **project history**.  But also,
-we use the git commit messages to **generate the kotoframework change log**.
+we use the git commit messages to **generate the kotlinorm change log**.
 
 ### Commit Message Format
 Each commit message consists of a **header**, a **body** and a **footer**.  The header has a special
@@ -165,7 +165,7 @@ to read on GitHub as well as in various git tools.
 
 Footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
 
-Samples: (even more [samples](https://github.com/kotoframework/kotoframework/commits/master))
+Samples: (even more [samples](https://github.com/kotlinorm/kotlinorm/commits/master))
 
 ```
 docs(changelog): update change log to beta.5
@@ -229,9 +229,9 @@ reference GitHub issues that this commit **Closes**.
 A detailed explanation can be found in this [document][commit-message-format].
 
 
-[coc]: https://github.com/kotoframework/kotoframework/blob/master/CODE_OF_CONDUCT.md
+[coc]: https://github.com/kotlinorm/kotlinorm/blob/master/CODE_OF_CONDUCT.md
 [commit-message-format]: https://docs.google.com/document/d/1QrDFcIiPjSLDn3EL15IJygNPiHORgU1_OOAqWjiDU5Y/edit#
-[dev-doc]: https://github.com/kotoframework/kotoframework/blob/master/docs/DEVELOPER.md
-[github]: https://github.com/kotoframework/kotoframework
+[dev-doc]: https://github.com/kotlinorm/kotlinorm/blob/master/docs/DEVELOPER.md
+[github]: https://github.com/kotlinorm/kotlinorm
 [discord]: https://discord.com/channels/748677963142135818/764322550712893451
 [plunker]: http://plnkr.co/edit

@@ -1,11 +1,14 @@
 package test.tests
 
-import com.kotoframework.Kronos
-import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotoframework.orm.insert.InsertClause.Companion.build
-import com.kotoframework.orm.insert.insert
-import com.kotoframework.utils.execute
-import com.kotoframework.utils.toAsyncTask
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.orm.insert.InsertClause.Companion.build
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.update.UpdateClause.Companion.build
+import com.kotlinorm.orm.update.UpdateClause.Companion.where
+import com.kotlinorm.orm.update.update
+import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.toAsyncTask
 import org.junit.jupiter.api.Test
 import tests.beans.User
 import kotlin.test.assertEquals

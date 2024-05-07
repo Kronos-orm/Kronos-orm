@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
 }
 
-group = "com.kotoframework"
+group = "com.kotlinorm"
 version = "2.0.0-SNAPSHOT"
 
 repositories {

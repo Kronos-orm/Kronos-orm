@@ -1,7 +1,7 @@
 package tests.beans
 
-import com.kotoframework.annotations.Table
-import com.kotoframework.interfaces.KPojo
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
 
 @Table(name = "tb_user")
 data class User(

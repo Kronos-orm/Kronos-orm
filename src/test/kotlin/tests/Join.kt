@@ -1,9 +1,9 @@
 //package tests
 //
-//import com.kotoframework.Kronos
-//import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
-//import com.kotoframework.orm.join.join
-//import com.kotoframework.orm.select.select
+//import com.kotlinorm.Kronos
+//import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+//import com.kotlinorm.orm.join.join
+//import com.kotlinorm.orm.select.select
 //import org.junit.jupiter.api.Test
 //import tests.beans.User
 //import tests.beans.UserRelation

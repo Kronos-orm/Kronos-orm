@@ -1,5 +1,5 @@
-import com.kotoframework.utils.Extensions.toKPojo
-import com.kotoframework.utils.Extensions.toMap
+import com.kotlinorm.utils.Extensions.toKPojo
+import com.kotlinorm.utils.Extensions.toMap
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

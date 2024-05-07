@@ -1,8 +1,8 @@
 package tests
 
-import com.kotoframework.Kronos
-import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotoframework.orm.delete.delete
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.orm.delete.delete
 import org.junit.jupiter.api.Test
 import tests.beans.User
 import kotlin.test.assertEquals

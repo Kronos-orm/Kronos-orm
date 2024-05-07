@@ -1,6 +1,6 @@
-import com.kotoframework.Kronos
-import com.kotoframework.KotoBasicWrapper
-import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.Kronos
+import com.kotlinorm.KotoBasicWrapper
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import org.apache.commons.dbcp.BasicDataSource
 
 class BasicWrapperTest {

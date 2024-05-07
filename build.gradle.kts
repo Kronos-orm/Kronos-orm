@@ -1,5 +1,5 @@
 allprojects {
-    group = "com.kotoframework"
+    group = "com.kotlinorm"
     version = File(rootDir, "kronos.version").readText().trim()
 
     repositories {
@@ -10,7 +10,7 @@ allprojects {
 
 plugins {
     kotlin("jvm")
-    id("com.kotoframework.kronos-compiler-plugin")
+    id("com.kotlinorm.kronos-compiler-plugin")
 }
 
 dependencies {

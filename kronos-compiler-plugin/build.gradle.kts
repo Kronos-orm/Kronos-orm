@@ -53,8 +53,8 @@ kotlin {
 gradlePlugin {
     plugins {
         create("kronosCompilerPlugin") {
-            id = "com.kotoframework.kronos-compiler-plugin"
-            implementationClass = "com.kotoframework.plugins.KronosGradlePlugin"
+            id = "com.kotlinorm.kronos-compiler-plugin"
+            implementationClass = "com.kotlinorm.plugins.KronosGradlePlugin"
         }
     }
 }
@@ -72,7 +72,7 @@ publishing {
             pom {
                 name.set("${project.group}:${project.name}")
                 description.set("A gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time.")
-                url.set("https://www.kotoframework.com")
+                url.set("https://www.kotlinorm.com")
                 licenses {
                     license {
                         name.set("The Apache Software License, Version 2.0")
@@ -80,9 +80,9 @@ publishing {
                     }
                 }
                 scm {
-                    url.set("https://github.com/kotoframework/kotoframework")
-                    connection.set("scm:git:https://github.com/kotoframework/kotoframework.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:kotoframework/kotoframework.git")
+                    url.set("https://github.com/kotlinorm/kotlinorm")
+                    connection.set("scm:git:https://github.com/kotlinorm/kotlinorm.git")
+                    developerConnection.set("scm:git:ssh://git@github.com:kotlinorm/kotlinorm.git")
                 }
                 developers {
                     developer {

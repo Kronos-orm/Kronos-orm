@@ -1,6 +1,6 @@
 package tests.beans
 
-import com.kotoframework.interfaces.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 data class Movie(
     val id: Long? = null, // 主键

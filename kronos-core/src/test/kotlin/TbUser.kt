@@ -1,5 +1,5 @@
-import com.kotoframework.annotations.Column
-import com.kotoframework.interfaces.KPojo
+import com.kotlinorm.annotations.Column
+import com.kotlinorm.interfaces.KPojo
 import java.util.*
 
 /**

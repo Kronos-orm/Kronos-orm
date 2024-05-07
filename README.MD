@@ -12,8 +12,14 @@
 > 查询示例：
 
 ```kotlin
-// 1. 条件查询 / 查询单个字段 / 使用queryForObjectOrNull()查询单行可空结果
-val user: User? = User(1).select{ where() }.queryForObjectOrNull()
+User(1).insert().execute() // 插入单行数据
+listOfUser.insert().execute() // 批量插入多行数据
+
+User(1, "name").update{ it.username }.by{ it.id }.execute() //条件更新
+User(username = "name").update{ it.username }.where{ it.id between 1..100 }.execute() //条件更新
+listOfUser.update{ it.username }.by{ it.id }.execute() //批量条件更新
+
+val user: User? = User().select().where{ it.id > 1 && it.username.notNull }.queryForObjectOrNull()
 
 // 2.多条件查询 / 查询多个字段 / 类型解析 / 带分页 / 带去重 / 带排序
 val (users, total) =
@@ -130,4 +136,4 @@ val affectRowNumber: Int =
 ```
 
 ------
-[Read more on GitHub](https://github.com/ousc/kotoframework-v2)
+[Read more on GitHub](https://github.com/ousc/kotlinorm-v2)

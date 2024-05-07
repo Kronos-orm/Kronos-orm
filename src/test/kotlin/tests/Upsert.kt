@@ -1,9 +1,9 @@
 package tests
 
-import com.kotoframework.Kronos
-import com.kotoframework.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotoframework.orm.upsert.upsert
-import com.kotoframework.orm.upsert.upsertExcept
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.orm.upsert.upsert
+import com.kotlinorm.orm.upsert.upsertExcept
 import org.junit.jupiter.api.Test
 import tests.beans.User
 import kotlin.test.assertEquals

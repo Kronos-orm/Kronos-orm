@@ -9,6 +9,7 @@ import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.AND
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.Equal
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -16,7 +17,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
-import com.kotlinorm.utils.CommonUtil
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
@@ -55,17 +55,21 @@ class UpdateClause<T : KPojo>(
     }
 
     fun set(rowData: KTableField<T, Unit>): UpdateClause<T> {
-        if (rowData == null) return this
+        if (rowData == null) throw NeedFieldsException()
         with(KTable(pojo::class.createInstance())) {
             rowData()
-            toUpdateFields.addAll(fields)
+            if (isExcept) {
+                toUpdateFields.removeAll(fields)
+            } else {
+                toUpdateFields.addAll(fields)
+            }
             paramMapNew.putAll(fieldParamMap)
         }
         return this
     }
 
     fun by(someFields: KTableField<T, Any?>): UpdateClause<T> {
-        if (someFields == null) return this
+        if (someFields == null) throw NeedFieldsException()
         with(KTable(pojo::class.createInstance())) {
             someFields()
             if (fields.isEmpty()) {
@@ -106,17 +110,7 @@ class UpdateClause<T : KPojo>(
         with(KTableConditional(pojo::class.createInstance())) {
             propParamMap = paramMap
             updateCondition()
-            condition = criteria ?: Criteria(
-                type = AND
-            ).apply {
-                children = paramMap.keys.map { propName ->
-                    Criteria(
-                        type = Equal,
-                        field = toUpdateFields.distinct().first { it.name == propName },
-                        value = paramMap[propName]
-                    )
-                }.toMutableList()
-            }
+            condition = criteria
         }
         return this
     }
@@ -138,11 +132,27 @@ class UpdateClause<T : KPojo>(
             // 全都更新
             toUpdateFields = allFields.toMutableList()
             toUpdateFields.forEach {
-                paramMapNew[Field(
-                    it.columnName, it.name + "New"
-                )] = paramMap[it.name]
+                if (logicDeleteStrategy.enabled && logicDeleteStrategy.field != it) {
+                    paramMapNew[Field(
+                        it.columnName, it.name + "New"
+                    )] = paramMap[it.name]
+                }
             }
         }
+
+        // 设置逻辑删除
+        if (logicDeleteStrategy.enabled) {
+            val logicDeleteField = logicDeleteStrategy.field
+            toUpdateFields.remove(logicDeleteField)
+            condition = Criteria(
+                type = AND,
+                children = mutableListOf(
+                    condition,
+                    Criteria(type = ConditionType.SQL, value = "${logicDeleteField.quotedColumnName()} = 0")
+                )
+            )
+        }
+
         // 设置更新时间
         paramMapNew.apply {
             if (updateTimeStrategy.enabled) {
@@ -157,22 +167,8 @@ class UpdateClause<T : KPojo>(
         val updateFields = toUpdateFields.joinToString(", ") { "${it.name} = :${it.name + "New"}" }
 
         var (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
-        if (conditionSql != null) {
+        if (!conditionSql.isNullOrEmpty()) {
             conditionSql = "WHERE $conditionSql"
-        }
-
-        // 设置逻辑删除
-        if (logicDeleteStrategy.enabled) {
-            val logicDeleteField = logicDeleteStrategy.field
-            val logicDeleteValue = logicDeleteStrategy.config ?: 1
-            paramMap[logicDeleteField.name] = logicDeleteValue
-            val logicDeleteSql = "AND ${logicDeleteField.columnName} = :${logicDeleteField.name}"
-            conditionSql = if (conditionSql != null) {
-                "$conditionSql $logicDeleteSql"
-            } else {
-                "WHERE ${logicDeleteField.columnName} = :${logicDeleteField.name}"
-            }
-
         }
 
         val sql = listOfNotNull("UPDATE", tableName, "SET", updateFields, conditionSql).joinToString(" ")

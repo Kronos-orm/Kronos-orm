@@ -8,5 +8,5 @@ import com.kotlinorm.interfaces.KPojo
 data class User(
     var id: Int? = null,
     var username: String? = null,
-    @UpdateTime(format = "YYYY-MM-dd") var gender: Int? = null
+    var gender: Int? = null
 ) : KPojo

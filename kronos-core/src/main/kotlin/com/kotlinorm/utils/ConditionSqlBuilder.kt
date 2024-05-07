@@ -188,9 +188,9 @@ object ConditionSqlBuilder {
             }
 
             else -> throw IllegalArgumentException("Unsupported condition type: ${condition.type}")
-        }.joinToString(" ")
+        }.filterNotNull().joinToString(" ")
 
-        return KotoBuildResultSet(sql, paramMap)
+        return KotoBuildResultSet(sql.ifEmpty { null }, paramMap)
     }
 
     // 辅助扩展函数，用于判断是否为逻辑操作符类型

@@ -1,6 +1,9 @@
 package com.kotlinorm.plugins.utils.deleteClause
 
+import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.applyIrCall
+import com.kotlinorm.plugins.utils.getValidStrategy
+import com.kotlinorm.plugins.utils.globalUpdateTimeSymbol
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import com.kotlinorm.plugins.utils.subType
@@ -35,10 +38,16 @@ private val fieldSymbol
 context(IrBuilderWithScope, IrPluginContext)
 fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
+    val updateTimeStrategy =
+        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
+    val logicDeleteStrategy =
+        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
     return applyIrCall(
         initDeleteClauseSymbol,
         expression,
         getTableName(irClass),
+        updateTimeStrategy,
+        logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
@@ -49,10 +58,16 @@ fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
 context(IrBuilderWithScope, IrPluginContext)
 fun initDeleteClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
+    val updateTimeStrategy =
+        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
+    val logicDeleteStrategy =
+        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
     return applyIrCall(
         initDeleteClauseListSymbol,
         expression,
         getTableName(irClass),
+        updateTimeStrategy,
+        logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }

@@ -21,7 +21,7 @@ class InsertClause<T : KPojo>(t: T) {
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal var allFields: MutableSet<Field> = mutableSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-    private val toInsertFields: MutableSet<String> = mutableSetOf()
+    private val toInsertFields: MutableList<String> = mutableListOf()
 
     init {
         paramMap.putAll(t.toMap().filter { it.value != null })

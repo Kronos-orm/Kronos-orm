@@ -15,7 +15,7 @@ object CommonUtil {
 
     fun setAuditStrategy(
         strategy: KronosCommonStrategy,
-        fields: MutableSet<String>,
+        fields: MutableList<String>,
         paramMap: MutableMap<String, Any?>,
         timeStrategy: Boolean,
         deleted: Boolean = true,

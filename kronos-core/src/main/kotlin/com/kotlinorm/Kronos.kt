@@ -18,7 +18,7 @@ import com.kotlinorm.utils.DataSourceUtil.javaName
 import kotlin.reflect.full.declaredFunctions
 
 object Kronos {
-    internal var defaultLogger: (Any) -> KLogger =
+    var defaultLogger: (Any) -> KLogger =
         { BundledSimpleLoggerAdapter(it.javaName) }
     internal var noValueStrategy = NoValueStrategy.Ignore
 

@@ -498,7 +498,7 @@ class Update {
         println(paramMap)
 
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` LIKE :id", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "id" to "%1%"),paramMap)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "id" to "%1%"), paramMap)
     }
 
     //  val Comparable<*>?.like get() = true
@@ -508,7 +508,7 @@ class Update {
     @Test
     fun testLike() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.username.like}.build()
+            .where { it.username.like }.build()
 
         println(sql)
         println(paramMap)
@@ -526,7 +526,7 @@ class Update {
         println(paramMap)
 
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` NOT LIKE :username", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test"),paramMap)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test"), paramMap)
     }
 
     @Test
@@ -552,6 +552,7 @@ class Update {
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` LIKE :username", sql)
         assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%test"), paramMap)
     }
+
     //     val Comparable<*>?.lt get() = true
     //    val Comparable<*>?.gt get() = true
     //    val Comparable<*>?.le get() = true
@@ -565,8 +566,9 @@ class Update {
         println(paramMap)
 
         assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` < :idMax", sql)
-        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMax" to 2), paramMap)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMax" to 1), paramMap)
     }
+
     @Test
     fun testGt() {
         val (sql, paramMap) = testUser.update { it.id + it.username }

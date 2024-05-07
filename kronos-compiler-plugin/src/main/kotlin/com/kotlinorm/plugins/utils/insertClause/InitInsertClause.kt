@@ -1,5 +1,6 @@
 package com.kotlinorm.plugins.utils.insertClause
 
+import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.applyIrCall
 import com.kotlinorm.plugins.utils.getValidStrategy
 import com.kotlinorm.plugins.utils.globalUpdateTimeSymbol
@@ -16,12 +17,6 @@ import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.name.FqName
-
-context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
-internal val globalCreateTimeSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.getCreateTimeStrategy"))
-        .first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
@@ -44,9 +39,9 @@ context(IrBuilderWithScope, IrPluginContext)
 fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
     val createTimeStrategy =
-        getValidStrategy(irClass, globalCreateTimeSymbol, FqName("com.kotlinorm.annotations.CreateTime"))
+        getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
     val updateTimeStrategy =
-        getValidStrategy(irClass, globalUpdateTimeSymbol, FqName("com.kotlinorm.annotations.UpdateTime"))
+        getValidStrategy(irClass, globalUpdateTimeSymbol, CreateTimeFqName)
     return applyIrCall(
         initInsertClauseSymbol,
         expression,
@@ -63,10 +58,16 @@ fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
 context(IrBuilderWithScope, IrPluginContext)
 fun initInsertClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
+    val createTimeStrategy =
+        getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
+    val updateTimeStrategy =
+        getValidStrategy(irClass, globalUpdateTimeSymbol, CreateTimeFqName)
     return applyIrCall(
         initInsertClauseListSymbol,
         expression,
         getTableName(irClass),
+        createTimeStrategy,
+        updateTimeStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }

@@ -27,16 +27,22 @@ internal val globalLogicDeleteSymbol
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
+internal val globalCreateTimeSymbol
+    get() = referenceFunctions(FqName("com.kotlinorm.utils.getCreateTimeStrategy"))
+        .first()
+
+context(IrPluginContext)
+@OptIn(FirIncompatiblePluginAPI::class)
 internal val commonStrategySymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.config.KronosCommonStrategy"))!!.constructors.first()
-
 
 val UpdateTimeFqName = FqName("com.kotlinorm.beans.config.UpdateTimeStrategy")
 
 val LogicDeleteFqName = FqName("com.kotlinorm.beans.config.LogicDeleteStrategy")
 
+val CreateTimeFqName = FqName("com.kotlinorm.beans.config.CreateTimeStrategy")
+
 context(IrBuilderWithScope, IrPluginContext)
-@OptIn(ObsoleteDescriptorBasedAPI::class)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression? {
     var strategy: IrExpression? = applyIrCall(globalSymbol).asIrCall()
     val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)

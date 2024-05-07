@@ -30,6 +30,8 @@ inline fun <reified T : KPojo> Array<T>.updateExcept(noinline setUpdateFields: K
     return map { UpdateClause(it, true, setUpdateFields) }
 }
 
+// For compiler plugin to init the UpdateClause
+@Suppress("UNUSED")
 fun initUpdateClause(
     clause: UpdateClause<*>,
     name: String,
@@ -45,6 +47,8 @@ fun initUpdateClause(
     }
 }
 
+// For compiler plugin to init the list of UpdateClause
+@Suppress("UNUSED")
 fun initUpdateClauseList(
     clauses: List<UpdateClause<*>>,
     name: String,

@@ -10,6 +10,7 @@ import com.kotlinorm.types.KTableField
 inline fun <reified T : KPojo> T.insert(): InsertClause<T> {
     return InsertClause(this)
 }
+
 inline fun <reified T : KPojo> Array<T>.insert(): List<InsertClause<T>> {
     return map { InsertClause(it) }
 }
@@ -18,6 +19,8 @@ inline fun <reified T : KPojo> Iterable<T>.insert(): List<InsertClause<T>> {
     return map { InsertClause(it) }
 }
 
+// For compiler plugin to init the InsertClause
+@Suppress("UNUSED")
 fun initInsertClause(
     clause: InsertClause<*>,
     name: String,
@@ -33,9 +36,18 @@ fun initInsertClause(
     }
 }
 
-fun initInsertClauseList(clauses: List<InsertClause<*>>, name: String, vararg fields: Field): List<InsertClause<*>> {
+// For compiler plugin to init the list of InsertClause
+@Suppress("UNUSED")
+fun initInsertClauseList(
+    clauses: List<InsertClause<*>>, name: String,
+    createTime: KronosCommonStrategy,
+    updateTime: KronosCommonStrategy,
+    vararg fields: Field
+): List<InsertClause<*>> {
     return clauses.onEach {
         it.tableName = name
+        it.createTimeStrategy = createTime
+        it.updateTimeStrategy = updateTime
         it.allFields.addAll(fields)
     }
 }

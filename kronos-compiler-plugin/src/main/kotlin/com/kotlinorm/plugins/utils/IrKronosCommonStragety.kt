@@ -36,11 +36,11 @@ context(IrPluginContext)
 internal val commonStrategySymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.config.KronosCommonStrategy"))!!.constructors.first()
 
-val UpdateTimeFqName = FqName("com.kotlinorm.beans.config.UpdateTimeStrategy")
+val UpdateTimeFqName = FqName("com.kotlinorm.annotations.UpdateTime")
 
-val LogicDeleteFqName = FqName("com.kotlinorm.beans.config.LogicDeleteStrategy")
+val LogicDeleteFqName = FqName("com.kotlinorm.annotations.LogicDelete")
 
-val CreateTimeFqName = FqName("com.kotlinorm.beans.config.CreateTimeStrategy")
+val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 
 context(IrBuilderWithScope, IrPluginContext)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression? {

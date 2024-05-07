@@ -1,3 +1,5 @@
+package com.kotlinorm.utils
+
 import com.kotlinorm.utils.Extensions.toKPojo
 import com.kotlinorm.utils.Extensions.toMap
 import org.junit.jupiter.api.Test

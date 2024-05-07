@@ -1,9 +1,7 @@
-package tests
+package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.insert.InsertClause.Companion.build
-import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
@@ -12,8 +10,8 @@ import com.kotlinorm.orm.update.updateExcept
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.toAsyncTask
 import org.junit.jupiter.api.Test
-import tests.beans.Movie
-import tests.beans.User
+import com.kotlinorm.orm.beans.Movie
+import com.kotlinorm.orm.beans.User
 import kotlin.test.assertEquals
 
 class Update {

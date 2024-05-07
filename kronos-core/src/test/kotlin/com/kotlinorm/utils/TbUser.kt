@@ -1,6 +1,6 @@
+package com.kotlinorm.utils
+
 import com.kotlinorm.annotations.Column
-import com.kotlinorm.annotations.CreateTime
-import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.interfaces.KPojo
 import java.util.*
@@ -19,5 +19,5 @@ data class TbUser(
     val sex: String? = null,
     val age: Int? = null,
     val avatar: String? = null,
-    @UpdateTime(timeFormat = "yyyy-MM-dd HH:mm:ss") val updateTime: Date? = null,
+    @UpdateTime(format = "yyyy-MM-dd HH:mm:ss") val updateTime: Date? = null,
 ) : KPojo

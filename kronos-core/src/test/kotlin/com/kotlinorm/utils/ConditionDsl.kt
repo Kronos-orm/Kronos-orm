@@ -1,3 +1,5 @@
+package com.kotlinorm.utils
+
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.AND

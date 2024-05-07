@@ -1,4 +1,4 @@
-//package tests
+package com.kotlinorm.orm//package tests
 //
 //import com.kotlinorm.Kronos
 //import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy

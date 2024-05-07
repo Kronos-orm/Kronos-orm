@@ -1,4 +1,4 @@
-package tests.beans
+package com.kotlinorm.orm.beans
 
 import com.kotlinorm.interfaces.KPojo
 

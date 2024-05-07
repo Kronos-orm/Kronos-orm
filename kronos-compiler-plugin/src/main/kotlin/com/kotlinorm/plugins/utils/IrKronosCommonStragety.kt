@@ -3,28 +3,28 @@ package com.kotlinorm.plugins.utils
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 internal val globalUpdateTimeSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.getUpdateTimeStrategy"))
-        .first()
+    get() = referenceFunctions(FqName("com.kotlinorm.utils.getUpdateTimeStrategy")).first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 internal val globalLogicDeleteSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.getLogicDeleteStrategy"))
-        .first()
+    get() = referenceFunctions(FqName("com.kotlinorm.utils.getLogicDeleteStrategy")).first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
@@ -33,14 +33,22 @@ internal val commonStrategySymbol
 
 
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(ObsoleteDescriptorBasedAPI::class)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression? {
     var strategy: IrExpression? = applyIrCall(globalSymbol).asIrCall()
-    val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()
-        ?.getValueArgument(1)
+    val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
     if (tableSetting == null || (tableSetting is IrConst<*> && tableSetting.value == true)) {
-        val column = irClass.properties.find { it.annotations.findByFqName(fqName) != null }
+        var annotation: IrConstructorCall? = null
+        var config: IrConst<*>? = null
+        var enabled: IrConst<*>? = null
+        val column = irClass.properties.find {
+            annotation = it.annotations.findByFqName(fqName)
+            enabled = annotation?.getValueArgument(Name.identifier("enabled")) as IrConst<*>?
+            config = annotation?.getValueArgument(0) as IrConst<*>?
+            annotation != null && enabled?.value != false
+        }
         if (column != null) {
-            strategy = applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(column))
+            strategy = applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(column), config)
         }
     }
     return strategy

@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 internal val globalUpdateTimeSymbol

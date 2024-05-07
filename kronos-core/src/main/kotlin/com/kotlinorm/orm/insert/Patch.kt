@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.update.UpdateClause
@@ -17,9 +18,17 @@ inline fun <reified T : KPojo> Iterable<T>.insert(): List<InsertClause<T>> {
     return map { InsertClause(it) }
 }
 
-fun initInsertClause(clause: InsertClause<*>, name: String, vararg fields: Field): InsertClause<*> {
+fun initInsertClause(
+    clause: InsertClause<*>,
+    name: String,
+    createTime: KronosCommonStrategy,
+    updateTime: KronosCommonStrategy,
+    vararg fields: Field
+): InsertClause<*> {
     return clause.apply {
         tableName = name
+        createTimeStrategy = createTime
+        updateTimeStrategy = updateTime
         allFields.addAll(fields)
     }
 }

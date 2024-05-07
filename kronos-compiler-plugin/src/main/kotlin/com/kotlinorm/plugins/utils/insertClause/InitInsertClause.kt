@@ -1,6 +1,8 @@
 package com.kotlinorm.plugins.utils.insertClause
 
 import com.kotlinorm.plugins.utils.applyIrCall
+import com.kotlinorm.plugins.utils.getValidStrategy
+import com.kotlinorm.plugins.utils.globalUpdateTimeSymbol
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import com.kotlinorm.plugins.utils.subType
@@ -14,6 +16,12 @@ import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.name.FqName
+
+context(IrPluginContext)
+@OptIn(FirIncompatiblePluginAPI::class)
+internal val globalCreateTimeSymbol
+    get() = referenceFunctions(FqName("com.kotlinorm.utils.getCreateTimeStrategy"))
+        .first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
@@ -35,10 +43,16 @@ private val fieldSymbol
 context(IrBuilderWithScope, IrPluginContext)
 fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
+    val createTimeStrategy =
+        getValidStrategy(irClass, globalCreateTimeSymbol, FqName("com.kotlinorm.annotations.CreateTime"))
+    val updateTimeStrategy =
+        getValidStrategy(irClass, globalUpdateTimeSymbol, FqName("com.kotlinorm.annotations.UpdateTime"))
     return applyIrCall(
         initInsertClauseSymbol,
         expression,
         getTableName(irClass),
+        createTimeStrategy,
+        updateTimeStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }

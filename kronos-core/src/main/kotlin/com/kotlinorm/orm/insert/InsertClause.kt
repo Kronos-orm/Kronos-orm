@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
@@ -13,13 +14,14 @@ import com.kotlinorm.utils.execute
 class InsertClause<T : KPojo>(t: T) {
 
     internal lateinit var tableName: String
+    internal lateinit var createTimeStrategy: KronosCommonStrategy
+    internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal var allFields: MutableSet<Field> = mutableSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private val toInsertFields: MutableSet<String> = mutableSetOf()
 
     init {
         paramMap.putAll(t.toMap().filter { it.value != null })
-
     }
 
     fun build(): KronosAtomicTask {

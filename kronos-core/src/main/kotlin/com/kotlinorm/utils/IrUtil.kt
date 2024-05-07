@@ -20,6 +20,10 @@ fun tableDb2k(str: String): String {
     return Kronos.fieldNamingStrategy.db2k(str)
 }
 
+fun getCreateTimeStrategy(): KronosCommonStrategy {
+    return Kronos.createTimeStrategy
+}
+
 fun getUpdateTimeStrategy(): KronosCommonStrategy {
     return Kronos.updateTimeStrategy
 }

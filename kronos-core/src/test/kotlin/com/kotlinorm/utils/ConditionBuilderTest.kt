@@ -3,6 +3,7 @@ package com.kotlinorm.utils
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.utils.ConditionSqlBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -12,7 +13,7 @@ class ConditionBuilderTest {
     fun test() {
         val condition = "id".eq(1)
 
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 
         val expect = "id = :id"
         val paramMap = mapOf("id" to 1)
@@ -31,7 +32,7 @@ class ConditionBuilderTest {
 
         val expect = "id != :id"
         val paramMap = mapOf("id" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -46,7 +47,7 @@ class ConditionBuilderTest {
 
         val expect = "username LIKE :username"
         val paramMap = mapOf("username" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -62,7 +63,7 @@ class ConditionBuilderTest {
 
         val expect = "username NOT LIKE :username"
         val paramMap = mapOf("username" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -77,7 +78,7 @@ class ConditionBuilderTest {
 
         val expect = "id < :idMax"
         val paramMap = mapOf("idMax" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -92,7 +93,7 @@ class ConditionBuilderTest {
 
         val expect = "id <= :idMax"
         val paramMap = mapOf("idMax" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -107,7 +108,7 @@ class ConditionBuilderTest {
 
         val expect = "id > :idMin"
         val paramMap = mapOf("idMin" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -122,7 +123,7 @@ class ConditionBuilderTest {
 
         val expect = "id >= :idMin"
         val paramMap = mapOf("idMin" to 1)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -137,7 +138,7 @@ class ConditionBuilderTest {
 
         val expect = "id BETWEEN :idMin AND :idMax"
         val paramMap = mapOf("idMin" to 1, "idMax" to 10)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -153,7 +154,7 @@ class ConditionBuilderTest {
 
         val expect = "id NOT BETWEEN :idMin AND :idMax"
         val paramMap = mapOf("idMin" to 1, "idMax" to 10)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -167,7 +168,7 @@ class ConditionBuilderTest {
 
         val expect = "id IS NULL"
         val paramMap = emptyMap<String, Any>()
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -182,7 +183,7 @@ class ConditionBuilderTest {
 
         val expect = "id IS NOT NULL"
         val paramMap = emptyMap<String, Any>()
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -196,7 +197,7 @@ class ConditionBuilderTest {
 
         val expect = "id = 1"
         val paramMap = emptyMap<String, Any>()
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -221,7 +222,7 @@ class ConditionBuilderTest {
 
         val expect = "id = :id AND gender = :gender"
         val paramMap = mapOf("id" to 1 , "gender" to 0)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -246,7 +247,7 @@ class ConditionBuilderTest {
 
         val expect = "id = :id OR gender = :gender"
         val paramMap = mapOf("id" to 1 , "gender" to 0)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -261,7 +262,7 @@ class ConditionBuilderTest {
 
         val expect = "id IN (:idList)"
         val paramMap = mapOf("idList" to listOf(1,2,3))
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -277,7 +278,7 @@ class ConditionBuilderTest {
 
         val expect = "id NOT IN (:idList)"
         val paramMap = mapOf("idList" to listOf(1,2,3))
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }
@@ -288,7 +289,7 @@ class ConditionBuilderTest {
 
         val expect = "id = id OR id = id@2"
         val paramMap = mapOf("id" to 1 , "id@2" to 2)
-        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition , mutableMapOf())
+        val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         assertEquals(expect, sql)
         assertEquals(paramMap, paramMap2.toMap())
     }

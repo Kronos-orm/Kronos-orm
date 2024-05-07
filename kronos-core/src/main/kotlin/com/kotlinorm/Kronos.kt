@@ -1,5 +1,7 @@
 package com.kotlinorm
 
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsw.NoneDataSourceWrapper
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.logMessageOf
@@ -16,14 +18,18 @@ import com.kotlinorm.utils.DataSourceUtil.javaName
 import kotlin.reflect.full.declaredFunctions
 
 object Kronos {
+    internal var defaultLogger: (Any) -> KLogger =
+        { BundledSimpleLoggerAdapter(it.javaName) }
     var defaultDataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper() }
+    internal var noValueStrategy = NoValueStrategy.Ignore
+
+    var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
+    var serializeResolver: KronosSerializeResolver = NoneSerializeResolver()
     var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
     var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
-    var defaultLoggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
-    var defaultLogger: (Any) -> KLogger =
-        { BundledSimpleLoggerAdapter(it.javaName) }
-    var defaultSerializeResolver: KronosSerializeResolver = NoneSerializeResolver()
-    internal var defaultNoValueStrategy = com.kotlinorm.enums.NoValueStrategy.Ignore
+    var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time"))
+    var createTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("create_time"))
+    var logicDeleteStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("deleted"))
 
     /**
      * detect logger implementation if kronos-logging is used

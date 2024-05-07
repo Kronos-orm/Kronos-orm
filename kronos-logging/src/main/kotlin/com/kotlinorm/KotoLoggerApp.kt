@@ -6,7 +6,6 @@ import com.kotlinorm.adapter.JavaUtilLoggerAdapter
 import com.kotlinorm.adapter.Slf4jLoggerAdapter
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.exceptions.KotoNoLoggerException
-import com.kotlinorm.Kronos
 import com.kotlinorm.i18n.Noun
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
@@ -29,7 +28,7 @@ object KotoLoggerApp {
 
     private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
         val tag = loggingClazz.javaName
-        return when (Kronos.defaultLoggerType) {
+        return when (Kronos.loggerType) {
             KLoggerType.ANDROID_LOGGER -> AndroidUtilLoggerAdapter(tag)
             KLoggerType.COMMONS_LOGGER -> ApacheCommonsLoggerAdapter(tag)
             KLoggerType.JDK_LOGGER -> JavaUtilLoggerAdapter(tag)
@@ -48,7 +47,7 @@ object KotoLoggerApp {
             if (result == null) {
                 try {
                     result = init()
-                    Kronos.defaultLoggerType = this
+                    Kronos.loggerType = this
                 } catch (_: ClassNotFoundException) {
                     // ignored
                 } catch (_: NoClassDefFoundError) {

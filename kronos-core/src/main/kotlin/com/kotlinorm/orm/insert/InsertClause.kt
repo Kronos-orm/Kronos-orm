@@ -10,6 +10,8 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class InsertClause<T : KPojo>(t: T) {
 
@@ -27,6 +29,19 @@ class InsertClause<T : KPojo>(t: T) {
     fun build(): KronosAtomicTask {
 
         toInsertFields.addAll(allFields.filter { it.name in paramMap.keys }.map { it.columnName })
+
+        if (createTimeStrategy.enabled) {
+            val format = (createTimeStrategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
+            toInsertFields.add(createTimeStrategy.field.columnName)
+            paramMap[createTimeStrategy.field.name] = DateTimeFormatter.ofPattern(format).format(LocalDateTime.now())
+        }
+
+        if (updateTimeStrategy.enabled) {
+            val format = (updateTimeStrategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
+            toInsertFields.add(updateTimeStrategy.field.columnName)
+            paramMap[updateTimeStrategy.field.name] = DateTimeFormatter.ofPattern(format).format(LocalDateTime.now())
+        }
+
         val sql = listOfNotNull(
             "INSERT INTO",
             "`${tableName}`",

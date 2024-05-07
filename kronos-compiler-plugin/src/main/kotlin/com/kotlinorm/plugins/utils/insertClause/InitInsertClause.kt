@@ -41,7 +41,7 @@ fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
     val createTimeStrategy =
         getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
     val updateTimeStrategy =
-        getValidStrategy(irClass, globalUpdateTimeSymbol, CreateTimeFqName)
+        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
     return applyIrCall(
         initInsertClauseSymbol,
         expression,
@@ -61,7 +61,7 @@ fun initInsertClauseList(expression: IrCall): IrFunctionAccessExpression {
     val createTimeStrategy =
         getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
     val updateTimeStrategy =
-        getValidStrategy(irClass, globalUpdateTimeSymbol, CreateTimeFqName)
+        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
     return applyIrCall(
         initInsertClauseListSymbol,
         expression,

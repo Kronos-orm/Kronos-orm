@@ -28,8 +28,8 @@ class Field(
         return result
     }
 
-    operator fun plus(@Suppress("UNUSED_PARAMETER") other: String?): Field = Field(
+    operator fun plus(other: String?): Field = Field(
         columnName,
-        name + "New"
+        name + other
     )
 }

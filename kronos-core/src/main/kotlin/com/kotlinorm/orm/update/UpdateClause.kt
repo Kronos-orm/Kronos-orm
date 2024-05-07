@@ -82,6 +82,21 @@ class UpdateClause<T : KPojo>(
 
     fun where(updateCondition: KTableConditionalField<T, Boolean?> = null): UpdateClause<T> {
         if (updateCondition == null) return this
+            .apply {
+                // 获取所有字段 且去除null
+                condition = Criteria(
+                    type = AND,
+                    children = paramMap.keys.map { propName ->
+                        Criteria(
+                            type = Equal,
+                            field = allFields.first { it.name == propName },
+                            value = paramMap[propName]
+                        ).let {
+                            if (it.value == null) null else it
+                        }
+                    }.toMutableList()
+                )
+            }
         with(KTableConditional(pojo::class.createInstance())) {
             propParamMap = paramMap
             updateCondition()

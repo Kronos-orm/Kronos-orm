@@ -455,10 +455,150 @@ class Update {
             it.username = "ZhangSan"
         }.where().build()
         assertEquals(
-            "UPDATE tb_user SET id = :idNew, username = :usernameNew where id = :id and username = :username",
+            "UPDATE tb_user SET username = :usernameNew WHERE `id` = :id AND `username` = :username",
             sql
         )
         assertEquals(mapOf("id" to 1, "username" to "test", "usernameNew" to "ZhangSan"), paramMap)
     }
 
+    //    infix fun Comparable<*>?.matchLeft(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
+    //    infix fun Comparable<*>?.matchRight(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
+    //    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
+
+    @Test
+    fun testMatch_1() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id matchLeft "1" }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` LIKE :id", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "id" to "1%"), paramMap)
+    }
+
+    @Test
+    fun testMatch_2() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id matchRight "1" }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` LIKE :id", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "id" to "%1"), paramMap)
+    }
+
+    @Test
+    fun testMatch_3() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id matchBoth "1" }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` LIKE :id", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "id" to "%1%"),paramMap)
+    }
+
+    //  val Comparable<*>?.like get() = true
+    //    val Comparable<*>?.notLike get() = true
+    //    val Comparable<*>?.matchLeft get() = true
+    //    val Comparable<*>?.matchRight get() = true
+    @Test
+    fun testLike() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.username.like}.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test"), paramMap)
+    }
+
+    @Test
+    fun testNotLike() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.username.notLike }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` NOT LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test"),paramMap)
+    }
+
+    @Test
+    fun testMatchLeft() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.username.matchLeft }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "test%"), paramMap)
+    }
+
+    @Test
+    fun testMatchRight() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.username.matchRight }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `username` LIKE :username", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "username" to "%test"), paramMap)
+    }
+    //     val Comparable<*>?.lt get() = true
+    //    val Comparable<*>?.gt get() = true
+    //    val Comparable<*>?.le get() = true
+    //    val Comparable<*>?.ge get() = true
+    @Test
+    fun testLt() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id.lt }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` < :idMax", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMax" to 2), paramMap)
+    }
+    @Test
+    fun testGt() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id.gt }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` > :idMin", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMin" to 1), paramMap)
+    }
+
+    @Test
+    fun testLe() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id.le }.build()
+
+        println(sql)
+        println(paramMap)
+
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` <= :idMax", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMax" to 1), paramMap)
+    }
+
+    @Test
+    fun testGe() {
+        val (sql, paramMap) = testUser.update { it.id + it.username }
+            .where { it.id.ge }.build()
+
+        println(sql)
+        println(paramMap)
+        assertEquals("UPDATE tb_user SET id = :idNew, username = :usernameNew WHERE `id` >= :idMin", sql)
+        assertEquals(mapOf("idNew" to 1, "usernameNew" to "test", "idMin" to 1), paramMap)
+    }
 }

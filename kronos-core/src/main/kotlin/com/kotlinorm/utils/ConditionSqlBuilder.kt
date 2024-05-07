@@ -130,7 +130,7 @@ object ConditionSqlBuilder {
 
             Like -> {
                 val safeKey = getSafeKey(condition.field.name)
-                paramMap[safeKey] = condition.value
+                paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
                     condition.field.quotedColumnName(), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
                 )

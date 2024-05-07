@@ -1,6 +1,7 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
 
 
 fun fieldK2db(str: String): String {
@@ -17,4 +18,12 @@ fun tableK2db(str: String): String {
 
 fun tableDb2k(str: String): String {
     return Kronos.fieldNamingStrategy.db2k(str)
+}
+
+fun getUpdateTimeStrategy(): KronosCommonStrategy {
+    return Kronos.updateTimeStrategy
+}
+
+fun getLogicDeleteStrategy(): KronosCommonStrategy {
+    return Kronos.logicDeleteStrategy
 }

@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.update
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable
@@ -24,6 +25,8 @@ class UpdateClause<T : KPojo>(
     private val pojo: T, private var isExcept: Boolean = false, setUpdateFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
+    internal lateinit var updateTimeStrategy: KronosCommonStrategy
+    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     internal var allFields: MutableSet<Field> = mutableSetOf()
     private var toUpdateFields: MutableSet<Field> = mutableSetOf()
     private var condition: Criteria? = null

@@ -20,9 +20,9 @@ import kotlin.reflect.full.declaredFunctions
 object Kronos {
     internal var defaultLogger: (Any) -> KLogger =
         { BundledSimpleLoggerAdapter(it.javaName) }
-    var defaultDataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper() }
     internal var noValueStrategy = NoValueStrategy.Ignore
 
+    var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper() }
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
     var serializeResolver: KronosSerializeResolver = NoneSerializeResolver()
     var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()

@@ -1,7 +1,7 @@
 package com.kotlinorm.plugins.utils.updateClause
 
+import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.asSimpleType
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import com.kotlinorm.plugins.utils.subType
@@ -37,10 +37,16 @@ private val fieldSymbol
 context(IrBuilderWithScope, IrPluginContext)
 fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
+    val updateTimeStrategy =
+        getValidStrategy(irClass, globalUpdateTimeSymbol, FqName("com.kotlinorm.annotations.UpdateTime"))
+    val logicDeleteStrategy =
+        getValidStrategy(irClass, globalLogicDeleteSymbol, FqName("com.kotlinorm.annotations.LogicDelete"))
     return applyIrCall(
         initUpdateClauseSymbol,
         expression,
         getTableName(irClass),
+        updateTimeStrategy,
+        logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }

@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.update
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.KTableField
@@ -29,9 +30,17 @@ inline fun <reified T : KPojo> Array<T>.updateExcept(noinline setUpdateFields: K
     return map { UpdateClause(it, true, setUpdateFields) }
 }
 
-fun initUpdateClause(clause: UpdateClause<*>, name: String, vararg fields: Field): UpdateClause<*> {
+fun initUpdateClause(
+    clause: UpdateClause<*>,
+    name: String,
+    updateTime: KronosCommonStrategy,
+    logicDelete: KronosCommonStrategy,
+    vararg fields: Field
+): UpdateClause<*> {
     return clause.apply {
         tableName = name
+        updateTimeStrategy = updateTime
+        logicDeleteStrategy = logicDelete
         allFields.addAll(fields)
     }
 }

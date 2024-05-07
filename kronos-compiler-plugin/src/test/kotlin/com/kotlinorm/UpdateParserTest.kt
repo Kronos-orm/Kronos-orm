@@ -20,17 +20,23 @@ class UpdateParserTest {
       sourceFile = SourceFile.kotlin("main.kt", """
       import com.kotlinorm.Kronos
       import com.kotlinorm.annotations.Table
+      import com.kotlinorm.annotations.UpdateTime
+      import com.kotlinorm.annotations.LogicDelete
       import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
       import com.kotlinorm.interfaces.KPojo
       import com.kotlinorm.orm.update.UpdateClause.Companion.by
       import com.kotlinorm.orm.update.UpdateClause.Companion.execute
       import com.kotlinorm.orm.update.update
+      import com.kotlinorm.beans.config.KronosCommonStrategy
+      import com.kotlinorm.beans.dsl.Field
 
       @Table(name = "tb_user")
       data class User(
           var id: Int? = null,
           var username: String? = null,
-          var gender: Int? = null
+          var gender: Int? = null,
+          @UpdateTime var updateTime: String? = null,
+          @LogicDelete var deleted: String? = null
       ) : KPojo
 
       fun main() {
@@ -43,7 +49,7 @@ class UpdateParserTest {
         val testUser = User(1, "test")
 
         
-        arrayOf(user, testUser).update { it.username }
+        testUser.update { it.username }
             .by{ it.id }.execute()
       }
       """.trimIndent())

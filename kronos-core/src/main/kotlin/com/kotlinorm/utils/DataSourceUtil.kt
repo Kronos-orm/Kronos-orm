@@ -5,7 +5,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
 object DataSourceUtil {
     fun KronosDataSourceWrapper?.orDefault(): KronosDataSourceWrapper {
-        return this ?: Kronos.defaultDataSource()
+        return this ?: Kronos.dataSource()
     }
 
     val Any.javaName: String

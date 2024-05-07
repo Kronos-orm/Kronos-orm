@@ -34,7 +34,7 @@ class Update {
         val (sql, paramMap) =
             user.update()
                 .set {
-                    // use Field("username").setValue("123")
+                    // Field("username").setValue("123")
                     it.username = "123"
                     it.gender = 1
                 }

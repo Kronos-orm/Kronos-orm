@@ -16,9 +16,12 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
+import com.kotlinorm.utils.CommonUtil
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.reflect.full.createInstance
 
 class UpdateClause<T : KPojo>(
@@ -122,7 +125,8 @@ class UpdateClause<T : KPojo>(
         // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
         if (isExcept) {
             toUpdateFields =
-                allFields.apply { removeIf { it.columnName in toUpdateFields.map { f -> f.columnName } } } .toMutableList()
+                allFields.apply { removeIf { it.columnName in toUpdateFields.map { f -> f.columnName } } }
+                    .toMutableList()
             toUpdateFields.forEach {
                 paramMapNew[Field(
                     it.columnName, it.name + "New"
@@ -139,6 +143,16 @@ class UpdateClause<T : KPojo>(
                 )] = paramMap[it.name]
             }
         }
+        // 设置更新时间
+        paramMapNew.apply {
+            if (updateTimeStrategy.enabled) {
+                val format = (updateTimeStrategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
+                put(
+                    Field(updateTimeStrategy.field.columnName, updateTimeStrategy.field.name),
+                    DateTimeFormatter.ofPattern(format).format(LocalDateTime.now())
+                )
+            }
+        }
 
         val updateFields = toUpdateFields.joinToString(", ") { "${it.name} = :${it.name + "New"}" }
 
@@ -146,6 +160,21 @@ class UpdateClause<T : KPojo>(
         if (conditionSql != null) {
             conditionSql = "WHERE $conditionSql"
         }
+
+        // 设置逻辑删除
+        if (logicDeleteStrategy.enabled) {
+            val logicDeleteField = logicDeleteStrategy.field
+            val logicDeleteValue = logicDeleteStrategy.config ?: 1
+            paramMap[logicDeleteField.name] = logicDeleteValue
+            val logicDeleteSql = "AND ${logicDeleteField.columnName} = :${logicDeleteField.name}"
+            conditionSql = if (conditionSql != null) {
+                "$conditionSql $logicDeleteSql"
+            } else {
+                "WHERE ${logicDeleteField.columnName} = :${logicDeleteField.name}"
+            }
+
+        }
+
         val sql = listOfNotNull("UPDATE", tableName, "SET", updateFields, conditionSql).joinToString(" ")
         // 合并
         paramMap.apply {

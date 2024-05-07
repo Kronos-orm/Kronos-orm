@@ -38,9 +38,9 @@ context(IrBuilderWithScope, IrPluginContext)
 fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
     val updateTimeStrategy =
-        getValidStrategy(irClass, globalUpdateTimeSymbol, FqName("com.kotlinorm.annotations.UpdateTime"))
+        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
     val logicDeleteStrategy =
-        getValidStrategy(irClass, globalLogicDeleteSymbol, FqName("com.kotlinorm.annotations.LogicDelete"))
+        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
     return applyIrCall(
         initUpdateClauseSymbol,
         expression,
@@ -57,10 +57,16 @@ fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
 context(IrBuilderWithScope, IrPluginContext)
 fun initUpdateClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
+    val updateTimeStrategy =
+        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
+    val logicDeleteStrategy =
+        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
     return applyIrCall(
         initUpdateClauseListSymbol,
         expression,
         getTableName(irClass),
+        updateTimeStrategy,
+        logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }

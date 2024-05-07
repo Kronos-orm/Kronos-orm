@@ -32,15 +32,19 @@ internal val commonStrategySymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.config.KronosCommonStrategy"))!!.constructors.first()
 
 
+val UpdateTimeFqName = FqName("com.kotlinorm.beans.config.UpdateTimeStrategy")
+
+val LogicDeleteFqName = FqName("com.kotlinorm.beans.config.LogicDeleteStrategy")
+
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression? {
     var strategy: IrExpression? = applyIrCall(globalSymbol).asIrCall()
     val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
     if (tableSetting == null || (tableSetting is IrConst<*> && tableSetting.value == true)) {
-        var annotation: IrConstructorCall? = null
+        var annotation: IrConstructorCall?
         var config: IrConst<*>? = null
-        var enabled: IrConst<*>? = null
+        var enabled: IrConst<*>?
         val column = irClass.properties.find {
             annotation = it.annotations.findByFqName(fqName)
             enabled = annotation?.getValueArgument(Name.identifier("enabled")) as IrConst<*>?

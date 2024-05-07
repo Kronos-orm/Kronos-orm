@@ -45,9 +45,17 @@ fun initUpdateClause(
     }
 }
 
-fun initUpdateClauseList(clauses: List<UpdateClause<*>>, name: String, vararg fields: Field): List<UpdateClause<*>> {
+fun initUpdateClauseList(
+    clauses: List<UpdateClause<*>>,
+    name: String,
+    updateTime: KronosCommonStrategy,
+    logicDelete: KronosCommonStrategy,
+    vararg fields: Field
+): List<UpdateClause<*>> {
     return clauses.onEach {
         it.tableName = name
+        it.updateTimeStrategy = updateTime
+        it.logicDeleteStrategy = logicDelete
         it.allFields.addAll(fields)
     }
 }

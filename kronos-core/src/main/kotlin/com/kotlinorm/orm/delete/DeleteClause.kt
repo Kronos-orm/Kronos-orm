@@ -1,8 +1,10 @@
 package com.kotlinorm.orm.delete
 
 import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable
 import com.kotlinorm.beans.dsl.KTableConditional
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy.db2k
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.AND
@@ -17,15 +19,24 @@ import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.fieldDb2k
 import kotlin.reflect.full.createInstance
 
-class DeleteClause<T : KPojo>(private val pojo:  T) {
+class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField<T, Any?> = null
+) {
     internal lateinit var tableName: String
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    internal var allFields: MutableList<Field> = mutableListOf()
+
 
     init {
         paramMap.putAll(pojo.toMap().filter { it.value != null })
+        if (setDeleteFields != null) {
+            with(KTable(pojo::class.createInstance())) {
+                setDeleteFields()
+            }
+        }
     }
 
     fun logic(): DeleteClause<T> {
@@ -56,6 +67,24 @@ class DeleteClause<T : KPojo>(private val pojo:  T) {
 
     fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
         if (deleteCondition == null) return this
+            .apply {
+                // 获取所有字段 且去除null
+                condition = Criteria(
+                    type = AND,
+                    children = paramMap.keys.map { propName ->
+                        Criteria(
+                            type = Equal,
+                            field = Field(
+                                columnName = allFields.first { it.name == propName }.columnName,
+                                name = propName
+                            ),
+                            value = paramMap[propName]
+                        ).let {
+                            if (it.value == null) null else it
+                        }
+                    }.toMutableList()
+                )
+            }
         with(KTableConditional(pojo::class.createInstance())) {
             propParamMap = paramMap
             deleteCondition()

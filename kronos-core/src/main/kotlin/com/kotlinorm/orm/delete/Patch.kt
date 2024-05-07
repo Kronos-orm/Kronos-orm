@@ -19,11 +19,13 @@ inline fun <reified T : KPojo> Iterable<T>.delete(): List<DeleteClause<T>> {
 fun initDeleteClause(clause: DeleteClause<*>, name: String, vararg fields: Field): DeleteClause<*> {
     return clause.apply {
         tableName = name
+        allFields.addAll(fields)
     }
 }
 
 fun initDeleteClauseList(clauses: List<DeleteClause<*>>, name: String, vararg fields: Field): List<DeleteClause<*>> {
     return clauses.onEach {
         it.tableName = name
+        it.allFields.addAll(fields)
     }
 }

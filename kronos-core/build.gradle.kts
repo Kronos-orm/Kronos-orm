@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     kotlin("kapt")
+ //   id("com.kotlinorm.kronos-compiler-plugin")
 }
 
 dependencies {

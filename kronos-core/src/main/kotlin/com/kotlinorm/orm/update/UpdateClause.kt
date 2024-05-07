@@ -27,8 +27,8 @@ class UpdateClause<T : KPojo>(
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
-    internal var allFields: MutableSet<Field> = mutableSetOf()
-    private var toUpdateFields: MutableSet<Field> = mutableSetOf()
+    internal var allFields: MutableList<Field> = mutableListOf()
+    private var toUpdateFields: MutableList<Field> = mutableListOf()
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
@@ -39,7 +39,7 @@ class UpdateClause<T : KPojo>(
             with(KTable(pojo::class.createInstance())) {
                 setUpdateFields()
                 toUpdateFields.addAll(fields)
-                toUpdateFields.forEach {
+                toUpdateFields.distinct().forEach {
                     paramMapNew[
                         Field(
                             it.columnName,
@@ -109,7 +109,7 @@ class UpdateClause<T : KPojo>(
                 children = paramMap.keys.map { propName ->
                     Criteria(
                         type = Equal,
-                        field = toUpdateFields.first { it.name == propName },
+                        field = toUpdateFields.distinct().first { it.name == propName },
                         value = paramMap[propName]
                     )
                 }.toMutableList()
@@ -122,7 +122,7 @@ class UpdateClause<T : KPojo>(
         // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
         if (isExcept) {
             toUpdateFields =
-                allFields.filter { !toUpdateFields.any { f -> f.columnName == it.columnName } }.toMutableSet()
+                allFields.apply { removeIf { it.columnName in toUpdateFields.map { f -> f.columnName } } } .toMutableList()
             toUpdateFields.forEach {
                 paramMapNew[Field(
                     it.columnName, it.name + "New"
@@ -132,7 +132,7 @@ class UpdateClause<T : KPojo>(
 
         if (toUpdateFields.isEmpty()) {
             // 全都更新
-            toUpdateFields = allFields.toMutableSet()
+            toUpdateFields = allFields.toMutableList()
             toUpdateFields.forEach {
                 paramMapNew[Field(
                     it.columnName, it.name + "New"

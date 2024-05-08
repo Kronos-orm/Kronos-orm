@@ -43,7 +43,7 @@ fun initUpdateClause(
         tableName = name
         updateTimeStrategy = updateTime
         logicDeleteStrategy = logicDelete
-        allFields.addAll(fields)
+        allFields += fields
     }
 }
 
@@ -60,6 +60,6 @@ fun initUpdateClauseList(
         it.tableName = name
         it.updateTimeStrategy = updateTime
         it.logicDeleteStrategy = logicDelete
-        it.allFields.addAll(fields)
+        it.allFields += fields
     }
 }

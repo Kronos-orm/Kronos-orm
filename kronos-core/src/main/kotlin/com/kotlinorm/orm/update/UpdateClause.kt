@@ -40,7 +40,7 @@ class UpdateClause<T : KPojo>(
         if (setUpdateFields != null) {
             with(KTable(pojo::class.createInstance())) {
                 setUpdateFields()
-                toUpdateFields.addAll(fields)
+                toUpdateFields += fields
             }
             toUpdateFields.distinct().forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
@@ -53,9 +53,9 @@ class UpdateClause<T : KPojo>(
         with(KTable(pojo::class.createInstance())) {
             newValue()
             if (isExcept) {
-                toUpdateFields.removeAll(fields)
+                toUpdateFields -= fields
             } else {
-                toUpdateFields.addAll(fields)
+                toUpdateFields += fields
             }
             paramMapNew.putAll(fieldParamMap.map { it.key + "New" to it.value })
         }
@@ -106,8 +106,8 @@ class UpdateClause<T : KPojo>(
 
         // 设置逻辑删除
         setCommonStrategy(logicDeleteStrategy) { field, value ->
-            toUpdateFields.remove(field)
-            paramMapNew.remove(field + "new")
+            toUpdateFields -= field
+            paramMapNew -= field + "new"
             condition = listOfNotNull(
                 condition, "${logicDeleteStrategy.field.quotedColumnName()} = $value".asSql()
             ).toCriteria()

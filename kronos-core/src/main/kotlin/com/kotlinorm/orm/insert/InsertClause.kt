@@ -26,7 +26,7 @@ class InsertClause<T : KPojo>(t: T) {
     }
 
     private val updateInsertFields = { field: Field, value: Any? ->
-        toInsertFields.add(field)
+        toInsertFields += field
         paramMap[field.name] = value
     }
 

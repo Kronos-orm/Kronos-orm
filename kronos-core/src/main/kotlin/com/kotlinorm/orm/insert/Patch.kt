@@ -48,6 +48,6 @@ fun initInsertClauseList(
         it.tableName = name
         it.createTimeStrategy = createTime
         it.updateTimeStrategy = updateTime
-        it.allFields.addAll(fields)
+        it.allFields += fields
     }
 }

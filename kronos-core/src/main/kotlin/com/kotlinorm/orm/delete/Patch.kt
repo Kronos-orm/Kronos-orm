@@ -24,7 +24,7 @@ fun initDeleteClause(clause: DeleteClause<*>, name: String,
         tableName = name
         updateTimeStrategy = updateTime
         logicDeleteStrategy = logicDelete
-        allFields.addAll(fields)
+        allFields += fields
     }
 }
 
@@ -35,6 +35,6 @@ fun initDeleteClauseList(clauses: List<DeleteClause<*>>, name: String,
         it.tableName = name
         it.updateTimeStrategy = updateTime
         it.logicDeleteStrategy = logicDelete
-        it.allFields.addAll(fields)
+        it.allFields += fields
     }
 }

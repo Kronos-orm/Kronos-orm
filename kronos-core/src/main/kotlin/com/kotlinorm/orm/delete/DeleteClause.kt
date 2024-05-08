@@ -19,6 +19,7 @@ import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
+import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
@@ -26,7 +27,8 @@ import com.kotlinorm.utils.fieldDb2k
 import com.kotlinorm.utils.setCommonStrategy
 import kotlin.reflect.full.createInstance
 
-class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField<T, Any?> = null
+class DeleteClause<T : KPojo>(
+    private val pojo: T, setDeleteFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
@@ -58,55 +60,23 @@ class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
             }
-            condition = Criteria(
-                type = AND,
-            ).apply {
-                children = fields.map {
-                    Criteria(
-                        type = Equal,
-                        field = it,
-                        value = paramMap[it.name]
-                    )
-                }.toMutableList()
-            }
+
+            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this
     }
 
     fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
-        if (deleteCondition == null) return this
-            .apply {
-                // 获取所有字段 且去除null
-                condition = Criteria(
-                    type = AND,
-                    children = paramMap.keys.map { propName ->
-                        Criteria(
-                            type = Equal,
-                            field = Field(
-                                columnName = allFields.first { it.name == propName }.columnName,
-                                name = propName
-                            ),
-                            value = paramMap[propName]
-                        ).let {
-                            if (it.value == null) null else it
-                        }
-                    }.toMutableList()
-                )
-            }
+        if (deleteCondition == null) return this.apply {
+            // 获取所有字段 且去除null
+            condition = paramMap.keys.mapNotNull { propName ->
+                allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
+            }.toCriteria()
+        }
         with(KTableConditional(pojo::class.createInstance())) {
             propParamMap = paramMap
             deleteCondition()
-            condition = criteria ?: Criteria(
-                type = AND
-            ).apply {
-                children = paramMap.keys.map { propName ->
-                    Criteria(
-                        type = Equal,
-                        field = fields.first { it.name == propName },
-                        value = paramMap[propName]
-                    )
-                }.toMutableList()
-            }
+            condition = criteria
         }
         return this
     }
@@ -121,33 +91,28 @@ class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField
         }
 
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
-        if (conditionSql == null) {
-            throw NeedConditionException()
-        }
 
         if (logic) {
             val toUpdateFields = mutableListOf<Field>()
             val updateInsertFields = { field: Field, value: Any? ->
-                toUpdateFields.add(field)
+                toUpdateFields += field
                 paramMap[field.name] = value
             }
-            setCommonStrategy(updateTimeStrategy , true , callBack =  updateInsertFields)
-            setCommonStrategy(logicDeleteStrategy , false , true , callBack =  updateInsertFields)
+            setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
+            setCommonStrategy(logicDeleteStrategy, false, true, callBack = updateInsertFields)
 
             val updateFields = toUpdateFields.joinToString(", ") { "`${it.columnName}` = :${it.name + "New"}" }
 
-            val sql = listOfNotNull(
-                "UPDATE",
+            val sql = listOfNotNull("UPDATE",
                 tableName,
                 "SET",
                 updateFields,
-                "WHERE",
-                conditionSql.ifEmpty { null }
-            ).joinToString(" ")
+                "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
+                conditionSql?.ifEmpty { null }).joinToString(" ")
 
             return KronosAtomicTask(sql, paramMap, operationType = KOperationType.UPDATE)
         } else {
-            val sql ="DELETE FROM $tableName WHERE $conditionSql"
+            val sql = "DELETE FROM $tableName WHERE $conditionSql"
             return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
         }
     }

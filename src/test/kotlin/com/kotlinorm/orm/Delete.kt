@@ -49,6 +49,16 @@ class Delete {
         }.build()
         //delete from tb_user where id > 10 and id < 100
         assertEquals("delete from tb_user where id > :idMin and id < :idMax", sql)
-        assertEquals(mapOf("idMin" to 10, "idMax" to 100), paramMap)
+        assertEquals(mapOf("id" to 10, "idMax" to 100), paramMap)
+    }
+
+    @Test
+    fun testDelete5() {
+        val (sql, paramMap) = user.delete().logic().where {
+            it.id.eq
+        }.build()
+        //delete from tb_user where id > 10 and id < 100
+        assertEquals("UPDATE tb_user SET `update_time` = :updateTimeNew, `delete` = :deleteNew WHERE `id` = :id AND `delete` = 0", sql)
+        assertEquals(mapOf("id" to 1, "updateTime" to "024-05-08 10:23:25" , "delete" to "1"), paramMap)
     }
 }

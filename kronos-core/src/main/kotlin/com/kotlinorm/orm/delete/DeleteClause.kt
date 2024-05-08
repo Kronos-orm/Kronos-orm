@@ -5,6 +5,7 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable
 import com.kotlinorm.beans.dsl.KTableConditional
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy.db2k
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.AND
@@ -17,8 +18,12 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.Extensions.asSql
+import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.fieldDb2k
+import com.kotlinorm.utils.setCommonStrategy
 import kotlin.reflect.full.createInstance
 
 class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField<T, Any?> = null
@@ -26,6 +31,7 @@ class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
+    private var logic: Boolean = false
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     internal var allFields: MutableList<Field> = mutableListOf()
@@ -41,7 +47,8 @@ class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField
     }
 
     fun logic(): DeleteClause<T> {
-        TODO("not implemented")
+        this.logic = true
+        return this
     }
 
     fun by(someFields: KTableField<T, Any?>): DeleteClause<T> {
@@ -105,12 +112,44 @@ class DeleteClause<T : KPojo>(private val pojo:  T, setDeleteFields: KTableField
     }
 
     fun build(): KronosAtomicTask {
+
+        // 设置逻辑删除
+        setCommonStrategy(logicDeleteStrategy) { field, value ->
+            condition = listOfNotNull(
+                condition, "${logicDeleteStrategy.field.quotedColumnName()} = $value".asSql()
+            ).toCriteria()
+        }
+
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
         if (conditionSql == null) {
             throw NeedConditionException()
         }
-        val sql = "DELETE FROM $tableName WHERE $conditionSql"
-        return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
+
+        if (logic) {
+            val toUpdateFields = mutableListOf<Field>()
+            val updateInsertFields = { field: Field, value: Any? ->
+                toUpdateFields.add(field)
+                paramMap[field.name] = value
+            }
+            setCommonStrategy(updateTimeStrategy , true , callBack =  updateInsertFields)
+            setCommonStrategy(logicDeleteStrategy , false , true , callBack =  updateInsertFields)
+
+            val updateFields = toUpdateFields.joinToString(", ") { "`${it.columnName}` = :${it.name + "New"}" }
+
+            val sql = listOfNotNull(
+                "UPDATE",
+                tableName,
+                "SET",
+                updateFields,
+                "WHERE",
+                conditionSql.ifEmpty { null }
+            ).joinToString(" ")
+
+            return KronosAtomicTask(sql, paramMap, operationType = KOperationType.UPDATE)
+        } else {
+            val sql ="DELETE FROM $tableName WHERE $conditionSql"
+            return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
+        }
     }
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {

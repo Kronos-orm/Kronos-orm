@@ -40,9 +40,10 @@ class InsertClause<T : KPojo>(t: T) {
         val sql = listOfNotNull(
             "INSERT INTO",
             "`${tableName}`",
-            "(" + toInsertFields.joinToString { "`${it}`" } + ")",
+            "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
             "VALUES",
-            "(" + paramMap.keys.joinToString { ":${it}" } + ")").joinToString(" ")
+            "(" + paramMap.keys.joinToString { ":${it}" } + ")"
+        ).joinToString(" ")
 
         return KronosAtomicTask(
             sql,

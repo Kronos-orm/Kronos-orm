@@ -28,6 +28,8 @@ import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import com.kotlinorm.plugins.utils.subType
 import com.kotlinorm.plugins.utils.updateClause.initUpdateClause
 import com.kotlinorm.plugins.utils.updateClause.initUpdateClauseList
+import com.kotlinorm.plugins.utils.upsertClause.initUpsertClause
+import com.kotlinorm.plugins.utils.upsertClause.initUpsertClauseList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -56,6 +58,7 @@ class KronosParserTransformer(
     private val kTableClass = "com.kotlinorm.beans.dsl.KTable"
     private val updateClauseClass = "com.kotlinorm.orm.update.UpdateClause"
     private val insertClauseClass = "com.kotlinorm.orm.insert.InsertClause"
+    private val upsertClauseClass = "com.kotlinorm.orm.upsert.UpsertClause"
     private val deleteClauseClass = "com.kotlinorm.orm.delete.DeleteClause"
     private val kTableConditionalClass = "com.kotlinorm.beans.dsl.KTableConditional"
 
@@ -115,6 +118,13 @@ class KronosParserTransformer(
                     }
                 }
 
+                fqName == upsertClauseClass &&
+                        expression.funcName() in listOf("upsert", "upsertExcept") -> {
+                    return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                        initUpsertClause(super.visitCall(expression).asIrCall())
+                    }
+                }
+
                 fqName == deleteClauseClass &&
                         expression.funcName() == "delete" -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
@@ -137,6 +147,12 @@ class KronosParserTransformer(
                                 expression.funcName() in listOf("insert") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                                 initInsertClauseList(super.visitCall(expression).asIrCall())
+                            }
+                        }
+                        subTypeFqName == upsertClauseClass &&
+                                expression.funcName() in listOf("upsert", "upsertExcept") -> {
+                            return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                                initUpsertClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
 

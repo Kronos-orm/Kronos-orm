@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.enums
+package com.kotlinorm.exceptions
 
 /**
- * Sort Type
+ * No Json Resolver Exception
+ *
+ * Exception thrown when there is no serialize resolver
  *
  * @author OUSC
+ * @create 2022/11/30 00:21
+ * @see [com.kotlinorm.interfaces.KronosSerializeResolver]
  */
-enum class SortType {
-    ASC, DESC
-}
+class NoSerializeResolverException(message: String) : RuntimeException(message)

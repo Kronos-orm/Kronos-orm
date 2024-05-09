@@ -1,9 +1,23 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.enums
 
-import com.kotlinorm.enums.*
-
 /**
- * Created by ousc on 2022/4/18 10:49
+ * Created by OUSC on 2022/4/18 10:49
  */
 
 val Root = ConditionType.ROOT
@@ -22,21 +36,9 @@ val OR = ConditionType.OR
 
 val ASC = SortType.ASC
 val DESC = SortType.DESC
-//
-//val MySql = DBType.MySql
-//val Oracle = DBType.Oracle
-//val MSSql = DBType.MSSql
-//val PostgreSQL = DBType.PostgreSQL
-//val SQLite = DBType.SQLite
-//val OceanBase = DBType.OceanBase
 
-val ignore = com.kotlinorm.enums.NoValueStrategy.Ignore
-val alwaysFalse = com.kotlinorm.enums.NoValueStrategy.False
-val alwaysTrue = com.kotlinorm.enums.NoValueStrategy.True
-val judgeNull = com.kotlinorm.enums.NoValueStrategy.JudgeNull
-val smart = com.kotlinorm.enums.NoValueStrategy.Smart
-
-//val INNER_JOIN = JoinType.INNER_JOIN
-//val LEFT_JOIN = JoinType.LEFT_JOIN
-//val RIGHT_JOIN = JoinType.RIGHT_JOIN
-//val FULL_JOIN = JoinType.FULL_JOIN
+val ignore = NoValueStrategy.Ignore
+val alwaysFalse = NoValueStrategy.False
+val alwaysTrue = NoValueStrategy.True
+val judgeNull = NoValueStrategy.JudgeNull
+val smart = NoValueStrategy.Smart

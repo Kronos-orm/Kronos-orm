@@ -2,6 +2,19 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.enums.*
 
+/**
+ * Criteria
+ *
+ * Criteria are used to construct SQL where clause
+ *
+ * @property field the field for the condition
+ * @property type the type of the condition
+ * @property not whether the condition is not
+ * @property value the value
+ * @property tableName the table name
+ * @property noValueStrategy when the value is null, whether to generate sql
+ * @property children the children criteria
+ */
 class Criteria(
     var field: Field = Field("", ""), // original parameter name
     var type: ConditionType, // condition type
@@ -15,12 +28,12 @@ class Criteria(
     internal val valueAcceptable: Boolean
         get() = type != ISNULL && type != AND && type != OR && type != Root
 
+    /**
+     * Adds a child criteria to the list of children.
+     *
+     * @param criteria the criteria to be added as a child, or null to remove the last child
+     */
     fun addChild(criteria: Criteria?) {
         children.add(criteria)
     }
-
-    override fun toString(): String {
-        return "Criteria(field='$field', type=$type, not=$not, value=$value, tableName=$tableName, noValueStrategy=$noValueStrategy, children=$children, valueAcceptable=$valueAcceptable)"
-    }
-
 }

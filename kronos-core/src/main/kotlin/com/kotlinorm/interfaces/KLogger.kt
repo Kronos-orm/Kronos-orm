@@ -2,56 +2,71 @@ package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.logging.KLogMessage
 
-public interface KLogger {
+interface KLogger {
 
     /**
      * Check if the logger instance enabled for the [com.kotlinorm.enums.KLogLevel.TRACE] level.
      */
-    public fun isTraceEnabled(): Boolean
+    fun isTraceEnabled(): Boolean
 
     /**
      * Log a message at the [com.kotlinorm.enums.KLogLevel.TRACE] level.
+     *
+     * @param messages messages to log
+     * @param e exception
      */
-    public fun trace(messages: Array<KLogMessage>, e: Throwable? = null)
+    fun trace(messages: Array<KLogMessage>, e: Throwable? = null)
 
     /**
      * Check if the logger instance enabled for the [com.kotlinorm.enums.KLogLevel.DEBUG] level.
      */
-    public fun isDebugEnabled(): Boolean
+    fun isDebugEnabled(): Boolean
 
     /**
      * Log a message at the [com.kotlinorm.enums.KLogLevel.DEBUG] level.
+     *
+     * @param messages messages to log
+     * @param e exception
      */
-    public fun debug(messages: Array<KLogMessage>, e: Throwable? = null)
+    fun debug(messages: Array<KLogMessage>, e: Throwable? = null)
 
     /**
      * Check if the logger instance enabled for the [com.kotlinorm.enums.KLogLevel.INFO] level.
      */
-    public fun isInfoEnabled(): Boolean
+    fun isInfoEnabled(): Boolean
 
     /**
      * Log a message at the [com.kotlinorm.enums.KLogLevel.INFO] level.
+     *
+     * @param messages messages to log
+     * @param e exception
      */
-    public fun info(messages: Array<KLogMessage>, e: Throwable? = null)
+    fun info(messages: Array<KLogMessage>, e: Throwable? = null)
 
     /**
      * Check if the logger instance enabled for the 'WARN' level.
      */
-    public fun isWarnEnabled(): Boolean
+    fun isWarnEnabled(): Boolean
 
     /**
      * Log a message at the [com.kotlinorm.enums.KLogLevel.WARN] level.
+     *
+     * @param messages messages to log
+     * @param e exception
      */
-    public fun warn(messages: Array<KLogMessage>, e: Throwable? = null)
+    fun warn(messages: Array<KLogMessage>, e: Throwable? = null)
 
     /**
      * Check if the logger instance enabled for the [com.kotlinorm.enums.KLogLevel.ERROR] level.
      */
-    public fun isErrorEnabled(): Boolean
+    fun isErrorEnabled(): Boolean
 
     /**
      * Log a message at the [com.kotlinorm.enums.KLogLevel.ERROR] level.
+     *
+     * @param messages messages to log
+     * @param e exception
      */
-    public fun error(messages: Array<KLogMessage>, e: Throwable? = null)
+    fun error(messages: Array<KLogMessage>, e: Throwable? = null)
 
 }

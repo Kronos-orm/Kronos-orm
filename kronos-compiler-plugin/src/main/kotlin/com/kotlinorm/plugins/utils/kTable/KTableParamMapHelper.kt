@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.utils.kTable
 
 import com.kotlinorm.plugins.utils.applyIrCall
@@ -15,18 +31,20 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 
 /**
  * Constructs a list of IR expressions by processing assignment statements and mapping them to field parameters.
- * 通过处理赋值语句并将其映射到字段参数，构造 IR 表达式列表。
+ *
+ * @return The list of IR expressions representing the parameter mapping.
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun putFieldParamMap(): List<IrExpression> {
-    // Call to process the body of the function with the function's receiver.
-    // 调用以使用函数的接收器处理函数的体。
     return putParamMapStatements(irGet(extensionReceiverParameter!!), body!!)
 }
 
 /**
- * Recursively processes IR elements to construct expressions that represent parameter mapping for fields.
- * 递归处理 IR 元素，以构建表示字段参数映射的表达式。
+ * Constructs a list of IR expressions by processing assignment statements and mapping them to field parameters.
+ *
+ * @param receiver The receiver [IrExpression] for the parameter mapping.
+ * @param element The [IrElement] to process for parameter mapping.
+ * @return The list of IR expressions representing the parameter mapping.
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun putParamMapStatements(receiver: IrExpression, element: IrElement): MutableList<IrExpression> {
@@ -49,7 +67,8 @@ fun putParamMapStatements(receiver: IrExpression, element: IrElement): MutableLi
                     applyIrCall(
                         setValueSymbol,
                         getColumnName(element),
-                        element.valueArguments[0]){
+                        element.valueArguments[0]
+                    ) {
                         dispatchBy(receiver)
                     }
                 )

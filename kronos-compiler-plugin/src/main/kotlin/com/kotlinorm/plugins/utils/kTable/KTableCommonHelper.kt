@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.utils.kTable
 
 import com.kotlinorm.plugins.utils.applyIrCall
@@ -20,26 +36,17 @@ import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 
-/**
- * Defines various Kotlin IR extensions to handle specific methods of `KTable` during the IR transformation process in Kotlin compiler plugins.
- * 定义多个 Kotlin IR 扩展，用于在 Kotlin 编译器插件的 IR 转换过程中处理 `KTable` 类的特定方法。
- */
+
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
-// Reference to `KTable` class in the plugin context.
-// 在插件上下文中引用 `KTable` 类。
 private val kTableSymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.dsl.KTable"))!!
 
 context(IrPluginContext)
-// Obtain a reference to the `setValue` method of `KTable`.
-// 获取 `KTable` 的 `setValue` 方法的引用。
 internal val setValueSymbol
     get() = kTableSymbol.getSimpleFunction("setValue")!!
 
 context(IrPluginContext)
-// Obtain a reference to the `addField` method of `KTable`.
-// 获取 `KTable` 的 `addField` 方法的引用。
 internal val addFieldSymbol
     get() = kTableSymbol.getSimpleFunction("addField")!!
 
@@ -47,8 +54,6 @@ context(IrPluginContext)
 internal val propParamSymbol
     get() = kTableSymbol.getSimpleFunction("getValueByFieldName")
 
-// Extension property to get the name associated with a property from an `IrCall`.
-// 扩展属性，用于从 `IrCall` 获取与属性相关联的名称。
 context(IrPluginContext)
 internal val IrCall.correspondingName
     get() = symbol.owner.correspondingPropertySymbol?.owner?.name
@@ -65,11 +70,15 @@ internal val tableK2dbSymbol
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
-// Reference to `KTable` class in the plugin context.
-// 在插件上下文中引用 `KTable` 类。
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
 
+/**
+ * Returns the column name of the given IrExpression.
+ *
+ * @param expression the [IrExpression] to get the column name from
+ * @return the IrExpression representing the column name
+ */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun getColumnName(expression: IrExpression): IrExpression {
     return when (expression) {
@@ -84,6 +93,13 @@ fun getColumnName(expression: IrExpression): IrExpression {
     }
 }
 
+/**
+ * Returns the column name of the given IrProperty.
+ *
+ * @param irProperty the [IrProperty] to get the column name from
+ * @param propertyName the name of the property (default: the name of the IrProperty)
+ * @return the IrExpression representing the column name
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name.asString()): IrExpression {
     val columnAnnotation =
@@ -93,6 +109,13 @@ fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name
     return applyIrCall(fieldSymbol.constructors.first(), columnName, irString(propertyName))
 }
 
+/**
+ * Returns the table name associated with the given IrExpression.
+ *
+ * @param expression the [IrExpression] to retrieve the table name from
+ * @return the IrExpression representing the table name
+ * @throws IllegalStateException if the expression type is unexpected
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(expression: IrExpression): IrExpression {
     val irClass = when (expression) {
@@ -103,6 +126,13 @@ fun getTableName(expression: IrExpression): IrExpression {
     return getTableName(irClass)
 }
 
+/**
+ * Returns the table name associated with the given IrClass.
+ *
+ * @param irClass the [IrClass] to retrieve the table name from
+ * @return the IrExpression representing the table name
+ * @throws IllegalStateException if the table annotation is not found
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(irClass: IrClass): IrExpression {
     val tableAnnotation =

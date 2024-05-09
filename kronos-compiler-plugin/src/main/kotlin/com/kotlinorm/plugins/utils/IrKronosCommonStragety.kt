@@ -1,9 +1,24 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.utils
 
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -11,7 +26,9 @@ import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.getValueArgument
+import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
@@ -42,6 +59,14 @@ val LogicDeleteFqName = FqName("com.kotlinorm.annotations.LogicDelete")
 
 val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 
+/**
+ * Retrieves a valid strategy for the given IrClass, global symbol, and FqName.
+ *
+ * @param irClass The IrClass for which the strategy is being retrieved.
+ * @param globalSymbol The global symbol representing the strategy.
+ * @param fqName The fully qualified name of the strategy.
+ * @return The valid strategy as an IrExpression, or null if no valid strategy is found.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression? {
     var strategy: IrExpression? = applyIrCall(globalSymbol).asIrCall()

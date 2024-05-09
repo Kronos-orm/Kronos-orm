@@ -17,6 +17,7 @@ inline fun <reified T : KPojo> Iterable<T>.delete(): List<DeleteClause<T>> {
     return map { DeleteClause(it) }
 }
 
+@Suppress("UNUSED")
 fun initDeleteClause(clause: DeleteClause<*>, name: String,
                      updateTime: KronosCommonStrategy,
                      logicDelete: KronosCommonStrategy, vararg fields: Field): DeleteClause<*> {
@@ -28,6 +29,7 @@ fun initDeleteClause(clause: DeleteClause<*>, name: String,
     }
 }
 
+@Suppress("UNUSED")
 fun initDeleteClauseList(clauses: List<DeleteClause<*>>, name: String,
                          updateTime: KronosCommonStrategy,
                          logicDelete: KronosCommonStrategy, vararg fields: Field): List<DeleteClause<*>> {

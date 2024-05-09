@@ -3,8 +3,8 @@ package com.kotlinorm.orm.update
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTable
-import com.kotlinorm.beans.dsl.KTableConditional
+import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
+import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
@@ -21,7 +21,6 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
-import kotlin.reflect.full.createInstance
 
 class UpdateClause<T : KPojo>(
     private val pojo: T, private var isExcept: Boolean = false, setUpdateFields: KTableField<T, Any?> = null
@@ -38,11 +37,11 @@ class UpdateClause<T : KPojo>(
     init {
         paramMap.putAll(pojo.toMap().filter { it.value != null })
         if (setUpdateFields != null) {
-            with(KTable(pojo::class.createInstance())) {
+            pojo.tableRun {
                 setUpdateFields()
                 toUpdateFields += fields
             }
-            toUpdateFields.distinct().forEach {
+            toUpdateFields.toSet().forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
@@ -50,10 +49,10 @@ class UpdateClause<T : KPojo>(
 
     fun set(newValue: KTableField<T, Unit>): UpdateClause<T> {
         if (newValue == null) throw NeedFieldsException()
-        with(KTable(pojo::class.createInstance())) {
+        pojo.tableRun {
             newValue()
             if (isExcept) {
-                toUpdateFields -= fields
+                toUpdateFields -= fields.toSet()
             } else {
                 toUpdateFields += fields
             }
@@ -64,7 +63,7 @@ class UpdateClause<T : KPojo>(
 
     fun by(someFields: KTableField<T, Any?>): UpdateClause<T> {
         if (someFields == null) throw NeedFieldsException()
-        with(KTable(pojo::class.createInstance())) {
+        pojo.tableRun {
             someFields()
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
@@ -79,9 +78,9 @@ class UpdateClause<T : KPojo>(
                     allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
                 }.toCriteria()
             }
-        with(KTableConditional(pojo::class.createInstance())) {
-            propParamMap = paramMap
+        pojo.conditionalRun {
             updateCondition()
+            propParamMap = paramMap
             condition = criteria
         }
         return this
@@ -118,7 +117,7 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "new"] = value
         }
 
-        val updateFields = toUpdateFields.joinToString(", ") { "$it = :${it.name + "New"}" }
+        val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it + "New"}" }
 
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 

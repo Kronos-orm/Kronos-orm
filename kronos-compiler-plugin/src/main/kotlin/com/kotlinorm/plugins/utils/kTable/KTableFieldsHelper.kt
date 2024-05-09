@@ -1,6 +1,23 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.utils.*
+import com.kotlinorm.plugins.utils.applyIrCall
+import com.kotlinorm.plugins.utils.dispatchBy
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -9,10 +26,10 @@ import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 
-
 /**
  * Creates a list of IR expressions that represent field additions, using a predefined symbol to generate `addField` calls.
- * 使用预定义符号生成 `addField` 调用，创建表示字段添加的 IR 表达式列表。
+ *
+ * @return A list of IR expressions representing field additions.
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun addFieldList(): List<IrExpression> {
@@ -24,8 +41,10 @@ fun addFieldList(): List<IrExpression> {
 }
 
 /**
- * Recursively extracts field names from an IR element, handling different kinds of IR nodes.
- * 从 IR 元素递归提取字段名，处理不同类型的 IR 节点。
+ * Recursively adds field names from the given IR element to a mutable list.
+ *
+ * @param element the [IrElement] to extract field names from
+ * @return a mutable list of IR expressions representing the field names
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun addFieldsNames(element: IrElement): MutableList<IrExpression> {

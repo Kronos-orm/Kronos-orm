@@ -3,15 +3,12 @@ package com.kotlinorm.orm.delete
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTable
-import com.kotlinorm.beans.dsl.KTableConditional
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy.db2k
+import com.kotlinorm.beans.dsl.KTable.Companion.table
+import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
+import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.enums.AND
-import com.kotlinorm.enums.Equal
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.exceptions.NeedConditionException
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -23,9 +20,7 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.fieldDb2k
 import com.kotlinorm.utils.setCommonStrategy
-import kotlin.reflect.full.createInstance
 
 class DeleteClause<T : KPojo>(
     private val pojo: T, setDeleteFields: KTableField<T, Any?> = null
@@ -42,9 +37,7 @@ class DeleteClause<T : KPojo>(
     init {
         paramMap.putAll(pojo.toMap().filter { it.value != null })
         if (setDeleteFields != null) {
-            with(KTable(pojo::class.createInstance())) {
-                setDeleteFields()
-            }
+            pojo.table().setDeleteFields()
         }
     }
 
@@ -55,7 +48,7 @@ class DeleteClause<T : KPojo>(
 
     fun by(someFields: KTableField<T, Any?>): DeleteClause<T> {
         if (someFields == null) return this
-        with(KTable(pojo::class.createInstance())) {
+        pojo.tableRun {
             someFields()
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
@@ -73,7 +66,7 @@ class DeleteClause<T : KPojo>(
                 allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
             }.toCriteria()
         }
-        with(KTableConditional(pojo::class.createInstance())) {
+        pojo.conditionalRun {
             propParamMap = paramMap
             deleteCondition()
             condition = criteria
@@ -83,10 +76,10 @@ class DeleteClause<T : KPojo>(
 
     fun build(): KronosAtomicTask {
 
-        // 设置逻辑删除
+        // 设置Where内的逻辑删除
         setCommonStrategy(logicDeleteStrategy) { field, value ->
             condition = listOfNotNull(
-                condition, "${logicDeleteStrategy.field.quotedColumnName()} = $value".asSql()
+                condition, "${field.quotedColumnName()} = $value".asSql()
             ).toCriteria()
         }
 
@@ -99,9 +92,9 @@ class DeleteClause<T : KPojo>(
                 paramMap[field.name] = value
             }
             setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
-            setCommonStrategy(logicDeleteStrategy, false, true, callBack = updateInsertFields)
+            setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateInsertFields)
 
-            val updateFields = toUpdateFields.joinToString(", ") { "`${it.columnName}` = :${it.name + "New"}" }
+            val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it + "New"}" }
 
             val sql = listOfNotNull("UPDATE",
                 tableName,
@@ -110,7 +103,7 @@ class DeleteClause<T : KPojo>(
                 "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
                 conditionSql?.ifEmpty { null }).joinToString(" ")
 
-            return KronosAtomicTask(sql, paramMap, operationType = KOperationType.UPDATE)
+            return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
         } else {
             val sql = "DELETE FROM $tableName WHERE $conditionSql"
             return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)

@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.beans.logging
 
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter.Companion.format
@@ -7,16 +23,16 @@ import java.io.File
 import java.io.FileWriter
 
 /**
- * Created by sundaiyue on 2022/11/12 14:21
- */
-
-/**
  * Log line
- * @property text
- * @property codes
- * @property endLine
- * @constructor Create empty Log line
- * @author ousc
+ *
+ * Create empty Log line
+ *
+ * @property text the log message
+ * @property codes the style codes
+ * @property endLine whether to end the line
+ *
+ * @author OUSC
+ * @create 2022/11/12 14:21
  */
 class KLogMessage(
     private val text: String,
@@ -25,7 +41,7 @@ class KLogMessage(
 ) {
 
     /**
-     * Endl log line
+     * End log line
      *
      * @return Log line
      */
@@ -40,7 +56,7 @@ class KLogMessage(
      * @return Log line
      */
     fun print(level: KLogLevel) {
-        val out = if(level > KLogLevel.WARN) System.out else System.err
+        val out = if (level > KLogLevel.WARN) System.out else System.err
         if (endLine) {
             out.println(format(text, codes))
         } else {
@@ -68,20 +84,35 @@ class KLogMessage(
         writer.close()
     }
 
+    /**
+     * Convert the current KLogMessage object to an array of KLogMessage objects.
+     */
     fun toArray(): Array<KLogMessage> {
         return arrayOf(this)
     }
 
     companion object {
+        /**
+         * Creates a new instance of KLogMessage with the given text and optional color print codes.
+         *
+         * @param text the log message text
+         * @param codes an optional array of color print codes to apply to the log message
+         * @return a new instance of KLogMessage
+         */
         fun logMessageOf(text: String, codes: Array<ColorPrintCode> = arrayOf()): KLogMessage {
             return KLogMessage(text, codes)
         }
 
+        /**
+         * Formats an array of KLogMessage objects into a single string.
+         *
+         * @return The formatted string containing the text of each KLogMessage object, with an optional newline character after each message.
+         */
         fun Array<KLogMessage>.formatted(): String {
             val sb = StringBuilder()
             this.forEach {
                 sb.append(it.text)
-                if(it.endLine) {
+                if (it.endLine) {
                     sb.append("\r\n")
                 }
             }

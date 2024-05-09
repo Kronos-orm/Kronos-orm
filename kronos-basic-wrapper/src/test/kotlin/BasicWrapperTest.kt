@@ -1,5 +1,5 @@
 import com.kotlinorm.Kronos
-import com.kotlinorm.KotoBasicWrapper
+import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import org.apache.commons.dbcp.BasicDataSource
 
@@ -17,7 +17,7 @@ class BasicWrapperTest {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { KotoBasicWrapper(ds) }
+            dataSource = { KronosBasicWrapper(ds) }
         }
     }
 }

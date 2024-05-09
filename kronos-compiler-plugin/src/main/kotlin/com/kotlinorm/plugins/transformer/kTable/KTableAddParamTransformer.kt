@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.transformer.kTable
 
 import com.kotlinorm.plugins.utils.kTable.putFieldParamMap
@@ -10,36 +26,27 @@ import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
 /**
- * `KTableAddParamTransformer` is designed to manipulate block expressions in Kotlin's Intermediate Representation (IR) during the compilation process.
- * It focuses on enriching blocks by adding field parameter mappings, specifically tailored for transformations that require parameter context.
- * `KTableAddParamTransformer` 旨在编译过程中操作 Kotlin 中间表示 (IR) 的块表达式。
- * 它专注于通过添加字段参数映射来丰富块，特别适用于需要参数上下文的转换。
+ * KTable Add Param Transformer
+ *
+ * Transform IR blocks in Kotlin code. It enriches the block by appending a field parameter mapping at the end.
+ * @author: OUSC
  */
 class KTableAddParamTransformer(
-    // Plugin context, includes essential information for the compilation process
-    // 插件上下文，包含编译过程中的必要信息
     private val pluginContext: IrPluginContext,
-
-    // The current IR function being transformed
-    // 当前正在转换的 IR 函数
     private val irFunction: IrFunction
 ) : IrElementTransformerVoidWithContext() {
 
     /**
-     * Overrides the visitBlock method to apply transformations to IR blocks.
-     * This method enriches the block by appending a field parameter mapping at the end.
-     * 重写 visitBlock 方法以对 IR 块应用转换。
-     * 该方法通过在块的末尾附加一个字段参数映射来丰富块。
+     * Overrides the visitBlock function to add field-parameter mappings to the block.
+     *
+     * @param expression the [IrBlock] expression to be visited
+     * @return the transformed block expression
      */
     override fun visitBlock(expression: IrBlock): IrExpression {
         with(pluginContext) {
             with(irFunction) {
                 return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-                    // Preserve existing statements in the block
-                    // 保留块中的现有语句
                     +expression.statements
-                    // add field-parameter mappings
-                    // 添加字段参数映射
                     +putFieldParamMap()
 
                     super.visitBlock(expression)

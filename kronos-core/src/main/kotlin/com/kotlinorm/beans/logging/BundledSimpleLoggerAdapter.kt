@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.beans.logging
 
 import com.kotlinorm.enums.ColorPrintCode
@@ -6,7 +22,11 @@ import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 
 /**
- * Bundled Simple Logger Adapter by Kronos ORM
+ * BundledSimpleLoggerAdapter
+ *
+ * Bundled Simple Logger Adapter by Kronos ORM, support color print on console and write to file.
+ *
+ * @property tagName the name of the logger
  */
 class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     companion object {
@@ -14,10 +34,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         private var logTaskList = mutableListOf<LogTask>() // log task queue
         private const val SEMICOLON = ";"
 
-
         var logPath = mutableListOf("console")
         var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss"
-        var colorPrintEnabled = true
         var traceEnabled = true
         var debugEnabled = true
         var infoEnabled = true
@@ -28,14 +46,11 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         /**
          * 格式化信息
          *
-         * @param txt   信息
-         * @param codes 参数集合
-         * @return 格式化后的信息
+         * @param txt  the text to format
+         * @param codes the style codes
+         * @return the formatted text
          */
         internal fun format(txt: String, codes: Array<ColorPrintCode>): String {
-            if (!colorPrintEnabled) {
-                return txt
-            }
             val codeStr = java.lang.String.join(
                 SEMICOLON,
                 codes.map { code -> code.code.toString() })
@@ -43,6 +58,12 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         }
     }
 
+    /**
+     * Log Task
+     *
+     * @property level the log level
+     * @property messages the log messages
+     */
     data class LogTask(val level: KLogLevel, val messages: List<KLogMessage>)
 
     private fun Array<KLogMessage>.attachCodes(codes: Array<ColorPrintCode>): MutableList<KLogMessage> {
@@ -66,7 +87,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                                 ColorPrintCode.BLUE.toArray()
                             )
                         )
-                }
+                    }
             )
         )
         if (!logLock) executeLogTask()
@@ -89,7 +110,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                                 ColorPrintCode.MAGENTA.toArray()
                             )
                         )
-                }
+                    }
             )
         )
         if (!logLock) executeLogTask()
@@ -112,7 +133,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                                 ColorPrintCode.CYAN.toArray()
                             )
                         )
-                }
+                    }
             )
         )
         if (!logLock) executeLogTask()
@@ -135,7 +156,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                                 ColorPrintCode.YELLOW.toArray()
                             )
                         )
-                }
+                    }
             )
         )
         if (!logLock) executeLogTask()
@@ -158,12 +179,15 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                                 ColorPrintCode.RED.toArray()
                             )
                         )
-                }
+                    }
             )
         )
         if (!logLock) executeLogTask()
     }
 
+    /**
+     * Executes the log task asynchronously.
+     */
     private fun executeLogTask() {
         Runnable {
             logLock = true

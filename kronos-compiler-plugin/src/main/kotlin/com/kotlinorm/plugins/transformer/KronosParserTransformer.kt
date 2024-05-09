@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.transformer
 
 import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
@@ -30,14 +46,11 @@ import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
 
 /**
- * `KotoParserTransformer` manipulates function declarations in Kotlin's Intermediate Representation (IR) based on specific type conditions.
- * This transformer focuses on functions that have a `KTable` as their extension receiver, applying custom IR transformations to modify the function body.
- * `KotoParserTransformer` 根据特定类型条件操作 Kotlin 中间表示 (IR) 的函数声明。
- * 此转换器专注于那些以 `KTable` 作为扩展接收器的函数，应用自定义 IR 转换以修改函数体。
+ * Kronos Parser Transformer
+ *
+ * @author OUSC, Jieyao Lu
  */
 class KronosParserTransformer(
-    // Plugin context, includes essential information for IR transformation
-    // 插件上下文，包含 IR 转换所需的必要信息
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotlinorm.beans.dsl.KTable"
@@ -46,6 +59,11 @@ class KronosParserTransformer(
     private val deleteClauseClass = "com.kotlinorm.orm.delete.DeleteClause"
     private val kTableConditionalClass = "com.kotlinorm.beans.dsl.KTableConditional"
 
+    /**
+     * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
+     *
+     * @return The symbol of the `println` function.
+     */
     @OptIn(FirIncompatiblePluginAPI::class)
     fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions(FqName("kotlin.io.println")).single {
         val parameters = it.owner.valueParameters
@@ -53,10 +71,10 @@ class KronosParserTransformer(
     }
 
     /**
-     * Checks each function's extension receiver type during its creation.
-     * If it matches `KTable`, applies a specific transformation to the function body.
-     * 在函数创建时检查每个函数的扩展接收器类型。
-     * 如果匹配 `KTable`，则对函数体应用特定的转换。
+     * Visits a new function and performs different actions based on the extension receiver's return type.
+     *
+     * @param declaration the [IrFunction] being visited
+     * @return the transformed function body or the result of calling the super class's implementation
      */
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
@@ -72,6 +90,12 @@ class KronosParserTransformer(
         return super.visitFunctionNew(declaration)
     }
 
+    /**
+     * Visits a call expression and returns an IrExpression.
+     *
+     * @param expression the [IrCall] expression to visit
+     * @return the transformed IrExpression
+     */
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         with(pluginContext) {
@@ -108,12 +132,14 @@ class KronosParserTransformer(
                                 initUpdateClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
+
                         subTypeFqName == insertClauseClass &&
                                 expression.funcName() in listOf("insert") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
                                 initInsertClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
+
                         subTypeFqName == deleteClauseClass &&
                                 expression.funcName() == "delete" -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
@@ -128,8 +154,10 @@ class KronosParserTransformer(
     }
 
     /**
-     * Creates a new IR block body for the function, transforming each statement with additional IR transformations focused on `KTable` manipulations.
-     * 为函数创建一个新的 IR 块体，通过额外的针对 `KTable` 操作的 IR 转换来转换每个语句。
+     * Transforms the given IrFunction representing a ktable declaration into an IrBlockBody.
+     *
+     * @param irFunction the [IrFunction] to be transformed
+     * @return the transformed IrBlockBody representing the ktable declaration
      */
     private fun transformKTable(
         irFunction: IrFunction
@@ -143,6 +171,12 @@ class KronosParserTransformer(
         }
     }
 
+    /**
+     * Transforms the given IrFunction representing a ktable conditional declaration into an IrBlockBody.
+     *
+     * @param irFunction the [IrFunction] to be transformed
+     * @return the transformed IrBlockBody representing the ktable conditional declaration
+     */
     private fun transformKTableConditional(
         irFunction: IrFunction
     ): IrBlockBody {

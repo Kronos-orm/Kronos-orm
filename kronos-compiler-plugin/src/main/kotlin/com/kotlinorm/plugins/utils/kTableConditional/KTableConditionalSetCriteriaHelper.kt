@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins.utils.kTableConditional
 
 import com.kotlinorm.plugins.utils.applyIrCall
@@ -20,14 +36,17 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
-import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 
 /**
- * Adds IR for setting simple criteria. example: criteriaField.setCriteria(tmp)
+ * Generates IR for setting simple criteria.
  *
- * @receiver KotoBuildScope instance.
+ * This function applies an IR call to set the criteria using the criteriaSetterSymbol.
+ * It takes the result of building the criteria using the body of the current function.
+ * The criteria are then dispatched by getting the extension receiver parameter.
+ *
+ * @return the IR expression for setting the criteria
  * @author OUSC
  */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
@@ -38,8 +57,23 @@ fun setCriteriaIr() =
         dispatchBy(irGet(extensionReceiverParameter!!))
     }
 
+/**
+ * Builds a criteria IR variable based on the given element.
+ *
+ * This function recursively builds a criteria IR variable based on the given element and its children.
+ * It handles different types of elements such as IrBlockBody, IrIfThenElseImpl, IrCall, IrReturn, and IrConstImpl.
+ * The criteria are built based on the function name and the value arguments of the IrCall element.
+ * The criteria type and not flag are determined based on the function name.
+ * The column name, table name, value, and children are extracted from the element and its arguments.
+ * The criteria IR variable is then returned.
+ *
+ * @param element The element to build the criteria IR from.
+ * @param setNot Whether to set the not flag. Default is false.
+ * @param noValueStrategy The strategy to use when there is no value. Default is null.
+ * @return The built criteria IR variable, or null if the element is a constant.
+ */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
-fun buildCriteria(element: IrElement, setNot: Boolean = false , noValueStrategy: IrExpression? = null): IrVariable? {
+fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: IrExpression? = null): IrVariable? {
     var paramName: IrExpression? = null
     var type = "ROOT"
     var not = setNot
@@ -160,7 +194,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false , noValueStrategy:
                     value = applyIrCall(
                         stringPlusSymbol,
                         irString("%")
-                    ){
+                    ) {
                         dispatchBy(str)
                     }
                     tableName = getTableName(element.dispatchReceiver!!)
@@ -225,7 +259,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false , noValueStrategy:
 
                 "ifNoValue" -> {
                     strategy = args[0]
-                    return buildCriteria(element.extensionReceiver!! , not , strategy)
+                    return buildCriteria(element.extensionReceiver!!, not, strategy)
                 }
             }
         }
@@ -240,5 +274,5 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false , noValueStrategy:
 
     }
 
-    return CriteriaIR(paramName, type, not, value, children.filterNotNull(), tableName , strategy).toIrVariable()
+    return CriteriaIR(paramName, type, not, value, children.filterNotNull(), tableName, strategy).toIrVariable()
 }

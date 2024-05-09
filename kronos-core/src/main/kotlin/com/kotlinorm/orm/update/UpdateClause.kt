@@ -79,8 +79,8 @@ class UpdateClause<T : KPojo>(
                 }.toCriteria()
             }
         pojo.conditionalRun {
+            propParamMap = paramMap // 更新 propParamMap
             updateCondition()
-            propParamMap = paramMap
             condition = criteria
         }
         return this
@@ -91,7 +91,7 @@ class UpdateClause<T : KPojo>(
         if (isExcept) {
             toUpdateFields = (allFields - toUpdateFields.toSet()).toMutableList()
             toUpdateFields.forEach {
-                paramMapNew[it + "new"] = paramMap[it.name]
+                paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
 
@@ -99,14 +99,14 @@ class UpdateClause<T : KPojo>(
             // 全都更新
             toUpdateFields = allFields.toMutableList()
             toUpdateFields.forEach {
-                paramMapNew[it + "new"] = paramMap[it.name]
+                paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
 
         // 设置逻辑删除
         setCommonStrategy(logicDeleteStrategy) { field, value ->
             toUpdateFields -= field
-            paramMapNew -= field + "new"
+            paramMapNew -= field + "New"
             condition = listOfNotNull(
                 condition, "${logicDeleteStrategy.field.quotedColumnName()} = $value".asSql()
             ).toCriteria()
@@ -114,7 +114,7 @@ class UpdateClause<T : KPojo>(
 
         // 设置更新时间
         setCommonStrategy(updateTimeStrategy, true) { field, value ->
-            paramMapNew[field + "new"] = value
+            paramMapNew[field + "New"] = value
         }
 
         val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it + "New"}" }
@@ -123,7 +123,7 @@ class UpdateClause<T : KPojo>(
 
         val sql = listOfNotNull(
             "UPDATE",
-            tableName,
+            "`$tableName`",
             "SET",
             updateFields,
             "WHERE".takeIf { !conditionSql.isNullOrEmpty() },

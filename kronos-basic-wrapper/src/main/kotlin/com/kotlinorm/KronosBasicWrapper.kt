@@ -175,6 +175,12 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             }
             return list.firstOrNull()
         } catch (e: SQLException) {
+            defaultLogger(this).error(
+                logMessageOf(
+                    "Failed to execute query，${e.message}.",
+                    ColorPrintCode.RED.toArray()
+                ).endl().toArray()
+            )
             throw e
         } finally {
             rs?.close()

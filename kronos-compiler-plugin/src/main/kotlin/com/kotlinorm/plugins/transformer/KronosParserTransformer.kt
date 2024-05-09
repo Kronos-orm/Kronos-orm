@@ -81,6 +81,7 @@ class KronosParserTransformer(
      */
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+        val fqName = declaration.extensionReceiverParameter?.symbol?.descriptor?.returnType?.getKotlinTypeFqName(false)
         when (declaration.extensionReceiverParameter?.symbol?.descriptor?.returnType?.getKotlinTypeFqName(false)) {
             kTableClass -> {
                 declaration.body = transformKTable(declaration)

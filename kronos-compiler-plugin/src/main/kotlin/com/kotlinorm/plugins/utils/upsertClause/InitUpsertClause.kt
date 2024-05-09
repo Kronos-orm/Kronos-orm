@@ -26,7 +26,6 @@ private val initUpsertClauseListSymbol
     get() = referenceFunctions(FqName("com.kotlinorm.orm.upsert.initUpsertClauseList"))
         .first()
 
-
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol

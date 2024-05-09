@@ -7,11 +7,11 @@ import com.kotlinorm.interfaces.KPojo
 
 
 inline fun <reified T : KPojo> T.upsert(noinline fields: (KTable<T>.() -> Unit)? = null): UpsertClause<T> {
-    return UpsertClause(this, fields)
+    return UpsertClause(this, false, fields)
 }
 
 inline fun <reified T : KPojo> T.upsertExcept(noinline fields: (KTable<T>.() -> Unit)? = null): UpsertClause<T> {
-    return UpsertClause(this, fields)
+    return UpsertClause(this, true, fields)
 }
 
 // For compiler plugin to init the UpsertClause
@@ -35,7 +35,7 @@ fun initUpsertClause(
 
 // For compiler plugin to init the list of UpsertClause
 @Suppress("UNUSED")
-fun initUpdateClauseList(
+fun initUpsertClauseList(
     clauses: List<UpsertClause<*>>,
     name: String,
     createTime: KronosCommonStrategy,

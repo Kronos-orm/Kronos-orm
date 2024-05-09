@@ -1,13 +1,8 @@
 package com.kotlinorm.plugins.utils.upsertClause
 
 import com.kotlinorm.plugins.utils.*
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.getValidStrategy
-import com.kotlinorm.plugins.utils.globalLogicDeleteSymbol
-import com.kotlinorm.plugins.utils.globalUpdateTimeSymbol
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
-import com.kotlinorm.plugins.utils.subType
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -55,7 +50,7 @@ fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
         logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
         )
     )
 }
@@ -78,7 +73,7 @@ fun initUpsertClauseList(expression: IrCall): IrFunctionAccessExpression {
         logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
         )
     )
 }

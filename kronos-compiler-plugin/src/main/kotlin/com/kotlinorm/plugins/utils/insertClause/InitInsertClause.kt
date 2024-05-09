@@ -68,7 +68,7 @@ fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
         updateTimeStrategy,
         irVararg(
             fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
         )
     )
 }
@@ -94,7 +94,7 @@ fun initInsertClauseList(expression: IrCall): IrFunctionAccessExpression {
         updateTimeStrategy,
         irVararg(
             fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
         )
     )
 }

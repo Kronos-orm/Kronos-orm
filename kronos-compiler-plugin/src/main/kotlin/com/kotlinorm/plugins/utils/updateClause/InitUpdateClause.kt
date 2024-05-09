@@ -69,7 +69,7 @@ fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
         logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
         )
     )
 }
@@ -95,7 +95,7 @@ fun initUpdateClauseList(expression: IrCall): IrFunctionAccessExpression {
         logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().map { getColumnName(it) }
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
         )
     )
 }

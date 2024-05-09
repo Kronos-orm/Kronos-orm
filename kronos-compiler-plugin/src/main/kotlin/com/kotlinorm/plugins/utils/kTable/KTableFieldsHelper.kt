@@ -60,6 +60,10 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
             }
         }
 
+        is IrTypeOperatorCall -> {
+            fieldNames.addAll(addFieldsNames(element.argument))
+        }
+
         is IrCall -> {
             when (element.origin) {
                 IrStatementOrigin.PLUS -> {

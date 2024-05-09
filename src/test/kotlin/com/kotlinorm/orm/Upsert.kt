@@ -20,7 +20,7 @@ class Upsert {
     fun testUpsert() {
         val user = User(1)
 
-        val (sql, paramMap) = user.upsert()
+        val (sql, paramMap) = user.upsert {it.username}
             .on { it.id }.build()
 
         assertEquals("insert into tb_user (id) values (:id) on duplicate key Update username = :username", sql)

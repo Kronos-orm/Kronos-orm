@@ -1,30 +1,49 @@
 package com.kotlinorm.orm.upsert
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableField
+import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
 
-class UpsertClause<T : KPojo>(private val t: T, private var isExcepted: Boolean = false, fields: (KTable<T>.() -> Unit)? = null) {
+class UpsertClause<T : KPojo>(
+    private val t: T,
+    private var isExcept: Boolean = false,
+    setUpsertFields: (KTable<T>.() -> Unit)? = null
+) {
 
     internal lateinit var tableName: String
     internal lateinit var createTimeStrategy: KronosCommonStrategy
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     internal var allFields: MutableList<Field> = mutableListOf()
-    private var onDuplicateKey:Boolean = false
+    private var onDuplicateKey: Boolean = false
     private var toUpsertFields: MutableList<Field> = mutableListOf()
     private var duplicateFeilds: MutableList<Field> = mutableListOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
+
+    init {
+        paramMap.putAll(t.toMap().filter { null != it.value })
+        if (setUpsertFields != null) {
+            t.tableRun {
+                setUpsertFields()
+                toUpsertFields += fields
+            }
+            toUpsertFields.toSet().forEach {
+                paramMapNew[it + "New"] = paramMap[it.name]
+            }
+        }
+    }
 
     fun on(someFields: KTableField<T, Unit>): UpsertClause<T> {
         if (null == someFields) throw NeedFieldsException()
@@ -45,6 +64,27 @@ class UpsertClause<T : KPojo>(private val t: T, private var isExcepted: Boolean 
     }
 
     fun build(): KronosAtomicTask {
-        TODO()
+        if (isExcept) {
+            toUpsertFields = (allFields - toUpsertFields.toSet()).toMutableList()
+            toUpsertFields.forEach {
+                paramMapNew[it + "New"] = paramMap[it.name]
+            }
+        }
+
+        if (toUpsertFields.isEmpty()) {
+            // 全都更新
+            toUpsertFields = allFields.toMutableList()
+            toUpsertFields.forEach {
+                paramMapNew[it + "New"] = paramMap[it.name]
+            }
+        }
+
+        var sql = ""
+
+        return KronosAtomicTask(
+            sql,
+            paramMap,
+            operationType = KOperationType.UPDATE
+        )
     }
 }

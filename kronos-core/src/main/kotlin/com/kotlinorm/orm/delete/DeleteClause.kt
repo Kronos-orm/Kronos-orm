@@ -8,6 +8,7 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -32,6 +33,7 @@ class DeleteClause<T : KPojo>(
     private var condition: Criteria? = null
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    private var paramMapNew: MutableMap<String, Any?> = mutableMapOf()
 
 
     init {
@@ -43,6 +45,8 @@ class DeleteClause<T : KPojo>(
 
     fun logic(): DeleteClause<T> {
         this.logic = true
+        this.logicDeleteStrategy.enabled = true
+        this.updateTimeStrategy.enabled = true
         return this
     }
 
@@ -89,12 +93,16 @@ class DeleteClause<T : KPojo>(
             val toUpdateFields = mutableListOf<Field>()
             val updateInsertFields = { field: Field, value: Any? ->
                 toUpdateFields += field
-                paramMap[field.name] = value
+                paramMap[field.name.let {
+                    if (toUpdateFields.map { it.name }.contains(it)) {
+                        return@let it + "New"
+                    }else it
+                }] = value
             }
             setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
             setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateInsertFields)
 
-            val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it + "New"}" }
+            val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name + "New"}" }
 
             val sql = listOfNotNull("UPDATE",
                 "`$tableName`",
@@ -102,7 +110,6 @@ class DeleteClause<T : KPojo>(
                 updateFields,
                 "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
                 conditionSql?.ifEmpty { null }).joinToString(" ")
-
             return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
         } else {
             val sql = "DELETE FROM `$tableName` WHERE $conditionSql"

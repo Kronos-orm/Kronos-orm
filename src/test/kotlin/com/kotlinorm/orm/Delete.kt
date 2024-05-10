@@ -1,9 +1,11 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -39,7 +41,7 @@ class Delete {
             it.id > 10 && it.id < 100
         }.build()
         //delete from tb_user where id > 10 and id < 100
-        assertEquals("delete from `tb_user` where id > :idMin and id < :idMax", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `id` > :idMin AND `id` < :idMax", sql)
         assertEquals(mapOf("idMin" to 10, "idMax" to 100), paramMap)
     }
 
@@ -49,8 +51,8 @@ class Delete {
             it.id.eq
         }.build()
         //delete from tb_user where id > 10 and id < 100
-        assertEquals("delete from `tb_user` where id > :idMin and id < :idMax", sql)
-        assertEquals(mapOf("id" to 10, "idMax" to 100), paramMap)
+        assertEquals("DELETE FROM `tb_user` WHERE `id` = :id", sql)
+        assertEquals(mapOf("id" to 1), paramMap)
     }
 
     @Test
@@ -60,9 +62,9 @@ class Delete {
         }.build()
         //delete from tb_user where id > 10 and id < 100
         assertEquals(
-            "UPDATE `tb_user` SET `update_time` = :updateTimeNew, `delete` = :deleteNew WHERE `id` = :id AND `delete` = 0",
+            "UPDATE `tb_user` SET `update_time` = :updateTimeNew, `deleted` = :deletedNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
-        assertEquals(mapOf("id" to 1, "updateTime" to "024-05-08 10:23:25", "delete" to "1"), paramMap)
+        assertEquals(mapOf("id" to 1, "updateTimeNew" to paramMap["updateTimeNew"], "deletedNew" to 1), paramMap)
     }
 }

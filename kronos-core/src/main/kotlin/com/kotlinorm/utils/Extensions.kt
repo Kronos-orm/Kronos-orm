@@ -22,7 +22,7 @@ object Extensions {
     }
 
     /* AN extension function of Map. It will return a KPojo of the map. */
-    inline fun <reified T> Map<String, *>.toKPojo(): T {
+    inline fun <reified T : Any> Map<String, *>.toKPojo(): T {
         return this.toKPojo(T::class) as T
     }
 

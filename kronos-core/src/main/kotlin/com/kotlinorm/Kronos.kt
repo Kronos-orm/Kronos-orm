@@ -27,8 +27,8 @@ object Kronos {
     var serializeResolver: KronosSerializeResolver = NoneSerializeResolver()
     var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
     var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
-    var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time"))
-    var createTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("create_time"))
+    var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))
+    var createTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("create_time","createTime"))
     var logicDeleteStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("deleted"))
 
     /**

@@ -30,8 +30,8 @@ class DeleteClause<T : KPojo>(
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     private var logic: Boolean = false
     private var condition: Criteria? = null
+    internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-    internal var allFields: MutableList<Field> = mutableListOf()
 
 
     init {

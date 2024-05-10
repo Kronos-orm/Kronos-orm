@@ -73,6 +73,9 @@ context(IrPluginContext)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
 
+val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
+val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
+
 /**
  * Returns the column name of the given IrExpression.
  *
@@ -103,7 +106,7 @@ fun getColumnName(expression: IrExpression): IrExpression {
 context(IrBuilderWithScope, IrPluginContext)
 fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name.asString()): IrExpression {
     val columnAnnotation =
-        irProperty.annotations.findByFqName(FqName("com.kotlinorm.annotations.Column"))
+        irProperty.annotations.findByFqName(ColumnAnnotationsFqName)
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
     return applyIrCall(fieldSymbol.constructors.first(), columnName, irString(propertyName))
@@ -136,7 +139,7 @@ fun getTableName(expression: IrExpression): IrExpression {
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(irClass: IrClass): IrExpression {
     val tableAnnotation =
-        irClass.annotations.findByFqName(FqName("com.kotlinorm.annotations.Table"))
+        irClass.annotations.findByFqName(TableAnnotationsFqName)
     return tableAnnotation?.getValueArgument(0) ?: applyIrCall(
         tableK2dbSymbol, irString(
             irClass.name.asString()

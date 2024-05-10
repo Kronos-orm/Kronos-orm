@@ -1,6 +1,5 @@
 package com.kotlinorm.orm.upsert
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable
@@ -25,10 +24,10 @@ class UpsertClause<T : KPojo>(
     internal lateinit var createTimeStrategy: KronosCommonStrategy
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
-    internal var allFields: MutableList<Field> = mutableListOf()
+    internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private var onDuplicateKey: Boolean = false
-    private var toUpsertFields: MutableList<Field> = mutableListOf()
-    private var duplicateFeilds: MutableList<Field> = mutableListOf()
+    private var toUpsertFields: LinkedHashSet<Field> = linkedSetOf()
+    private var duplicateFeilds: LinkedHashSet<Field> = linkedSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
 
@@ -65,7 +64,7 @@ class UpsertClause<T : KPojo>(
 
     fun build(): KronosAtomicTask {
         if (isExcept) {
-            toUpsertFields = (allFields - toUpsertFields.toSet()).toMutableList()
+            toUpsertFields = (allFields - toUpsertFields.toSet()) as LinkedHashSet<Field>
             toUpsertFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
@@ -73,7 +72,7 @@ class UpsertClause<T : KPojo>(
 
         if (toUpsertFields.isEmpty()) {
             // 全都更新
-            toUpsertFields = allFields.toMutableList()
+            toUpsertFields = allFields
             toUpsertFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }

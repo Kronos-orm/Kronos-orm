@@ -56,8 +56,8 @@ class UpdateClause<T : KPojo>(
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
-    internal var allFields: MutableList<Field> = mutableListOf()
-    private var toUpdateFields: MutableList<Field> = mutableListOf()
+    internal var allFields: LinkedHashSet<Field> = linkedSetOf()
+    private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
     private var condition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
@@ -152,7 +152,7 @@ class UpdateClause<T : KPojo>(
     fun build(): KronosAtomicTask {
         // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
         if (isExcept) {
-            toUpdateFields = (allFields - toUpdateFields.toSet()).toMutableList()
+            toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
@@ -160,7 +160,7 @@ class UpdateClause<T : KPojo>(
 
         if (toUpdateFields.isEmpty()) {
             // 全都更新
-            toUpdateFields = allFields.toMutableList()
+            toUpdateFields = allFields
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }

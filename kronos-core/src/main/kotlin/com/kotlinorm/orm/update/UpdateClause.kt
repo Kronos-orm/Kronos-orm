@@ -150,9 +150,14 @@ class UpdateClause<T : KPojo>(
      * @return The constructed KronosAtomicTask.
      */
     fun build(): KronosAtomicTask {
+
+        updateTimeStrategy.enabled = true
+        logicDeleteStrategy.enabled = true
+
         // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
         if (isExcept) {
             toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet
+            toUpdateFields = toUpdateFields.filter { it.columnName != "create_time" }.toCollection(LinkedHashSet())
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
@@ -177,6 +182,7 @@ class UpdateClause<T : KPojo>(
 
         // 设置更新时间
         setCommonStrategy(updateTimeStrategy, true) { field, value ->
+            toUpdateFields += field
             paramMapNew[field + "New"] = value
         }
 

@@ -97,7 +97,7 @@ class DeleteClause<T : KPojo>(
             val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it + "New"}" }
 
             val sql = listOfNotNull("UPDATE",
-                tableName,
+                "`$tableName`",
                 "SET",
                 updateFields,
                 "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
@@ -105,7 +105,7 @@ class DeleteClause<T : KPojo>(
 
             return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
         } else {
-            val sql = "DELETE FROM $tableName WHERE $conditionSql"
+            val sql = "DELETE FROM `$tableName` WHERE $conditionSql"
             return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
         }
     }

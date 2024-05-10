@@ -69,7 +69,7 @@ class UpdateClause<T : KPojo>(
                 setUpdateFields()
                 toUpdateFields += fields
             }
-            toUpdateFields.toSet().forEach {
+            toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
         }

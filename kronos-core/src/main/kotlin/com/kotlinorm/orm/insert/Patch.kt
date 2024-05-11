@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
@@ -26,12 +27,14 @@ fun initInsertClause(
     name: String,
     createTime: KronosCommonStrategy,
     updateTime: KronosCommonStrategy,
+    logicDelete: KronosCommonStrategy,
     vararg fields: Field
 ): InsertClause<*> {
     return clause.apply {
         tableName = name
         createTimeStrategy = createTime
         updateTimeStrategy = updateTime
+        logicDeleteStrategy = logicDelete
         allFields.addAll(fields)
     }
 }
@@ -42,12 +45,14 @@ fun initInsertClauseList(
     clauses: List<InsertClause<*>>, name: String,
     createTime: KronosCommonStrategy,
     updateTime: KronosCommonStrategy,
+    logicDelete: KronosCommonStrategy,
     vararg fields: Field
 ): List<InsertClause<*>> {
     return clauses.onEach {
         it.tableName = name
         it.createTimeStrategy = createTime
         it.updateTimeStrategy = updateTime
+        it.logicDeleteStrategy = logicDelete
         it.allFields += fields
     }
 }

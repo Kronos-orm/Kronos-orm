@@ -17,6 +17,7 @@ class InsertClause<T : KPojo>(t: T) {
     internal lateinit var tableName: String
     internal lateinit var createTimeStrategy: KronosCommonStrategy
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
+    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private val toInsertFields: LinkedHashSet<Field> = linkedSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
@@ -36,13 +37,14 @@ class InsertClause<T : KPojo>(t: T) {
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
+        setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
 
         val sql = listOfNotNull(
             "INSERT INTO",
             "`${tableName}`",
             "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
             "VALUES",
-            "(" + paramMap.keys.joinToString { ":${it}" } + ")"
+            "(" + toInsertFields.joinToString { ":${it.name}" } + ")"
         ).joinToString(" ")
 
         return KronosAtomicTask(

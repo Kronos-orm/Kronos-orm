@@ -60,12 +60,15 @@ fun initInsertClause(expression: IrCall): IrFunctionAccessExpression {
         getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
     val updateTimeStrategy =
         getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
+    val logicDeleteStrategy =
+        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
     return applyIrCall(
         initInsertClauseSymbol,
         expression,
         getTableName(irClass),
         createTimeStrategy,
         updateTimeStrategy,
+        logicDeleteStrategy,
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }

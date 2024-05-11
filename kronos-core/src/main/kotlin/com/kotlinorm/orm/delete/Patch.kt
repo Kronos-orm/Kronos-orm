@@ -3,7 +3,6 @@ package com.kotlinorm.orm.delete
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.orm.update.UpdateClause
 
 
 inline fun <reified T : KPojo> T.delete(): DeleteClause<T> {

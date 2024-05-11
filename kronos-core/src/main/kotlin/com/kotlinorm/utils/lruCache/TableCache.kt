@@ -1,9 +1,9 @@
 package com.kotlinorm.utils.lruCache
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
 object TableCache {
@@ -33,7 +33,7 @@ object TableCache {
     }
 
 
-    internal fun getTable(wrapper: KronosDataSourceWrapper, tableName: String, kPojo: KPojo): TableObject {
+    internal fun getTable(wrapper: KronosDataSourceWrapper, tableName: String): TableObject {
         val key = tableMetaKey(wrapper, tableName)
         if (lruCache[key] == null) {
             try {
@@ -93,8 +93,8 @@ object TableCache {
                         )
                     )
                 val columns = list.map {
-                    TableColumn(
-                        name = (it["Field"] ?: it["name"]).toString(),
+                    Field(
+                        columnName = (it["Field"] ?: it["name"]).toString(),
                         type = (it["Type"] ?: it["type"]).toString(),
                         primaryKey = when (wrapper.dbType) {
                             DBType.Mysql -> it["Key"]?.toString() == "PRI"

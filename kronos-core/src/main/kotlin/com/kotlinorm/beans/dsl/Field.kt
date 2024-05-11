@@ -28,14 +28,17 @@ import com.kotlinorm.utils.fieldDb2k
  */
 class Field(
     val columnName: String,
-    val name: String = fieldDb2k(columnName)
+    val name: String = fieldDb2k(columnName),
+    val type: String = "",
+    var primaryKey: Boolean = false
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {
         return name
     }
 
-    fun quotedColumnName(): String = "`$columnName`"
+    fun quoted(): String = "`$columnName`"
+    fun equation(): String = "`$columnName` = :$name"
 
     /**
      * Check if this object is equal to another object.
@@ -45,10 +48,7 @@ class Field(
      */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
         other as Field
-
         if (columnName != other.columnName) return false
         if (name != other.name) return false
 

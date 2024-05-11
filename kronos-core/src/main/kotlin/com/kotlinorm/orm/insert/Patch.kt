@@ -1,11 +1,8 @@
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.orm.update.UpdateClause
-import com.kotlinorm.types.KTableField
 
 
 inline fun <reified T : KPojo> T.insert(): InsertClause<T> {

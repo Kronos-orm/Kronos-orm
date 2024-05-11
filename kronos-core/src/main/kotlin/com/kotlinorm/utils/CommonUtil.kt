@@ -26,3 +26,5 @@ fun setCommonStrategy(
         }
     }
 }
+
+fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { this.addAll(this@toLinkedSet) }

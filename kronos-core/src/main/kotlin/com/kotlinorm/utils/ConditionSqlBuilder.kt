@@ -1,7 +1,6 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.beans.dsl.Criteria
-import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.*
 
 /**
@@ -119,11 +118,11 @@ object ConditionSqlBuilder {
             Equal -> {
                 val safeKey = getSafeKey(condition.field.name)
                 paramMap[safeKey] = condition.value
-                listOfNotNull(condition.field.quotedColumnName(), "!=".takeIf { condition.not } ?: "=", ":$safeKey")
+                listOfNotNull(condition.field.quoted(), "!=".takeIf { condition.not } ?: "=", ":$safeKey")
             }
 
             ISNULL -> listOfNotNull(
-                condition.field.quotedColumnName(), "IS", "NOT".takeIf { condition.not }, "NULL"
+                condition.field.quoted(), "IS", "NOT".takeIf { condition.not }, "NULL"
             )
 
             SQL -> listOf(condition.value.toString())
@@ -132,7 +131,7 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name)
                 paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
-                    condition.field.quotedColumnName(), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
+                    condition.field.quoted(), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
                 )
             }
 
@@ -140,7 +139,7 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name + "List")
                 paramMap[safeKey] = condition.value
                 listOfNotNull(
-                    condition.field.quotedColumnName(), "NOT".takeIf { condition.not }, "IN", "(:${safeKey})"
+                    condition.field.quoted(), "NOT".takeIf { condition.not }, "IN", "(:${safeKey})"
                 )
             }
 
@@ -152,7 +151,7 @@ object ConditionSqlBuilder {
                 )
                 paramMap[safeKey] = condition.value
                 listOf(
-                    condition.field.quotedColumnName(), sign[condition.type], ":${safeKey}"
+                    condition.field.quoted(), sign[condition.type], ":${safeKey}"
                 )
             }
 
@@ -163,7 +162,7 @@ object ConditionSqlBuilder {
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive
                 listOfNotNull(
-                    condition.field.quotedColumnName(), "NOT".takeIf { condition.not }, "BETWEEN", ":${safeKeyMin}", "AND", ":${safeKeyMax}"
+                    condition.field.quoted(), "NOT".takeIf { condition.not }, "BETWEEN", ":${safeKeyMin}", "AND", ":${safeKeyMax}"
                 )
             }
             AND, OR -> {

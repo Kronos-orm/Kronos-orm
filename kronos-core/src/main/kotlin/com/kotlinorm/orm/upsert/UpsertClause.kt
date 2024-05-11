@@ -16,11 +16,24 @@ import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.getTableInfo
+import com.kotlinorm.utils.lruCache.TableCache.getTable
 import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.toLinkedSet
 
+/**
+ * Update Clause
+ *
+ * Creates an update clause for the given pojo.
+ *
+ * @param T the type of the pojo
+ *
+ * @property pojo the pojo for the update
+ * @property isExcept whether to exclude the fields from the update
+ * @param setUpsertFields the fields to update
+ * @author Jieyao Lu, OUSC
+ */
 class UpsertClause<T : KPojo>(
-    private val t: T,
+    private val pojo: T,
     private var isExcept: Boolean = false,
     setUpsertFields: (KTable<T>.() -> Unit)? = null
 ) {
@@ -33,28 +46,51 @@ class UpsertClause<T : KPojo>(
     private var onDuplicateKey: Boolean = false
     private var toInsertFields: LinkedHashSet<Field> = linkedSetOf()
     private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
-    private var duplicateFeilds: LinkedHashSet<Field> = linkedSetOf()
+    private var onFields: LinkedHashSet<Field> = linkedSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
     init {
-        paramMap.putAll(t.toMap())
+        paramMap.putAll(pojo.toMap())
         if (setUpsertFields != null) {
-            t.tableRun {
+            pojo.tableRun {
                 setUpsertFields()
                 toUpdateFields += fields
             }
         }
     }
 
+    private fun updateUpsertFields(updateOnFields: Boolean = false): (Field, Any?) -> Unit {
+        return { field: Field, value: Any? ->
+            toInsertFields += field
+            toUpdateFields -= field
+            if (updateOnFields) onFields += field
+            paramMap[field.name] = value
+        }
+    }
+
+    /**
+     * Set the fields on which the update clause will be applied.
+     *
+     * @param someFields on which the update clause will be applied
+     * @throws NeedFieldsException if the new value is null
+     * @return the upsert UpdateClause object
+     */
     fun on(someFields: KTableField<T, Unit>): UpsertClause<T> {
         if (null == someFields) throw NeedFieldsException()
-        t.tableRun {
+        pojo.tableRun {
             someFields()
-            duplicateFeilds += fields.toSet()
+            onFields += fields.toSet()
         }
         return this
     }
 
+    /**
+     * On duplicate key update
+     *
+     * **Please define constraints before using onDuplicateKey**
+     *
+     * @return the upsert UpdateClause object
+     */
     fun onDuplicateKey(): UpsertClause<T> {
         onDuplicateKey = true
         return this
@@ -65,124 +101,55 @@ class UpsertClause<T : KPojo>(
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicTask {
-
-        val dbType = wrapper.orDefault().dbType
+        val dataSource = wrapper.orDefault()
+        val dbType = dataSource.dbType
 
         if (isExcept) {
             toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet<Field>
         }
 
         if (toInsertFields.isEmpty()) {
-            toInsertFields = linkedSetOf<Field>().apply {
-                addAll(allFields.filter { null != paramMap[it.name] })
-            }
+            toInsertFields = allFields.filter { null != paramMap[it.name] }.toLinkedSet()
         }
 
         if (toUpdateFields.isEmpty()) {
-            toUpdateFields = linkedSetOf<Field>().apply {
-                addAll(allFields)
-            }
+            toUpdateFields = allFields.toLinkedSet()
         }
 
-        setCommonStrategy(createTimeStrategy, true) { field, value ->
-            toInsertFields += field
-            toUpdateFields -= field
-            paramMap[field.name] = value
-        }
-
-        setCommonStrategy(updateTimeStrategy, true) { field, value ->
-            toInsertFields += field
-            toUpdateFields += field
-            paramMap[field.name] = value
-        }
-
-        setCommonStrategy(logicDeleteStrategy) { field, value ->
-            toInsertFields += field
-            toUpdateFields -= field
-            duplicateFeilds += field
-            paramMap[field.name] = value
-        }
+        setCommonStrategy(createTimeStrategy, true, callBack = updateUpsertFields())
+        setCommonStrategy(updateTimeStrategy, true, callBack = updateUpsertFields())
+        setCommonStrategy(logicDeleteStrategy, callBack = updateUpsertFields(true))
 
         paramMap = paramMap.filter { it ->
-            it.key in toUpdateFields.map { it.name } || it.key in toInsertFields.map { it.name } || it.key in duplicateFeilds.map { it.name }
+            it.key in (toUpdateFields + toInsertFields + onFields).map { it.name }
         }.toMutableMap()
 
-        val sql = sqlGenerateOnFields().takeUnless { onDuplicateKey } ?: when (dbType) {
-            DBType.Mysql , DBType.OceanBase -> {
-                listOfNotNull(
-                    "INSERT INTO",
-                    "`${tableName}`",
-                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-                    "VALUES",
-                    "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
-                    "ON DUPLICATE KEY UPDATE",
-                    toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
-                ).joinToString(" ")
+        val sql = if (onDuplicateKey) {
+            when (dbType) {
+                DBType.Mysql, DBType.OceanBase -> mysqlOnDuplicateSql(
+                    ConflictResolver(
+                        tableName,
+                        onFields,
+                        toUpdateFields,
+                        toInsertFields
+                    )
+                )
+
+                else -> {
+                    val pks = getTable(dataSource, tableName).columns.filter { it.primaryKey }.toLinkedSet()
+                    val conflictResolver = ConflictResolver(tableName, pks, toUpdateFields, toInsertFields)
+                    when (dbType) {
+                        DBType.Postgres -> postgresOnExistSql(conflictResolver)
+                        DBType.Oracle -> oracleOnConflictSql(conflictResolver)
+                        DBType.SQLite -> sqliteOnConflictSql(conflictResolver)
+                        DBType.Mssql -> sqlServerOnExistSql(conflictResolver)
+                        else -> throw UnsupportedDatabaseTypeException()
+                    }
+                }
             }
-
-            DBType.Postgres -> {
-                listOfNotNull(
-                    "INSERT INTO",
-                    "`${tableName}`",
-                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-                    "VALUES",
-                    "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
-                    "ON CONFLICT",
-                    duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
-                    "DO UPDATE SET",
-                    toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
-                ).joinToString(" ")
-            }
-
-            DBType.Oracle -> {
-                listOfNotNull(
-                    "BEGIN\n",
-                    "INSERT INTO",
-                    "`${tableName}`",
-                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-                    "VALUES",
-                    "(" + toInsertFields.joinToString { ":${it.name}" } + ");\n",
-                    "EXCEPTION\n",
-                    "WHEN DUP_VAL_ON_INDEX THEN\n",
-                    "UPDATE",
-                    "`${tableName}`",
-                    "SET",
-                    toUpdateFields.joinToString { "${it.quotedColumnName()} = :${it.name}" },
-                    "WHERE",
-                    duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
-                    ";\n",
-                    "END;"
-                ).joinToString(" ")
-            }
-
-            DBType.SQLite -> {
-                listOfNotNull(
-                    "INSERT OR REPLACE INTO",
-                    "`${tableName}`",
-                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-                    "VALUES",
-                    "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
-                    "ON CONFLICT",
-                    "(" + getTableInfo(DBType.SQLite, tableName) + ")", //这里写不来了
-                    "DO UPDATE SET",
-                    toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
-                ).joinToString(" ")
-            }
-
-            DBType.Mssql -> {
-                listOfNotNull(
-                    "MERGE",
-                    "`${tableName}`",
-                    "WITH (SERIALIZABLE) AS t\n",
-                    "USING (SELECT",
-
-                ).joinToString(" ")
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-
+        } else {
+            generateOnExistSql(dataSource)
         }
-
 
         return KronosAtomicTask(
             sql,
@@ -191,25 +158,16 @@ class UpsertClause<T : KPojo>(
         )
     }
 
-    private fun sqlGenerateOnFields(): String {
-        return listOfNotNull(
-            "INSERT INTO",
-            "`${tableName}`",
-            "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-            "SELECT",
-            toInsertFields.joinToString { ":${it.name}" },
-            "FROM DUAL WHERE NOT EXISTS ( SELECT 1 FROM",
-            "`${tableName}`",
-            "WHERE",
-            duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
-            ");\n",
-            "UPDATE",
-            "`${tableName}`",
-            "SET",
-            toUpdateFields.joinToString { "${it.quotedColumnName()} = :${it.name}" },
-            "WHERE",
-            duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" }
-        ).joinToString(" ")
+    private fun generateOnExistSql(wrapper: KronosDataSourceWrapper): String {
+        val conflictResolver = ConflictResolver(tableName, onFields, toUpdateFields, toInsertFields)
+        return when (wrapper.dbType) {
+            DBType.Mysql, DBType.OceanBase -> mysqlOnExistSql(conflictResolver)
+            DBType.Postgres -> postgresOnExistSql(conflictResolver)
+            DBType.Mssql -> sqlServerOnExistSql(conflictResolver)
+            DBType.Oracle -> oracleOnExistSql(conflictResolver)
+            DBType.SQLite -> sqliteOnConflictSql(conflictResolver)
+            else -> throw UnsupportedDatabaseTypeException()
+        }
     }
 
 }

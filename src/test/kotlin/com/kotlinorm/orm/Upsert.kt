@@ -5,6 +5,7 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.upsert.upsert
 import com.kotlinorm.orm.upsert.upsertExcept
+import com.kotlinorm.orm.utils.TestWrapper
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -13,6 +14,7 @@ class Upsert {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
+            dataSource = { TestWrapper }
         }
     }
 
@@ -23,9 +25,19 @@ class Upsert {
         val (sql, paramMap) = user.upsert {it.username}
             .on { it.id }.build()
 
-        assertEquals("insert into tb_user (id) values (:id) on duplicate key Update username = :username", sql)
-        assertEquals(mapOf("id" to 1, "username" to "123"), paramMap)
-        // Update tb_user set username = '123' where id = 1 and delete = 0
+        assertEquals(
+            "INSERT INTO `tb_user` (`id`, `create_time`, `update_time`, `deleted`) SELECT :id, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `username` = :username WHERE `id` = :id AND `deleted` = :deleted",
+            sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "deleted" to 0,
+                "updateTime" to paramMap["updateTime"],
+                "createTime" to paramMap["createTime"],
+                "username" to null
+            ), paramMap
+        )
     }
 
     @Test
@@ -35,9 +47,20 @@ class Upsert {
         val (sql, paramMap) = user.upsert()
             .on { it.id }.build()
 
-        assertEquals("insert into tb_user (id) values (:id) on duplicate key Update gender = :gender", sql)
-        assertEquals(mapOf("id" to 1, "gender" to 1), paramMap)
-        // Update tb_user set gender = 1 where id = 1 and delete = 0
+        assertEquals(
+            "INSERT INTO `tb_user` (`id`, `create_time`, `update_time`, `deleted`) SELECT :id, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `gender` = :gender, `id` = :id, `username` = :username WHERE `id` = :id AND `deleted` = :deleted",
+            sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "gender" to null,
+                "username" to null,
+                "deleted" to 0,
+                "updateTime" to paramMap["updateTime"],
+                "createTime" to paramMap["createTime"]
+            ), paramMap
+        )
 
     }
 
@@ -48,9 +71,19 @@ class Upsert {
         val (sql, paramMap) = testUser.upsert { it.username }
             .on { it.id }.build()
 
-        assertEquals("insert into tb_user (id) values (:id) on duplicate key Update username = :username", sql)
-        assertEquals(mapOf("id" to 1, "username" to "test"), paramMap)
-        // Update tb_user set username = 'test' where id = 1 and delete = 0
+        assertEquals(
+            "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) SELECT :id, :username, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `username` = :username WHERE `id` = :id AND `deleted` = :deleted",
+            sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "username" to "test",
+                "deleted" to 0,
+                "updateTime" to paramMap["updateTime"],
+                "createTime" to paramMap["createTime"]
+            ), paramMap
+        )
     }
 
     @Test
@@ -60,9 +93,11 @@ class Upsert {
         val (sql, paramMap) = testUser.upsert { it.username }
             .onDuplicateKey().build()
 
-        assertEquals("insert into tb_user (id) values (:id) on duplicate key Update username = :username", sql)
-        assertEquals(mapOf("id" to 1, "username" to "test"), paramMap)
-        // Update tb_user set username = 'test' where id = 1 and delete = 0
+        assertEquals(
+            "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
+            sql
+        )
+        assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"]), paramMap)
     }
 
     @Test
@@ -71,9 +106,11 @@ class Upsert {
         val (sql, paramMap) = testUser.upsert { it.username }
             .onDuplicateKey().build()
 
-        assertEquals("insert into tb_user (id) values (:id) on duplicate key Update username = :username", sql)
-        assertEquals(mapOf("id" to 1, "username" to "test"), paramMap)
-        // Update tb_user set username = 'test' where id = 1 and delete = 0
+        assertEquals(
+            "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
+            sql
+        )
+        assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"]), paramMap)
     }
 
     @Test
@@ -82,10 +119,11 @@ class Upsert {
         val (sql, paramMap) = testUser.upsertExcept { it.username }
             .on { it.id }.build()
 
-        assertEquals("insert into tb_user (id) values (:id) on duplicate key Update username = :username", sql)
-        assertEquals(mapOf("id" to 1, "username" to "test"), paramMap)
-        // Update tb_user set username = 'test' where id = 1
-
+        assertEquals(
+            "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) SELECT :id, :username, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `gender` = :gender, `id` = :id WHERE `id` = :id AND `deleted` = :deleted",
+            sql
+        )
+        assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"], "gender" to null), paramMap)
     }
 
 }

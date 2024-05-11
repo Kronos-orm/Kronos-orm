@@ -96,4 +96,9 @@ object Extensions {
     internal fun String.asSql(): Criteria {
         return Criteria(type = ConditionType.SQL, value = this)
     }
+
+    /* It's an extension function of String. It will return a string with redundant spaces removed. */
+    internal fun String.rmRedundantBlk(): String {
+        return this.replace("\\s+".toRegex(), " ").trim()
+    }
 }

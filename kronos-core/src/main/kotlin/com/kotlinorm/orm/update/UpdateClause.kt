@@ -176,7 +176,7 @@ class UpdateClause<T : KPojo>(
             toUpdateFields -= field
             paramMapNew -= field + "New"
             condition = listOfNotNull(
-                condition, "${logicDeleteStrategy.field.quotedColumnName()} = $value".asSql()
+                condition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
             ).toCriteria()
         }
 
@@ -186,7 +186,7 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "New"] = value
         }
 
-        val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it + "New"}" }
+        val updateFields = toUpdateFields.joinToString(", ") { "${it.quoted()} = :${it + "New"}" }
 
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 

@@ -18,7 +18,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
-    testImplementation(project(":kronos-basic-wrapper"))
 }
 
 tasks.test {

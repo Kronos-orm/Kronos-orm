@@ -8,7 +8,6 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -82,7 +81,7 @@ class DeleteClause<T : KPojo>(
         if (logic) {// 设置Where内的逻辑删除
             setCommonStrategy(logicDeleteStrategy) { field, value ->
                 condition = listOfNotNull(
-                    condition, "${field.quotedColumnName()} = $value".asSql()
+                    condition, "${field.quoted()} = $value".asSql()
                 ).toCriteria()
             }
         }
@@ -92,17 +91,13 @@ class DeleteClause<T : KPojo>(
         if (logic) {
             val toUpdateFields = mutableListOf<Field>()
             val updateInsertFields = { field: Field, value: Any? ->
-                toUpdateFields += field
-                paramMap[field.name.let {
-                    if (toUpdateFields.map { it.name }.contains(it)) {
-                        return@let it + "New"
-                    }else it
-                }] = value
+                toUpdateFields += (field + "New")
+                paramMap[field.name + "New"] = value
             }
             setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
             setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateInsertFields)
 
-            val updateFields = toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name + "New"}" }
+            val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
 
             val sql = listOfNotNull("UPDATE",
                 "`$tableName`",

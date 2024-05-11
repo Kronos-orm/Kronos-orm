@@ -27,25 +27,22 @@ class InsertClause<T : KPojo>(t: T) {
     }
 
     private val updateInsertFields = { field: Field, value: Any? ->
-        toInsertFields += field
-        paramMap[field.name] = value
+        if (value != null) {
+            toInsertFields += field
+            paramMap[field.name] = value
+        }
     }
 
     fun build(): KronosAtomicTask {
-
         toInsertFields.addAll(allFields.filter { it.name in paramMap.keys })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
 
-        val sql = listOfNotNull(
-            "INSERT INTO",
-            "`${tableName}`",
-            "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-            "VALUES",
-            "(" + toInsertFields.joinToString { ":${it.name}" } + ")"
-        ).joinToString(" ")
+        val sql = """
+            INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
+        """.trimIndent()
 
         return KronosAtomicTask(
             sql,

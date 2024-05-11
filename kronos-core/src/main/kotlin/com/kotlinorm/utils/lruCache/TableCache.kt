@@ -1,5 +1,6 @@
 package com.kotlinorm.utils.lruCache
 
+import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
@@ -38,10 +39,11 @@ object TableCache {
             try {
                 val list =
                     wrapper.forList(
-                        when (wrapper.dbType) {
-                            DBType.Mysql -> "show full fields from $tableName"
-                            DBType.SQLite -> "PRAGMA table_info($tableName)"
-                            DBType.Oracle -> """
+                        KronosAtomicTask(
+                            when (wrapper.dbType) {
+                                DBType.Mysql -> "show full fields from $tableName"
+                                DBType.SQLite -> "PRAGMA table_info($tableName)"
+                                DBType.Oracle -> """
                                 SELECT 
                                     cols.column_name Field,
                                     cols.data_type Type,
@@ -55,7 +57,7 @@ object TableCache {
                                 WHERE cols.table_name = '${tableName.uppercase()}';
                             """.trimIndent()
 
-                            DBType.Mssql -> """
+                                DBType.Mssql -> """
                                 SELECT 
                                     COLUMN_NAME as Field,
                                     DATA_TYPE as Type,
@@ -69,7 +71,7 @@ object TableCache {
                                 WHERE TABLE_NAME = '$tableName';
                             """.trimIndent()
 
-                            DBType.Postgres -> """
+                                DBType.Postgres -> """
                                 SELECT 
                                     cols.column_name Field,
                                     cols.data_type Type,
@@ -86,8 +88,9 @@ object TableCache {
                                     cols.table_name = '$tableName';
                             """.trimIndent()
 
-                            else -> throw UnsupportedDatabaseTypeException()
-                        }
+                                else -> throw UnsupportedDatabaseTypeException()
+                            }
+                        )
                     )
                 val columns = list.map {
                     TableColumn(

@@ -1,28 +1,26 @@
-package com.kotlinorm.orm//package tests
+//package com.kotlinorm.orm//package tests
 //
 //import com.kotlinorm.Kronos
 //import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+//import com.kotlinorm.orm.beans.User
+//import com.kotlinorm.orm.beans.UserRelation
 //import com.kotlinorm.orm.join.join
 //import com.kotlinorm.orm.select.select
 //import org.junit.jupiter.api.Test
-//import tests.beans.User
-//import tests.beans.UserRelation
 //import kotlin.test.assertEquals
 //
 //class Join {
 //    init {
 //        Kronos.apply {
-//            LineHumpNamingStrategy().let {
-//                fieldNamingStrategy = it
-//                tableNamingStrategy = it
-//            }
+//            fieldNamingStrategy = LineHumpNamingStrategy
+//            tableNamingStrategy = LineHumpNamingStrategy
 //        }
 //    }
 //
 //    @Test
 //    fun testJoin() {
-//        val (sql, paramMap) = User(1)
-//            .join(
+//        val (sql, paramMap) =
+//            User(1).join(
 //                UserRelation(1, "123", 1, 1)
 //            ) { user, relation ->
 //                leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }

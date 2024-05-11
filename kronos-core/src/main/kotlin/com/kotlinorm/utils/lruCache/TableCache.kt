@@ -48,8 +48,8 @@ object TableCache {
                                     cols.column_name Field,
                                     cols.data_type Type,
                                     CASE
-                                        WHEN cons.constraint_type = 'P' THEN 'YES'
-                                        ELSE 'NO'
+                                        WHEN cons.constraint_type = 'P' THEN '1'
+                                        ELSE '0'
                                     END AS PrimaryKey
                                 FROM all_tab_columns cols
                                 LEFT JOIN all_cons_columns cons_cols ON cols.table_name = cons_cols.table_name AND cols.column_name = cons_cols.column_name

@@ -24,8 +24,8 @@ class Insert {
     @Test
     fun testInsert() {
         val (sql, paramMap) = user.insert().build()
-        assertEquals("INSERT INTO `tb_user` (`id`) VALUES (:id)", sql)
-        assertEquals(mapOf("id" to 1), paramMap)
+        assertEquals("INSERT INTO `tb_user` (`id`, `create_time`, `update_time`) VALUES (:id, :createTime, :updateTime)", sql)
+        assertEquals(mapOf("id" to 1, "createTime" to paramMap["createTime"], "updateTime" to paramMap["updateTime"]), paramMap)
     }
 
     @Test

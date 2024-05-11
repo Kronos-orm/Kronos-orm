@@ -33,7 +33,6 @@ class DeleteClause<T : KPojo>(
     private var condition: Criteria? = null
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-    private var paramMapNew: MutableMap<String, Any?> = mutableMapOf()
 
 
     init {
@@ -80,11 +79,12 @@ class DeleteClause<T : KPojo>(
 
     fun build(): KronosAtomicTask {
 
-        // 设置Where内的逻辑删除
-        setCommonStrategy(logicDeleteStrategy) { field, value ->
-            condition = listOfNotNull(
-                condition, "${field.quotedColumnName()} = $value".asSql()
-            ).toCriteria()
+        if (logic) {// 设置Where内的逻辑删除
+            setCommonStrategy(logicDeleteStrategy) { field, value ->
+                condition = listOfNotNull(
+                    condition, "${field.quotedColumnName()} = $value".asSql()
+                ).toCriteria()
+            }
         }
 
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())

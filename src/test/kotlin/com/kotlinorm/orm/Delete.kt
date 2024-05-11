@@ -67,4 +67,14 @@ class Delete {
         )
         assertEquals(mapOf("id" to 1, "updateTimeNew" to paramMap["updateTimeNew"], "deletedNew" to 1), paramMap)
     }
+
+    @Test
+    fun testDelete6() {
+        val (sql, paramMap) = user.delete().where {
+            it.username == "John" && it.gender == 0
+        }.build()
+        // delete from tb_user where name = 'John' and email like 'john%'
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
+        assertEquals(mapOf("username" to "John", "gender" to 0), paramMap)
+    }
 }

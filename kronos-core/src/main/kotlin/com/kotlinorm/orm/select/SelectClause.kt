@@ -1,5 +1,8 @@
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
@@ -7,6 +10,11 @@ import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
 
 class SelectClause<T : KPojo>(kPojo: T, fields: KTableField<T, Unit> = null) {
+
+    internal lateinit var tableName: String
+    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
+    internal var allFields: MutableList<Field> = mutableListOf()
+
     fun orderBy(lambda: KTableSortableField<T, Unit>): SelectClause<T> {
         TODO()
     }

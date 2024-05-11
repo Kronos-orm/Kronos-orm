@@ -25,6 +25,8 @@ import com.kotlinorm.plugins.utils.deleteClause.initDeleteClauseList
 import com.kotlinorm.plugins.utils.insertClause.initInsertClause
 import com.kotlinorm.plugins.utils.insertClause.initInsertClauseList
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
+import com.kotlinorm.plugins.utils.selectClause.initSelectClause
+import com.kotlinorm.plugins.utils.selectClause.initSelectClauseList
 import com.kotlinorm.plugins.utils.subType
 import com.kotlinorm.plugins.utils.updateClause.initUpdateClause
 import com.kotlinorm.plugins.utils.updateClause.initUpdateClauseList
@@ -56,6 +58,7 @@ class KronosParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotlinorm.beans.dsl.KTable"
+    private val selectClauseClass = "com.kotlinorm.orm.select.SelectClause"
     private val updateClauseClass = "com.kotlinorm.orm.update.UpdateClause"
     private val insertClauseClass = "com.kotlinorm.orm.insert.InsertClause"
     private val upsertClauseClass = "com.kotlinorm.orm.upsert.UpsertClause"
@@ -81,7 +84,6 @@ class KronosParserTransformer(
      */
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
-        val fqName = declaration.extensionReceiverParameter?.symbol?.descriptor?.returnType?.getKotlinTypeFqName(false)
         when (declaration.extensionReceiverParameter?.symbol?.descriptor?.returnType?.getKotlinTypeFqName(false)) {
             kTableClass -> {
                 declaration.body = transformKTable(declaration)
@@ -105,6 +107,13 @@ class KronosParserTransformer(
         with(pluginContext) {
             val fqName = expression.symbol.descriptor.returnType?.getKotlinTypeFqName(false)
             when {
+                fqName == selectClauseClass &&
+                        expression.funcName() == "select" -> {
+                    return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                        initSelectClause(super.visitCall(expression).asIrCall())
+                    }
+                }
+
                 fqName == updateClauseClass &&
                         expression.funcName() in listOf("update", "updateExcept") -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
@@ -137,6 +146,13 @@ class KronosParserTransformer(
                     val subTypeFqName =
                         expression.type.subType().kotlinType?.getKotlinTypeFqName(false)
                     when {
+                        subTypeFqName == selectClauseClass &&
+                                expression.funcName() == "select" -> {
+                            return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
+                                initSelectClauseList(super.visitCall(expression).asIrCall())
+                            }
+                        }
+
                         subTypeFqName == updateClauseClass &&
                                 expression.funcName() in listOf("update", "updateExcept") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {

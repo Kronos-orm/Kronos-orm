@@ -9,12 +9,14 @@ import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.getTableInfo
 import com.kotlinorm.utils.setCommonStrategy
 
 class UpsertClause<T : KPojo>(
@@ -101,54 +103,86 @@ class UpsertClause<T : KPojo>(
             paramMap[field.name] = value
         }
 
-        val sql = when (dbType) {
-            DBType.Mysql -> {
-                if (onDuplicateKey) {
-                    listOfNotNull(
-                        "INSERT INTO",
-                        "`${tableName}`",
-                        "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-                        "VALUES",
-                        "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
-                        "ON DUPLICATE KEY UPDATE",
-                        toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
-                    ).joinToString(" ")
-                } else if (duplicateFeilds.isNotEmpty()) {
-                    listOfNotNull(
-                        "INSERT INTO",
-                        "`${tableName}`",
-                        "(" + toInsertFields.joinToString { it.quotedColumnName() }+ ")",
-                        "SELECT",
-                        toInsertFields.joinToString { ":${it.name}" },
-                        "FROM DUAL WHERE NOT EXISTS ( SELECT 1 FROM",
-                        "`${tableName}`",
-                        "WHERE",
-                        duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
-                        ");\n",
-                        "UPDATE",
-                        "`${tableName}`",
-                        "SET",
-                        toUpdateFields.joinToString { "${it.quotedColumnName()} = :${it.name}" },
-                        "WHERE",
-                        duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" }
-                    ).joinToString(" ")
+        paramMap = paramMap.filter { it ->
+            it.key in toUpdateFields.map { it.name } || it.key in toInsertFields.map { it.name } || it.key in duplicateFeilds.map { it.name }
+        }.toMutableMap()
 
-                } else {
-                    listOfNotNull(
-                        "INSERT INTO",
-                        "`${tableName}`",
-                        "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
-                        "VALUES",
-                        "(" + toInsertFields.joinToString { ":${it.name}" } + ")"
-                    ).joinToString(" ")
-                }
+        val sql = sqlGenerateOnFields().takeUnless { onDuplicateKey } ?: when (dbType) {
+            DBType.Mysql , DBType.OceanBase -> {
+                listOfNotNull(
+                    "INSERT INTO",
+                    "`${tableName}`",
+                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
+                    "VALUES",
+                    "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
+                    "ON DUPLICATE KEY UPDATE",
+                    toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
+                ).joinToString(" ")
             }
 
-            else -> {
-                TODO()
+            DBType.Postgres -> {
+                listOfNotNull(
+                    "INSERT INTO",
+                    "`${tableName}`",
+                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
+                    "VALUES",
+                    "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
+                    "ON CONFLICT",
+                    duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
+                    "DO UPDATE SET",
+                    toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
+                ).joinToString(" ")
             }
+
+            DBType.Oracle -> {
+                listOfNotNull(
+                    "BEGIN\n",
+                    "INSERT INTO",
+                    "`${tableName}`",
+                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
+                    "VALUES",
+                    "(" + toInsertFields.joinToString { ":${it.name}" } + ");\n",
+                    "EXCEPTION\n",
+                    "WHEN DUP_VAL_ON_INDEX THEN\n",
+                    "UPDATE",
+                    "`${tableName}`",
+                    "SET",
+                    toUpdateFields.joinToString { "${it.quotedColumnName()} = :${it.name}" },
+                    "WHERE",
+                    duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
+                    ";\n",
+                    "END;"
+                ).joinToString(" ")
+            }
+
+            DBType.SQLite -> {
+                listOfNotNull(
+                    "INSERT OR REPLACE INTO",
+                    "`${tableName}`",
+                    "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
+                    "VALUES",
+                    "(" + toInsertFields.joinToString { ":${it.name}" } + ")",
+                    "ON CONFLICT",
+                    "(" + getTableInfo(DBType.SQLite, tableName) + ")", //这里写不来了
+                    "DO UPDATE SET",
+                    toUpdateFields.joinToString(", ") { "${it.quotedColumnName()} = :${it.name}" }
+                ).joinToString(" ")
+            }
+
+            DBType.Mssql -> {
+                listOfNotNull(
+                    "MERGE",
+                    "`${tableName}`",
+                    "WITH (SERIALIZABLE) AS t\n",
+                    "USING (SELECT",
+
+                ).joinToString(" ")
+            }
+
+            else -> throw UnsupportedDatabaseTypeException()
 
         }
+
 
         return KronosAtomicTask(
             sql,
@@ -156,4 +190,26 @@ class UpsertClause<T : KPojo>(
             operationType = KOperationType.UPSERT
         )
     }
+
+    private fun sqlGenerateOnFields(): String {
+        return listOfNotNull(
+            "INSERT INTO",
+            "`${tableName}`",
+            "(" + toInsertFields.joinToString { it.quotedColumnName() } + ")",
+            "SELECT",
+            toInsertFields.joinToString { ":${it.name}" },
+            "FROM DUAL WHERE NOT EXISTS ( SELECT 1 FROM",
+            "`${tableName}`",
+            "WHERE",
+            duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" },
+            ");\n",
+            "UPDATE",
+            "`${tableName}`",
+            "SET",
+            toUpdateFields.joinToString { "${it.quotedColumnName()} = :${it.name}" },
+            "WHERE",
+            duplicateFeilds.joinToString(" AND ") { "${it.quotedColumnName()} = :${it.name}" }
+        ).joinToString(" ")
+    }
+
 }

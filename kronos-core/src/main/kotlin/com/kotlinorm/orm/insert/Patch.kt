@@ -3,19 +3,19 @@ package com.kotlinorm.orm.insert
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.Extensions.toMap
+import com.kotlinorm.utils.Extensions.toMutableMap
 
 
 inline fun <reified T : KPojo> T.insert(): InsertClause<T> {
-    return InsertClause(this)
+    return InsertClause(this, toMutableMap())
 }
 
 inline fun <reified T : KPojo> Array<T>.insert(): List<InsertClause<T>> {
-    return map { InsertClause(it) }
+    return map { InsertClause(it, it.toMutableMap()) }
 }
 
 inline fun <reified T : KPojo> Iterable<T>.insert(): List<InsertClause<T>> {
-    return map { InsertClause(it) }
+    return map { InsertClause(it, it.toMutableMap()) }
 }
 
 // For compiler plugin to init the InsertClause
@@ -26,7 +26,6 @@ fun initInsertClause(
     createTime: KronosCommonStrategy,
     updateTime: KronosCommonStrategy,
     logicDelete: KronosCommonStrategy,
-    classDataMap: Map<String, Any?>,
     vararg fields: Field
 ): InsertClause<*> {
     return clause.apply {
@@ -35,7 +34,6 @@ fun initInsertClause(
         updateTimeStrategy = updateTime
         logicDeleteStrategy = logicDelete
         allFields.addAll(fields)
-        paramMap.putAll(classDataMap)
     }
 }
 
@@ -46,17 +44,13 @@ fun initInsertClauseList(
     createTime: KronosCommonStrategy,
     updateTime: KronosCommonStrategy,
     logicDelete: KronosCommonStrategy,
-    classDataMaps: List<Map<String, Any?>>,
     vararg fields: Field
 ): List<InsertClause<*>> {
-    return clauses.onEachIndexed { index, it ->
-        with(it) {
-            tableName = name
-            createTimeStrategy = createTime
-            updateTimeStrategy = updateTime
-            logicDeleteStrategy = logicDelete
-            allFields += fields
-            paramMap.putAll(classDataMaps.getOrNull(index) ?: pojo.toMap())
-        }
+    return clauses.onEach {
+        it.tableName = name
+        it.createTimeStrategy = createTime
+        it.updateTimeStrategy = updateTime
+        it.logicDeleteStrategy = logicDelete
+        it.allFields += fields
     }
 }

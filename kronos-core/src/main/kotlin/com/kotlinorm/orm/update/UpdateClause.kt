@@ -52,6 +52,7 @@ import com.kotlinorm.utils.setCommonStrategy
 class UpdateClause<T : KPojo>(
     internal val pojo: T,
     private var isExcept: Boolean = false,
+    private var paramMap: MutableMap<String, Any?>,
     private var setUpdateFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
@@ -60,10 +61,9 @@ class UpdateClause<T : KPojo>(
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
     private var condition: Criteria? = null
-    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
 
-    fun init() {
+    init {
         if (setUpdateFields != null) {
             pojo.tableRun {
                 setUpdateFields!!()

@@ -21,14 +21,16 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 
-class DeleteClause<T : KPojo>(internal val pojo: T) {
+class DeleteClause<T : KPojo>(
+    internal val pojo: T,
+    private var paramMap: MutableMap<String, Any?>
+) {
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     private var logic: Boolean = false
     private var condition: Criteria? = null
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
-    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
     fun logic(): DeleteClause<T> {
         this.logic = true

@@ -16,15 +16,11 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.asSimpleType
-import com.kotlinorm.plugins.utils.findByFqName
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
+import com.kotlinorm.plugins.helpers.*
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -38,9 +34,8 @@ import org.jetbrains.kotlin.name.FqName
 
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val kTableSymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.dsl.KTable"))!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTable")!!
 
 context(IrPluginContext)
 internal val setValueSymbol
@@ -59,19 +54,16 @@ internal val IrCall.correspondingName
     get() = symbol.owner.correspondingPropertySymbol?.owner?.name
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val fieldK2dbSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.fieldK2db")).first()
+    get() = referenceFunctions("com.kotlinorm.utils", "fieldK2db").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val tableK2dbSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.tableK2db")).first()
+    get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
@@ -82,7 +74,7 @@ val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
  * @param expression the [IrExpression] to get the column name from
  * @return the IrExpression representing the column name
  */
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun getColumnName(expression: IrExpression): IrExpression {
     return when (expression) {
         is IrCall -> {

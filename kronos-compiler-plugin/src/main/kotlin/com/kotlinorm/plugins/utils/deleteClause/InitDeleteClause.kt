@@ -16,6 +16,8 @@
 
 package com.kotlinorm.plugins.utils.deleteClause
 
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.subType
 import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
@@ -52,7 +54,7 @@ private val fieldSymbol
  * @param expression the [IrCall] expression representing the delete clause
  * @return the initialized IrFunctionAccessExpression
  */
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
     val updateTimeStrategy = getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
@@ -63,7 +65,6 @@ fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
         getTableName(irClass),
         updateTimeStrategy,
         logicDeleteStrategy,
-        pojo2Map(irClass, expression),
         irVararg(fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) })
     )
@@ -75,7 +76,7 @@ fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
  * @param expression the [IrCall] expression representing the delete clause
  * @return the initialized IrFunctionAccessExpression
  */
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun initDeleteClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
     val updateTimeStrategy = getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
@@ -85,7 +86,6 @@ fun initDeleteClauseList(expression: IrCall): IrFunctionAccessExpression {
         getTableName(irClass),
         updateTimeStrategy,
         logicDeleteStrategy,
-        pojoList2MapList(irClass, expression),
         irVararg(fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) })
     )

@@ -1,40 +1,36 @@
 package com.kotlinorm.plugins.utils.upsertClause
 
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irVararg
-import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val initUpsertClauseSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.orm.upsert.initUpsertClause"))
+    get() = referenceFunctions("com.kotlinorm.orm.upsert", "initUpsertClause")
         .first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val initUpsertClauseListSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.orm.upsert.initUpsertClauseList"))
+    get() = referenceFunctions("com.kotlinorm.orm.upsert", "initUpsertClauseList")
         .first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
-    val irClass = expression.type.subType().getClass()!!
+    val irClass = expression.subTypeClass()
     val createTimeStrategy =
         getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
     val updateTimeStrategy =
@@ -48,7 +44,6 @@ fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
         createTimeStrategy,
         updateTimeStrategy,
         logicDeleteStrategy,
-        pojo2Map(irClass, expression),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
@@ -56,9 +51,9 @@ fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
     )
 }
 
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun initUpsertClauseList(expression: IrCall): IrFunctionAccessExpression {
-    val irClass = expression.type.subType().subType().getClass()!!
+    val irClass = expression.subTypeClass(2)
     val createTimeStrategy =
         getValidStrategy(irClass, globalCreateTimeSymbol, CreateTimeFqName)
     val updateTimeStrategy =
@@ -72,7 +67,6 @@ fun initUpsertClauseList(expression: IrCall): IrFunctionAccessExpression {
         createTimeStrategy,
         updateTimeStrategy,
         logicDeleteStrategy,
-        pojoList2MapList(irClass, expression),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }

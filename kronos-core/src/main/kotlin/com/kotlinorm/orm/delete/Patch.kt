@@ -3,19 +3,19 @@ package com.kotlinorm.orm.delete
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.Extensions.toMap
+import com.kotlinorm.utils.Extensions.toMutableMap
 
 
 inline fun <reified T : KPojo> T.delete(): DeleteClause<T> {
-    return DeleteClause(this)
+    return DeleteClause(this, toMutableMap())
 }
 
 inline fun <reified T : KPojo> Array<T>.delete(): List<DeleteClause<T>> {
-    return map { DeleteClause(it) }
+    return map { DeleteClause(it, it.toMutableMap()) }
 }
 
 inline fun <reified T : KPojo> Iterable<T>.delete(): List<DeleteClause<T>> {
-    return map { DeleteClause(it) }
+    return map { DeleteClause(it, it.toMutableMap()) }
 }
 
 @Suppress("UNUSED")
@@ -24,7 +24,6 @@ fun initDeleteClause(
     name: String,
     updateTime: KronosCommonStrategy,
     logicDelete: KronosCommonStrategy,
-    classDataMap: Map<String, Any?>,
     vararg fields: Field
 ): DeleteClause<*> {
     return clause.apply {
@@ -32,7 +31,6 @@ fun initDeleteClause(
         updateTimeStrategy = updateTime
         logicDeleteStrategy = logicDelete
         allFields += fields
-        paramMap.putAll(classDataMap)
     }
 }
 
@@ -42,16 +40,12 @@ fun initDeleteClauseList(
     name: String,
     updateTime: KronosCommonStrategy,
     logicDelete: KronosCommonStrategy,
-    classDataMaps: List<Map<String, Any?>>,
     vararg fields: Field
 ): List<DeleteClause<*>> {
-    return clauses.onEachIndexed { index, it ->
-        with(it) {
-            tableName = name
-            updateTimeStrategy = updateTime
-            logicDeleteStrategy = logicDelete
-            allFields += fields
-            paramMap.putAll(classDataMaps.getOrNull(index) ?: pojo.toMap())
-        }
+    return clauses.onEach {
+        it.tableName = name
+        it.updateTimeStrategy = updateTime
+        it.logicDeleteStrategy = logicDelete
+        it.allFields += fields
     }
 }

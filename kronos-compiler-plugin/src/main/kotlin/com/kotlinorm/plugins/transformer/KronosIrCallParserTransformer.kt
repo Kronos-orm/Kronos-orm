@@ -16,10 +16,8 @@
 
 package com.kotlinorm.plugins.transformer
 
-import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
-import com.kotlinorm.plugins.transformer.kTable.KTableAddFieldTransformer
-import com.kotlinorm.plugins.transformer.kTable.KTableAddParamTransformer
-import com.kotlinorm.plugins.utils.asIrCall
+import com.kotlinorm.plugins.helpers.asIrCall
+import com.kotlinorm.plugins.helpers.subType
 import com.kotlinorm.plugins.utils.deleteClause.initDeleteClause
 import com.kotlinorm.plugins.utils.deleteClause.initDeleteClauseList
 import com.kotlinorm.plugins.utils.insertClause.initInsertClause
@@ -27,7 +25,6 @@ import com.kotlinorm.plugins.utils.insertClause.initInsertClauseList
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import com.kotlinorm.plugins.utils.selectClause.initSelectClause
 import com.kotlinorm.plugins.utils.selectClause.initSelectClauseList
-import com.kotlinorm.plugins.utils.subType
 import com.kotlinorm.plugins.utils.updateClause.initUpdateClause
 import com.kotlinorm.plugins.utils.updateClause.initUpdateClauseList
 import com.kotlinorm.plugins.utils.upsertClause.initUpsertClause
@@ -37,14 +34,10 @@ import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.builders.irBlock
-import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
 
@@ -88,45 +81,35 @@ class KronosIrCallParserTransformer(
                 fqName == selectClauseClass &&
                         expression.funcName() == "select" -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                        with(irFunction) {
-                            initSelectClause(super.visitCall(expression).asIrCall())
-                        }
+                        initSelectClause(super.visitCall(expression).asIrCall())
                     }
                 }
 
                 fqName == updateClauseClass &&
                         expression.funcName() in listOf("update", "updateExcept") -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                        with(irFunction) {
-                            initUpdateClause(super.visitCall(expression).asIrCall())
-                        }
+                        initUpdateClause(super.visitCall(expression).asIrCall())
                     }
                 }
 
                 fqName == insertClauseClass &&
                         expression.funcName() == "insert" -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                        with(irFunction) {
-                            initInsertClause(super.visitCall(expression).asIrCall())
-                        }
+                        initInsertClause(super.visitCall(expression).asIrCall())
                     }
                 }
 
                 fqName == upsertClauseClass &&
                         expression.funcName() in listOf("upsert", "upsertExcept") -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                        with(irFunction) {
-                            initUpsertClause(super.visitCall(expression).asIrCall())
-                        }
+                        initUpsertClause(super.visitCall(expression).asIrCall())
                     }
                 }
 
                 fqName == deleteClauseClass &&
                         expression.funcName() == "delete" -> {
                     return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                        with(irFunction) {
-                            initDeleteClause(super.visitCall(expression).asIrCall())
-                        }
+                        initDeleteClause(super.visitCall(expression).asIrCall())
                     }
                 }
 
@@ -137,86 +120,41 @@ class KronosIrCallParserTransformer(
                         subTypeFqName == selectClauseClass &&
                                 expression.funcName() == "select" -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                                with(irFunction) {
                                     initSelectClauseList(super.visitCall(expression).asIrCall())
-                                }
                             }
                         }
 
                         subTypeFqName == updateClauseClass &&
                                 expression.funcName() in listOf("update", "updateExcept") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                                with(irFunction) {
                                     initUpdateClauseList(super.visitCall(expression).asIrCall())
-                                }
                             }
                         }
 
                         subTypeFqName == insertClauseClass &&
                                 expression.funcName() in listOf("insert") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                                with(irFunction) {
-                                    initInsertClauseList(super.visitCall(expression).asIrCall())
-                                }
+                                initInsertClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
 
                         subTypeFqName == upsertClauseClass &&
                                 expression.funcName() in listOf("upsert", "upsertExcept") -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                                with(irFunction) {
-                                    initUpsertClauseList(super.visitCall(expression).asIrCall())
-                                }
+                                initUpsertClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
 
                         subTypeFqName == deleteClauseClass &&
                                 expression.funcName() == "delete" -> {
                             return with(DeclarationIrBuilder(pluginContext, expression.symbol)) {
-                                with(irFunction) {
-                                    initDeleteClauseList(super.visitCall(expression).asIrCall())
-                                }
+                                initDeleteClauseList(super.visitCall(expression).asIrCall())
                             }
                         }
                     }
                 }
             }
             return super.visitCall(expression)
-        }
-    }
-
-    /**
-     * Transforms the given IrFunction representing a ktable declaration into an IrBlockBody.
-     *
-     * @param irFunction the [IrFunction] to be transformed
-     * @return the transformed IrBlockBody representing the ktable declaration
-     */
-    private fun transformKTable(
-        irFunction: IrFunction
-    ): IrBlockBody {
-        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
-            +irBlock {
-                +irFunction.body!!.statements
-            }
-                .transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
-                .transform(KTableAddParamTransformer(pluginContext, irFunction), null)
-        }
-    }
-
-    /**
-     * Transforms the given IrFunction representing a ktable conditional declaration into an IrBlockBody.
-     *
-     * @param irFunction the [IrFunction] to be transformed
-     * @return the transformed IrBlockBody representing the ktable conditional declaration
-     */
-    private fun transformKTableConditional(
-        irFunction: IrFunction
-    ): IrBlockBody {
-        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
-            +irBlock(resultType = irFunction.returnType) {
-                +irFunction.body!!.statements
-            }
-                .transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

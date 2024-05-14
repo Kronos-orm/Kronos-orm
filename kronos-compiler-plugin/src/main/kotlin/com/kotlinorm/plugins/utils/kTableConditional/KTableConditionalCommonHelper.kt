@@ -16,10 +16,11 @@
 
 package com.kotlinorm.plugins.utils.kTableConditional
 
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.dispatchBy
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.dispatchBy
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTable.correspondingName
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrVariable
@@ -27,31 +28,26 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val criteriaSetterSymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.dsl.KTableConditional"))!!.getPropertySetter("criteria")!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTableConditional")!!.getPropertySetter("criteria")!!
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val criteriaClassSymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Criteria"))!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.Criteria")!!
 
 context(IrBuilderWithScope, IrPluginContext)
 private val addCriteriaChild
     get() = criteriaClassSymbol.getSimpleFunction("addChild")!!
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val string2ConditionTypeSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.enums.toConditionType")).first()
+    get() = referenceFunctions("com.kotlinorm.enums", "toConditionType").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val stringPlusSymbol
-    get() = referenceFunctions(FqName("kotlin.String.plus")).first()
+    get() = referenceFunctions("kotlin.String", "plus").first()
 
 /**
  * Returns a string representing the function name based on the IrExpression type and origin, with optional logic for setNot parameter.

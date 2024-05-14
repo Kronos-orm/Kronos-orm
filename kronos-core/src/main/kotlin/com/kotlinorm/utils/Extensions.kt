@@ -23,6 +23,11 @@ object Extensions {
     }
 
     /* AN extension function of Map. It will return a KPojo of the map. */
+    inline fun <reified K : KPojo> K.toMutableMap(): MutableMap<String, Any?> {
+        return toMap().toMutableMap()
+    }
+
+    /* AN extension function of Map. It will return a KPojo of the map. */
     inline fun <reified K : KPojo> Map<String, Any?>.toKPojo(): K {
         return toKPojo(K::class) as K
     }

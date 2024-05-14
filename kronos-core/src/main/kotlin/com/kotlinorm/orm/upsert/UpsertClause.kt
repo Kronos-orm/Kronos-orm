@@ -33,6 +33,7 @@ import com.kotlinorm.utils.toLinkedSet
 class UpsertClause<T : KPojo>(
     internal val pojo: T,
     private var isExcept: Boolean = false,
+    private var paramMap: MutableMap<String, Any?>,
     private var setUpsertFields: KTableField<T, Unit> = null
 ) {
 
@@ -45,9 +46,8 @@ class UpsertClause<T : KPojo>(
     private var toInsertFields: LinkedHashSet<Field> = linkedSetOf()
     private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
     private var onFields: LinkedHashSet<Field> = linkedSetOf()
-    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
-    fun init() {
+    init {
         if (setUpsertFields != null) {
             pojo.tableRun {
                 setUpsertFields!!()

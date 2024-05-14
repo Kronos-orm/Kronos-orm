@@ -2,21 +2,34 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.AND
 import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.javaType
 
 object Extensions {
+    val constructors: Map<KClass<*>, KFunction<*>> = mutableMapOf()
+    val properties: Map<KClass<*>, List<KProperty<*>>> = mutableMapOf()
+
     /* AN extension function of Map. It will return a KPojo of the map. */
-    inline fun <reified K : KPojo> Map<String, Any?>.transformToKPojo(): K {
-        return transformToKPojo(K::class) as K
+    inline fun <reified K : KPojo> K.toMap(): Map<String, Any?> {
+        val properties = properties.getOrDefault(K::class, K::class.declaredMemberProperties)
+        return properties.associate { it.name to it.getter.call(this) }
+    }
+
+    /* AN extension function of Map. It will return a KPojo of the map. */
+    inline fun <reified K : KPojo> Map<String, Any?>.toKPojo(): K {
+        return toKPojo(K::class) as K
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    fun Map<String, *>.transformToKPojo(clazz: KClass<*>): Any {
-        val constructor = clazz.constructors.first()
+    fun Map<String, *>.toKPojo(clazz: KClass<*>): Any {
+        val constructor = constructors.getOrDefault(clazz, clazz.primaryConstructor)!!
         return try {
             val booleanNames =
                 constructor.parameters.filter { it.name == "boolean" }.map { it.name }
@@ -45,7 +58,7 @@ object Extensions {
                     addSuppressed(e)
                 }
             }
-        }
+        }!!
     }
 
     internal fun List<Criteria>.toCriteria(): Criteria {

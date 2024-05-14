@@ -50,9 +50,9 @@ import com.kotlinorm.utils.setCommonStrategy
  * @author yf, OUSC
  */
 class UpdateClause<T : KPojo>(
-    private val pojo: T,
+    internal val pojo: T,
     private var isExcept: Boolean = false,
-    setUpdateFields: KTableField<T, Any?> = null
+    private var setUpdateFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
@@ -60,22 +60,19 @@ class UpdateClause<T : KPojo>(
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
     private var condition: Criteria? = null
-    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
 
-    init {
+    fun init() {
         if (setUpdateFields != null) {
             pojo.tableRun {
-                setUpdateFields()
+                setUpdateFields!!()
                 toUpdateFields += fields
             }
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
-    }
-
-    init {
     }
 
     /**

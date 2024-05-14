@@ -6,8 +6,8 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 /**
  *@program: kronos-orm
@@ -23,7 +23,8 @@ class InsertParserTest {
 //      sourceFile = SourceFile.fromPath(File("/Users/sundaiyue/IdeaProjects/kotlinorm/koto-plugins/src/test/kotlin/com/kotlinorm/plugins/test/UpdateParserTest.kt"))
 //    )
         val result = compile(
-            sourceFile = SourceFile.kotlin("main.kt", """
+            sourceFile = SourceFile.kotlin(
+                "main.kt", """
       import com.kotlinorm.Kronos
       import com.kotlinorm.annotations.Table
       import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
@@ -44,12 +45,17 @@ class InsertParserTest {
           tableNamingStrategy = LineHumpNamingStrategy
         }
 
-        val user = User(1)
-        val testUser = User(1, "test")
-
-        arrayOf(user, testUser).insert().execute()
+        class A{
+            val user = User(1)
+            val testUser = User(1, "test")
+            fun a(){
+              arrayOf(user, testUser).insert().execute()
+            }
+        }
+        A().a()
       }
-      """.trimIndent())
+      """.trimIndent()
+            )
         )
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 

@@ -11,15 +11,16 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 
-class InsertClause<T : KPojo>(kPojo: T) {
-
+class InsertClause<T : KPojo>(
+    internal val pojo: T
+) {
     internal lateinit var tableName: String
     internal lateinit var createTimeStrategy: KronosCommonStrategy
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
     private val toInsertFields: LinkedHashSet<Field> = linkedSetOf()
-    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
     private val updateInsertFields = { field: Field, value: Any? ->
         if (value != null) {

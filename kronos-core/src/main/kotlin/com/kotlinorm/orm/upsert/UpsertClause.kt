@@ -2,7 +2,6 @@ package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTable
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
@@ -32,9 +31,9 @@ import com.kotlinorm.utils.toLinkedSet
  * @author Jieyao Lu, OUSC
  */
 class UpsertClause<T : KPojo>(
-    private val pojo: T,
+    internal val pojo: T,
     private var isExcept: Boolean = false,
-    setUpsertFields: (KTable<T>.() -> Unit)? = null
+    private var setUpsertFields: KTableField<T, Unit> = null
 ) {
 
     internal lateinit var tableName: String
@@ -46,12 +45,12 @@ class UpsertClause<T : KPojo>(
     private var toInsertFields: LinkedHashSet<Field> = linkedSetOf()
     private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
     private var onFields: LinkedHashSet<Field> = linkedSetOf()
-    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
-    init {
+    fun init() {
         if (setUpsertFields != null) {
             pojo.tableRun {
-                setUpsertFields()
+                setUpsertFields!!()
                 toUpdateFields += fields
             }
         }

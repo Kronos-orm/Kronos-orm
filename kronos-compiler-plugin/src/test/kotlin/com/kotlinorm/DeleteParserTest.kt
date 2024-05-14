@@ -31,6 +31,8 @@ class DeleteParserTest {
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.orm.delete.delete
+            import com.kotlinorm.orm.delete.DeleteClause.Companion.build
+            import com.kotlinorm.orm.delete.DeleteClause.Companion.by
                     
             @Table(name = "tb_user")
             data class User(
@@ -47,6 +49,7 @@ class DeleteParserTest {
                     
                 val user = User(1)
                 val testUser = User(1, "test")
+                val users = listOf(user, testUser)
                     
                 val (sql, paramMap) = user.delete().by { it.id }.build()
             }        

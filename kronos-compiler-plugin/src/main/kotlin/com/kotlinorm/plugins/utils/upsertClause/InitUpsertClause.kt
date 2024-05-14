@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irVararg
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
@@ -31,7 +32,7 @@ context(IrPluginContext)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
     val createTimeStrategy =
@@ -47,6 +48,7 @@ fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
         createTimeStrategy,
         updateTimeStrategy,
         logicDeleteStrategy,
+        pojo2Map(irClass, expression),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
@@ -54,7 +56,7 @@ fun initUpsertClause(expression: IrCall): IrFunctionAccessExpression {
     )
 }
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initUpsertClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
     val createTimeStrategy =
@@ -70,6 +72,7 @@ fun initUpsertClauseList(expression: IrCall): IrFunctionAccessExpression {
         createTimeStrategy,
         updateTimeStrategy,
         logicDeleteStrategy,
+        pojoList2MapList(irClass, expression),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }

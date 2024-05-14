@@ -21,57 +21,30 @@ import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.builders.*
-import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irVararg
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val initDeleteClauseSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.orm.delete.initDeleteClause"))
-        .first()
+    get() = referenceFunctions(FqName("com.kotlinorm.orm.delete.initDeleteClause")).first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val initDeleteClauseListSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.orm.delete.initDeleteClauseList"))
-        .first()
+    get() = referenceFunctions(FqName("com.kotlinorm.orm.delete.initDeleteClauseList")).first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
-
-
-context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
-private val mutableMapOfSymbol
-    get() = referenceFunctions(FqName("kotlin.collections.mutableMapOf")).first()
-
-
-context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
-private val mutableMapPutSymbol
-    get() = referenceClass(FqName("kotlin.collections.MutableMap"))!!.getSimpleFunction("put")!!
-
-context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
-private val mutableListOfSymbol
-    get() = referenceFunctions(FqName("kotlin.collections.mutableListOf")).first()
-
-
-context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
-private val mutableListAdd
-    get() = referenceClass(FqName("kotlin.collections.MutableList"))!!.getSimpleFunction("add")!!
 
 /**
  * Initializes a delete clause for the given IrCall expression.
@@ -79,13 +52,11 @@ private val mutableListAdd
  * @param expression the [IrCall] expression representing the delete clause
  * @return the initialized IrFunctionAccessExpression
  */
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
-    val updateTimeStrategy =
-        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
-    val logicDeleteStrategy =
-        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
+    val updateTimeStrategy = getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
+    val logicDeleteStrategy = getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
     return applyIrCall(
         initDeleteClauseSymbol,
         expression,
@@ -93,10 +64,8 @@ fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
         updateTimeStrategy,
         logicDeleteStrategy,
         pojo2Map(irClass, expression),
-        irVararg(
-            fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
-        )
+        irVararg(fieldSymbol.defaultType,
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) })
     )
 }
 
@@ -106,65 +75,18 @@ fun initDeleteClause(expression: IrCall): IrFunctionAccessExpression {
  * @param expression the [IrCall] expression representing the delete clause
  * @return the initialized IrFunctionAccessExpression
  */
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initDeleteClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
-    val updateTimeStrategy =
-        getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
-    val logicDeleteStrategy =
-        getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
-    return applyIrCall(
-        initDeleteClauseListSymbol,
+    val updateTimeStrategy = getValidStrategy(irClass, globalUpdateTimeSymbol, UpdateTimeFqName)
+    val logicDeleteStrategy = getValidStrategy(irClass, globalLogicDeleteSymbol, LogicDeleteFqName)
+    return applyIrCall(initDeleteClauseListSymbol,
         expression,
         getTableName(irClass),
         updateTimeStrategy,
         logicDeleteStrategy,
         pojoList2MapList(irClass, expression),
-        irVararg(
-            fieldSymbol.defaultType,
-            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
-        )
+        irVararg(fieldSymbol.defaultType,
+            irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) })
     )
-}
-
-context(IrBuilderWithScope, IrPluginContext)
-fun pojo2Map(irClass: IrClass, expression: IrCall): IrContainerExpression {
-    return irBlock {
-        val irVariable = irTemporary(
-            applyIrCall(
-                mutableMapOfSymbol
-            )
-        )
-
-        irClass.properties.forEach {
-            +applyIrCall(
-                mutableMapPutSymbol,
-                irString(it.name.asString()),
-                expression.extensionReceiver
-            )
-        }
-
-        +irReturn(irGet(irVariable))
-    }
-}
-
-context(IrBuilderWithScope, IrPluginContext)
-fun pojoList2MapList(irClass: IrClass, expression: IrCall): IrContainerExpression {
-    return irBlock {
-        val irVariable = irTemporary(
-            applyIrCall(
-                mutableMapOfSymbol
-            )
-        )
-
-        irClass.properties.forEach {
-            +applyIrCall(
-                mutableMapPutSymbol,
-                irString(it.name.asString()),
-                expression.extensionReceiver
-            )
-        }
-
-        +irReturn(irGet(irVariable))
-    }
 }

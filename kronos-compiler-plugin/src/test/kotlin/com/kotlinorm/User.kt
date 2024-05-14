@@ -6,6 +6,8 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.orm.delete.DeleteClause.Companion.build
+import com.kotlinorm.orm.delete.DeleteClause.Companion.by
 import com.kotlinorm.orm.delete.delete
 
 @Table(name = "tb_user")
@@ -25,5 +27,5 @@ fun main() {
     val user = User(1)
     val testUser = User(1, "test")
 
-    val (sql, paramMap) = user.delete().by { it.id }.build()
+    val (sql, paramMap) = listOf(user, testUser).delete().by { it.id }.build()
 }

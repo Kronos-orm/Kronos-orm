@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irVararg
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
@@ -54,7 +55,7 @@ private val fieldSymbol
  * @param expression the [IrCall] expression representing the update clause
  * @return the initialized IrFunctionAccessExpression
  */
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
     val updateTimeStrategy =
@@ -67,6 +68,7 @@ fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
         getTableName(irClass),
         updateTimeStrategy,
         logicDeleteStrategy,
+        pojo2Map(irClass, expression),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }
@@ -80,7 +82,7 @@ fun initUpdateClause(expression: IrCall): IrFunctionAccessExpression {
  * @param expression the [IrCall] expression representing the update clause list
  * @return the initialized IrFunctionAccessExpression
  */
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initUpdateClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
     val updateTimeStrategy =
@@ -93,6 +95,7 @@ fun initUpdateClauseList(expression: IrCall): IrFunctionAccessExpression {
         getTableName(irClass),
         updateTimeStrategy,
         logicDeleteStrategy,
+        pojoList2MapList(irClass, expression),
         irVararg(
             fieldSymbol.defaultType,
             irClass.declarations.filterIsInstance<IrProperty>().sortedBy { it.name }.map { getColumnName(it) }

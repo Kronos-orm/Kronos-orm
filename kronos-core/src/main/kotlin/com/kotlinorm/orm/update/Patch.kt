@@ -20,7 +20,7 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.KTableField
-
+import com.kotlinorm.utils.Extensions.toMap
 
 
 inline fun <reified T : KPojo> T.update(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
@@ -54,6 +54,7 @@ fun initUpdateClause(
     name: String,
     updateTime: KronosCommonStrategy,
     logicDelete: KronosCommonStrategy,
+    classDataMap: Map<String, Any?>,
     vararg fields: Field
 ): UpdateClause<*> {
     return clause.apply {
@@ -61,6 +62,8 @@ fun initUpdateClause(
         updateTimeStrategy = updateTime
         logicDeleteStrategy = logicDelete
         allFields += fields
+        paramMap.putAll(classDataMap)
+        init()
     }
 }
 
@@ -71,12 +74,17 @@ fun initUpdateClauseList(
     name: String,
     updateTime: KronosCommonStrategy,
     logicDelete: KronosCommonStrategy,
+    classDataMaps: List<Map<String, Any?>>,
     vararg fields: Field
 ): List<UpdateClause<*>> {
-    return clauses.onEach {
-        it.tableName = name
-        it.updateTimeStrategy = updateTime
-        it.logicDeleteStrategy = logicDelete
-        it.allFields += fields
+    return clauses.onEachIndexed { index, it ->
+        with(it) {
+            it.tableName = name
+            it.updateTimeStrategy = updateTime
+            it.logicDeleteStrategy = logicDelete
+            it.allFields += fields
+            paramMap.putAll(classDataMaps.getOrNull(index) ?: pojo.toMap())
+            init()
+        }
     }
 }

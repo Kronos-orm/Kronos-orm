@@ -1,16 +1,13 @@
 package com.kotlinorm.plugins.utils.selectClause
 
 import com.kotlinorm.plugins.utils.*
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.getValidStrategy
-import com.kotlinorm.plugins.utils.globalLogicDeleteSymbol
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
-import com.kotlinorm.plugins.utils.subType
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irVararg
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
@@ -42,7 +39,7 @@ context(IrPluginContext)
 private val fieldSymbol
     get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initSelectClause(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().getClass()!!
     val logicDeleteStrategy =
@@ -59,7 +56,7 @@ fun initSelectClause(expression: IrCall): IrFunctionAccessExpression {
     )
 }
 
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun initSelectClauseList(expression: IrCall): IrFunctionAccessExpression {
     val irClass = expression.type.subType().subType().getClass()!!
     val logicDeleteStrategy =

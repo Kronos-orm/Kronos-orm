@@ -29,6 +29,8 @@ import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
+const val KTABLE_CONDITIONAL_CLASS = "com.kotlinorm.beans.dsl.KTableConditional"
+
 context(IrPluginContext)
 internal val criteriaSetterSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KTableConditional")!!.getPropertySetter("criteria")!!

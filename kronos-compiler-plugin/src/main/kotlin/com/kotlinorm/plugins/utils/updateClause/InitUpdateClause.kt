@@ -19,7 +19,6 @@ package com.kotlinorm.plugins.utils.updateClause
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
-import com.kotlinorm.plugins.helpers.subType
 import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
@@ -30,7 +29,10 @@ import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.getClass
+
+const val UPDATE_CLAUSE_CLASS = "com.kotlinorm.orm.update.UpdateClause"
+const val UPDATE_FUNCTION = "update"
+const val UPDATE_EXCEPT_FUNCTION = "updateExcept"
 
 context(IrPluginContext)
 private val initUpdateClauseSymbol

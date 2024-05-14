@@ -14,6 +14,10 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 
+const val UPSERT_CLAUSE_CLASS = "com.kotlinorm.orm.upsert.UpsertClause"
+const val UPSERT_FUNCTION = "update"
+const val UPSERT_EXCEPT_FUNCTION = "updateExcept"
+
 context(IrPluginContext)
 private val initUpsertClauseSymbol
     get() = referenceFunctions("com.kotlinorm.orm.upsert", "initUpsertClause")

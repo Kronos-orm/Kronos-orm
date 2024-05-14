@@ -32,6 +32,9 @@ import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 
+const val INSERT_CLAUSE_CLASS = "com.kotlinorm.orm.insert.InsertClause"
+const val INSERT_FUNCTION = "insert"
+
 context(IrPluginContext)
 private val initInsertClauseSymbol
     get() = referenceFunctions("com.kotlinorm.orm.insert", "initInsertClause")

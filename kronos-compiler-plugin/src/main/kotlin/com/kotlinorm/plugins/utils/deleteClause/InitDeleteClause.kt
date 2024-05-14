@@ -17,36 +17,35 @@
 package com.kotlinorm.plugins.utils.deleteClause
 
 import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.helpers.subType
 import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irVararg
-import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.name.FqName
+
+const val DELETE_CLAUSE_CLASS = "com.kotlinorm.orm.delete.DeleteClause"
+const val DELETE_FUNCTION = "delete"
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val initDeleteClauseSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.orm.delete.initDeleteClause")).first()
+    get() = referenceFunctions("com.kotlinorm.orm.delete", "initDeleteClause").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val initDeleteClauseListSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.orm.delete.initDeleteClauseList")).first()
+    get() = referenceFunctions("com.kotlinorm.orm.delete", "initDeleteClauseList").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 private val fieldSymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.dsl.Field"))!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 /**
  * Initializes a delete clause for the given IrCall expression.

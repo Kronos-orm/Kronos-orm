@@ -16,23 +16,25 @@
 
 package com.kotlinorm.plugins.transformer
 
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddParamTransformer
+import com.kotlinorm.plugins.utils.kTable.KTABLE_CLASS
+import com.kotlinorm.plugins.utils.kTableConditional.KTABLE_CONDITIONAL_CLASS
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.statements
-import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
-import org.jetbrains.kotlin.name.FqName
 
 /**
  * Kronos Parser Transformer
@@ -42,16 +44,13 @@ import org.jetbrains.kotlin.name.FqName
 class KronosParserTransformer(
     private val pluginContext: IrPluginContext,
 ) : IrElementTransformerVoidWithContext() {
-    private val kTableClass = "com.kotlinorm.beans.dsl.KTable"
-    private val kTableConditionalClass = "com.kotlinorm.beans.dsl.KTableConditional"
 
     /**
      * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
      *
      * @return The symbol of the `println` function.
      */
-    @OptIn(FirIncompatiblePluginAPI::class)
-    fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions(FqName("kotlin.io.println")).single {
+    fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions("kotlin.io", "println").single {
         val parameters = it.owner.valueParameters
         parameters.size == 1 && parameters[0].type == irBuiltIns.anyNType
     }
@@ -62,21 +61,16 @@ class KronosParserTransformer(
      * @param declaration the [IrFunction] being visited
      * @return the transformed function body or the result of calling the super class's implementation
      */
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
-        when (declaration.extensionReceiverParameter?.symbol?.descriptor?.returnType?.getKotlinTypeFqName(false)) {
-            kTableClass -> {
-                declaration.body = transformKTable(declaration)
-            }
-
-            kTableConditionalClass -> {
-                declaration.body = transformKTableConditional(declaration)
-            }
+        when (declaration.extensionReceiverParameter?.type?.classFqName?.asString()) {
+            KTABLE_CLASS -> declaration.body = transformKTable(declaration)
+            KTABLE_CONDITIONAL_CLASS -> declaration.body = transformKTableConditional(declaration)
         }
-
-        declaration.body?.transform(KronosIrCallParserTransformer(pluginContext, declaration), null)
-
         return super.visitFunctionNew(declaration)
+    }
+
+    override fun visitCall(expression: IrCall): IrExpression {
+        return super.visitCall(expression).transform(KronosIrCallParserTransformer(pluginContext), null)
     }
 
     /**

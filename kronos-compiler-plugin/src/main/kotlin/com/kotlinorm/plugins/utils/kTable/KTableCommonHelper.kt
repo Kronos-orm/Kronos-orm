@@ -33,6 +33,11 @@ import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 
 
+const val KTABLE_CLASS = "com.kotlinorm.beans.dsl.KTable"
+val COLLECTION_CLASSES = arrayOf(
+    "kotlin.collections.List", "kotlin.collections.Set", "kotlin.collections.Array"
+)
+
 context(IrPluginContext)
 private val kTableSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KTable")!!

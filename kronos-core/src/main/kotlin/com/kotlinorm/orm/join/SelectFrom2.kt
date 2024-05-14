@@ -1,7 +1,6 @@
 package com.kotlinorm.orm.join;
 
 import com.kotlinorm.interfaces.KPojo;
-import com.kotlinorm.orm.select.SelectClause
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField

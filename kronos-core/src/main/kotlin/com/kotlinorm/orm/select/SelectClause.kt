@@ -1,7 +1,6 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.pagination.PagedClause

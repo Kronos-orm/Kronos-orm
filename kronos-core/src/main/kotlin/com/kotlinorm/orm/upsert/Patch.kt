@@ -6,6 +6,7 @@ import com.kotlinorm.beans.dsl.KTable
 import com.kotlinorm.interfaces.KPojo
 
 
+
 inline fun <reified T : KPojo> T.upsert(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): UpsertClause<T> {
     return UpsertClause(this, false, setUpdateFields)
 }

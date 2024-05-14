@@ -51,9 +51,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
          * @return the formatted text
          */
         internal fun format(txt: String, codes: Array<ColorPrintCode>): String {
-            val codeStr = java.lang.String.join(
-                SEMICOLON,
-                codes.map { code -> code.code.toString() })
+            val codeStr = codes.map { code -> code.code.toString() }.joinToString(SEMICOLON)
             return 27.toChar().toString() + "[" + codeStr + "m" + txt + 27.toChar() + "[0m"
         }
     }

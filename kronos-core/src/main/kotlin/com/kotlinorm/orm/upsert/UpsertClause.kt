@@ -14,10 +14,9 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.lruCache.TableCache.getTable
 import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -50,7 +49,6 @@ class UpsertClause<T : KPojo>(
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
     init {
-        paramMap.putAll(pojo.toMap())
         if (setUpsertFields != null) {
             pojo.tableRun {
                 setUpsertFields()

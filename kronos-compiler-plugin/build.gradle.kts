@@ -10,7 +10,7 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:2.3.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
     }
 }
 
@@ -19,7 +19,7 @@ plugins {
     id("signing")
     id("maven-publish")
     id("java-gradle-plugin")
-    id("org.jetbrains.kotlin.kapt")
+    kotlin("kapt")
 }
 
 tasks.withType<KotlinCompile>().configureEach {

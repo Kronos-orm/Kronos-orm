@@ -22,6 +22,7 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.KTableField
 
 
+
 inline fun <reified T : KPojo> T.update(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
     return UpdateClause(this, false, setUpdateFields)
 }

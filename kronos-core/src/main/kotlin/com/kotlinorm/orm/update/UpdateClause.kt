@@ -34,7 +34,6 @@ import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 
@@ -51,7 +50,9 @@ import com.kotlinorm.utils.setCommonStrategy
  * @author yf, OUSC
  */
 class UpdateClause<T : KPojo>(
-    private val pojo: T, private var isExcept: Boolean = false, setUpdateFields: KTableField<T, Any?> = null
+    private val pojo: T,
+    private var isExcept: Boolean = false,
+    setUpdateFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
@@ -63,7 +64,6 @@ class UpdateClause<T : KPojo>(
     private var paramMapNew: MutableMap<Field, Any?> = mutableMapOf()
 
     init {
-        paramMap.putAll(pojo.toMap().filter { it.value != null })
         if (setUpdateFields != null) {
             pojo.tableRun {
                 setUpdateFields()
@@ -73,6 +73,9 @@ class UpdateClause<T : KPojo>(
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
+    }
+
+    init {
     }
 
     /**

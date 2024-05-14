@@ -17,25 +17,41 @@ inline fun <reified T : KPojo> Iterable<T>.delete(): List<DeleteClause<T>> {
 }
 
 @Suppress("UNUSED")
-fun initDeleteClause(clause: DeleteClause<*>, name: String,
-                     updateTime: KronosCommonStrategy,
-                     logicDelete: KronosCommonStrategy, vararg fields: Field): DeleteClause<*> {
+fun initDeleteClause(
+    clause: DeleteClause<*>,
+    name: String,
+    updateTime: KronosCommonStrategy,
+    logicDelete: KronosCommonStrategy,
+    classDataMap: () -> Map<String, Any?>,
+    vararg fields: Field
+): DeleteClause<*> {
     return clause.apply {
         tableName = name
         updateTimeStrategy = updateTime
         logicDeleteStrategy = logicDelete
         allFields += fields
+        paramMap.putAll(classDataMap())
+        init()
     }
 }
 
 @Suppress("UNUSED")
-fun initDeleteClauseList(clauses: List<DeleteClause<*>>, name: String,
-                         updateTime: KronosCommonStrategy,
-                         logicDelete: KronosCommonStrategy, vararg fields: Field): List<DeleteClause<*>> {
-    return clauses.onEach {
-        it.tableName = name
-        it.updateTimeStrategy = updateTime
-        it.logicDeleteStrategy = logicDelete
-        it.allFields += fields
+fun initDeleteClauseList(
+    clauses: List<DeleteClause<*>>,
+    name: String,
+    updateTime: KronosCommonStrategy,
+    logicDelete: KronosCommonStrategy,
+    classDataMap: () -> List<Map<String, Any?>>,
+    vararg fields: Field
+): List<DeleteClause<*>> {
+    return clauses.onEachIndexed { index, it ->
+        with(it) {
+            tableName = name
+            updateTimeStrategy = updateTime
+            logicDeleteStrategy = logicDelete
+            allFields += fields
+            paramMap.putAll(classDataMap()[index])
+            init()
+        }
     }
 }

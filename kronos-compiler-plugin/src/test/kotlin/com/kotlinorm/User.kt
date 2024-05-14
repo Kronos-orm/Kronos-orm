@@ -25,6 +25,5 @@ fun main() {
     val user = User(1)
     val testUser = User(1, "test")
 
-
     val (sql, paramMap) = user.delete().by { it.id }.build()
 }

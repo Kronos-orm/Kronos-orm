@@ -1,9 +1,17 @@
 package com.kotlinorm.utils
 
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.*
+import kotlinx.datetime.format.FormatStringsInDatetimeFormats
+import kotlinx.datetime.format.byUnicodePattern
 
 object DateTimeUtil {
+    @OptIn(FormatStringsInDatetimeFormats::class)
     val currentDateTime =
-        { format: String -> LocalDateTime.now().format(DateTimeFormatter.ofPattern(format)) }
+        { format: String ->
+            Clock.System.now().toLocalDateTime(TimeZone.UTC).format(
+                LocalDateTime.Format {
+                    byUnicodePattern(format)
+                }
+            )
+        }
 }

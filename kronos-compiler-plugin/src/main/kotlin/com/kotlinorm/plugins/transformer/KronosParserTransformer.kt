@@ -55,7 +55,8 @@ import org.jetbrains.kotlin.name.FqName
  * @author OUSC, Jieyao Lu
  */
 class KronosParserTransformer(
-    private val pluginContext: IrPluginContext
+    private val pluginContext: IrPluginContext,
+    private val parentNode: MutableList<IrFunction> = mutableListOf()
 ) : IrElementTransformerVoidWithContext() {
     private val kTableClass = "com.kotlinorm.beans.dsl.KTable"
     private val selectClauseClass = "com.kotlinorm.orm.select.SelectClause"
@@ -64,7 +65,6 @@ class KronosParserTransformer(
     private val upsertClauseClass = "com.kotlinorm.orm.upsert.UpsertClause"
     private val deleteClauseClass = "com.kotlinorm.orm.delete.DeleteClause"
     private val kTableConditionalClass = "com.kotlinorm.beans.dsl.KTableConditional"
-
     /**
      * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
      *
@@ -93,6 +93,7 @@ class KronosParserTransformer(
                 declaration.body = transformKTableConditional(declaration)
             }
         }
+
         return super.visitFunctionNew(declaration)
     }
 

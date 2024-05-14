@@ -18,12 +18,12 @@ import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 
 class DeleteClause<T : KPojo>(
-    private val pojo: T, setDeleteFields: KTableField<T, Any?> = null
+    internal val pojo: T,
+    internal val setDeleteFields: KTableField<T, Any?> = null
 ) {
     internal lateinit var tableName: String
     internal lateinit var updateTimeStrategy: KronosCommonStrategy
@@ -31,14 +31,10 @@ class DeleteClause<T : KPojo>(
     private var logic: Boolean = false
     private var condition: Criteria? = null
     internal var allFields: LinkedHashSet<Field> = linkedSetOf()
-    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    internal var paramMap: MutableMap<String, Any?> = mutableMapOf()
 
-
-    init {
-        paramMap.putAll(pojo.toMap().filter { it.value != null })
-        if (setDeleteFields != null) {
-            pojo.table().setDeleteFields()
-        }
+    fun init() {
+        setDeleteFields?.let { pojo.table().it() }
     }
 
     fun logic(): DeleteClause<T> {

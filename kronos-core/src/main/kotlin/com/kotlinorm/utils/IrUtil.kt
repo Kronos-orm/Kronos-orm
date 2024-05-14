@@ -2,6 +2,8 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.enums.SortType
 
 
 fun fieldK2db(str: String): String {

@@ -207,17 +207,17 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             map?.toKPojo(kClass)
         } else if (clazz.name == "java.lang.Integer") {
             map?.values?.firstOrNull()?.toString()?.toInt()
-        } else if (clazz.name == "java.lang.Long") {
+        } else if (clazz.name == "long") {
             map?.values?.firstOrNull()?.toString()?.toLong()
-        } else if (clazz.name == "java.lang.Double") {
+        } else if (clazz.name == "double") {
             map?.values?.firstOrNull()?.toString()?.toDouble()
-        } else if (clazz.name == "java.lang.Float") {
+        } else if (clazz.name == "float") {
             map?.values?.firstOrNull()?.toString()?.toFloat()
-        } else if (clazz.name == "java.lang.Boolean") {
+        } else if (clazz.name == "boolean") {
             map?.values?.firstOrNull()?.toString()?.toBoolean()
-        } else if (clazz.name == "java.lang.Short") {
+        } else if (clazz.name == "short") {
             map?.values?.firstOrNull()?.toString()?.toShort()
-        } else if (clazz.name == "java.lang.Byte") {
+        } else if (clazz.name == "byte") {
             map?.values?.firstOrNull()?.toString()?.toByte()
         } else if (clazz.name == "java.lang.String") {
             map?.values?.firstOrNull()?.toString()

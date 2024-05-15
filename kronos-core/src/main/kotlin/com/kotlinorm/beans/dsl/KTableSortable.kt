@@ -19,6 +19,7 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.ASC
 import com.kotlinorm.enums.DESC
 import com.kotlinorm.enums.SortType
+import kotlin.reflect.full.createInstance
 
 /**
  * KTableSortable
@@ -29,6 +30,20 @@ import com.kotlinorm.enums.SortType
  * @property it the instance of the table
  */
 class KTableSortable<T : KPojo>(override val it: T) : KTable<T>(it) {
+    var fieldSorts = mutableListOf<Pair<Field?, SortType>>()
+
     val Any?.desc get(): Pair<Any?, SortType> = this to DESC
     val Any?.asc get(): Pair<Any?, SortType> = this to ASC
+
+    companion object {
+        /**
+         * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.
+         *
+         * @param T The type of the KPojo object.
+         * @param block The block of code to be applied to the KTable instance.
+         * @return The resulting KTable instance after applying the block.
+         */
+        fun <T : KPojo> T.sortableRun(block: KTable<T>.() -> Unit): KTableSortable<T> =
+            KTableSortable(this::class.createInstance()).apply(block)
+    }
 }

@@ -20,19 +20,15 @@ import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddParamTransformer
-import com.kotlinorm.plugins.utils.kTable.KTABLE_CLASS
-import com.kotlinorm.plugins.utils.kTableConditional.KTABLE_CONDITIONAL_CLASS
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
-import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.statements
 
 /**
@@ -64,6 +60,7 @@ class KronosParserTransformer(
         when (declaration.extensionReceiverParameter?.type?.classFqName?.asString()) {
             KTABLE_CLASS -> declaration.body = transformKTable(declaration)
             KTABLE_CONDITIONAL_CLASS -> declaration.body = transformKTableConditional(declaration)
+            KTABLE_SORTABLE_CLASS -> declaration.body = transformKTableSortable(declaration)
         }
         return super.visitFunctionNew(declaration)
     }
@@ -106,6 +103,17 @@ class KronosParserTransformer(
             +irBlock(resultType = irFunction.returnType) {
                 +irFunction.body!!.statements
             }.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
+        }
+    }
+
+    private fun transformKTableSortable(
+        irFunction: IrFunction
+    ): IrBlockBody {
+        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
+            +irBlock {
+                +irFunction.body!!.statements
+            }
+                .transform(SortableParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

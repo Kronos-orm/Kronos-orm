@@ -37,6 +37,7 @@ object LineHumpNamingStrategy : KronosNamingStrategy {
         return line
             .split("_")
             .joinToString("") { it.replaceFirstChar(Char::uppercase) }
+            .replaceFirstChar { it.lowercase() }
     }
 
     /**

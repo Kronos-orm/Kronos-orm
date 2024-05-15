@@ -66,6 +66,7 @@ class KronosParserTransformer(
             KTABLE_CLASS -> declaration.body = transformKTable(declaration)
             KTABLE_CONDITIONAL_CLASS -> declaration.body = transformKTableConditional(declaration)
         }
+        declaration.body = declaration.body?.transform(KronosIrFunctionNewTransformer(pluginContext, declaration), null)
         return super.visitFunctionNew(declaration)
     }
 

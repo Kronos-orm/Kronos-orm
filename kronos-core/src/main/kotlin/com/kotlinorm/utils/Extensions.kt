@@ -1,5 +1,6 @@
 package com.kotlinorm.utils
 
+import com.kotlinorm.annotations.ReplaceWhenCompile
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.AND
@@ -13,16 +14,18 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.javaType
 
 object Extensions {
-    val constructors: Map<KClass<*>, KFunction<*>> = mutableMapOf()
+    private val constructors: Map<KClass<*>, KFunction<*>> = mutableMapOf()
     val properties: Map<KClass<*>, List<KProperty<*>>> = mutableMapOf()
 
     /* AN extension function of Map. It will return a KPojo of the map. */
+    @ReplaceWhenCompile
     inline fun <reified K : KPojo> K.toMap(): Map<String, Any?> {
         val properties = properties.getOrDefault(K::class, K::class.declaredMemberProperties)
         return properties.associate { it.name to it.getter.call(this) }
     }
 
     /* AN extension function of Map. It will return a KPojo of the map. */
+    @ReplaceWhenCompile
     inline fun <reified K : KPojo> K.toMutableMap(): MutableMap<String, Any?> {
         return toMap().toMutableMap()
     }

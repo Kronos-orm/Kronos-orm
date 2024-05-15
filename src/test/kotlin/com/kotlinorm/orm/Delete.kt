@@ -1,11 +1,9 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.delete.delete
-import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

@@ -33,5 +33,4 @@ class KronosParserCompilerPluginRegistrar : CompilerPluginRegistrar() {
         val ignoreWarning = configuration.get(KronosCommandLineProcessor.ARG_OPTION_IGNORE_WARNING, true)
         IrGenerationExtension.registerExtension(KronosParserExtension())
     }
-
 }

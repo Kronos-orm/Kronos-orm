@@ -1,4 +1,4 @@
-package com.kotlinorm.utils.lruCache
+package com.kotlinorm.utils.tableCache
 
 import com.kotlinorm.beans.dsl.Field
 

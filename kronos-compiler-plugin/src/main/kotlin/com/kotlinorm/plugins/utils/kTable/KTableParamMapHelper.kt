@@ -16,8 +16,8 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.dispatchBy
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.dispatchBy
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -46,7 +46,7 @@ fun putFieldParamMap(): List<IrExpression> {
  * @param element The [IrElement] to process for parameter mapping.
  * @return The list of IR expressions representing the parameter mapping.
  */
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun putParamMapStatements(receiver: IrExpression, element: IrElement): MutableList<IrExpression> {
     val statements = mutableListOf<IrExpression>()  // Initialize an empty list to hold the resulting IR expressions.
     // 初始化空列表，以保存结果 IR 表达式。

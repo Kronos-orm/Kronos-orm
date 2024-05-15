@@ -1,30 +1,24 @@
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.toLinkedSet
 
-class InsertClause<T : KPojo>(t: T) {
-
-    internal lateinit var tableName: String
-    internal lateinit var createTimeStrategy: KronosCommonStrategy
-    internal lateinit var updateTimeStrategy: KronosCommonStrategy
-    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
-    internal var allFields: LinkedHashSet<Field> = linkedSetOf()
-    private val toInsertFields: LinkedHashSet<Field> = linkedSetOf()
-    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-
-    init {
-        paramMap.putAll(t.toMap().filter { it.value != null })
-    }
+class InsertClause<T : KPojo>(pojo: T) {
+    private var paramMap = pojo.transformToMap()
+    private var tableName = pojo.kronosTableName()
+    private var createTimeStrategy = pojo.kronosCreateTime()
+    private var updateTimeStrategy = pojo.kronosUpdateTime()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var allFields = pojo.kronosColumns().toLinkedSet()
+    private val toInsertFields = linkedSetOf<Field>()
 
     private val updateInsertFields = { field: Field, value: Any? ->
         if (value != null) {

@@ -1,9 +1,9 @@
 plugins {
     kotlin("jvm")
-    kotlin("kapt")
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:latest.release")
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test"))
 }

@@ -1,8 +1,8 @@
 package com.kotlinorm.orm.select
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
@@ -11,9 +11,7 @@ import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.update.UpdateClause
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
@@ -23,25 +21,23 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.Extensions.toMap
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.lruCache.TableCache.getTable
 import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
 class SelectClause<T : KPojo>(
     private val pojo: T, setSelectFields: KTableField<T, Any?> = null
 ) {
 
-    internal lateinit var tableName: String
-    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
+    private var tableName = pojo.kronosTableName()
+    private var paramMap = pojo.transformToMap()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var allFields: LinkedHashSet<Field> = pojo.kronosColumns().toLinkedSet()
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
-    private var paramMap: MutableMap<String, Any?> = mutableMapOf()
-    var allFields: LinkedHashSet<Field> = linkedSetOf()
 
     init {
-        paramMap.putAll(pojo.toMap())
         if (setSelectFields != null) {
             pojo.tableRun {
                 setSelectFields()
@@ -50,7 +46,7 @@ class SelectClause<T : KPojo>(
     }
 
     fun orderBy(someFields: KTableSortableField<T, Unit>): SelectClause<T> {
-        pojo.sortableRun{
+        pojo.sortableRun {
             this
         }
         return this

@@ -16,26 +16,37 @@
 
 package com.kotlinorm.plugins.utils
 
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.asIrCall
+import com.kotlinorm.plugins.helpers.findByFqName
+import com.kotlinorm.plugins.helpers.subType
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val globalUpdateTimeSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.getUpdateTimeStrategy")).first()
+    get() = referenceFunctions(
+        CallableId(
+            FqName("com.kotlinorm.utils"),
+            Name.identifier("getUpdateTimeStrategy")
+        )
+    ).first()
 
 context(IrPluginContext)
 @OptIn(FirIncompatiblePluginAPI::class)
@@ -58,6 +69,15 @@ val UpdateTimeFqName = FqName("com.kotlinorm.annotations.UpdateTime")
 val LogicDeleteFqName = FqName("com.kotlinorm.annotations.LogicDelete")
 
 val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
+
+
+internal fun IrCall.subTypeClass(num: Int = 1): IrClass {
+    var type = this.type
+    for (i in 1..num) {
+        type = type.subType()
+    }
+    return type.getClass()!!
+}
 
 /**
  * Retrieves a valid strategy for the given IrClass, global symbol, and FqName.

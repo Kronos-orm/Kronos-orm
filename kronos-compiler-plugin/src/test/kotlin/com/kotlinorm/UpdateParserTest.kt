@@ -10,20 +10,21 @@ import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
 
 class UpdateParserTest {
-  @OptIn(ExperimentalCompilerApi::class)
-  @Test
-  fun `IR plugin success`() {
+    @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `IR plugin success`() {
 //    val result = compile(
 //      sourceFile = SourceFile.fromPath(File("/Users/sundaiyue/IdeaProjects/kotlinorm/koto-plugins/src/test/kotlin/com/kotlinorm/plugins/test/UpdateParserTest.kt"))
 //    )
-    val result = compile(
-      sourceFile = SourceFile.kotlin("main.kt", """
+        val result = compile(
+            sourceFile = SourceFile.kotlin(
+                "main.kt", """
       import com.kotlinorm.Kronos
       import com.kotlinorm.annotations.Table
       import com.kotlinorm.annotations.UpdateTime
       import com.kotlinorm.annotations.LogicDelete
       import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-      import com.kotlinorm.interfaces.KPojo
+      import com.kotlinorm.beans.dsl.KPojo
       import com.kotlinorm.orm.update.UpdateClause.Companion.by
       import com.kotlinorm.orm.update.UpdateClause.Companion.execute
       import com.kotlinorm.orm.update.update
@@ -35,9 +36,9 @@ class UpdateParserTest {
           var id: Int? = null,
           var username: String? = null,
           var gender: Int? = null,
-          @UpdateTime("YYYY-MM-dd HH:mm:ss") var updateTime: String? = null,
+          @UpdateTime("yyyy-MM-dd HH:mm:ss") var updateTime: String? = null,
           @LogicDelete var deleted: String? = null
-      ) : KPojo
+      ) : KPojo()
 
       fun main() {
         Kronos.apply {
@@ -52,32 +53,33 @@ class UpdateParserTest {
         testUser.update { it.username }
             .by{ it.id }.execute()
       }
-      """.trimIndent())
-    )
-    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+      """.trimIndent()
+            )
+        )
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 
-    val ktClazz = result.classLoader.loadClass("MainKt")
-    val main = ktClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
-    main.invoke(null)
-  }
+        val ktClazz = result.classLoader.loadClass("MainKt")
+        val main = ktClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
+        main.invoke(null)
+    }
 
-  @OptIn(ExperimentalCompilerApi::class)
-  fun compile(
-      sourceFiles: List<SourceFile>,
-      plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
-  ): JvmCompilationResult {
-    return KotlinCompilation().apply {
-      sources = sourceFiles
-      compilerPluginRegistrars = listOf(plugin)
-      inheritClassPath = true
-    }.compile()
-  }
+    @OptIn(ExperimentalCompilerApi::class)
+    fun compile(
+        sourceFiles: List<SourceFile>,
+        plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
+    ): JvmCompilationResult {
+        return KotlinCompilation().apply {
+            sources = sourceFiles
+            compilerPluginRegistrars = listOf(plugin)
+            inheritClassPath = true
+        }.compile()
+    }
 
-  @OptIn(ExperimentalCompilerApi::class)
-  fun compile(
-      sourceFile: SourceFile,
-      plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
-  ): JvmCompilationResult {
-    return compile(listOf(sourceFile), plugin)
-  }
+    @OptIn(ExperimentalCompilerApi::class)
+    fun compile(
+        sourceFile: SourceFile,
+        plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
+    ): JvmCompilationResult {
+        return compile(listOf(sourceFile), plugin)
+    }
 }

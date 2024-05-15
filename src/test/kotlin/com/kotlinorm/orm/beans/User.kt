@@ -4,7 +4,7 @@ import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.dsl.KPojo
 
 @Table(name = "tb_user")
 data class User(
@@ -17,4 +17,4 @@ data class User(
     var updateTime: String? = null,
     @LogicDelete
     var deleted: Boolean? = null
-) : KPojo
+) : KPojo()

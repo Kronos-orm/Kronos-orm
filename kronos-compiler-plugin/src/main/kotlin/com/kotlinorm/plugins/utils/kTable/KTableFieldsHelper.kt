@@ -16,8 +16,8 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.dispatchBy
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.dispatchBy
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -46,7 +46,7 @@ fun addFieldList(): List<IrExpression> {
  * @param element the [IrElement] to extract field names from
  * @return a mutable list of IR expressions representing the field names
  */
-context(IrBuilderWithScope, IrPluginContext, IrFunction)
+context(IrBuilderWithScope, IrPluginContext)
 fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。

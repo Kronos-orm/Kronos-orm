@@ -23,7 +23,7 @@ import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.Extensions.toKPojo
 import java.sql.PreparedStatement
@@ -204,8 +204,8 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         return if (String::class.java == kClass.java) {
             map?.values?.firstOrNull()?.toString()
         } else if (KPojo::class.java.isAssignableFrom(kClass.java)) {
-            map?.toKPojo(clazz)
-        } else if (clazz.name == "int") {
+            map?.toKPojo(kClass)
+        } else if (clazz.name == "java.lang.Integer") {
             map?.values?.firstOrNull()?.toString()?.toInt()
         } else if (clazz.name == "long") {
             map?.values?.firstOrNull()?.toString()?.toLong()

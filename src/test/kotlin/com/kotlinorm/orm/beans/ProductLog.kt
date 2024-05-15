@@ -1,7 +1,8 @@
 package com.kotlinorm.orm.beans
 
-import com.kotlinorm.annotations.*
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.annotations.Column
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.KPojo
 import java.time.LocalDateTime
 
 @Table(name = "product_log")
@@ -59,4 +60,4 @@ data class ProductLog(
 
     @Column(name = "audit_roles")
     var auditRoles: Any? = null, // Assuming it's a JSON object or array
-) : KPojo
+) : KPojo()

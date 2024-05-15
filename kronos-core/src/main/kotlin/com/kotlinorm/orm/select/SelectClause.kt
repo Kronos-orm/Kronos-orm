@@ -5,6 +5,7 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
@@ -59,15 +60,11 @@ class SelectClause<T : KPojo>(
         }
     }
 
-    fun orderBy(sortableFields: KTableSortableField<T, Unit>): SelectClause<T> {
-        TODO()
-        /*isOrder = true
-        if(sortableFields == null) throw NeedFieldsException()
-        pojo.tableRun {
-            sortableFields()
-            orderByFields = fields.toLinkedSet()
+    fun orderBy(someFields: KTableSortableField<T, Unit>): SelectClause<T> {
+        pojo.sortableRun{
+            this
         }
-        return this*/
+        return this
     }
 
     fun groupBy(someFields: KTableField<T, Unit>): SelectClause<T> {

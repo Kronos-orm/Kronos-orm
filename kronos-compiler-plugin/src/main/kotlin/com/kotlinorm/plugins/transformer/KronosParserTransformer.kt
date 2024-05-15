@@ -19,6 +19,7 @@ package com.kotlinorm.plugins.transformer
 import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddParamTransformer
+import com.kotlinorm.plugins.transformer.sortable.SortableParseReturnTransformer
 import com.kotlinorm.plugins.utils.asIrCall
 import com.kotlinorm.plugins.utils.deleteClause.initDeleteClause
 import com.kotlinorm.plugins.utils.deleteClause.initDeleteClauseList
@@ -64,6 +65,7 @@ class KronosParserTransformer(
     private val upsertClauseClass = "com.kotlinorm.orm.upsert.UpsertClause"
     private val deleteClauseClass = "com.kotlinorm.orm.delete.DeleteClause"
     private val kTableConditionalClass = "com.kotlinorm.beans.dsl.KTableConditional"
+    private val kTableSortableClass = "com.kotlinorm.beans.dsl.KTableSortable"
 
     /**
      * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
@@ -91,6 +93,10 @@ class KronosParserTransformer(
 
             kTableConditionalClass -> {
                 declaration.body = transformKTableConditional(declaration)
+            }
+
+            kTableSortableClass -> {
+                declaration.body = transformKTableSortable(declaration)
             }
         }
         return super.visitFunctionNew(declaration)
@@ -218,6 +224,17 @@ class KronosParserTransformer(
                 +irFunction.body!!.statements
             }
                 .transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
+        }
+    }
+
+    private fun transformKTableSortable(
+        irFunction: IrFunction
+    ): IrBlockBody {
+        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
+            +irBlock {
+                +irFunction.body!!.statements
+            }
+                .transform(SortableParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

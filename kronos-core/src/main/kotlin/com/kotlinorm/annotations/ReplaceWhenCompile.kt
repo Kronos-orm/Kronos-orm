@@ -17,15 +17,13 @@
 package com.kotlinorm.annotations
 
 /**
- * Unsafe Criteria
+ * Column
  *
- * Annotation to declare that the criteria is not safe.
+ * Annotation to specify the name of a column in a database table.
  *
- * @property message The name of the column in the database table.
+ * @property name The name of the column in the database table.
  * @author OUSC
- * @create 2022/7/20 15:40
  */
-@RequiresOptIn(level = RequiresOptIn.Level.WARNING, message = "Unsafe criteria")
-@Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-annotation class UnsafeCriteria(val message: String = "")
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ReplaceWhenCompile()

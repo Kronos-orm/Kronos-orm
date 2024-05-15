@@ -2,7 +2,7 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.UpdateTime
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.dsl.KPojo
 import java.util.*
 
 /**
@@ -20,4 +20,4 @@ data class TbUser(
     val age: Int? = null,
     val avatar: String? = null,
     @UpdateTime(format = "yyyy-MM-dd HH:mm:ss") val updateTime: Date? = null,
-) : KPojo
+) : KPojo()

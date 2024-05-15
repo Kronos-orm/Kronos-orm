@@ -1,7 +1,6 @@
 package com.kotlinorm.orm.join;
 
-import com.kotlinorm.interfaces.KPojo;
-import com.kotlinorm.orm.select.SelectClause
+import com.kotlinorm.beans.dsl.KPojo;
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
@@ -18,6 +17,7 @@ public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     fun select(fields: KTableField<Nothing, Unit>) {
         TODO()
     }
+
     fun orderBy(lambda: KTableSortableField<Nothing, Unit>) {
         TODO()
     }
@@ -26,23 +26,23 @@ public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
         TODO()
     }
 
-    fun distinct(){
+    fun distinct() {
         TODO()
     }
 
-    fun limit(num: Int){
+    fun limit(num: Int) {
         TODO()
     }
 
-    fun offset(num: Int){
+    fun offset(num: Int) {
         TODO()
     }
 
-    fun page(pi: Int, ps: Int){
+    fun page(pi: Int, ps: Int) {
         TODO()
     }
 
-    fun by(lambda: KTableField<Nothing, Unit>){
+    fun by(lambda: KTableField<Nothing, Unit>) {
         TODO()
     }
 

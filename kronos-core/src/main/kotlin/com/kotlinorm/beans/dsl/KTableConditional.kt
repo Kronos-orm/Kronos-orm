@@ -16,10 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.annotations.UnsafeCriteria
 import com.kotlinorm.enums.NoValueStrategy
-import com.kotlinorm.interfaces.KPojo
-import java.util.*
 import kotlin.reflect.full.createInstance
 
 /**
@@ -51,41 +48,16 @@ open class KTableConditional<T : KPojo>(override val it: T) : KTable<T>(it) {
     ) = true
 
     /**
-     * Check if the number is greater than the specified number
+     * Check if the Comparable<*> is greater than the specified
      *
      * Only for compiler plugin to parse to [Criteria]
      *
      * Return 1 whether which one is greater
      *
-     * @param other The number to compare with.
+     * @param other The Comparable<*> to compare with.
      * @return `1`
      */
-    operator fun Number?.compareTo(@Suppress("UNUSED_PARAMETER") other: Number?) = 1
-
-    /**
-     * Check if the date is greater than the specified date
-     *
-     * Only for compiler plugin to parse to [Criteria]
-     *
-     * Return 1 whether which one is greater
-     *
-     * @param other The number to compare with.
-     * @return `1`
-     */
-    operator fun Date?.compareTo(@Suppress("UNUSED_PARAMETER") other: Date?) = 1
-
-    /**
-     * Check if the string is greater than the specified string
-     *
-     * Only for compiler plugin to parse to [Criteria]
-     *
-     * Return 1 whether which one is greater
-     *
-     * @param other The number to compare with.
-     * @return `1`
-     */
-    @UnsafeCriteria("It's not safe to compare String with other Type.")
-    operator fun <T> String?.compareTo(@Suppress("UNUSED_PARAMETER") other: T?): Int = 1
+    operator fun Comparable<*>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Comparable<*>?) = 1
 
     /**
      * Set the no value strategy

@@ -2,6 +2,7 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
 
 
 fun fieldK2db(str: String): String {
@@ -31,3 +32,9 @@ fun getUpdateTimeStrategy(): KronosCommonStrategy {
 fun getLogicDeleteStrategy(): KronosCommonStrategy {
     return Kronos.logicDeleteStrategy
 }
+
+fun createPair(first: String, second: Any?) = first to second
+
+fun createMutableMap(vararg pairs: Pair<String, Any?>) = mutableMapOf(*pairs)
+
+fun createFieldList(vararg elements: Field) = mutableListOf(*elements)

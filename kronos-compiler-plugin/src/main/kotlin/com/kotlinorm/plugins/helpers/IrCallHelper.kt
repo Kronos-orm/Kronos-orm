@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.plugins.utils
+package com.kotlinorm.plugins.helpers
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
-import org.jetbrains.kotlin.ir.types.IrSimpleType
-import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.typeOrFail
+import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.util.hasEqualFqName
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 
-// A helper class for specifying the receiver of an IR function call
+// A helpers class for specifying the receiver of an IR function call
 // applyIrCall的辅助类，用于指定IR函数调用的接收器
 class Receivers(
     // The dispatch receiver expression
@@ -49,7 +45,7 @@ class Receivers(
  * @return A new instance of the Receivers class with the specified dispatch receiver.
  * @author OUSC
  */
-fun dispatchBy(dispatchReceiver: IrExpression?): Receivers {
+internal fun dispatchBy(dispatchReceiver: IrExpression?): Receivers {
     return Receivers(dispatchReceiver)
 }
 
@@ -111,26 +107,10 @@ internal fun IrExpression.asIrCall(): IrCall {
 }
 
 /**
- * Casts the given IrType to an IrSimpleType.
- *
- * @return The IrSimpleType representation of the IrType.
- */
-internal fun IrType.asSimpleType(): IrSimpleType = this as IrSimpleType
-
-/**
- * Returns the first type argument of the given IrType as an IrSimpleType.
- * 返回给定IrType的第一个类型参数
- *
- * @return The first type argument of the given IrType as an IrSimpleType.
- */
-internal fun IrType.subType(): IrSimpleType = this.asSimpleType().arguments[0].typeOrFail.asSimpleType()
-
-/**
  * Finds the first IrConstructorCall in the iterable that has a containing descriptor with the given fqName.
  *
  * @param fqName The fully qualified name of the containing descriptor to search for.
  * @return The first IrConstructorCall that matches the given fqName, or null if none is found.
  */
-@OptIn(ObsoleteDescriptorBasedAPI::class)
-internal fun Iterable<IrConstructorCall>.findByFqName(fqName: FqName): IrConstructorCall? =
-    firstOrNull { it.symbol.descriptor.containingDeclaration.fqNameSafe == fqName }
+internal fun <T : IrFunctionAccessExpression> Iterable<T>.findByFqName(fqName: FqName): T? =
+    firstOrNull { it.type.classFqName == fqName }

@@ -1,7 +1,5 @@
-package com.kotlinorm.plugins.transformer.sortable
+package com.kotlinorm.plugins.transformer.kTable
 
-import com.kotlinorm.plugins.utils.kTable.addFieldList
-import com.kotlinorm.plugins.utils.kTableConditional.setCriteriaIr
 import com.kotlinorm.plugins.utils.kTableSortType.setFieldSortsIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -10,7 +8,6 @@ import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 
 /**
@@ -19,10 +16,10 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
  *@description:
  *@create: 2024/5/14 15:29
  **/
-class SortableParseReturnTransformer(
+class KTableSortableParseReturnTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction
-): IrElementTransformerVoidWithContext() {
+) : IrElementTransformerVoidWithContext() {
 
     override fun visitCall(expression: IrCall): IrExpression {
         with(pluginContext) {

@@ -16,9 +16,9 @@
 
 package com.kotlinorm.plugins.utils.kTableConditional
 
-import com.kotlinorm.plugins.utils.applyIrCall
-import com.kotlinorm.plugins.utils.asIrCall
-import com.kotlinorm.plugins.utils.dispatchBy
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.asIrCall
+import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.utils.kTable.correspondingName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName

@@ -23,14 +23,15 @@ class UpsertParserTest {
 //      sourceFile = SourceFile.fromPath(File("/Users/sundaiyue/IdeaProjects/kotlinorm/koto-plugins/src/test/kotlin/com/kotlinorm/plugins/test/UpdateParserTest.kt"))
 //    )
         val result = compile(
-            sourceFile = SourceFile.kotlin("main.kt", """
+            sourceFile = SourceFile.kotlin(
+                "main.kt", """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.CreateTime
             import com.kotlinorm.annotations.LogicDelete
             import com.kotlinorm.annotations.Table
             import com.kotlinorm.annotations.UpdateTime
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-            import com.kotlinorm.interfaces.KPojo
+            import com.kotlinorm.beans.dsl.KPojo
             import com.kotlinorm.orm.upsert.upsert
             
             @Table(name = "tb_user")
@@ -41,7 +42,7 @@ class UpsertParserTest {
                 @UpdateTime var updateTime: String? = null,
                 @CreateTime var createTime: String? = null,
                 @LogicDelete var deleted: Int = 0
-            ) : KPojo
+            ) : KPojo()
             
             fun main() {
                 Kronos.apply {
@@ -55,7 +56,8 @@ class UpsertParserTest {
                 testUser.upsert { it.username }
                     .on{ it.id }.execute()
             }
-      """.trimIndent())
+      """.trimIndent()
+            )
         )
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 

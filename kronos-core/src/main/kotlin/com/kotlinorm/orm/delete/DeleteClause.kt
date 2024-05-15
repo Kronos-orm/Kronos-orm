@@ -1,8 +1,8 @@
 package com.kotlinorm.orm.delete
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -10,7 +10,6 @@ import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
@@ -20,17 +19,16 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.toLinkedSet
 
-class DeleteClause<T : KPojo>(
-    internal val pojo: T,
-    private var paramMap: MutableMap<String, Any?>
-) {
-    internal lateinit var tableName: String
-    internal lateinit var updateTimeStrategy: KronosCommonStrategy
-    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
-    private var logic: Boolean = false
+class DeleteClause<T : KPojo>(private val pojo: T) {
+    private var paramMap = pojo.transformToMap()
+    private var tableName = pojo.kronosTableName()
+    private var updateTimeStrategy = pojo.kronosUpdateTime()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var logic = false
     private var condition: Criteria? = null
-    internal var allFields: LinkedHashSet<Field> = linkedSetOf()
+    private var allFields = pojo.kronosColumns().toLinkedSet()
 
     fun logic(): DeleteClause<T> {
         this.logic = true

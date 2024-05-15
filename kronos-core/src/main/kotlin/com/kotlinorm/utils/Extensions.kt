@@ -1,34 +1,17 @@
 package com.kotlinorm.utils
 
-import com.kotlinorm.annotations.ReplaceWhenCompile
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.AND
 import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.javaType
 
 object Extensions {
     private val constructors: Map<KClass<*>, KFunction<*>> = mutableMapOf()
-    val properties: Map<KClass<*>, List<KProperty<*>>> = mutableMapOf()
-
-    /* AN extension function of Map. It will return a KPojo of the map. */
-    @ReplaceWhenCompile
-    inline fun <reified K : KPojo> K.toMap(): Map<String, Any?> {
-        val properties = properties.getOrDefault(K::class, K::class.declaredMemberProperties)
-        return properties.associate { it.name to it.getter.call(this) }
-    }
-
-    /* AN extension function of Map. It will return a KPojo of the map. */
-    @ReplaceWhenCompile
-    inline fun <reified K : KPojo> K.toMutableMap(): MutableMap<String, Any?> {
-        return toMap().toMutableMap()
-    }
 
     /* AN extension function of Map. It will return a KPojo of the map. */
     inline fun <reified K : KPojo> Map<String, Any?>.toKPojo(): K {

@@ -19,7 +19,6 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.ASC
 import com.kotlinorm.enums.DESC
 import com.kotlinorm.enums.SortType
-import com.kotlinorm.interfaces.KPojo
 
 /**
  * KTableSortable

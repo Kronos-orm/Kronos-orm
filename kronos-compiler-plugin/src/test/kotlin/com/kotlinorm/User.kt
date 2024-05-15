@@ -1,11 +1,10 @@
 package com.kotlinorm
 
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.by
 import com.kotlinorm.orm.delete.delete
@@ -14,8 +13,8 @@ import com.kotlinorm.orm.delete.delete
 data class User(
     var id: Int? = null,
     var username: String? = null,
-    @UpdateTime var gender: Int? = null
-) : KPojo
+    var gender: Int? = null
+) : KPojo()
 
 fun main() {
     Kronos.apply {

@@ -29,18 +29,22 @@ class DeleteParserTest {
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.Table
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-            import com.kotlinorm.interfaces.KPojo
+            import com.kotlinorm.beans.dsl.KPojo
             import com.kotlinorm.orm.delete.delete
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by
+            import com.kotlinorm.annotations.CreateTime
                     
             @Table(name = "tb_user")
             data class User(
                 var id: Int? = null,
                 var username: String? = null,
-                var gender: Int? = null
-            ) : KPojo
-                    
+                var gender: Int? = null,
+                @CreateTime
+                var createTime: String? = null
+            ) : KPojo()
+
+
             fun main() {
                 Kronos.apply {
                      fieldNamingStrategy = LineHumpNamingStrategy
@@ -49,9 +53,10 @@ class DeleteParserTest {
                     
                 val user = User(1)
                 val testUser = User(1, "test")
-                val users = listOf(user, testUser)
+                val t = user.kronosColumns()
                     
                 val (sql, paramMap) = user.delete().by { it.id }.build()
+                println(user.transformToMap())
             }        
       """.trimIndent()
             )

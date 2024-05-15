@@ -1,7 +1,7 @@
 package com.kotlinorm.orm.upsert
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
@@ -9,7 +9,6 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -31,21 +30,20 @@ import com.kotlinorm.utils.toLinkedSet
  * @author Jieyao Lu, OUSC
  */
 class UpsertClause<T : KPojo>(
-    internal val pojo: T,
+    private val pojo: T,
     private var isExcept: Boolean = false,
-    private var paramMap: MutableMap<String, Any?>,
     private var setUpsertFields: KTableField<T, Unit> = null
 ) {
-
-    internal lateinit var tableName: String
-    internal lateinit var createTimeStrategy: KronosCommonStrategy
-    internal lateinit var updateTimeStrategy: KronosCommonStrategy
-    internal lateinit var logicDeleteStrategy: KronosCommonStrategy
-    internal var allFields: LinkedHashSet<Field> = linkedSetOf()
-    private var onDuplicateKey: Boolean = false
-    private var toInsertFields: LinkedHashSet<Field> = linkedSetOf()
-    private var toUpdateFields: LinkedHashSet<Field> = linkedSetOf()
-    private var onFields: LinkedHashSet<Field> = linkedSetOf()
+    private var paramMap = pojo.transformToMap()
+    private var tableName = pojo.kronosTableName()
+    private var createTimeStrategy = pojo.kronosCreateTime()
+    private var updateTimeStrategy = pojo.kronosUpdateTime()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var allFields = pojo.kronosColumns().toLinkedSet()
+    private var onDuplicateKey = false
+    private var toInsertFields = linkedSetOf<Field>()
+    private var toUpdateFields = linkedSetOf<Field>()
+    private var onFields = linkedSetOf<Field>()
 
     init {
         if (setUpsertFields != null) {

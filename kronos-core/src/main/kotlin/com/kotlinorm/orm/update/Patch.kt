@@ -16,67 +16,30 @@
 
 package com.kotlinorm.orm.update
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.types.KTableField
-import com.kotlinorm.utils.Extensions.toMutableMap
 
 
 inline fun <reified T : KPojo> T.update(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, false, toMutableMap(), setUpdateFields)
+    return UpdateClause(this, false, setUpdateFields)
 }
 
 inline fun <reified T : KPojo> T.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, true, toMutableMap(), setUpdateFields)
+    return UpdateClause(this, true, setUpdateFields)
 }
 
 inline fun <reified T : KPojo> Iterable<T>.update(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, false, it.toMutableMap(), setUpdateFields) }
+    return map { UpdateClause(it, false, setUpdateFields) }
 }
 
 inline fun <reified T : KPojo> Iterable<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, true, it.toMutableMap(), setUpdateFields) }
+    return map { UpdateClause(it, true, setUpdateFields) }
 }
 
 inline fun <reified T : KPojo> Array<T>.update(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, false, it.toMutableMap(), setUpdateFields) }
+    return map { UpdateClause(it, false, setUpdateFields) }
 }
 
 inline fun <reified T : KPojo> Array<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, true, it.toMutableMap(), setUpdateFields) }
-}
-
-// For compiler plugin to init the UpdateClause
-@Suppress("UNUSED")
-fun initUpdateClause(
-    clause: UpdateClause<*>,
-    name: String,
-    updateTime: KronosCommonStrategy,
-    logicDelete: KronosCommonStrategy,
-    vararg fields: Field
-): UpdateClause<*> {
-    return clause.apply {
-        tableName = name
-        updateTimeStrategy = updateTime
-        logicDeleteStrategy = logicDelete
-        allFields += fields
-    }
-}
-
-// For compiler plugin to init the list of UpdateClause
-@Suppress("UNUSED")
-fun initUpdateClauseList(
-    clauses: List<UpdateClause<*>>,
-    name: String,
-    updateTime: KronosCommonStrategy,
-    logicDelete: KronosCommonStrategy,
-    vararg fields: Field
-): List<UpdateClause<*>> {
-    return clauses.onEach {
-        it.tableName = name
-        it.updateTimeStrategy = updateTime
-        it.logicDeleteStrategy = logicDelete
-        it.allFields += fields
-    }
+    return map { UpdateClause(it, true, setUpdateFields) }
 }

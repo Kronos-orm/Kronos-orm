@@ -17,7 +17,6 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.enums.NoValueStrategy
-import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.full.createInstance
 
 /**

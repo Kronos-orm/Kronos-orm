@@ -2,7 +2,7 @@ package com.kotlinorm.orm.beans
 
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.UpdateTime
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.dsl.KPojo
 
 data class Movie(
     val id: Long? = null, // 主键
@@ -23,4 +23,4 @@ data class Movie(
     val favorite: Int? = null, // 收藏人数
     @LogicDelete val deleted: Boolean? = null, // 逻辑删除
     @UpdateTime val updateTime: String? = null, // 逻辑删除
-) : KPojo
+) : KPojo()

@@ -28,10 +28,9 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.statements
@@ -66,12 +65,15 @@ class KronosParserTransformer(
             KTABLE_CLASS -> declaration.body = transformKTable(declaration)
             KTABLE_CONDITIONAL_CLASS -> declaration.body = transformKTableConditional(declaration)
         }
-        declaration.body = declaration.body?.transform(KronosIrFunctionNewTransformer(pluginContext, declaration), null)
         return super.visitFunctionNew(declaration)
     }
 
-    override fun visitCall(expression: IrCall): IrExpression {
-        return super.visitCall(expression).transform(KronosIrCallParserTransformer(pluginContext), null)
+    override fun visitClassNew(declaration: IrClass): IrStatement {
+        if (declaration.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }) {
+            return super.visitClassNew(declaration)
+                .transform(KronosIrClassNewTransformer(pluginContext, declaration), null) as IrStatement
+        }
+        return super.visitClassNew(declaration)
     }
 
     /**
@@ -86,8 +88,7 @@ class KronosParserTransformer(
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock {
                 +irFunction.body!!.statements
-            }
-                .transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
+            }.transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
                 .transform(KTableAddParamTransformer(pluginContext, irFunction), null)
         }
     }
@@ -104,8 +105,7 @@ class KronosParserTransformer(
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock(resultType = irFunction.returnType) {
                 +irFunction.body!!.statements
-            }
-                .transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
+            }.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

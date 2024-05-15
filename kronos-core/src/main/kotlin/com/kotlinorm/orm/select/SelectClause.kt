@@ -2,7 +2,7 @@ package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField

@@ -2,6 +2,7 @@ package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
@@ -10,7 +11,6 @@ import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
@@ -23,6 +23,7 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
 class SelectClause<T : KPojo>(
@@ -31,7 +32,7 @@ class SelectClause<T : KPojo>(
     private var tableName = pojo.kronosTableName()
     private var paramMap = pojo.transformToMap()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var allFields: LinkedHashSet<Field> = pojo.kronosColumns().toLinkedSet()
+    private var allFields = pojo.kronosColumns().toLinkedSet()
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
@@ -175,10 +176,10 @@ class SelectClause<T : KPojo>(
         val offsetKeyword = if (isPage) "OFFSET" else null
 
         // 检查 isGroup 标志
-        val groupByKeyword = if (isGroup) "GROUP BY" + (groupByFields.takeIf { it.isNotEmpty() }?.joinToString(",") { it.quoted() }) else null
+        val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.quoted() }) else null
 
         // 检查 isHaving 标志
-        val havingKeyword = if (isHaving) "HAVING" + (havingCondition.let {
+        val havingKeyword = if (isHaving) "HAVING " + (havingCondition.let {
             it?.children ?.joinToString(" AND ") { it?.field?.equation().toString() }
         }) else null
 
@@ -187,7 +188,7 @@ class SelectClause<T : KPojo>(
 
         val sql = listOfNotNull(
             selectKeyword,
-            if (selectFields.isEmpty()) "*" else selectFields.joinToString(",") {
+            if (selectFields.isEmpty()) "*" else selectFields.joinToString(", ") {
                 it.let {
                     // 加别名
                     if (it.name != it.columnName) {

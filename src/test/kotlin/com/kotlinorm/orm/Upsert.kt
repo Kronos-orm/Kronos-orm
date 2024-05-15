@@ -48,7 +48,7 @@ class Upsert {
             .on { it.id }.build()
 
         assertEquals(
-            "INSERT INTO `tb_user` (`id`, `create_time`, `update_time`, `deleted`) SELECT :id, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `gender` = :gender, `id` = :id, `username` = :username WHERE `id` = :id AND `deleted` = :deleted",
+            "INSERT INTO `tb_user` (`id`, `create_time`, `update_time`, `deleted`) SELECT :id, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `id` = :id, `username` = :username, `gender` = :gender WHERE `id` = :id AND `deleted` = :deleted",
             sql
         )
         assertEquals(

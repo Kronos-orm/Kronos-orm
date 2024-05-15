@@ -39,11 +39,11 @@ class Select {
     @Test
     fun testSelect3() {
         val (sql, paramMap) = User()
-            .select { it.username }
+            .select { it.username+ it.gender }
             .where { it.id > 10 }
             .distinct()
-            .groupBy { it.id }
-           // .orderBy { it.id.desc + it.username.asc }
+            .groupBy { it.id + it.gender }
+         //   .orderBy { it.id.desc + it.username.asc }
             .having { it.id.eq }
             .build()
 

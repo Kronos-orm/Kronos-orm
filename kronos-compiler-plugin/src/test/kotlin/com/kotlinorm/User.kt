@@ -5,9 +5,7 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.delete.DeleteClause.Companion.build
-import com.kotlinorm.orm.delete.DeleteClause.Companion.by
-import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.select.select
 
 @Table(name = "tb_user")
 data class User(
@@ -26,5 +24,5 @@ fun main() {
     val user = User(1)
     val testUser = User(1, "test")
 
-    val (sql, paramMap) = listOf(user, testUser).delete().by { it.id }.build()
+    val (sql, paramMap) = user.select { it.id + it.username + it.gender }.build()
 }

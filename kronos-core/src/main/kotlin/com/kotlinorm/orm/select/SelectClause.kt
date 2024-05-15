@@ -31,58 +31,83 @@ import com.kotlinorm.utils.toLinkedSet
 class SelectClause<T : KPojo>(
     private val pojo: T, setSelectFields: KTableField<T, Any?> = null
 ) {
-
     internal lateinit var tableName: String
     internal lateinit var logicDeleteStrategy: KronosCommonStrategy
     private var condition: Criteria? = null
+    private var havingCondition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var paramMap: MutableMap<String, Any?> = mutableMapOf()
+    var selectFields: LinkedHashSet<Field> = linkedSetOf()
     var allFields: LinkedHashSet<Field> = linkedSetOf()
+    var groupByFields: LinkedHashSet<Field> = linkedSetOf()
+    var orderByFields: LinkedHashSet<Field> = linkedSetOf()
+    var isDistinct = false
+    var isPage = false
+    var isGroup = false
+    var isHaving = false
+    var isOrder = false
+    var ps = 0
+    var offset = 0
 
     init {
         paramMap.putAll(pojo.toMap())
         if (setSelectFields != null) {
             pojo.tableRun {
                 setSelectFields()
+                selectFields = fields.toLinkedSet()
             }
         }
     }
 
-    fun orderBy(lambda: KTableSortableField<T, Unit>): SelectClause<T> {
+    fun orderBy(sortableFields: KTableSortableField<T, Unit>): SelectClause<T> {
         TODO()
+        /*isOrder = true
+        if(sortableFields == null) throw NeedFieldsException()
+        pojo.tableRun {
+            sortableFields()
+            orderByFields = fields.toLinkedSet()
+        }
+        return this*/
     }
 
-    fun groupBy(lambda: KTableField<T, Unit>): SelectClause<T> {
-        TODO()
+    fun groupBy(someFields: KTableField<T, Unit>): SelectClause<T> {
+        isGroup = true
+        if(someFields == null) throw NeedFieldsException()
+        pojo.tableRun {
+            someFields()
+            groupByFields = fields.toLinkedSet()
+        }
+        return this
     }
 
     fun distinct(): SelectClause<T> {
-        TODO()
+        isDistinct = true
+        return this
     }
 
     fun limit(num: Int): SelectClause<T> {
-        TODO()
+        ps = num
+        return this
     }
 
     fun offset(num: Int): SelectClause<T> {
-        TODO()
+        offset = num
+        return this
     }
 
     fun page(pi: Int, ps: Int): SelectClause<T> {
-        // page(1, 10) limit 10 offset 0
+        isDistinct = true
         val offset = (pi - 1) * ps
-        return this.apply {
-            lastCondition = listOfNotNull(
-                lastCondition, "limit ${ps} offset ${offset}".asSql()
-            ).toCriteria()
-        }
+        limit(ps)
+        offset(offset)
+        return this
     }
 
     fun by(someFields: KTableField<T, Any?>): SelectClause<T> {
         if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
             someFields()
-            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
+            havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this
     }
@@ -102,8 +127,15 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun having(lambda: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
-        TODO()
+    fun having(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
+        isHaving = true
+        if (selectCondition == null) throw NeedFieldsException()
+        pojo.conditionalRun {
+            propParamMap = paramMap
+            selectCondition()
+            havingCondition = criteria
+        }
+        return this
     }
 
     fun withTotal(): PagedClause<SelectClause<T>> {
@@ -144,9 +176,27 @@ class SelectClause<T : KPojo>(
 
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 
+        // 检查 isDistinct 标志
+        val selectKeyword = if (selectFields.isEmpty()) "*" else if (isDistinct) "SELECT DISTINCT" else "SELECT"
+
+        // 检查 isPage 标志
+        val limitKeyword = if (isPage) "LIMIT" else null
+        val offsetKeyword = if (isPage) "OFFSET" else null
+
+        // 检查 isGroup 标志
+        val groupByKeyword = if (isGroup) "GROUP BY" + (groupByFields.takeIf { it.isNotEmpty() }?.joinToString(",") { it.quoted() }) else null
+
+        // 检查 isHaving 标志
+        val havingKeyword = if (isHaving) "HAVING" + (havingCondition.let {
+            it?.children ?.joinToString(" AND ") { it?.field?.equation().toString() }
+        }) else null
+
+        // 添加分页到 SQL
+        val limitOffsetPart = if (isPage) " $limitKeyword ${ps} $offsetKeyword ${offset}" else null
+
         val sql = listOfNotNull(
-            "SELECT",
-            if (allFields.isEmpty()) "*" else allFields.joinToString(",") {
+            selectKeyword,
+            if (selectFields.isEmpty()) "*" else selectFields.joinToString(",") {
                 it.let {
                     // 加别名
                     if (it.name != it.columnName) {
@@ -158,13 +208,16 @@ class SelectClause<T : KPojo>(
             },
             "FROM `$tableName`",
             "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
-            conditionSql?.ifEmpty { null }
+            conditionSql?.ifEmpty { null },
+            groupByKeyword,
+            havingKeyword,
+            limitOffsetPart
         ).joinToString(" ")
 
         return KronosAtomicTask(
             sql,
             paramMap,
-            operationType = KOperationType.UPDATE
+            operationType = KOperationType.SELECT
         )
     }
 

@@ -32,24 +32,25 @@ class Select {
     fun testSelect2() {
         val (sql, paramMap) = user.select { it.id }.page(1, 10)/*.withTotal()*/.build()
 
+        assertEquals(mapOf("id" to 1), paramMap)
         assertEquals("select id from tb_user where deleted = 0 limit 10 offset 0", sql)
-        assertEquals(mapOf(), paramMap)
     }
 
-//    @Test
-//    fun testSelect3() {
-//        val (sql, paramMap) = User()
-//            .select { it.username }
-//            .where { it.id > 10 }
-//            .distinct()
-//            .groupBy { it.id }
-//            .orderBy { it.id.desc + it.username.asc }
-//            .having { it.id.eq }
-//
-//        assertEquals(
-//            "select distinct username from tb_user where id > :idMin group by id order by id desc, username asc",
-//            sql
-//        )
-//        assertEquals(mapOf("idMin" to 10, "id" to 1), paramMap)
-//    }
+    @Test
+    fun testSelect3() {
+        val (sql, paramMap) = User()
+            .select { it.username }
+            .where { it.id > 10 }
+            .distinct()
+            .groupBy { it.id }
+           // .orderBy { it.id.desc + it.username.asc }
+            .having { it.id.eq }
+            .build()
+
+        assertEquals(mapOf("idMin" to 10), paramMap)
+        assertEquals(
+            "SELECT DISTINCT username FROM tb_user WHERE id > :idMin GROUP BY id ORDER BY id DESC, username ASC HAVING id = :id",
+            sql
+        )
+    }
 }

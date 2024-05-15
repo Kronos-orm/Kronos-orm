@@ -30,6 +30,8 @@ import com.kotlinorm.interfaces.KPojo
  * @property it the instance of the table
  */
 class KTableSortable<T : KPojo>(override val it: T) : KTable<T>(it) {
+    val pairList = mutableListOf<Pair<Field, SortType>>()
+
     val Any?.desc get(): Pair<Any?, SortType> = this to DESC
     val Any?.asc get(): Pair<Any?, SortType> = this to ASC
 }

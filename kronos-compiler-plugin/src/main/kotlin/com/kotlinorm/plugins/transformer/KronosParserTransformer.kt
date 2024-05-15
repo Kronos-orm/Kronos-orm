@@ -20,15 +20,21 @@ import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddFieldTransformer
 import com.kotlinorm.plugins.transformer.kTable.KTableAddParamTransformer
+import com.kotlinorm.plugins.transformer.kTable.KTableSortableParseReturnTransformer
+import com.kotlinorm.plugins.utils.kTable.KTABLE_CLASS
+import com.kotlinorm.plugins.utils.kTableConditional.KTABLE_CONDITIONAL_CLASS
+import com.kotlinorm.plugins.utils.kTableSortType.KTABLE_SORTABLE_CLASS
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.statements
 
 /**
@@ -113,7 +119,7 @@ class KronosParserTransformer(
             +irBlock {
                 +irFunction.body!!.statements
             }
-                .transform(SortableParseReturnTransformer(pluginContext, irFunction), null)
+                .transform(KTableSortableParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

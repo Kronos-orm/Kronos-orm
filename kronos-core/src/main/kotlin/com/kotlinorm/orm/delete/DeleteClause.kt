@@ -32,12 +32,16 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
     fun logic(): DeleteClause<T> {
         this.logic = true
+        // TODO：这里有问题
+        // 这里逻辑是错的，若logicDeleteStrategy.enabled为false则抛出异常
+        // 若updateTimeStrategy.enabled为false则不更新updateTime，而不是强制更新
         this.logicDeleteStrategy.enabled = true
         this.updateTimeStrategy.enabled = true
         return this
     }
 
     fun by(someFields: KTableField<T, Any?>): DeleteClause<T> {
+        // TODO:someFields为空时抛出异常
         if (someFields == null) return this
         pojo.tableRun {
             someFields()
@@ -51,11 +55,12 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     }
 
     fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
-        if (deleteCondition == null) return this.apply {
+        if (deleteCondition == null) {
             // 获取所有字段 且去除null
             condition = paramMap.keys.mapNotNull { propName ->
                 allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
             }.toCriteria()
+            return this
         }
         pojo.conditionalRun {
             propParamMap = paramMap
@@ -66,7 +71,6 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     }
 
     fun build(): KronosAtomicTask {
-
         if (logic) {// 设置Where内的逻辑删除
             setCommonStrategy(logicDeleteStrategy) { field, value ->
                 condition = listOfNotNull(

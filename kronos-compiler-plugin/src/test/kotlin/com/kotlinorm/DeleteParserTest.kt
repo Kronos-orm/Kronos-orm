@@ -34,6 +34,7 @@ class DeleteParserTest {
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by
             import com.kotlinorm.annotations.CreateTime
+            import com.kotlinorm.utils.Extensions.transformToKPojo
                     
             @Table(name = "tb_user")
             data class User(
@@ -53,10 +54,10 @@ class DeleteParserTest {
                     
                 val user = User(1)
                 val testUser = User(1, "test")
-                val t = user.kronosColumns()
+                val m = mutableMapOf("id" to 2)
+                val u = m.transformToKPojo<User>()
                     
                 val (sql, paramMap) = user.delete().by { it.id }.build()
-                println(user.transformToMap())
             }        
       """.trimIndent()
             )

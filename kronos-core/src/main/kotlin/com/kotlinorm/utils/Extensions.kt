@@ -6,50 +6,17 @@ import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.AND
 import com.kotlinorm.enums.ConditionType
 import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.javaType
+import kotlin.reflect.full.createInstance
 
 object Extensions {
-    private val constructors: Map<KClass<*>, KFunction<*>> = mutableMapOf()
-
     /* AN extension function of Map. It will return a KPojo of the map. */
-    inline fun <reified K : KPojo> Map<String, Any?>.toKPojo(): K {
-        return toKPojo(K::class) as K
+    inline fun <reified K : KPojo> Map<String, Any?>.transformToKPojo(): K {
+        return K::class.createInstance().fromMapValue(this)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    fun Map<String, *>.toKPojo(clazz: KClass<*>): Any {
-        val constructor = constructors.getOrDefault(clazz, clazz.primaryConstructor)!!
-        return try {
-            val booleanNames =
-                constructor.parameters.filter { it.name == "boolean" }.map { it.name }
-            constructor.callBy(constructor.parameters.associateWith {
-                if (booleanNames.contains(it.name)) {
-                    (this[it.name] is Int && this[it.name] == 1) || this[it.name] != null
-                } else {
-                    this[it.name] ?: this[fieldDb2k(it.name!!)]
-                }
-            })
-        } catch (e: IllegalArgumentException) {
-            // compare the argument type of constructor and the given value, print which argument is mismatched
-            val mismatchedArgument = constructor.parameters.first {
-                if (this[it.name] == null) {
-                    !it.isOptional
-                } else {
-                    it.type.javaType.typeName != this[it.name]!!.javaClass.typeName
-                }
-            }
-            if (this[mismatchedArgument.name] == null) {
-                throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is null, but it's not optional.").apply {
-                    addSuppressed(e)
-                }
-            } else {
-                throw IllegalArgumentException("The argument ${clazz.simpleName}.${mismatchedArgument.name} is ${this[mismatchedArgument.name]!!.javaClass.typeName} but expected ${mismatchedArgument.type.javaType.typeName}.").apply {
-                    addSuppressed(e)
-                }
-            }
-        }!!
+    /* AN extension function of Map. It will return a KPojo of the map. */
+    fun Map<String, Any?>.transformToKPojo(kClass: KClass<*>): Any {
+        return (kClass.createInstance() as KPojo).fromMapValue(this)
     }
 
     internal fun List<Criteria>.toCriteria(): Criteria {

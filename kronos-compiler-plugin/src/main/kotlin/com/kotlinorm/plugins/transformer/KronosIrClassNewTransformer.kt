@@ -41,6 +41,7 @@ class KronosIrClassNewTransformer(
                 with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {
                     when (declaration.name.asString()) {
                         "transformToMap" -> declaration.body = createToMapFunction(irClass, declaration)
+                        "fromMapValue" -> declaration.body = createFromMapValueFunction(irClass, declaration)
                         "kronosTableName" -> declaration.body = createKronosTableName(irClass)
                         "kronosColumns" -> declaration.body = createGetFieldsFunction(irClass)
                         "kronosCreateTime" -> declaration.body = createKronosCreateTime(irClass)

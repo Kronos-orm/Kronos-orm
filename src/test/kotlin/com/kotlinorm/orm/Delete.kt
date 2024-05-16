@@ -3,6 +3,8 @@ package com.kotlinorm.orm
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.delete.DeleteClause.Companion.build
+import com.kotlinorm.orm.delete.DeleteClause.Companion.where
 import com.kotlinorm.orm.delete.delete
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -16,6 +18,7 @@ class Delete {
     }
 
     private val user = User(1)
+    private val testUser = User(1,"username")
 
     @Test
     fun testDelete() {
@@ -74,5 +77,37 @@ class Delete {
         // delete from tb_user where name = 'John' and email like 'john%'
         assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
         assertEquals(mapOf("username" to "John", "gender" to 0), paramMap)
+    }
+
+    @Test
+    fun testDeleteArray() {
+        val (sql, paramMapArr) = arrayOf(user,testUser).delete().where {
+            it.username == "John" && it.gender == 0
+        }.build()
+        // delete from tb_user where name = 'John' and email like 'john%'
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
+        assertEquals(
+            arrayOf(
+                mapOf("username" to "John", "gender" to 0),
+                mapOf("username" to "John", "gender" to 0)
+            ).toList(), paramMapArr!!.toList()
+
+        )
+    }
+
+    @Test
+    fun testDeleteIter() {
+        val (sql, paramMapArr) = listOf(user,testUser).delete().where {
+            it.username == "John" && it.gender == 0
+        }.build()
+        // delete from tb_user where name = 'John' and email like 'john%'
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
+        assertEquals(
+            arrayOf(
+                mapOf("username" to "John", "gender" to 0),
+                mapOf("username" to "John", "gender" to 0)
+            ).toList(), paramMapArr!!.toList()
+
+        )
     }
 }

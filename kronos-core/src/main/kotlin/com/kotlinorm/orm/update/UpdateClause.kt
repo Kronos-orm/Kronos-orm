@@ -33,6 +33,7 @@ import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.Extensions.transformToKPojo
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
@@ -63,12 +64,21 @@ class UpdateClause<T : KPojo>(
     private var condition: Criteria? = null
     private var paramMapNew = mutableMapOf<Field, Any?>()
 
+    /**
+     * 初始化函数：用于配置更新字段和构建参数映射。
+     * 该函数不接受参数，也不返回任何值。
+     * 主要完成以下功能：
+     * 1. 如果设置了更新字段，则对更新字段进行配置，并添加到更新字段列表中；
+     * 2. 遍历更新字段列表，将字段名拼接为"New"格式，并映射到参数映射表中。
+     */
     init {
+        // 如果设置了更新字段，则进行字段配置和更新字段列表的构建
         if (setUpdateFields != null) {
             pojo.tableRun {
-                setUpdateFields!!()
-                toUpdateFields += fields
+                setUpdateFields!!() // 配置更新字段
+                toUpdateFields += fields // 将当前字段添加到更新字段列表
             }
+            // 为每个更新字段在参数映射表中创建"New"版本的映射
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
@@ -154,40 +164,46 @@ class UpdateClause<T : KPojo>(
         updateTimeStrategy.enabled = true
         logicDeleteStrategy.enabled = true
 
-        // 如果 isExcept 为 true，则将 toUpdateFields 中的字段从 allFields 中移除
+        // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
         if (isExcept) {
+            // 移除指定字段并处理"create_time"字段的特殊情况
             toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet
             toUpdateFields = toUpdateFields.filter { it.columnName != "create_time" }.toCollection(LinkedHashSet())
+            // 为更新的字段生成新的参数映射
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
 
+        // 如果没有指定字段需要更新，则更新所有字段
         if (toUpdateFields.isEmpty()) {
-            // 全都更新
             toUpdateFields = allFields
+            // 为所有字段生成新的参数映射
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
             }
         }
 
-        // 设置逻辑删除
+        // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
         setCommonStrategy(logicDeleteStrategy) { field, value ->
             toUpdateFields -= field
             paramMapNew -= field + "New"
+            // 构建逻辑删除的条件SQL
             condition = listOfNotNull(
                 condition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
             ).toCriteria()
         }
 
-        // 设置更新时间
+        // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
         setCommonStrategy(updateTimeStrategy, true) { field, value ->
             toUpdateFields += field
             paramMapNew[field + "New"] = value
         }
 
+        // 构建SQL语句中的更新字段部分
         val updateFields = toUpdateFields.joinToString(", ") { "${it.quoted()} = :${it + "New"}" }
 
+        // 构建完整的更新SQL语句，包括条件部分
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 
         val sql = listOfNotNull(
@@ -199,8 +215,9 @@ class UpdateClause<T : KPojo>(
             conditionSql?.ifEmpty { null }
         ).joinToString(" ")
 
-        // 合并
+        // 合并参数映射，准备执行SQL所需的参数
         paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
+        // 返回构建好的KronosAtomicTask实例
         return KronosAtomicTask(
             sql,
             paramMap,

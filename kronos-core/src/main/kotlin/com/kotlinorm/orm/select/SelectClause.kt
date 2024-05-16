@@ -88,7 +88,7 @@ class SelectClause<T : KPojo>(
     }
 
     fun page(pi: Int, ps: Int): SelectClause<T> {
-        isDistinct = true
+        isPage = true
         val offset = (pi - 1) * ps
         limit(ps)
         offset(offset)

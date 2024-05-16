@@ -22,9 +22,9 @@ class Select {
     @Test
     fun testSelect() {
 
-        val (sql, paramMap) = user.select { it.id + it.username + it.gender }.build()
+        val (sql, paramMap) = user.select { it.id + it.username + it.gender+"123" }.build()
 
-        assertEquals("SELECT `id`,`username`,`gender`,`create_time`,`update_time`,`deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals("SELECT `id`, `username`, `gender`, `123` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
         assertEquals(mapOf("id" to 1), paramMap)
     }
 

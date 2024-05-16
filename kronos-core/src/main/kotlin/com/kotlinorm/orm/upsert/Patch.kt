@@ -11,3 +11,5 @@ inline fun <reified T : KPojo> T.upsert(noinline setUpdateFields: (KTable<T>.() 
 inline fun <reified T : KPojo> T.upsertExcept(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): UpsertClause<T> {
     return UpsertClause(this, true, setUpdateFields)
 }
+
+// TODO: 支持批量upsert

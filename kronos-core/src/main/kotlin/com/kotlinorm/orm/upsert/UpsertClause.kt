@@ -34,7 +34,7 @@ class UpsertClause<T : KPojo>(
     private var isExcept: Boolean = false,
     private var setUpsertFields: KTableField<T, Unit> = null
 ) {
-    private var paramMap = pojo.transformToMap()
+    private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var createTimeStrategy = pojo.kronosCreateTime()
     private var updateTimeStrategy = pojo.kronosUpdateTime()

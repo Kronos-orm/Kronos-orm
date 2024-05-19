@@ -12,7 +12,7 @@ import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
 class InsertClause<T : KPojo>(pojo: T) {
-    private var paramMap = pojo.transformToMap()
+    private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var createTimeStrategy = pojo.kronosCreateTime()
     private var updateTimeStrategy = pojo.kronosUpdateTime()

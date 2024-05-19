@@ -30,7 +30,7 @@ class SelectClause<T : KPojo>(
     private val pojo: T, setSelectFields: KTableField<T, Any?> = null
 ) {
     private var tableName = pojo.kronosTableName()
-    private var paramMap = pojo.transformToMap()
+    private var paramMap = pojo.toDataMap()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var condition: Criteria? = null

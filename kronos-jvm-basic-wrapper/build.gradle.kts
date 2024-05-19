@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation(project(":kronos-core"))
+    implementation(kotlin("reflect"))
     testImplementation("commons-dbcp:commons-dbcp:1.4")
     testImplementation(kotlin("test"))
 }

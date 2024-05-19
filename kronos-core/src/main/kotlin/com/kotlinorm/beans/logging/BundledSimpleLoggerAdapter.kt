@@ -20,6 +20,7 @@ import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+import kotlinx.io.files.Path
 
 /**
  * BundledSimpleLoggerAdapter
@@ -197,8 +198,9 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                             message.print(logTask.level)
                         }
                     } else {
+                        val logFileName = logFileNameRule()
                         logTask.messages.forEach { message ->
-                            message.write(path, logFileNameRule())
+                            message.write(Path(path, logFileName))
                         }
                     }
                 }

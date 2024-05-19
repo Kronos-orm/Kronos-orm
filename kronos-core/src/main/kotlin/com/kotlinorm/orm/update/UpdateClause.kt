@@ -54,7 +54,7 @@ class UpdateClause<T : KPojo>(
     private var isExcept: Boolean = false,
     private var setUpdateFields: KTableField<T, Any?> = null
 ) {
-    private var paramMap = pojo.transformToMap()
+    private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()

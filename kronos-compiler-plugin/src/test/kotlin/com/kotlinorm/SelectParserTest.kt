@@ -57,7 +57,7 @@ class SelectParserTest {
                 val t = user.kronosColumns()
                     
                 val (sql, paramMap) = user.select { it.id + it.username + "123" }.build()
-                println(user.transformToMap())
+                println(user.toDataMap())
             }        
       """.trimIndent()
             )

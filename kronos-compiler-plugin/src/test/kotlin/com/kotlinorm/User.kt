@@ -6,7 +6,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.utils.Extensions.transformToKPojo
+import com.kotlinorm.utils.Extensions.mapperTo
 
 @Table(name = "tb_user")
 data class User(
@@ -25,7 +25,7 @@ fun main() {
     val user = User(1)
     val testUser = User(1, "test")
     val m = mapOf("id" to 2)
-    val u = m.transformToKPojo<User>()
+    val u = m.mapperTo<User>()
 
     val (sql, paramMap) = user.select { it.id + it.username + it.gender }.build()
 }

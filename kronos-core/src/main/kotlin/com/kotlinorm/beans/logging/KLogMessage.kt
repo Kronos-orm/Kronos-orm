@@ -19,8 +19,9 @@ package com.kotlinorm.beans.logging
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter.Companion.format
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
-import java.io.File
-import java.io.FileWriter
+import kotlinx.io.Buffer
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 /**
  * Log line
@@ -39,7 +40,6 @@ class KLogMessage(
     internal var codes: Array<ColorPrintCode> = arrayOf(),
     private var endLine: Boolean = false,
 ) {
-
     /**
      * End log line
      *
@@ -69,19 +69,20 @@ class KLogMessage(
      *
      * @param path
      */
-    fun write(path: String, fileName: String) {
-        val file = File(path, fileName)
-        if (!file.exists()) {
-            file.createNewFile()
+    fun write(path: Path) {
+        if (!SystemFileSystem.exists(path)) {
+            throw RuntimeException("File $path not found.")
         }
-        val writer = FileWriter(file, true)
-        if (endLine) {
-            writer.write(text + "\r")
-        } else {
-            writer.write(text)
+        with(SystemFileSystem.sink(path, true)) {
+            (text + "\n".takeIf { endLine }).toByteArray().let { byteArray ->
+                write(
+                    Buffer().apply {
+                        write(byteArray)
+                    },
+                    byteArray.size.toLong()
+                )
+            }
         }
-        writer.flush()
-        writer.close()
     }
 
     /**

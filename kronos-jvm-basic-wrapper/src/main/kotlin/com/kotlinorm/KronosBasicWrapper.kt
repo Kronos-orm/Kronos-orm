@@ -25,12 +25,13 @@ import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.Extensions.transformToKPojo
+import com.kotlinorm.utils.Extensions.mapperTo
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 import javax.sql.DataSource
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSuperclassOf
 
 /**
  * Kronos Basic Jdbc Wrapper
@@ -111,8 +112,9 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [SQLException] if an error occurs while executing the query
      */
     override fun forList(task: KronosAtomicTask, kClass: KClass<*>): List<Any> {
-        return if (kClass.java.isAssignableFrom(KPojo::class.java)) {
-            forList(task).map { it.transformToKPojo(kClass) }
+        return if (KPojo::class.isSuperclassOf(kClass)) {
+            @Suppress("UNCHECKED_CAST")
+            forList(task).map { it.mapperTo(kClass as KClass<KPojo>) }
         } else {
             val (sql, paramList) = task.parsed()
             val conn = dataSource.connection
@@ -203,8 +205,9 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         val clazz = kClass.java
         return if (String::class.java == kClass.java) {
             map?.values?.firstOrNull()?.toString()
-        } else if (KPojo::class.java.isAssignableFrom(kClass.java)) {
-            map?.transformToKPojo(kClass)
+        } else if (KPojo::class.isSuperclassOf(kClass)) {
+            @Suppress("UNCHECKED_CAST")
+            map?.mapperTo(kClass as KClass<KPojo>)
         } else if (clazz.name == "java.lang.Integer") {
             map?.values?.firstOrNull()?.toString()?.toInt()
         } else if (clazz.name == "long") {

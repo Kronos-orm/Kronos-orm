@@ -88,8 +88,8 @@ internal fun IrCall.subTypeClass(num: Int = 1): IrClass {
  * @return The valid strategy as an IrExpression, or null if no valid strategy is found.
  */
 context(IrBuilderWithScope, IrPluginContext)
-internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression? {
-    var strategy: IrExpression? = applyIrCall(globalSymbol).asIrCall()
+internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
+    var strategy: IrExpression = applyIrCall(globalSymbol).asIrCall()
     val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
     if (tableSetting == null || (tableSetting is IrConst<*> && tableSetting.value == true)) {
         var annotation: IrConstructorCall?

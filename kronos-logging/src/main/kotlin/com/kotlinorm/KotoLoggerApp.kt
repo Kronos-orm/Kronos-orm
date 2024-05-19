@@ -9,7 +9,6 @@ import com.kotlinorm.exceptions.KotoNoLoggerException
 import com.kotlinorm.i18n.Noun
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
-import com.kotlinorm.utils.DataSourceUtil.javaName
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
@@ -27,7 +26,7 @@ object KotoLoggerApp {
     }
 
     private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
-        val tag = loggingClazz.javaName
+        val tag = loggingClazz::class.simpleName!!
         return when (Kronos.loggerType) {
             KLoggerType.ANDROID_LOGGER -> AndroidUtilLoggerAdapter(tag)
             KLoggerType.COMMONS_LOGGER -> ApacheCommonsLoggerAdapter(tag)
@@ -40,7 +39,7 @@ object KotoLoggerApp {
 
     fun detectLoggerImplementation() {
         Kronos.defaultLogger = { getKotoLoggerInstance(it) }
-        val tag = "com.kotlinorm.jdbcWrapper"
+        val tag = "com.kotlinorm.core"
         var result: KLogger? = null
 
         infix fun KLoggerType.detect(init: () -> KLogger) {

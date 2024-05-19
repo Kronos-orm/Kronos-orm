@@ -14,12 +14,11 @@ import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeResolver
-import com.kotlinorm.utils.DataSourceUtil.javaName
 import kotlin.reflect.full.declaredFunctions
 
 object Kronos {
     var defaultLogger: (Any) -> KLogger =
-        { BundledSimpleLoggerAdapter(it.javaName) }
+        { BundledSimpleLoggerAdapter(it::class.simpleName!!) }
     internal var noValueStrategy = NoValueStrategy.Ignore
 
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper() }

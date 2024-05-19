@@ -113,7 +113,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalCreateTimeSymbol, CreateTimeFqName) ?: irNull()
+            getValidStrategy(declaration, globalCreateTimeSymbol, CreateTimeFqName)
         )
     }
 }
@@ -122,7 +122,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalUpdateTimeSymbol, UpdateTimeFqName) ?: irNull()
+            getValidStrategy(declaration, globalUpdateTimeSymbol, UpdateTimeFqName)
         )
     }
 }
@@ -131,7 +131,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalLogicDeleteSymbol, LogicDeleteFqName) ?: irNull()
+            getValidStrategy(declaration, globalLogicDeleteSymbol, LogicDeleteFqName)
         )
     }
 }

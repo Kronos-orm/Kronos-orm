@@ -9,14 +9,16 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 object Extensions {
-    /* AN extension function of Map. It will return a KPojo of the map. */
-    inline fun <reified K : KPojo> Map<String, Any?>.transformToKPojo(): K {
-        return K::class.createInstance().fromMapValue(this)
+    inline fun <reified K : KPojo> Map<String, Any?>.mapperTo(): K {
+        return K::class.createInstance().fromMapData(this)
     }
 
-    /* AN extension function of Map. It will return a KPojo of the map. */
-    fun Map<String, Any?>.transformToKPojo(kClass: KClass<*>): Any {
-        return (kClass.createInstance() as KPojo).fromMapValue(this)
+    fun Map<String, Any?>.mapperTo(kClass: KClass<KPojo>): Any {
+        return kClass.createInstance().fromMapData(this)
+    }
+
+    inline fun <reified K : KPojo> KPojo.mapperTo(): K {
+        return K::class.createInstance().fromMapData(toDataMap())
     }
 
     internal fun List<Criteria>.toCriteria(): Criteria {

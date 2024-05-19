@@ -1,14 +1,15 @@
 package com.kotlinorm.plugins.transformer.kTable
 
-import com.kotlinorm.plugins.utils.kTableSortType.setFieldSortsIr
+import com.kotlinorm.plugins.utils.kTableSortType.addFieldSortsIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
+import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrReturn
 
 /**
  *@program: kronos-orm
@@ -20,17 +21,16 @@ class KTableSortableParseReturnTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction
 ) : IrElementTransformerVoidWithContext() {
-
-    override fun visitCall(expression: IrCall): IrExpression {
+    override fun visitReturn(expression: IrReturn): IrExpression {
         with(pluginContext) {
             with(irFunction) {
-                return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-                    if (expression.origin in arrayOf(IrStatementOrigin.PLUS, IrStatementOrigin.GET_PROPERTY)) {
-                        +setFieldSortsIr()
+                with(DeclarationIrBuilder(pluginContext, irFunction.symbol)) {
+                    return irBlock {
+                        +addFieldSortsIr(expression)
+                        +irReturn(irNull())
                     }
                 }
             }
         }
     }
-
 }

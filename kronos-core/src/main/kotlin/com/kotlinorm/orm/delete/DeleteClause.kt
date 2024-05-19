@@ -46,7 +46,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         // 检查传入的someFields是否为null，若为null则抛出异常
         if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
-            someFields()
+            someFields(it)
             // 若fields为空，则抛出异常，表示需要至少一个字段来构建删除条件
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
@@ -78,7 +78,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         // 如果指定了删除条件，执行条件函数，并设置条件
         pojo.conditionalRun {
             propParamMap = paramMap
-            deleteCondition()
+            deleteCondition(it)
             condition = criteria
         }
         return this

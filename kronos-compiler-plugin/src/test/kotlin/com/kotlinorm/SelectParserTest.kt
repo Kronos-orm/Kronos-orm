@@ -56,7 +56,7 @@ class SelectParserTest {
                 val testUser = User(1, "test")
                 val t = user.kronosColumns()
                     
-                val (sql, paramMap) = user.select { it.id + it.username + "123" }.build()
+                val (sql, paramMap) = user.select { it.id + it.username + "123" }.orderBy{ it.id.desc() + it.username + "SUM(id, uid)" }.build()
                 println(user.toDataMap())
             }        
       """.trimIndent()

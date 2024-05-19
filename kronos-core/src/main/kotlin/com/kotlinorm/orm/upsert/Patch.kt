@@ -2,13 +2,14 @@ package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable
+import com.kotlinorm.types.KTableField
 
 
-inline fun <reified T : KPojo> T.upsert(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): UpsertClause<T> {
+inline fun <reified T : KPojo> T.upsert(noinline setUpdateFields: KTableField<T, Unit> = null): UpsertClause<T> {
     return UpsertClause(this, false, setUpdateFields)
 }
 
-inline fun <reified T : KPojo> T.upsertExcept(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): UpsertClause<T> {
+inline fun <reified T : KPojo> T.upsertExcept(noinline setUpdateFields: KTableField<T, Unit> = null): UpsertClause<T> {
     return UpsertClause(this, true, setUpdateFields)
 }
 
@@ -16,28 +17,28 @@ inline fun <reified T : KPojo> T.upsertExcept(noinline setUpdateFields: (KTable<
 
 
 // 添加批量upsert功能
-inline fun <reified T : KPojo> Iterable<T>.upsert(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+inline fun <reified T : KPojo> Iterable<T>.upsert(noinline setUpdateFields: KTableField<T, Unit> = null): List<UpsertClause<T>> {
     return map { entity ->
         UpsertClause(entity, false, setUpdateFields)
     }
 }
 
 // 添加批量upsert except功能
-inline fun <reified T : KPojo> Iterable<T>.upsertExcept(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+inline fun <reified T : KPojo> Iterable<T>.upsertExcept(noinline setUpdateFields: KTableField<T, Unit> = null): List<UpsertClause<T>> {
     return map { entity ->
         UpsertClause(entity, true, setUpdateFields)
     }
 }
 
 // 对于Array类型的批量upsert功能
-inline fun <reified T : KPojo> Array<T>.upsert(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+inline fun <reified T : KPojo> Array<T>.upsert(noinline setUpdateFields: KTableField<T, Unit> = null): List<UpsertClause<T>> {
     return map { entity ->
         UpsertClause(entity, false, setUpdateFields)
     }
 }
 
 // 对于Array类型的批量upsert except功能
-inline fun <reified T : KPojo> Array<T>.upsertExcept(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+inline fun <reified T : KPojo> Array<T>.upsertExcept(noinline setUpdateFields: KTableField<T, Unit> = null): List<UpsertClause<T>> {
     return map { entity ->
         UpsertClause(entity, true, setUpdateFields)
     }

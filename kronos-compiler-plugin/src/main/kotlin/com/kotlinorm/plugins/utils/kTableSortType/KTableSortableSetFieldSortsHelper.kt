@@ -1,43 +1,62 @@
 package com.kotlinorm.plugins.utils.kTableSortType
 
 import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
-import com.kotlinorm.plugins.helpers.extensionBy
-import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 
 context(IrBlockBuilder, IrPluginContext, IrFunction)
-fun setFieldSortsIr() =
+fun addFieldSortsIr(irReturn: IrReturn) = getSortFields(irReturn).map {
     applyIrCall(
-        fieldSortsSetterSymbol, irGet(buildFieldSortsIr(body!!))
+        addSortFieldSymbol, it
     ) {
         dispatchBy(irGet(extensionReceiverParameter!!))
     }
+}
 
 context(IrBlockBuilder, IrPluginContext, IrFunction)
-fun buildFieldSortsIr(element: IrElement): IrVariable {
+fun getSortFields(element: IrElement): MutableList<IrExpression> {
+    val variables = mutableListOf<IrExpression>()
+    when (element) {
+        is IrBlockBody -> {
+            // 处理块体
+            element.statements.forEach { statement ->
+                variables.addAll(getSortFields(statement))
+            }
+        }
 
-    val irCall = ((element as IrBlockBody).statements[0] as IrTypeOperatorCall).argument as IrCall
-    val field = getColumnName(irCall.extensionReceiver!!)
+        is IrCall -> {
+            if (element.origin == IrStatementOrigin.GET_PROPERTY) {
+                variables.add(element)
+            } else {
+                when (element.asIrCall().funcName()) {
+                    "plus" -> {
+                        variables.addAll(getSortFields(element.extensionReceiver!!))
+                        variables.addAll(getSortFields(element.valueArguments.first()!!))
+                    }
 
-    val fieldSorts = applyIrCall(
-        createAscSymbol
-    ) {
-        extensionBy(field)
-    }.takeUnless { "desc" == irCall.funcName() } ?: applyIrCall(
-        createDescSymbol,
-    ) {
-        extensionBy(field)
+                    "desc", "asc" -> {
+                        variables.add(element)
+                    }
+                }
+            }
+        }
+
+        is IrGetValueImpl, is IrConst<*> -> {
+            variables.add(element as IrExpression)
+        }
+
+        is IrReturn -> {
+            return getSortFields(element.value)
+        }
     }
-
-    return SortableIR(fieldSorts).toIrVariable()
+    return variables
 }

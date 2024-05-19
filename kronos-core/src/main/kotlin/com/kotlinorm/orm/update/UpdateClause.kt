@@ -33,7 +33,6 @@ import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.Extensions.transformToKPojo
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
@@ -75,7 +74,7 @@ class UpdateClause<T : KPojo>(
         // 如果设置了更新字段，则进行字段配置和更新字段列表的构建
         if (setUpdateFields != null) {
             pojo.tableRun {
-                setUpdateFields!!() // 配置更新字段
+                setUpdateFields!!(it) // 配置更新字段
                 toUpdateFields += fields // 将当前字段添加到更新字段列表
             }
             // 为每个更新字段在参数映射表中创建"New"版本的映射
@@ -95,7 +94,7 @@ class UpdateClause<T : KPojo>(
     fun set(newValue: KTableField<T, Unit>): UpdateClause<T> {
         if (newValue == null) throw NeedFieldsException()
         pojo.tableRun {
-            newValue()
+            newValue(it)
             if (isExcept) {
                 toUpdateFields -= fields.toSet()
             } else {
@@ -116,7 +115,7 @@ class UpdateClause<T : KPojo>(
     fun by(someFields: KTableField<T, Any?>): UpdateClause<T> {
         if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
-            someFields()
+            someFields(it)
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this
@@ -138,7 +137,7 @@ class UpdateClause<T : KPojo>(
             }
         pojo.conditionalRun {
             propParamMap = paramMap // 更新 propParamMap
-            updateCondition()
+            updateCondition(it)
             condition = criteria
         }
         return this

@@ -17,7 +17,6 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.enums.NoValueStrategy
-import kotlin.reflect.full.createInstance
 
 /**
  * KTableConditional
@@ -28,7 +27,7 @@ import kotlin.reflect.full.createInstance
  *
  * @property it the instance of the table
  */
-open class KTableConditional<T : KPojo>(override val it: T) : KTable<T>(it) {
+open class KTableConditional<T : KPojo> : KTable<T>() {
     var criteria: Criteria? = null
 
     /**
@@ -344,7 +343,7 @@ open class KTableConditional<T : KPojo>(override val it: T) : KTable<T>(it) {
          * @param block The block of code to be applied to the [KTableConditional] instance.
          * @return The resulting [KTableConditional] instance after applying the block.
          */
-        fun <T : KPojo> T.conditionalRun(block: KTableConditional<T>.() -> Unit): KTableConditional<T> =
-            KTableConditional(this::class.createInstance()).apply(block)
+        fun <T : KPojo> T.conditionalRun(block: KTableConditional<T>.(T) -> Unit) =
+            KTableConditional<T>().block(this)
     }
 }

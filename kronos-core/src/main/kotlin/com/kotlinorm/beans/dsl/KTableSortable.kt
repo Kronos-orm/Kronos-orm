@@ -19,7 +19,6 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.ASC
 import com.kotlinorm.enums.DESC
 import com.kotlinorm.enums.SortType
-import kotlin.reflect.full.createInstance
 
 /**
  * KTableSortable
@@ -29,11 +28,32 @@ import kotlin.reflect.full.createInstance
  *
  * @property it the instance of the table
  */
-class KTableSortable<T : KPojo>(override val it: T) : KTable<T>(it) {
-    var fieldSorts = mutableListOf<Pair<Field?, SortType>>()
+class KTableSortable<T : KPojo> : KTable<T>() {
+    internal val sortFields = mutableListOf<Pair<Field, SortType>>()
+    internal val sortStrings = mutableListOf<String>()
 
-    val Any?.desc get(): Pair<Any?, SortType> = this to DESC
-    val Any?.asc get(): Pair<Any?, SortType> = this to ASC
+    @Suppress("UNCHECKED_CAST", "UNUSED")
+    fun addSortField(field: Any) {
+        when (field) {
+            is Pair<*, *> -> {
+                sortFields.add(field as Pair<Field, SortType>)
+            }
+
+            is String -> {
+                sortStrings.add(field)
+            }
+
+            else -> {
+                sortFields.add((field to ASC) as Pair<Field, SortType>)
+            }
+        }
+    }
+
+    @Suppress("UNUSED")
+    fun Any?.desc(): Pair<Any?, SortType> = this to DESC
+
+    @Suppress("UNUSED")
+    fun Any?.asc(): Pair<Any?, SortType> = this to ASC
 
     companion object {
         /**
@@ -43,7 +63,7 @@ class KTableSortable<T : KPojo>(override val it: T) : KTable<T>(it) {
          * @param block The block of code to be applied to the KTable instance.
          * @return The resulting KTable instance after applying the block.
          */
-        fun <T : KPojo> T.sortableRun(block: KTable<T>.() -> Unit): KTableSortable<T> =
-            KTableSortable(this::class.createInstance()).apply(block)
+        fun <T : KPojo> T.sortableRun(block: KTableSortable<T>.(T) -> Unit) =
+            KTableSortable<T>().block(this)
     }
 }

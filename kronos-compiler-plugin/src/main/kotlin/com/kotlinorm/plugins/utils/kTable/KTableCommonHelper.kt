@@ -66,10 +66,6 @@ context(IrPluginContext)
 internal val tableK2dbSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
 
-context(IrPluginContext)
-private val fieldSymbol
-    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
-
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 

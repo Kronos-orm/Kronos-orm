@@ -19,7 +19,6 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.utils.fieldK2db
 import kotlin.reflect.KProperty
-import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 
 /**
@@ -38,7 +37,7 @@ import kotlin.reflect.full.findAnnotation
  *
  * @property it the instance of the table
  */
-open class KTable<T : KPojo>(open val it: T) {
+open class KTable<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
     var propParamMap: MutableMap<String, Any?> = mutableMapOf()
     val fieldParamMap: MutableMap<Field, Any?> = mutableMapOf()
@@ -128,21 +127,12 @@ open class KTable<T : KPojo>(open val it: T) {
 
     companion object {
         /**
-         * Creates a KTable instance with the given KPojo object as the data source.
-         *
-         * @param T The type of the KPojo object.
-         * @return A KTable instance with the given KPojo object as the data source.
-         */
-        fun <T : KPojo> T.table(): KTable<T> = KTable(this::class.createInstance())
-
-        /**
          * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.
          *
          * @param T The type of the KPojo object.
          * @param block The block of code to be applied to the KTable instance.
          * @return The resulting KTable instance after applying the block.
          */
-        fun <T : KPojo> T.tableRun(block: KTable<T>.() -> Unit): KTable<T> =
-            KTable(this::class.createInstance()).apply(block)
+        fun <T : KPojo> T.tableRun(block: KTable<T>.(T) -> Unit) = KTable<T>().block(this)
     }
 }

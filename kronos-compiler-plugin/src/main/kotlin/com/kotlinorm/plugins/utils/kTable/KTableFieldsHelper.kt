@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.ir.util.constructors
 
 
 context(IrPluginContext)
-private val fieldSymbol
+internal val fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 /**

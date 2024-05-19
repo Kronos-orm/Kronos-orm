@@ -56,7 +56,7 @@ class SelectClause<T : KPojo>(
     init {
         if (setSelectFields != null) {
             pojo.tableRun {
-                setSelectFields() // 设置选择的字段
+                setSelectFields(it) // 设置选择的字段
                 selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
             }
         }
@@ -70,9 +70,11 @@ class SelectClause<T : KPojo>(
      *                   该参数指定了排序时所依据的字段。
      * @return 返回 [SelectClause] 对象，允许链式调用。
      */
-    fun orderBy(someFields: KTableSortableField<T, Unit>): SelectClause<T> {
-        pojo.sortableRun {
-            this // 在这里对排序操作进行封装，为后续的链式调用提供支持。
+    fun orderBy(someFields: KTableSortableField<T, Any?>): SelectClause<T> {
+        if(someFields!=null) {
+            pojo.sortableRun {
+                this// 在这里对排序操作进行封装，为后续的链式调用提供支持。
+            }
         }
         return this // 返回当前对象，允许继续进行其他查询操作。
     }
@@ -90,7 +92,7 @@ class SelectClause<T : KPojo>(
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if(someFields == null) throw NeedFieldsException()
         pojo.tableRun {
-            someFields()
+            someFields(it)
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
         }
@@ -163,7 +165,7 @@ class SelectClause<T : KPojo>(
         if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
             // 执行someFields中定义的查询逻辑
-            someFields()
+            someFields(it)
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
@@ -187,7 +189,7 @@ class SelectClause<T : KPojo>(
         }
         pojo.conditionalRun {
             propParamMap = paramMap
-            selectCondition() // 执行用户提供的条件函数
+            selectCondition(it) // 执行用户提供的条件函数
             condition = criteria // 设置查询条件
         }
         return this
@@ -208,7 +210,7 @@ class SelectClause<T : KPojo>(
         if (selectCondition == null) throw NeedFieldsException()
         pojo.conditionalRun {
             propParamMap = paramMap // 设置属性参数映射
-            selectCondition() // 执行传入的条件函数
+            selectCondition(it) // 执行传入的条件函数
             havingCondition = criteria // 设置HAVING条件
         }
         return this // 允许链式调用

@@ -48,7 +48,7 @@ class UpsertClause<T : KPojo>(
     init {
         if (setUpsertFields != null) {
             pojo.tableRun {
-                setUpsertFields!!()
+                setUpsertFields!!(it)
                 toUpdateFields += fields
             }
         }
@@ -73,7 +73,7 @@ class UpsertClause<T : KPojo>(
     fun on(someFields: KTableField<T, Unit>): UpsertClause<T> {
         if (null == someFields) throw NeedFieldsException()
         pojo.tableRun {
-            someFields()
+            someFields(it)
             onFields += fields.toSet()
         }
         return this

@@ -11,6 +11,7 @@ import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.update.updateExcept
+import com.kotlinorm.utils.Extensions.transformToKPojo
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.toAsyncTask
 import org.junit.jupiter.api.Test
@@ -858,6 +859,7 @@ class Update {
 
         assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0", sql)
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
+        assertEquals( testUser.transformToMap().transformToKPojo<User>().equals(testUser),true)
         // Update tb_user set username = 'test' where id = 1
     }
 
@@ -901,6 +903,27 @@ class Update {
     }
 
     @Test
+    fun testBatchUpdateExceptBy() {
+        val (sql, paramMapArr) = arrayOf(user, testUser).updateExcept { it.username }.by { it.id }.build()
+        assertEquals(
+            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            sql
+        )
+        assertEquals(
+            arrayOf(
+                mapOf(
+                    "usernameNew" to null, "id" to 1, "idNew" to 1, "genderNew" to null, "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
+                ),
+                mapOf(
+                    "usernameNew" to "test", "id" to 1, "idNew" to 1, "genderNew" to null, "updateTimeNew" to (paramMapArr?.get(1)
+                        ?.get("updateTimeNew") ?: "")
+                )
+            ).toList(), paramMapArr!!.toList()
+        )
+    }
+
+    @Test
     fun testBatchUpdateWhere() {
         val (sql, paramMapArr) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
         assertEquals(
@@ -915,6 +938,48 @@ class Update {
                 ),
                 mapOf(
                     "genderNew" to 2, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
+                )
+            ).toList(), paramMapArr!!.toList()
+        )
+    }
+
+    @Test
+    fun testBatchUpdateIterWhere() {
+        val (sql, paramMapArr) = listOf(user, testUser).updateExcept{ it.username  }.where { it.id.eq }.build()
+        assertEquals(
+            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            sql
+        )
+        assertEquals(
+            arrayOf(
+                mapOf(
+                    "usernameNew" to null, "id" to 1, "idNew" to 1, "genderNew" to null, "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
+                ),
+                mapOf(
+                    "usernameNew" to "test", "id" to 1, "idNew" to 1, "genderNew" to null, "updateTimeNew" to (paramMapArr?.get(1)
+                        ?.get("updateTimeNew") ?: "")
+                )
+            ).toList(), paramMapArr!!.toList()
+        )
+    }
+
+    @Test
+    fun testBatchUpdateExceptIterWhere() {
+        val (sql, paramMapArr) = listOf(user, testUser).updateExcept{ it.gender  }.where { it.id.eq }.build()
+        assertEquals(
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            sql
+        )
+        assertEquals(
+            arrayOf(
+                mapOf(
+                    "genderNew" to null, "id" to 1, "idNew" to 1, "usernameNew" to null,"updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
+                ),
+                mapOf(
+                    "genderNew" to null, "id" to 1, "idNew" to 1, "usernameNew" to "test", "updateTimeNew" to (paramMapArr?.get(0)
                         ?.get("updateTimeNew") ?: "")
                 )
             ).toList(), paramMapArr!!.toList()

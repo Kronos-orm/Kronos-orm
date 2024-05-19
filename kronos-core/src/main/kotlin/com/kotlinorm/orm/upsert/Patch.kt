@@ -13,3 +13,32 @@ inline fun <reified T : KPojo> T.upsertExcept(noinline setUpdateFields: (KTable<
 }
 
 // TODO: 支持批量upsert
+
+
+// 添加批量upsert功能
+inline fun <reified T : KPojo> Iterable<T>.upsert(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+    return map { entity ->
+        UpsertClause(entity, false, setUpdateFields)
+    }
+}
+
+// 添加批量upsert except功能
+inline fun <reified T : KPojo> Iterable<T>.upsertExcept(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+    return map { entity ->
+        UpsertClause(entity, true, setUpdateFields)
+    }
+}
+
+// 对于Array类型的批量upsert功能
+inline fun <reified T : KPojo> Array<T>.upsert(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+    return map { entity ->
+        UpsertClause(entity, false, setUpdateFields)
+    }
+}
+
+// 对于Array类型的批量upsert except功能
+inline fun <reified T : KPojo> Array<T>.upsertExcept(noinline setUpdateFields: (KTable<T>.() -> Unit)? = null): List<UpsertClause<T>> {
+    return map { entity ->
+        UpsertClause(entity, true, setUpdateFields)
+    }
+}

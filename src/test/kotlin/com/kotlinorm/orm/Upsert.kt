@@ -120,10 +120,13 @@ class Upsert {
             .on { it.id }.build()
 
         assertEquals(
-            "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) SELECT :id, :username, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `gender` = :gender, `id` = :id WHERE `id` = :id AND `deleted` = :deleted",
+            "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) SELECT :id, :username, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `id` = :id, `gender` = :gender WHERE `id` = :id AND `deleted` = :deleted",
             sql
         )
         assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"], "gender" to null), paramMap)
     }
+
+    //  支持批量upsert
+
 
 }

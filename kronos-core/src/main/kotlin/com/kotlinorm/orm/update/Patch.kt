@@ -32,7 +32,7 @@ inline fun <reified T : KPojo> Iterable<T>.update(noinline setUpdateFields: KTab
     return map { UpdateClause(it, false, setUpdateFields) }
 }
 
-// TODO: 添加测试用例
+//  添加测试用例
 inline fun <reified T : KPojo> Iterable<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
     return map { UpdateClause(it, true, setUpdateFields) }
 }
@@ -41,7 +41,7 @@ inline fun <reified T : KPojo> Array<T>.update(noinline setUpdateFields: KTableF
     return map { UpdateClause(it, false, setUpdateFields) }
 }
 
-// TODO: 添加测试用例
+//  添加测试用例
 inline fun <reified T : KPojo> Array<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
     return map { UpdateClause(it, true, setUpdateFields) }
 }

@@ -46,88 +46,172 @@ class SelectClause<T : KPojo>(
     var isOrder = false
     var ps = 0
     var offset = 0
+
+    /**
+     * 初始化函数：用于在对象初始化时配置选择字段。
+     * 该函数不接受参数，也不返回任何值。
+     * 它首先检查[setSelectFields]是否为非空，如果是，则调用[pojo.tableRun]块，
+     * 在该块内调用[setSelectFields]方法来设置选择的字段，并将当前字段集合转换为链接集合后赋值给[selectFields]属性。
+     */
     init {
         if (setSelectFields != null) {
             pojo.tableRun {
-                setSelectFields()
-                selectFields = fields.toLinkedSet()
+                setSelectFields() // 设置选择的字段
+                selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
             }
         }
     }
 
+
+    /**
+     * 根据指定的字段对当前对象进行排序。
+     *
+     * @param someFields 可排序字段的集合，这里的字段类型为 [KTableSortableField]，单位为 [Unit]。
+     *                   该参数指定了排序时所依据的字段。
+     * @return 返回 [SelectClause] 对象，允许链式调用。
+     */
     fun orderBy(someFields: KTableSortableField<T, Unit>): SelectClause<T> {
         pojo.sortableRun {
-            this
+            this // 在这里对排序操作进行封装，为后续的链式调用提供支持。
         }
-        return this
+        return this // 返回当前对象，允许继续进行其他查询操作。
     }
 
+
+    /**
+     * 根据指定的字段对数据进行分组。
+     *
+     * @param someFields 要用于分组的字段，类型为 KTableField<T, Unit>。该字段不能为空。
+     * @return 返回 SelectClause<T> 实例，允许链式调用。
+     * @throws NeedFieldsException 如果 someFields 为空，则抛出此异常。
+     */
     fun groupBy(someFields: KTableField<T, Unit>): SelectClause<T> {
         isGroup = true
+        // 检查 someFields 参数是否为空，如果为空则抛出异常
         if(someFields == null) throw NeedFieldsException()
         pojo.tableRun {
             someFields()
+            // 设置分组字段
             groupByFields = fields.toLinkedSet()
         }
         return this
     }
 
+
+    /**
+     * 将当前选择语句设置为Distinct模式，即去除结果中的重复项。
+     *
+     * @return [SelectClause<T>] 返回当前选择语句实例，允许链式调用。
+     */
     fun distinct(): SelectClause<T> {
-        isDistinct = true
+        isDistinct = true // 标记为Distinct，去除结果中的重复项
         return this
     }
 
+
+    /**
+     * 设置选择语句的限制数量。
+     *
+     * 该函数用于限制查询结果的返回数量。调用此函数后，会将指定的数量设置为查询结果的上限。
+     *
+     * @param num 指定的限制数量，表示查询结果最多返回的记录数。
+     * @return 返回 SelectClause<T> 实例，支持链式调用。
+     */
     fun limit(num: Int): SelectClause<T> {
-        ps = num
-        return this
+        ps = num // 设置限制数量
+        return this // 返回当前 SelectClause 实例以支持链式调用
     }
 
+
+    /**
+     * 设置查询的偏移量（即跳过前num条记录）
+     *
+     * @param num 要跳过的记录数，用于实现分页查询时的偏移功能。
+     * @return 返回SelectClause的实例，支持链式调用。
+     */
     fun offset(num: Int): SelectClause<T> {
-        offset = num
-        return this
+        offset = num // 设置查询偏移量
+        return this // 返回当前SelectClause实例以支持链式调用
     }
 
+
+    /**
+     * 设置分页信息，用于查询语句的分页操作。
+     *
+     * @param pi 当前页码，表示需要获取哪一页的数据。
+     * @param ps 每页的记录数，指定每页显示的数据量。
+     * @return 返回 SelectClause<T> 实例，支持链式调用。
+     */
     fun page(pi: Int, ps: Int): SelectClause<T> {
-        isDistinct = true
-        val offset = (pi - 1) * ps
-        limit(ps)
-        offset(offset)
-        return this
+        isPage = true // 标记为分页查询
+        val offset = (pi - 1) * ps // 计算偏移量，用于数据库查询的偏移定位
+        limit(ps) // 设置每页的记录数
+        offset(offset) // 设置查询的偏移量，从指定位置开始查询
+        return this // 返回当前 SelectClause<T> 实例，允许链式调用
     }
 
+
+    /**
+     * 根据指定的字段构建查询条件，并返回SelectClause实例。
+     *
+     * @param someFields KTableField类型，表示要用来构建查询条件的字段。
+     *                   不能为空，否则会抛出NeedFieldsException异常。
+     * @return 返回当前SelectClause实例，允许链式调用。
+     */
     fun by(someFields: KTableField<T, Any?>): SelectClause<T> {
+        // 检查someFields是否为空，为空则抛出异常
         if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
+            // 执行someFields中定义的查询逻辑
             someFields()
+            // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
-        return this
+        return this // 返回当前SelectClause实例，允许链式调用
     }
 
+
+    /**
+     * 根据提供的选择条件构建查询条件。
+     *
+     * @param selectCondition 一个函数，用于定义条件查询。该函数接收一个 [KTableConditionalField] 类型的参数，
+     *                        并返回一个 [Boolean]? 类型的值，用于指定条件是否成立。如果为 null，则表示选择所有字段。
+     * @return [SelectClause] 的实例，代表了一个查询的选择子句。
+     */
     fun where(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
         if (selectCondition == null) return this.apply {
-            // 获取所有字段
+            // 当没有提供选择条件时，构建一个查询所有字段的条件
             condition = paramMap.keys.map { propName ->
                 allFields.first { it.name == propName }.eq(paramMap[propName])
             }.toCriteria()
         }
         pojo.conditionalRun {
             propParamMap = paramMap
-            selectCondition()
-            condition = criteria
+            selectCondition() // 执行用户提供的条件函数
+            condition = criteria // 设置查询条件
         }
         return this
     }
 
+
+    /**
+     * 设置HAVING条件的函数，用于在查询中添加基于聚合结果的条件限制。
+     *
+     * @param selectCondition 一个KTableConditionalField类型的函数参数，表示筛选的条件。该条件是一个函数，
+     *                        它接收当前的参数映射表和执行条件，并设置HAVING子句的条件。
+     * @return 返回SelectClause类型的实例，允许链式调用。
+     * @throws NeedFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
+     */
     fun having(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
-        isHaving = true
+        isHaving = true // 标记为HAVING条件
+        // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
         pojo.conditionalRun {
-            propParamMap = paramMap
-            selectCondition()
-            havingCondition = criteria
+            propParamMap = paramMap // 设置属性参数映射
+            selectCondition() // 执行传入的条件函数
+            havingCondition = criteria // 设置HAVING条件
         }
-        return this
+        return this // 允许链式调用
     }
 
     fun withTotal(): PagedClause<SelectClause<T>> {
@@ -138,10 +222,22 @@ class SelectClause<T : KPojo>(
         TODO()
     }
 
+
+    /**
+     * 构建一个KronosAtomicTask对象。
+     *
+     * 该方法主要用于根据提供的KronosDataSourceWrapper（如果存在）和其他参数构建一个用于执行数据库操作的KronosAtomicTask对象。
+     * 这包括构建SQL查询语句及其参数映射，配置逻辑删除策略，并根据不同的标志（如分页、去重、分组等）调整查询语句的构造。
+     *
+     * @param wrapper 可选的KronosDataSourceWrapper对象，用于提供数据库表信息等。
+     * @return 构建好的KronosAtomicTask对象，包含了完整的SQL查询语句和对应的参数映射。
+     */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicTask {
 
+        // 初始化所有字段集合
         allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
 
+        // 如果条件为空，则根据paramMap构建查询条件
         if (condition == null) {
             condition = paramMap.keys.filter {
                 paramMap[it] != null
@@ -150,42 +246,45 @@ class SelectClause<T : KPojo>(
             }.toCriteria()
         }
 
+        // 启用逻辑删除策略
         logicDeleteStrategy.enabled = true
 
-        // 设置逻辑删除
+        // 设置逻辑删除的条件
         setCommonStrategy(logicDeleteStrategy) { field, value ->
             condition = listOfNotNull(
                 condition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
             ).toCriteria()
         }
 
-        // 是否分页
+        // 如果存在额外的最后条件，则将其添加到查询条件中
         if (lastCondition != null) {
             condition = listOfNotNull(
                 condition, lastCondition
             ).toCriteria()
         }
 
+        // 构建带有参数的查询条件SQL
         val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
 
-        // 检查 isDistinct 标志
+        // 检查并设置是否使用去重（DISTINCT）
         val selectKeyword = if (selectFields.isEmpty()) "*" else if (isDistinct) "SELECT DISTINCT" else "SELECT"
 
-        // 检查 isPage 标志
+        // 检查并设置是否分页
         val limitKeyword = if (isPage) "LIMIT" else null
         val offsetKeyword = if (isPage) "OFFSET" else null
 
-        // 检查 isGroup 标志
+        // 检查并设置是否分组
         val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.quoted() }) else null
 
-        // 检查 isHaving 标志
+        // 检查并设置是否使用HAVING条件
         val havingKeyword = if (isHaving) "HAVING " + (havingCondition.let {
             it?.children ?.joinToString(" AND ") { it?.field?.equation().toString() }
         }) else null
 
-        // 添加分页到 SQL
+        // 如果分页，则将分页参数添加到SQL中
         val limitOffsetPart = if (isPage) " $limitKeyword ${ps} $offsetKeyword ${offset}" else null
 
+        // 组装最终的SQL语句
         val sql = listOfNotNull(
             selectKeyword,
             if (selectFields.isEmpty()) "*" else selectFields.joinToString(", ") {
@@ -206,6 +305,7 @@ class SelectClause<T : KPojo>(
             limitOffsetPart
         ).joinToString(" ")
 
+        // 返回构建好的KronosAtomicTask对象
         return KronosAtomicTask(
             sql,
             paramMap,
@@ -213,7 +313,15 @@ class SelectClause<T : KPojo>(
         )
     }
 
+    /**
+     * 执行Kronos操作的函数。
+     *
+     * @param wrapper 可选参数，KronosDataSourceWrapper的实例，用于提供数据源配置和上下文。
+     *                如果为null，函数将使用默认配置执行操作。
+     * @return 返回KronosOperationResult对象，包含操作的结果信息。
+     */
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+        // 构建并执行Kronos操作，根据提供的wrapper参数（如果有的话）来调整执行行为。
         return build().execute(wrapper)
     }
 

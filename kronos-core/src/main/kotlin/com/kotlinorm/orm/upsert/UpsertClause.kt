@@ -3,6 +3,7 @@ package com.kotlinorm.orm.upsert
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
+import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
@@ -10,6 +11,7 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.update.UpdateClause
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
@@ -162,6 +164,22 @@ class UpsertClause<T : KPojo>(
             DBType.Oracle -> oracleOnExistSql(conflictResolver)
             DBType.SQLite -> sqliteOnConflictSql(conflictResolver)
             else -> throw UnsupportedDatabaseTypeException()
+        }
+    }
+
+    companion object {
+
+        fun <T : KPojo> List<UpsertClause<T>>.build(): KronosAtomicBatchTask {
+            val tasks = this.map { it.build() }
+            return KronosAtomicBatchTask(
+                sql = tasks.first().sql,
+                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
+                operationType = KOperationType.UPSERT
+            )
+        }
+
+        fun <T : KPojo> List<UpsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+            return build().execute(wrapper)
         }
     }
 

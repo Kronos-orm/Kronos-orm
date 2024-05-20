@@ -2,10 +2,10 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.select.select
-import org.junit.jupiter.api.Test
 import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.TestWrapper
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class Select {
@@ -13,7 +13,7 @@ class Select {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = {TestWrapper}
+            dataSource = { TestWrapper }
         }
     }
 
@@ -22,7 +22,7 @@ class Select {
     @Test
     fun testSelect() {
 
-        val (sql, paramMap) = user.select { it.id + it.username + it.gender+"123" }.build()
+        val (sql, paramMap) = user.select { it.id + it.username + it.gender + "123" }.build()
 
         assertEquals("SELECT `id`, `username`, `gender`, `123` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
         assertEquals(mapOf("id" to 1), paramMap)
@@ -39,11 +39,11 @@ class Select {
     @Test
     fun testSelect3() {
         val (sql, paramMap) = User()
-            .select { it.username+ it.gender }
+            .select { it.username + it.gender }
             .where { it.id > 10 }
             .distinct()
             .groupBy { it.id + it.gender }
-         //   .orderBy { it.id.desc + it.username.asc }
+            //   .orderBy { it.id.desc + it.username.asc }
             .having { it.id.eq }
             .build()
 
@@ -52,5 +52,14 @@ class Select {
             "SELECT DISTINCT username FROM tb_user WHERE id > :idMin GROUP BY id ORDER BY id DESC, username ASC HAVING id = :id",
             sql
         )
+    }
+
+    @Test
+    fun testSelect4() {
+
+        val (sql, paramMap) = user.select { it.id + it.username + it.gender + "COUNT(1) as `count`" }.build()
+
+        assertEquals("SELECT `id`, `username`, `gender`, `123` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals(mapOf("id" to 1), paramMap)
     }
 }

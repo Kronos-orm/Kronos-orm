@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.util.constructors
@@ -92,7 +93,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
         is IrConst<*> -> {
             // Add constant values directly to the field names list.
             // 直接将常量值添加到字段名列表。
-            fieldNames.add(applyIrCall(fieldSymbol.constructors.first(), element, element))
+            fieldNames.add(applyIrCall(fieldSymbol.constructors.first(), element, element, irString("string")))
         }
 
         is IrReturn -> {

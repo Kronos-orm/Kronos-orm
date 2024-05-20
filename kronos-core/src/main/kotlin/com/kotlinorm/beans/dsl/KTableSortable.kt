@@ -39,7 +39,7 @@ class KTableSortable<T : KPojo> : KTable<T>() {
             }
 
             is String -> {
-                sortFields.add(Field(field, type = "string") to ASC)
+                sortFields.add(Field(field, field, type = "string") to ASC)
             }
 
             else -> {
@@ -49,10 +49,10 @@ class KTableSortable<T : KPojo> : KTable<T>() {
     }
 
     @Suppress("UNUSED")
-    fun Any?.desc(): Pair<Any?, SortType> = this to DESC
+    fun Any?.desc(): Pair<Any?, SortType> = (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to DESC
 
     @Suppress("UNUSED")
-    fun Any?.asc(): Pair<Any?, SortType> = this to ASC
+    fun Any?.asc(): Pair<Any?, SortType> = (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to ASC
 
     companion object {
         /**

@@ -10,6 +10,7 @@ import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.pagination.PagedClause
@@ -38,7 +39,7 @@ class SelectClause<T : KPojo>(
     private var havingCondition: Criteria? = null
     var selectFields: LinkedHashSet<Field> = linkedSetOf()
     var groupByFields: LinkedHashSet<Field> = linkedSetOf()
-    var orderByFields: LinkedHashSet<Field> = linkedSetOf()
+    var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     var isDistinct = false
     var isPage = false
     var isGroup = false
@@ -71,10 +72,12 @@ class SelectClause<T : KPojo>(
      * @return 返回 [SelectClause] 对象，允许链式调用。
      */
     fun orderBy(someFields: KTableSortableField<T, Any?>): SelectClause<T> {
-        if (someFields != null) {
-            pojo.sortableRun {
-                someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
-            }
+        if (someFields == null) throw NeedFieldsException()
+
+        isOrder = true
+        pojo.sortableRun {
+            someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
+            orderByFields = sortFields.toLinkedSet()
         }
         return this // 返回当前对象，允许继续进行其他查询操作。
     }
@@ -241,6 +244,13 @@ class SelectClause<T : KPojo>(
         // 检查并设置是否使用去重（DISTINCT）
         val selectKeyword = if (selectFields.isEmpty()) "*" else if (isDistinct) "SELECT DISTINCT" else "SELECT"
 
+        //检查是否设置排序
+        val orderByKeywords = if (isOrder && orderByFields.isNotEmpty()) "ORDER BY " +
+                orderByFields.joinToString(", ") {
+                    if (it.first.type == "string") it.first.toString() else it.first.quoted() +
+                    " " + it.second
+                } else null
+
         // 检查并设置是否分页
 
         // 检查并设置是否分组
@@ -269,6 +279,8 @@ class SelectClause<T : KPojo>(
             "FROM `$tableName`",
             whereClauseSql,
             groupByKeyword,
+            havingKeyword,
+            orderByKeywords,
             havingKeyword
         ).joinToString(" ")
 

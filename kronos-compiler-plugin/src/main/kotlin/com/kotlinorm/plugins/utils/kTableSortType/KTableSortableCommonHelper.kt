@@ -21,3 +21,11 @@ private val sortableClassSymbol
 context(IrPluginContext)
 internal val addSortFieldSymbol
     get() = sortableClassSymbol.getSimpleFunction("addSortField")!!
+
+context(IrPluginContext)
+internal val createAscSymbol
+    get() = sortableClassSymbol.getSimpleFunction("asc")!!
+
+context(IrPluginContext)
+internal val createDescSymbol
+    get() = sortableClassSymbol.getSimpleFunction("desc")!!

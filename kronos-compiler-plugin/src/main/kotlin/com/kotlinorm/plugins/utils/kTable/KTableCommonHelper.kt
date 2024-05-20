@@ -16,7 +16,10 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.findByFqName
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irString
@@ -26,7 +29,6 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
@@ -115,8 +117,7 @@ fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(expression: IrExpression): IrExpression {
     val irClass = when (expression) {
-        is IrGetValue -> expression.type.asSimpleType().arguments[0].typeOrFail.getClass()
-        is IrCall -> expression.type.getClass()
+        is IrGetValue, is IrCall -> expression.type.getClass()
         else -> throw IllegalStateException("Unexpected expression type: $expression")
     }!!
     return getTableName(irClass)

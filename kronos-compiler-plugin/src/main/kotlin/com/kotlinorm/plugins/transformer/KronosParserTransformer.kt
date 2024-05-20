@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
+import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -88,10 +89,10 @@ class KronosParserTransformer(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
-            +irFunction.body!!
-                .transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
+            +irBlock {
+                +irFunction.body!!.statements
+            }.transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
                 .transform(KTableAddParamTransformer(pluginContext, irFunction), null)
-                .statements
         }
     }
 
@@ -105,8 +106,9 @@ class KronosParserTransformer(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
-            +irFunction.body!!.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
-                .statements
+            +irBlock(resultType = irFunction.returnType) {
+                +irFunction.body!!.statements
+            }.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
         }
     }
 
@@ -114,9 +116,10 @@ class KronosParserTransformer(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
-            +irFunction.body!!
+            +irBlock(resultType = irFunction.returnType) {
+                +irFunction.body!!.statements
+            }
                 .transform(KTableSortableParseReturnTransformer(pluginContext, irFunction), null)
-                .statements
         }
     }
 }

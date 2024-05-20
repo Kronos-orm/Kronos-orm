@@ -6,8 +6,8 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 class UpdateParserTest {
     @OptIn(ExperimentalCompilerApi::class)
@@ -51,7 +51,7 @@ class UpdateParserTest {
 
         
         testUser.update { it.username }
-            .by{ it.id }.execute()
+            .where{ it.id == 1 }.execute()
       }
       """.trimIndent()
             )

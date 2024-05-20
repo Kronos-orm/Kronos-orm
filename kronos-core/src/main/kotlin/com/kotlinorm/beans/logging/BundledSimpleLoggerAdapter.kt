@@ -21,6 +21,7 @@ import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 /**
  * BundledSimpleLoggerAdapter
@@ -35,7 +36,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         private var logTaskList = mutableListOf<LogTask>() // log task queue
         private const val SEMICOLON = ";"
 
-        var logPath = mutableListOf("console")
+        var logPath = listOf("console")
         var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss"
         var traceEnabled = true
         var debugEnabled = true
@@ -52,7 +53,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
          * @return the formatted text
          */
         internal fun format(txt: String, codes: Array<ColorPrintCode>): String {
-            val codeStr = codes.map { code -> code.code.toString() }.joinToString(SEMICOLON)
+            val codeStr = codes.joinToString(SEMICOLON) { it.code.toString() }
             return 27.toChar().toString() + "[" + codeStr + "m" + txt + 27.toChar() + "[0m"
         }
     }
@@ -198,6 +199,10 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                             message.print(logTask.level)
                         }
                     } else {
+                        val directory = Path(path)
+                        if (!SystemFileSystem.exists(directory)) {
+                            SystemFileSystem.createDirectories(directory)
+                        }
                         val logFileName = logFileNameRule()
                         logTask.messages.forEach { message ->
                             message.write(Path(path, logFileName))

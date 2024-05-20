@@ -8,7 +8,7 @@ object DateTimeUtil {
     @OptIn(FormatStringsInDatetimeFormats::class)
     val currentDateTime =
         { format: String ->
-            Clock.System.now().toLocalDateTime(TimeZone.UTC).format(
+            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).format(
                 LocalDateTime.Format {
                     byUnicodePattern(format)
                 }

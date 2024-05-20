@@ -70,11 +70,8 @@ class KLogMessage(
      * @param path
      */
     fun write(path: Path) {
-        if (!SystemFileSystem.exists(path)) {
-            throw RuntimeException("File $path not found.")
-        }
         with(SystemFileSystem.sink(path, true)) {
-            (text + "\n".takeIf { endLine }).toByteArray().let { byteArray ->
+            (text + ("\r\n".takeIf { endLine } ?: "")).toByteArray().let { byteArray ->
                 write(
                     Buffer().apply {
                         write(byteArray)

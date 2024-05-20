@@ -125,8 +125,9 @@ open class KTable<T : KPojo> {
         return Field(this.findAnnotation<Column>()?.name ?: fieldK2db(this.name), this.name)
     }
 
-    fun Field.setAlias(alias: String) {
+    fun Field.setAlias(alias: String): Field {
         this.alias = alias
+        return this
     }
 
     companion object {

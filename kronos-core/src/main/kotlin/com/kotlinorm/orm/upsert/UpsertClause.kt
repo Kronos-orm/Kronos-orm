@@ -168,6 +168,13 @@ class UpsertClause<T : KPojo>(
     }
 
     companion object {
+        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: KTableField<T, Unit>): List<UpsertClause<T>> {
+            return map { it.on(someFields) }
+        }
+
+        fun <T : KPojo> List<UpsertClause<T>>.onDuplicateKey(): List<UpsertClause<T>> {
+            return map { it.onDuplicateKey() }
+        }
 
         fun <T : KPojo> List<UpsertClause<T>>.build(): KronosAtomicBatchTask {
             val tasks = this.map { it.build() }

@@ -42,8 +42,8 @@ internal val fieldSymbol
  * @return A list of IR expressions representing field additions.
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
-fun addFieldList(): List<IrExpression> {
-    return addFieldsNames(body!!).map {
+fun addFieldList(irReturn: IrReturn): List<IrExpression> {
+    return addFieldsNames(irReturn).map {
         // Apply the `addField` operation to each field name gathered, passing the receiver.
         // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
         applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
@@ -79,7 +79,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                 IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
-                    fieldNames.addAll(addFieldsNames(element.extensionReceiver!!))
+                    fieldNames.addAll(addFieldsNames((element.extensionReceiver ?: element.dispatchReceiver)!!))
                     val args = element.valueArguments.filterNotNull()
                     args.forEach {
                         fieldNames.addAll(addFieldsNames(it))

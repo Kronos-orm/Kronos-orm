@@ -11,7 +11,6 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.update.UpdateClause
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
@@ -34,7 +33,7 @@ import com.kotlinorm.utils.toLinkedSet
 class UpsertClause<T : KPojo>(
     private val pojo: T,
     private var isExcept: Boolean = false,
-    private var setUpsertFields: KTableField<T, Unit> = null
+    private var setUpsertFields: KTableField<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()

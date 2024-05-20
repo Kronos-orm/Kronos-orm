@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrReturn
 
 /**
  * KTable Add Field Transformer
@@ -43,12 +43,13 @@ class KTableAddFieldTransformer(
      * @param expression the [IrCall] expression to visit
      * @return the transformed IrExpression
      */
-    override fun visitCall(expression: IrCall): IrExpression {
+    override fun visitReturn(expression: IrReturn): IrExpression {
         with(pluginContext) {
             with(irFunction) {
-                return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-                    if (expression.origin in arrayOf(IrStatementOrigin.PLUS, IrStatementOrigin.GET_PROPERTY)) {
-                        +addFieldList()
+                with(DeclarationIrBuilder(pluginContext, irFunction.symbol)) {
+                    return irBlock {
+                        +addFieldList(expression)
+                        +expression
                     }
                 }
             }

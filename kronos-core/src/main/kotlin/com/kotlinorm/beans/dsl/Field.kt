@@ -28,10 +28,9 @@ import com.kotlinorm.utils.fieldDb2k
  */
 class Field(
     val columnName: String,
-    val name: String = fieldDb2k(columnName),
+    var name: String = fieldDb2k(columnName),
     val type: String = "",
-    var primaryKey: Boolean = false,
-    var alias: String? = null
+    var primaryKey: Boolean = false
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

@@ -126,7 +126,7 @@ open class KTable<T : KPojo> {
     }
 
     fun Field.setAlias(alias: String): Field {
-        this.alias = alias
+        this.name = alias
         return this
     }
 

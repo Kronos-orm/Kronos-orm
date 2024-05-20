@@ -39,5 +39,5 @@ data class KronosAtomicQueryTask(
      *
      * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
      */
-    fun parsed() = parseSqlStatement(sql, paramMap)
+    override fun parsed() = parseSqlStatement(sql, paramMap)
 }

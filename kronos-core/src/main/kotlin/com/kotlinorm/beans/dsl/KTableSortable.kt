@@ -30,7 +30,6 @@ import com.kotlinorm.enums.SortType
  */
 class KTableSortable<T : KPojo> : KTable<T>() {
     internal val sortFields = mutableListOf<Pair<Field, SortType>>()
-    internal val sortStrings = mutableListOf<String>()
 
     @Suppress("UNCHECKED_CAST", "UNUSED")
     fun addSortField(field: Any) {
@@ -40,7 +39,7 @@ class KTableSortable<T : KPojo> : KTable<T>() {
             }
 
             is String -> {
-                sortStrings.add(field)
+                sortFields.add(Field(field, type = "string") to ASC)
             }
 
             else -> {

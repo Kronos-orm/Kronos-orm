@@ -71,9 +71,9 @@ class SelectClause<T : KPojo>(
      * @return 返回 [SelectClause] 对象，允许链式调用。
      */
     fun orderBy(someFields: KTableSortableField<T, Any?>): SelectClause<T> {
-        if(someFields!=null) {
+        if (someFields != null) {
             pojo.sortableRun {
-                this// 在这里对排序操作进行封装，为后续的链式调用提供支持。
+                someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
             }
         }
         return this // 返回当前对象，允许继续进行其他查询操作。
@@ -90,7 +90,7 @@ class SelectClause<T : KPojo>(
     fun groupBy(someFields: KTableField<T, Unit>): SelectClause<T> {
         isGroup = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
-        if(someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
             someFields(it)
             // 设置分组字段
@@ -276,11 +276,12 @@ class SelectClause<T : KPojo>(
         val offsetKeyword = if (isPage) "OFFSET" else null
 
         // 检查并设置是否分组
-        val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.quoted() }) else null
+        val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
+            ?.joinToString(", ") { it.quoted() }) else null
 
         // 检查并设置是否使用HAVING条件
         val havingKeyword = if (isHaving) "HAVING " + (havingCondition.let {
-            it?.children ?.joinToString(" AND ") { it?.field?.equation().toString() }
+            it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
         }) else null
 
         // 如果分页，则将分页参数添加到SQL中

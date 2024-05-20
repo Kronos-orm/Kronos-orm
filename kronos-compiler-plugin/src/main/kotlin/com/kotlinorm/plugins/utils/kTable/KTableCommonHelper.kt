@@ -57,6 +57,10 @@ internal val propParamSymbol
     get() = kTableSymbol.getSimpleFunction("getValueByFieldName")
 
 context(IrPluginContext)
+internal val aliasSymbol
+    get() = kTableSymbol.getSimpleFunction("setAlias")!!
+
+context(IrPluginContext)
 internal val IrCall.correspondingName
     get() = symbol.owner.correspondingPropertySymbol?.owner?.name
 

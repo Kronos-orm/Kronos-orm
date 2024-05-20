@@ -91,7 +91,7 @@ open class KTable<T : KPojo> {
      * @param alias the alias to set for the object
      * @return the provided alias
      */
-    @Suppress("UNUSED")
+    @Suppress("UNUSED", "UnusedReceiverParameter")
     fun Any?.alias(alias: String): String = alias
 
     /**
@@ -123,6 +123,10 @@ open class KTable<T : KPojo> {
     @Suppress("MemberVisibilityCanBePrivate")
     fun KProperty<*>.toField(): Field {
         return Field(this.findAnnotation<Column>()?.name ?: fieldK2db(this.name), this.name)
+    }
+
+    fun Field.setAlias(alias: String) {
+        this.alias = alias
     }
 
     companion object {

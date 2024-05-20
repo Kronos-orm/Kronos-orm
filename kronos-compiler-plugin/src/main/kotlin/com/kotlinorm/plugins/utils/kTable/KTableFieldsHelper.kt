@@ -18,7 +18,9 @@ package com.kotlinorm.plugins.utils.kTable
 
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
+import com.kotlinorm.plugins.helpers.extensionBy
 import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -54,7 +56,7 @@ fun addFieldList(): List<IrExpression> {
  * @param element the [IrElement] to extract field names from
  * @return a mutable list of IR expressions representing the field names
  */
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。
@@ -86,6 +88,24 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
 
                 IrStatementOrigin.GET_PROPERTY -> {
                     getColumnName(element).let { fieldNames.add(it) }
+                }
+
+                else -> {
+                    if (element.funcName() == "alias") {
+                        fieldNames.add(applyIrCall(
+                            aliasSymbol,
+                            element.valueArguments.first()
+                        ) {
+                            dispatchBy(
+                                irGet(
+                                    extensionReceiverParameter!!
+                                ),
+                            )
+                            extensionBy(
+                                addFieldsNames(element.extensionReceiver!!).first()
+                            )
+                        })
+                    }
                 }
             }
         }

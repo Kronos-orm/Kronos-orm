@@ -24,7 +24,6 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.util.hasEqualFqName
 import org.jetbrains.kotlin.name.FqName
 
 // A helpers class for specifying the receiver of an IR function call
@@ -32,10 +31,10 @@ import org.jetbrains.kotlin.name.FqName
 class Receivers(
     // The dispatch receiver expression
     // 分派接收器表达式
-    val dispatchReceiver: IrExpression? = null,
+    var dispatchReceiver: IrExpression? = null,
     // The extension receiver expression
     // 扩展接收器表达式
-    val extensionReceiver: IrExpression? = null
+    var extensionReceiver: IrExpression? = null
 )
 
 /**
@@ -45,8 +44,8 @@ class Receivers(
  * @return A new instance of the Receivers class with the specified dispatch receiver.
  * @author OUSC
  */
-internal fun dispatchBy(dispatchReceiver: IrExpression?): Receivers {
-    return Receivers(dispatchReceiver)
+internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?): Unit {
+    this.dispatchReceiver = dispatchReceiver
 }
 
 /**
@@ -56,20 +55,8 @@ internal fun dispatchBy(dispatchReceiver: IrExpression?): Receivers {
  * @return A new instance of the Receivers class with the specified extension receiver.
  * @author OUSC
  */
-fun extensionBy(extensionReceiver: IrExpression?): Receivers {
-    return Receivers(null, extensionReceiver)
-}
-
-/**
- * Creates a new instance of the Receivers class with the specified dispatch and extension receivers.
- *
- * @param dispatchReceiver The dispatch receiver expression.
- * @param extensionReceiver The extension receiver expression.
- * @return A new instance of the Receivers class with the specified dispatch and extension receivers.
- * @author OUSC
- */
-fun dispatchAndExtensionBy(dispatchReceiver: IrExpression?, extensionReceiver: IrExpression?): Receivers {
-    return Receivers(dispatchReceiver, extensionReceiver)
+internal fun Receivers.extensionBy(extensionReceiver: IrExpression?): Unit {
+    this.extensionReceiver = extensionReceiver
 }
 
 /**
@@ -85,9 +72,9 @@ context(IrBuilderWithScope, IrPluginContext)
 internal fun applyIrCall(
     irCall: IrFunctionSymbol,
     vararg values: IrExpression?,
-    receivers: () -> Receivers = { Receivers() }
+    setReceivers: Receivers.() -> Unit = { }
 ): IrFunctionAccessExpression {
-    val receiver = receivers()
+    val receiver = Receivers().apply(setReceivers)
     return irCall(irCall).apply {
         dispatchReceiver = receiver.dispatchReceiver
         extensionReceiver = receiver.extensionReceiver

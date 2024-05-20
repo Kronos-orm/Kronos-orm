@@ -266,7 +266,8 @@ class SelectClause<T : KPojo>(
         }
 
         // 构建带有参数的查询条件SQL
-        val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+            .toWhereClause()
 
         // 检查并设置是否使用去重（DISTINCT）
         val selectKeyword = if (selectFields.isEmpty()) "*" else if (isDistinct) "SELECT DISTINCT" else "SELECT"
@@ -301,8 +302,7 @@ class SelectClause<T : KPojo>(
                 }
             },
             "FROM `$tableName`",
-            "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
-            conditionSql?.ifEmpty { null },
+            whereClauseSql,
             groupByKeyword,
             havingKeyword,
             limitOffsetPart

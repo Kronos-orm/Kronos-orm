@@ -203,15 +203,15 @@ class UpdateClause<T : KPojo>(
         val updateFields = toUpdateFields.joinToString(", ") { "${it.quoted()} = :${it + "New"}" }
 
         // 构建完整的更新SQL语句，包括条件部分
-        val (conditionSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+            .toWhereClause()
 
         val sql = listOfNotNull(
             "UPDATE",
             "`$tableName`",
             "SET",
             updateFields,
-            "WHERE".takeIf { !conditionSql.isNullOrEmpty() },
-            conditionSql?.ifEmpty { null }
+            whereClauseSql
         ).joinToString(" ")
 
         // 合并参数映射，准备执行SQL所需的参数

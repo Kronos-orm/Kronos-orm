@@ -11,12 +11,21 @@ object ConditionSqlBuilder {
     data class KotoBuildResultSet(
         val sql: String?,
         val paramMap: MutableMap<String, Any?>
-    )
+    ) {
+        fun toWhereClause(): Pair<String?, MutableMap<String, Any?>> {
+            return if (sql != null) {
+                "WHERE $sql"
+            } else {
+                null
+            } to paramMap
+        }
+    }
 
     data class KeyCounter(
         var initialized: Boolean = false,
         var metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
     )
+
     /**
      * 根据给定的条件类型构建对应的SQL查询条件。这里处理的是逻辑操作符（AND, OR）的情况。
      *
@@ -162,9 +171,15 @@ object ConditionSqlBuilder {
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive
                 listOfNotNull(
-                    condition.field.quoted(), "NOT".takeIf { condition.not }, "BETWEEN", ":${safeKeyMin}", "AND", ":${safeKeyMax}"
+                    condition.field.quoted(),
+                    "NOT".takeIf { condition.not },
+                    "BETWEEN",
+                    ":${safeKeyMin}",
+                    "AND",
+                    ":${safeKeyMax}"
                 )
             }
+
             AND, OR -> {
                 // 将子条件转换为SQL字符串，并根据需要添加括号。
                 val branches = condition.children.mapNotNull { child ->

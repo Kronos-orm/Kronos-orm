@@ -12,7 +12,6 @@ import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.update.updateExcept
 import com.kotlinorm.utils.Extensions.mapperTo
-import com.kotlinorm.utils.execute
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

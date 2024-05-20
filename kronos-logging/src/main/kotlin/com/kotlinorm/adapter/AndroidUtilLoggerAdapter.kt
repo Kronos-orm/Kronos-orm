@@ -1,6 +1,6 @@
 package com.kotlinorm.adapter
 
-import com.kotlinorm.KotoLoggerApp.invoke0
+import com.kotlinorm.KronosLoggerApp.invoke0
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.formatted
 import com.kotlinorm.enums.KLogLevel
@@ -17,7 +17,14 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
     private val isLoggableMethod = logClass.getMethod("isLoggable", String::class.java, Int::class.javaPrimitiveType)
     private val methodCache = mutableMapOf<String, Method>()
     private val getLoggerMethod =
-        { name: String -> methodCache[name] ?: logClass.getMethod(name, String::class.java, String::class.java, Throwable::class.java).apply { methodCache[name] = this } }
+        { name: String ->
+            methodCache[name] ?: logClass.getMethod(
+                name,
+                String::class.java,
+                String::class.java,
+                Throwable::class.java
+            ).apply { methodCache[name] = this }
+        }
 
     override fun isTraceEnabled(): Boolean {
         return isLoggableMethod.invoke0(null, tag, KLogLevel.VERBOSE.ordinal) as Boolean

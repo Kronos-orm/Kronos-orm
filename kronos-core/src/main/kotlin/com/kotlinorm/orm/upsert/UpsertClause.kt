@@ -3,8 +3,8 @@ package com.kotlinorm.orm.upsert
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
+import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
@@ -96,7 +96,7 @@ class UpsertClause<T : KPojo>(
         return build(wrapper).execute(wrapper)
     }
 
-    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicTask {
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicActionTask {
         val dataSource = wrapper.orDefault()
         val dbType = dataSource.dbType
 
@@ -147,7 +147,7 @@ class UpsertClause<T : KPojo>(
             generateOnExistSql(dataSource)
         }
 
-        return KronosAtomicTask(
+        return KronosAtomicActionTask(
             sql,
             paramMap,
             operationType = KOperationType.UPSERT

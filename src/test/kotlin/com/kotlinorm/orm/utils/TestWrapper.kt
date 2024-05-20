@@ -1,8 +1,9 @@
 package com.kotlinorm.orm.utils
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import kotlin.reflect.KClass
 
@@ -12,7 +13,7 @@ object TestWrapper : KronosDataSourceWrapper {
     override val dbType: DBType
         get() = DBType.Mysql
 
-    override fun forList(task: KronosAtomicTask): List<Map<String, Any>> {
+    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
         return listOf(
             mapOf(
                 "Field" to "id",
@@ -42,19 +43,19 @@ object TestWrapper : KronosDataSourceWrapper {
         )
     }
 
-    override fun forList(task: KronosAtomicTask, kClass: KClass<*>): List<Any> {
+    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
         return listOf()
     }
 
-    override fun forMap(task: KronosAtomicTask): Map<String, Any>? {
+    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
         return null
     }
 
-    override fun forObject(task: KronosAtomicTask, kClass: KClass<*>): Any? {
+    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         return null
     }
 
-    override fun update(task: KronosAtomicTask): Int {
+    override fun update(task: KAtomicActionTask): Int {
         return 1
     }
 

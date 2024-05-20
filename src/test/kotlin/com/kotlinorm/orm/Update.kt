@@ -13,7 +13,6 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.update.updateExcept
 import com.kotlinorm.utils.Extensions.mapperTo
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.toAsyncTask
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -21,8 +20,10 @@ class Update {
 
     init {
         Kronos.apply {
+            logPath = listOf("console", "/Users/sundaiyue/kronos/logs")
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
+            defaultLogger.start()
         }
     }
 
@@ -1008,20 +1009,5 @@ class Update {
                 )
             ).toList(), paramMapArr!!.toList()
         )
-    }
-
-    fun testAsyncUpdate() {
-        listOf(
-            listOf(user, testUser).update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build(),
-            testUser.update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build(),
-            testUser.update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build(),
-            testUser.update { it.id + it.username }
-                .where { listOf(1, 2, 3).contains(it.id) }.build()
-        )
-            .toAsyncTask() // 还没实现 后面再拆
-            .execute()
     }
 }

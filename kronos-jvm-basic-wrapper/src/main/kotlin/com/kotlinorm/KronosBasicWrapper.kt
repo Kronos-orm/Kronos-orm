@@ -21,9 +21,10 @@ import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.logging.KLogMessage.Companion.logMessageOf
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.Extensions.mapperTo
 import java.sql.PreparedStatement
@@ -60,11 +61,11 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     /**
      * Retrieves a list of maps from the database based on the provided task.
      *
-     * @param task the [KronosAtomicTask] containing the SQL query and parameters
+     * @param task the [KAtomicQueryTask] containing the SQL query and parameters
      * @return a list of maps representing the rows returned by the query
      * @throws [SQLException] if an error occurs while executing the query
      */
-    override fun forList(task: KronosAtomicTask): List<Map<String, Any>> {
+    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
         val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
         var ps: PreparedStatement? = null
@@ -106,12 +107,12 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     /**
      * Retrieves a list of objects of the specified class from the database based on the given task.
      *
-     * @param task the [KronosAtomicTask] containing the SQL query and parameters
+     * @param task the [KAtomicQueryTask] containing the SQL query and parameters
      * @param kClass the class of the objects to retrieve
      * @return a list of objects of the specified class
      * @throws [SQLException] if an error occurs while executing the query
      */
-    override fun forList(task: KronosAtomicTask, kClass: KClass<*>): List<Any> {
+    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
         return if (KPojo::class.isSuperclassOf(kClass)) {
             @Suppress("UNCHECKED_CAST")
             forList(task).map { it.mapperTo(kClass as KClass<KPojo>) }
@@ -150,11 +151,11 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     /**
      * Retrieves a single row from the database as a map of column names to values.
      *
-     * @param task the [KronosAtomicTask] containing the SQL query and parameters
+     * @param task the [KAtomicQueryTask] containing the SQL query and parameters
      * @return a map of column names to values, or null if no rows are returned
      * @throws [SQLException] if an error occurs while executing the query
      */
-    override fun forMap(task: KronosAtomicTask): Map<String, Any>? {
+    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
         val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
         var ps: PreparedStatement? = null
@@ -194,13 +195,13 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     /**
      * Retrieves an object from the database based on the provided task and class.
      *
-     * @param task The [KronosAtomicTask] used to query the database.
+     * @param task The [KAtomicQueryTask] used to query the database.
      * @param kClass The class of the object to be retrieved.
      * @return The retrieved object, or null if no object is found.
      * @throws [UnsupportedTypeException] If the provided class is not supported.
      * @throws [SQLException] If an error occurs while executing the query.
      */
-    override fun forObject(task: KronosAtomicTask, kClass: KClass<*>): Any? {
+    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         val map = forMap(task)
         val clazz = kClass.java
         return if (String::class.java == kClass.java) {
@@ -240,11 +241,11 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     /**
      * Updates the database with the provided task.
      *
-     * @param task the [KronosAtomicTask] to be executed
+     * @param task the [KAtomicActionTask] to be executed
      * @return the number of rows affected by the update operation
      * @throws [SQLException] if an error occurs while executing the update
      */
-    override fun update(task: KronosAtomicTask): Int {
+    override fun update(task: KAtomicActionTask): Int {
         val (sql, paramList) = task.parsed()
         val conn = dataSource.connection
         var ps: PreparedStatement? = null
@@ -270,7 +271,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     /**
      * Executes a batch update operation using the provided [KronosAtomicBatchTask].
      *
-     * @param task the [KronosAtomicBatchTask] containing the SQL query and parameter lists
+     * @param task the [KAtomicActionTask] containing the SQL query and parameter lists
      * @return an array of integers representing the number of rows affected by each update operation
      * @throws [SQLException] if an error occurs while executing the batch update
      */

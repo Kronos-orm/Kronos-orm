@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.logging
 
+import com.kotlinorm.Kronos.logPath
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
@@ -36,7 +37,6 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         private var logTaskList = mutableListOf<LogTask>() // log task queue
         private const val SEMICOLON = ";"
 
-        var logPath = listOf("console")
         var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss"
         var traceEnabled = true
         var debugEnabled = true

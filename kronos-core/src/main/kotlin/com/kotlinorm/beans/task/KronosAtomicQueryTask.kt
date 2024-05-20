@@ -18,20 +18,21 @@ package com.kotlinorm.beans.task
 
 import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KAtomicTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 
 /**
- * Kronos Atomic Task
+ * Kronos Atomic Query Task
  *
- * Atomic execution task for Insert、Update、Delete and Select
+ * Atomic execution task for Select
  *
  * @author OUSC
+ * @create 2024/4/18 23:05
  */
-data class KronosAtomicTask(
+data class KronosAtomicQueryTask(
     override val sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
     override val operationType: KOperationType = KOperationType.SELECT
-) : KAtomicTask {
+) : KAtomicQueryTask {
 
     /**
      * Parses the SQL statement and returns a pair of JDBC SQL and a list of JDBC parameter lists.

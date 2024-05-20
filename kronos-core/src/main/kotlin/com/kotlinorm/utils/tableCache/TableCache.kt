@@ -1,7 +1,7 @@
 package com.kotlinorm.utils.tableCache
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.task.KronosAtomicTask
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -39,7 +39,7 @@ object TableCache {
             try {
                 val list =
                     wrapper.forList(
-                        KronosAtomicTask(
+                        KronosAtomicQueryTask(
                             when (wrapper.dbType) {
                                 DBType.Mysql -> "show full fields from $tableName"
                                 DBType.SQLite -> "PRAGMA table_info($tableName)"

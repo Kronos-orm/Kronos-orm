@@ -18,7 +18,7 @@ package com.kotlinorm.beans.task
 
 import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KAtomicTask
+import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KBatchTask
 
 /**
@@ -31,7 +31,7 @@ data class KronosAtomicBatchTask(
     override val sql: String,
     override val paramMapArr: Array<Map<String, Any?>>? = null,
     override val operationType: KOperationType
-) : KAtomicTask, KBatchTask {
+) : KAtomicActionTask, KBatchTask {
 
     @Deprecated("Please use 'paramMapArr' instead.")
     override val paramMap: Map<String, Any?> = mapOf()

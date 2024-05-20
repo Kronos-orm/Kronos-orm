@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.task
-
-import com.kotlinorm.interfaces.KAtomicTask
-import com.kotlinorm.interfaces.KronosSQLTask
+package com.kotlinorm.interfaces
 
 /**
- * Kronos Operation Task
+ * Kronos Atomic Task
  *
- * @property tasks the atomic tasks list
- * @property async whether the operation is async
+ * Interface for Atomic Task
  *
  * @author OUSC
- * @create 2024/4/18 23:08
  */
-class KronosOperationTask(
-    override val tasks: List<KAtomicTask>, override val async: Boolean = false
-) : KronosSQLTask
+interface KAtomicQueryTask : KAtomicTask

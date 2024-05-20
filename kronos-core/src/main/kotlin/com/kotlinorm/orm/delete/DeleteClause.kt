@@ -5,8 +5,8 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -34,7 +34,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         // TODO：这里有问题
         // 这里逻辑是错的，若logicDeleteStrategy.enabled为false则抛出异常
         // 若updateTimeStrategy.enabled为false则不更新updateTime，而不是强制更新
-        if(!this.logicDeleteStrategy.enabled){
+        if (!this.logicDeleteStrategy.enabled) {
             throw NeedFieldsException()
         }
         this.logic = true
@@ -95,9 +95,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      * 构建并返回一个KronosAtomicTask对象，用于执行数据库的原子操作。
      * 该方法根据设定的条件构建对应的UPDATE或DELETE SQL语句，并封装必要的参数与操作类型。
      *
-     * @return [KronosAtomicTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
+     * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
      */
-    fun build(): KronosAtomicTask {
+    fun build(): KronosAtomicActionTask {
         // 设置逻辑删除的策略
         if (logic) {
             setCommonStrategy(logicDeleteStrategy) { field, value ->
@@ -133,7 +133,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 updateFields,
                 whereClauseSql
             ).joinToString(" ")
-            return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
+            return KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE)
         } else {
             // 构建DELETE语句并返回KronosAtomicTask对象
             val sql = listOfNotNull(
@@ -141,7 +141,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 "`$tableName`",
                 whereClauseSql
             ).joinToString(" ")
-            return KronosAtomicTask(sql, paramMap, operationType = KOperationType.DELETE)
+            return KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE)
         }
     }
 

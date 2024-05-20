@@ -4,15 +4,15 @@ import com.kotlinorm.adapter.AndroidUtilLoggerAdapter
 import com.kotlinorm.adapter.ApacheCommonsLoggerAdapter
 import com.kotlinorm.adapter.JavaUtilLoggerAdapter
 import com.kotlinorm.adapter.Slf4jLoggerAdapter
+import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.exceptions.KotoNoLoggerException
 import com.kotlinorm.i18n.Noun
 import com.kotlinorm.interfaces.KLogger
-import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
-object KotoLoggerApp {
+object KronosLoggerApp {
     /**
      * Call the [Method.invoke] method, catching [InvocationTargetException], and rethrowing the target exception.
      */

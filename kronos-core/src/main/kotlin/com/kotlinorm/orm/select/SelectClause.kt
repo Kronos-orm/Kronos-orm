@@ -7,7 +7,7 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
@@ -17,15 +17,12 @@ import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.*
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.tableCache.TableCache.getTable
-import com.kotlinorm.utils.toLinkedSet
 
 class SelectClause<T : KPojo>(
     private val pojo: T, setSelectFields: KTableField<T, Any?> = null
@@ -206,7 +203,7 @@ class SelectClause<T : KPojo>(
      * @param wrapper 可选的KronosDataSourceWrapper对象，用于提供数据库表信息等。
      * @return 构建好的KronosAtomicTask对象，包含了完整的SQL查询语句和对应的参数映射。
      */
-    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicTask {
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicQueryTask {
 
         // 初始化所有字段集合
         allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
@@ -224,7 +221,7 @@ class SelectClause<T : KPojo>(
         logicDeleteStrategy.enabled = true
 
         // 设置逻辑删除的条件
-        setCommonStrategy(logicDeleteStrategy) { field, value ->
+        setCommonStrategy(logicDeleteStrategy) { _, value ->
             condition = listOfNotNull(
                 condition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
             ).toCriteria()
@@ -241,14 +238,18 @@ class SelectClause<T : KPojo>(
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
             .toWhereClause()
 
+        if (selectFields.isEmpty()) {
+            selectFields = allFields
+        }
+
         // 检查并设置是否使用去重（DISTINCT）
-        val selectKeyword = if (selectFields.isEmpty()) "*" else if (isDistinct) "SELECT DISTINCT" else "SELECT"
+        val selectKeyword = if (isDistinct) "SELECT DISTINCT" else "SELECT"
 
         //检查是否设置排序
         val orderByKeywords = if (isOrder && orderByFields.isNotEmpty()) "ORDER BY " +
                 orderByFields.joinToString(", ") {
                     if (it.first.type == "string") it.first.toString() else it.first.quoted() +
-                    " " + it.second
+                            " " + it.second
                 } else null
 
         // 检查并设置是否分页
@@ -285,7 +286,7 @@ class SelectClause<T : KPojo>(
         ).joinToString(" ")
 
         // 返回构建好的KronosAtomicTask对象
-        return KronosAtomicTask(
+        return KronosAtomicQueryTask(
             sql,
             paramMap,
             operationType = KOperationType.SELECT
@@ -299,9 +300,9 @@ class SelectClause<T : KPojo>(
      *                如果为null，函数将使用默认配置执行操作。
      * @return 返回KronosOperationResult对象，包含操作的结果信息。
      */
-    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+    fun fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
         // 构建并执行Kronos操作，根据提供的wrapper参数（如果有的话）来调整执行行为。
-        return build().execute(wrapper)
+        return build().fetchAll(wrapper)
     }
 
     companion object {

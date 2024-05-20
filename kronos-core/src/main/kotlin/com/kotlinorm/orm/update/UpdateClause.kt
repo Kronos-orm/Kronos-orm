@@ -21,8 +21,8 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -158,7 +158,7 @@ class UpdateClause<T : KPojo>(
      *
      * @return The constructed KronosAtomicTask.
      */
-    fun build(): KronosAtomicTask {
+    fun build(): KronosAtomicActionTask {
 
         updateTimeStrategy.enabled = true
         logicDeleteStrategy.enabled = true
@@ -217,7 +217,7 @@ class UpdateClause<T : KPojo>(
         // 合并参数映射，准备执行SQL所需的参数
         paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
         // 返回构建好的KronosAtomicTask实例
-        return KronosAtomicTask(
+        return KronosAtomicActionTask(
             sql,
             paramMap,
             operationType = KOperationType.UPDATE

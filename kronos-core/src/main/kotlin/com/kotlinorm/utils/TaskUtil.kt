@@ -1,12 +1,14 @@
 package com.kotlinorm.utils
 
-import com.kotlinorm.beans.task.*
+import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KAtomicTask
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.interfaces.KronosSQLTask
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
@@ -23,59 +25,42 @@ fun lastInsertIdObtainSql(dbType: DBType): String {
     }
 }
 
-fun Iterable<KAtomicTask>.toTask(): KronosOperationTask {
-    return KronosOperationTask(this.toList())
-}
-
-fun Iterable<KAtomicTask>.toAsyncTask(): KronosAsyncOperationTask {
-    return KronosAsyncOperationTask(this.toList())
-}
-
-fun Array<KAtomicTask>.toTask(): KronosOperationTask {
-    return KronosOperationTask(this.toList())
-}
-
-fun Array<KAtomicTask>.toAsyncTask(): KronosAsyncOperationTask {
-    return KronosAsyncOperationTask(this.toList())
-}
-
-fun KronosOperationTask.toAsyncTask(): KronosAsyncOperationTask {
-    return KronosAsyncOperationTask(this.tasks)
-}
-
-fun KronosAsyncOperationTask.toSyncTask(): KronosOperationTask {
-    return KronosOperationTask(this.tasks)
-}
-
-fun KAtomicTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
+fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
     val affectRows = if (this is KBatchTask) {
         wrapper.orDefault().batchUpdate(this as KronosAtomicBatchTask).sum()
     } else {
-        wrapper.orDefault().update(this as KronosAtomicTask)
+        wrapper.orDefault().update(this as KronosAtomicActionTask)
     }
     var lastInsertId: Long? = null
     if (operationType == KOperationType.INSERT) {
         lastInsertId = wrapper.orDefault()
             .forObject(
-                KronosAtomicTask(lastInsertIdObtainSql(wrapper.orDefault().dbType))
-            , kClass = Long::class) as Long
+                KronosAtomicActionTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
+            ) as Long
     }
     return KronosOperationResult(affectRows, lastInsertId)
 }
 
-private fun KronosSQLTask.execute(wrapper: KronosDataSourceWrapper?): List<KronosOperationResult> {
-    if (async) {
-        // TODO: if async is true, use coroutines to execute tasks
-    } else {
-        return tasks.map {
-            it.execute(wrapper).apply {
-                // TODO: log Task Info and Result Info
-            }
-        }
-    }
-    return emptyList()
+fun KAtomicQueryTask.fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+    TODO()
 }
 
-fun KronosOperationTask.execute(wrapper: KronosDataSourceWrapper? = null) = (this as KronosSQLTask).execute(wrapper)
+inline fun <reified T> KAtomicQueryTask.fetchList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+    TODO()
+}
 
-fun KronosAsyncOperationTask.execute(wrapper: KronosDataSourceWrapper? = null) = (this as KronosSQLTask).execute(wrapper)
+fun KAtomicQueryTask.singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+    TODO()
+}
+
+fun KAtomicQueryTask.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+    TODO()
+}
+
+inline fun <reified T> KAtomicQueryTask.single(wrapper: KronosDataSourceWrapper? = null): T {
+    TODO()
+}
+
+inline fun <reified T> KAtomicQueryTask.singleOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+    TODO()
+}

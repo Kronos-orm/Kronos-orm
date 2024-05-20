@@ -1,6 +1,6 @@
 package com.kotlinorm.adapter
 
-import com.kotlinorm.KotoLoggerApp.invoke0
+import com.kotlinorm.KronosLoggerApp.invoke0
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.formatted
 import com.kotlinorm.interfaces.KLogger
@@ -16,8 +16,12 @@ class ApacheCommonsLoggerAdapter(loggerName: String) : KLogger {
     private val logClass = Class.forName("org.apache.commons.logging.Log")
     private val logger = logFactoryClass.getMethod("getLog", String::class.java).invoke0(null, loggerName)
     private val methodCache = mutableMapOf<String, Method>()
-    private val getLoggerMethod = { name: String -> methodCache[name] ?: logClass.getMethod(name, Any::class.java, Throwable::class.java).apply { methodCache[name] = this } }
-    private val getLoggerEnabledMethod = { name: String -> methodCache[name] ?: logClass.getMethod(name).apply { methodCache[name] = this } }
+    private val getLoggerMethod = { name: String ->
+        methodCache[name] ?: logClass.getMethod(name, Any::class.java, Throwable::class.java)
+            .apply { methodCache[name] = this }
+    }
+    private val getLoggerEnabledMethod =
+        { name: String -> methodCache[name] ?: logClass.getMethod(name).apply { methodCache[name] = this } }
 
     override fun isTraceEnabled(): Boolean {
         return getLoggerEnabledMethod("isTraceEnabled").invoke0(logger) as Boolean

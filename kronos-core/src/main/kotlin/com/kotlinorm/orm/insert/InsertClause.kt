@@ -2,8 +2,8 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -27,7 +27,7 @@ class InsertClause<T : KPojo>(pojo: T) {
         }
     }
 
-    fun build(): KronosAtomicTask {
+    fun build(): KronosAtomicActionTask {
         toInsertFields.addAll(allFields.filter { it.name in paramMap.keys })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
@@ -38,7 +38,7 @@ class InsertClause<T : KPojo>(pojo: T) {
             INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
         """.trimIndent()
 
-        return KronosAtomicTask(
+        return KronosAtomicActionTask(
             sql,
             paramMap,
             operationType = KOperationType.INSERT

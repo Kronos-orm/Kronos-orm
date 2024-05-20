@@ -331,7 +331,7 @@ class SelectClause<T : KPojo>(
             return KronosAtomicBatchTask(
                 sql = tasks.first().sql,
                 paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
-                operationType = KOperationType.UPDATE
+                operationType = KOperationType.SELECT
             )
         }
 

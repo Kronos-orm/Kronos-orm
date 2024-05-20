@@ -17,8 +17,10 @@
 package com.kotlinorm.beans.task
 
 import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
+import com.kotlinorm.beans.dsw.ParsedSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 
 /**
@@ -36,12 +38,16 @@ data class KronosAtomicBatchTask(
     @Deprecated("Please use 'paramMapArr' instead.")
     override val paramMap: Map<String, Any?> = mapOf()
 
+    override fun parsed(): ParsedSql {
+        TODO("Not yet implemented")
+    }
+
     /**
      * Parses the SQL statement and returns a pair of JDBC SQL and a list of JDBC parameter lists.
      *
      * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
      */
-    fun parsed() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }.let {
+    fun parsedArr() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }.let {
         Pair(it.firstOrNull()?.jdbcSql, it.map { parsedSql -> parsedSql.jdbcParamList })
     }
 

@@ -16,11 +16,12 @@
 
 package com.kotlinorm.beans.dsw
 
-import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.NoDataSourceException
 import com.kotlinorm.i18n.Noun.noDataSourceMessage
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import kotlin.reflect.KClass
 
@@ -39,23 +40,23 @@ class NoneDataSourceWrapper : KronosDataSourceWrapper {
     override val dbType: DBType
         get() = throw NoDataSourceException(noDataSourceMessage)
 
-    override fun forList(task: KronosAtomicActionTask): List<Map<String, Any>> {
+    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forList(task: KronosAtomicActionTask, kClass: KClass<*>): List<Any> {
+    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forMap(task: KronosAtomicActionTask): Map<String, Any>? {
+    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forObject(task: KronosAtomicActionTask, kClass: KClass<*>): Any? {
+    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun update(task: KronosAtomicActionTask): Int {
+    override fun update(task: KAtomicActionTask): Int {
         throw NoDataSourceException(noDataSourceMessage)
     }
 

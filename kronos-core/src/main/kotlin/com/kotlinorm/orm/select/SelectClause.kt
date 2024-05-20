@@ -112,32 +112,6 @@ class SelectClause<T : KPojo>(
 
 
     /**
-     * 设置选择语句的限制数量。
-     *
-     * 该函数用于限制查询结果的返回数量。调用此函数后，会将指定的数量设置为查询结果的上限。
-     *
-     * @param num 指定的限制数量，表示查询结果最多返回的记录数。
-     * @return 返回 SelectClause<T> 实例，支持链式调用。
-     */
-    fun limit(num: Int): SelectClause<T> {
-        ps = num // 设置限制数量
-        return this // 返回当前 SelectClause 实例以支持链式调用
-    }
-
-
-    /**
-     * 设置查询的偏移量（即跳过前num条记录）
-     *
-     * @param num 要跳过的记录数，用于实现分页查询时的偏移功能。
-     * @return 返回SelectClause的实例，支持链式调用。
-     */
-    fun offset(num: Int): SelectClause<T> {
-        offset = num // 设置查询偏移量
-        return this // 返回当前SelectClause实例以支持链式调用
-    }
-
-
-    /**
      * 设置分页信息，用于查询语句的分页操作。
      *
      * @param pi 当前页码，表示需要获取哪一页的数据。
@@ -145,13 +119,8 @@ class SelectClause<T : KPojo>(
      * @return 返回 SelectClause<T> 实例，支持链式调用。
      */
     fun page(pi: Int, ps: Int): SelectClause<T> {
-        isPage = true // 标记为分页查询
-        val offset = (pi - 1) * ps // 计算偏移量，用于数据库查询的偏移定位
-        limit(ps) // 设置每页的记录数
-        offset(offset) // 设置查询的偏移量，从指定位置开始查询
-        return this // 返回当前 SelectClause<T> 实例，允许链式调用
+        TODO()
     }
-
 
     /**
      * 根据指定的字段构建查询条件，并返回SelectClause实例。
@@ -273,8 +242,6 @@ class SelectClause<T : KPojo>(
         val selectKeyword = if (selectFields.isEmpty()) "*" else if (isDistinct) "SELECT DISTINCT" else "SELECT"
 
         // 检查并设置是否分页
-        val limitKeyword = if (isPage) "LIMIT" else null
-        val offsetKeyword = if (isPage) "OFFSET" else null
 
         // 检查并设置是否分组
         val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
@@ -286,26 +253,24 @@ class SelectClause<T : KPojo>(
         }) else null
 
         // 如果分页，则将分页参数添加到SQL中
-        val limitOffsetPart = if (isPage) " $limitKeyword ${ps} $offsetKeyword ${offset}" else null
 
         // 组装最终的SQL语句
         val sql = listOfNotNull(
             selectKeyword,
             if (selectFields.isEmpty()) "*" else selectFields.joinToString(", ") {
                 it.let {
-                    // 加别名
-                    if (it.name != it.columnName) {
-                        "${it.quoted()} AS `$it`"
-                    } else {
-                        it.quoted()
+                    when {
+                        it.alias != null -> "${it.quoted()} AS `${it.alias}`"
+                        it.name != it.columnName -> "${it.quoted()} AS `$it`"
+                        it.type == "string" -> it.toString()
+                        else -> it.quoted()
                     }
                 }
             },
             "FROM `$tableName`",
             whereClauseSql,
             groupByKeyword,
-            havingKeyword,
-            limitOffsetPart
+            havingKeyword
         ).joinToString(" ")
 
         // 返回构建好的KronosAtomicTask对象

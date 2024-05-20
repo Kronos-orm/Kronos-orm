@@ -260,7 +260,6 @@ class SelectClause<T : KPojo>(
             if (selectFields.isEmpty()) "*" else selectFields.joinToString(", ") {
                 it.let {
                     when {
-                        it.alias != null -> "${it.quoted()} AS `${it.alias}`"
                         it.name != it.columnName -> "${it.quoted()} AS `$it`"
                         it.type == "string" -> it.toString()
                         else -> it.quoted()

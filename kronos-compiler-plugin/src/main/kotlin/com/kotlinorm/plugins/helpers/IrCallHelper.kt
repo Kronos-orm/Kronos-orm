@@ -44,7 +44,7 @@ class Receivers(
  * @return A new instance of the Receivers class with the specified dispatch receiver.
  * @author OUSC
  */
-internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?): Unit {
+internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?) {
     this.dispatchReceiver = dispatchReceiver
 }
 
@@ -55,7 +55,7 @@ internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?): Unit {
  * @return A new instance of the Receivers class with the specified extension receiver.
  * @author OUSC
  */
-internal fun Receivers.extensionBy(extensionReceiver: IrExpression?): Unit {
+internal fun Receivers.extensionBy(extensionReceiver: IrExpression?) {
     this.extensionReceiver = extensionReceiver
 }
 
@@ -64,7 +64,7 @@ internal fun Receivers.extensionBy(extensionReceiver: IrExpression?): Unit {
  *
  * @param irCall The function symbol of the IR call.
  * @param values The vararg array of expression values for the IR call.
- * @param receivers The lambda function that returns the receivers for the IR call. Defaults to a lambda that returns an empty Receivers instance.
+ * @param setReceivers The lambda function that to set the receivers for the IR call. Defaults to a lambda that returns an empty Receivers instance.
  * @return The IrFunctionAccessExpression representing the applied IR function call.
  * @author OUSC
  */

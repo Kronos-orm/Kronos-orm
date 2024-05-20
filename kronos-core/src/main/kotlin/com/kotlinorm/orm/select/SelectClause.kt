@@ -34,14 +34,14 @@ class SelectClause<T : KPojo>(
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
-    var selectFields: LinkedHashSet<Field> = linkedSetOf()
-    var groupByFields: LinkedHashSet<Field> = linkedSetOf()
-    var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
-    var isDistinct = false
+    private var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
+    private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
+    private var isDistinct = false
     var isPage = false
-    var isGroup = false
-    var isHaving = false
-    var isOrder = false
+    private var isGroup = false
+    private var isHaving = false
+    private var isOrder = false
     var ps = 0
     var offset = 0
 
@@ -189,11 +189,6 @@ class SelectClause<T : KPojo>(
         TODO()
     }
 
-    fun query(): List<Map<String, Any>> {
-        TODO()
-    }
-
-
     /**
      * 构建一个KronosAtomicTask对象。
      *
@@ -301,8 +296,27 @@ class SelectClause<T : KPojo>(
      * @return 返回KronosOperationResult对象，包含操作的结果信息。
      */
     fun fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-        // 构建并执行Kronos操作，根据提供的wrapper参数（如果有的话）来调整执行行为。
-        return build().fetchAll(wrapper)
+        return this.build().fetchAll(wrapper)
+    }
+
+    inline fun <reified T> fetchList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        return this.build().fetchList(wrapper)
+    }
+
+    private fun singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+        return this.build().singleMap(wrapper)
+    }
+
+    private fun singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+        return this.build().singleMapOrNull(wrapper)
+    }
+
+    inline fun <reified T> single(wrapper: KronosDataSourceWrapper? = null): T {
+        return this.build().single(wrapper)
+    }
+
+    inline fun <reified T> singleOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        return this.build().singleOrNull(wrapper)
     }
 
     companion object {

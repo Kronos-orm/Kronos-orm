@@ -2,6 +2,7 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
@@ -10,6 +11,7 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.Extensions.mapperTo
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
 fun lastInsertIdObtainSql(dbType: DBType): String {
@@ -35,32 +37,34 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
     if (operationType == KOperationType.INSERT) {
         lastInsertId = wrapper.orDefault()
             .forObject(
-                KronosAtomicActionTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
+                KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
             ) as Long
     }
     return KronosOperationResult(affectRows, lastInsertId)
 }
 
 fun KAtomicQueryTask.fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-    TODO()
+    return wrapper!!.forList(this)
 }
 
+@Suppress("UNCHECKED_CAST")
 inline fun <reified T> KAtomicQueryTask.fetchList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-    TODO()
+    return wrapper!!.forList(this , T::class) as List<T>
 }
 
 fun KAtomicQueryTask.singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
-    TODO()
+    return wrapper!!.forMap(this)!!
 }
 
-fun KAtomicQueryTask.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
-    TODO()
+fun KAtomicQueryTask.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+    return wrapper!!.forMap(this)
 }
 
 inline fun <reified T> KAtomicQueryTask.single(wrapper: KronosDataSourceWrapper? = null): T {
-    TODO()
+    val rst = wrapper!!.forObject(this , T::class) as T ?: throw NullPointerException("No such record")
+    return rst
 }
 
 inline fun <reified T> KAtomicQueryTask.singleOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-    TODO()
+    return wrapper!!.forObject(this , T::class) as T
 }

@@ -1,6 +1,7 @@
 package com.kotlinorm
 
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.UseSerializeResolver
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
@@ -12,6 +13,7 @@ import com.kotlinorm.utils.Extensions.mapperTo
 data class User(
     var id: Int? = null,
     var username: String? = null,
+    @UseSerializeResolver
     var gender: Int? = null
 ) : KPojo()
 

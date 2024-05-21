@@ -27,13 +27,16 @@ fun setCommonStrategy(
     }
 }
 
-fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { this.addAll(this@toLinkedSet) }
+fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { addAll(this@toLinkedSet) }
 
 @Suppress("UNUSED")
-fun getSafeValue(kotlinType: String, superTypes: List<String>,  newVal: Any?): Any? {
-    return when {
-        newVal == null -> null
-        kotlinType == newVal::class.qualifiedName -> newVal
-        else -> newVal
-    }
+fun getSafeValue(
+    kotlinType: String,
+    superTypes: List<String>,
+    map: Map<String, Any?>,
+    key: String,
+    useSerializeResolver: Boolean
+): Any? {
+    val kClass = Class.forName(kotlinType).kotlin
+    return map[key]
 }

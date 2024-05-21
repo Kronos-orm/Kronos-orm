@@ -36,10 +36,12 @@ class SelectParserTest {
             import com.kotlinorm.annotations.CreateTime
             import com.kotlinorm.orm.select.select
             import java.util.Date
+            import com.kotlinorm.annotations.UseSerializeResolver
                     
             @Table(name = "tb_user")
             data class User(
                 var id: Int? = null,
+                @UseSerializeResolver
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime

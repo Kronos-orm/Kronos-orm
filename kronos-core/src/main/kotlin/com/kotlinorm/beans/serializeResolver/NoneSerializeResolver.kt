@@ -31,6 +31,10 @@ class NoneSerializeResolver : KronosSerializeResolver {
         throw UnsupportedOperationException()
     }
 
+    override fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any {
+        throw UnsupportedOperationException()
+    }
+
     override fun serialize(obj: Any): String {
         throw UnsupportedOperationException()
     }

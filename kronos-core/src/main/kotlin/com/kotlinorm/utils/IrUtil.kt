@@ -3,6 +3,7 @@ package com.kotlinorm.utils
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
+import kotlin.reflect.KClass
 
 
 fun fieldK2db(str: String): String {

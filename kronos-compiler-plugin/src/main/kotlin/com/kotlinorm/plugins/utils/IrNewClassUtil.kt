@@ -8,14 +8,15 @@ import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.builders.declarations.buildClass
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.kotlinFqName
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.name.FqName
+import kotlin.reflect.KClass
 
 context(IrPluginContext)
 val createPairSymbol
@@ -83,20 +84,43 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
                 irGet(irFunction.dispatchReceiverParameter!!),
                 it.backingField!!,
                 applyIrCall(
+                    mapGetterSymbol!!,
+                    irString(it.name.asString())
+                ) {
+                    dispatchBy(irGet(map))
+                }
+            )
+        }
+
+        +irReturn(
+            irGet(irFunction.dispatchReceiverParameter!!)
+        )
+    }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
+    val map = irFunction.valueParameters.first()
+    return irBlockBody {
+        declaration.properties.forEach {
+            +irSetField(
+                irGet(irFunction.dispatchReceiverParameter!!),
+                it.backingField!!,
+                applyIrCall(
                     getSafeValueSymbol,
-                    irString(it.backingField!!.type.getClass()!!.kotlinFqName.asString()),
+                    irString(it.backingField!!.type.classFqName!!.asString()),
                     applyIrCall(
                         createStringListSymbol,
-                        *it.backingField!!.type.getClass()!!.superTypes.map {
-                            irString(it.getClass()!!.kotlinFqName.asString())
-                        }.toTypedArray()
+                        irVararg(
+                            irBuiltIns.stringType,
+                            it.backingField!!.type.getClass()!!.superTypes.map { type ->
+                                irString(type.getClass()!!.kotlinFqName.asString())
+                            }
+                        )
                     ),
-                    applyIrCall(
-                        mapGetterSymbol!!,
-                        irString(it.name.asString())
-                    ) {
-                        dispatchBy(irGet(map))
-                    }
+                    irGet(map),
+                    irString(it.name.asString()),
+                    irBoolean(it.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))
                 )
             )
         }

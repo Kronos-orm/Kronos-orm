@@ -17,13 +17,14 @@
 package com.kotlinorm.annotations
 
 /**
- * Column
+ * CreateTime
  *
- * Annotation to specify the name of a column in a database table.
+ * Annotation to specify the create_time format of a column in a database table.
  *
- * @property name The name of the column in the database table.
+ * @property format The create_time format of the column in the database table.
+ * @property enable Whether to enable the create_time format of the column in the database table.
  * @author OUSC
  */
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ReplaceWhenCompile()
+annotation class UseSerializeResolver

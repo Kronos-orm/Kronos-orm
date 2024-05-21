@@ -34,6 +34,8 @@ interface KronosSerializeResolver {
      */
     fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T
 
+    fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any
+
     /**
      * Serializes an object of type T into a string.
      *

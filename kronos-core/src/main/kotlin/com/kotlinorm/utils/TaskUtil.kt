@@ -11,7 +11,6 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.Extensions.mapperTo
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
 fun lastInsertIdObtainSql(dbType: DBType): String {

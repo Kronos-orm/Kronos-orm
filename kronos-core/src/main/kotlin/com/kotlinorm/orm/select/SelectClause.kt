@@ -247,8 +247,6 @@ class SelectClause<T : KPojo>(
                             " " + it.second
                 } else null
 
-        // 检查并设置是否分页
-
         // 检查并设置是否分组
         val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
             ?.joinToString(", ") { it.quoted() }) else null
@@ -303,11 +301,12 @@ class SelectClause<T : KPojo>(
         return this.build().fetchList(wrapper)
     }
 
-    private fun singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+
+    fun singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
         return this.build().singleMap(wrapper)
     }
 
-    private fun singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+    fun singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
         return this.build().singleMapOrNull(wrapper)
     }
 
@@ -358,6 +357,30 @@ class SelectClause<T : KPojo>(
          */
         fun <T : KPojo> List<SelectClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
             return build().execute(wrapper)
+        }
+
+        fun <T : KPojo> List<SelectClause<T>>.fetchAll(wrapper: KronosDataSourceWrapper? = null): List<List<Map<String, Any>>> {
+            return map { it.fetchAll(wrapper) }
+        }
+
+        inline fun <reified T : KPojo> List<SelectClause<T>>.fetchList(wrapper: KronosDataSourceWrapper? = null): List<List<T>> {
+            return map { it.fetchList(wrapper) }
+        }
+
+        fun <T : KPojo> List<SelectClause<T>>.singleMap(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+            return map { it.singleMap(wrapper) }
+        }
+
+        fun <T : KPojo> List<SelectClause<T>>.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>?> {
+            return map { it.singleMapOrNull(wrapper) }
+        }
+
+        inline fun <reified T : KPojo> List<SelectClause<T>>.single(wrapper: KronosDataSourceWrapper? = null): List<T> {
+            return map { it.single(wrapper) }
+        }
+
+        inline fun <reified T : KPojo> List<SelectClause<T>>.singleOrNull(wrapper: KronosDataSourceWrapper? = null): List<T?> {
+            return map { it.singleOrNull(wrapper) }
         }
     }
 }

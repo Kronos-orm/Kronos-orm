@@ -44,27 +44,27 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
 }
 
 fun KAtomicQueryTask.fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-    return wrapper!!.forList(this)
+    return wrapper.orDefault().forList(this)
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T> KAtomicQueryTask.fetchList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-    return wrapper!!.forList(this , T::class) as List<T>
+    return wrapper.orDefault().forList(this , T::class) as List<T>
 }
 
 fun KAtomicQueryTask.singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
-    return wrapper!!.forMap(this)!!
+    return wrapper.orDefault().forMap(this)!!
 }
 
 fun KAtomicQueryTask.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
-    return wrapper!!.forMap(this)
+    return wrapper.orDefault().forMap(this)
 }
 
 inline fun <reified T> KAtomicQueryTask.single(wrapper: KronosDataSourceWrapper? = null): T {
-    val rst = wrapper!!.forObject(this , T::class) as T ?: throw NullPointerException("No such record")
+    val rst = wrapper.orDefault().forObject(this , T::class) as T ?: throw NullPointerException("No such record")
     return rst
 }
 
 inline fun <reified T> KAtomicQueryTask.singleOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-    return wrapper!!.forObject(this , T::class) as T
+    return wrapper.orDefault().forObject(this , T::class) as T
 }

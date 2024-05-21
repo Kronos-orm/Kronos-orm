@@ -276,7 +276,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [SQLException] if an error occurs while executing the batch update
      */
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
-        val (sql, paramList) = task.parsed()
+        val (sql, paramList) = task.parsedArr()
         val conn = dataSource.connection
         var ps: PreparedStatement? = null
         val result: IntArray

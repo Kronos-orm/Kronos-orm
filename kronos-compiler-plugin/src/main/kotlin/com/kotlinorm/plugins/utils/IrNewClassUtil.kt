@@ -21,13 +21,20 @@ context(IrPluginContext)
 val createPairSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "createPair")
         .first()
+
 context(IrPluginContext)
 val createMutableMapSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "createMutableMap")
         .first()
+
 context(IrPluginContext)
 val createFieldListSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "createFieldList")
+        .first()
+
+context(IrPluginContext)
+val createStringListSymbol
+    get() = referenceFunctions("com.kotlinorm.utils", "createStringList")
         .first()
 
 context(IrPluginContext)
@@ -78,6 +85,12 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
                 applyIrCall(
                     getSafeValueSymbol,
                     irString(it.backingField!!.type.getClass()!!.kotlinFqName.asString()),
+                    applyIrCall(
+                        createStringListSymbol,
+                        *it.backingField!!.type.getClass()!!.superTypes.map {
+                            irString(it.getClass()!!.kotlinFqName.asString())
+                        }.toTypedArray()
+                    ),
                     applyIrCall(
                         mapGetterSymbol!!,
                         irString(it.name.asString())

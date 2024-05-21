@@ -30,9 +30,10 @@ fun setCommonStrategy(
 fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { this.addAll(this@toLinkedSet) }
 
 @Suppress("UNUSED")
-fun getSafeValue(kotlinType: String, newVal: Any?): Any? {
-    if (newVal == null) return null
-    if (kotlinType == newVal::class.qualifiedName)
-        return newVal
-    return newVal
+fun getSafeValue(kotlinType: String, superTypes: List<String>,  newVal: Any?): Any? {
+    return when {
+        newVal == null -> null
+        kotlinType == newVal::class.qualifiedName -> newVal
+        else -> newVal
+    }
 }

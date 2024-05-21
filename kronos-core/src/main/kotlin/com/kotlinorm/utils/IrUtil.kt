@@ -38,3 +38,5 @@ fun createPair(first: String, second: Any?) = first to second
 fun createMutableMap(vararg pairs: Pair<String, Any?>) = mutableMapOf(*pairs)
 
 fun createFieldList(vararg elements: Field) = mutableListOf(*elements)
+
+fun createStringList(vararg elements: String) = mutableListOf(*elements)

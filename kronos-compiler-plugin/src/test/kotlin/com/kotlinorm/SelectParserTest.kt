@@ -35,6 +35,7 @@ class SelectParserTest {
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by
             import com.kotlinorm.annotations.CreateTime
             import com.kotlinorm.orm.select.select
+            import java.util.Date
                     
             @Table(name = "tb_user")
             data class User(
@@ -42,7 +43,7 @@ class SelectParserTest {
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime
-                var createTime: String? = null
+                var createTime: Date? = null
             ) : KPojo()
 
 
@@ -56,7 +57,7 @@ class SelectParserTest {
                 val testUser = User(1, "test")
                 val t = user.kronosColumns()
                     
-                val (sql, paramMap) = user.select { it.id + it.username.alias("name") + "COUNT(1)".alias("count") }.build()
+                val (sql, paramMap) = user.select { it.username.alias("name") + it.gender }.build()
                 println(user.toDataMap())
             }        
       """.trimIndent()

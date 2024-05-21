@@ -28,3 +28,7 @@ fun setCommonStrategy(
 }
 
 fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { this.addAll(this@toLinkedSet) }
+
+fun getSafeValue(kotlinType: String, newVal: Any?): Any? {
+    return newVal
+}

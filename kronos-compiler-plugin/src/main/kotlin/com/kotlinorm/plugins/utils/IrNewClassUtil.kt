@@ -11,9 +11,10 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getPropertyGetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 
 context(IrPluginContext)
@@ -27,6 +28,11 @@ val createMutableMapSymbol
 context(IrPluginContext)
 val createFieldListSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "createFieldList")
+        .first()
+
+context(IrPluginContext)
+private val getSafeValueSymbol
+    get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue")
         .first()
 
 context(IrPluginContext)
@@ -70,11 +76,15 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
                 irGet(irFunction.dispatchReceiverParameter!!),
                 it.backingField!!,
                 applyIrCall(
-                    mapGetterSymbol!!,
-                    irString(it.name.asString())
-                ){
-                    dispatchBy(irGet(map))
-                }
+                    getSafeValueSymbol,
+                    irString(it.backingField!!.type.getClass()!!.kotlinFqName.asString()),
+                    applyIrCall(
+                        mapGetterSymbol!!,
+                        irString(it.name.asString())
+                    ) {
+                        dispatchBy(irGet(map))
+                    }
+                )
             )
         }
 

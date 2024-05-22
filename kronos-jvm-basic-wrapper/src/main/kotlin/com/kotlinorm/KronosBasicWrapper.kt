@@ -20,9 +20,7 @@ import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
@@ -250,37 +248,25 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [SQLException] if an error occurs while executing the update
      */
     override fun update(task: KAtomicActionTask): Int {
-        val taskList = mutableListOf<KAtomicActionTask>()
-        task.sql.split(";").forEach {
-            taskList.add(
-                KronosAtomicActionTask(
-                    sql = it,
-                    paramMap = task.paramMap,
-                    operationType = task.operationType
-                )
-            )
-        }
-        return taskList.sumOf {
-            val (sql, paramList) = it.parsed()
-            val conn = dataSource.connection
-            var ps: PreparedStatement? = null
-            try {
-                ps = conn.prepareStatement(sql)
-                paramList.forEachIndexed { index, any ->
-                    ps.setObject(index + 1, any)
-                }
-                ps.executeUpdate()
-            } catch (e: SQLException) {
-                defaultLogger(this).error(
-                    kMsgOf(
-                        "Failed to execute update operation, ${e.message}.", Red
-                    ).endl().toArray()
-                )
-                throw e
-            } finally {
-                ps?.close()
-                conn.close()
+        val (sql, paramList) = task.parsed()
+        val conn = dataSource.connection
+        var ps: PreparedStatement? = null
+        try {
+            ps = conn.prepareStatement(sql)
+            paramList.forEachIndexed { index, any ->
+                ps.setObject(index + 1, any)
             }
+            return ps.executeUpdate()
+        } catch (e: SQLException) {
+            defaultLogger(this).error(
+                kMsgOf(
+                    "Failed to execute update operation, ${e.message}.", Red
+                ).endl().toArray()
+            )
+            throw e
+        } finally {
+            ps?.close()
+            conn.close()
         }
     }
 

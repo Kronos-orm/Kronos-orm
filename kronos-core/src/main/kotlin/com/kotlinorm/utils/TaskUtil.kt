@@ -37,7 +37,9 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
         wrapper.orDefault().batchUpdate(this as KronosAtomicBatchTask).sum()
     } else {
         doTaskLog()
-        wrapper.orDefault().update(this as KronosAtomicActionTask)
+        (this as KronosAtomicActionTask).trySplitOut().sumOf {
+            wrapper.orDefault().update(it)
+        }
     }
     var lastInsertId: Long? = null
     if (operationType == KOperationType.INSERT) {

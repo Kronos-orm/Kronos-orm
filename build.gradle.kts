@@ -19,6 +19,9 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
+    testImplementation(project(":kronos-jvm-basic-wrapper"))
+    testImplementation("commons-dbcp:commons-dbcp:1.4")
+    testImplementation("com.mysql:mysql-connector-j:8.4.0")
 }
 
 tasks.test {

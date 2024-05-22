@@ -30,7 +30,8 @@ class Field(
     val columnName: String,
     var name: String = fieldDb2k(columnName),
     val type: String = "",
-    var primaryKey: Boolean = false
+    var primaryKey: Boolean = false,
+    val dateFormat: String? = null
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

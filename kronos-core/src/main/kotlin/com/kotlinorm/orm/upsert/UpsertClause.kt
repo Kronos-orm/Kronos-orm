@@ -71,7 +71,7 @@ class UpsertClause<T : KPojo>(
      * @throws NeedFieldsException if the new value is null
      * @return the upsert UpdateClause object
      */
-    fun on(someFields: KTableField<T, Unit>): UpsertClause<T> {
+    fun on(someFields: KTableField<T, Any?>): UpsertClause<T> {
         if (null == someFields) throw NeedFieldsException()
         pojo.tableRun {
             someFields(it)

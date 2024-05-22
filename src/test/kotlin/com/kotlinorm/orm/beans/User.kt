@@ -1,10 +1,8 @@
 package com.kotlinorm.orm.beans
 
-import com.kotlinorm.annotations.CreateTime
-import com.kotlinorm.annotations.LogicDelete
-import com.kotlinorm.annotations.Table
-import com.kotlinorm.annotations.UpdateTime
+import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
+import java.sql.Date
 
 @Table(name = "tb_user")
 data class User(
@@ -12,9 +10,10 @@ data class User(
     var username: String? = null,
     var gender: Int? = null,
     @CreateTime
+    @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
     var createTime: String? = null,
     @UpdateTime
-    var updateTime: String? = null,
+    var updateTime: Date? = null,
     @LogicDelete
     var deleted: Boolean? = null
 ) : KPojo()

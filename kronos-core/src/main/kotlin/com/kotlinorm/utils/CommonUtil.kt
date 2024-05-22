@@ -6,12 +6,9 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.format
+import kotlinx.datetime.*
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
-import kotlinx.datetime.toJavaLocalDateTime
 
 
 /**
@@ -80,7 +77,7 @@ fun getSafeValue(
                     "kotlin.Float" -> map[safeKey].toString().toFloat()
                     "kotlin.Double" -> map[safeKey].toString().toDouble()
                     "kotlin.Byte" -> map[safeKey].toString().toByte()
-                    "kotlin.Char" -> map[safeKey].toString().toCharArray()[0]
+                    "kotlin.Char" -> map[safeKey].toString().firstOrNull()
                     "kotlin.String" -> when {
                         (listOf(typeOfVal.qualifiedName) + typeOfVal.supertypes.map { it.toString() }).any {
                             it in listOf(
@@ -102,31 +99,33 @@ fun getSafeValue(
                         .toBoolean()
 
                     "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime" -> {
-                        val epochSecond = getEpochSecond()
+                        val localDateTime = java.time.Instant.ofEpochSecond(getEpochSecond())
+                            .atZone(java.time.ZoneId.systemDefault())
                         when (kotlinType) {
-                            "java.time.LocalDateTime" -> java.time.Instant.ofEpochSecond(epochSecond)
-                                .atZone(java.time.ZoneId.systemDefault())
-
-                            "java.time.LocalDate" -> java.time.Instant.ofEpochSecond(epochSecond)
-                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-
-                            "java.time.LocalTime" -> java.time.Instant.ofEpochSecond(epochSecond)
-                                .atZone(java.time.ZoneId.systemDefault()).toLocalTime()
-
+                            "java.time.LocalDateTime" -> localDateTime
+                            "java.time.LocalDate" -> localDateTime.toLocalDate()
+                            "java.time.LocalTime" -> localDateTime.toLocalTime()
                             else -> map[safeKey]
                         }
                     }
 
-                    "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> Instant.parse(
-                        map[safeKey].toString()
-                    )
+                    "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> {
+                        val localDateTime = Instant.parse(
+                            map[safeKey].toString()
+                        ).toLocalDateTime(TimeZone.currentSystemDefault())
+                        when (kotlinType) {
+                            "kotlinx.datetime.LocalDateTime" -> localDateTime
+                            "kotlinx.datetime.LocalDate" -> localDateTime.date
+                            "kotlinx.datetime.LocalTime" -> localDateTime.time
+                            else -> map[safeKey]
+                        }
+                    }
 
                     else -> when {
                         "java.util.Date" in superTypes -> {
-                            val epochSecond = getEpochSecond()
                             val constructor =
                                 Class.forName(kotlinType).constructors.find { it.parameters.size == 1 && it.parameterTypes[0] == Long::class.java }!!
-                            constructor.newInstance(epochSecond * 1000)
+                            constructor.newInstance(getEpochSecond() * 1000)
                         }
 
                         else -> map[safeKey]

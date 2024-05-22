@@ -63,22 +63,24 @@ fun getSafeValue(
                 .atZone(java.time.ZoneId.systemDefault()).toInstant().epochSecond
         }
     }
+    val safeKey =
+        if (map[key] != null || kPojo.kronosColumns().any { it.name == column.columnName }) key else column.columnName
     return when {
-        map[key] == null -> null
+        map[safeKey] == null -> null
         else -> {
-            val typeOfVal = map[key]!!::class
+            val typeOfVal = map[safeKey]!!::class
             if (kotlinType != typeOfVal.qualifiedName) {
                 if (useSerializeResolver) {
-                    return serializeResolver.deserializeObj(map[key].toString(), kPojo::class)
+                    return serializeResolver.deserializeObj(map[safeKey].toString(), kPojo::class)
                 }
                 when (kotlinType) {
-                    "kotlin.Int" -> map[key].toString().toInt()
-                    "kotlin.Long" -> map[key].toString().toLong()
-                    "kotlin.Short" -> map[key].toString().toShort()
-                    "kotlin.Float" -> map[key].toString().toFloat()
-                    "kotlin.Double" -> map[key].toString().toDouble()
-                    "kotlin.Byte" -> map[key].toString().toByte()
-                    "kotlin.Char" -> map[key].toString().toCharArray()[0]
+                    "kotlin.Int" -> map[safeKey].toString().toInt()
+                    "kotlin.Long" -> map[safeKey].toString().toLong()
+                    "kotlin.Short" -> map[safeKey].toString().toShort()
+                    "kotlin.Float" -> map[safeKey].toString().toFloat()
+                    "kotlin.Double" -> map[safeKey].toString().toDouble()
+                    "kotlin.Byte" -> map[safeKey].toString().toByte()
+                    "kotlin.Char" -> map[safeKey].toString().toCharArray()[0]
                     "kotlin.String" -> when {
                         (listOf(typeOfVal.qualifiedName) + typeOfVal.supertypes.map { it.toString() }).any {
                             it in listOf(
@@ -88,15 +90,15 @@ fun getSafeValue(
                                 "java.time.LocalTime"
                             )
                         } -> {
-                            LocalDateTime.parse(map[key].toString()).format(LocalDateTime.Format {
+                            LocalDateTime.parse(map[safeKey].toString()).format(LocalDateTime.Format {
                                 byUnicodePattern(column.dateFormat ?: defaultDateFormat)
                             })
                         }
 
-                        else -> map[key].toString()
+                        else -> map[safeKey].toString()
                     }
 
-                    "kotlin.Boolean" -> (map[key] is Number && map[key] as Number != 0) || map[key].toString()
+                    "kotlin.Boolean" -> (map[safeKey] is Number && map[safeKey] as Number != 0) || map[safeKey].toString()
                         .toBoolean()
 
                     "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime" -> {
@@ -111,12 +113,12 @@ fun getSafeValue(
                             "java.time.LocalTime" -> java.time.Instant.ofEpochSecond(epochSecond)
                                 .atZone(java.time.ZoneId.systemDefault()).toLocalTime()
 
-                            else -> map[key]
+                            else -> map[safeKey]
                         }
                     }
 
                     "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> Instant.parse(
-                        map[key].toString()
+                        map[safeKey].toString()
                     )
 
                     else -> when {
@@ -127,12 +129,12 @@ fun getSafeValue(
                             constructor.newInstance(epochSecond * 1000)
                         }
 
-                        else -> map[key]
+                        else -> map[safeKey]
 
                     }
                 }
             } else {
-                map[key]
+                map[safeKey]
             }
         }
     }

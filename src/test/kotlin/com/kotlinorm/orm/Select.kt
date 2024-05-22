@@ -1,19 +1,28 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.orm.utils.TestWrapper
+import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class Select {
+
+    private val ds = BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver"
+        url = "jdbc:mysql://localhost:3306/test"
+        username = "root"
+        password = "rootroot"
+    }
+
     init {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { TestWrapper }
+            dataSource = { KronosBasicWrapper(ds) }
         }
     }
 
@@ -39,12 +48,12 @@ class Select {
     @Test
     fun testSelect3() {
         val (sql, paramMap) = User()
-            .select { it.username.alias("name") + it.gender }
-            .where { it.id > 10 }
-            .distinct()
+            .select { it.username + it.gender }
+//            .where { it.id > 10 }
+//            .distinct()
 //            .groupBy { it.id + it.gender }
-            //   .orderBy { it.id.desc + it.username.asc }
-            .having { it.id.eq }
+            .orderBy{ it.id.desc() + it.username + "SUM(id, uid)" }
+//            .having { it.id.eq }
             .build()
 
         assertEquals(mapOf("idMin" to 10), paramMap)
@@ -65,5 +74,22 @@ class Select {
             sql
         )
         assertEquals(mapOf("id" to 1), paramMap)
+    }
+
+    @Test
+    fun testSelect5() {
+
+        val (sql, paramMap) = user.select { it.id + it.username.alias("name") + it.gender + "COUNT(1) as `count`" }.build()
+
+        assertEquals("SELECT `id`, `username` AS `name`, `gender`, COUNT(1) as `count` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals(mapOf("id" to 1), paramMap)
+    }
+
+    @Test
+    fun testDatebase() {
+
+        val map = user.select().single<User>()
+        println(map)
+
     }
 }

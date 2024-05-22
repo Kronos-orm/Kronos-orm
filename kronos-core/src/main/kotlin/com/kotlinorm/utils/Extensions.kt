@@ -10,7 +10,7 @@ import kotlin.reflect.full.createInstance
 
 object Extensions {
 
-    internal fun Map<String, Any?>.safeMapperTo(kClass: KClass<KPojo>): Any {
+    fun Map<String, Any?>.safeMapperTo(kClass: KClass<KPojo>): Any {
         return kClass.createInstance().safeFromMapData(this)
     }
     inline fun <reified K : KPojo> Map<String, Any?>.mapperTo(): K {

@@ -27,6 +27,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.Extensions.mapperTo
+import com.kotlinorm.utils.Extensions.safeMapperTo
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
@@ -115,7 +116,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
         return if (KPojo::class.isSuperclassOf(kClass)) {
             @Suppress("UNCHECKED_CAST")
-            forList(task).map { it.mapperTo(kClass as KClass<KPojo>) }
+            forList(task).map { it.safeMapperTo(kClass as KClass<KPojo>) }
         } else {
             val (sql, paramList) = task.parsed()
             val conn = dataSource.connection
@@ -208,7 +209,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             map?.values?.firstOrNull()?.toString()
         } else if (KPojo::class.isSuperclassOf(kClass)) {
             @Suppress("UNCHECKED_CAST")
-            map?.mapperTo(kClass as KClass<KPojo>)
+            map?.safeMapperTo(kClass as KClass<KPojo>)
         } else if (clazz.name == "java.lang.Integer") {
             map?.values?.firstOrNull()?.toString()?.toInt()
         } else if (clazz.name == "long") {

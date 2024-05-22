@@ -43,5 +43,6 @@ fun getSafeValue(
     // 1.类型转换 Any->String,Long->Int, Short->Int, Int->Short, Int->Boolean...
     // 2.日期转换 String->Date, Long->Date, String-> LocalDateTime, Long->LocalDateTime
     // 3.将String使用serialize resolver转为指定类型
+    // 4.若columnLabel在map中的值为null，尝试查找columnName在map中的值存入KPojo
     return map[key]
 }

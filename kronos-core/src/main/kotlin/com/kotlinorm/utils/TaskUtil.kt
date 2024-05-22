@@ -1,15 +1,15 @@
 package com.kotlinorm.utils
 
+import com.kotlinorm.Kronos.defaultLogger
+import com.kotlinorm.beans.logging.KLogMessage.Companion.logMessageOf
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KAtomicActionTask
-import com.kotlinorm.interfaces.KAtomicQueryTask
-import com.kotlinorm.interfaces.KBatchTask
-import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.*
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
@@ -30,40 +30,59 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
     val affectRows = if (this is KBatchTask) {
         wrapper.orDefault().batchUpdate(this as KronosAtomicBatchTask).sum()
     } else {
+        doTaskLog()
         wrapper.orDefault().update(this as KronosAtomicActionTask)
     }
     var lastInsertId: Long? = null
     if (operationType == KOperationType.INSERT) {
-        lastInsertId = wrapper.orDefault()
-            .forObject(
-                KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
-            ) as Long
+        lastInsertId = wrapper.orDefault().forObject(
+            KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
+        ) as Long
     }
     return KronosOperationResult(affectRows, lastInsertId)
 }
 
-fun KAtomicQueryTask.fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+fun KAtomicQueryTask.query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+    doTaskLog()
     return wrapper.orDefault().forList(this)
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T> KAtomicQueryTask.fetchList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-    return wrapper.orDefault().forList(this , T::class) as List<T>
+inline fun <reified T> KAtomicQueryTask.queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+    doTaskLog()
+    return wrapper.orDefault().forList(this, T::class) as List<T>
 }
 
-fun KAtomicQueryTask.singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+fun KAtomicQueryTask.queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+    doTaskLog()
     return wrapper.orDefault().forMap(this)!!
 }
 
-fun KAtomicQueryTask.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+fun KAtomicQueryTask.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+    doTaskLog()
     return wrapper.orDefault().forMap(this)
 }
 
-inline fun <reified T> KAtomicQueryTask.single(wrapper: KronosDataSourceWrapper? = null): T {
-    val rst = wrapper.orDefault().forObject(this , T::class) as T ?: throw NullPointerException("No such record")
-    return rst
+inline fun <reified T> KAtomicQueryTask.queryOne(wrapper: KronosDataSourceWrapper? = null): T {
+    doTaskLog()
+    return wrapper.orDefault().forObject(this, T::class) as T ?: throw NullPointerException("No such record")
 }
 
-inline fun <reified T> KAtomicQueryTask.singleOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-    return wrapper.orDefault().forObject(this , T::class) as T
+inline fun <reified T> KAtomicQueryTask.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+    doTaskLog()
+    return wrapper.orDefault().forObject(this, T::class) as T
+}
+
+fun KAtomicTask.doTaskLog() {
+    defaultLogger(this).info(
+        arrayOf(
+            logMessageOf("Executing task: [${operationType.name}]", ColorPrintCode.GREEN.toArray()).endl(),
+            logMessageOf(
+                "\t$sql", ColorPrintCode.BLUE.toArray()
+            ).endl(),
+            logMessageOf(
+                "\t$paramMap", ColorPrintCode.MAGENTA.toArray()
+            ).endl()
+        )
+    )
 }

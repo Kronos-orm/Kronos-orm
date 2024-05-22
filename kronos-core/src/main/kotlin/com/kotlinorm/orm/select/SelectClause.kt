@@ -8,7 +8,6 @@ import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -293,29 +292,55 @@ class SelectClause<T : KPojo>(
      *                如果为null，函数将使用默认配置执行操作。
      * @return 返回KronosOperationResult对象，包含操作的结果信息。
      */
-    fun fetchAll(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-        return this.build().fetchAll(wrapper)
+    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+        return this.build().query(wrapper)
     }
 
-    inline fun <reified T> fetchList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-        return this.build().fetchList(wrapper)
+    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        return this.build().queryList(wrapper)
+    }
+
+    @JvmName("queryForList")
+    @Suppress("UNCHECKED_CAST")
+    fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        return this.build().let {
+            wrapper.orDefault().forList(it, pojo::class)
+        } as List<T>
     }
 
 
-    fun singleMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
-        return this.build().singleMap(wrapper)
+    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+        return this.build().queryMap(wrapper)
     }
 
-    fun singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
-        return this.build().singleMapOrNull(wrapper)
+    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+        return this.build().queryMapOrNull(wrapper)
     }
 
-    inline fun <reified T> single(wrapper: KronosDataSourceWrapper? = null): T {
-        return this.build().single(wrapper)
+    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
+        return this.build().queryOne(wrapper)
     }
 
-    inline fun <reified T> singleOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        return this.build().singleOrNull(wrapper)
+    @JvmName("queryForObject")
+    @Suppress("UNCHECKED_CAST")
+    fun queryOne(wrapper: KronosDataSourceWrapper? = null): T {
+        return this.build().let {
+            it.doTaskLog()
+            wrapper.orDefault().forObject(it, pojo::class) ?: throw NullPointerException("No such record")
+        } as T
+    }
+
+    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        return this.build().queryOneOrNull(wrapper)
+    }
+
+    @JvmName("queryForObjectOrNull")
+    @Suppress("UNCHECKED_CAST")
+    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        return this.build().let {
+            it.doTaskLog()
+            wrapper.orDefault().forObject(it, pojo::class)
+        } as T?
     }
 
     companion object {
@@ -349,38 +374,28 @@ class SelectClause<T : KPojo>(
             )
         }
 
-        /**
-         * Executes a list of UpdateClause objects and returns the result of the execution.
-         *
-         * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
-         * @return The KronosOperationResult of the execution.
-         */
-        fun <T : KPojo> List<SelectClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+        fun <T : KPojo> List<SelectClause<T>>.query(wrapper: KronosDataSourceWrapper? = null): List<List<Map<String, Any>>> {
+            return map { it.query(wrapper) }
         }
 
-        fun <T : KPojo> List<SelectClause<T>>.fetchAll(wrapper: KronosDataSourceWrapper? = null): List<List<Map<String, Any>>> {
-            return map { it.fetchAll(wrapper) }
+        inline fun <reified T : KPojo> List<SelectClause<T>>.queryList(wrapper: KronosDataSourceWrapper? = null): List<List<T>> {
+            return map { it.queryList<T>(wrapper) }
         }
 
-        inline fun <reified T : KPojo> List<SelectClause<T>>.fetchList(wrapper: KronosDataSourceWrapper? = null): List<List<T>> {
-            return map { it.fetchList(wrapper) }
+        fun <T : KPojo> List<SelectClause<T>>.queryMap(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+            return map { it.queryMap(wrapper) }
         }
 
-        fun <T : KPojo> List<SelectClause<T>>.singleMap(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-            return map { it.singleMap(wrapper) }
+        fun <T : KPojo> List<SelectClause<T>>.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>?> {
+            return map { it.queryMapOrNull(wrapper) }
         }
 
-        fun <T : KPojo> List<SelectClause<T>>.singleMapOrNull(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>?> {
-            return map { it.singleMapOrNull(wrapper) }
+        inline fun <reified T : KPojo> List<SelectClause<T>>.queryOne(wrapper: KronosDataSourceWrapper? = null): List<T> {
+            return map { it.queryOne(wrapper) }
         }
 
-        inline fun <reified T : KPojo> List<SelectClause<T>>.single(wrapper: KronosDataSourceWrapper? = null): List<T> {
-            return map { it.single(wrapper) }
-        }
-
-        inline fun <reified T : KPojo> List<SelectClause<T>>.singleOrNull(wrapper: KronosDataSourceWrapper? = null): List<T?> {
-            return map { it.singleOrNull(wrapper) }
+        inline fun <reified T : KPojo> List<SelectClause<T>>.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): List<T?> {
+            return map { it.queryOneOrNull(wrapper) }
         }
     }
 }

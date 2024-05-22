@@ -8,7 +8,6 @@ import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.*
-import org.jetbrains.kotlin.ir.builders.declarations.buildClass
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -16,7 +15,6 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
-import kotlin.reflect.KClass
 
 context(IrPluginContext)
 val createPairSymbol
@@ -108,6 +106,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                 it.backingField!!,
                 applyIrCall(
                     getSafeValueSymbol,
+                    irGet(irFunction.dispatchReceiverParameter!!),
                     irString(it.backingField!!.type.classFqName!!.asString()),
                     applyIrCall(
                         createStringListSymbol,

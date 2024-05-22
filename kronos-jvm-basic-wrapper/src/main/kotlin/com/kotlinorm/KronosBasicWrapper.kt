@@ -20,13 +20,13 @@ import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.logging.KLogMessage.Companion.logMessageOf
+import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.Extensions.mapperTo
 import com.kotlinorm.utils.Extensions.safeMapperTo
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -173,7 +173,9 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             while (rs.next()) {
                 val map = mutableMapOf<String, Any>()
                 for (i in 1..columnCount) {
-                    map[metaData.getColumnLabel(i)] = rs.getObject(i)
+                    rs.getObject(i)?.let {
+                        map[metaData.getColumnLabel(i)] = it
+                    }
                 }
                 list.add(map)
             }
@@ -247,25 +249,37 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [SQLException] if an error occurs while executing the update
      */
     override fun update(task: KAtomicActionTask): Int {
-        val (sql, paramList) = task.parsed()
-        val conn = dataSource.connection
-        var ps: PreparedStatement? = null
-        try {
-            ps = conn.prepareStatement(sql)
-            paramList.forEachIndexed { index, any ->
-                ps.setObject(index + 1, any)
-            }
-            return ps.executeUpdate()
-        } catch (e: SQLException) {
-            defaultLogger(this).error(
-                logMessageOf(
-                    "Failed to execute update operation, ${e.message}.", ColorPrintCode.RED.toArray()
-                ).endl().toArray()
+        val taskList = mutableListOf<KAtomicActionTask>()
+        task.sql.split(";").forEach {
+            taskList.add(
+                KronosAtomicActionTask(
+                    sql = it,
+                    paramMap = task.paramMap,
+                    operationType = task.operationType
+                )
             )
-            throw e
-        } finally {
-            ps?.close()
-            conn.close()
+        }
+        return taskList.sumOf {
+            val (sql, paramList) = it.parsed()
+            val conn = dataSource.connection
+            var ps: PreparedStatement? = null
+            try {
+                ps = conn.prepareStatement(sql)
+                paramList.forEachIndexed { index, any ->
+                    ps.setObject(index + 1, any)
+                }
+                ps.executeUpdate()
+            } catch (e: SQLException) {
+                defaultLogger(this).error(
+                    logMessageOf(
+                        "Failed to execute update operation, ${e.message}.", ColorPrintCode.RED.toArray()
+                    ).endl().toArray()
+                )
+                throw e
+            } finally {
+                ps?.close()
+                conn.close()
+            }
         }
     }
 

@@ -22,6 +22,7 @@ import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -74,6 +75,7 @@ internal val tableK2dbSymbol
 
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
+val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -108,7 +110,14 @@ fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name
         irProperty.annotations.findByFqName(ColumnAnnotationsFqName)
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
-    return applyIrCall(fieldSymbol.constructors.first(), columnName, irString(propertyName))
+    return applyIrCall(
+        fieldSymbol.constructors.first(),
+        columnName,
+        irString(propertyName),
+        irString(""),
+        irBoolean(false),
+        irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0)
+    )
 }
 
 /**

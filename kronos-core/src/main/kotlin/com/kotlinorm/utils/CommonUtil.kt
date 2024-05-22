@@ -3,6 +3,7 @@ package com.kotlinorm.utils
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+import com.kotlinorm.utils.KotlinClassMapper.toKClass
 
 /**
  *@program: kronos-orm
@@ -37,6 +38,10 @@ fun getSafeValue(
     key: String,
     useSerializeResolver: Boolean
 ): Any? {
-    val kClass = Class.forName(kotlinType).kotlin
+    val kClass = kotlinType.toKClass()
+    //TODO:
+    // 1.类型转换 Any->String,Long->Int, Short->Int, Int->Short, Int->Boolean...
+    // 2.日期转换 String->Date, Long->Date, String-> LocalDateTime, Long->LocalDateTime
+    // 3.将String使用serialize resolver转为指定类型
     return map[key]
 }

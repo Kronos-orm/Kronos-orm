@@ -3,9 +3,10 @@ package com.kotlinorm.orm
 import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.orm.upsert.upsert
+import com.kotlinorm.orm.utils.GsonResolver
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -14,7 +15,7 @@ class Select {
 
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/koto_test"
+        url = "jdbc:mysql://localhost:3306/test"
         username = "root"
     }
 
@@ -23,6 +24,7 @@ class Select {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
             dataSource = { KronosBasicWrapper(ds) }
+            serializeResolver = GsonResolver
         }
     }
 
@@ -91,8 +93,16 @@ class Select {
 
     @Test
     fun testDatebase() {
-        user.upsert().on { it.id }.execute()
         val res = user.select().queryOne()
+        println(res)
+    }
+
+    @Test
+    fun testDatebase1() {
+        val res = user.select {
+            it.id + Movie().select { m -> m.id }.where { m -> m.director == it.username }.single()
+        }.queryOne()
+
         println(res)
     }
 }

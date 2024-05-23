@@ -7,7 +7,6 @@ import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.namingStrategy.NoneNamingStrategy
 import com.kotlinorm.beans.serializeResolver.NoneSerializeResolver
-import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.ColorPrintCode.Companion.Yellow
 import com.kotlinorm.enums.KLoggerType
@@ -23,10 +22,10 @@ object Kronos {
         { BundledSimpleLoggerAdapter(it::class.simpleName!!) }
     internal var noValueStrategy = NoValueStrategy.Ignore
 
-    var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper() }
+    var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
     var logPath = listOf("console")
-    var serializeResolver: KronosSerializeResolver = NoneSerializeResolver()
+    var serializeResolver: KronosSerializeResolver = NoneSerializeResolver
     var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
     var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
     var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))

@@ -6,6 +6,7 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+import com.kotlinorm.utils.KotlinClassMapper.kotlinBuiltInClassMap
 import kotlinx.datetime.*
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
@@ -60,6 +61,7 @@ fun getSafeValue(
                 .atZone(java.time.ZoneId.systemDefault()).toInstant().epochSecond
         }
     }
+
     val safeKey =
         if (map[key] != null || kPojo.kronosColumns().any { it.name == column.columnName }) key else column.columnName
     return when {
@@ -68,7 +70,10 @@ fun getSafeValue(
             val typeOfVal = map[safeKey]!!::class
             if (kotlinType != typeOfVal.qualifiedName) {
                 if (useSerializeResolver) {
-                    return serializeResolver.deserializeObj(map[safeKey].toString(), kPojo::class)
+                    return serializeResolver.deserializeObj(
+                        map[safeKey].toString(),
+                        kotlinBuiltInClassMap[kotlinType] ?: Class.forName(kotlinType).kotlin
+                    )
                 }
                 when (kotlinType) {
                     "kotlin.Int" -> map[safeKey].toString().toInt()

@@ -11,7 +11,15 @@ object KotlinClassMapper {
         "kotlin.String" to String::class,
         "kotlin.Float" to Float::class,
         "kotlin.Double" to Double::class,
-        "kotlin.Any" to Any::class
+        "kotlin.Any" to Any::class,
+        "kotlin.collections.List" to List::class,
+        "kotlin.collections.Map" to Map::class,
+        "kotlin.collections.Set" to Set::class,
+        "kotlin.collections.MutableList" to MutableList::class,
+        "kotlin.collections.MutableMap" to MutableMap::class,
+        "kotlin.collections.MutableSet" to MutableSet::class,
+        "kotlin.Array" to Array::class,
+        "kotlin.Char" to Char::class
     )
 
     internal fun String.toKClass(): KClass<*> {

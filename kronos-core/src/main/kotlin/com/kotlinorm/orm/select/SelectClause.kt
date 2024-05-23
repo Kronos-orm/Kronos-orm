@@ -59,6 +59,11 @@ class SelectClause<T : KPojo>(
         }
     }
 
+    fun single(): SelectClause<T> {
+        //TODO：不同数据库具有不同实现
+        return this
+    }
+
 
     /**
      * 根据指定的字段对当前对象进行排序。

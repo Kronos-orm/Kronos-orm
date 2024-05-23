@@ -9,6 +9,8 @@ data class User(
     var id: Int? = null,
     var username: String? = null,
     var gender: Int? = null,
+    @UseSerializeResolver
+    var habbits: List<String>? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
     var createTime: String? = null,

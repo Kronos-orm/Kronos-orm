@@ -91,20 +91,27 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                 }
 
                 else -> {
-                    if (element.funcName() == "alias") {
-                        fieldNames.add(applyIrCall(
-                            aliasSymbol,
-                            element.valueArguments.first()
-                        ) {
-                            dispatchBy(
-                                irGet(
-                                    extensionReceiverParameter!!
-                                ),
-                            )
-                            extensionBy(
-                                addFieldsNames(element.extensionReceiver!!).first()
-                            )
-                        })
+                    val funcName = element.funcName()
+                    when (funcName) {
+                        "alias" -> {
+                            fieldNames.add(applyIrCall(
+                                aliasSymbol,
+                                element.valueArguments.first()
+                            ) {
+                                dispatchBy(
+                                    irGet(
+                                        extensionReceiverParameter!!
+                                    ),
+                                )
+                                extensionBy(
+                                    addFieldsNames(element.extensionReceiver!!).first()
+                                )
+                            })
+                        }
+
+//                        "toField" -> {
+//                            fieldNames.add(element)
+//                        }
                     }
                 }
             }

@@ -193,6 +193,10 @@ class SelectClause<T : KPojo>(
         TODO()
     }
 
+    fun toField(): Field {
+        return Field("", selectClause = this)
+    }
+
     /**
      * 构建一个KronosAtomicTask对象。
      *

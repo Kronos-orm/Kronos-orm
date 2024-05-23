@@ -15,22 +15,51 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeResolver
 import com.kotlinorm.types.KLoggerFactory
+import kotlinx.datetime.TimeZone.Companion.currentSystemDefault
 import kotlin.reflect.full.declaredFunctions
 
 object Kronos {
+    // 默认日志适配器
     var defaultLogger: KLoggerFactory =
         { BundledSimpleLoggerAdapter(it::class.simpleName!!) }
-    internal var noValueStrategy = NoValueStrategy.Ignore
 
-    var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }
+    // 日志类型
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
+
+    // 日志路径
     var logPath = listOf("console")
+
+    // 无值策略
+    internal var noValueStrategy = NoValueStrategy.Smart
+
+    // 数据源
+    var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }
+
+    // 严格模式（将提高性能，但当数据库类型与字段类型不匹配时会抛出异常，而不是尝试进行转换）
+    var strictSetValue = false
+
+    // 当前时区
+    var timeZone = currentSystemDefault()
+
+    // 序列化
     var serializeResolver: KronosSerializeResolver = NoneSerializeResolver
+
+    // 列名策略
     var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
+
+    // 表名策略
     var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
+
+    // 更新时间策略
     var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))
+
+    // 创建时间策略
     var createTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("create_time", "createTime"))
+
+    // 逻辑删除策略
     var logicDeleteStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("deleted"))
+
+    // 默认日期格式
     var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
     /**
@@ -48,7 +77,7 @@ object Kronos {
         }
     }
 
-    fun KLoggerFactory.start() {
+    fun KLoggerFactory.useCustomLogger() {
         detectLoggerImplementation()
     }
 

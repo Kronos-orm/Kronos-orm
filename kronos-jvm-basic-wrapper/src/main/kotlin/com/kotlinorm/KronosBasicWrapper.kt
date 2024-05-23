@@ -17,6 +17,7 @@
 package com.kotlinorm
 
 import com.kotlinorm.Kronos.defaultLogger
+import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
@@ -27,6 +28,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.Extensions.safeMapperTo
+import com.kotlinorm.utils.getTypeSafeValue
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
@@ -92,8 +94,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         } catch (e: SQLException) {
             defaultLogger(this).error(
                 kMsgOf(
-                    "Failed to execute query，${e.message}.",
-                    Red
+                    "Failed to execute query，${e.message}.", Red
                 ).endl().toArray()
             )
             throw e
@@ -114,8 +115,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      */
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
         return if (KPojo::class.isSuperclassOf(kClass)) {
-            @Suppress("UNCHECKED_CAST")
-            forList(task).map { it.safeMapperTo(kClass as KClass<KPojo>) }
+            @Suppress("UNCHECKED_CAST") forList(task).map { it.safeMapperTo(kClass as KClass<KPojo>) }
         } else {
             val (sql, paramList) = task.parsed()
             val conn = dataSource.connection
@@ -134,8 +134,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             } catch (e: SQLException) {
                 defaultLogger(this).error(
                     kMsgOf(
-                        "Failed to execute query，${e.message}.",
-                        Red
+                        "Failed to execute query，${e.message}.", Red
                     ).endl().toArray()
                 )
                 throw e
@@ -182,8 +181,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         } catch (e: SQLException) {
             defaultLogger(this).error(
                 kMsgOf(
-                    "Failed to execute query，${e.message}.",
-                    Red
+                    "Failed to execute query，${e.message}.", Red
                 ).endl().toArray()
             )
             throw e
@@ -205,37 +203,21 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      */
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         val map = forMap(task)
-        val clazz = kClass.java
-        return if (String::class.java == kClass.java) {
-            map?.values?.firstOrNull()?.toString()
-        } else if (KPojo::class.isSuperclassOf(kClass)) {
-            @Suppress("UNCHECKED_CAST")
-            map?.safeMapperTo(kClass as KClass<KPojo>)
-        } else if (clazz.name == "java.lang.Integer") {
-            map?.values?.firstOrNull()?.toString()?.toInt()
-        } else if (clazz.name == "long") {
-            map?.values?.firstOrNull()?.toString()?.toLong()
-        } else if (clazz.name == "double") {
-            map?.values?.firstOrNull()?.toString()?.toDouble()
-        } else if (clazz.name == "float") {
-            map?.values?.firstOrNull()?.toString()?.toFloat()
-        } else if (clazz.name == "boolean") {
-            map?.values?.firstOrNull()?.toString()?.toBoolean()
-        } else if (clazz.name == "short") {
-            map?.values?.firstOrNull()?.toString()?.toShort()
-        } else if (clazz.name == "byte") {
-            map?.values?.firstOrNull()?.toString()?.toByte()
-        } else if (clazz.name == "java.lang.String") {
-            map?.values?.firstOrNull()?.toString()
-        } else if (clazz.name == "java.util.Date") {
-            map?.values?.firstOrNull()?.toString()?.toLong()?.let { java.util.Date(it) }
+        return if (KPojo::class.isSuperclassOf(kClass)) {
+            @Suppress("UNCHECKED_CAST") map?.safeMapperTo(kClass as KClass<KPojo>)
+        } else if (map?.values?.firstOrNull() == null) {
+            null
         } else {
-            try {
-                map?.values?.firstOrNull()?.toString()?.let { clazz.cast(it) }
-            } catch (e: Exception) {
-                throw UnsupportedTypeException("Unsupported type: ${clazz.name}").apply {
-                    addSuppressed(e)
-                }
+            if (strictSetValue) {
+                map.values.first()
+            } else {
+                getTypeSafeValue(
+                    kClass::class.qualifiedName!!,
+                    kClass::class.supertypes.map { it.toString() },
+                    map.values.first(),
+                    null,
+                    map.values.first()::class
+                )
             }
         }
     }

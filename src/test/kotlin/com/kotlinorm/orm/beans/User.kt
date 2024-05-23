@@ -2,7 +2,7 @@ package com.kotlinorm.orm.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
-import java.sql.Date
+import java.util.*
 
 @Table(name = "tb_user")
 data class User(

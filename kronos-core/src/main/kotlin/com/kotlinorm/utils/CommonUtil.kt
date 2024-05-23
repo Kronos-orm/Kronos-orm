@@ -1,15 +1,14 @@
 package com.kotlinorm.utils
 
+import com.kotlinorm.Kronos.defaultDateFormat
+import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.format
+import kotlinx.datetime.*
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
-import kotlinx.datetime.toJavaLocalDateTime
 
 
 /**
@@ -27,7 +26,7 @@ fun setCommonStrategy(
 ) {
     if (strategy.enabled) {
         if (timeStrategy) {
-            val format = (strategy.config ?: "yyyy-MM-dd HH:mm:ss").toString()
+            val format = (strategy.config ?: defaultDateFormat).toString()
             callBack(strategy.field, currentDateTime(format))
         } else {
             callBack(strategy.field, 1.takeIf { deleted } ?: 0)
@@ -61,73 +60,80 @@ fun getSafeValue(
                 .atZone(java.time.ZoneId.systemDefault()).toInstant().epochSecond
         }
     }
+    val safeKey =
+        if (map[key] != null || kPojo.kronosColumns().any { it.name == column.columnName }) key else column.columnName
     return when {
-        map[key] == null -> null
+        map[safeKey] == null -> null
         else -> {
-            val typeOfVal = map[key]!!::class
+            val typeOfVal = map[safeKey]!!::class
             if (kotlinType != typeOfVal.qualifiedName) {
+                if (useSerializeResolver) {
+                    return serializeResolver.deserializeObj(map[safeKey].toString(), kPojo::class)
+                }
                 when (kotlinType) {
-                    "kotlin.Int" -> map[key].toString().toInt()
-                    "kotlin.Long" -> map[key].toString().toLong()
-                    "kotlin.Short" -> map[key].toString().toShort()
-                    "kotlin.Float" -> map[key].toString().toFloat()
-                    "kotlin.Double" -> map[key].toString().toDouble()
-                    "kotlin.Byte" -> map[key].toString().toByte()
-                    "kotlin.Char" -> map[key].toString().toCharArray()[0]
+                    "kotlin.Int" -> map[safeKey].toString().toInt()
+                    "kotlin.Long" -> map[safeKey].toString().toLong()
+                    "kotlin.Short" -> map[safeKey].toString().toShort()
+                    "kotlin.Float" -> map[safeKey].toString().toFloat()
+                    "kotlin.Double" -> map[safeKey].toString().toDouble()
+                    "kotlin.Byte" -> map[safeKey].toString().toByte()
+                    "kotlin.Char" -> map[safeKey].toString().firstOrNull()
                     "kotlin.String" -> when {
-                        typeOfVal.supertypes.any {
-                            it.toString() in listOf(
+                        (listOf(typeOfVal.qualifiedName) + typeOfVal.supertypes.map { it.toString() }).any {
+                            it in listOf(
                                 "java.util.Date",
                                 "java.time.LocalDateTime",
                                 "java.time.LocalDate",
                                 "java.time.LocalTime"
                             )
                         } -> {
-                            LocalDateTime.parse(map[key].toString()).format(LocalDateTime.Format {
-                                byUnicodePattern(column.dateFormat ?: "yyyy-MM-dd HH:mm:ss")
+                            LocalDateTime.parse(map[safeKey].toString()).format(LocalDateTime.Format {
+                                byUnicodePattern(column.dateFormat ?: defaultDateFormat)
                             })
                         }
 
-                        else -> map[key].toString()
+                        else -> map[safeKey].toString()
                     }
 
-                    "kotlin.Boolean" -> (map[key] is Number && map[key] as Number != 0) || map[key].toString()
+                    "kotlin.Boolean" -> (map[safeKey] is Number && map[safeKey] as Number != 0) || map[safeKey].toString()
                         .toBoolean()
 
                     "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime" -> {
-                        val epochSecond = getEpochSecond()
+                        val localDateTime = java.time.Instant.ofEpochSecond(getEpochSecond())
+                            .atZone(java.time.ZoneId.systemDefault())
                         when (kotlinType) {
-                            "java.time.LocalDateTime" -> java.time.Instant.ofEpochSecond(epochSecond)
-                                .atZone(java.time.ZoneId.systemDefault())
-
-                            "java.time.LocalDate" -> java.time.Instant.ofEpochSecond(epochSecond)
-                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-
-                            "java.time.LocalTime" -> java.time.Instant.ofEpochSecond(epochSecond)
-                                .atZone(java.time.ZoneId.systemDefault()).toLocalTime()
-
-                            else -> map[key]
+                            "java.time.LocalDateTime" -> localDateTime
+                            "java.time.LocalDate" -> localDateTime.toLocalDate()
+                            "java.time.LocalTime" -> localDateTime.toLocalTime()
+                            else -> map[safeKey]
                         }
                     }
 
-                    "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> Instant.parse(
-                        map[key].toString()
-                    )
+                    "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> {
+                        val localDateTime = Instant.parse(
+                            map[safeKey].toString()
+                        ).toLocalDateTime(TimeZone.currentSystemDefault())
+                        when (kotlinType) {
+                            "kotlinx.datetime.LocalDateTime" -> localDateTime
+                            "kotlinx.datetime.LocalDate" -> localDateTime.date
+                            "kotlinx.datetime.LocalTime" -> localDateTime.time
+                            else -> map[safeKey]
+                        }
+                    }
 
                     else -> when {
                         "java.util.Date" in superTypes -> {
-                            val epochSecond = getEpochSecond()
                             val constructor =
                                 Class.forName(kotlinType).constructors.find { it.parameters.size == 1 && it.parameterTypes[0] == Long::class.java }!!
-                            constructor.newInstance(epochSecond * 1000)
+                            constructor.newInstance(getEpochSecond() * 1000)
                         }
 
-                        else -> map[key]
+                        else -> map[safeKey]
 
                     }
                 }
             } else {
-                map[key]
+                map[safeKey]
             }
         }
     }

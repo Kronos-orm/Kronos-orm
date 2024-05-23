@@ -10,9 +10,9 @@ data class User(
     var username: String? = null,
     var gender: Int? = null,
     @CreateTime
+    @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
     var createTime: String? = null,
     @UpdateTime
-    @DateTimeFormat("YYYY-MM-dd HH:mm:ss")
     var updateTime: Date? = null,
     @LogicDelete
     var deleted: Boolean? = null

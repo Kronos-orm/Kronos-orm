@@ -124,4 +124,18 @@ enum class ColorPrintCode(val code: Int) {
     fun toArray(): Array<ColorPrintCode> {
         return arrayOf(this)
     }
+
+    companion object {
+        val Green = GREEN
+        val Red = RED
+        val Blue = BLUE
+        val Yellow = YELLOW
+        val Magenta = MAGENTA
+        val Cyan = CYAN
+        val Grey = GREY
+        val Black = BLACK
+        val Bold = BOLD
+        val Italic = ITALIC
+        val Underline = UNDERLINE
+    }
 }

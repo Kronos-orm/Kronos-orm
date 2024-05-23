@@ -1,12 +1,18 @@
 package com.kotlinorm.utils
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.defaultLogger
-import com.kotlinorm.beans.logging.KLogMessage.Companion.logMessageOf
+import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.enums.ColorPrintCode
+import com.kotlinorm.enums.ColorPrintCode.Companion.Black
+import com.kotlinorm.enums.ColorPrintCode.Companion.Blue
+import com.kotlinorm.enums.ColorPrintCode.Companion.Bold
+import com.kotlinorm.enums.ColorPrintCode.Companion.Green
+import com.kotlinorm.enums.ColorPrintCode.Companion.Magenta
+import com.kotlinorm.enums.ColorPrintCode.Companion.Red
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.*
@@ -31,7 +37,9 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
         wrapper.orDefault().batchUpdate(this as KronosAtomicBatchTask).sum()
     } else {
         doTaskLog()
-        wrapper.orDefault().update(this as KronosAtomicActionTask)
+        (this as KronosAtomicActionTask).trySplitOut().sumOf {
+            wrapper.orDefault().update(it)
+        }
     }
     var lastInsertId: Long? = null
     if (operationType == KOperationType.INSERT) {
@@ -73,16 +81,22 @@ inline fun <reified T> KAtomicQueryTask.queryOneOrNull(wrapper: KronosDataSource
     return wrapper.orDefault().forObject(this, T::class) as T
 }
 
-fun KAtomicTask.doTaskLog() {
-    defaultLogger(this).info(
+var howToLog: (KAtomicTask) -> Unit = { task ->
+    defaultLogger(Kronos).info(
         arrayOf(
-            logMessageOf("Executing task: [${operationType.name}]", ColorPrintCode.GREEN.toArray()).endl(),
-            logMessageOf(
-                "\t$sql", ColorPrintCode.BLUE.toArray()
-            ).endl(),
-            logMessageOf(
-                "\t$paramMap", ColorPrintCode.MAGENTA.toArray()
-            ).endl()
+            kMsgOf("Executing [", Green),
+            kMsgOf(task.operationType.name, Red, Bold),
+            kMsgOf("] task:", Green).endl(),
+            kMsgOf("SQL:\t", Black, Bold),
+            kMsgOf(task.sql, Blue).endl(),
+            kMsgOf("PARAM:\t", Black, Bold),
+            kMsgOf(task.paramMap.filterNot { it.value == null }.toString(), Magenta).endl(),
+            kMsgOf("Task execution result:", Black, Bold).endl(),
+            kMsgOf("-----------------------", Black, Bold).endl(),
         )
     )
+}
+
+fun KAtomicTask.doTaskLog() {
+    howToLog(this)
 }

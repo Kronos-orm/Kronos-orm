@@ -97,8 +97,9 @@ class KLogMessage(
          * @param codes an optional array of color print codes to apply to the log message
          * @return a new instance of KLogMessage
          */
-        fun logMessageOf(text: String, codes: Array<ColorPrintCode> = arrayOf()): KLogMessage {
-            return KLogMessage(text, codes)
+        @Suppress("UNCHECKED_CAST")
+        fun kMsgOf(text: String, vararg codes: ColorPrintCode): KLogMessage {
+            return KLogMessage(text, codes as Array<ColorPrintCode>)
         }
 
         /**

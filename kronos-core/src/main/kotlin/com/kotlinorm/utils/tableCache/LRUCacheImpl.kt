@@ -1,6 +1,6 @@
 package com.kotlinorm.utils.tableCache
 
-class LRUCacheImplementation(private val limit: Int) {
+class LRUCacheImpl(private val limit: Int) {
     private var counter: Int
     private val head: Node = Node(null, null)
     private val tail: Node = Node(null, null)

@@ -8,7 +8,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
 object TableCache {
     val lruLimit = 20
-    internal val lruCache = LRUCacheImplementation(lruLimit)
+    internal val lruCache = LRUCacheImpl(lruLimit)
 
     private val KronosDataSourceWrapper.dbName
         get() = getDBNameFromUrl(url)

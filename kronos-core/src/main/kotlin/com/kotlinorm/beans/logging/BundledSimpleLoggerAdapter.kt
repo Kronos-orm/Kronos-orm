@@ -37,7 +37,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         private var logTaskList = mutableListOf<LogTask>() // log task queue
         private const val SEMICOLON = ";"
 
-        var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss"
+        var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         var traceEnabled = true
         var debugEnabled = true
         var infoEnabled = true

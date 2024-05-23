@@ -14,9 +14,8 @@ class Select {
 
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/test"
+        url = "jdbc:mysql://localhost:3306/koto_test"
         username = "root"
-        password = "Leinbo2103221541@"
     }
 
     init {
@@ -93,8 +92,7 @@ class Select {
     @Test
     fun testDatebase() {
         user.upsert().on { it.id }.execute()
-        val map = user.select().queryOne()
-        println(map)
-
+        val res = user.select().queryOne()
+        println(res)
     }
 }

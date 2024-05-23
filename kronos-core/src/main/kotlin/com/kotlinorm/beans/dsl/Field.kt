@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.orm.select.SelectClause
 import com.kotlinorm.utils.fieldDb2k
 
 /**
@@ -31,7 +32,9 @@ class Field(
     var name: String = fieldDb2k(columnName),
     val type: String = "",
     var primaryKey: Boolean = false,
-    val dateFormat: String? = null
+    val dateFormat: String? = null,
+    val tableName: String? = null,
+    val selectClause: SelectClause<*>? = null
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

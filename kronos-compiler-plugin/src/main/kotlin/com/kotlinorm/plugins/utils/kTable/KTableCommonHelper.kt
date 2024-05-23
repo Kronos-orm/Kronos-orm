@@ -21,12 +21,14 @@ import com.kotlinorm.plugins.helpers.findByFqName
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.types.getClass
@@ -110,13 +112,22 @@ fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name
         irProperty.annotations.findByFqName(ColumnAnnotationsFqName)
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
+    val tableName = getTableName(irProperty.parent as IrClass)
+
     return applyIrCall(
         fieldSymbol.constructors.first(),
         columnName,
         irString(propertyName),
         irString(""),
         irBoolean(false),
-        irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0)
+        irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0),
+        when (tableName) {
+            is IrCall -> applyIrCall(
+                fieldK2dbSymbol,
+                irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
+            )
+            else -> irString((tableName as IrConst<*>).value.toString())
+        }
     )
 }
 

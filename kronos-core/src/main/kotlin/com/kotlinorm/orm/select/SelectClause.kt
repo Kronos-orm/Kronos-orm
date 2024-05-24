@@ -136,9 +136,9 @@ class SelectClause<T : KPojo>(
     fun by(someFields: KTableField<T, Any?>): SelectClause<T> {
         // 检查someFields是否为空，为空则抛出异常
         if (someFields == null) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.tableRun { t ->
             // 执行someFields中定义的查询逻辑
-            someFields(it)
+            someFields(t)
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
@@ -190,7 +190,7 @@ class SelectClause<T : KPojo>(
     }
 
     fun withTotal(): PagedClause<SelectClause<T>> {
-        TODO()
+        return PagedClause(this)
     }
 
     fun toField(): Field {

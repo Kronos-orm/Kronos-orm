@@ -8,9 +8,11 @@ import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
@@ -33,16 +35,16 @@ class SelectClause<T : KPojo>(
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
-    private var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var isDistinct = false
-    var isPage = false
+    private var isPage = false
     private var isGroup = false
     private var isHaving = false
     private var isOrder = false
-    var ps = 0
-    var offset = 0
+    private var ps = 0
+    private var pi = 0
 
     /**
      * 初始化函数：用于在对象初始化时配置选择字段。
@@ -123,7 +125,10 @@ class SelectClause<T : KPojo>(
      * @return 返回 SelectClause<T> 实例，支持链式调用。
      */
     fun page(pi: Int, ps: Int): SelectClause<T> {
-        TODO()
+        isPage = true
+        this.ps = ps
+        this.pi = pi
+        return this
     }
 
     /**
@@ -211,6 +216,10 @@ class SelectClause<T : KPojo>(
         // 初始化所有字段集合
         allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
 
+        if (selectFields.isEmpty()) {
+            selectFields += allFields
+        }
+
         // 如果条件为空，则根据paramMap构建查询条件
         if (condition == null) {
             condition = paramMap.keys.filter {
@@ -265,15 +274,30 @@ class SelectClause<T : KPojo>(
         }) else null
 
         // 如果分页，则将分页参数添加到SQL中
+        var pagedPrefix: String? = null
+        var pagedSuffix: String? = null
+        if (isPage) when(wrapper.orDefault().dbType) {
+            DBType.Mysql , DBType.SQLite , DBType.Postgres -> pagedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
+            DBType.Oracle -> {
+                pagedPrefix = "SELECT * FROM ("
+                selectFields += Field("rownum", "R")
+                pagedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
+            }
+            DBType.Mssql -> {
+                pagedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
+            }
+            else -> throw UnsupportedDatabaseTypeException()
+        }
 
         // 组装最终的SQL语句
         val sql = listOfNotNull(
+            pagedPrefix,
             selectKeyword,
-            if (selectFields.isEmpty()) "*" else selectFields.joinToString(", ") {
+            selectFields.joinToString(", ") {
                 it.let {
                     when {
-                        it.name != it.columnName -> "${it.quoted()} AS `$it`"
                         it.type == "string" -> it.toString()
+                        it.name != it.columnName -> "${it.quoted()} AS `$it`"
                         else -> it.quoted()
                     }
                 }
@@ -283,7 +307,8 @@ class SelectClause<T : KPojo>(
             groupByKeyword,
             havingKeyword,
             orderByKeywords,
-            havingKeyword
+            havingKeyword,
+            pagedSuffix
         ).joinToString(" ")
 
         // 返回构建好的KronosAtomicTask对象

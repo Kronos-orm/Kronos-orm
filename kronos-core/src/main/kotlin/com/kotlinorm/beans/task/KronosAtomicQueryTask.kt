@@ -29,7 +29,7 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
  * @create 2024/4/18 23:05
  */
 data class KronosAtomicQueryTask(
-    override val sql: String,
+    override var sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
     override val operationType: KOperationType = KOperationType.SELECT
 ) : KAtomicQueryTask {

@@ -54,9 +54,9 @@ public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
         TODO()
     }
 
-    fun withTotal(): PagedClause<SelectFrom2<T1, T2>> {
-        TODO()
-    }
+//    fun withTotal(): PagedClause<SelectFrom2<T1, T2>> {
+//        TODO()
+//    }
 
     fun query(): List<Map<String, Any>> {
         TODO()

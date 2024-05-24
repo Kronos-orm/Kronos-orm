@@ -19,6 +19,7 @@ class PagedClause<T : SelectClause<*>>(
     fun build(): Pair<KronosAtomicQueryTask , KronosAtomicQueryTask> {
         val recordsTask = selectClause.build()
         selectClause.selectFields = linkedSetOf(Field("1" , type = "string"))
+
         val cntTask = selectClause.build()
         cntTask.sql = "SELECT COUNT(1) FROM (${cntTask.sql}) AS t"
         return cntTask to recordsTask

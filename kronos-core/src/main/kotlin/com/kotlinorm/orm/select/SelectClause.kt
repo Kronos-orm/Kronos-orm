@@ -30,7 +30,7 @@ class SelectClause<T : KPojo>(
 ) {
     private var tableName = pojo.kronosTableName()
     private var paramMap = pojo.toDataMap()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
@@ -212,7 +212,7 @@ class SelectClause<T : KPojo>(
      * @return 构建好的KronosAtomicTask对象，包含了完整的SQL查询语句和对应的参数映射。
      */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicQueryTask {
-
+        var buildCondition = condition
         // 初始化所有字段集合
         allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
 
@@ -221,33 +221,30 @@ class SelectClause<T : KPojo>(
         }
 
         // 如果条件为空，则根据paramMap构建查询条件
-        if (condition == null) {
-            condition = paramMap.keys.filter {
+        if (buildCondition == null) {
+            buildCondition = paramMap.keys.filter {
                 paramMap[it] != null
             }.map { propName ->
                 allFields.first { it.name == propName }.eq(paramMap[propName])
             }.toCriteria()
         }
 
-        // 启用逻辑删除策略
-        logicDeleteStrategy.enabled = true
-
         // 设置逻辑删除的条件
-        setCommonStrategy(logicDeleteStrategy) { _, value ->
-            condition = listOfNotNull(
-                condition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
+        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
+            buildCondition = listOfNotNull(
+                buildCondition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
             ).toCriteria()
         }
 
         // 如果存在额外的最后条件，则将其添加到查询条件中
         if (lastCondition != null) {
-            condition = listOfNotNull(
-                condition, lastCondition
+            buildCondition = listOfNotNull(
+                buildCondition, lastCondition
             ).toCriteria()
         }
 
         // 构建带有参数的查询条件SQL
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(buildCondition, mutableMapOf())
             .toWhereClause()
 
         if (selectFields.isEmpty()) {

@@ -13,12 +13,29 @@ object Extensions {
     fun Map<String, Any?>.safeMapperTo(kClass: KClass<KPojo>): Any {
         return kClass.createInstance().safeFromMapData(this)
     }
+
+    fun Map<String, Any?>.mapperTo(kClass: KClass<KPojo>): Any {
+        return kClass.createInstance().fromMapData(this)
+    }
+
+    inline fun <reified K : KPojo> Map<String, Any?>.safeMapperTo(): K {
+        return K::class.createInstance().safeFromMapData(this)
+    }
+
     inline fun <reified K : KPojo> Map<String, Any?>.mapperTo(): K {
         return K::class.createInstance().fromMapData(this)
     }
 
-    fun Map<String, Any?>.mapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().fromMapData(this)
+    fun KPojo.safeMapperTo(kClass: KClass<KPojo>): Any {
+        return kClass.createInstance().fromMapData(toDataMap())
+    }
+
+    fun KPojo.mapperTo(kClass: KClass<KPojo>): Any {
+        return kClass.createInstance().fromMapData(toDataMap())
+    }
+
+    inline fun <reified K : KPojo> KPojo.safeMapperTo(): K {
+        return K::class.createInstance().fromMapData(toDataMap())
     }
 
     inline fun <reified K : KPojo> KPojo.mapperTo(): K {

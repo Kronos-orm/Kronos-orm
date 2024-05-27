@@ -37,6 +37,7 @@ class SelectParserTest {
             import com.kotlinorm.orm.select.select
             import java.util.Date
             import com.kotlinorm.annotations.UseSerializeResolver
+            import com.kotlinorm.utils.Extensions.safeMapperTo
                     
             @Table(name = "tb_user")
             data class User(
@@ -58,7 +59,9 @@ class SelectParserTest {
                 val user = User(1)
                 val testUser = User(1, "test")
                 val t = user.kronosColumns()
-                    
+                val m = mapOf("id" to 2)
+                val u = m.safeMapperTo<User>()
+                                
                 val (sql, paramMap) = user.select { it.username.alias("name") + it.gender }.build()
                 println(user.toDataMap())
             }        

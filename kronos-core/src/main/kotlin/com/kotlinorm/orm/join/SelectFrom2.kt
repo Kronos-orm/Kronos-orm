@@ -1,15 +1,18 @@
-package com.kotlinorm.orm.join;
+package com.kotlinorm.orm.join
 
-import com.kotlinorm.beans.dsl.KPojo;
+import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
 
-public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
-    var t1: T1? = null,
-    var t2: T2? = null,
-) {
+class SelectFrom2<T1 : KPojo, T2 : KPojo>(
+    var t1: T1,
+    var t2: T2,
+) : KSelectable<T1>(t1) {
     fun leftJoin(table2: T2, on: KTableConditionalField<Nothing, Boolean?>) {
         TODO()
     }
@@ -54,9 +57,9 @@ public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
         TODO()
     }
 
-//    fun withTotal(): PagedClause<SelectFrom2<T1, T2>> {
-//        TODO()
-//    }
+    fun withTotal(): PagedClause<T1, SelectFrom2<T1, T2>> {
+        TODO()
+    }
 
     fun query(): List<Map<String, Any>> {
         TODO()
@@ -72,5 +75,9 @@ public class SelectFrom2<T1 : KPojo, T2 : KPojo>(
 
     operator fun component2(): Map<String, Any?> {
         TODO()
+    }
+
+    override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
+        TODO("Not yet implemented")
     }
 }

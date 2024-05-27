@@ -101,26 +101,31 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
     val map = irFunction.valueParameters.first()
     return irBlockBody {
         declaration.properties.forEach {
-            +irSetField(
-                irGet(irFunction.dispatchReceiverParameter!!),
-                it.backingField!!,
-                applyIrCall(
-                    getSafeValueSymbol,
+            +irTry(
+                irUnit().type,
+                irSetField(
                     irGet(irFunction.dispatchReceiverParameter!!),
-                    irString(it.backingField!!.type.classFqName!!.asString()),
+                    it.backingField!!,
                     applyIrCall(
-                        createStringListSymbol,
-                        irVararg(
-                            irBuiltIns.stringType,
-                            it.backingField!!.type.getClass()!!.superTypes.map { type ->
-                                irString(type.getClass()!!.kotlinFqName.asString())
-                            }
-                        )
-                    ),
-                    irGet(map),
-                    irString(it.name.asString()),
-                    irBoolean(it.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))
-                )
+                        getSafeValueSymbol,
+                        irGet(irFunction.dispatchReceiverParameter!!),
+                        irString(it.backingField!!.type.classFqName!!.asString()),
+                        applyIrCall(
+                            createStringListSymbol,
+                            irVararg(
+                                irBuiltIns.stringType,
+                                it.backingField!!.type.getClass()!!.superTypes.map { type ->
+                                    irString(type.getClass()!!.kotlinFqName.asString())
+                                }
+                            )
+                        ),
+                        irGet(map),
+                        irString(it.name.asString()),
+                        irBoolean(it.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))
+                    )
+                ),
+                listOf(),
+                null
             )
         }
 

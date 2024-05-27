@@ -3,6 +3,7 @@ package com.kotlinorm.orm.select
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
@@ -26,8 +27,8 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.tableCache.TableCache.getTable
 
 class SelectClause<T : KPojo>(
-    internal val pojo: T, setSelectFields: KTableField<T, Any?> = null
-) {
+    override val pojo: T, setSelectFields: KTableField<T, Any?> = null
+) : KSelectable<T>(pojo) {
     private var tableName = pojo.kronosTableName()
     private var paramMap = pojo.toDataMap()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
@@ -35,7 +36,7 @@ class SelectClause<T : KPojo>(
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
-    internal var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var isDistinct = false
@@ -194,7 +195,7 @@ class SelectClause<T : KPojo>(
         return this // 允许链式调用
     }
 
-    fun withTotal(): PagedClause<T> {
+    fun withTotal(): PagedClause<T, SelectClause<T>> {
         return PagedClause(this)
     }
 
@@ -207,7 +208,7 @@ class SelectClause<T : KPojo>(
      * @param wrapper 可选的KronosDataSourceWrapper对象，用于提供数据库表信息等。
      * @return 构建好的KronosAtomicTask对象，包含了完整的SQL查询语句和对应的参数映射。
      */
-    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicQueryTask {
+    override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
         var buildCondition = condition
         // 初始化所有字段集合
         allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
@@ -269,16 +270,18 @@ class SelectClause<T : KPojo>(
         // 如果分页，则将分页参数添加到SQL中
         var pagedPrefix: String? = null
         var pagedSuffix: String? = null
-        if (isPage) when(wrapper.orDefault().dbType) {
-            DBType.Mysql , DBType.SQLite , DBType.Postgres -> pagedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
+        if (isPage) when (wrapper.orDefault().dbType) {
+            DBType.Mysql, DBType.SQLite, DBType.Postgres -> pagedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
             DBType.Oracle -> {
                 pagedPrefix = "SELECT * FROM ("
                 selectFields += Field("rownum", "R")
                 pagedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
             }
+
             DBType.Mssql -> {
                 pagedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
             }
+
             else -> throw UnsupportedDatabaseTypeException()
         }
 

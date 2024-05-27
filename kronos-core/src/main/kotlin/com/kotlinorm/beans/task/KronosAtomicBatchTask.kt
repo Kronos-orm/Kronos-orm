@@ -20,7 +20,6 @@ import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.beans.dsw.ParsedSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KAtomicActionTask
-import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 
 /**
@@ -39,7 +38,7 @@ data class KronosAtomicBatchTask(
     override val paramMap: Map<String, Any?> = mapOf()
 
     override fun parsed(): ParsedSql {
-        TODO("Not yet implemented")
+        throw UnsupportedOperationException("Please use `parsedArr()` instead of `parsed()`")
     }
 
     /**

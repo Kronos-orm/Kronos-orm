@@ -28,7 +28,7 @@ object TableCache {
         return try {
             "${dataSource.dbName}_$tableName"
         } catch (npe: NullPointerException) {
-            tableName
+            tableName.apply { throw npe }
         }
     }
 
@@ -36,14 +36,13 @@ object TableCache {
     internal fun getTable(wrapper: KronosDataSourceWrapper, tableName: String): TableObject {
         val key = tableMetaKey(wrapper, tableName)
         if (lruCache[key] == null) {
-            try {
-                val list =
-                    wrapper.forList(
-                        KronosAtomicQueryTask(
-                            when (wrapper.dbType) {
-                                DBType.Mysql -> "show full fields from $tableName"
-                                DBType.SQLite -> "PRAGMA table_info($tableName)"
-                                DBType.Oracle -> """
+            val list =
+                wrapper.forList(
+                    KronosAtomicQueryTask(
+                        when (wrapper.dbType) {
+                            DBType.Mysql -> "show full fields from $tableName"
+                            DBType.SQLite -> "PRAGMA table_info($tableName)"
+                            DBType.Oracle -> """
                                 SELECT 
                                     cols.column_name Field,
                                     cols.data_type Type,
@@ -57,7 +56,7 @@ object TableCache {
                                 WHERE cols.table_name = '${tableName.uppercase()}';
                             """.trimIndent()
 
-                                DBType.Mssql -> """
+                            DBType.Mssql -> """
                                 SELECT 
                                     COLUMN_NAME as Field,
                                     DATA_TYPE as Type,
@@ -71,7 +70,7 @@ object TableCache {
                                 WHERE TABLE_NAME = '$tableName';
                             """.trimIndent()
 
-                                DBType.Postgres -> """
+                            DBType.Postgres -> """
                                 SELECT 
                                     cols.column_name Field,
                                     cols.data_type Type,
@@ -88,31 +87,28 @@ object TableCache {
                                     cols.table_name = '$tableName';
                             """.trimIndent()
 
-                                else -> throw UnsupportedDatabaseTypeException()
-                            }
-                        )
-                    )
-                val columns = list.map {
-                    Field(
-                        columnName = (it["Field"] ?: it["name"]).toString(),
-                        type = (it["Type"] ?: it["type"]).toString(),
-                        primaryKey = when (wrapper.dbType) {
-                            DBType.Mysql -> it["Key"]?.toString() == "PRI"
-                            DBType.SQLite -> it["pk"]?.toString() == "1"
-                            DBType.Oracle -> it["PrimaryKey"]?.toString() == "1"
-                            DBType.Mssql -> it["PrimaryKey"]?.toString() == "1"
-                            DBType.Postgres -> it["PrimaryKey"]?.toString() == "1"
                             else -> throw UnsupportedDatabaseTypeException()
                         }
                     )
-                }
-                lruCache[key] = TableObject(
-                    columns,
-                    tableName
                 )
-            } catch (e: Exception) {
-                throw e
+            val columns = list.map {
+                Field(
+                    columnName = (it["Field"] ?: it["name"]).toString(),
+                    type = (it["Type"] ?: it["type"]).toString(),
+                    primaryKey = when (wrapper.dbType) {
+                        DBType.Mysql -> it["Key"]?.toString() == "PRI"
+                        DBType.SQLite -> it["pk"]?.toString() == "1"
+                        DBType.Oracle -> it["PrimaryKey"]?.toString() == "1"
+                        DBType.Mssql -> it["PrimaryKey"]?.toString() == "1"
+                        DBType.Postgres -> it["PrimaryKey"]?.toString() == "1"
+                        else -> throw UnsupportedDatabaseTypeException()
+                    }
+                )
             }
+            lruCache[key] = TableObject(
+                columns,
+                tableName
+            )
         }
         return lruCache[key]!!
     }

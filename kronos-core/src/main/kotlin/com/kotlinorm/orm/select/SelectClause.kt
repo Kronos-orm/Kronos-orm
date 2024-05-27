@@ -26,16 +26,16 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.tableCache.TableCache.getTable
 
 class SelectClause<T : KPojo>(
-    private val pojo: T, setSelectFields: KTableField<T, Any?> = null
+    internal val pojo: T, setSelectFields: KTableField<T, Any?> = null
 ) {
     private var tableName = pojo.kronosTableName()
     private var paramMap = pojo.toDataMap()
-    var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
-    var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    internal var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var isDistinct = false
@@ -194,12 +194,8 @@ class SelectClause<T : KPojo>(
         return this // 允许链式调用
     }
 
-    fun withTotal(): PagedClause<SelectClause<T>> {
+    fun withTotal(): PagedClause<T> {
         return PagedClause(this)
-    }
-
-    fun toField(): Field {
-        return Field("", selectClause = this)
     }
 
     /**

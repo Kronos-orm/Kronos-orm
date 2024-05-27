@@ -93,7 +93,7 @@ class Select {
 
     @Test
     fun testDatebase() {
-        val res = user.select().queryOne()
+        val res = user.select().withTotal().build()
         println(res)
     }
 

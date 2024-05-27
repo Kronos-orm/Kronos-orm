@@ -94,7 +94,7 @@ class SelectClause<T : KPojo>(
      * @return 返回 SelectClause<T> 实例，允许链式调用。
      * @throws NeedFieldsException 如果 someFields 为空，则抛出此异常。
      */
-    fun groupBy(someFields: KTableField<T, Unit>): SelectClause<T> {
+    fun groupBy(someFields: KTableField<T, Any?>): SelectClause<T> {
         isGroup = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (someFields == null) throw NeedFieldsException()
@@ -303,7 +303,6 @@ class SelectClause<T : KPojo>(
             groupByKeyword,
             havingKeyword,
             orderByKeywords,
-            havingKeyword,
             pagedSuffix
         ).joinToString(" ")
 

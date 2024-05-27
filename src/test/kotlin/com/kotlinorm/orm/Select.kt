@@ -68,7 +68,7 @@ class Select {
     @Test
     fun testSelect4() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.alias("name") + it.gender + "COUNT(1) as `count`" }
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
             .build()
 
         assertEquals(
@@ -81,7 +81,7 @@ class Select {
     @Test
     fun testSelect5() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.alias("name") + it.gender + "COUNT(1) as `count`" }
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
             .build()
 
         assertEquals(

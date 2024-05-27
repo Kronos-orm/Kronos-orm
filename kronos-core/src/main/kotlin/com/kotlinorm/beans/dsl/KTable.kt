@@ -91,8 +91,8 @@ open class KTable<T : KPojo> {
      * @param alias the alias to set for the object
      * @return the provided alias
      */
-    @Suppress("UNUSED", "UnusedReceiverParameter")
-    fun Any?.alias(alias: String): String = alias
+    @Suppress("UNUSED")
+    infix fun Any?.`as`(alias: String): String = alias
 
     /**
      * Adds a field to the collection of fields.

@@ -55,6 +55,7 @@ class SelectClause<T : KPojo>(
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
+    private var limitCapacity: Int = 0
     private var isDistinct = false
     private var isPage = false
     private var isGroup = false
@@ -79,7 +80,12 @@ class SelectClause<T : KPojo>(
     }
 
     fun single(): SelectClause<T> {
-        //TODO：不同数据库具有不同实现
+        limitCapacity = 1
+        return this
+    }
+
+    fun limit(capacity: Int): SelectClause<T> {
+        limitCapacity = capacity
         return this
     }
 
@@ -284,18 +290,34 @@ class SelectClause<T : KPojo>(
         }) else null
 
         // 如果分页，则将分页参数添加到SQL中
-        var pagedPrefix: String? = null
-        var pagedSuffix: String? = null
+        var limitedPrefix: String? = null
+        var limitedSuffix: String? = null
         if (isPage) when (wrapper.orDefault().dbType) {
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> pagedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
+            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
             DBType.Oracle -> {
-                pagedPrefix = "SELECT * FROM ("
+                limitedPrefix = "SELECT * FROM ("
                 selectFields += Field("rownum", "R")
-                pagedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
+                limitedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
             }
 
             DBType.Mssql -> {
-                pagedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
+                limitedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
+            }
+
+            else -> throw UnsupportedDatabaseTypeException()
+        }
+
+        //检查并设置是否使用LIMIT条件
+        if (limitCapacity > 0) when (wrapper.orDefault().dbType) {
+
+            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $limitCapacity"
+            DBType.Oracle -> {
+                limitedPrefix = "SELECT * FROM ("
+                selectFields += Field("rownum", "R")
+                limitedSuffix = ") WHERE R <= $limitCapacity"
+            }
+            DBType.Mssql -> {
+                limitedSuffix = "OFFSET 0 ROWS FETCH NEXT $limitCapacity ROWS ONLY"
             }
 
             else -> throw UnsupportedDatabaseTypeException()
@@ -303,7 +325,7 @@ class SelectClause<T : KPojo>(
 
         // 组装最终的SQL语句
         val sql = listOfNotNull(
-            pagedPrefix,
+            limitedPrefix,
             selectKeyword,
             selectFields.joinToString(", ") {
                 it.let {
@@ -319,7 +341,7 @@ class SelectClause<T : KPojo>(
             groupByKeyword,
             havingKeyword,
             orderByKeywords,
-            pagedSuffix
+            limitedSuffix
         ).joinToString(" ")
 
         // 返回构建好的KronosAtomicTask对象

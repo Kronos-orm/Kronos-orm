@@ -91,8 +91,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                 }
 
                 else -> {
-                    val funcName = element.funcName()
-                    when (funcName) {
+                    when (element.funcName()) {
                         "as" -> {
                             fieldNames.add(applyIrCall(
                                 aliasSymbol,
@@ -108,10 +107,6 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                                 )
                             })
                         }
-
-//                        "toField" -> {
-//                            fieldNames.add(element)
-//                        }
                     }
                 }
             }

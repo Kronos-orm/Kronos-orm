@@ -1,5 +1,3 @@
-import com.kotlinorm.buildSrc.SelectFromNGeneratorExtension
-
 plugins {
     `kotlin-dsl`
 }
@@ -13,17 +11,14 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
 }
 
-gradlePlugin {
-    plugins {
-        create("kronosJoinClauseGeneratorPlugin") {
-            id = "com.kotlinorm.buildSrc.kronosJoinClauseGeneratorPlugin"
-            implementationClass = "com.kotlinorm.buildSrc.KronosJoinClauseGeneratorPlugin"
-        }
+
+apply(from = "generate-join-clause.gradle.kts")
+
+@Suppress("UNCHECKED_CAST")
+val generateJoin = extra["export"] as () -> Unit
+
+tasks.create("generateJoinClause") {
+    doLast {
+        generateJoin()
     }
 }
-
-configure<SelectFromNGeneratorExtension> {
-    generateSelectFrom.runTask()
-}
-
-task("123").

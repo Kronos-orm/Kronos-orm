@@ -21,19 +21,20 @@
 //    fun testJoin() {
 //        val (sql, paramMap) =
 //            User(1).join(
-//                UserRelation(1, "123", 1, 1)
+//                UserRelation(1, "123", 1, 1),
 //            ) { user, relation ->
 //                leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
 //                select {
-//                    user.id + relation.gender + user.select { it.gender }.where { it.id == 1 }.limit(1).alias("col")
+//                    user.id + relation.gender + user.select { it.gender }.where { it.id == 1 }.`as`("col")
 //                }
 //                where { user.id == 1 }
-//                orderBy { user.id.desc }
-//                page(1, 10)
-//            }
-//            .withTotal()
+//                orderBy { user.id.desc() }
+//            }.build()
 //
-//        assertEquals("Select `user`.`id` as `id`, `relation`.`gender` as `gender`, (Select `gender` from `user` where `user`.`id` = 1 limit 1) as col from `user` left join `user_relation` as `relation` on `user`.`id` = `relation`.`id2` and `user`.`gender` = `relation`.`gender` where `user`.`id` = ? order by `user`.`id` desc limit 0, 10", sql)
+//        assertEquals(
+//            "Select `user`.`id` as `id`, `relation`.`gender` as `gender`, (Select `gender` from `user` where `user`.`id` = 1 limit 1) as col from `user` left join `user_relation` as `relation` on `user`.`id` = `relation`.`id2` and `user`.`gender` = `relation`.`gender` where `user`.`id` = ? order by `user`.`id` desc limit 0, 10",
+//            sql
+//        )
 //        assertEquals(mapOf("id" to 1), paramMap)
 //    }
 //}

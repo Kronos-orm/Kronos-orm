@@ -98,15 +98,15 @@ extra["export"] = {
                         |        TODO()
                         |   }
                         |
-                        |    fun select(fields: KTableField<Nothing, Unit>) {
+                        |    fun select(fields: KTableField<Nothing, Any?>) {
                         |        TODO()
                         |    }
                         |
-                        |    fun orderBy(lambda: KTableSortableField<Nothing, Unit>) {
+                        |    fun orderBy(lambda: KTableSortableField<Nothing, Any?>) {
                         |        TODO()
                         |    }
                         |
-                        |    fun groupBy(lambda: KTableField<Nothing, Unit>) {
+                        |    fun groupBy(lambda: KTableField<Nothing, Any?>) {
                         |        TODO()
                         |    }
                         
@@ -126,7 +126,7 @@ extra["export"] = {
                         |        TODO()
                         |    }
                         
-                        |    fun by(lambda: KTableField<Nothing, Unit>) {
+                        |    fun by(lambda: KTableField<Nothing, Any?>) {
                         |        TODO()
                         |    }
                         

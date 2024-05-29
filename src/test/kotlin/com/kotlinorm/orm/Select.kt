@@ -17,6 +17,7 @@ class Select {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
+        password = "Leinbo2103221541@"
     }
 
     init {

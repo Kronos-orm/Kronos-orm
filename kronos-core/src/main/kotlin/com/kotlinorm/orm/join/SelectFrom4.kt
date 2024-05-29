@@ -9,9 +9,11 @@ import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
                         
-class SelectFrom2<T1: KPojo, T2: KPojo>(
+class SelectFrom4<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo>(
     var t1: T1,
-    var t2: T2
+    var t2: T2,
+    var t3: T3,
+    var t4: T4
 ) : KSelectable<T1>(t1) {
     inline fun <reified T : KPojo> leftJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
         TODO()
@@ -73,7 +75,7 @@ class SelectFrom2<T1: KPojo, T2: KPojo>(
         TODO()
     }
                         
-    fun withTotal(): PagedClause<T1, SelectFrom2<T1, T2>> {
+    fun withTotal(): PagedClause<T1, SelectFrom4<T1, T2, T3, T4>> {
         TODO()
     }
                         

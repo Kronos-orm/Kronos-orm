@@ -5,7 +5,6 @@
 //import com.kotlinorm.orm.beans.User
 //import com.kotlinorm.orm.beans.UserRelation
 //import com.kotlinorm.orm.join.join
-//import com.kotlinorm.orm.select.select
 //import org.junit.jupiter.api.Test
 //import kotlin.test.assertEquals
 //
@@ -25,7 +24,7 @@
 //            ) { user, relation ->
 //                leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
 //                select {
-//                    user.id + relation.gender + user.select { it.gender }.where { it.id == 1 }.`as`("col")
+//                    user.id + relation.gender
 //                }
 //                where { user.id == 1 }
 //                orderBy { user.id.desc() }

@@ -41,7 +41,7 @@ class Field(
         return name
     }
 
-    fun quoted(): String = "`$columnName`"
+    fun quoted(showTable: Boolean = false): String = "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
     fun equation(): String = "`$columnName` = :$name"
 
     /**
@@ -55,7 +55,7 @@ class Field(
         other as Field
         if (columnName != other.columnName) return false
         if (name != other.name) return false
-
+        if (tableName != other.tableName) return false
         return true
     }
 
@@ -67,6 +67,7 @@ class Field(
     override fun hashCode(): Int {
         var result = columnName.hashCode()
         result = 31 * result + name.hashCode()
+        result = 31 * result + tableName.hashCode()
         return result
     }
 

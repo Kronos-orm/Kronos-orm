@@ -55,7 +55,7 @@ class SelectClause<T : KPojo>(
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
-    private var limitCapacity: Int = 0
+    private var limitCapacity = 0
     private var isDistinct = false
     private var isPage = false
     private var isGroup = false

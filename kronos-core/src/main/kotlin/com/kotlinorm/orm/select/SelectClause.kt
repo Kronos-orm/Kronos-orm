@@ -266,10 +266,6 @@ class SelectClause<T : KPojo>(
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(buildCondition, mutableMapOf())
             .toWhereClause()
 
-        if (selectFields.isEmpty()) {
-            selectFields = allFields
-        }
-
         // 检查并设置是否使用去重（DISTINCT）
         val selectKeyword = if (isDistinct) "SELECT DISTINCT" else "SELECT"
 

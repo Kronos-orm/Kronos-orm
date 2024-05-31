@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.join
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
@@ -9,6 +10,7 @@ import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -23,14 +25,21 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.query
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
+class Joinable(
+    val tableName: String,
+    val joinType: JoinType,
+    val condition: Criteria?,
+    val logicDeleteStrategy: KronosCommonStrategy
+)
+
 class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     var t1: T1,
-    var t2: T2,
-    val doAction: SelectFrom2<T1, T2>.(T1, T2) -> Unit
+    var t2: T2
 ) : KSelectable<T1>(t1) {
 
     private var tableName = t1.kronosTableName()
@@ -41,6 +50,9 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    private var selectFieldsWithNames: MutableMap<String , Field> = mutableMapOf()
+    private var keyCounters:ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()
+    val joinables: MutableList<Joinable> = mutableListOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var isDistinct = false
@@ -53,35 +65,67 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     private var pi = 0
     private var ps = 0
 
-    init {
-        doAction(t1, t2)
+    inline fun <reified T : KPojo> leftJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+        val tableName = another.kronosTableName()
+        t1.conditionalRun {
+            on(t1)
+            joinables.add(Joinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+        }
     }
 
-    inline fun <reified T : KPojo> leftJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-        TODO()
+    inline fun <reified T : KPojo> rightJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+        val tableName = another.kronosTableName()
+        t1.conditionalRun {
+            on(t1)
+            joinables.add(Joinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+        }
     }
 
-    inline fun <reified T : KPojo> rightJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-        TODO()
+    inline fun <reified T : KPojo> crossJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+        val tableName = another.kronosTableName()
+        t1.conditionalRun {
+            on(t1)
+            joinables.add(Joinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+        }
     }
 
-    inline fun <reified T : KPojo> crossJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-        TODO()
+    inline fun <reified T : KPojo> innerJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+        val tableName = another.kronosTableName()
+        t1.conditionalRun {
+            on(t1)
+            joinables.add(Joinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+        }
     }
 
-    inline fun <reified T : KPojo> innerJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-        TODO()
+    inline fun <reified T : KPojo> fullJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+        val tableName = another.kronosTableName()
+        t1.conditionalRun {
+            on(t1)
+            joinables.add(Joinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+        }
     }
 
-    inline fun <reified T : KPojo> fullJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-        TODO()
-    }
-
+    @Suppress("UNCHECKED_CAST")
     fun select(someFields: KTableField<T1, Any?>) {
         if (null == someFields) return
+
         pojo.tableRun {
             someFields(t1)
-            selectFields = fields.toLinkedSet()
+            selectFields += fields
+            fields.forEach { field ->
+                val safeKey = ConditionSqlBuilder.getSafeKey(
+                    field.columnName,
+                    keyCounters,
+                    selectFieldsWithNames as MutableMap<String, Any?>,
+                    field
+                )
+                selectFieldsWithNames[safeKey] = field
+            }
         }
     }
 
@@ -159,11 +203,11 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     }
 
     fun withTotal(): PagedClause<T1, SelectFrom2<T1, T2>> {
-        TODO()
+        return PagedClause(this)
     }
 
-    fun query(): List<Map<String, Any>> {
-        TODO()
+    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+        return this.build().query(wrapper)
     }
 
     operator fun component1(): String {
@@ -176,6 +220,7 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
 
     override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
         var buildCondition = condition
+
         // 初始化所有字段集合
         allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
 
@@ -210,8 +255,18 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(buildCondition, mutableMapOf(), showTable = true)
             .toWhereClause()
 
-        if (selectFields.isEmpty()) {
-            selectFields = allFields
+        val joinClauseSql = joinables.joinToString(" ") {
+            var joinCondition = it.condition
+            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
+                joinCondition = listOfNotNull(
+                    joinCondition, "${it.logicDeleteStrategy.field.quoted(true)} = $value".asSql()
+                ).toCriteria()
+            }
+            listOfNotNull(
+                it.joinType.value,
+                it.tableName,
+                ConditionSqlBuilder.buildConditionSqlWithParams(joinCondition, paramMap, showTable = true).toOnClause().first
+            ).joinToString(" ")
         }
 
         // 检查并设置是否使用去重（DISTINCT）
@@ -272,13 +327,14 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
         val sql = listOfNotNull(
             limitedPrefix,
             selectKeyword,
-            selectFields.joinToString(", ") {
-                it.let {
-                    if (it.type == "string") it.toString()
-                    else "${it.quoted(true)} AS `$it`"
+            selectFields.joinToString(", ") { field ->
+                field.let { item ->
+                    if (item.type == "string") field.toString()
+                    else "${item.quoted(true)} AS `${selectFieldsWithNames.filterKeys { selectFieldsWithNames[it] == item}.keys.first()}`"
                 }
             },
             "FROM `$tableName`",
+            joinClauseSql,
             whereClauseSql,
             groupByKeyword,
             havingKeyword,

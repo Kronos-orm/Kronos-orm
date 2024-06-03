@@ -173,7 +173,7 @@ fun runExpressionAnalysis(
     operator: String,
     right: IrExpression?
 ): Triple<IrExpression?, String, IrExpression?> {
-    if (!left.isKronosColumn()) {
+    if (!left.isKronosColumn() && right.isKronosColumn()) {
         return Triple(getColumnOrValue(right), getOperatorRevered(operator), getColumnOrValue(left))
     }
 

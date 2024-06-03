@@ -162,7 +162,7 @@ class SelectFrom2<T1 : KPojo, T2 : KPojo>(
     fun page(pi: Int, ps: Int) {
         this.isPage = true
         this.ps = ps
-        this.pi = (pi - 1) * ps
+        this.pi = pi
     }
 
     fun by(someFields: KTableField<T1, Any?>) {

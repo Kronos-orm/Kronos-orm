@@ -17,6 +17,7 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.*
 
 /**
@@ -115,9 +116,13 @@ object ConditionSqlBuilder {
             }
 
             Equal -> {
-                val safeKey = getSafeKey(condition.field.name , keyCounters , paramMap , condition)
-                paramMap[safeKey] = condition.value
-                listOfNotNull(condition.field.quoted(showTable), "!=".takeIf { condition.not } ?: "=", ":$safeKey")
+                if (condition.value is Field)  listOfNotNull(
+                    condition.field.quoted(showTable), "!=".takeIf { condition.not } ?: "=", (condition.value as Field).quoted(showTable))
+                else {
+                    val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
+                    paramMap[safeKey] = condition.value
+                    listOfNotNull(condition.field.quoted(showTable), "!=".takeIf { condition.not } ?: "=", ":$safeKey")
+                }
             }
 
             ISNULL -> listOfNotNull(
@@ -143,15 +148,17 @@ object ConditionSqlBuilder {
             }
 
             GT, GE, LT, LE -> {
-                val suffix = "Min".takeIf { condition.type in listOf(GT, GE) } ?: "Max"
-                val safeKey = getSafeKey(condition.field.name + suffix , keyCounters , paramMap , condition)
-                val sign = mapOf(
-                    GT to ">", GE to ">=", LT to "<", LE to "<="
-                )
-                paramMap[safeKey] = condition.value
-                listOf(
-                    condition.field.quoted(showTable), sign[condition.type], ":${safeKey}"
-                )
+                val sign = mapOf(GT to ">", GE to ">=", LT to "<", LE to "<=")
+                if (condition.value is Field)  listOfNotNull(
+                    condition.field.quoted(showTable), sign[condition.type], (condition.value as Field).quoted(showTable))
+                else {
+                    val suffix = "Min".takeIf { condition.type in listOf(GT, GE) } ?: "Max"
+                    val safeKey = getSafeKey(condition.field.name + suffix, keyCounters, paramMap, condition)
+                    paramMap[safeKey] = condition.value
+                    listOf(
+                        condition.field.quoted(showTable), sign[condition.type], ":${safeKey}"
+                    )
+                }
             }
 
             BETWEEN -> {

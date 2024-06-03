@@ -20,7 +20,7 @@ import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.utils.kTable.correspondingName
-import com.kotlinorm.plugins.utils.kTable.getColumnName
+import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import com.kotlinorm.plugins.utils.kTable.propParamSymbol
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -50,12 +50,11 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
  * @author OUSC
  */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
-fun setCriteriaIr() =
-    applyIrCall(
-        criteriaSetterSymbol, irGet(buildCriteria(body!!)!!)
-    ) {
-        dispatchBy(irGet(extensionReceiverParameter!!))
-    }
+fun setCriteriaIr() = applyIrCall(
+    criteriaSetterSymbol, irGet(buildCriteria(body!!)!!)
+) {
+    dispatchBy(irGet(extensionReceiverParameter!!))
+}
 
 /**
  * Builds a criteria IR variable based on the given element.
@@ -112,16 +111,17 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
             val (conditionType, isNot) = parseConditionType(funcName)
             type = conditionType
             not = not xor isNot
+
             when (funcName) {
                 "isNull", "notNull" -> {
-                    paramName = getColumnName(element.extensionReceiver!!)
+                    paramName = getColumnOrValue(element.extensionReceiver!!)
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
                 "lt", "gt", "le", "ge" -> {
                     if (args.isEmpty()) {
                         // 形如it.<property>.lt的写法
-                        paramName = getColumnName(element.extensionReceiver!!)
+                        paramName = getColumnOrValue(element.extensionReceiver!!)
                         tableName = getTableName(element.dispatchReceiver!!)
                         value = applyIrCall(
                             propParamSymbol!!,
@@ -131,15 +131,14 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                         }
                     } else {
                         val irCall = args.first()!!.asIrCall()
-                        if (irCall.extensionReceiver is IrCall && null != (irCall.extensionReceiver as IrCall).origin) {
-                            // 形如it.<property> < 100的写法
-                            paramName = getColumnName(irCall.extensionReceiver!!)
-                            value = irCall.valueArguments.first()!!
-                        } else {
-                            // 形如100 < it.<property> 的写法
-                            paramName = getColumnName(irCall.valueArguments.first()!!)
-                            value = irCall.extensionReceiver
-                        }
+                        val (left, operator, right) = runExpressionAnalysis(
+                            irCall.extensionReceiver,
+                            funcName,
+                            irCall.valueArguments.first()
+                        )
+                        paramName = left
+                        type = operator
+                        value = right
                         tableName = getTableName(irCall.dispatchReceiver!!)
                     }
                 }
@@ -148,13 +147,18 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                     not = not xor element.valueArguments.isEmpty()
                     val index = if (args.first() is IrCall && null != (args.first()!! as IrCall).origin) 0 else 1
                     val irCall = args[index]!!.asIrCall()
-                    paramName = getColumnName(irCall)
-                    value = args[1 - index]
+                    val (left, _, right) = runExpressionAnalysis(
+                        irCall,
+                        funcName,
+                        args[1 - index]
+                    )
+                    paramName = left
+                    value = right
                     tableName = getTableName(irCall.dispatchReceiver!!)
                 }
 
                 "eq", "neq" -> {
-                    paramName = getColumnName(element.extensionReceiver!!)
+                    paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
                         propParamSymbol!!,
                         irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
@@ -165,7 +169,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                 }
 
                 "between", "like", "notBetween", "notLike" -> {
-                    paramName = getColumnName(element.extensionReceiver!!)
+                    paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = if (args.isEmpty()) {
                         applyIrCall(
                             propParamSymbol!!,
@@ -190,10 +194,9 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                     } else {
                         args.first()
                     }
-                    paramName = getColumnName(element.extensionReceiver!!)
+                    paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
-                        stringPlusSymbol,
-                        irString("%")
+                        stringPlusSymbol, irString("%")
                     ) {
                         dispatchBy(str)
                     }
@@ -211,10 +214,9 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                     } else {
                         args.first()
                     }
-                    paramName = getColumnName(element.extensionReceiver!!)
+                    paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
-                        stringPlusSymbol,
-                        str
+                        stringPlusSymbol, str
                     ) {
                         dispatchBy(irString("%"))
                     }
@@ -232,23 +234,19 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                     } else {
                         args.first()
                     }
-                    paramName = getColumnName(element.extensionReceiver!!)
-                    value = applyIrCall(
-                        stringPlusSymbol,
-                        applyIrCall(
-                            stringPlusSymbol,
-                            irString("%")
-                        ) {
-                            dispatchBy(str)
-                        }
+                    paramName = getColumnOrValue(element.extensionReceiver!!)
+                    value = applyIrCall(stringPlusSymbol, applyIrCall(
+                        stringPlusSymbol, irString("%")
                     ) {
+                        dispatchBy(str)
+                    }) {
                         dispatchBy(irString("%"))
                     }
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
                 "contains" -> {
-                    paramName = getColumnName(args.first()!!)
+                    paramName = getColumnOrValue(args.first()!!)
                     value = element.extensionReceiver
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
@@ -275,12 +273,6 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
     }
 
     return CriteriaIR(
-        paramName,
-        type,
-        not,
-        getRightHandSideValue(value),
-        children.filterNotNull(),
-        tableName,
-        strategy
+        paramName, type, not, value, children.filterNotNull(), tableName, strategy
     ).toIrVariable()
 }

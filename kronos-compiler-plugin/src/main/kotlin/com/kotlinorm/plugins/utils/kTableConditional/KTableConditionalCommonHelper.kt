@@ -21,7 +21,8 @@ import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTable.correspondingName
-import com.kotlinorm.plugins.utils.kTable.getColumnName
+import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
+import com.kotlinorm.plugins.utils.kTable.isKronosColumn
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
@@ -30,7 +31,6 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
-import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.constructors
@@ -85,10 +85,8 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
         }
 
         is IrWhen -> when {
-            origin == IrStatementOrigin.OROR && !setNot -> "OR"
-            origin == IrStatementOrigin.ANDAND && !setNot -> "AND"
-            origin == IrStatementOrigin.OROR && setNot -> "AND"
-            origin == IrStatementOrigin.ANDAND && setNot -> "OR"
+            (origin == IrStatementOrigin.OROR && !setNot) || (origin == IrStatementOrigin.ANDAND && setNot) -> "OR"
+            (origin == IrStatementOrigin.ANDAND && !setNot) || (origin == IrStatementOrigin.OROR && setNot) -> "AND"
             else -> origin.toString()
         }
 
@@ -170,17 +168,32 @@ fun createCriteria(
 }
 
 context(IrBlockBuilder, IrPluginContext)
-fun getRightHandSideValue(expression: IrExpression?): IrExpression? {
-    if (expression == null) return null
-    if (expression is IrCallImpl && expression.origin == IrStatementOrigin.GET_PROPERTY) {
-        val extensionReceiver = expression.extensionReceiver
-        if (extensionReceiver is IrCallImpl &&
-            extensionReceiver.origin == IrStatementOrigin.GET_PROPERTY &&
-            expression.funcName() == "value"
-        ) {
-            return extensionReceiver
-        }
-        return getColumnName(expression)
+fun runExpressionAnalysis(
+    left: IrExpression?,
+    operator: String,
+    right: IrExpression?
+): Triple<IrExpression?, String, IrExpression?> {
+    if (!left.isKronosColumn() && !right.isKronosColumn()) {
+        return Triple(getColumnOrValue(left), operator, getColumnOrValue(right))
     }
-    return expression
+
+    if (!right.isKronosColumn()) {
+        return Triple(getColumnOrValue(left), operator, getColumnOrValue(right))
+    }
+
+    if (!left.isKronosColumn()) {
+        return Triple(getColumnOrValue(right), getOperatorRevered(operator), getColumnOrValue(left))
+    }
+
+    return Triple(getColumnOrValue(left), operator, getColumnOrValue(right))
+}
+
+fun getOperatorRevered(operator: String): String {
+    return when (operator) {
+        "lt" -> "gt"
+        "le" -> "ge"
+        "ge" -> "le"
+        "gt" -> "lt"
+        else -> operator
+    }
 }

@@ -16,21 +16,19 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.findByFqName
-import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
+import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
-import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConst
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrGetValue
+import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
@@ -92,7 +90,7 @@ fun getColumnName(expression: IrExpression): IrExpression {
             val propertyName = expression.correspondingName!!.asString()
             val irProperty =
                 expression.dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
-            getColumnName(irProperty, propertyName)
+            getColumnName(irProperty, propertyName, expression)
         }
 
         else -> applyIrCall(fieldSymbol.constructors.first(), irString(""), irString(""))
@@ -107,12 +105,22 @@ fun getColumnName(expression: IrExpression): IrExpression {
  * @return the IrExpression representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
-fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name.asString()): IrExpression {
+fun getColumnName(
+    irProperty: IrProperty,
+    propertyName: String = irProperty.name.asString(),
+    expression: IrExpression? = null,
+): IrExpression {
+    val parent = irProperty.parent as IrClass
+    if (expression != null) {
+        if (parent.superTypes.none { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }) {
+            return expression
+        }
+    }
     val columnAnnotation =
         irProperty.annotations.findByFqName(ColumnAnnotationsFqName)
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
-    val tableName = getTableName(irProperty.parent as IrClass)
+    val tableName = getTableName(parent)
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
@@ -126,9 +134,39 @@ fun getColumnName(irProperty: IrProperty, propertyName: String = irProperty.name
                 fieldK2dbSymbol,
                 irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
             )
+
             else -> irString((tableName as IrConst<*>).value.toString())
         }
     )
+}
+
+context(IrBlockBuilder, IrPluginContext)
+fun IrExpression?.isKronosValueGetter(): Boolean {
+    return this is IrCallImpl && this.origin == IrStatementOrigin.GET_PROPERTY && this.extensionReceiver is IrCallImpl && (this.extensionReceiver as IrCallImpl).origin == IrStatementOrigin.GET_PROPERTY && this.funcName() == "value"
+}
+
+context(IrBlockBuilder, IrPluginContext)
+fun IrExpression?.isKronosColumn(): Boolean {
+    if (this == null) return false
+    return this is IrCallImpl && this.origin == IrStatementOrigin.GET_PROPERTY && this.let {
+        val propertyName = correspondingName!!.asString()
+        val irProperty =
+            dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
+        val parent = irProperty.parent as IrClass
+        parent.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+    }
+}
+
+context(IrBlockBuilder, IrPluginContext)
+fun getColumnOrValue(expression: IrExpression?): IrExpression? {
+    if (expression == null) return null
+    if (expression.isKronosValueGetter()) {
+        return expression.asIrCall().extensionReceiver
+    }
+    if (expression.isKronosColumn()) {
+        return getColumnName(expression)
+    }
+    return expression
 }
 
 /**

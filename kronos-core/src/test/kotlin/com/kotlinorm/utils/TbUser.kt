@@ -1,9 +1,9 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.annotations.Column
+import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.utils.Extensions.mapperTo
 import java.util.*
 
 /**
@@ -20,7 +20,9 @@ data class TbUser(
     val sex: String? = null,
     val age: Int? = null,
     val avatar: String? = null,
-    @UpdateTime(format = "yyyy-MM-dd HH:mm:ss") val updateTime: Date? = null,
+    @UpdateTime()
+    @DateTimeFormat(format = "yyyy-MM-dd HH:mm:ss")
+    val updateTime: Date? = null,
 ) : KPojo()
 
 data class Ha(

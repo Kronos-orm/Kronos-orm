@@ -65,14 +65,22 @@ class JoinParserTest {
                      tableNamingStrategy = LineHumpNamingStrategy
                 }
                     
+            data class C(val id: Int? = null)
+            val c = C(1)
             val (sql, paramMap) =
                 User(1).join(
                     UserRelation(1, "123", 1, 1),
                 ) { user, relation ->
                     leftJoin(relation) { 
-                        user.id == relation.id2 &&
-                        user.gender == relation.gender &&
-                        user.id == relation.id2.value
+                        user.id > 1 &&
+                        user.id <= 1 &&
+                        1 > user.id &&
+                        1 <= user.id &&
+                        user.id == 1 &&
+                        user.id != 1 &&
+                        c.id >= user.id &&
+                        user.id > relation.id2.value &&
+                        relation.id2.value >= user.id
                     }
                     select {
                         user.id + relation.gender

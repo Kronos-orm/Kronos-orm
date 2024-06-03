@@ -174,7 +174,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args[0]
+                        args.first()
                     }
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
@@ -188,7 +188,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args[0]
+                        args.first()
                     }
                     paramName = getColumnName(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -209,7 +209,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args[0]
+                        args.first()
                     }
                     paramName = getColumnName(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -230,7 +230,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args[0]
+                        args.first()
                     }
                     paramName = getColumnName(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -248,7 +248,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                 }
 
                 "contains" -> {
-                    paramName = getColumnName(args[0]!!)
+                    paramName = getColumnName(args.first()!!)
                     value = element.extensionReceiver
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
@@ -258,7 +258,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                 }
 
                 "ifNoValue" -> {
-                    strategy = args[0]
+                    strategy = args.first()
                     return buildCriteria(element.extensionReceiver!!, not, strategy)
                 }
             }
@@ -274,5 +274,13 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
 
     }
 
-    return CriteriaIR(paramName, type, not, value, children.filterNotNull(), tableName, strategy).toIrVariable()
+    return CriteriaIR(
+        paramName,
+        type,
+        not,
+        getRightHandSideValue(value),
+        children.filterNotNull(),
+        tableName,
+        strategy
+    ).toIrVariable()
 }

@@ -36,14 +36,3 @@ enum class ConditionType {
     OR,
     ROOT
 }
-
-/**
- * Converts a string to a ConditionType enum value.
- *
- * @param str The string to convert.
- * @return The corresponding ConditionType enum value.
- * @throws IllegalArgumentException If the string does not match any of the enum values.
- */
-internal fun toConditionType(str: String): ConditionType {
-    return ConditionType.valueOf(str.uppercase())
-}

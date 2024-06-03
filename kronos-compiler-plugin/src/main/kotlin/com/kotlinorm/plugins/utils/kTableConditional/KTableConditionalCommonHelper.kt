@@ -21,15 +21,34 @@ import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTable.correspondingName
+import com.kotlinorm.plugins.utils.kTable.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrWhen
+import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
 const val KTABLE_CONDITIONAL_CLASS = "com.kotlinorm.beans.dsl.KTableConditional"
+
+context(IrBuilderWithScope, IrPluginContext)
+internal val conditionTypeSymbol
+    get() = referenceClass("com.kotlinorm.enums.ConditionType")!!
+
+context(IrBuilderWithScope, IrPluginContext)
+internal fun getConditionType(type: String): IrExpression {
+    val enumEntries = conditionTypeSymbol.owner.declarations.filterIsInstance<IrEnumEntry>()
+    val enumEntry = enumEntries.find { it.name.asString() == type.uppercase() }!!
+    return IrGetEnumValueImpl(startOffset, endOffset, conditionTypeSymbol.defaultType, enumEntry.symbol)
+}
 
 context(IrPluginContext)
 internal val criteriaSetterSymbol
@@ -42,10 +61,6 @@ private val criteriaClassSymbol
 context(IrBuilderWithScope, IrPluginContext)
 private val addCriteriaChild
     get() = criteriaClassSymbol.getSimpleFunction("addChild")!!
-
-context(IrPluginContext)
-private val string2ConditionTypeSymbol
-    get() = referenceFunctions("com.kotlinorm.enums", "toConditionType").first()
 
 context(IrPluginContext)
 internal val stringPlusSymbol
@@ -136,7 +151,7 @@ fun createCriteria(
         applyIrCall(
             criteriaClassSymbol.constructors.first(),
             parameterName,
-            string2ConditionType(type),
+            getConditionType(type),
             irBoolean(not),
             value,
             tableName,
@@ -146,8 +161,7 @@ fun createCriteria(
     //添加子条件
     children.forEach {
         +applyIrCall(
-            addCriteriaChild,
-            irGet(it)
+            addCriteriaChild, irGet(it)
         ) {
             dispatchBy(irGet(irVariable))
         }
@@ -155,13 +169,18 @@ fun createCriteria(
     return irVariable
 }
 
-/**
- * Converts a string to a condition type and returns an IrFunctionAccessExpression.
- *
- * @param str The string to be converted.
- * @return The IrFunctionAccessExpression representing the condition type.
- */
-context(IrBuilderWithScope, IrPluginContext)
-fun string2ConditionType(str: String): IrFunctionAccessExpression {
-    return applyIrCall(string2ConditionTypeSymbol, irString(str))
+context(IrBlockBuilder, IrPluginContext)
+fun getRightHandSideValue(expression: IrExpression?): IrExpression? {
+    if (expression == null) return null
+    if (expression is IrCallImpl && expression.origin == IrStatementOrigin.GET_PROPERTY) {
+        val extensionReceiver = expression.extensionReceiver
+        if (extensionReceiver is IrCallImpl &&
+            extensionReceiver.origin == IrStatementOrigin.GET_PROPERTY &&
+            expression.funcName() == "value"
+        ) {
+            return extensionReceiver
+        }
+        return getColumnName(expression)
+    }
+    return expression
 }

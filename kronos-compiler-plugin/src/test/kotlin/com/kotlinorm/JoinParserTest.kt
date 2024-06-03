@@ -69,7 +69,11 @@ class JoinParserTest {
                 User(1).join(
                     UserRelation(1, "123", 1, 1),
                 ) { user, relation ->
-                    leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
+                    leftJoin(relation) { 
+                        user.id == relation.id2 &&
+                        user.gender == relation.gender &&
+                        user.id == relation.id2.value
+                    }
                     select {
                         user.id + relation.gender
                     }

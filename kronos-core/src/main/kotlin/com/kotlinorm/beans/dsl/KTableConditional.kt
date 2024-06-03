@@ -30,6 +30,8 @@ import com.kotlinorm.enums.NoValueStrategy
 open class KTableConditional<T : KPojo> : KTable<T>() {
     var criteria: Criteria? = null
 
+    val Any?.value get() = this
+
     /**
      * Check if the iterable contains the element
      *

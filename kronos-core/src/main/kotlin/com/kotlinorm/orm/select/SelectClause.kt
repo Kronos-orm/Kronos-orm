@@ -55,7 +55,7 @@ class SelectClause<T : KPojo>(
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
-    private var limitCapacity: Int = 0
+    private var limitCapacity = 0
     private var isDistinct = false
     private var isPage = false
     private var isGroup = false
@@ -265,10 +265,6 @@ class SelectClause<T : KPojo>(
         // 构建带有参数的查询条件SQL
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(buildCondition, mutableMapOf())
             .toWhereClause()
-
-        if (selectFields.isEmpty()) {
-            selectFields = allFields
-        }
 
         // 检查并设置是否使用去重（DISTINCT）
         val selectKeyword = if (isDistinct) "SELECT DISTINCT" else "SELECT"

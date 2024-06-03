@@ -1,14 +1,16 @@
 package com.kotlinorm.orm.join
- 
+
 import com.kotlinorm.beans.dsl.KPojo
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo> T1.join(
     table2: T2,
     selectFrom: SelectFrom2<T1, T2>.(T1, T2) -> Unit
 ): SelectFrom2<T1, T2> {
-    TODO()
+    return SelectFrom2(this, table2).apply {
+        selectFrom(t1, t2)
+    }
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo> T1.join(
@@ -18,7 +20,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo> T1.join(
 ): SelectFrom3<T1, T2, T3> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo> T1.join(
@@ -29,7 +31,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom4<T1, T2, T3, T4> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo> T1.join(
@@ -41,7 +43,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom5<T1, T2, T3, T4, T5> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo> T1.join(
@@ -54,7 +56,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom6<T1, T2, T3, T4, T5, T6> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo> T1.join(
@@ -68,7 +70,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom7<T1, T2, T3, T4, T5, T6, T7> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo> T1.join(
@@ -83,7 +85,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom8<T1, T2, T3, T4, T5, T6, T7, T8> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo> T1.join(
@@ -99,7 +101,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo> T1.join(
@@ -116,7 +118,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo,reified T11 : KPojo> T1.join(
@@ -134,7 +136,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo,reified T11 : KPojo,reified T12 : KPojo> T1.join(
@@ -153,7 +155,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo,reified T11 : KPojo,reified T12 : KPojo,reified T13 : KPojo> T1.join(
@@ -173,7 +175,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo,reified T11 : KPojo,reified T12 : KPojo,reified T13 : KPojo,reified T14 : KPojo> T1.join(
@@ -194,7 +196,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo,reified T11 : KPojo,reified T12 : KPojo,reified T13 : KPojo,reified T14 : KPojo,reified T15 : KPojo> T1.join(
@@ -216,7 +218,7 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
     TODO()
 }
-                        
+
 
 
 inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 : KPojo,reified T5 : KPojo,reified T6 : KPojo,reified T7 : KPojo,reified T8 : KPojo,reified T9 : KPojo,reified T10 : KPojo,reified T11 : KPojo,reified T12 : KPojo,reified T13 : KPojo,reified T14 : KPojo,reified T15 : KPojo,reified T16 : KPojo> T1.join(
@@ -239,4 +241,3 @@ inline fun <reified T1 : KPojo,reified T2 : KPojo,reified T3 : KPojo,reified T4 
 ): SelectFrom16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> {
     TODO()
 }
-                        

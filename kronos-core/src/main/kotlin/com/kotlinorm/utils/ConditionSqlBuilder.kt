@@ -35,6 +35,14 @@ object ConditionSqlBuilder {
                 null
             } to paramMap
         }
+
+        fun toOnClause(): Pair<String?, MutableMap<String, Any?>> {
+            return if (sql != null) {
+                "ON $sql"
+            } else {
+                null
+            } to paramMap
+        }
     }
 
     data class KeyCounter(
@@ -55,7 +63,8 @@ object ConditionSqlBuilder {
         condition: Criteria?,
         paramMap: MutableMap<String, Any?>,
         needBrackets: Boolean = false,
-        keyCounters: KeyCounter = KeyCounter()
+        keyCounters: KeyCounter = KeyCounter(),
+        showTable: Boolean = false
     ): KotoBuildResultSet {
         if (condition == null) { // 如果条件为 null，则直接返回
             return KotoBuildResultSet(null, paramMap)
@@ -98,96 +107,61 @@ object ConditionSqlBuilder {
             }
         }
 
-        // 这个函数用于生成一个安全的键名，以避免与现有的键名冲突
-        fun getSafeKey(keyName: String): String {
-            // 如果 keyCounters 尚未初始化，则进行初始化
-            if (!keyCounters.initialized) {
-                keyCounters.initialized = true
-                // 遍历paramMap中的所有键
-                paramMap.keys.forEach { key ->
-                    // 使用解构声明从字符串中提取键和计数器
-                    val (k, c) = if (key.contains("@")) {
-                        val split = key.split("@")
-                        split[0] to split[1].toInt()
-                    } else {
-                        key to 0
-                    }
-                    // 使用getOrPut函数简化向metaOfMap中添加新条目的过程
-                    keyCounters.metaOfMap.getOrPut(k) { mutableMapOf() }[c] = paramMap[key]
-                }
-            }
-
-            // 获取与条件值匹配的键计数对
-            val keyCount = keyCounters.metaOfMap[keyName]?.toList()?.firstOrNull { it.second == condition.value }
-
-            // 如果没有匹配的键计数对，则创建新的键计数对
-            return if (keyCount == null) {
-                // 获取键的最大计数器值，如果不存在则默认为-1
-                val counter = keyCounters.metaOfMap[keyName]?.keys?.maxOrNull() ?: -1
-                // 添加新的键计数对
-                keyCounters.metaOfMap.getOrPut(keyName) { mutableMapOf() }[counter + 1] = condition.value
-                if (counter + 1 == 0) keyName else "${keyName}@${counter + 1}"
-            } else {
-                // 如果存在匹配的键计数对，则返回相应的键名
-                if (keyCount.first == 0) keyName else "${keyName}@${keyCount.first}"
-            }
-        }
-
         val sql = when (condition.type) {
             Root -> {
                 listOf(
-                    buildConditionSqlWithParams(condition.children.firstOrNull(), paramMap).sql
+                    buildConditionSqlWithParams(condition.children.firstOrNull(), paramMap , showTable = showTable).sql
                 )
             }
 
             Equal -> {
-                val safeKey = getSafeKey(condition.field.name)
+                val safeKey = getSafeKey(condition.field.name , keyCounters , paramMap , condition)
                 paramMap[safeKey] = condition.value
-                listOfNotNull(condition.field.quoted(), "!=".takeIf { condition.not } ?: "=", ":$safeKey")
+                listOfNotNull(condition.field.quoted(showTable), "!=".takeIf { condition.not } ?: "=", ":$safeKey")
             }
 
             ISNULL -> listOfNotNull(
-                condition.field.quoted(), "IS", "NOT".takeIf { condition.not }, "NULL"
+                condition.field.quoted(showTable), "IS", "NOT".takeIf { condition.not }, "NULL"
             )
 
             SQL -> listOf(condition.value.toString())
 
             Like -> {
-                val safeKey = getSafeKey(condition.field.name)
+                val safeKey = getSafeKey(condition.field.name , keyCounters , paramMap , condition)
                 paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
-                    condition.field.quoted(), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
+                    condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
                 )
             }
 
             In -> {
-                val safeKey = getSafeKey(condition.field.name + "List")
+                val safeKey = getSafeKey(condition.field.name + "List" , keyCounters , paramMap , condition)
                 paramMap[safeKey] = condition.value
                 listOfNotNull(
-                    condition.field.quoted(), "NOT".takeIf { condition.not }, "IN", "(:${safeKey})"
+                    condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "IN", "(:${safeKey})"
                 )
             }
 
             GT, GE, LT, LE -> {
                 val suffix = "Min".takeIf { condition.type in listOf(GT, GE) } ?: "Max"
-                val safeKey = getSafeKey(condition.field.name + suffix)
+                val safeKey = getSafeKey(condition.field.name + suffix , keyCounters , paramMap , condition)
                 val sign = mapOf(
                     GT to ">", GE to ">=", LT to "<", LE to "<="
                 )
                 paramMap[safeKey] = condition.value
                 listOf(
-                    condition.field.quoted(), sign[condition.type], ":${safeKey}"
+                    condition.field.quoted(showTable), sign[condition.type], ":${safeKey}"
                 )
             }
 
             BETWEEN -> {
-                val safeKeyMin = getSafeKey(condition.field.name + "Min")
-                val safeKeyMax = getSafeKey(condition.field.name + "Max")
+                val safeKeyMin = getSafeKey(condition.field.name + "Min" , keyCounters , paramMap , condition)
+                val safeKeyMax = getSafeKey(condition.field.name + "Max" , keyCounters , paramMap , condition)
                 val rangeValue = condition.value as ClosedRange<*>
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive
                 listOfNotNull(
-                    condition.field.quoted(),
+                    condition.field.quoted(showTable),
                     "NOT".takeIf { condition.not },
                     "BETWEEN",
                     ":${safeKeyMin}",
@@ -203,7 +177,8 @@ object ConditionSqlBuilder {
                         child,
                         paramMap,
                         needBrackets = child?.type.isLogicalOperator() && child?.type != condition.type,
-                        keyCounters
+                        keyCounters,
+                        showTable = showTable
                     )
                     childSql
                 }
@@ -225,4 +200,51 @@ object ConditionSqlBuilder {
 
     // 辅助扩展函数，用于判断是否为逻辑操作符类型
     private fun ConditionType?.isLogicalOperator(): Boolean = this == AND || this == OR
+
+    // 这个函数用于生成一个安全的键名，以避免与现有的键名冲突
+    fun getSafeKey(
+        keyName: String,
+        keyCounters: KeyCounter,
+        dataMap: MutableMap<String, Any?>,
+        data: Any
+    ): String {
+        // 如果 keyCounters 尚未初始化，则进行初始化
+        if (!keyCounters.initialized) {
+            keyCounters.initialized = true
+            // 遍历paramMap中的所有键
+            dataMap.keys.forEach { key ->
+                // 使用解构声明从字符串中提取键和计数器
+                val (k, c) = if (key.contains("@")) {
+                    val split = key.split("@")
+                    split[0] to split[1].toInt()
+                } else {
+                    key to 0
+                }
+                // 使用getOrPut函数简化向metaOfMap中添加新条目的过程
+                keyCounters.metaOfMap.getOrPut(k) { mutableMapOf() }[c] = dataMap[key]
+            }
+        }
+
+        // 获取与条件值匹配的键计数对
+        val keyCount = keyCounters.metaOfMap[keyName]?.toList()?.firstOrNull { it.second == getValue(data) }
+
+        // 如果没有匹配的键计数对，则创建新的键计数对
+        return if (keyCount == null) {
+            // 获取键的最大计数器值，如果不存在则默认为-1
+            val counter = keyCounters.metaOfMap[keyName]?.keys?.maxOrNull() ?: -1
+            // 添加新的键计数对
+            keyCounters.metaOfMap.getOrPut(keyName) { mutableMapOf() }[counter + 1] = getValue(dataMap)
+            if (counter + 1 == 0) keyName else "${keyName}@${counter + 1}"
+        } else {
+            // 如果存在匹配的键计数对，则返回相应的键名
+            if (keyCount.first == 0) keyName else "${keyName}@${keyCount.first}"
+        }
+    }
+
+    private fun getValue(data: Any): Any? {
+        return when (data) {
+            is Criteria -> data.value
+            else -> data
+        }
+    }
 }

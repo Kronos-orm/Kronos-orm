@@ -20,10 +20,6 @@ extra["export"] = {
     val maxJoinNum = 16
     val joinRange = 2..maxJoinNum
 
-    fun File.writeKotlin(source: String) {
-        writeText(source)
-    }
-
     fun generatePatch() {
         val fileName = "Patch.kt"
         with(File(joinDir, fileName)) {
@@ -31,7 +27,7 @@ extra["export"] = {
                 createNewFile()
             }
 
-            writeKotlin("""
+            writeText("""
                     |package com.kotlinorm.orm.join
                     | 
                     |import com.kotlinorm.beans.dsl.KPojo
@@ -67,7 +63,7 @@ extra["export"] = {
             val nthOfType = range.joinToString(", ") { "T${it}" }
             val nthOfType_ = range.joinToString(", ") { "T${it}: KPojo" }
             val className = "SelectFrom$n<$nthOfType>"
-            writeKotlin(
+            writeText(
                 """
                         |package com.kotlinorm.orm.join
                         |

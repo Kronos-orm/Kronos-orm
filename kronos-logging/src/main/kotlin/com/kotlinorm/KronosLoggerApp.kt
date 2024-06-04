@@ -9,22 +9,15 @@ import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.exceptions.KotoNoLoggerException
 import com.kotlinorm.i18n.Noun
 import com.kotlinorm.interfaces.KLogger
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
 
 object KronosLoggerApp {
     /**
-     * Call the [Method.invoke] method, catching [InvocationTargetException], and rethrowing the target exception.
+     * Returns an instance of KLogger based on the provided logging class.
+     *
+     * @param loggingClazz the class for which the logger is being created
+     * @return an instance of KLogger based on the logger type specified in Kronos
+     * @throws KotoNoLoggerException if the logger type specified in Kronos is not supported
      */
-    @Suppress("SwallowedException")
-    internal fun Method.invoke0(obj: Any?, vararg args: Any?): Any? {
-        try {
-            return this.invoke(obj, *args)
-        } catch (e: InvocationTargetException) {
-            throw e.targetException
-        }
-    }
-
     private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
         val tag = loggingClazz::class.simpleName!!
         return when (Kronos.loggerType) {
@@ -37,6 +30,16 @@ object KronosLoggerApp {
         }
     }
 
+    /**
+     * Detects and sets the logger implementation based on the available logger types.
+     *
+     * This function sets the default logger implementation using the `getKotoLoggerInstance` function.
+     * It then iterates over each available logger type and attempts to initialize the logger using the `init` function.
+     * If the logger initialization is successful, the logger type is set as the current logger type.
+     * Any `ClassNotFoundException` or `NoClassDefFoundError` exceptions are caught and ignored.
+     *
+     * @throws KotoNoLoggerException if no logger implementation is found for the given logger type
+     */
     fun detectLoggerImplementation() {
         Kronos.defaultLogger = { getKotoLoggerInstance(it) }
         val tag = "com.kotlinorm.core"

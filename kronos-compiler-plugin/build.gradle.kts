@@ -80,9 +80,9 @@ publishing {
                     }
                 }
                 scm {
-                    url.set("https://github.com/kotlinorm/kotlinorm")
-                    connection.set("scm:git:https://github.com/kotlinorm/kotlinorm.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:kotlinorm/kotlinorm.git")
+                    url.set("https://github.com/Kronos-orm/Kronos-orm")
+                    connection.set("scm:git:https://github.com/Kronos-orm/Kronos-orm.git")
+                    developerConnection.set("scm:git:ssh://git@github.com:Kronos-orm/Kronos-orm.git")
                 }
                 developers {
                     developer {
@@ -95,13 +95,38 @@ publishing {
                         name.set("FOYU")
                         email.set("2456416562@qq.com")
                     }
+                    developer {
+                        id.set("yf")
+                        name.set("yf")
+                        email.set("1661264104@qq.com")
+                    }
                 }
             }
         }
     }
-    //5. 设置发布仓库
+
     repositories {
-        // 6. 发布到本地 maven 仓库
+        maven {
+            name = "central"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2")
+            credentials {
+                username = System.getenv("OSSRH_USER")
+                password = System.getenv("OSSRH_PASSWORD")
+            }
+        }
+        maven {
+            name = "snapshot"
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
+            credentials {
+                username = System.getenv("OSSRH_USER")
+                password = System.getenv("OSSRH_PASSWORD")
+            }
+        }
         mavenLocal()
     }
+}
+
+signing {
+    //sign publishing.publications.mavenJava
+    sign(publishing.publications["dist"])
 }

@@ -20,10 +20,6 @@ extra["export"] = {
     val maxJoinNum = 16
     val joinRange = 2..maxJoinNum
 
-    fun File.writeKotlin(source: String) {
-        writeText(source)
-    }
-
     fun generatePatch() {
         val fileName = "Patch.kt"
         with(File(joinDir, fileName)) {
@@ -31,7 +27,7 @@ extra["export"] = {
                 createNewFile()
             }
 
-            writeKotlin("""
+            writeText("""
                     |package com.kotlinorm.orm.join
                     | 
                     |import com.kotlinorm.beans.dsl.KPojo
@@ -44,7 +40,11 @@ extra["export"] = {
                             |${range.drop(1).joinToString(",\n") { "    table$it: T$it" }},
                             |    selectFrom: SelectFrom$index<$nthOfType>.($nthOfType) -> Unit
                             |): SelectFrom$index<$nthOfType> {
-                            |    TODO()
+                            |    return SelectFrom$index(this, ${
+                        range.drop(1).joinToString(", ") { "table$it" }
+                    }).apply {
+                            |        selectFrom(${range.joinToString(", ") { "t$it" }})
+                            |    }
                             |}
                         """
                 }
@@ -61,114 +61,39 @@ extra["export"] = {
             }
             val range = 1..n
             val nthOfType = range.joinToString(", ") { "T${it}" }
+            val nthOfType_ = range.joinToString(", ") { "T${it}: KPojo" }
             val className = "SelectFrom$n<$nthOfType>"
-            writeKotlin(
+            writeText(
                 """
                         |package com.kotlinorm.orm.join
-
+                        |
                         |import com.kotlinorm.beans.dsl.KPojo
-                        |import com.kotlinorm.beans.dsl.KSelectable
-                        |import com.kotlinorm.beans.task.KronosAtomicQueryTask
-                        |import com.kotlinorm.interfaces.KronosDataSourceWrapper
                         |import com.kotlinorm.pagination.PagedClause
-                        |import com.kotlinorm.types.KTableConditionalField
-                        |import com.kotlinorm.types.KTableField
-                        |import com.kotlinorm.types.KTableSortableField
-                        
-                        |class SelectFrom$n<${range.joinToString(", ") { "T$it: KPojo" }}>(
-                        |${range.joinToString(",\n") { "    var t$it: T$it" }}
-                        |) : KSelectable<T1>(t1) {
-                        |    inline fun <reified T : KPojo> leftJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-                        |        TODO()
-                        |    }
+                        |import com.kotlinorm.utils.toLinkedSet
                         |
-                        |    inline fun <reified T : KPojo> rightJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-                        |        TODO()
-                        |    }
-                        |
-                        |    inline fun <reified T : KPojo> crossJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-                        |        TODO()
-                        |    }
-                        |
-                        |    inline fun <reified T : KPojo> innerJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-                        |        TODO()
-                        |    }
-                        |
-                        |    inline fun <reified T : KPojo> fullJoin(another: T, noinline on: KTableConditionalField<Nothing, Boolean?>) {
-                        |        TODO()
-                        |   }
-                        |
-                        |    fun select(fields: KTableField<Nothing, Any?>) {
-                        |        TODO()
-                        |    }
-                        |
-                        |    fun orderBy(lambda: KTableSortableField<Nothing, Any?>) {
-                        |        TODO()
-                        |    }
-                        |
-                        |    fun groupBy(lambda: KTableField<Nothing, Any?>) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun distinct() {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun limit(num: Int) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun offset(num: Int) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun page(pi: Int, ps: Int) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun by(lambda: KTableField<Nothing, Any?>) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun where(lambda: KTableConditionalField<Nothing, Boolean?> = null) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun having(lambda: KTableConditionalField<Nothing, Boolean?> = null) {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun withTotal(): PagedClause<T1, $className> {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun query(): List<Map<String, Any>> {
-                        |        TODO()
-                        |    }
-                        
-                        |    fun count(): List<Map<String, Any>> {
-                        |        TODO()
-                        |    }
-                        
-                        |    operator fun component1(): String {
-                        |        TODO()
-                        |    }
-                        
-                        |    operator fun component2(): Map<String, Any?> {
-                        |        TODO()
-                        |    }
-                        
-                        |    override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
-                        |        TODO("Not yet implemented")
+                        |class SelectFrom$n<$nthOfType_>(
+                        |    override var t1: T1,
+                        |    ${range.drop(1).joinToString(", ") { "var t$it: T$it" }}
+                        |) : SelectFrom<T1>(t1) {
+                        |    override var tableName = t1.kronosTableName()
+                        |    override var paramMap = t1.toDataMap()
+                        |    override var logicDeleteStrategy = t1.kronosLogicDelete()
+                        |    override var allFields = t1.kronosColumns().toLinkedSet()
+                        |    
+                        |    fun withTotal(): PagedClause<T1, SelectFrom$n<$nthOfType>> {
+                        |        return PagedClause(this)
                         |    }
                         |}
-
                     """.trimMargin()
             )
         }
     }
 
-    joinDir.listFiles()?.forEach { it.delete() }
+    joinDir.listFiles()?.forEach {
+        if (it.name != "SelectFrom.kt") {
+            it.delete()
+        }
+    }
     generatePatch()
     joinRange.forEach {
         generateSelectFromN(it)

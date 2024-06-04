@@ -49,6 +49,14 @@ context(IrPluginContext)
 private val mapGetterSymbol
     get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")
 
+/**
+ * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
+ * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.
+ *
+ * @param declaration The IrClass to be converted to a map.
+ * @param irFunction The IrFunction that contains the instance of the IrClass.
+ * @return The IrBlockBody that represents the function.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     return irBlockBody {
@@ -73,6 +81,13 @@ fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBo
     }
 }
 
+/**
+ * Creates an IrBlockBody that sets the properties of an IrClass instance using values from a map.
+ *
+ * @param declaration the IrClass instance whose properties will be set
+ * @param irFunction the IrFunction that contains the map parameter
+ * @return an IrBlockBody that sets the properties of the IrClass instance using values from the map
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.valueParameters.first()
@@ -96,6 +111,13 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
     }
 }
 
+/**
+ * Creates a safe from map value function.
+ *
+ * @param declaration The IrClass declaration.
+ * @param irFunction The IrFunction to create the safe from map value function for.
+ * @return An IrBlockBody containing the generated code.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.valueParameters.first()
@@ -135,6 +157,13 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
     }
 }
 
+/**
+ * Creates an IrBlockBody that contains an IrReturn statement with the result of calling the
+ * getTableName function with the given IrClass declaration as an argument.
+ *
+ * @param declaration the IrClass declaration to generate the table name for
+ * @return an IrBlockBody containing an IrReturn statement with the generated table name
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosTableName(declaration: IrClass): IrBlockBody {
     return irBlockBody {
@@ -144,6 +173,13 @@ fun createKronosTableName(declaration: IrClass): IrBlockBody {
     }
 }
 
+/**
+ * Creates a safe from map value function for the given declaration and irFunction.
+ *
+ * @param declaration The IrClass declaration.
+ * @param irFunction The IrFunction to create the safe from map value function for.
+ * @return An IrBlockBody containing the generated code.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
     return irBlockBody {
@@ -160,6 +196,14 @@ fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
     }
 }
 
+/**
+ * Creates an IrBlockBody that contains an IrReturn statement with the result of calling the
+ * getValidStrategy function with the given IrClass declaration, globalCreateTimeSymbol, and
+ * CreateTimeFqName as arguments.
+ *
+ * @param declaration The IrClass declaration to generate the IrBlockBody for.
+ * @return An IrBlockBody containing the generated code.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
@@ -169,6 +213,14 @@ fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
     }
 }
 
+/**
+ * Creates an IrBlockBody that contains an IrReturn statement with the result of calling the
+ * getValidStrategy function with the given IrClass declaration, globalUpdateTimeSymbol, and
+ * UpdateTimeFqName as arguments.
+ *
+ * @param declaration The IrClass declaration to generate the IrBlockBody for.
+ * @return An IrBlockBody containing the generated code.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
@@ -178,6 +230,13 @@ fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
     }
 }
 
+/**
+ * Creates a function that returns a block body containing an irCall to createFieldListSymbol
+ * with the properties of the given IrClass as arguments.
+ *
+ * @param declaration the IrClass whose properties will be used as arguments for createFieldListSymbol
+ * @return an IrBlockBody containing an irCall to createFieldListSymbol
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {
     return irBlockBody {

@@ -70,10 +70,16 @@ val LogicDeleteFqName = FqName("com.kotlinorm.annotations.LogicDelete")
 
 val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 
-
-internal fun IrCall.subTypeClass(num: Int = 1): IrClass {
+/**
+ * Returns the `num`-th subtype of the class represented by the given `IrCall`.
+ *
+ * @param num the number of subtypes to traverse (default: 1)
+ * @return the `IrClass` representing the `num`-th subtype of the class represented by the `IrCall`
+ * @throws IllegalArgumentException if `num` is negative
+ */
+internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
     var type = this.type
-    for (i in 1..num) {
+    for (i in 1..depth) {
         type = type.subType()
     }
     return type.getClass()!!

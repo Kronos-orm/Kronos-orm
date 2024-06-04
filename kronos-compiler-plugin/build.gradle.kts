@@ -95,6 +95,11 @@ publishing {
                         name.set("FOYU")
                         email.set("2456416562@qq.com")
                     }
+                    developer {
+                        id.set("yf")
+                        name.set("yf")
+                        email.set("1661264104@qq.com")
+                    }
                 }
             }
         }

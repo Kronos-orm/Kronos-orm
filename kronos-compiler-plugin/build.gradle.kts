@@ -1,3 +1,6 @@
+import com.vanniktech.maven.publish.GradlePlugin
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
@@ -16,8 +19,6 @@ buildscript {
 
 plugins {
     kotlin("jvm")
-    id("signing")
-    id("maven-publish")
     id("java-gradle-plugin")
     kotlin("kapt")
 }
@@ -59,82 +60,68 @@ gradlePlugin {
     }
 }
 
-//2. 设置发布相关配置
-publishing {
-    publications {
-        //3. 将插件发布到 maven 仓库
-        create<MavenPublication>("dist") {
-            //4. 设置插件的 maven 坐标
-            groupId = project.group.toString()
-            artifactId = "kronos-compiler-plugin"
-            version = project.version.toString()
-
-            pom {
-                name.set("${project.group}:${project.name}")
-                description.set("A gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time.")
-                url.set("https://www.kotlinorm.com")
-                licenses {
-                    license {
-                        name.set("The Apache Software License, Version 2.0")
-                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
+mavenPublishing {
+    configure(
+        GradlePlugin(
+            javadocJar = JavadocJar.Javadoc(),
+            sourcesJar = true,
+        )
+    )
+    coordinates(project.group.toString(), project.name, project.version.toString())
+    pom {
+        name.set("${project.group}:${project.name}")
+        description.set("A gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time.")
+        inceptionYear.set("2024")
+        url.set("https://www.kotlinorm.com")
+        licenses {
+            license {
+                name.set("The Apache Software License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developers {
+                developer {
+                    id.set("ousc")
+                    name.set("ousc")
+                    email.set("sundaiyue@foxmail.com")
                 }
-                scm {
-                    url.set("https://github.com/Kronos-orm/Kronos-orm")
-                    connection.set("scm:git:https://github.com/Kronos-orm/Kronos-orm.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:Kronos-orm/Kronos-orm.git")
+                developer {
+                    id.set("FOYU")
+                    name.set("FOYU")
+                    email.set("2456416562@qq.com")
                 }
-                developers {
-                    developer {
-                        id.set("ousc")
-                        name.set("ousc")
-                        email.set("sundaiyue@foxmail.com")
-                    }
-                    developer {
-                        id.set("FOYU")
-                        name.set("FOYU")
-                        email.set("2456416562@qq.com")
-                    }
-                    developer {
-                        id.set("yf")
-                        name.set("yf")
-                        email.set("1661264104@qq.com")
+                developer {
+                    id.set("yf")
+                    name.set("yf")
+                    email.set("1661264104@qq.com")
+                }
+            }
+        }
+        scm {
+            url.set("https://github.com/Kronos-orm/Kronos-orm")
+            connection.set("scm:git:https://github.com/Kronos-orm/Kronos-orm.git")
+            developerConnection.set("scm:git:ssh://git@github.com:Kronos-orm/Kronos-orm.git")
+        }
+    }
+    if (version.toString().endsWith("-SNAPSHOT")) {
+        publishing {
+            repositories {
+                maven {
+                    name = "snapshot"
+                    url = uri("https://maven.pkg.github.com/Kronos-orm/Kronos-orm/packages")
+                    credentials {
+                        val githubPackageUsername: String by project
+                        val githubPackagePassword: String by project
+                        username = githubPackageUsername
+                        password = githubPackagePassword
                     }
                 }
             }
         }
+    } else {
+        publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     }
-
-    repositories {
-        maven {
-            name = "central"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2")
-            credentials {
-                username = System.getenv("OSSRH_USER")
-                password = System.getenv("OSSRH_PASSWORD")
-            }
-        }
-        maven {
-            name = "snapshot"
-            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
-            credentials {
-                username = System.getenv("OSSRH_USER")
-                password = System.getenv("OSSRH_PASSWORD")
-            }
-        }
-        mavenLocal()
-    }
-}
-
-signing {
-    val keyId = System.getenv("GPG_KEY_ID")
-    val secretKey = System.getenv("GPG_SECRET_KEY")
-    val password = System.getenv("GPG_PASSWORD")
-
-    setRequired {
-        !project.version.toString().endsWith("SNAPSHOT")
-    }
-
-    useInMemoryPgpKeys(keyId, secretKey, password)
-    sign(publishing.publications["dist"])
+    signAllPublications()
 }

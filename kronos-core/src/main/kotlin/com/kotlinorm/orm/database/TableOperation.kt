@@ -23,4 +23,5 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
     inline fun <reified T: KPojo> createTable(): Table {
         TODO()
     }
+
 }

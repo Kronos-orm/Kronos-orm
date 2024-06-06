@@ -13,7 +13,7 @@
 # 4. Manually, on demand, via the "workflow_dispatch" event
 #
 # The workflow should work with no modifications, but you might like to use a
-# later version of the Detekt CLI by modifying the $DETEKT_RELEASE_TAG
+# later version of the Detekt CLI by modifing the $DETEKT_RELEASE_TAG
 # environment variable.
 name: Scan with Detekt
 
@@ -24,7 +24,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-     - cron: '39 15 * * 4'
+     - cron: '40 0 * * 1'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -32,7 +32,8 @@ on:
 env:
   # Release tag associated with version of Detekt to be installed
   # SARIF support (required for this workflow) was introduced in Detekt v1.15.0
-  DETEKT_RELEASE_TAG: v1.15.0
+  DETEKT_RELEASE_TAG: v1.21.0
+  EXPECTED_DETEKT_RELEASE_SHA: 32f6e22d9524804ebbb51d31e53cd28a84864ed6
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -45,7 +46,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     # Gets the download URL associated with the $DETEKT_RELEASE_TAG
     - name: Get Detekt download URL

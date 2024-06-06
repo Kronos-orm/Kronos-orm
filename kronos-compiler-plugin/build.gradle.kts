@@ -110,12 +110,12 @@ mavenPublishing {
             repositories {
                 maven {
                     name = "snapshot"
+                    val githubPackageUsername: String? by project
+                    val githubPackagePassword: String? by project
                     url = uri("https://maven.pkg.github.com/Kronos-orm/Kronos-orm/packages")
                     credentials {
-                        val githubPackageUsername: String by project
-                        val githubPackagePassword: String by project
-                        username = githubPackageUsername
-                        password = githubPackagePassword
+                        username = githubPackageUsername ?: System.getenv("GITHUB_ACTOR")
+                        password = githubPackagePassword ?: System.getenv("GITHUB_TOKEN")
                     }
                 }
             }

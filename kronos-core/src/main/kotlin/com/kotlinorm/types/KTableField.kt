@@ -23,3 +23,28 @@ import com.kotlinorm.beans.dsl.KTableSortable
 typealias KTableField<T, R> = (KTable<T>.(it: T) -> R)?
 typealias KTableSortableField<T, R> = (KTableSortable<T>.(it: T) -> R)?
 typealias KTableConditionalField<T, R> = (KTableConditional<T>.(it: T) -> R)?
+//
+//
+//class Company {
+//    fun work() {
+//
+//    }
+//
+//    fun main() {
+//        work()
+//    }
+////
+////    fun a(content: String){
+////        work()
+////        print(content)
+////    }
+//}
+//
+//fun main() {
+//    Company().work()
+//    val a: Company.(content: String) -> Unit = {
+//        work()
+//        print(it)
+//    }
+//    Company().a("something")
+//}

@@ -24,29 +24,29 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 /**
  * Criteria IR
  *
+ * @author: OUSC, Jieyao Lu
+ */
+/**
+ * Criteria IR
+ *
  * Constructing a condition IR, which can be used to specify how parts of the IR should be built based on certain criteria.
+ *
+ * @property parameterName The name of the parameter
+ * @property type The type of the criterion
+ * @property not Whether the condition is negated
+ * @property value The value to compare with, optional
+ * @property children List of child variables, optional
+ * @property tableName The name of the table, optional
+ * @property noValueStrategy The strategy for handling missing values
  * @author: OUSC, Jieyao Lu
  */
 class CriteriaIR(
-    // The name of the parameter
-    // 参数的名称
     private var parameterName: IrExpression? = null,
-    // The type of the criterion
-    // 条件的类型
     private var type: String,
-    // Whether the condition is negated
-    // 是否对条件进行否定
     var not: Boolean,
-    // The value to compare with, optional
-    // 用于比较的值，可选
     private val value: IrExpression? = null,
-    // List of child variables, optional
-    // 子变量列表，可选
     private val children: List<IrVariable> = listOf(),
-    // The name of the table, optional
-    // 表的名称，可选
     private var tableName: IrExpression? = null,
-
     private var noValueStrategy: IrExpression? = null
 ) {
 

@@ -1,6 +1,5 @@
 package com.kotlinorm.adapter
 
-import com.kotlinorm.KronosLoggerApp.invoke0
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.formatted
 import com.kotlinorm.enums.KLogLevel
@@ -27,42 +26,42 @@ class AndroidUtilLoggerAdapter(private val tag: String) : KLogger {
         }
 
     override fun isTraceEnabled(): Boolean {
-        return isLoggableMethod.invoke0(null, tag, KLogLevel.VERBOSE.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, KLogLevel.VERBOSE.ordinal) as Boolean
     }
 
     override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("v").invoke0(null, tag, messages.formatted(), e)
+        getLoggerMethod("v").invoke(null, tag, messages.formatted(), e)
     }
 
     override fun isDebugEnabled(): Boolean {
-        return isLoggableMethod.invoke0(null, tag, KLogLevel.DEBUG.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, KLogLevel.DEBUG.ordinal) as Boolean
     }
 
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("d").invoke0(null, tag, messages.formatted(), e)
+        getLoggerMethod("d").invoke(null, tag, messages.formatted(), e)
     }
 
     override fun isInfoEnabled(): Boolean {
-        return isLoggableMethod.invoke0(null, tag, KLogLevel.INFO.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, KLogLevel.INFO.ordinal) as Boolean
     }
 
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("i").invoke0(null, tag, messages.formatted(), e)
+        getLoggerMethod("i").invoke(null, tag, messages.formatted(), e)
     }
 
     override fun isWarnEnabled(): Boolean {
-        return isLoggableMethod.invoke0(null, tag, KLogLevel.WARN.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, KLogLevel.WARN.ordinal) as Boolean
     }
 
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("w").invoke0(null, tag, messages.formatted(), e)
+        getLoggerMethod("w").invoke(null, tag, messages.formatted(), e)
     }
 
     override fun isErrorEnabled(): Boolean {
-        return isLoggableMethod.invoke0(null, tag, KLogLevel.ERROR.ordinal) as Boolean
+        return isLoggableMethod.invoke(null, tag, KLogLevel.ERROR.ordinal) as Boolean
     }
 
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("e").invoke0(null, tag, messages.formatted(), e)
+        getLoggerMethod("e").invoke(null, tag, messages.formatted(), e)
     }
 }

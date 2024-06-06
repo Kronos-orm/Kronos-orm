@@ -43,6 +43,12 @@ context(IrBuilderWithScope, IrPluginContext)
 internal val conditionTypeSymbol
     get() = referenceClass("com.kotlinorm.enums.ConditionType")!!
 
+/**
+ * Retrieves the condition type enum value based on the given type string.
+ *
+ * @param type The type string to retrieve the condition type for.
+ * @return The IrExpression representing the condition type enum value.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 internal fun getConditionType(type: String): IrExpression {
     val enumEntries = conditionTypeSymbol.owner.declarations.filterIsInstance<IrEnumEntry>()
@@ -167,6 +173,15 @@ fun createCriteria(
     return irVariable
 }
 
+/**
+ * Analyzes the given expression by running it and returns a triple containing the analyzed left expression,
+ * reversed operator, and analyzed right expression.
+ *
+ * @param left the left expression to analyze
+ * @param operator the operator to analyze
+ * @param right the right expression to analyze
+ * @return a triple containing the analyzed left expression, reversed operator, and analyzed right expression
+ */
 context(IrBlockBuilder, IrPluginContext)
 fun runExpressionAnalysis(
     left: IrExpression?,
@@ -180,6 +195,12 @@ fun runExpressionAnalysis(
     return Triple(getColumnOrValue(left), operator, getColumnOrValue(right))
 }
 
+/**
+ * Returns the reversed operator for the given operator.
+ *
+ * @param operator the operator to reverse
+ * @return the reversed operator or the original operator if it cannot be reversed
+ */
 fun getOperatorRevered(operator: String): String {
     return when (operator) {
         "lt" -> "gt"

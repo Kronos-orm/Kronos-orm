@@ -26,6 +26,15 @@ import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
+/**
+ * Select From
+ *
+ * Create a joint clause for the given pojos
+ *
+ * @param T1 the type of the first pojo
+ *
+ * @property t1 the instance of the first pojo
+ */
 open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var tableName: String
     open lateinit var paramMap: MutableMap<String, Any?>
@@ -50,7 +59,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var pi = 0
     private var ps = 0
 
-
+    /**
+     * Performs a left join operation between two tables.
+     *
+     * @param another The table to join with.
+     * @param on The condition for the join.
+     * @throws NeedFieldsException If the `on` parameter is null.
+     */
     inline fun <reified T : KPojo> leftJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
@@ -60,6 +75,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Performs a right join operation between two tables.
+     *
+     * @param another The table to join with.
+     * @param on The condition for the join.
+     * @throws NeedFieldsException If the `on` parameter is null.
+     */
     inline fun <reified T : KPojo> rightJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
@@ -69,6 +91,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Performs a cross join operation between two tables.
+     *
+     * @param another The table to join with.
+     * @param on The condition for the join.
+     * @throws NeedFieldsException If the `on` parameter is null.
+     */
     inline fun <reified T : KPojo> crossJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
@@ -78,6 +107,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Performs an inner join operation between two tables.
+     *
+     * @param another The table to join with.
+     * @param on The condition for the join.
+     * @throws NeedFieldsException If the `on` parameter is null.
+     */
     inline fun <reified T : KPojo> innerJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
@@ -87,6 +123,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Performs a full join operation between two tables.
+     *
+     * @param another The table to join with.
+     * @param on The condition for the join.
+     * @throws NeedFieldsException If the `on` parameter is null.
+     */
     inline fun <reified T : KPojo> fullJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
@@ -96,6 +139,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Selects the specified fields from the table associated with the given KTableField.
+     *
+     * @param someFields The KTableField representing the fields to be selected.
+     */
     @Suppress("UNCHECKED_CAST")
     fun select(someFields: KTableField<T1, Any?>) {
         if (null == someFields) return
@@ -115,6 +163,12 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Orders the result set by the specified fields.
+     *
+     * @param someFields The fields to order the result set by.
+     * @throws NeedFieldsException If the `someFields` parameter is null.
+     */
     fun orderBy(someFields: KTableSortableField<T1, Any?>) {
         if (someFields == null) throw NeedFieldsException()
 
@@ -125,6 +179,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Sets the groupBy flag to true and checks if the `someFields` parameter is null.
+     * If it is null, throws a NeedFieldsException.
+     *
+     * @param someFields The fields to group the result set by.
+     * @throws NeedFieldsException If the `someFields` parameter is null.
+     */
     fun groupBy(someFields: KTableField<T1, Any?>) {
         isGroup = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
@@ -136,21 +197,41 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Sets the isDistinct flag to true, indicating that the result set should be distinct.
+     */
     fun distinct() {
         this.isDistinct = true
     }
 
+    /**
+     * Sets the limit flag to true and sets the limit capacity to the specified number.
+     *
+     * @param num the number of records to limit the result set to
+     */
     fun limit(num: Int) {
         this.isLimit = true
         this.limitCapacity = num
     }
 
+    /**
+     * Sets the page information for the query, enabling pagination.
+     *
+     * @param pi the current page number, indicating which page of data to retrieve
+     * @param ps the number of records per page, specifying the number of records to display per page
+     */
     fun page(pi: Int, ps: Int) {
         this.isPage = true
         this.ps = ps
         this.pi = pi
     }
 
+    /**
+     * Executes the query logic defined in [someFields] and builds the query condition.
+     *
+     * @param someFields the fields to be queried
+     * @throws NeedFieldsException if [someFields] is null
+     */
     fun by(someFields: KTableField<T1, Any?>) {
         // 检查someFields是否为空，为空则抛出异常
         if (null == someFields) throw NeedFieldsException()
@@ -162,6 +243,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Sets the condition for the query based on the provided select condition.
+     *
+     * @param selectCondition the conditional field representing the query condition. Defaults to null.
+     * If null, a condition is built to query all fields. Otherwise, the provided select condition is executed
+     * and the resulting condition is set.
+     */
     fun where(selectCondition: KTableConditionalField<T1, Boolean?> = null) {
         if (selectCondition == null) {
             // 当没有提供选择条件时，构建一个查询所有字段的条件
@@ -177,6 +265,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Sets the condition for the HAVING clause based on the provided select condition.
+     *
+     * @param selectCondition the conditional field representing the HAVING condition. Defaults to null.
+     * If null, a condition is built to query all fields. Otherwise, the provided select condition is executed
+     * and the resulting condition is set.
+     *
+     * @throws NeedFieldsException if the selectCondition parameter is null.
+     */
     fun having(selectCondition: KTableConditionalField<T1, Boolean?> = null) {
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
@@ -188,10 +285,22 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    /**
+     * Queries the data source using the provided data source wrapper and returns a list of maps representing the results.
+     *
+     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
+     * @return a list of maps representing the results of the query.
+     */
     fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
         return this.build().query(wrapper)
     }
 
+    /**
+     * Builds and returns a KronosAtomicQueryTask object based on the provided data source wrapper.
+     *
+     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
+     * @return a KronosAtomicQueryTask object representing the query.
+     */
     override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
         var buildCondition = condition
 

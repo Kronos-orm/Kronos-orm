@@ -37,9 +37,10 @@ internal val fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 /**
- * Creates a list of IR expressions that represent field additions, using a predefined symbol to generate `addField` calls.
+ * Adds a list of fields to the given IrReturn by gathering field names and applying the `addField` operation to each name.
  *
- * @return A list of IR expressions representing field additions.
+ * @param irReturn the IrReturn to which the fields will be added
+ * @return a list of IrExpressions representing the applied `addField` operations
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun addFieldList(irReturn: IrReturn): List<IrExpression> {

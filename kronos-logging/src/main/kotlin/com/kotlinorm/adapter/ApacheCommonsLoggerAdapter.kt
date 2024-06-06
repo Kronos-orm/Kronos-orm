@@ -1,6 +1,5 @@
 package com.kotlinorm.adapter
 
-import com.kotlinorm.KronosLoggerApp.invoke0
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.formatted
 import com.kotlinorm.interfaces.KLogger
@@ -14,7 +13,7 @@ class ApacheCommonsLoggerAdapter(loggerName: String) : KLogger {
     // we are not able to require it in module-info.java.
     private val logFactoryClass = Class.forName("org.apache.commons.logging.LogFactory")
     private val logClass = Class.forName("org.apache.commons.logging.Log")
-    private val logger = logFactoryClass.getMethod("getLog", String::class.java).invoke0(null, loggerName)
+    private val logger = logFactoryClass.getMethod("getLog", String::class.java).invoke(null, loggerName)
     private val methodCache = mutableMapOf<String, Method>()
     private val getLoggerMethod = { name: String ->
         methodCache[name] ?: logClass.getMethod(name, Any::class.java, Throwable::class.java)
@@ -24,42 +23,42 @@ class ApacheCommonsLoggerAdapter(loggerName: String) : KLogger {
         { name: String -> methodCache[name] ?: logClass.getMethod(name).apply { methodCache[name] = this } }
 
     override fun isTraceEnabled(): Boolean {
-        return getLoggerEnabledMethod("isTraceEnabled").invoke0(logger) as Boolean
+        return getLoggerEnabledMethod("isTraceEnabled").invoke(logger) as Boolean
     }
 
     override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("trace").invoke0(logger, messages.formatted(), e)
+        getLoggerMethod("trace").invoke(logger, messages.formatted(), e)
     }
 
     override fun isDebugEnabled(): Boolean {
-        return getLoggerEnabledMethod("isDebugEnabled").invoke0(logger) as Boolean
+        return getLoggerEnabledMethod("isDebugEnabled").invoke(logger) as Boolean
     }
 
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("debug").invoke0(logger, messages.formatted(), e)
+        getLoggerMethod("debug").invoke(logger, messages.formatted(), e)
     }
 
     override fun isInfoEnabled(): Boolean {
-        return getLoggerEnabledMethod("isInfoEnabled").invoke0(logger) as Boolean
+        return getLoggerEnabledMethod("isInfoEnabled").invoke(logger) as Boolean
     }
 
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("info").invoke0(logger, messages.formatted(), e)
+        getLoggerMethod("info").invoke(logger, messages.formatted(), e)
     }
 
     override fun isWarnEnabled(): Boolean {
-        return getLoggerEnabledMethod("isWarnEnabled").invoke0(logger) as Boolean
+        return getLoggerEnabledMethod("isWarnEnabled").invoke(logger) as Boolean
     }
 
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("warn").invoke0(logger, messages.formatted(), e)
+        getLoggerMethod("warn").invoke(logger, messages.formatted(), e)
     }
 
     override fun isErrorEnabled(): Boolean {
-        return getLoggerEnabledMethod("isErrorEnabled").invoke0(logger) as Boolean
+        return getLoggerEnabledMethod("isErrorEnabled").invoke(logger) as Boolean
     }
 
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {
-        getLoggerMethod("error").invoke0(logger, messages.formatted(), e)
+        getLoggerMethod("error").invoke(logger, messages.formatted(), e)
     }
 }

@@ -71,6 +71,12 @@ class KronosParserTransformer(
         return super.visitFunctionNew(declaration)
     }
 
+    /**
+     * Visits a new class declaration and performs transformation if it is a subclass of "com.kotlinorm.beans.dsl.KPojo".
+     *
+     * @param declaration the class declaration to visit
+     * @return the transformed class declaration or the result of calling the super class's implementation
+     */
     override fun visitClassNew(declaration: IrClass): IrStatement {
         if (declaration.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }) {
             return super.visitClassNew(declaration)
@@ -112,6 +118,12 @@ class KronosParserTransformer(
         }
     }
 
+    /**
+     * Transforms the given IrFunction representing a ktable sortable declaration into an IrBlockBody.
+     *
+     * @param irFunction the IrFunction to be transformed
+     * @return the transformed IrBlockBody representing the ktable sortable declaration
+     */
     private fun transformKTableSortable(
         irFunction: IrFunction
     ): IrBlockBody {

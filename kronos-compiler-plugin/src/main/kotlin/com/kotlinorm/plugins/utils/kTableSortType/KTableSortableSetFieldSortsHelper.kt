@@ -15,6 +15,12 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 
+/**
+ * Recursively traverses the given IrElement and extracts the sort fields.
+ *
+ * @param element The IrElement to traverse.
+ * @return A mutable list of IrExpressions representing the sort fields.
+ */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
 fun addFieldSortsIr(irReturn: IrReturn) = getSortFields(irReturn).map {
     applyIrCall(
@@ -24,6 +30,12 @@ fun addFieldSortsIr(irReturn: IrReturn) = getSortFields(irReturn).map {
     }
 }
 
+/**
+ * Recursively traverses the given IrElement and extracts the sort fields.
+ *
+ * @param element The IrElement to traverse.
+ * @return A mutable list of IrExpressions representing the sort fields.
+ */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
 fun getSortFields(element: IrElement): MutableList<IrExpression> {
     val variables = mutableListOf<IrExpression>()
@@ -42,9 +54,11 @@ fun getSortFields(element: IrElement): MutableList<IrExpression> {
                     applyIrCall(
                         createAscSymbol
                     ) {
-                        dispatchBy(irGet(
-                            extensionReceiverParameter!!
-                        ))
+                        dispatchBy(
+                            irGet(
+                                extensionReceiverParameter!!
+                            )
+                        )
                         extensionBy(field)
                     }
                 )
@@ -63,9 +77,11 @@ fun getSortFields(element: IrElement): MutableList<IrExpression> {
                             applyIrCall(
                                 createDescSymbol
                             ) {
-                                dispatchBy(irGet(
-                                    extensionReceiverParameter!!
-                                ))
+                                dispatchBy(
+                                    irGet(
+                                        extensionReceiverParameter!!
+                                    )
+                                )
                                 extensionBy(field)
                             }
                         )
@@ -78,9 +94,11 @@ fun getSortFields(element: IrElement): MutableList<IrExpression> {
                             applyIrCall(
                                 createAscSymbol
                             ) {
-                                dispatchBy(irGet(
-                                    extensionReceiverParameter!!
-                                ))
+                                dispatchBy(
+                                    irGet(
+                                        extensionReceiverParameter!!
+                                    )
+                                )
                                 extensionBy(field)
                             }
                         )
@@ -94,9 +112,11 @@ fun getSortFields(element: IrElement): MutableList<IrExpression> {
                 applyIrCall(
                     createAscSymbol
                 ) {
-                    dispatchBy(irGet(
-                        extensionReceiverParameter!!
-                    ))
+                    dispatchBy(
+                        irGet(
+                            extensionReceiverParameter!!
+                        )
+                    )
                     extensionBy(element as IrExpression)
                 }
             )

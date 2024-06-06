@@ -31,7 +31,6 @@ import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -148,7 +147,7 @@ class UpsertClause<T : KPojo>(
                 )
 
                 else -> {
-                    val pks = getTable(dataSource, tableName).columns.filter { it.primaryKey }.toLinkedSet()
+                    val pks = pojo.kronosColumns().filter { it.primaryKey }.toLinkedSet()
                     val conflictResolver = ConflictResolver(tableName, pks, toUpdateFields, toInsertFields)
                     when (dbType) {
                         DBType.Postgres -> postgresOnExistSql(conflictResolver)

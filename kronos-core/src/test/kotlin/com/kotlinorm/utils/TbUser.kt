@@ -21,7 +21,7 @@ data class TbUser(
     val age: Int? = null,
     val avatar: String? = null,
     @UpdateTime()
-    @DateTimeFormat(format = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: Date? = null,
 ) : KPojo()
 

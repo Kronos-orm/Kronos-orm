@@ -23,7 +23,6 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.query
 import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -305,7 +304,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         var buildCondition = condition
 
         // 初始化所有字段集合
-        allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
+        allFields = pojo.kronosColumns().toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields

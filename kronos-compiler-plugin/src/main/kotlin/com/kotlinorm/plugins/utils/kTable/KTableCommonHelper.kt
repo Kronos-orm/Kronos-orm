@@ -142,7 +142,9 @@ fun IrExpression?.isKronosValueGetter(): Boolean {
 context(IrBuilderWithScope, IrPluginContext)
 fun IrExpression?.isKronosColumn(): Boolean {
     if (this == null) return false
-    return this is IrCallImpl && this.origin == IrStatementOrigin.GET_PROPERTY && this.let {
+    return this is IrCallImpl && this.origin in listOf(
+        IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
+    ) && this.let {
         val propertyName = correspondingName!!.asString()
         val irProperty =
             dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }

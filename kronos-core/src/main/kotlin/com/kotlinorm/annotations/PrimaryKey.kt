@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.utils.tableCache
-
-import com.kotlinorm.beans.dsl.Field
+package com.kotlinorm.annotations
 
 /**
- * Table object
+ * Primary Key
  *
- * @property columns the table columns
- * @property tableName the table name
- * @constructor Create empty Table object
- * @author ousc
- * @create 2022/11/12 14:19
+ * Annotation to specify if the column is Primary Key
+ *
+ * @author OUSC
  */
-data class TableObject(
-    val columns: List<Field>,
-    val tableName: String
-)
+@Target(AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class PrimaryKey

@@ -36,7 +36,7 @@ class UpdateParserTest {
           var id: Int? = null,
           var username: String? = null,
           var gender: Int? = null,
-          @UpdateTime("yyyy-MM-dd HH:mm:ss") var updateTime: String? = null,
+          @UpdateTime var updateTime: String? = null,
           @LogicDelete var deleted: String? = null
       ) : KPojo()
 

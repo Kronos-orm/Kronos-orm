@@ -21,9 +21,9 @@ package com.kotlinorm.annotations
  *
  * Annotation to specify the format of the column in the database table.
  *
- * @property format The dateTime format of the column in the database table.
+ * @property pattern The dateTime format of the column in the database table.
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class DateTimeFormat(val format: String)
+annotation class DateTimeFormat(val pattern: String)

@@ -17,8 +17,11 @@
 package com.kotlinorm.plugins.utils.kTable
 
 import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.getSqlType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
+import org.jetbrains.kotlin.ir.backend.js.utils.getJsNameOrKotlinName
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -33,6 +36,7 @@ import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
 
 
@@ -71,6 +75,7 @@ internal val tableK2dbSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
 
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
+val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 
@@ -105,6 +110,7 @@ fun getColumnName(expression: IrExpression): IrExpression {
  * @return the IrExpression representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(ObsoleteDescriptorBasedAPI::class)
 fun getColumnName(
     irProperty: IrProperty,
     propertyName: String = irProperty.name.asString()
@@ -114,14 +120,19 @@ fun getColumnName(
         irProperty.annotations.findByFqName(ColumnAnnotationsFqName)
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
+
+    val propertyType = irProperty.descriptor.type.getKotlinTypeFqName(false)
+    val columnDbType =
+        columnAnnotation?.getValueArgument(1) ?: irString(getSqlType(propertyType))
+
     val tableName = getTableName(parent)
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
         columnName,
         irString(propertyName),
-        irString(""),
-        irBoolean(false),
+        columnDbType,
+        irBoolean(irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName) != null),
         irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0),
         when (tableName) {
             is IrCall -> applyIrCall(
@@ -142,7 +153,9 @@ fun IrExpression?.isKronosValueGetter(): Boolean {
 context(IrBuilderWithScope, IrPluginContext)
 fun IrExpression?.isKronosColumn(): Boolean {
     if (this == null) return false
-    return this is IrCallImpl && this.origin == IrStatementOrigin.GET_PROPERTY && this.let {
+    return this is IrCallImpl && this.origin in listOf(
+        IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
+    ) && this.let {
         val propertyName = correspondingName!!.asString()
         val irProperty =
             dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }

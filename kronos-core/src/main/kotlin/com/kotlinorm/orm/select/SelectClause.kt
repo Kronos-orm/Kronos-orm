@@ -40,7 +40,6 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.tableCache.TableCache.getTable
 
 class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: KTableField<T, Any?> = null
@@ -233,7 +232,7 @@ class SelectClause<T : KPojo>(
     override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
         var buildCondition = condition
         // 初始化所有字段集合
-        allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
+        allFields = pojo.kronosColumns().toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields
@@ -312,6 +311,7 @@ class SelectClause<T : KPojo>(
                 selectFields += Field("rownum", "R")
                 limitedSuffix = ") WHERE R <= $limitCapacity"
             }
+
             DBType.Mssql -> {
                 limitedSuffix = "OFFSET 0 ROWS FETCH NEXT $limitCapacity ROWS ONLY"
             }

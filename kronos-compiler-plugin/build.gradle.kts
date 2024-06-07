@@ -105,23 +105,25 @@ mavenPublishing {
             developerConnection.set("scm:git:ssh://git@github.com:Kronos-orm/Kronos-orm.git")
         }
     }
-    if (version.toString().endsWith("-SNAPSHOT")) {
-        publishing {
-            repositories {
+    if (!version.toString().endsWith("-SNAPSHOT")) {
+        publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    }
+
+    publishing {
+        repositories {
+            if (providers.gradleProperty("aliyunMvnPackages").isPresent) {
                 maven {
-                    name = "snapshot"
-                    val githubPackageUsername: String? by project
-                    val githubPackagePassword: String? by project
-                    url = uri("https://maven.pkg.github.com/Kronos-orm/Kronos-orm/packages")
+                    name = "aliyun"
+                    url = uri(providers.gradleProperty("aliyunMvnPackages").get())
                     credentials {
-                        username = githubPackageUsername ?: System.getenv("GITHUB_ACTOR")
-                        password = githubPackagePassword ?: System.getenv("GITHUB_TOKEN")
+                        username = providers.gradleProperty("aliyunUsername").get()
+                        password = providers.gradleProperty("aliyunPassword").get()
                     }
                 }
             }
+            mavenLocal()
         }
-    } else {
-        publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     }
+
     signAllPublications()
 }

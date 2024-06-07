@@ -27,4 +27,4 @@ package com.kotlinorm.annotations
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Column(val name: String)
+annotation class ColumnType(val type: String)

@@ -23,5 +23,5 @@ object KColumnType {
     const val MULTISET = "MULTISET" // 元素的可变长度的无序集合
     const val XML = "XML" // 存储 XML 数据
 
-    const val CUSTOM_CRITERIA_SQL = "CUSTOM_CRITERIA_SQL" // 存储 XML 数据
+    const val CUSTOM_CRITERIA_SQL = "CUSTOM_CRITERIA_SQL" // 用于where查询的由String.asSql()产生的自定义SQL Field类型
 }

@@ -2,12 +2,15 @@ package com.kotlinorm.orm.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.enums.KColumnType.CHARACTER
 import java.util.*
 
 @Table(name = "tb_user")
 data class User(
     var id: Int? = null,
     var username: String? = null,
+    @Column("gender")
+    @ColumnType(CHARACTER)
     var gender: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")

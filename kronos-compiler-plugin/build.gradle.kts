@@ -119,11 +119,6 @@ mavenPublishing {
                         username = providers.gradleProperty("aliyunUsername").get()
                         password = providers.gradleProperty("aliyunPassword").get()
                     }
-                    developer {
-                        id.set("yf")
-                        name.set("yf")
-                        email.set("1661264104@qq.com")
-                    }
                 }
             }
             mavenLocal()

@@ -5,7 +5,7 @@ pluginManagement {
         gradlePluginPortal()
         maven("https://dl.bintray.com/kotlin/kotlin-eap")
         maven("https://maven.aliyun.com/repository/public")
-        if(providers.gradleProperty("aliyunMvnPackages").isPresent){
+        if (providers.gradleProperty("aliyunMvnPackages").isPresent) {
             maven {
                 url = uri(providers.gradleProperty("aliyunMvnPackages").get())
                 credentials {
@@ -39,5 +39,4 @@ include("kronos-core")
 include("kronos-logging")
 include("kronos-compiler-plugin")
 include("kronos-jvm-driver-wrapper")
-include("kronos-compiler-plugin")
 include("kronos-testing")

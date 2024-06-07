@@ -4,6 +4,16 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven("https://dl.bintray.com/kotlin/kotlin-eap")
+        maven("https://maven.aliyun.com/repository/public")
+        if (providers.gradleProperty("aliyunMvnPackages").isPresent) {
+            maven {
+                url = uri(providers.gradleProperty("aliyunMvnPackages").get())
+                credentials {
+                    username = providers.gradleProperty("aliyunUsername").get()
+                    password = providers.gradleProperty("aliyunPassword").get()
+                }
+            }
+        }
     }
     resolutionStrategy {
         eachPlugin {
@@ -29,3 +39,4 @@ include("kronos-core")
 include("kronos-logging")
 include("kronos-compiler-plugin")
 include("kronos-jvm-driver-wrapper")
+include("kronos-testing")

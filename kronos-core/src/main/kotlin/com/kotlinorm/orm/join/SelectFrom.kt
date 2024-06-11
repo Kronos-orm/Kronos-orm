@@ -418,7 +418,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             selectKeyword,
             selectFields.joinToString(", ") { field ->
                 field.let { item ->
-                    if (item.type == "string") field.toString()
+                    if (item.type == "CUSTOM_CRITERIA_SQL") field.toString()
                     else "${item.quoted(true)} AS `${selectFieldsWithNames.filterKeys { selectFieldsWithNames[it] == item }.keys.first()}`"
                 }
             },

@@ -77,6 +77,7 @@ internal val tableK2dbSymbol
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
+val columnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 
 /**
@@ -121,9 +122,11 @@ fun getColumnName(
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
 
+    val columnTypeAnnotation =
+        irProperty.annotations.findByFqName(columnTypeAnnotationsFqName)
     val propertyType = irProperty.descriptor.type.getKotlinTypeFqName(false)
-    val columnDbType =
-        columnAnnotation?.getValueArgument(1) ?: irString(getSqlType(propertyType))
+    val columnType =
+        columnTypeAnnotation?.getValueArgument(0) ?: irString(getSqlType(propertyType))
 
     val tableName = getTableName(parent)
 
@@ -131,7 +134,7 @@ fun getColumnName(
         fieldSymbol.constructors.first(),
         columnName,
         irString(propertyName),
-        columnDbType,
+        columnType,
         irBoolean(irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName) != null),
         irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0),
         when (tableName) {

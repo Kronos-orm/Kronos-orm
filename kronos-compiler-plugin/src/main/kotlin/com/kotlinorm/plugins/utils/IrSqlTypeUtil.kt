@@ -1,18 +1,27 @@
 package com.kotlinorm.plugins.utils
 
+import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
+
 fun getSqlType(propertyType: String): String {
+
+    val d: ByteArray
+
     return when (propertyType) {
 
-        "kotlin.String" -> "VARCHAR"
-        "kotlin.Int" -> "INT"
-        "java.math.BigDecimal" -> "NUMERIC"
-        "kotlin.Long" -> "BIGINT"
+        "kotlin.Boolean" -> "TINYINT"
+        "kotlin.Byte" -> "TINYINT"
         "kotlin.Short" -> "SMALLINT"
+        "kotlin.Int" -> "INT"
+        "kotlin.Long" -> "BIGINT"
         "kotlin.Float" -> "FLOAT"
         "kotlin.Double" -> "DOUBLE"
-        "kotlin.Byte" , "kotlin.Boolean" -> "TINYINT"
+        "java.math.BigDecimal" -> "NUMERIC"
         "kotlin.Char" -> "CHAR"
-        "java.util.Date" , "java.sql.Date", "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime", "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> "DATETIME"
+        "kotlin.String" -> "VARCHAR"
+        "java.util.Date" , "java.sql.Date" , "java.time.LocalDate", "kotlinx.datetime.LocalDate" -> "DATE"
+        "java.time.LocalTime", "kotlinx.datetime.LocalTime" -> "TIME"
+        "java.time.LocalDateTime",   "kotlinx.datetime.LocalDateTime" -> "DATETIME"
+        "kotlin.ByteArray" -> "BINARY"
 
         else -> "UNKOWN"
     }

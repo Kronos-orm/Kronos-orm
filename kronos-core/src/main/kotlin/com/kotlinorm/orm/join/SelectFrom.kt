@@ -8,6 +8,7 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.JoinType
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -418,7 +419,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             selectKeyword,
             selectFields.joinToString(", ") { field ->
                 field.let { item ->
-                    if (item.type == "CUSTOM_CRITERIA_SQL") field.toString()
+                    if (item.type == CUSTOM_CRITERIA_SQL) field.toString()
                     else "${item.quoted(true)} AS `${selectFieldsWithNames.filterKeys { selectFieldsWithNames[it] == item }.keys.first()}`"
                 }
             },

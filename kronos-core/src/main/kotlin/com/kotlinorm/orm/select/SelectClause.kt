@@ -26,6 +26,7 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -326,7 +327,7 @@ class SelectClause<T : KPojo>(
             selectFields.joinToString(", ") {
                 it.let {
                     when {
-                        it.type == "CUSTOM_CRITERIA_SQL" -> it.toString()
+                        it.type == CUSTOM_CRITERIA_SQL -> it.toString()
                         it.name != it.columnName -> "${it.quoted()} AS `$it`"
                         else -> it.quoted()
                     }

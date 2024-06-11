@@ -116,7 +116,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
         is IrConst<*> -> {
             // Add constant values directly to the field names list.
             // 直接将常量值添加到字段名列表。
-            fieldNames.add(applyIrCall(fieldSymbol.constructors.first(), element, element, irString("string")))
+            fieldNames.add(applyIrCall(fieldSymbol.constructors.first(), element, element, irString("CUSTOM_CRITERIA_SQL")))
         }
 
         is IrReturn -> {

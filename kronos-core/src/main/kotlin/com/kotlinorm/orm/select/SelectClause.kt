@@ -326,7 +326,7 @@ class SelectClause<T : KPojo>(
             selectFields.joinToString(", ") {
                 it.let {
                     when {
-                        it.type == "string" -> it.toString()
+                        it.type == "CUSTOM_CRITERIA_SQL" -> it.toString()
                         it.name != it.columnName -> "${it.quoted()} AS `$it`"
                         else -> it.quoted()
                     }

@@ -23,7 +23,6 @@ import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.getSqlType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -35,7 +34,6 @@ import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 import org.jetbrains.kotlin.name.FqName
 
 
@@ -111,7 +109,6 @@ fun getColumnName(expression: IrExpression): IrExpression {
  * @return the `IrExpression` representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
-@OptIn(ObsoleteDescriptorBasedAPI::class)
 fun getColumnName(
     irProperty: IrProperty,
     propertyName: String = irProperty.name.asString()
@@ -124,7 +121,7 @@ fun getColumnName(
 
     val columnTypeAnnotation =
         irProperty.annotations.findByFqName(columnTypeAnnotationsFqName)
-    val propertyType = irProperty.descriptor.type.getKotlinTypeFqName(false)
+    val propertyType = irProperty.backingField!!.type.classFqName!!.asString()
     val columnType =
         columnTypeAnnotation?.getValueArgument(0) ?: irString(getSqlType(propertyType))
     val columnTypeLength =

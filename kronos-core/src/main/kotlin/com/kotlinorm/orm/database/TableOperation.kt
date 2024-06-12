@@ -188,11 +188,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 return result > 0
             }
 
-            DBType.DB2 -> TODO()
-            DBType.Sybase -> TODO()
-            DBType.H2 -> TODO()
-            DBType.OceanBase -> TODO()
-            DBType.DM8 -> TODO()
+            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
         }
     }
 
@@ -243,11 +239,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 DeleteClause(instance)
             }
 
-            DBType.DB2 -> TODO()
-            DBType.Sybase -> TODO()
-            DBType.H2 -> TODO()
-            DBType.OceanBase -> TODO()
-            DBType.DM8 -> TODO()
+            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
         }
     }
 
@@ -481,11 +473,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 return true
             }
 
-            DBType.DB2 -> TODO()
-            DBType.Sybase -> TODO()
-            DBType.H2 -> TODO()
-            DBType.OceanBase -> TODO()
-            DBType.DM8 -> TODO()
+            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
         }
     }
 
@@ -499,11 +487,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             DBType.Postgres -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$tableName'"
             DBType.Mssql -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME= '$tableName'"
             DBType.SQLite -> "SELECT name FROM pragma_table_info('$tableName')"
-            DBType.DB2 -> TODO()
-            DBType.Sybase -> TODO()
-            DBType.H2 -> TODO()
-            DBType.OceanBase -> TODO()
-            DBType.DM8 -> TODO()
+            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
         }
         return wrapper.orDefault().forList(KronosAtomicQueryTask(sql)).map { it["COLUMN_NAME"].toString() }
     }

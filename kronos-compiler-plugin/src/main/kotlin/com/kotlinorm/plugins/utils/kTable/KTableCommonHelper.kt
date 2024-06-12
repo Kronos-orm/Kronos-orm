@@ -134,9 +134,19 @@ fun getColumnName(
     )
 }
 
+enum class KronosColumnValueType {
+    Extension, ColumnName, ExtensionColumnName
+}
+
 context(IrBlockBuilder, IrPluginContext)
-fun IrExpression?.isKronosValueGetter(): Boolean {
-    return this is IrCallImpl && this.origin == IrStatementOrigin.GET_PROPERTY && this.extensionReceiver is IrCallImpl && (this.extensionReceiver as IrCallImpl).origin == IrStatementOrigin.GET_PROPERTY && this.funcName() == "value"
+fun IrExpression?.columnValueGetter(): KronosColumnValueType {
+    return if (!(this is IrCallImpl && this.extensionReceiver is IrCallImpl && (this.extensionReceiver as IrCallImpl).origin == IrStatementOrigin.GET_PROPERTY)) {
+        KronosColumnValueType.ColumnName
+    } else if (this.funcName() == "value") {
+        KronosColumnValueType.Extension
+    } else {
+        KronosColumnValueType.ExtensionColumnName
+    }
 }
 
 context(IrBuilderWithScope, IrPluginContext)
@@ -146,8 +156,7 @@ fun IrExpression?.isKronosColumn(): Boolean {
         IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
     ) && this.let {
         val propertyName = correspondingName!!.asString()
-        val irProperty =
-            dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
+        val irProperty = dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
         val parent = irProperty.parent as IrClass
         parent.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
     }
@@ -156,10 +165,12 @@ fun IrExpression?.isKronosColumn(): Boolean {
 context(IrBlockBuilder, IrPluginContext)
 fun getColumnOrValue(expression: IrExpression?): IrExpression? {
     if (expression == null) return null
-    if (expression.isKronosValueGetter()) {
-        return expression.asIrCall().extensionReceiver
+    return when (expression.columnValueGetter()) {
+        KronosColumnValueType.Extension -> expression.asIrCall().extensionReceiver
+        KronosColumnValueType.ColumnName -> getColumnName(expression)
+        KronosColumnValueType.ExtensionColumnName -> getColumnName(expression.asIrCall().extensionReceiver!!)
+
     }
-    return getColumnName(expression)
 }
 
 /**
@@ -187,8 +198,7 @@ fun getTableName(expression: IrExpression): IrExpression {
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(irClass: IrClass): IrExpression {
-    val tableAnnotation =
-        irClass.annotations.findByFqName(TableAnnotationsFqName)
+    val tableAnnotation = irClass.annotations.findByFqName(TableAnnotationsFqName)
     return tableAnnotation?.getValueArgument(0) ?: applyIrCall(
         tableK2dbSymbol, irString(
             irClass.name.asString()

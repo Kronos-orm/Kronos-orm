@@ -147,7 +147,7 @@ fun getColumnName(
                 irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
             )
 
-            else -> irString((tableName as IrConst<*>).value.toString())
+            else -> tableName
         },
         columnTypeLength,
         columnDefaultValue

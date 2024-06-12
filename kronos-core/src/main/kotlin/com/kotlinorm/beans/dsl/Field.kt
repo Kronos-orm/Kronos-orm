@@ -34,6 +34,7 @@ class Field(
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",
+    val length: Int = 0,
     val selectClause: SelectClause<*>? = null
 ) {
     // Returns the name of the field as a string

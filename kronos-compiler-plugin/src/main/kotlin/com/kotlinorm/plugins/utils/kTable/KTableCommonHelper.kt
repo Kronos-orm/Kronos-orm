@@ -21,12 +21,8 @@ import com.kotlinorm.plugins.utils.getSqlType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.backend.js.utils.getJsNameOrKotlinName
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
-import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
-import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
-import org.jetbrains.kotlin.ir.builders.irBoolean
-import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.*
@@ -127,7 +123,8 @@ fun getColumnName(
     val propertyType = irProperty.descriptor.type.getKotlinTypeFqName(false)
     val columnType =
         columnTypeAnnotation?.getValueArgument(0) ?: irString(getSqlType(propertyType))
-
+    val columnTypeLength =
+        columnTypeAnnotation?.getValueArgument(1) ?: irInt(0)
     val tableName = getTableName(parent)
 
     return applyIrCall(
@@ -144,7 +141,8 @@ fun getColumnName(
             )
 
             else -> irString((tableName as IrConst<*>).value.toString())
-        }
+        },
+        columnTypeLength
     )
 }
 

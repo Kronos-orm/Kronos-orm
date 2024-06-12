@@ -80,7 +80,8 @@ class JoinParserTest {
                         user.id != 1 &&
                         c.id >= user.id &&
                         user.id > relation.id2.value &&
-                        relation.id2.value >= user.id
+                        relation.id2.value >= user.id &&
+                        relation.id2.toString()!!.cast() >= user.id
                     }
                     select {
                         user.id + relation.gender

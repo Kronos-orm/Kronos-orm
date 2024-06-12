@@ -90,7 +90,7 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      * @param other The Comparable<*> to compare with.
      * @return `1`
      */
-    operator fun Comparable<*>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Any?) = 1
+    operator fun Any?.compareTo(@Suppress("UNUSED_PARAMETER") other: Any?) = 1
 
     /**
      * Set the no value strategy

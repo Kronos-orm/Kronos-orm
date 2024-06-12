@@ -16,7 +16,10 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.findByFqName
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -135,17 +138,40 @@ fun getColumnName(
 }
 
 enum class KronosColumnValueType {
-    Extension, ColumnName, ExtensionColumnName
+    Value, ColumnName
 }
 
 context(IrBlockBuilder, IrPluginContext)
-fun IrExpression?.columnValueGetter(): KronosColumnValueType {
-    return if (!(this is IrCallImpl && this.extensionReceiver is IrCallImpl && (this.extensionReceiver as IrCallImpl).origin == IrStatementOrigin.GET_PROPERTY)) {
-        KronosColumnValueType.ColumnName
-    } else if (this.funcName() == "value") {
-        KronosColumnValueType.Extension
+fun IrExpression.findKronosColumn(): IrExpression? {
+    if (this is IrBlock && origin == IrStatementOrigin.SAFE_CALL) return null
+    if (this !is IrCall) return this
+    if (isKronosColumn()) {
+        return this
+    } else if (extensionReceiver is IrCall) {
+        return extensionReceiver!!.findKronosColumn()
+    } else if (dispatchReceiver is IrCall) {
+        return dispatchReceiver!!.findKronosColumn()
     } else {
-        KronosColumnValueType.ExtensionColumnName
+        for (arg in valueArguments) {
+            if (arg is IrCall) {
+                return arg.findKronosColumn()
+            }
+        }
+        return this
+    }
+}
+
+
+context(IrBlockBuilder, IrPluginContext)
+fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> {
+    return if (this.isKronosColumn()) {
+        KronosColumnValueType.ColumnName to this
+    } else if (this.funcName() == "value") {
+        KronosColumnValueType.Value to this
+    } else {
+        KronosColumnValueType.ColumnName to
+                (findKronosColumn()
+                    ?: throw IllegalStateException("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
     }
 }
 
@@ -165,11 +191,10 @@ fun IrExpression?.isKronosColumn(): Boolean {
 context(IrBlockBuilder, IrPluginContext)
 fun getColumnOrValue(expression: IrExpression?): IrExpression? {
     if (expression == null) return null
-    return when (expression.columnValueGetter()) {
-        KronosColumnValueType.Extension -> expression.asIrCall().extensionReceiver
-        KronosColumnValueType.ColumnName -> getColumnName(expression)
-        KronosColumnValueType.ExtensionColumnName -> getColumnName(expression.asIrCall().extensionReceiver!!)
-
+    val (type, expr) = expression.columnValueGetter()
+    return when (type) {
+        KronosColumnValueType.Value -> expr
+        KronosColumnValueType.ColumnName -> getColumnName(expr)
     }
 }
 

@@ -73,7 +73,7 @@ val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 /**
  * Returns the `num`-th subtype of the class represented by the given `IrCall`.
  *
- * @param num the number of subtypes to traverse (default: 1)
+ * @param depth the number of subtypes to traverse (default: 1)
  * @return the `IrClass` representing the `num`-th subtype of the class represented by the `IrCall`
  * @throws IllegalArgumentException if `num` is negative
  */

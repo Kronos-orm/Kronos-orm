@@ -20,7 +20,6 @@ import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.findByFqName
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
-import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.getSqlType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -85,7 +84,7 @@ val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
  * Returns the column name of the given IrExpression.
  *
  * @param expression the [IrExpression] to get the column name from
- * @return the IrExpression representing the column name
+ * @return the `IrExpression` representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun getColumnName(expression: IrExpression): IrExpression {
@@ -109,7 +108,7 @@ fun getColumnName(expression: IrExpression): IrExpression {
  *
  * @param irProperty the [IrProperty] to get the column name from
  * @param propertyName the name of the property (default: the name of the IrProperty)
- * @return the IrExpression representing the column name
+ * @return the `IrExpression` representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(ObsoleteDescriptorBasedAPI::class)
@@ -154,10 +153,28 @@ fun getColumnName(
     )
 }
 
+/**
+ * Kronos Column Value Type
+ *
+ * Enum class for the kronos column value type
+ */
 enum class KronosColumnValueType {
     Value, ColumnName
 }
 
+/**
+ * Finds a Kronos Column in the given IrExpression.
+ *
+ * This function checks if the given IrExpression is a Kronos Column. If it is, it returns the expression itself.
+ * If the expression is an instance of IrBlock and its origin is SAFE_CALL, it returns null.
+ * If the expression is not an instance of IrCall, it returns the expression itself.
+ * If the extension receiver or the dispatch receiver of the expression is an instance of IrCall, it recursively calls this function with the receiver.
+ * If none of the above conditions are met, it iterates over the value arguments of the expression. If it finds an argument that is an instance of IrCall, it recursively calls this function with the argument.
+ * If no Kronos Column is found, it returns the expression itself.
+ *
+ * @receiver the `IrExpression` to find the Kronos Column in.
+ * @return returns the found Kronos Column `IrExpression`, or null if no Kronos Column is found.
+ */
 context(IrBlockBuilder, IrPluginContext)
 fun IrExpression.findKronosColumn(): IrExpression? {
     if (this is IrBlock && origin == IrStatementOrigin.SAFE_CALL) return null
@@ -178,7 +195,18 @@ fun IrExpression.findKronosColumn(): IrExpression? {
     }
 }
 
-
+/**
+ * Determines the type and value of a Kronos Column.
+ *
+ * This function checks if the given IrExpression is a Kronos Column. If it is, it returns a pair with the type as ColumnName and the expression itself.
+ * If the function name of the expression is "value", it returns a pair with the type as Value and the expression itself.
+ * Otherwise, it tries to find a Kronos Column in the expression and returns a pair with the type as ColumnName and the found Kronos Column.
+ * If no Kronos Column is found, it throws an IllegalStateException.
+ *
+ * @receiver the `IrExpression` to check.
+ * @return returns a pair with the type and value of the Kronos Column.
+ * @throws IllegalStateException if no Kronos Column is found in the expression and the function name is not "value".
+ */
 context(IrBlockBuilder, IrPluginContext)
 fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> {
     return if (this.isKronosColumn()) {
@@ -192,6 +220,16 @@ fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> 
     }
 }
 
+/**
+ * Checks if the given IrExpression is a Kronos Column.
+ *
+ * This function checks if the given IrExpression is an instance of IrCallImpl and if its origin is either GET_PROPERTY or EQ.
+ * If these conditions are met, it retrieves the property name from the IrExpression and finds the corresponding property in the class.
+ * It then checks if any of the super types of the parent class of the property is "com.kotlinorm.beans.dsl.KPojo".
+ *
+ * @receiver the `IrExpression` to check. It can be null.
+ * @return returns true if the IrExpression is a Kronos Column, false otherwise.
+ */
 context(IrBuilderWithScope, IrPluginContext)
 fun IrExpression?.isKronosColumn(): Boolean {
     if (this == null) return false
@@ -205,6 +243,17 @@ fun IrExpression?.isKronosColumn(): Boolean {
     }
 }
 
+/**
+ * Retrieves the column or value from the given IrExpression.
+ *
+ * This function checks if the given IrExpression is null. If it is, it returns null.
+ * Otherwise, it determines the type and value of the IrExpression using the columnValueGetter function.
+ * If the type is Value, it returns the expression itself.
+ * If the type is ColumnName, it retrieves the column name from the expression using the getColumnName function.
+ *
+ * @param expression the IrExpression to retrieve the column or value from. It can be null.
+ * @return returns the column or value from the `IrExpression`, or null if the IrExpression is null.
+ */
 context(IrBlockBuilder, IrPluginContext)
 fun getColumnOrValue(expression: IrExpression?): IrExpression? {
     if (expression == null) return null
@@ -219,7 +268,7 @@ fun getColumnOrValue(expression: IrExpression?): IrExpression? {
  * Returns the table name associated with the given IrExpression.
  *
  * @param expression the [IrExpression] to retrieve the table name from
- * @return the IrExpression representing the table name
+ * @return the `IrExpression` representing the table name
  * @throws IllegalStateException if the expression type is unexpected
  */
 context(IrBuilderWithScope, IrPluginContext)
@@ -235,7 +284,7 @@ fun getTableName(expression: IrExpression): IrExpression {
  * Returns the table name associated with the given IrClass.
  *
  * @param irClass the [IrClass] to retrieve the table name from
- * @return the IrExpression representing the table name
+ * @return the `IrExpression` representing the table name
  * @throws IllegalStateException if the table annotation is not found
  */
 context(IrBuilderWithScope, IrPluginContext)

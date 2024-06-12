@@ -127,7 +127,9 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
+                        // it.xxx > xx或 xx > it.xxx
                         val irCall = args.first()!!.asIrCall()
+                        // 提供fun(a, b)形式和A.B.C形式的函数调用支持(!!属于fun(a, b))
                         val columnExpr = irCall.findKronosColumn()
                         val (left, operator, right) = runExpressionAnalysis(
                             columnExpr,

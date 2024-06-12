@@ -21,6 +21,15 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.NoDataSourceException
 import kotlin.reflect.KClass
 
+/**
+ * Kronos Data Source Wrapper.
+ *
+ * The Kronos Data Source Wrapper is an interface that provides a set of methods for executing SQL queries and updates
+ * against a database. It serves as a bridge between the application and the underlying database, allowing the application
+ * to interact with the database in a safe and efficient manner.
+ *
+ * @sample com.kotlinorm.beans.dsw.NoneDataSourceWrapper
+ */
 interface KronosDataSourceWrapper {
     /**
      * The URL for database requests.

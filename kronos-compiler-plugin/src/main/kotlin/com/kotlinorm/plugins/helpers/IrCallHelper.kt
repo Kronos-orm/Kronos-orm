@@ -41,7 +41,7 @@ class Receivers(
  * Creates a new instance of the Receivers class with the specified dispatch receiver.
  *
  * @param dispatchReceiver The dispatch receiver expression.
- * @return A new instance of the Receivers class with the specified dispatch receiver.
+ * @return A new instance of the `Receivers` class with the specified dispatch receiver.
  * @author OUSC
  */
 internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?) {
@@ -52,7 +52,7 @@ internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?) {
  * Creates a new instance of the Receivers class with the specified extension receiver.
  *
  * @param extensionReceiver The extension receiver expression.
- * @return A new instance of the Receivers class with the specified extension receiver.
+ * @return A new instance of the `Receivers` class with the specified extension receiver.
  * @author OUSC
  */
 internal fun Receivers.extensionBy(extensionReceiver: IrExpression?) {
@@ -65,7 +65,7 @@ internal fun Receivers.extensionBy(extensionReceiver: IrExpression?) {
  * @param irCall The function symbol of the IR call.
  * @param values The vararg array of expression values for the IR call.
  * @param setReceivers The lambda function that to set the receivers for the IR call. Defaults to a lambda that returns an empty Receivers instance.
- * @return The IrFunctionAccessExpression representing the applied IR function call.
+ * @return The `IrFunctionAccessExpression` representing the applied IR function call.
  * @author OUSC
  */
 context(IrBuilderWithScope, IrPluginContext)
@@ -87,7 +87,7 @@ internal fun applyIrCall(
 /**
  * Casts the given IrExpression to an IrCall.
  *
- * @return The IrCall representation of the IrExpression.
+ * @return The `IrCall` representation of the IrExpression.
  */
 internal fun IrExpression.asIrCall(): IrCall {
     return this as IrCall
@@ -100,4 +100,4 @@ internal fun IrExpression.asIrCall(): IrCall {
  * @return The first IrConstructorCall that matches the given fqName, or null if none is found.
  */
 internal fun <T : IrFunctionAccessExpression> Iterable<T>.findByFqName(fqName: FqName): T? =
-    firstOrNull { it.type.classFqName == fqName }
+    find { it.type.classFqName == fqName }

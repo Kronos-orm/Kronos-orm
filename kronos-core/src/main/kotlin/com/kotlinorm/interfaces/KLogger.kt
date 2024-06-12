@@ -21,6 +21,7 @@ import com.kotlinorm.beans.logging.KLogMessage
 /**
  * Kronos Logger Interface
  *
+ * @sample com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
  * @author OUSC
  */
 interface KLogger {

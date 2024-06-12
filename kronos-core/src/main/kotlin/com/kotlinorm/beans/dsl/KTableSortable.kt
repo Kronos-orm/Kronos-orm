@@ -25,8 +25,6 @@ import com.kotlinorm.enums.SortType
  *
  * DSL Class of Kronos, which the compiler plugin use to generate the `order by` code.
  * @param T the type of the table
- *
- * @property it the instance of the table
  */
 class KTableSortable<T : KPojo> : KTable<T>() {
     internal val sortFields = mutableListOf<Pair<Field, SortType>>()
@@ -49,10 +47,12 @@ class KTableSortable<T : KPojo> : KTable<T>() {
     }
 
     @Suppress("UNUSED")
-    fun Any?.desc(): Pair<Any?, SortType> = (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to DESC
+    fun Any?.desc(): Pair<Any?, SortType> =
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to DESC
 
     @Suppress("UNUSED")
-    fun Any?.asc(): Pair<Any?, SortType> = (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to ASC
+    fun Any?.asc(): Pair<Any?, SortType> =
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to ASC
 
     companion object {
         /**

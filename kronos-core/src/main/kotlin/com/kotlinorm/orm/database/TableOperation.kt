@@ -311,6 +311,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         val sql = "ALTER TABLE $kronosTableName DROP COLUMN $deleteColumnDefinitions"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
+
+                    // 无需要修改的字段就返回false
+                    if (newColumns.isEmpty() && deleteColumns.isEmpty()) return false
                 }
                 return true
             }
@@ -354,6 +357,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         val sql = "ALTER TABLE $kronosTableName DROP COLUMN $column"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
+
+                    // 无需要修改的字段就返回false
+                    if (newColumns.isEmpty() && deleteColumns.isEmpty()) return false
                 }
                 return true
             }
@@ -388,6 +394,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         val sql = "ALTER TABLE $kronosTableName DROP COLUMN IF EXISTS $column"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
+
+                    // 无需要修改的字段就返回false
+                    if (newColumns.isEmpty() && deleteColumns.isEmpty()) return false
                 }
                 return true
             }
@@ -435,6 +444,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         val sql = "ALTER TABLE $kronosTableName DROP COLUMN $column"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
+
+                    // 无需要修改的字段就返回false
+                    if (newColumns.isEmpty() && deleteColumns.isEmpty()) return false
                 }
                 return true
             }
@@ -469,6 +481,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         val sql = "ALTER TABLE $kronosTableName DROP COLUMN $column"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
+                    // 无需要修改的字段就返回false
+                    if (newColumns.isEmpty() && deleteColumns.isEmpty()) return false
                 }
                 return true
             }

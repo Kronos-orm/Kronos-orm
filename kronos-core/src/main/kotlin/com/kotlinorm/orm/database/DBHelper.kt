@@ -4,7 +4,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
-object Utils {
+object DBHelper {
     fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper): String {
         return when (wrapper.dbType) {
             DBType.Mysql -> wrapper.url.split("?").first().split("//")[1].split("/").last()
@@ -26,6 +26,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Boolean.")
             }
+
             "TINYINT" -> when (dbType) {
                 DBType.Mysql -> "TINYINT"
                 DBType.Oracle -> "NUMBER(3)"
@@ -34,6 +35,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Byte.")
             }
+
             "SMALLINT" -> when (dbType) {
                 DBType.Mysql -> "SMALLINT"
                 DBType.Oracle -> "NUMBER(5)"
@@ -42,6 +44,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Short.")
             }
+
             "INT" -> when (dbType) {
                 DBType.Mysql -> "INT"
                 DBType.Oracle -> "NUMBER(10)"
@@ -50,6 +53,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Int.")
             }
+
             "BIGINT" -> when (dbType) {
                 DBType.Mysql -> "BIGINT"
                 DBType.Oracle -> "NUMBER(19)"
@@ -58,6 +62,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Long.")
             }
+
             "FLOAT" -> when (dbType) {
                 DBType.Mysql -> "FLOAT"
                 DBType.Oracle -> "FLOAT"
@@ -66,6 +71,7 @@ object Utils {
                 DBType.SQLite -> "REAL"
                 else -> throw RuntimeException("Unsupported database type for Float.")
             }
+
             "DOUBLE" -> when (dbType) {
                 DBType.Mysql -> "DOUBLE"
                 DBType.Oracle -> "DOUBLE"
@@ -74,6 +80,7 @@ object Utils {
                 DBType.SQLite -> "REAL"
                 else -> throw RuntimeException("Unsupported database type for Double.")
             }
+
             "DECIMAL" -> when (dbType) {
                 DBType.Mysql -> "DECIMAL"
                 DBType.Oracle -> "NUMBER"
@@ -82,6 +89,7 @@ object Utils {
                 DBType.SQLite -> "NUMERIC"
                 else -> throw RuntimeException("Unsupported database type for BigDecimal.")
             }
+
             "CHAR" -> when (dbType) {
                 DBType.Mysql -> "CHAR(1)"
                 DBType.Oracle -> "CHAR"
@@ -90,14 +98,16 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "VARCHAR" -> when (dbType) {
-                DBType.Mysql -> "VARCHAR(${if(length == 0) 255 else length})"
-                DBType.Oracle -> "VARCHAR(${if(length == 0) 255 else length})"
-                DBType.Mssql -> "VARCHAR(${if(length == 0) 255 else length})"
-                DBType.Postgres -> "VARCHAR(${if(length == 0) 255 else length})"
+                DBType.Mysql -> "VARCHAR(${if (length == 0) 255 else length})"
+                DBType.Oracle -> "VARCHAR(${if (length == 0) 255 else length})"
+                DBType.Mssql -> "VARCHAR(${if (length == 0) 255 else length})"
+                DBType.Postgres -> "VARCHAR(${if (length == 0) 255 else length})"
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "TEXT" -> when (dbType) {
                 DBType.Mysql -> "TEXT"
                 DBType.Oracle -> "CLOB"
@@ -106,6 +116,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "LONGTEXT" -> when (dbType) {
                 DBType.Mysql -> "TEXT"
                 DBType.Oracle -> "CLOB"
@@ -114,6 +125,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "DATE" -> when (dbType) {
                 DBType.Mysql -> "DATE"
                 DBType.Oracle -> "DATE"
@@ -122,6 +134,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for Date.")
             }
+
             "TIME" -> when (dbType) {
                 DBType.Mysql -> "TIME"
                 DBType.Oracle -> "DATE"
@@ -130,6 +143,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for Time.")
             }
+
             "DATETIME" -> when (dbType) {
                 DBType.Mysql -> "DATETIME"
                 DBType.Oracle -> "DATE"
@@ -138,6 +152,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for Timestamp.")
             }
+
             "TIMESTAMP" -> when (dbType) {
                 DBType.Mysql -> "TIMESTAMP"
                 DBType.Oracle -> "DATE"
@@ -146,6 +161,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for Timestamp.")
             }
+
             "BINARY" -> when (dbType) {
                 DBType.Mysql -> "BINARY"
                 DBType.Oracle -> "BLOB"
@@ -154,6 +170,7 @@ object Utils {
                 DBType.SQLite -> "BLOB"
                 else -> throw RuntimeException("Unsupported database type for ByteArray.")
             }
+
             "VARBINARY" -> when (dbType) {
                 DBType.Mysql -> "VARBINARY"
                 DBType.Oracle -> "BLOB"
@@ -162,6 +179,7 @@ object Utils {
                 DBType.SQLite -> "BLOB"
                 else -> throw RuntimeException("Unsupported database type for ByteArray.")
             }
+
             "LONGVARBINARY" -> when (dbType) {
                 DBType.Mysql -> "LONGBLOB"
                 DBType.Oracle -> "BLOB"
@@ -170,6 +188,7 @@ object Utils {
                 DBType.SQLite -> "BLOB"
                 else -> throw RuntimeException("Unsupported database type for ByteArray.")
             }
+
             "BLOB" -> when (dbType) {
                 DBType.Mysql -> "BLOB"
                 DBType.Oracle -> "BLOB"
@@ -178,6 +197,7 @@ object Utils {
                 DBType.SQLite -> "BLOB"
                 else -> throw RuntimeException("Unsupported database type for ByteArray.")
             }
+
             "CLOB" -> when (dbType) {
                 DBType.Mysql -> "CLOB"
                 DBType.Oracle -> "CLOB"
@@ -186,6 +206,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "JSON" -> when (dbType) {
                 DBType.Mysql -> "JSON"
                 DBType.Oracle -> "JSON"
@@ -194,6 +215,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "ENUM" -> when (dbType) {
                 DBType.Mysql -> "ENUM"
                 DBType.Oracle -> "ENUM"
@@ -202,6 +224,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "NVARCHAR" -> when (dbType) {
                 DBType.Mysql -> "NVARCHAR"
                 DBType.Oracle -> "NVARCHAR"
@@ -210,6 +233,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "NCHAR" -> when (dbType) {
                 DBType.Mysql -> "NCHAR"
                 DBType.Oracle -> "NCHAR"
@@ -218,6 +242,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "NCLOB" -> when (dbType) {
                 DBType.Mysql -> "NCLOB"
                 DBType.Oracle -> "NCLOB"
@@ -226,6 +251,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
+
             "UUID" -> when (dbType) {
                 DBType.Mysql -> "CHAR"
                 DBType.Oracle -> "CHAR"
@@ -234,6 +260,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for UUID.")
             }
+
             "SERIAL" -> when (dbType) {
                 DBType.Mysql -> "INT"
                 DBType.Oracle -> "NUMBER"
@@ -242,6 +269,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Serial.")
             }
+
             "Year" -> when (dbType) {
                 DBType.Mysql -> "YEAR"
                 DBType.Oracle -> "NUMBER"
@@ -250,6 +278,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Year.")
             }
+
             "MEDIUMINT" -> when (dbType) {
                 DBType.Mysql -> "MEDIUMINT"
                 DBType.Oracle -> "NUMBER(7)"
@@ -258,6 +287,7 @@ object Utils {
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for MEDIUMINT.")
             }
+
             "NUMERIC" -> when (dbType) {
                 DBType.Mysql -> "NUMERIC"
                 DBType.Oracle -> "NUMBER"
@@ -266,6 +296,7 @@ object Utils {
                 DBType.SQLite -> "NUMERIC"
                 else -> throw RuntimeException("Unsupported database type for NUMERIC.")
             }
+
             "MEDIUMTEXT" -> when (dbType) {
                 DBType.Mysql -> "MEDIUMTEXT"
                 DBType.Oracle -> "CLOB"
@@ -274,6 +305,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for MEDIUMTEXT.")
             }
+
             "MEDIUMBLOB" -> when (dbType) {
                 DBType.Mysql -> "MEDIUMBLOB"
                 DBType.Oracle -> "BLOB"
@@ -282,6 +314,7 @@ object Utils {
                 DBType.SQLite -> "BLOB"
                 else -> throw RuntimeException("Unsupported database type for MEDIUMBLOB.")
             }
+
             "LONGBLOB" -> when (dbType) {
                 DBType.Mysql -> "LONGBLOB"
                 DBType.Oracle -> "BLOB"
@@ -290,6 +323,7 @@ object Utils {
                 DBType.SQLite -> "BLOB"
                 else -> throw RuntimeException("Unsupported database type for LONGBLOB.")
             }
+
             "SET" -> when (dbType) {
                 DBType.Mysql -> "SET"
                 DBType.Oracle -> "SET"
@@ -298,6 +332,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for SET.")
             }
+
             "GEOMETRY" -> when (dbType) {
                 DBType.Mysql -> "GEOMETRY"
                 DBType.Oracle -> "GEOMETRY"
@@ -306,6 +341,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for GEOMETRY.")
             }
+
             "POINT" -> when (dbType) {
                 DBType.Mysql -> "POINT"
                 DBType.Oracle -> "POINT"
@@ -314,6 +350,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException()
             }
+
             "LINESTRING" -> when (dbType) {
                 DBType.Mysql -> "LINESTRING"
                 DBType.Oracle -> "LINESTRING"
@@ -322,7 +359,7 @@ object Utils {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException()
             }
-             // 这里可以继续添加其他类型的处理逻辑
+            // 这里可以继续添加其他类型的处理逻辑
             else -> throw RuntimeException("Unsupported type: $type")
         }
     }

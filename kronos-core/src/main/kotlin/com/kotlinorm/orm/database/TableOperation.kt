@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.orm.database
 
 import com.kotlinorm.beans.dsl.KPojo
@@ -6,8 +22,8 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.database.Utils.convertToSqliteColumnType
-import com.kotlinorm.orm.database.Utils.getDBNameFromUrl
+import com.kotlinorm.orm.database.DBHelper.convertToSqliteColumnType
+import com.kotlinorm.orm.database.DBHelper.getDBNameFromUrl
 import com.kotlinorm.orm.delete.DeleteClause
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import java.util.*
@@ -16,12 +32,18 @@ import kotlin.reflect.full.createInstance
 class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
     /**
+     * Checks whether the specified table exists in the database.
+     * Use the reified keyword to support type erasure of generics, so that information about the generic type T can be obtained at runtime.
+     * This method is mainly used for instances of the KPojo type. It creates an instance to get the table name and then checks whether the table exists.
+     *
      * 检查数据库中是否存在指定的表。
      * 使用 reified 关键字支持泛型的类型擦除，使得可以在运行时获取泛型类型 T 的信息。
      * 该方法主要用于 KPojo 类型的实例，通过创建一个实例来获取表名，然后检查表是否存在。
      *
-     * @param T 泛型类型，继承自 KPojo，用于获取表名。
-     * @return Boolean 表示表是否存在的布尔值。
+     * @param T generic type, inherited from KPojo, used to get the table name.
+     * 泛型类型，继承自 KPojo，用于获取表名。
+     * @return Boolean, Boolean value indicating whether the table exists.
+     * 表示表是否存在的布尔值。
      */
     inline fun <reified T : KPojo> exists(): Boolean {
         // 创建指定类型的实例，用于获取表名
@@ -93,14 +115,24 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
     }
 
     /**
+     * Dynamically create a database table based on a given KPojo class.
+     *
      * 根据给定的KPojo类动态创建数据库表。
+     *
+     * This function obtains the instance and metadata of the KPojo class through the reflection mechanism, generates and executes the corresponding SQL statement according to different database types,
+     * thereby creating the corresponding table in the database. Supported database types include MySQL, Oracle, PostgreSQL, Microsoft SQL Server,
+     * SQLite, DB2, Sybase, H2, OceanBase, and DM8.
      *
      * 该函数通过反射机制获取KPojo类的实例和元数据，根据不同的数据库类型生成并执行相应的SQL语句，
      * 从而在数据库中创建对应的表。支持的数据库类型包括MySQL、Oracle、PostgreSQL、Microsoft SQL Server、
      * SQLite、DB2、Sybase、H2、OceanBase和DM8。
      *
-     * @param <T> KPojo类的类型参数，必须继承自KPojo。
-     * @return 创建的表的实例。
+     * @param <T> The type parameter of the KPojo class, which must be inherited from KPojo.
+     *
+     * KPojo类的类型参数，必须继承自KPojo
+     * @return The instance of the created table.
+     *
+     * 创建的表的实例。
      */
     inline fun <reified T : KPojo> createTable(): Boolean {
         // 获取数据源实例
@@ -197,11 +229,15 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
     }
 
     /**
+     * Function to delete the specified table, and execute the corresponding delete statement according to different database types.
+     * This function uses the reified keyword to allow information about type T to be obtained at runtime.
      * 删除指定表的函数，根据不同的数据库类型执行相应的删除语句。
      * 该函数使用了reified关键字，允许在运行时获取类型T的信息。
      *
-     * @param T 类型参数，必须继承自KPojo，表示要删除的表对应的实体类。
-     * @return 返回DeleteClause实例，表示删除操作的结果。
+     * @param T type parameter, which must be inherited from KPojo, indicating the entity class corresponding to the table to be deleted.
+     * 类型参数，必须继承自KPojo，表示要删除的表对应的实体类。
+     * @return Returns the DeleteClause instance, indicating the result of the delete operation.
+     * 返回DeleteClause实例，表示删除操作的结果。
      */
     inline fun <reified T : KPojo> deleteTable(): DeleteClause<KPojo> {
         // 获取数据源实例
@@ -252,11 +288,19 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
     }
 
     /**
+     * Synchronize (update) the database table according to the specified table structure. If the table does not exist, create it. If the table exists, modify it if the data does not match.
+     * This function uses the reified keyword to allow information about type T to be obtained at runtime.
+     *
      * 根据指定的表结构同步（更新）数据库表，如果表不存在则创建，表如果存在，数据对不上则修改。
      * 该函数使用了reified关键字，允许在运行时获取类型T的信息。
      *
-     * @param T 类型参数，必须继承自KPojo，表示要同步的表对应的实体类。
-     * @return 返回Table实例，表示同步操作的结果。
+     * @param T type parameter, which must inherit from KPojo, indicating the entity class corresponding to the table to be synchronized.
+     *
+     * 类型参数，必须继承自KPojo，表示要同步的表对应的实体类
+     *
+     * @return Returns the Table instance, indicating the result of the synchronization operation.
+     *
+     * 返回Table实例，表示同步操作的结果。
      */
     inline fun <reified T : KPojo> structureSync(): Boolean {
         // 获取数据源实例
@@ -301,21 +345,17 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     if (newColumns.isNotEmpty()) {
                         // 创建新字段
                         val newColumnDefinitions = newColumns.joinToString(", ") { column ->
-                            val columnName = column
                             val columnType = kronosColumns.first { it.columnName == column }.type
                             val primaryKey =
                                 if (kronosColumns.first { it.columnName == column }.primaryKey) "PRIMARY KEY" else ""
-                            "$columnName $columnType $primaryKey"
+                            "$column $columnType $primaryKey"
                         }
                         val sql = "ALTER TABLE $kronosTableName ADD COLUMN $newColumnDefinitions"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
                     if (deleteColumns.isNotEmpty()) {
                         // 删除旧字段
-                        val deleteColumnDefinitions = deleteColumns.joinToString(", ") { column ->
-                            val columnName = column
-                            columnName
-                        }
+                        val deleteColumnDefinitions = deleteColumns.joinToString(", ")
                         val sql = "ALTER TABLE $kronosTableName DROP COLUMN $deleteColumnDefinitions"
                         dataSource.update(KronosAtomicActionTask(sql))
                     }
@@ -490,7 +530,17 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
     }
 
     /**
-     * 查询表字段列表
+     * Get the column names of the specified table.
+     *
+     * 获取指定表的列名。
+     *
+     * @param tableName String, the name of the table.
+     *
+     * 表名。
+     *
+     * @return List<String>, a list of column names.
+     *
+     * 列名列表。
      */
     fun getTableColumns(wrapper: KronosDataSourceWrapper, tableName: String): List<String> {
         val sql = when (wrapper.dbType) {

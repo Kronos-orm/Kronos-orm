@@ -75,6 +75,19 @@ class TableOperation {
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
+
+        val actualColumns = dataSource.table.getTableColumns("tb_user")
+
+        // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
+        val expectedColumns = user.kronosColumns()
+        
+        // 确保所有期望的列都存在于实际的列列表中，且类型一致
+        expectedColumns.forEach { column ->
+            val actualColumn = actualColumns.find { it.columnName == column.columnName }
+            assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
+            assertEquals(actualColumn.type, column.type, "列 '$column' 的类型应一致")
+            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
+        }
     }
 
     /**

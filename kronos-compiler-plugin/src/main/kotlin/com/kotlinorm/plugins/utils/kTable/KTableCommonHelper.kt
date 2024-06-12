@@ -75,6 +75,7 @@ val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val columnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
+val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -125,6 +126,8 @@ fun getColumnName(
         columnTypeAnnotation?.getValueArgument(0) ?: irString(getSqlType(propertyType))
     val columnTypeLength =
         columnTypeAnnotation?.getValueArgument(1) ?: irInt(0)
+    val columnDefaultValue =
+        irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
 
     return applyIrCall(
@@ -142,7 +145,8 @@ fun getColumnName(
 
             else -> irString((tableName as IrConst<*>).value.toString())
         },
-        columnTypeLength
+        columnTypeLength,
+        columnDefaultValue
     )
 }
 

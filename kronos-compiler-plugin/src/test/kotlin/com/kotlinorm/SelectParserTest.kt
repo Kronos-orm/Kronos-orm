@@ -34,6 +34,7 @@ class SelectParserTest {
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by
             import com.kotlinorm.annotations.CreateTime
+            import com.kotlinorm.annotations.Default
             import com.kotlinorm.orm.select.select
             import java.util.Date
             import com.kotlinorm.annotations.UseSerializeResolver
@@ -46,6 +47,7 @@ class SelectParserTest {
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime
+                @Default("now()")
                 var createTime: Date? = null
             ) : KPojo()
 
@@ -62,7 +64,7 @@ class SelectParserTest {
                 val m = mapOf("id" to 2)
                 val u = m.safeMapperTo<User>()
                                 
-                val (sql, paramMap) = user.select { it.username.alias("name") + it.gender }.build()
+                val (sql, paramMap) = user.select { it.username.`as`("name") + it.gender }.build()
                 println(user.toDataMap())
             }        
       """.trimIndent()

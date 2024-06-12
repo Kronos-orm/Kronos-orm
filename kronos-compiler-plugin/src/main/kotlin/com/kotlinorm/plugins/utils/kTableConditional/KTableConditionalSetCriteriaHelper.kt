@@ -19,10 +19,7 @@ package com.kotlinorm.plugins.utils.kTableConditional
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
-import com.kotlinorm.plugins.utils.kTable.correspondingName
-import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
-import com.kotlinorm.plugins.utils.kTable.getTableName
-import com.kotlinorm.plugins.utils.kTable.propParamSymbol
+import com.kotlinorm.plugins.utils.kTable.*
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -125,21 +122,31 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                         tableName = getTableName(element.dispatchReceiver!!)
                         value = applyIrCall(
                             propParamSymbol!!,
-                            irString((element.extensionReceiver!! as IrCall).correspondingName!!.asString())
+                            irString(element.extensionReceiver!!.asIrCall().funcName())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
                         val irCall = args.first()!!.asIrCall()
+                        val columnExpr = irCall.findKronosColumn()
                         val (left, operator, right) = runExpressionAnalysis(
-                            irCall.extensionReceiver,
+                            columnExpr,
                             funcName,
-                            irCall.valueArguments.first()
+                            irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
                         )
                         paramName = left
                         type = operator
                         value = right
-                        tableName = getTableName(irCall.dispatchReceiver!!)
+                        tableName = if (columnExpr.isKronosColumn()) {
+                            getTableName(columnExpr!!.asIrCall().dispatchReceiver!!)
+                        } else {
+                            val newExpr = irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
+                            if (newExpr.isKronosColumn()) {
+                                getTableName(newExpr!!.asIrCall().dispatchReceiver!!)
+                            } else {
+                                irString("")
+                            }
+                        }
                     }
                 }
 

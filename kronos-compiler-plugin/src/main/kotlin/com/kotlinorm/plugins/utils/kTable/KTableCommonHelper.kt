@@ -16,6 +16,10 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.findByFqName
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.getSqlType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
@@ -150,9 +154,42 @@ fun getColumnName(
     )
 }
 
+enum class KronosColumnValueType {
+    Value, ColumnName
+}
+
 context(IrBlockBuilder, IrPluginContext)
-fun IrExpression?.isKronosValueGetter(): Boolean {
-    return this is IrCallImpl && this.origin == IrStatementOrigin.GET_PROPERTY && this.extensionReceiver is IrCallImpl && (this.extensionReceiver as IrCallImpl).origin == IrStatementOrigin.GET_PROPERTY && this.funcName() == "value"
+fun IrExpression.findKronosColumn(): IrExpression? {
+    if (this is IrBlock && origin == IrStatementOrigin.SAFE_CALL) return null
+    if (this !is IrCall) return this
+    if (isKronosColumn()) {
+        return this
+    } else if (extensionReceiver is IrCall) {
+        return extensionReceiver!!.findKronosColumn()
+    } else if (dispatchReceiver is IrCall) {
+        return dispatchReceiver!!.findKronosColumn()
+    } else {
+        for (arg in valueArguments) {
+            if (arg is IrCall) {
+                return arg.findKronosColumn()
+            }
+        }
+        return this
+    }
+}
+
+
+context(IrBlockBuilder, IrPluginContext)
+fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> {
+    return if (this.isKronosColumn()) {
+        KronosColumnValueType.ColumnName to this
+    } else if (this.funcName() == "value") {
+        KronosColumnValueType.Value to this
+    } else {
+        KronosColumnValueType.ColumnName to
+                (findKronosColumn()
+                    ?: throw IllegalStateException("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
+    }
 }
 
 context(IrBuilderWithScope, IrPluginContext)
@@ -162,8 +199,7 @@ fun IrExpression?.isKronosColumn(): Boolean {
         IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
     ) && this.let {
         val propertyName = correspondingName!!.asString()
-        val irProperty =
-            dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
+        val irProperty = dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
         val parent = irProperty.parent as IrClass
         parent.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
     }
@@ -172,10 +208,11 @@ fun IrExpression?.isKronosColumn(): Boolean {
 context(IrBlockBuilder, IrPluginContext)
 fun getColumnOrValue(expression: IrExpression?): IrExpression? {
     if (expression == null) return null
-    if (expression.isKronosValueGetter()) {
-        return expression.asIrCall().extensionReceiver
+    val (type, expr) = expression.columnValueGetter()
+    return when (type) {
+        KronosColumnValueType.Value -> expr
+        KronosColumnValueType.ColumnName -> getColumnName(expr)
     }
-    return getColumnName(expression)
 }
 
 /**
@@ -203,8 +240,7 @@ fun getTableName(expression: IrExpression): IrExpression {
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(irClass: IrClass): IrExpression {
-    val tableAnnotation =
-        irClass.annotations.findByFqName(TableAnnotationsFqName)
+    val tableAnnotation = irClass.annotations.findByFqName(TableAnnotationsFqName)
     return tableAnnotation?.getValueArgument(0) ?: applyIrCall(
         tableK2dbSymbol, irString(
             irClass.name.asString()

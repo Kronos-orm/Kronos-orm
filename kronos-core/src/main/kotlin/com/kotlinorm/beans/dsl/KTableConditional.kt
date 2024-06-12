@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.annotations.UnsafeCriteria
 import com.kotlinorm.enums.NoValueStrategy
 
 /**
@@ -48,6 +49,37 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
         ) @kotlin.internal.NoInfer T?
     ) = true
 
+    fun <T> T?.cast() = this as Any?
+
+    /**
+     * Check if the Comparable<*> is greater than the specified
+     *
+     * Only for compiler plugin to parse to [Criteria]
+     *
+     * Return 1 whether which one is greater
+     *
+     * @param other The Comparable<*> to compare with.
+     * @param T The type of the Comparable<*> to compare with.
+     * @return `1`
+     */
+    operator fun <T> Comparable<T>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Comparable<T>?) = 1
+
+    /**
+     * Check if the Comparable<*> is greater than the specified
+     *
+     * Only for compiler plugin to parse to [Criteria]
+     *
+     * Return 1 whether which one is greater
+     *
+     * @param other The Comparable<*> to compare with.
+     * @param T The type of the Comparable<*> to compare with.
+     * @param R The type of the Comparable<*> to compare with.
+     * @return `1`
+     */
+    @JvmName("compareToDifferentType")
+    @UnsafeCriteria("It's not safe to compare different Type, use `.cast()` to declare that the expression is safe.")
+    operator fun <T, R> Comparable<T>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Comparable<R>?) = 1
+
     /**
      * Check if the Comparable<*> is greater than the specified
      *
@@ -58,7 +90,7 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      * @param other The Comparable<*> to compare with.
      * @return `1`
      */
-    operator fun Comparable<*>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Comparable<*>?) = 1
+    operator fun Any?.compareTo(@Suppress("UNUSED_PARAMETER") other: Any?) = 1
 
     /**
      * Set the no value strategy

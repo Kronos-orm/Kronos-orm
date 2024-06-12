@@ -1,39 +1,19 @@
 package com.kotlinorm.orm.database
 
-import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy.k2db
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.Utils.convertToSqliteColumnType
 import com.kotlinorm.orm.database.Utils.getDBNameFromUrl
 import com.kotlinorm.orm.delete.DeleteClause
-import com.kotlinorm.types.KTableConditionalField
-import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.execute
 import java.util.*
-import javax.activation.DataSource
 import kotlin.reflect.full.createInstance
 
 class TableOperation(val wrapper: KronosDataSourceWrapper) {
-
-    // val ds = Kronos.dataSource
-    //
-    //data class User(): KPojo
-    //
-    //// 1.  return if the table exists
-    //ds.table.exist<User>() // return Kotlin.Boolean
-    //// 2. create a table
-    //ds.table.create<User>()
-    //// 3. confirm to delete a table
-    //ds.table.delete<User>().confirm()
-    //// 4. confirm to sync the structure from kotlin code to database
-    //ds.table.structureSync<User>().confirm()
-
 
     /**
      * 检查数据库中是否存在指定的表。
@@ -69,7 +49,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // MySQL 的查询 SQL，统计表信息表中指定表名和数据库名的行数
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = :tableName AND table_schema = :tableSchema" to mapOf(
                     "tableName" to tableName,
-                    "tableSchema" to getDBNameFromUrl(dataSource.url)
+                    "tableSchema" to getDBNameFromUrl(dataSource)
                 )
 
             DBType.Oracle ->
@@ -103,11 +83,12 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
         // 执行查询，返回结果大于0表示表存在
         // 执行查询操作，返回结果大于0表示表存在
-        val result = dataSource.update(
-            KronosAtomicActionTask(
+        val result = dataSource.forObject(
+            KronosAtomicQueryTask(
                 sql, paramMap
-            )
-        )
+            ),
+            Int::class
+        ) as Int
         return result > 0
     }
 
@@ -136,7 +117,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // 生成MySQL的列定义字符串
                 val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                     val columnName = column.columnName
-                    val columnType = convertToSqliteColumnType(DBType.Mysql, column.type)
+                    val columnType = convertToSqliteColumnType(DBType.Mysql, column.type, column.length)
                     val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                     "$columnName $columnType $primaryKey"
                 }
@@ -150,7 +131,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // 生成Oracle的列定义字符串
                 val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                     val columnName = column.columnName
-                    val columnType = convertToSqliteColumnType(DBType.Oracle, column.type) // PostgreSQL通常不需要额外类型转换
+                    val columnType =
+                        convertToSqliteColumnType(DBType.Oracle, column.type, column.length) // PostgreSQL通常不需要额外类型转换
                     val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                     "$columnName $columnType $primaryKey"
                 }
@@ -164,7 +146,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // 生成PostgreSQL的列定义字符串
                 val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                     val columnName = column.columnName
-                    val columnType = convertToSqliteColumnType(DBType.Postgres, column.type) // PostgreSQL通常不需要额外类型转换
+                    val columnType =
+                        convertToSqliteColumnType(DBType.Postgres, column.type, column.length) // PostgreSQL通常不需要额外类型转换
                     val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                     "$columnName $columnType $primaryKey"
                 }
@@ -178,7 +161,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // 生成Microsoft SQL Server的列定义字符串
                 val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                     val columnName = column.columnName
-                    val columnType = convertToSqliteColumnType(DBType.Mssql, column.type) // 可能需要根据MSSQL调整类型
+                    val columnType =
+                        convertToSqliteColumnType(DBType.Mssql, column.type, column.length) // 可能需要根据MSSQL调整类型
                     val primaryKey =
                         if (column.primaryKey) "CONSTRAINT PK_$kronosTableName PRIMARY KEY CLUSTERED ($columnName)" else ""
                     "$columnName $columnType $primaryKey"
@@ -194,7 +178,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // 生成SQLite的列定义字符串
                 val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                     val columnName = column.columnName
-                    val columnType = convertToSqliteColumnType(DBType.SQLite, column.type)
+                    val columnType = convertToSqliteColumnType(DBType.SQLite, column.type, column.length)
                     val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                     "$columnName $columnType $primaryKey"
                 }
@@ -286,13 +270,13 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         val kronosColumns = instance.kronosColumns()
 
         // 根据数据库类型执行不同的创建/修改表语句
-        return when (dataSource.dbType) {
+        when (dataSource.dbType) {
             DBType.Mysql -> {
                 // 不存在就创建
                 if (!queryTableExistence(kronosTableName)) {
                     val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                         val columnName = column.columnName
-                        val columnType = convertToSqliteColumnType(DBType.Mysql, column.type)
+                        val columnType = convertToSqliteColumnType(DBType.Mysql, column.type, column.length)
                         val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                         "$columnName $columnType $primaryKey"
                     }
@@ -309,7 +293,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     // 获取表字段
                     val tableColumns = fields.map { it.columnName }
                     // 获取实体字段
-                    val entityColumns = fields.map { it.name }
+                    val entityColumns = fields.map { k2db(it.name) }
                     // 获取新增字段
                     val newColumns = entityColumns.filter { !tableColumns.contains(it) }
                     // 获取删除字段
@@ -344,7 +328,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 if (!queryTableExistence(kronosTableName)) {
                     val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                         val columnName = column.columnName
-                        val columnType = convertToSqliteColumnType(DBType.Oracle, column.type)
+                        val columnType = convertToSqliteColumnType(DBType.Oracle, column.type, column.length)
                         val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                         "$columnName $columnType $primaryKey"
                     }
@@ -386,7 +370,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 if (!queryTableExistence(kronosTableName)) {
                     val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                         val columnName = column.columnName
-                        val columnType = convertToSqliteColumnType(DBType.Postgres, column.type)
+                        val columnType = convertToSqliteColumnType(DBType.Postgres, column.type, column.length)
                         val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                         "$columnName $columnType $primaryKey"
                     }
@@ -421,7 +405,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 if (!queryTableExistence(kronosTableName)) {
                     val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                         val columnName = column.columnName
-                        val columnType = convertToSqliteColumnType(DBType.Mssql, column.type)
+                        val columnType = convertToSqliteColumnType(DBType.Mssql, column.type, column.length)
                         "$columnName $columnType NULL" // MSSQL 默认允许NULL
                     }
                     val primaryKeySql = kronosColumns.filter { it.primaryKey }
@@ -467,7 +451,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 if (!queryTableExistence(kronosTableName)) {
                     val columnDefinitions = kronosColumns.joinToString(", ") { column ->
                         val columnName = column.columnName
-                        val columnType = convertToSqliteColumnType(DBType.SQLite, column.type)
+                        val columnType = convertToSqliteColumnType(DBType.SQLite, column.type, column.length)
                         val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
                         "$columnName $columnType $primaryKey"
                     }
@@ -503,6 +487,25 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             DBType.OceanBase -> TODO()
             DBType.DM8 -> TODO()
         }
+    }
+
+    /**
+     * 查询表字段列表
+     */
+    fun getTableColumns(wrapper: KronosDataSourceWrapper, tableName: String): List<String> {
+        val sql = when (wrapper.dbType) {
+            DBType.Mysql -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '${tableName}'"
+            DBType.Oracle -> "SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = '$tableName'"
+            DBType.Postgres -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$tableName'"
+            DBType.Mssql -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME= '$tableName'"
+            DBType.SQLite -> "SELECT name FROM pragma_table_info('$tableName')"
+            DBType.DB2 -> TODO()
+            DBType.Sybase -> TODO()
+            DBType.H2 -> TODO()
+            DBType.OceanBase -> TODO()
+            DBType.DM8 -> TODO()
+        }
+        return wrapper.orDefault().forList(KronosAtomicQueryTask(sql)).map { it["COLUMN_NAME"].toString() }
     }
 
 }

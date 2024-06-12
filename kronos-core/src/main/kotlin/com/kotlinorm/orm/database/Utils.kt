@@ -1,23 +1,22 @@
 package com.kotlinorm.orm.database
 
-import com.kotlinorm.beans.dsw.NoneDataSourceWrapper.dbType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
-import kotlin.jvm.Throws
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
 object Utils {
-    fun getDBNameFromUrl(url: String): String {
-        return when (dbType) {
-            DBType.Mysql -> url.split("?").first().split("//")[1]
-            DBType.SQLite -> url.split("//").last()
-            DBType.Oracle -> url.split("@").last()
-            DBType.Mssql -> url.split("//").last().split(";").first()
-            DBType.Postgres -> url.split("//").last().split("/").first()
+    fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper): String {
+        return when (wrapper.dbType) {
+            DBType.Mysql -> wrapper.url.split("?").first().split("//")[1].split("/").last()
+            DBType.SQLite -> wrapper.url.split("//").last()
+            DBType.Oracle -> wrapper.url.split("@").last()
+            DBType.Mssql -> wrapper.url.split("//").last().split(";").first()
+            DBType.Postgres -> wrapper.url.split("//").last().split("/").first()
             else -> throw UnsupportedDatabaseTypeException()
         }
     }
 
-    fun convertToSqliteColumnType(dbType: DBType, type: String): String {
+    fun convertToSqliteColumnType(dbType: DBType, type: String, length: Int): String {
         return when (type) {
             "BIT" -> when (dbType) {
                 DBType.Mysql -> "TINYINT(1)"
@@ -84,7 +83,7 @@ object Utils {
                 else -> throw RuntimeException("Unsupported database type for BigDecimal.")
             }
             "CHAR" -> when (dbType) {
-                DBType.Mysql -> "CHAR"
+                DBType.Mysql -> "CHAR(1)"
                 DBType.Oracle -> "CHAR"
                 DBType.Mssql -> "CHAR"
                 DBType.Postgres -> "CHAR"
@@ -92,10 +91,10 @@ object Utils {
                 else -> throw RuntimeException("Unsupported database type for String.")
             }
             "VARCHAR" -> when (dbType) {
-                DBType.Mysql -> "VARCHAR"
-                DBType.Oracle -> "VARCHAR"
-                DBType.Mssql -> "VARCHAR"
-                DBType.Postgres -> "VARCHAR"
+                DBType.Mysql -> "VARCHAR(${if(length == 0) 255 else length})"
+                DBType.Oracle -> "VARCHAR(${if(length == 0) 255 else length})"
+                DBType.Mssql -> "VARCHAR(${if(length == 0) 255 else length})"
+                DBType.Postgres -> "VARCHAR(${if(length == 0) 255 else length})"
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException("Unsupported database type for String.")
             }

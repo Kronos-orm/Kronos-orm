@@ -22,7 +22,6 @@ class Update {
             logPath = listOf("console", "/Users/sundaiyue/kronos/logs")
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            defaultLogger.useCustomLogger()
         }
     }
 

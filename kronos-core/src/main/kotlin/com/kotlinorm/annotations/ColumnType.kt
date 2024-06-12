@@ -21,8 +21,8 @@ package com.kotlinorm.annotations
  *
  * Annotation to specify the name of a column in a database table.
  *
- * @property name The name of the column in the database table.
  * @property type The type of the column, if empty, inferred by Kotlin Type
+ * @property length The length of the column in the database table.
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)

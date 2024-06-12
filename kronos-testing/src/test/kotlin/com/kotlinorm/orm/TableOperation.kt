@@ -5,6 +5,7 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.beans.UserToBeSync
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
@@ -41,6 +42,8 @@ class TableOperation {
         }
     }
 
+    val user = User()
+
     /**
      * 测试表是否存在功能。
      * 此方法应完成一个测试用例，验证某个表是否存在，并使用assertEquals断言结果正确性。
@@ -48,14 +51,14 @@ class TableOperation {
     @Test
     fun testExists() {
         // 不管有没有先删
-        dataSource.table.deleteTable<User>()
+        dataSource.table.deleteTable(user)
         // 判断表是否存在
-        val exists = dataSource.table.exists<User>()
+        val exists = dataSource.table.exists(user)
         assertEquals(exists, false)
         // 创建表
-        dataSource.table.createTable<User>()
+        dataSource.table.createTable(user)
         // 判断表是否存在
-        val exists2 = dataSource.table.exists<User>()
+        val exists2 = dataSource.table.exists(user)
         assertEquals(exists2, true)
     }
 
@@ -66,11 +69,11 @@ class TableOperation {
     @Test
     fun testCreateTable() {
         // 不管有没有先删
-        dataSource.table.deleteTable<User>()
+        dataSource.table.deleteTable(user)
         // 创建表
-        dataSource.table.createTable<User>()
+        dataSource.table.createTable(user)
         // 判断表是否存在
-        val exists = dataSource.table.exists<User>()
+        val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
     }
 
@@ -81,16 +84,16 @@ class TableOperation {
     @Test
     fun testDeleteTable() {
         // 不管有没有先删
-        dataSource.table.deleteTable<User>()
+        dataSource.table.deleteTable(user)
         // 创建表
-        dataSource.table.createTable<User>()
+        dataSource.table.createTable(user)
         // 判断表是否存在
-        val exists = dataSource.table.exists<User>()
+        val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
         // 删除表
-        dataSource.table.deleteTable<User>()
+        dataSource.table.deleteTable(user)
         // 判断表是否存在
-        val exists2 = dataSource.table.exists<User>()
+        val exists2 = dataSource.table.exists(user)
         assertEquals(exists2, false)
     }
 
@@ -101,23 +104,28 @@ class TableOperation {
     @Test
     fun testSyncTable() {
         // 初始化：删除表以确保从干净状态开始测试
-        dataSource.table.deleteTable<User>()
-        assertFalse(dataSource.table.exists<User>(), "表应不存在于初始状态")
+        dataSource.table.deleteTable<User>(user)
+        assertFalse(dataSource.table.exists(user), "表应不存在于初始状态")
 
-        // 同步表结构
-        dataSource.table.structureSync<User>()
+        dataSource.table.createTable<UserToBeSync>()
 
         // 验证表是否被创建
-        assertTrue(dataSource.table.exists<User>(), "表应在同步后存在")
+        assertTrue(dataSource.table.exists<UserToBeSync>(), "表应在创建后存在")
+
+        // 同步user表结构
+        dataSource.table.structureSync(user)
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
-        val expectedColumns = User::class.java.fields.map { it.name }
+        val expectedColumns = user.kronosColumns()
 
-        val actualColumns = dataSource.table.getTableColumns(dataSource(), "tb_user")
+        val actualColumns = dataSource.table.getTableColumns("tb_user")
 
-        // 确保所有期望的列都存在于实际的列列表中
+        // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
-            assertTrue(actualColumns.contains(column), "列 '$column' 应存在于表中")
+            val actualColumn = actualColumns.find { it.columnName == column.columnName }
+            assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
+            assertEquals(actualColumn.type, column.type, "列 '$column' 的类型应一致")
+            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 
         // 可选：进一步验证列的属性，如类型、是否为主键等，这通常需要更复杂的数据库查询和比较逻辑

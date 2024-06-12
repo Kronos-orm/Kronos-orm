@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.database
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy.k2db
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -45,9 +46,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      * @return Boolean, Boolean value indicating whether the table exists.
      * 表示表是否存在的布尔值。
      */
-    inline fun <reified T : KPojo> exists(): Boolean {
-        // 创建指定类型的实例，用于获取表名
-        val instance = T::class.createInstance()
+    inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()): Boolean {
         // 通过实例获取表名
         val kronosTableName = instance.kronosTableName()
         // 调用查询方法，检查表是否存在
@@ -134,17 +133,15 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      *
      * 创建的表的实例。
      */
-    inline fun <reified T : KPojo> createTable(): Boolean {
+    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()): Boolean {
         // 获取数据源实例
         val dataSource = wrapper.orDefault()
-        // 通过反射创建KPojo类的实例
-        val instance = T::class.createInstance()
         // 从实例中获取表名
         val kronosTableName = instance.kronosTableName()
         // 从实例中获取列定义
         val kronosColumns = instance.kronosColumns()
         // 根据不同的数据库类型，生成并执行创建表的SQL语句
-        return when (dataSource.dbType) {
+        when (dataSource.dbType) {
             DBType.Mysql -> {
                 // 生成MySQL的列定义字符串
                 val columnDefinitions = kronosColumns.joinToString(", ") { column ->
@@ -235,11 +232,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      * @return Returns the DeleteClause instance, indicating the result of the delete operation.
      * 返回DeleteClause实例，表示删除操作的结果。
      */
-    inline fun <reified T : KPojo> deleteTable(): DeleteClause<KPojo> {
+    inline fun <reified T : KPojo> deleteTable(instance: T = T::class.createInstance()): DeleteClause<KPojo> {
         // 获取数据源实例
         val dataSource = wrapper.orDefault()
-        // 创建T类型的实例，用于获取表名
-        val instance = T::class.createInstance()
         // 表名
         val kronosTableName = instance.kronosTableName()
         // 根据数据库类型执行不同的删除语句
@@ -294,11 +289,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      *
      * 返回Table实例，表示同步操作的结果。
      */
-    inline fun <reified T : KPojo> structureSync(): Boolean {
+    inline fun <reified T : KPojo> structureSync(instance: T = T::class.createInstance()): Boolean {
         // 获取数据源实例
         val dataSource = wrapper.orDefault()
-        // 创建T类型的实例，用于获取表名和列信息
-        val instance = T::class.createInstance()
         // 表名
         val kronosTableName = instance.kronosTableName()
         // 列信息
@@ -544,8 +537,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      *
      * 列名列表。
      */
-    fun getTableColumns(wrapper: KronosDataSourceWrapper, tableName: String): List<String> {
-        val sql = when (wrapper.dbType) {
+    fun getTableColumns(tableName: String): List<Field> {
+        val sql = when (wrapper.orDefault().dbType) {
             DBType.Mysql -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '${tableName}'"
             DBType.Oracle -> "SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = '$tableName'"
             DBType.Postgres -> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$tableName'"
@@ -553,7 +546,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             DBType.SQLite -> "SELECT name FROM pragma_table_info('$tableName')"
             DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
         }
-        return wrapper.orDefault().forList(KronosAtomicQueryTask(sql)).map { it["COLUMN_NAME"].toString() }
+        return wrapper.orDefault().forList(KronosAtomicQueryTask(sql)).map { Field(it.toString()) }
     }
 
 }

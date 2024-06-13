@@ -78,6 +78,7 @@ val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
+val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -152,7 +153,8 @@ fun getColumnName(
         },
         columnTypeLength,
         columnDefaultValue,
-        identity
+        identity,
+        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName))
     )
 }
 

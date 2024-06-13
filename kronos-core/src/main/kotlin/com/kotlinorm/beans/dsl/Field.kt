@@ -34,7 +34,8 @@ class Field(
     val dateFormat: String? = null,
     val tableName: String = "",
     val length: Int = 0,
-    val defaultValue: String? = null
+    val defaultValue: String? = null,
+    val identity: Boolean = false
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

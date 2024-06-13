@@ -75,7 +75,7 @@ val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val TableIndexAnnotationsFqName = FqName("com.kotlinorm.annotations.TableIndex")
 val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
-val columnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
+val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 
@@ -121,7 +121,7 @@ fun getColumnName(
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
 
     val columnTypeAnnotation =
-        irProperty.annotations.findByFqName(columnTypeAnnotationsFqName)
+        irProperty.annotations.findByFqName(ColumnTypeAnnotationsFqName)
     val propertyType = irProperty.backingField!!.type.classFqName!!.asString()
     val columnType =
         columnTypeAnnotation?.getValueArgument(0) ?: irString(getSqlType(propertyType))
@@ -131,12 +131,16 @@ fun getColumnName(
         irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
 
+    val primaryKeyAnnotation =
+        irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName)
+    val identity = primaryKeyAnnotation?.getValueArgument(0) ?: irBoolean(false)
+
     return applyIrCall(
         fieldSymbol.constructors.first(),
         columnName,
         irString(propertyName),
         columnType,
-        irBoolean(irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName) != null),
+        irBoolean(primaryKeyAnnotation != null),
         irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0),
         when (tableName) {
             is IrCall -> applyIrCall(
@@ -147,7 +151,8 @@ fun getColumnName(
             else -> tableName
         },
         columnTypeLength,
-        columnDefaultValue
+        columnDefaultValue,
+        identity
     )
 }
 

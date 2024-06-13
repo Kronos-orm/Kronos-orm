@@ -21,5 +21,5 @@ fun getSqlType(propertyType: String) = when (propertyType) {
     "java.time.LocalTime", "kotlinx.datetime.LocalTime" -> "TIME"
     "java.time.LocalDateTime", "kotlinx.datetime.LocalDateTime" -> "DATETIME"
     "kotlin.ByteArray" -> "BINARY"
-    else -> "UNKOWN"
+    else -> "VARCHAR"
 }

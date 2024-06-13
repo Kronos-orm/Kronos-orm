@@ -2,6 +2,7 @@ package com.kotlinorm
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.TableIndex
 import com.kotlinorm.annotations.UseSerializeResolver
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
@@ -9,6 +10,7 @@ import com.kotlinorm.orm.join.join
 import java.util.*
 
 @Table(name = "tb_user")
+@TableIndex(name = "idx_user_id", columns = ["id"], type = "UNIQUE", method = "BTREE")
 data class User(
     var id: Int? = null,
     @UseSerializeResolver

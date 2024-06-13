@@ -19,7 +19,7 @@ package com.kotlinorm.utils
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import kotlin.reflect.KClass
+import com.kotlinorm.beans.dsl.KTableIndex
 
 
 fun fieldK2db(str: String): String {
@@ -57,3 +57,5 @@ fun createMutableMap(vararg pairs: Pair<String, Any?>) = mutableMapOf(*pairs)
 fun createFieldList(vararg elements: Field) = mutableListOf(*elements)
 
 fun createStringList(vararg elements: String) = mutableListOf(*elements)
+
+fun createTableIndexList(vararg elements: KTableIndex) = mutableListOf(*elements)

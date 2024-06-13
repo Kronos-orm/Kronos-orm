@@ -28,6 +28,7 @@ class SelectParserTest {
                 "main.kt", """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.Table
+            import com.kotlinorm.annotations.TableIndex
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
             import com.kotlinorm.beans.dsl.KPojo
             import com.kotlinorm.orm.delete.delete
@@ -41,6 +42,9 @@ class SelectParserTest {
             import com.kotlinorm.utils.Extensions.safeMapperTo
                     
             @Table(name = "tb_user")
+            @TableIndex(name = "idx_user_id", columns = ["id"], type = "UNIQUE", method = "BTREE")
+            @TableIndex(name = "idx_user_name", columns = ["username"], type = "UNIQUE", method = "BTREE")
+            @TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
             data class User(
                 var id: Int? = null,
                 @UseSerializeResolver

@@ -101,3 +101,12 @@ internal fun IrExpression.asIrCall(): IrCall {
  */
 internal fun <T : IrFunctionAccessExpression> Iterable<T>.findByFqName(fqName: FqName): T? =
     find { it.type.classFqName == fqName }
+
+/**
+ * Finds the first IrConstructorCall in the iterable that has a containing descriptor with the given fqName.
+ *
+ * @param fqName The fully qualified name of the containing descriptor to search for.
+ * @return The first IrConstructorCall that matches the given fqName, or null if none is found.
+ */
+internal fun <T : IrFunctionAccessExpression> Iterable<T>.filterByFqName(fqName: FqName): List<T> =
+    filter { it.type.classFqName == fqName }

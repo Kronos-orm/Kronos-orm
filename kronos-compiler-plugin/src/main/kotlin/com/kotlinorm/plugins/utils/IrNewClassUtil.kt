@@ -1,9 +1,7 @@
 package com.kotlinorm.plugins.utils
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.dispatchBy
-import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
+import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -12,6 +10,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
@@ -37,6 +36,11 @@ val createStringListSymbol
         .first()
 
 context(IrPluginContext)
+val createTableIndexListSymbol
+    get() = referenceFunctions("com.kotlinorm.utils", "createTableIndexList")
+        .first()
+
+context(IrPluginContext)
 private val getSafeValueSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue")
         .first()
@@ -48,6 +52,10 @@ private val fieldSymbol
 context(IrPluginContext)
 private val mapGetterSymbol
     get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")
+
+context(IrPluginContext)
+private val KTableIndexSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTableIndex")!!
 
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
@@ -169,6 +177,31 @@ fun createKronosTableName(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
             getTableName(declaration)
+        )
+    }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
+    return irBlockBody {
+        val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
+        val listOfIndexObj = indexesAnnotations.map {
+            applyIrCall(
+                KTableIndexSymbol.constructors.first(),
+                it.getValueArgument(0),
+                it.getValueArgument(1),
+                it.getValueArgument(2),
+                it.getValueArgument(3),
+            )
+        }
+        +irReturn(
+            applyIrCall(
+                createTableIndexListSymbol,
+                irVararg(
+                    KTableIndexSymbol.defaultType,
+                    listOfIndexObj
+                )
+            )
         )
     }
 }

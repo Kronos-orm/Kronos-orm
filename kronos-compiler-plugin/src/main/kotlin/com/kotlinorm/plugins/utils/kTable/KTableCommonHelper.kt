@@ -72,6 +72,7 @@ internal val tableK2dbSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
 
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
+val TableIndexAnnotationsFqName = FqName("com.kotlinorm.annotations.TableIndex")
 val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val columnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")

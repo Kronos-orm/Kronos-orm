@@ -17,13 +17,19 @@
 package com.kotlinorm.annotations
 
 /**
- * Primary Key
+ * Table Index
  *
- * Annotation to specify if the column is Primary Key
+ * Annotation to specify the index of a table in a database.
  *
- * @property identity If the column is auto-incremented
+ * @property name The name of the index in the database.
+ * @property columns The columns of the index in the database.
+ * @property type The type of the index in the database.
+ * @property method The method of the index in the database.
  * @author OUSC
  */
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class PrimaryKey(val identity: Boolean = false)
+@Repeatable
+annotation class TableIndex(
+    val name: String, val columns: Array<String>, val type: String = "", val method: String = ""
+)

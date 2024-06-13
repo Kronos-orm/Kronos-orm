@@ -23,10 +23,7 @@ import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
-import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
-import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
-import org.jetbrains.kotlin.ir.builders.irBoolean
-import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.*
@@ -73,9 +70,14 @@ context(IrPluginContext)
 internal val tableK2dbSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
 
+context(IrPluginContext)
+internal val kReferenceSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.KReference")!!
+
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
+val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -118,6 +120,18 @@ fun getColumnName(
     val columnName =
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
     val tableName = getTableName(parent)
+    val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
+    val reference = if (referenceAnnotation != null) {
+        applyIrCall(
+            kReferenceSymbol.constructors.first(),
+            getTableName(irProperty.backingField!!.type.getClass()!!),
+            referenceAnnotation.getValueArgument(0),
+            referenceAnnotation.getValueArgument(1),
+            referenceAnnotation.getValueArgument(2)
+        )
+    } else {
+        irNull()
+    }
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
@@ -133,7 +147,9 @@ fun getColumnName(
             )
 
             else -> irString((tableName as IrConst<*>).value.toString())
-        }
+        },
+        reference,
+        irBoolean(parent.constructors.first().valueParameters.any { it.name == irProperty.name })
     )
 }
 

@@ -28,6 +28,7 @@ class SelectParserTest {
                 "main.kt", """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.Table
+            import com.kotlinorm.annotations.Reference
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
             import com.kotlinorm.beans.dsl.KPojo
             import com.kotlinorm.orm.delete.delete
@@ -38,7 +39,9 @@ class SelectParserTest {
             import java.util.Date
             import com.kotlinorm.annotations.UseSerializeResolver
             import com.kotlinorm.utils.Extensions.safeMapperTo
-                    
+            import com.kotlinorm.annotations.LogicDelete
+            import com.kotlinorm.annotations.UpdateTime
+
             @Table(name = "tb_user")
             data class User(
                 var id: Int? = null,
@@ -46,8 +49,12 @@ class SelectParserTest {
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime
-                var createTime: Date? = null
-            ) : KPojo()
+                var createTime: Date? = null,
+                var friendId: Int? = null,
+            ) : KPojo() {
+                @Reference(["friendId"], ["id"])
+                lateinit var friend: User
+            }
 
 
             fun main() {
@@ -62,7 +69,7 @@ class SelectParserTest {
                 val m = mapOf("id" to 2)
                 val u = m.safeMapperTo<User>()
                                 
-                val (sql, paramMap) = user.select { it.username.alias("name") + it.gender }.build()
+                val (sql, paramMap) = user.select { it.username.`as`("name") + it.gender }.build()
                 println(user.toDataMap())
             }        
       """.trimIndent()

@@ -1,6 +1,7 @@
 package com.kotlinorm
 
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Reference
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UseSerializeResolver
 import com.kotlinorm.beans.dsl.KPojo
@@ -15,8 +16,12 @@ data class User(
     var username: String? = null,
     var gender: Int? = null,
     @CreateTime
-    var createTime: Date? = null
-) : KPojo()
+    var createTime: Date? = null,
+    var friendId: Int? = null,
+) : KPojo() {
+    @Reference(["friendId"], ["id"])
+    lateinit var friend: User
+}
 
 data class UserRelation(
     var id: Int? = null,

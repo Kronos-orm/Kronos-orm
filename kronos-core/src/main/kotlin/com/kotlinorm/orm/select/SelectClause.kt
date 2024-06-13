@@ -233,7 +233,7 @@ class SelectClause<T : KPojo>(
     override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
         var buildCondition = condition
         // 初始化所有字段集合
-        allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
+        allFields = getTable(wrapper.orDefault(), tableName).columns.filter { it.isColumn }.toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields
@@ -312,6 +312,7 @@ class SelectClause<T : KPojo>(
                 selectFields += Field("rownum", "R")
                 limitedSuffix = ") WHERE R <= $limitCapacity"
             }
+
             DBType.Mssql -> {
                 limitedSuffix = "OFFSET 0 ROWS FETCH NEXT $limitCapacity ROWS ONLY"
             }

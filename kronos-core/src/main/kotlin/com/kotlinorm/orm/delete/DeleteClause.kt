@@ -47,9 +47,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var allFields = pojo.kronosColumns().toLinkedSet()
 
     fun logic(): DeleteClause<T> {
-        // TODO：这里有问题
-        // 这里逻辑是错的，若logicDeleteStrategy.enabled为false则抛出异常
-        // 若updateTimeStrategy.enabled为false则不更新updateTime，而不是强制更新
+        // 若logicDeleteStrategy.enabled为false则抛出异常
+        // 若updateTimeStrategy.enabled为false则不更新updateTime
         if (!this.logicDeleteStrategy.enabled) {
             throw NeedFieldsException()
         }

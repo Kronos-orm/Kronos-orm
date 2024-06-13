@@ -1,140 +1,167 @@
 ![logo](https://cdn.leinbo.com/assets/images/kronos/logo_dark.png)
 
-##### Kronos ORM(Kotlin Reactive Object-Relational-Mapping)是一款前所未有的、开创性的、现代化的kotlin ORM框架。
+# Re-define KotlinORM
 
-*Kronos*是一个轻量级的框架，为开发者提供了一种高效的数据持久化解决方案。
+Kronos(Kotlin Reactive ORM, No-extra-class, Optimized, Simplified) is a lightweight framework that provides developers
+with a concise and efficient data persistence solution.
 
-*Kronos*使用Kotlin K2编译器插件分析Kotlin Ir表达式树，实现了简洁而又语义化的数据持久层框架，让使用者在开发过程中可以更加高效地操作数据。
+❓ **Why Kronos?**
 
-*Kronos*弥补了现有Kotlin ORM框架中不足之处，并基于协程和任务机制对数据操作提供更加便捷和高效的编写体验.
-
-*Kronos*支持多种常见关系型数据库，包括Mysql、Oracle、Postgres、Mssql、SQLite、DB2、Sybase和H2，以及国产数据库OceanBase和DM8。
+- [x] K2 Compiler Plugin Powered
+- [x] Multi-Database Support
+- [x] Concise writing
+- [x] Strong type checking
+- [x] High performance(less runtime reflection)
+- [x] Low intrusiveness
+- [x] No Extra Class
+- [x] Strong Coroutines Support
+- [x] Task handling mechanism
 
 -------
-> 查询示例：
+**Code First KPojo Definition:**
 
 ```kotlin
-User(1).insert().execute() // 插入单行数据
-listOfUser.insert().execute() // 批量插入多行数据
+@Table(name = "tb_movie")
+@TableIndex("idx_name", ["name"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
+data class Movie(
+    @PrimaryKey(identity = true)
+    val id: Long? = null, // primary key and auto increment
+    val name: String? = null, // movie name
+    val year: Int? = null, // the year of the movie
+    val director: String? = null, // director
+    val actor: String? = null, // actor
+    @UseSerializeResolver
+    val type: List<String>? = null, // type
+    val country: String? = null, // country
+    val language: String? = null, // language
+    val description: String? = null, // description
+    val poster: String? = null, // poster
+    val video: String? = null, // video
+    @Column("move_summary")
+    val summary: String? = null, // summary
+    val tags: String? = null, // tags
+    val score: Double? = null, // score
+    val vote: Int? = null, // vote
+    val favorite: Int? = null, // favorite
+    @LogicDelete
+    val deleted: Boolean? = null, // logic delete
+    @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
+    @UpdateTime val updateTime: String? = null, // update time
+) : KPojo()
+```
 
-User(1, "name").update { it.username }.by { it.id }.execute() //条件更新
-User(username = "name").update { it.username }.where { it.id between 1..100 }.execute() //条件更新
-listOfUser.update { it.username }.by { it.id }.execute() //批量条件更新
+------
+**Table Operation:**
 
-val user: User = User().select().where { it.id > 1 && it.username.notNull }.queryForObjectOrNull()
+```kotlin
+//is table exists
+dataSource.table.isTableExists<Movie>()
 
-// 2.多条件查询 / 查询多个字段 / 类型解析 / 带分页 / 带去重 / 带排序
-val (users, total) =
-    user.select { it.id + it.userName + it.authCode + "(select xxx from xxx limit 1)".alias("t") }
-        .where { it.id == 1 && "complex condition".toSql() }
-        .by { it.id }
-        .page(1, 10)
-        .orderBy { it.updateTime.desc }
-        .distinct()
-        .withTotal()
-        .queryForList() // Pair<List<User>, Int>
+// create table
+dataSource.table.createTable<Movie>()
 
+// drop table
+dataSource.table.deleteTable<Movie>()
 
-// 3.连表查询 / 使用query()查询List<Map<String, Any>>多行数据
-val result: List<Map<String, Any>> =
-    User().join(ShoppingCart(), Good()) { user, cart, good ->
-        leftJoin(cart)
-            .on(user.id == cart.id && user.age > 35)
-        rightJoin(good)
-            .on(good.id == cart.id)
-        select(user, good.id, cart.id)
-        where(
-            user.id == 1 &&
-                    user.age >= 20 &&
-                    user.email like "%@qq.com" &&
-                    user.telephone notLike "159%" &&
-                    (
-                            user.userName in listOf("a", "b") ||
-                                    user.id !in listOf(1, 2, 3)
-                            ) &&
-                    user.nickname.notNull &&
-                    user.age between 1..2 &&
-                    user.age notBetween 1..2
-        )
-        groupBy(user.age)
-        page(1, 100)
+//sync table structure
+dataSource.table.structureSync<Movie>()
+```
+
+------
+**Table Query:**
+
+```kotlin
+// single query
+val listOfUser: List<User> = User()
+    .select { it.id + it.username }
+    .where { it.id < 10 }
+    .distinct()
+    .groupBy { it.id }
+    .orderBy { it.username.desc() }
+    .queryList()
+
+// with Pagination
+val (total, list) = User()
+    .select { it.id + it.username }
+    .where { it.id < 10 }
+    .distinct()
+    .groupBy { it.id }
+    .orderBy { it.username.desc() }
+    .page(1, 10)
+    .withTotal()
+    .queryList()
+
+// multi-table query
+val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
+    leftJoin(relation) {
+        user.id == relation.userId
     }
-        .withTotal()
-        .query()
+    rightJoin(role) {
+        user.id == role.userId && relation.roleId == role.id
+    }
+    select {
+        user.id + user.username + relation.relation + role.role
+    }
+    where {
+        user.id < 10
+    }
+}.query()
 ```
 
-------
-> 插入示例：
+**Table Insert:**
 
 ```kotlin
-// 1.插入一行数据
-val affectRowNumber: Pair<Int, Int> =
-    User(1).insert().execute()
+// single insert
+user.insert()
 
-// 2.根据主键更新或插入一行数据
-val affectRowNumber: Pair<Int, Int> =
-    User(1).upsert()
-        .set { it.createTime = "YYYY-MM-DD" }
-        .execute()
-
-// 3.根据部分列更新或插入一行数据
-val affectRowNumber: Pair<Int, Int> =
-    User(1).upsert { it.id }
-        .onDuplicate() // 默认
-        .execute()
-
-// 4.根据部分列更新或插入一行数据
-val affectRowNumber: Pair<Int, Int> =
-    User(1, "name", "email@example.com").upsert { it.id }
-        .by { it.name + it.email }
-        .execute()
-
-// 5.根据部分列更新或插入一行数据 / 更新时排除部分列
-val affectRowNumber: Pair<Int, Int> =
-    User(1, "name", "email@example.com").upsertExcept { it.id }
-        .by { it.name + it.email }
-        .execute()
+// batch insert
+listOfUser.insert()
 ```
 
-------
-> 更新示例：
+**Table Update:**
 
 ```kotlin
-// 更新行
-val affectRowNumber: Int =
-    User(1).update()
-        .set { it.id = 2 }
-        .by { it.id }
-        .execute()
+// update by some conditions use `set`
+user.update()
+    .set {
+        it.username = "123"
+        it.gender = 1
+    }
+    .by { it.id }
+    .execute()
 
-// 更新行 / 仅更新部分字段
-val affectRowNumber: Int =
-    User(2).update { it.id }
-        .where { it.id == 1 }
-        .execute()
-
-// 更新行 / 更新时排除部分列
-val affectRowNumber: Int =
-    User(2).updateExcept { it.id }
-        .where { it.id == 1 }
-        .execute()
+// update by some conditions, data from record
+user.update { it.username + it.gender }
+    .by { it.id }
+    .execute()
 ```
 
-------
-> 删除示例：
+**Table Upsert:**
 
 ```kotlin
-val affectRowNumber: Int =
-    User(id = 1, status = 1).remove()
-        .by { it.id + it.status }
-        //.where()
-        .execute()
+// upsert on some columns
+user.upsert { it.username }
+    .on { it.id }
+    .execute()
 
-val affectRowNumber: Int =
-    User().remove()
-        .where { it.id > 1 && it.id < 10 }
-        .execute()
+// upsert on duplicate key
+user.upsert { it.username }
+    .onDuplicateKey()
+    .execute()
+```
+
+**Table Delete:**
+
+```kotlin
+// delete rows by some conditions
+user.delete()
+    .where { it.id == 1 }
+    .execute()
 ```
 
 ------
-[Read more on GitHub](https://github.com/ousc/kotlinorm-v2)
+> [Read more](https://kotoframework.com/#v2)
+>
+> [Official Website](https://kronos-orm.fun)
+>
+> [docs](https://kotlinorm.com/docs/)

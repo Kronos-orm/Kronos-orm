@@ -128,6 +128,9 @@ class TableOperation {
         // 同步user表结构
         dataSource.table.structureSync(user)
 
+        // 索引
+//        val list = user.kronosTableIndex()
+
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 

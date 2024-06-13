@@ -9,11 +9,12 @@ import java.time.LocalDateTime
 @Table(name = "tb_user")
 @TableIndex("idx_username", ["username"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
 data class User(
-    @PrimaryKey
+    @PrimaryKey(identity = true)
     var id: Int? = null,
     var username: String? = null,
     @Column("gender")
     @ColumnType(CHAR)
+    @Default("0")
     var gender: Int? = null,
 //    @ColumnType(INT)
 //    var age: Int? = null,

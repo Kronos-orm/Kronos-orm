@@ -62,4 +62,8 @@ object TestWrapper : KronosDataSourceWrapper {
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
         return intArrayOf(1)
     }
+
+    override fun <T> transact(block: () -> T): T {
+        return block()
+    }
 }

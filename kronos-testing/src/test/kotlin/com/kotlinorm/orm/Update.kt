@@ -882,7 +882,7 @@ class Update {
 
     @Test
     fun testBatchUpdateBy() {
-        val (sql, paramMapArr) = arrayOf(user, testUser).update { it.username }.by { it.id }.build()
+        val (sql, _, list) = arrayOf(user, testUser).update { it.username }.by { it.id }.build()
         assertEquals(
             "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -890,20 +890,18 @@ class Update {
         assertEquals(
             arrayOf(
                 mapOf(
-                    "usernameNew" to null, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "usernameNew" to null, "id" to 1, "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
-                    "usernameNew" to "test", "id" to 1, "updateTimeNew" to (paramMapArr?.get(1)
-                        ?.get("updateTimeNew") ?: "")
+                    "usernameNew" to "test", "id" to 1, "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
         )
     }
 
     @Test
     fun testBatchUpdateExceptBy() {
-        val (sql, paramMapArr) = arrayOf(user, testUser).updateExcept { it.username }.by { it.id }.build()
+        val (sql, _, list) = arrayOf(user, testUser).updateExcept { it.username }.by { it.id }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -915,24 +913,22 @@ class Update {
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "usernameNew" to "test",
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (paramMapArr?.get(1)
-                        ?.get("updateTimeNew") ?: "")
+                    "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
         )
     }
 
     @Test
     fun testBatchUpdateWhere() {
-        val (sql, paramMapArr) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
+        val (sql, _, list) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -940,20 +936,20 @@ class Update {
         assertEquals(
             arrayOf(
                 mapOf(
-                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (list[0].paramMap
+                        .get("updateTimeNew") ?: "")
                 ),
                 mapOf(
-                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (list[1].paramMap
+                        .get("updateTimeNew") ?: "")
                 )
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
         )
     }
 
     @Test
     fun testBatchUpdateIterWhere() {
-        val (sql, paramMapArr) = listOf(user, testUser).updateExcept { it.username }.where { it.id.eq }.build()
+        val (sql, _, list) = listOf(user, testUser).updateExcept { it.username }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -965,24 +961,22 @@ class Update {
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "usernameNew" to "test",
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (paramMapArr?.get(1)
-                        ?.get("updateTimeNew") ?: "")
+                    "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
         )
     }
 
     @Test
     fun testBatchUpdateExceptIterWhere() {
-        val (sql, paramMapArr) = listOf(user, testUser).updateExcept { it.gender }.where { it.id.eq }.build()
+        val (sql, _, list) = listOf(user, testUser).updateExcept { it.gender }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -994,18 +988,16 @@ class Update {
                     "id" to 1,
                     "idNew" to 1,
                     "usernameNew" to null,
-                    "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "genderNew" to null,
                     "id" to 1,
                     "idNew" to 1,
                     "usernameNew" to "test",
-                    "updateTimeNew" to (paramMapArr?.get(0)
-                        ?.get("updateTimeNew") ?: "")
+                    "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
         )
     }
 }

@@ -1,6 +1,5 @@
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 
 object CascadeInsertClause {
@@ -12,6 +11,7 @@ object CascadeInsertClause {
      * @return The list of atomic tasks.
      */
     fun <T> build(pojo: T): Array<KronosAtomicActionTask> {
-        TODO()
+        //TODO: Implement this method.
+        return arrayOf()
     }
 }

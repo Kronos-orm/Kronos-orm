@@ -24,9 +24,9 @@ object CascadeDeleteClause {
         val columns = pojo.kronosColumns().filter { !it.isColumn }
         return columns.map { col ->
             val propVal = pojo.toDataMap()[col.name]
-            val referenceType = col.referenceKClass
-            val ref = if (propVal is Iterable<*> && referenceType != null) {
-                referenceType
+            val referenceKClass = col.referenceKClass
+            val ref = if (propVal is Iterable<*> && referenceKClass != null) {
+                referenceKClass
             } else {
                 (propVal as KPojo)::class
             }.createInstance()

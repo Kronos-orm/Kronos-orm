@@ -13,6 +13,7 @@ object CascadeUpdateClause {
      * @return The list of atomic tasks.
      */
     fun <T> build(pojo: T, condition: Criteria?): Array<KronosAtomicActionTask> {
-        TODO()
+        //TODO: Implement this method.
+        return arrayOf()
     }
 }

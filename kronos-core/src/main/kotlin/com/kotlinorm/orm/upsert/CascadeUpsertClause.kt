@@ -18,6 +18,7 @@ object CascadeUpsertClause {
         toUpdateFields: LinkedHashSet<Field>,
         toInsertFields: LinkedHashSet<Field>
     ): Array<KronosAtomicActionTask> {
-        TODO()
+        //TODO: Implement this method.
+        return arrayOf()
     }
 }

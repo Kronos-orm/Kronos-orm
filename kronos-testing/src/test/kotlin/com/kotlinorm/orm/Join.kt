@@ -1,7 +1,6 @@
 package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.ProductLog
@@ -9,6 +8,7 @@ import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.orm.utils.TestWrapper
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -25,7 +25,7 @@ class Join {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { TestWrapper }
             serializeResolver = GsonResolver
         }
     }
@@ -106,7 +106,7 @@ class Join {
                 }
                 where { user.id == 1 }
                 orderBy { user.id.desc() }
-                page(1 , 10)
+                page(1, 10)
             }.withTotal().build()
 
         assertEquals(

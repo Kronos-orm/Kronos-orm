@@ -8,6 +8,6 @@ data class GroupClass(
     val name: String? = null,
     val groupNo: String? = null,
 ) : KPojo() {
-    @ReferenceType<Student>(Student::class)
+    @ReferenceType(Student::class)
     lateinit var students: List<Student>
 }

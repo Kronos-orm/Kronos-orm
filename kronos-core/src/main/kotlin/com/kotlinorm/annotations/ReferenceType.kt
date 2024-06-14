@@ -31,6 +31,6 @@ import kotlin.reflect.KClass
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ReferenceType<T : KPojo>(
-    val className: KClass<out T>
+annotation class ReferenceType(
+    val className: KClass<out KPojo>
 )

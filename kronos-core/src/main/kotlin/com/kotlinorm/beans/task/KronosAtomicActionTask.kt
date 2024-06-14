@@ -43,7 +43,7 @@ data class KronosAtomicActionTask(
     fun trySplitOut(): List<KronosAtomicActionTask> {
         return sql.split(";").map {
             KronosAtomicActionTask(
-                sql = it,
+                sql = it.trim(),
                 paramMap = paramMap,
                 operationType = operationType
             )

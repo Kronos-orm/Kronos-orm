@@ -154,7 +154,7 @@ fun getColumnName(
         columnTypeLength,
         columnDefaultValue,
         identity,
-        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName))
+        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
     )
 }
 

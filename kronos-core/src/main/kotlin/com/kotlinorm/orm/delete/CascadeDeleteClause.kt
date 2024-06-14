@@ -25,23 +25,24 @@ object CascadeDeleteClause {
         return columns.map { col ->
             val propVal = pojo.toDataMap()[col.name]
             val referenceType = col.referenceKClass
+            val ref = if (propVal is Iterable<*> && referenceType != null) {
+                referenceType
+            } else {
+                (propVal as KPojo)::class
+            }.createInstance()
             val references = if (col.reference != null) {
                 //自己维护的关系
                 listOf(col.reference)
             } else {
-                val ref = if (propVal is Iterable<*> && referenceType != null) {
-                    referenceType
-                } else {
-                    (propVal as KPojo)::class
-                }.createInstance()
                 ref.kronosColumns().mapNotNull { it.reference }.filter { col.tableName in it.mapperBy }
             }
-            generateReferenceUpdateSql(pojo, references, condition)
+            generateReferenceUpdateSql(pojo, ref, references, condition)
         }.toTypedArray()
     }
 
-    private fun <K : KPojo> generateReferenceUpdateSql(
-        pojo: K,
+    private fun <T : KPojo, K : KPojo> generateReferenceUpdateSql(
+        pojo: T,
+        ref: K,
         reference: List<KReference>,
         condition: Criteria?
     ): KronosAtomicActionTask {

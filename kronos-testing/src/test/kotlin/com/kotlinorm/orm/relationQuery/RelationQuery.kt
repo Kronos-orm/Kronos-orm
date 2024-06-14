@@ -1,6 +1,8 @@
 package com.kotlinorm.orm.relationQuery
 
 import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.relationQuery.oneToMany.GroupClass
+import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import org.junit.jupiter.api.Test
@@ -9,9 +11,9 @@ import kotlin.reflect.full.memberProperties
 class RelationQuery {
     @Test
     fun a() {
-        val student = Student().select().where { it.id == 1 }.queryOne()
+        val student = Student().select().where { it.id == 1 && it.groupClass!!.groupNo.isNull }.queryOne()
         val groupClass = student.groupClass
-        val students = groupClass.students
+        val students = groupClass!!.students
     }
 
     @Test

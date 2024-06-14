@@ -50,13 +50,9 @@ class SelectParserTest {
                 var gender: Int? = null,
                 @CreateTime
                 var createTime: Date? = null,
-                var friendId: Int? = null,
-            ) : KPojo() {
-                @Reference(["friendId"], ["id"])
-                lateinit var friend: User
-                
-                var a = {id}
-            }
+                var friend: User? = null,
+                var friends: List<User>? = null
+            ) : KPojo()
 
 
             fun main() {

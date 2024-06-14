@@ -16,10 +16,7 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.findByFqName
-import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
+import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -28,11 +25,10 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 
 
@@ -79,6 +75,7 @@ val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
 val ReferenceTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ReferenceType")
+val UseSerializeResolverAnnotationsFqName = FqName("com.kotlinorm.annotations.UseSerializeResolver")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -132,6 +129,27 @@ fun getColumnName(
     } else {
         irNull()
     }
+    println(
+        """
+            -------------------------
+            irProperty: ${irProperty.name}
+            !irProperty.hasAnnotation(ReferenceAnnotationsFqName): ${
+            !irProperty.hasAnnotation(
+                ReferenceAnnotationsFqName
+            )
+        }
+            !irProperty.hasAnnotation(ReferenceTypeAnnotationsFqName): ${
+            !irProperty.hasAnnotation(
+                ReferenceTypeAnnotationsFqName
+            )
+        }
+            !irProperty.backingField!!.type.isKronosColumn(): ${!irProperty.backingField!!.type.isKronosColumn()}
+            irProperty.backingField!!.type.subType()?.isKronosColumn() != true: ${
+            irProperty.backingField!!.type.subType()?.isKronosColumn() != true
+        }
+            -------------------------
+        """.trimIndent()
+    )
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
@@ -150,7 +168,12 @@ fun getColumnName(
         },
         reference,
         referenceType ?: irNull(),
-        irBoolean(parent.constructors.first().valueParameters.any { it.name == irProperty.name })
+        irBoolean(
+            !irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
+                    !irProperty.hasAnnotation(ReferenceTypeAnnotationsFqName) &&
+                    !irProperty.backingField!!.type.isKronosColumn() &&
+                    irProperty.backingField!!.type.subType()?.isKronosColumn() != true
+        )
     )
 }
 
@@ -199,10 +222,18 @@ fun IrExpression?.isKronosColumn(): Boolean {
         IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
     ) && this.let {
         val propertyName = correspondingName!!.asString()
-        val irProperty = dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
-        val parent = irProperty.parent as IrClass
-        parent.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+        (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKronosColumn()
     }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrClass.isKronosColumn(): Boolean {
+    return superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrType.isKronosColumn(): Boolean {
+    return superTypes().any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
 }
 
 context(IrBlockBuilder, IrPluginContext)

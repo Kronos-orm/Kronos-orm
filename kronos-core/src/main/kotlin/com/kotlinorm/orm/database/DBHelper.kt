@@ -32,7 +32,13 @@ object DBHelper {
         }
     }
 
-    fun convertToSqliteColumnType(dbType: DBType, type: String, length: Int): String {
+    fun convertToSqlColumnType(
+        dbType: DBType,
+        type: String,
+        length: Int,
+        nullable: Boolean,
+        primaryKey: Boolean
+    ): String {
         return when (type) {
             "BIT" -> when (dbType) {
                 DBType.Mysql -> "TINYINT(1)"
@@ -377,6 +383,12 @@ object DBHelper {
             }
             // 这里可以继续添加其他类型的处理逻辑
             else -> throw RuntimeException("Unsupported type: $type")
+        }.let {
+            when {
+                primaryKey -> it + " NOT NULL" + " PRIMARY KEY"
+                !nullable -> it + " NOT NULL"
+                else -> it
+            }
         }
     }
 

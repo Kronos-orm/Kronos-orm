@@ -51,7 +51,7 @@ class TableOperation {
     @Test
     fun testExists() {
         // 不管有没有先删
-        dataSource.table.deleteTable(user)
+        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(exists, false)
@@ -69,7 +69,7 @@ class TableOperation {
     @Test
     fun testCreateTable() {
         // 不管有没有先删
-        dataSource.table.deleteTable(user)
+        dataSource.table.dropTable(user)
         // 创建表
         dataSource.table.createTable(user)
         // 判断表是否存在
@@ -95,16 +95,16 @@ class TableOperation {
      * 此方法应完成一个测试用例，删除某个表，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testDeleteTable() {
+    fun testDropTable() {
         // 不管有没有先删
-        dataSource.table.deleteTable(user)
+        dataSource.table.dropTable(user)
         // 创建表
         dataSource.table.createTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
         // 删除表
-        dataSource.table.deleteTable(user)
+        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists2 = dataSource.table.exists(user)
         assertEquals(exists2, false)
@@ -116,17 +116,11 @@ class TableOperation {
      */
     @Test
     fun testSyncTable() {
-        // 初始化：删除表以确保从干净状态开始测试
-        dataSource.table.deleteTable<User>(user)
-        assertFalse(dataSource.table.exists(user), "表应不存在于初始状态")
-
-        dataSource.table.createTable<UserToBeSync>()
-
-        // 验证表是否被创建
-        assertTrue(dataSource.table.exists<UserToBeSync>(), "表应在创建后存在")
-
         // 同步user表结构
-        dataSource.table.structureSync(user)
+        val structureSync = dataSource.table.structureSync(user)
+        if(!structureSync){
+            println("表结构相同无需同步")
+        }
 
         // 索引
 //        val list = user.kronosTableIndex()

@@ -18,6 +18,7 @@ package com.kotlinorm.orm.database
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
@@ -419,6 +420,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         val kronosTableName = instance.kronosTableName()
         // 实体类列信息
         val kronosColumns = instance.kronosColumns()
+        // 从实例中获取索引
+        val kronosIndexes = instance.kronosTableIndex()
         // 数据库类型
         val dbType = dataSource.dbType
 
@@ -429,7 +432,12 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
         // 获取实际表字段信息
         val tableColumns = getTableColumns(kronosTableName)
+        // 获取实际表索引信息
+        val tableIndexes = getTableIndexes(kronosTableName)
+        // 新增、修改、删除字段
         val (toAdd, toModified, toDelete) = differ(dbType, kronosColumns, tableColumns)
+        // 需要新增与删除的索引
+        val (toAddIndex,todeleteIndex) = differIndex(dbType, kronosIndexes, tableIndexes)
 
         // 根据数据库类型执行不同的创建/修改表语句
         when (dbType) {
@@ -466,6 +474,10 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         }
                 } + toDelete.map {
                     "ALTER TABLE $kronosTableName DROP COLUMN ${it.columnName};"
+                }+ toAddIndex.map {
+                    "ALTER TABLE $kronosTableName ADD  ${it.type} INDEX ${it.name} (`${it.columns.joinToString("`, `")}`) USING ${it.method};"
+                } + todeleteIndex.map {
+                    "ALTER TABLE $kronosTableName DROP INDEX ${it.name};"
                 }
                 println(listOfSql)
                 if (listOfSql.isNotEmpty()) {
@@ -553,6 +565,70 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             }
 
             DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
+        }
+    }
+
+    fun differIndex(dbType: DBType, kronosIndexes: MutableList<KTableIndex>, tableIndexes: MutableList<KTableIndex>): Pair<MutableList<KTableIndex>, MutableList<KTableIndex>> {
+        // kronosIndexes有 tableIndexes无的 就是要新增的
+        // tableIndexes有 kronosIndexes无的 就是要删除的
+        val toAdd = mutableListOf<KTableIndex>()
+        val toDelete = mutableListOf<KTableIndex>()
+        for (kronosIndex in kronosIndexes) {
+            var isExist = false
+            for (tableIndex in tableIndexes) {
+                if (kronosIndex.name == tableIndex.name) {
+                    isExist = true
+                    break
+                }
+            }
+            if (!isExist) {
+                toAdd.add(kronosIndex)
+            }
+        }
+        for (tableIndex in tableIndexes) {
+            var isExist = false
+            for (kronosIndex in kronosIndexes) {
+                if (kronosIndex.name == tableIndex.name) {
+                    isExist = true
+                    break
+                }
+            }
+            if (!isExist) {
+                toDelete.add(tableIndex)
+            }
+        }
+        return toAdd to toDelete
+    }
+
+    // 获取表索引
+    fun getTableIndexes(kronosTableName: String): MutableList<KTableIndex> {
+        return when (wrapper.orDefault().dbType) {
+            DBType.Mysql -> {
+                val sql = """
+                    SELECT 
+                        INDEX_NAME AS name,
+                     GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS columns, 
+                     INDEX_TYPE AS type,
+                     NON_UNIQUE AS noUnique
+                    FROM 
+                     INFORMATION_SCHEMA.STATISTICS
+                    WHERE 
+                     TABLE_SCHEMA = DATABASE() AND 
+                     TABLE_NAME = '${kronosTableName}' AND 
+                      INDEX_NAME != 'PRIMARY'  
+                    GROUP BY 
+                        INDEX_NAME, INDEX_TYPE;
+                """
+                dataSource.forList(KronosAtomicQueryTask(sql)).map {
+                    val name = it["name"] as String
+                    val columns = (it["columns"] as? String ?: "").split(",").toTypedArray()
+                    val type = if(it["type"] == "BTREE" && it["noUnique"] == "1") "NORMAL" else if (it["type"] == "BTREE" && it["noUnique"] == "0") "UNIQUE" else it["type"] as String
+                    val method = if(it["type"] == "SPATIAL" || it["type"] == "FULLTEXT") "" else it["type"] as String
+                    KTableIndex(name, columns, type, method)
+                }.toMutableList()
+            }
+
+            else -> throw NotImplementedError("Unsupported database types")
         }
     }
 

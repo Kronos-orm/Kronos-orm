@@ -30,10 +30,10 @@ object CascadeDeleteClause {
                 listOf(col.reference)
             } else {
                 val ref = if (propVal is Iterable<*> && referenceType != null) {
-                    referenceType.createInstance()
+                    referenceType
                 } else {
-                    propVal
-                } as KPojo
+                    (propVal as KPojo)::class
+                }.createInstance()
                 ref.kronosColumns().mapNotNull { it.reference }.filter { col.tableName in it.mapperBy }
             }
             generateReferenceUpdateSql(pojo, references, condition)

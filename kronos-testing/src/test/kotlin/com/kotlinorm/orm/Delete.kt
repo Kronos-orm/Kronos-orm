@@ -18,7 +18,7 @@ class Delete {
     }
 
     private val user = User(1)
-    private val testUser = User(1,"username")
+    private val testUser = User(1, "username")
 
     @Test
     fun testDelete() {
@@ -81,7 +81,7 @@ class Delete {
 
     @Test
     fun testDeleteArray() {
-        val (sql, paramMapArr) = arrayOf(user,testUser).delete().where {
+        val (sql, _, list) = arrayOf(user, testUser).delete().where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
@@ -90,14 +90,14 @@ class Delete {
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
 
         )
     }
 
     @Test
     fun testDeleteIter() {
-        val (sql, paramMapArr) = listOf(user,testUser).delete().where {
+        val (sql, _, list) = listOf(user, testUser).delete().where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
@@ -106,7 +106,7 @@ class Delete {
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap }
 
         )
     }

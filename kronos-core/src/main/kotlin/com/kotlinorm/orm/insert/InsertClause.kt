@@ -18,16 +18,17 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.task.KronosActionTask
+import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
-class InsertClause<T : KPojo>(pojo: T) {
+class InsertClause<T : KPojo>(val pojo: T) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var createTimeStrategy = pojo.kronosCreateTime()
@@ -43,7 +44,7 @@ class InsertClause<T : KPojo>(pojo: T) {
         }
     }
 
-    fun build(): KronosAtomicActionTask {
+    fun build(): KronosActionTask {
         toInsertFields.addAll(allFields.filter { it.name in paramMap.keys })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
@@ -54,11 +55,14 @@ class InsertClause<T : KPojo>(pojo: T) {
             INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
         """.trimIndent()
 
-        return KronosAtomicActionTask(
-            sql,
-            paramMap,
-            operationType = KOperationType.INSERT
-        )
+        return listOf(
+            KronosAtomicActionTask(
+                sql,
+                paramMap,
+                operationType = KOperationType.INSERT
+            ),
+            *CascadeInsertClause.build(pojo)
+        ).toKronosActionTask()
 
     }
 
@@ -67,13 +71,8 @@ class InsertClause<T : KPojo>(pojo: T) {
     }
 
     companion object {
-        fun <T : KPojo> List<InsertClause<T>>.build(): KronosAtomicBatchTask {
-            val tasks = this.map { it.build() }
-            return KronosAtomicBatchTask(
-                sql = tasks.first().sql,
-                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
-                operationType = KOperationType.INSERT
-            )
+        fun <T : KPojo> List<InsertClause<T>>.build(): KronosActionTask {
+            return this.map { it.build() }.merge()
         }
 
         fun <T : KPojo> List<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {

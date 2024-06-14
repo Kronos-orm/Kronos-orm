@@ -286,16 +286,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     }
 
     /**
-     * Queries the data source using the provided data source wrapper and returns a list of maps representing the results.
-     *
-     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
-     * @return a list of maps representing the results of the query.
-     */
-    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-        return this.build().query(wrapper)
-    }
-
-    /**
      * Builds and returns a KronosAtomicQueryTask object based on the provided data source wrapper.
      *
      * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
@@ -438,5 +428,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             paramMap,
             operationType = KOperationType.SELECT
         )
+    }
+
+    /**
+     * Queries the data source using the provided data source wrapper and returns a list of maps representing the results.
+     *
+     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
+     * @return a list of maps representing the results of the query.
+     */
+    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+        return this.build().query(wrapper)
     }
 }

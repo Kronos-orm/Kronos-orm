@@ -54,6 +54,8 @@ class SelectParserTest {
             ) : KPojo() {
                 @Reference(["friendId"], ["id"])
                 lateinit var friend: User
+                
+                var a = {id}
             }
 
 

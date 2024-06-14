@@ -21,8 +21,10 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.task.KronosActionTask
+import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -33,7 +35,6 @@ import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -74,7 +75,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
 
             // 根据fields中的字段及其值构建删除条件
-            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
+            condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
         }
         return this
     }
@@ -91,8 +92,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
         if (deleteCondition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition = paramMap.keys.mapNotNull { propName ->
-                allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
+            condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+                field.eq(paramMap[field.name]).takeIf { it.value != null }
             }.toCriteria()
             return this
         }
@@ -112,7 +113,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      *
      * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
      */
-    fun build(): KronosAtomicActionTask {
+    fun build(): KronosActionTask {
         // 设置逻辑删除的策略
         if (logic) {
             setCommonStrategy(logicDeleteStrategy) { field, value ->
@@ -148,7 +149,10 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 updateFields,
                 whereClauseSql
             ).joinToString(" ")
-            return KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE)
+            return listOf(
+                KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE),
+                *CascadeDeleteClause.build(pojo, condition)
+            ).toKronosActionTask()
         } else {
             // 构建DELETE语句并返回KronosAtomicTask对象
             val sql = listOfNotNull(
@@ -156,7 +160,10 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 "`$tableName`",
                 whereClauseSql
             ).joinToString(" ")
-            return KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE)
+            return listOf(
+                KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE),
+                *CascadeDeleteClause.build(pojo, condition)
+            ).toKronosActionTask()
         }
     }
 
@@ -200,13 +207,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo> List<DeleteClause<T>>.build(): KronosAtomicBatchTask {
-            val tasks = this.map { it.build() }
-            return KronosAtomicBatchTask(
-                sql = tasks.first().sql,
-                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
-                operationType = KOperationType.DELETE
-            )
+        fun <T : KPojo> List<DeleteClause<T>>.build(): KronosActionTask {
+            return map { it.build() }.merge()
         }
 
         /**

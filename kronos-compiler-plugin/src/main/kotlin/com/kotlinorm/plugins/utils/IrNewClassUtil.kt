@@ -177,7 +177,6 @@ fun createKronosTableName(declaration: IrClass): IrBlockBody {
  * Creates a safe from map value function for the given declaration and irFunction.
  *
  * @param declaration The IrClass declaration.
- * @param irFunction The IrFunction to create the safe from map value function for.
  * @return An IrBlockBody containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)

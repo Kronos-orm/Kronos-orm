@@ -124,7 +124,7 @@ fun getColumnName(
     val reference = if (referenceAnnotation != null) {
         applyIrCall(
             kReferenceSymbol.constructors.first(),
-            getTableName(irProperty.backingField!!.type.getClass()!!),
+            irString(irProperty.backingField!!.name.asString()),
             referenceAnnotation.getValueArgument(0),
             referenceAnnotation.getValueArgument(1),
             referenceAnnotation.getValueArgument(2)

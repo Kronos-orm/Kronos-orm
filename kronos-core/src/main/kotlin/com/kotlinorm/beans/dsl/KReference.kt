@@ -1,8 +1,8 @@
 package com.kotlinorm.beans.dsl
 
 class KReference(
-    val tableName: String = "",
-    val fields: Array<String> = arrayOf(),
-    val referenceFields: Array<String> = arrayOf(),
+    val propName: String,
+    val referenceColumns: Array<String> = arrayOf(),
+    val targetColumns: Array<String> = arrayOf(),
     val cascade: Boolean = false
 )

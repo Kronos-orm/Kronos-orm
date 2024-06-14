@@ -26,4 +26,8 @@ package com.kotlinorm.annotations
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Reference(val column: Array<String>, val target: Array<String>, val cascade: Boolean = false)
+annotation class Reference(
+    val referenceColumns: Array<String>,
+    val targetColumns: Array<String>,
+    val cascade: Boolean = false
+)

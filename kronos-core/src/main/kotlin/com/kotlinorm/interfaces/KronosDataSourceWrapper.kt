@@ -137,4 +137,6 @@ interface KronosDataSourceWrapper {
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun batchUpdate(task: KronosAtomicBatchTask): IntArray
+
+    fun <T> transact(block: () -> T): T
 }

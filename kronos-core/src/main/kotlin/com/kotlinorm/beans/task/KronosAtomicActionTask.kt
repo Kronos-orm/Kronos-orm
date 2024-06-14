@@ -40,7 +40,7 @@ data class KronosAtomicActionTask(
      */
     override fun parsed() = parseSqlStatement(sql, paramMap)
 
-    fun trySplitOut(): List<KAtomicActionTask> {
+    fun trySplitOut(): List<KronosAtomicActionTask> {
         return sql.split(";").map {
             KronosAtomicActionTask(
                 sql = it,

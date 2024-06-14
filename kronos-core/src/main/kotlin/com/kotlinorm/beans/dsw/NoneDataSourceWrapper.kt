@@ -63,4 +63,8 @@ object NoneDataSourceWrapper : KronosDataSourceWrapper {
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
         throw NoDataSourceException(noDataSourceMessage)
     }
+
+    override fun <T> transact(block: () -> T): T {
+        throw NoDataSourceException(noDataSourceMessage)
+    }
 }

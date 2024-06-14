@@ -42,7 +42,7 @@ import kotlin.reflect.full.isSuperclassOf
  * A wrapper class for JDBC data sources that implements the `KronosDataSourceWrapper` interface.
  * @author: OUSC
  **/
-class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceWrapper {
+class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
     private var _metaUrl: String
     private var _metaDbType: DBType
 
@@ -287,29 +287,27 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         return result
     }
 
-    companion object {
-        /**
-         * Perform database operations in a transaction
-         *
-         * @param T the return type
-         * @param dataSource the data source
-         * @param block the block of code to execute in the transaction
-         * @return T the result of the block
-         */
-        inline fun <reified T> transact(dataSource: DataSource, block: (DataSource) -> T): T {
-            val res: T?
-            val conn = dataSource.connection
-            conn.autoCommit = false
-            try {
-                res = block(dataSource)
-                conn.commit()
-            } catch (e: Exception) {
-                conn.rollback()
-                throw e
-            } finally {
-                conn.close()
-            }
-            return res!!
+    /**
+     * Perform database operations in a transaction
+     *
+     * @param T the return type
+     * @param dataSource the data source
+     * @param block the block of code to execute in the transaction
+     * @return T the result of the block
+     */
+    override fun <T> transact(block: () -> T): T {
+        val res: T?
+        val conn = dataSource.connection
+        conn.autoCommit = false
+        try {
+            res = block()
+            conn.commit()
+        } catch (e: Exception) {
+            conn.rollback()
+            throw e
+        } finally {
+            conn.close()
         }
+        return res!!
     }
 }

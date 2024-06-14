@@ -78,6 +78,7 @@ val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
+val ReferenceTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ReferenceType")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -121,14 +122,12 @@ fun getColumnName(
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
     val tableName = getTableName(parent)
     val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
+    val referenceTypeAnnotation = irProperty.annotations.findByFqName(ReferenceTypeAnnotationsFqName)
+    val referenceType = referenceTypeAnnotation?.getValueArgument(0)
     val reference = if (referenceAnnotation != null) {
         applyIrCall(
             kReferenceSymbol.constructors.first(),
-            irString(irProperty.backingField!!.name.asString()),
-            referenceAnnotation.getValueArgument(0),
-            referenceAnnotation.getValueArgument(1),
-            referenceAnnotation.getValueArgument(2),
-            referenceAnnotation.getValueArgument(3)
+            *referenceAnnotation.valueArguments.toTypedArray()
         )
     } else {
         irNull()
@@ -150,6 +149,7 @@ fun getColumnName(
             else -> irString((tableName as IrConst<*>).value.toString())
         },
         reference,
+        referenceType ?: irNull(),
         irBoolean(parent.constructors.first().valueParameters.any { it.name == irProperty.name })
     )
 }

@@ -37,5 +37,6 @@ annotation class Reference(
     val referenceColumns: Array<String>,
     val targetColumns: Array<String>,
     val cascade: String = CascadeAction.CASCADE,
-    val defaultValue: String = ""
+    val defaultValue: String = "",
+    val mapperBy: Array<String> = []
 )

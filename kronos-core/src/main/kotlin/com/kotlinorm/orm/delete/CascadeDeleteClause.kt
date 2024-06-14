@@ -5,6 +5,7 @@ import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.KOperationType
+import kotlin.reflect.full.createInstance
 
 /**
  * Used to build a cascade delete clause.
@@ -20,22 +21,28 @@ object CascadeDeleteClause {
      * @return The list of atomic tasks.
      */
     fun <T : KPojo> build(pojo: T, condition: Criteria?): Array<KronosAtomicActionTask> {
-        val allReferences = pojo.kronosColumns().mapNotNull { it.reference }
-        return allReferences.map { ref ->
-            val propVal = pojo.toDataMap()[ref.propName]
-            if (propVal is Iterable<*>) {
-                propVal.map {
-                    generateReferenceUpdateSql(it as KPojo, ref, condition)
-                }
+        val columns = pojo.kronosColumns().filter { !it.isColumn }
+        return columns.map { col ->
+            val propVal = pojo.toDataMap()[col.name]
+            val referenceType = col.referenceKClass
+            val references = if (col.reference != null) {
+                //自己维护的关系
+                listOf(col.reference)
             } else {
-                listOf(generateReferenceUpdateSql(propVal as KPojo, ref, condition))
+                val ref = if (propVal is Iterable<*> && referenceType != null) {
+                    referenceType.createInstance()
+                } else {
+                    propVal
+                } as KPojo
+                ref.kronosColumns().mapNotNull { it.reference }.filter { col.tableName in it.mapperBy }
             }
-        }.flatten().toTypedArray()
+            generateReferenceUpdateSql(pojo, references, condition)
+        }.toTypedArray()
     }
 
     private fun <K : KPojo> generateReferenceUpdateSql(
         pojo: K,
-        reference: KReference,
+        reference: List<KReference>,
         condition: Criteria?
     ): KronosAtomicActionTask {
         return KronosAtomicActionTask("", mapOf(), KOperationType.UPDATE)

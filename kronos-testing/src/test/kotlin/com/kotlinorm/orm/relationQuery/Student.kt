@@ -9,6 +9,6 @@ data class Student(
     var studentNo: String? = null,
     var groupClassId: Int? = null
 ) : KPojo() {
-    @Reference(column = ["group_class_id"], target = ["id"], cascade = false)
+    @Reference(["group_class_id"], ["id"])
     lateinit var groupClass: GroupClass
 }

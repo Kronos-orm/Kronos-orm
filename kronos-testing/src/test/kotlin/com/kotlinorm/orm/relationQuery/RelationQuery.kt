@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.relationQuery
 
+import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import org.junit.jupiter.api.Test
@@ -36,5 +37,17 @@ class RelationQuery {
         }
         groupClass.students = students
         println(students)
+    }
+
+    @Test
+    fun testCascadeDelete() {
+        val groupClass = GroupClass(1)
+        val students = (1..10).map {
+            Student(it, groupClassId = 1).apply {
+                this.groupClass = groupClass
+            }
+        }
+        groupClass.students = students
+        groupClass.delete().where().execute()
     }
 }

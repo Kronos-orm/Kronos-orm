@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.relationQuery
 
+import com.kotlinorm.annotations.ReferenceType
 import com.kotlinorm.beans.dsl.KPojo
 
 data class GroupClass(
@@ -7,5 +8,6 @@ data class GroupClass(
     val name: String? = null,
     val groupNo: String? = null,
 ) : KPojo() {
+    @ReferenceType<Student>(Student::class)
     lateinit var students: List<Student>
 }

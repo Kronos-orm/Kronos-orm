@@ -21,23 +21,31 @@ object CascadeDeleteClause {
      * @return The list of atomic tasks.
      */
     fun <T : KPojo> build(pojo: T, condition: Criteria?): Array<KronosAtomicActionTask> {
+        // 获取所有Kotlin 属性（非数据库对应的列）
         val columns = pojo.kronosColumns().filter { !it.isColumn }
-        return columns.map { col ->
-            val propVal = pojo.toDataMap()[col.name]
-            val referenceKClass = col.referenceKClass
-            val ref = if (propVal is Iterable<*> && referenceKClass != null) {
-                referenceKClass
+        val dataMap = pojo.toDataMap()
+        return columns.map { col -> // 对于其中的每一个属性
+            val propVal = dataMap[col.name]  //获取其值
+            val referenceKClass = col.referenceKClass //获取其引用的类
+            val ref = if (propVal is Iterable<*>) { //如果是集合
+                if (referenceKClass != null) { //如果引用的类不为空
+                    referenceKClass //返回引用的类
+                } else { // 否则抛出异常，引用类未指定：因为引用是一个集合。使用@ReferenceType指定引用类。
+                    throw IllegalArgumentException("The reference class is not specified because the reference is a collection. Use @ReferenceType to specify the reference class.")
+                }
             } else {
-                (propVal as KPojo)::class
+                (propVal as KPojo)::class //否则返回其类
             }.createInstance()
             val references = if (col.reference != null) {
-                //自己维护的关系
+                //当前属性通过@Reference维护的关联关系
                 listOf(col.reference)
             } else {
-                ref.kronosColumns().mapNotNull { it.reference }.filter { col.tableName in it.mapperBy }
+                //否则要去找到当前属性所在的表的所有@Reference维护的关联关系，判断当前属性是否在mapperBy中
+                ref.kronosColumns().mapNotNull { it.reference }
+                    .filter { "${col.tableName}.${col.columnName}" in it.mapperBy }
             }
-            generateReferenceUpdateSql(pojo, ref, references, condition)
-        }.toTypedArray()
+            generateReferenceUpdateSql(pojo, ref, references, condition) //生成删除语句
+        }.flatten().toTypedArray()
     }
 
     private fun <T : KPojo, K : KPojo> generateReferenceUpdateSql(
@@ -45,7 +53,7 @@ object CascadeDeleteClause {
         ref: K,
         reference: List<KReference>,
         condition: Criteria?
-    ): KronosAtomicActionTask {
-        return KronosAtomicActionTask("", mapOf(), KOperationType.UPDATE)
+    ): List<KronosAtomicActionTask> {
+        return listOf(KronosAtomicActionTask("", mapOf(), KOperationType.UPDATE))
     }
 }

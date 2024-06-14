@@ -5,7 +5,6 @@ import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.KOperationType
-import kotlin.reflect.full.memberProperties
 
 /**
  * Used to build a cascade delete clause.
@@ -23,7 +22,7 @@ object CascadeDeleteClause {
     fun <T : KPojo> build(pojo: T, condition: Criteria?): Array<KronosAtomicActionTask> {
         val allReferences = pojo.kronosColumns().mapNotNull { it.reference }
         return allReferences.map { ref ->
-            val propVal = pojo::class.memberProperties.find { it.name == ref.propName }!!.getter.call(pojo)
+            val propVal = pojo.toDataMap()[ref.propName]
             if (propVal is Iterable<*>) {
                 propVal.map {
                     generateReferenceUpdateSql(it as KPojo, ref, condition)

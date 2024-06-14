@@ -16,12 +16,19 @@
 
 package com.kotlinorm.annotations
 
+import com.kotlinorm.enums.CascadeAction
+
 /**
- * Column
+ * Annotation to specify the reference between two database tables.
  *
- * Annotation to specify the name of a column in a database table.
+ * This annotation is used to define a reference from one database table to another.
+ * It is applied to a property in a data class that represents a database table.
+ * The property should be of type Array<String> and should contain the names of the columns in the referencing table.
  *
- * @property name The name of the column in the database table.
+ * @property referenceColumns The names of the columns in the referencing table.
+ * @property targetColumns The names of the columns in the referenced table.
+ * @property cascade The cascade action to apply when a referenced row is deleted or updated. The default value is CASCADE.
+ * @property defaultValue The default value to use when a referenced row is deleted or updated and the cascade action is SET DEFAULT.
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
@@ -29,5 +36,6 @@ package com.kotlinorm.annotations
 annotation class Reference(
     val referenceColumns: Array<String>,
     val targetColumns: Array<String>,
-    val cascade: Boolean = false
+    val cascade: String = CascadeAction.CASCADE,
+    val defaultValue: String = ""
 )

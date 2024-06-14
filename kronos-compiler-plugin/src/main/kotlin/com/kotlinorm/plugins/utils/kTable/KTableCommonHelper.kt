@@ -127,7 +127,8 @@ fun getColumnName(
             irString(irProperty.backingField!!.name.asString()),
             referenceAnnotation.getValueArgument(0),
             referenceAnnotation.getValueArgument(1),
-            referenceAnnotation.getValueArgument(2)
+            referenceAnnotation.getValueArgument(2),
+            referenceAnnotation.getValueArgument(3)
         )
     } else {
         irNull()

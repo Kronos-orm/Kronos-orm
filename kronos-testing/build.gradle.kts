@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     testImplementation(kotlin("test"))
+    testImplementation(kotlin("reflect"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jvm-driver-wrapper"))

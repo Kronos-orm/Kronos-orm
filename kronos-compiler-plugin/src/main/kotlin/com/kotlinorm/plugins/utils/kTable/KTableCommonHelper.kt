@@ -149,7 +149,8 @@ fun getColumnName(
         reference,
         irString(referenceTypeKClassName),
         irBoolean(
-            !irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
+            !irProperty.hasAnnotation(UseSerializeResolverAnnotationsFqName) &&
+                    !irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
                     !irProperty.backingField!!.type.isKronosColumn() &&
                     irProperty.backingField!!.type.subType()?.isKronosColumn() != true
         )

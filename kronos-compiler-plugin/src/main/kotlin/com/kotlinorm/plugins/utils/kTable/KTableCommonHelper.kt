@@ -149,10 +149,18 @@ fun getColumnName(
         reference,
         irString(referenceTypeKClassName),
         irBoolean(
-            !irProperty.hasAnnotation(UseSerializeResolverAnnotationsFqName) &&
-                    !irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
-                    !irProperty.backingField!!.type.isKronosColumn() &&
-                    irProperty.backingField!!.type.subType()?.isKronosColumn() != true
+            /**
+             * for custom serialization, the property is a column if it has a `@UseSerializeResolver` annotation
+             * for properties that are not columns, we need to check if :
+             * 1. the type is a KPojo
+             * 2. has a KPojo in its super types
+             * 3. is a Collection of KPojo
+             * 4. has Annotation `@Reference`
+             */
+            irProperty.hasAnnotation(UseSerializeResolverAnnotationsFqName) ||
+                    (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
+                            !irProperty.backingField!!.type.isKronosColumn() &&
+                            irProperty.backingField!!.type.subType()?.isKronosColumn() != true)
         )
     )
 }

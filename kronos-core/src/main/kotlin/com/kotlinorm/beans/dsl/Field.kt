@@ -17,7 +17,6 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.utils.fieldDb2k
-import kotlin.reflect.KClass
 
 /**
  * Field
@@ -35,7 +34,7 @@ class Field(
     val dateFormat: String? = null,
     val tableName: String = "",
     val reference: KReference? = null,
-    val referenceKClass: KClass<KPojo>? = null,
+    val referenceKClassName: String? = null,
     val isColumn: Boolean = true
 ) {
     // Returns the name of the field as a string

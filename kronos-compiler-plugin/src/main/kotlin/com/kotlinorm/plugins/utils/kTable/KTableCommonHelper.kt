@@ -74,7 +74,7 @@ val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
-val ReferenceTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ReferenceType")
+val ReferenceByAnnotationsFqName = FqName("com.kotlinorm.annotations.ReferenceBy")
 val UseSerializeResolverAnnotationsFqName = FqName("com.kotlinorm.annotations.UseSerializeResolver")
 
 /**
@@ -119,8 +119,12 @@ fun getColumnName(
         columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
     val tableName = getTableName(parent)
     val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
-    val referenceTypeAnnotation = irProperty.annotations.findByFqName(ReferenceTypeAnnotationsFqName)
+    val referenceTypeAnnotation = irProperty.annotations.findByFqName(ReferenceByAnnotationsFqName)
     val referenceType = referenceTypeAnnotation?.getValueArgument(0)
+    var referenceTypeKClassName = irProperty.backingField!!.type.getClass()!!.classId!!.asFqNameString()
+    if (referenceTypeKClassName.startsWith("kotlin.collections")) {
+        referenceTypeKClassName = irProperty.backingField!!.type.subType()!!.getClass()!!.classId!!.asFqNameString()
+    }
     val reference = if (referenceAnnotation != null) {
         applyIrCall(
             kReferenceSymbol.constructors.first(),
@@ -129,27 +133,6 @@ fun getColumnName(
     } else {
         irNull()
     }
-    println(
-        """
-            -------------------------
-            irProperty: ${irProperty.name}
-            !irProperty.hasAnnotation(ReferenceAnnotationsFqName): ${
-            !irProperty.hasAnnotation(
-                ReferenceAnnotationsFqName
-            )
-        }
-            !irProperty.hasAnnotation(ReferenceTypeAnnotationsFqName): ${
-            !irProperty.hasAnnotation(
-                ReferenceTypeAnnotationsFqName
-            )
-        }
-            !irProperty.backingField!!.type.isKronosColumn(): ${!irProperty.backingField!!.type.isKronosColumn()}
-            irProperty.backingField!!.type.subType()?.isKronosColumn() != true: ${
-            irProperty.backingField!!.type.subType()?.isKronosColumn() != true
-        }
-            -------------------------
-        """.trimIndent()
-    )
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
@@ -168,9 +151,10 @@ fun getColumnName(
         },
         reference,
         referenceType ?: irNull(),
+        irString(referenceTypeKClassName),
         irBoolean(
             !irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
-                    !irProperty.hasAnnotation(ReferenceTypeAnnotationsFqName) &&
+                    !irProperty.hasAnnotation(ReferenceByAnnotationsFqName) &&
                     !irProperty.backingField!!.type.isKronosColumn() &&
                     irProperty.backingField!!.type.subType()?.isKronosColumn() != true
         )

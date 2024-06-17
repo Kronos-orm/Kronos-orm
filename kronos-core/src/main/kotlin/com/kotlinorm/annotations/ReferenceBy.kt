@@ -16,9 +16,6 @@
 
 package com.kotlinorm.annotations
 
-import com.kotlinorm.beans.dsl.KPojo
-import kotlin.reflect.KClass
-
 /**
  * Annotation to specify the type of referenced entity in a database table.
  *
@@ -31,6 +28,4 @@ import kotlin.reflect.KClass
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ReferenceType(
-    val className: KClass<out KPojo>
-)
+annotation class ReferenceBy

@@ -252,12 +252,7 @@ object SQLite {
         /**
          * This constant represents the B-tree index method.
          */
-        const val BTREE = "BTREE"
-
-        /**
-         * This constant represents the hash index method.
-         */
-        const val HASH = "HASH"
+        const val UNIQUE = "UNIQUE"
     }
 
     /**
@@ -269,21 +264,16 @@ object SQLite {
         /**
          * This constant represents the normal index type.
          */
-        const val NORMAL = "NORMAL"
+        const val BINARY = "BINARY"
 
         /**
          * This constant represents the unique index type.
          */
-        const val UNIQUE = "UNIQUE"
+        const val NOCASE = "NOCASE"
 
         /**
-         * This constant represents the B-tree index type.
+         * This constant represents the unique index type.
          */
-        const val BTREE = "BTREE"
-
-        /**
-         * This constant represents the hash index type.
-         */
-        const val HASH = "HASH"
+        const val RTRIM = "RTRIM"
     }
 }

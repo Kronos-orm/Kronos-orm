@@ -3,8 +3,8 @@ package com.kotlinorm.beans.dsl
 data class KTableIndex(
     val name: String,
     val columns: Array<String>,
-    val type: String,
-    val method: String
+    val type: String = "",
+    val method: String = ""
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

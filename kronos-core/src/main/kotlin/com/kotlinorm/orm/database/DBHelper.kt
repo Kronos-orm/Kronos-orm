@@ -76,6 +76,11 @@ object DBHelper {
                 else -> throw RuntimeException("Unsupported database type for Int.")
             }
 
+            "INTEGER" -> when (dbType) {
+                DBType.SQLite -> "INTEGER"
+                else -> throw RuntimeException("Unsupported database type for INTEGER.")
+            }
+
             "BIGINT" -> when (dbType) {
                 DBType.Mysql -> "BIGINT"
                 DBType.Oracle -> "NUMBER(19)"

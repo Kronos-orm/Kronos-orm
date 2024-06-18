@@ -7,5 +7,5 @@ class KReference(
     val targetColumns: Array<String> = arrayOf(),
     val cascade: String = CASCADE,
     val defaultValue: String = "",
-    val mapperBy: Array<String> = arrayOf()
+    val mapperBy: String = ""
 )

@@ -5,14 +5,18 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.CascadeAction.NO_ACTION
 import com.kotlinorm.enums.CascadeAction.RESTRICT
 import com.kotlinorm.enums.CascadeAction.SET_DEFAULT
 import com.kotlinorm.enums.CascadeAction.SET_NULL
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.query
+import com.kotlinorm.utils.queryOne
 import com.kotlinorm.utils.setCommonStrategy
 import kotlin.reflect.full.createInstance
 
@@ -36,13 +40,13 @@ object CascadeDeleteClause {
             val ref = Class.forName(
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo
-            val references = if (col.reference != null) {
+            val references = if (col.reference != null && (col.reference.mapperBy.isBlank() || col.tableName == col.reference.mapperBy)) {
                 //当前属性通过@Reference维护的关联关系
                 listOf(col.reference)
             } else {
                 //否则要去找到当前属性所在的表的所有@Reference维护的关联关系，判断当前属性是否在mapperBy中
                 ref.kronosColumns().mapNotNull { it.reference }
-                    .filter { "${col.tableName}.${col.columnName}" in it.mapperBy || it.mapperBy.isEmpty() }
+                    .filter { col.tableName == it.mapperBy || it.mapperBy.isBlank() }
             }
             generateReferenceUpdateSql(pojo, ref, references, condition) //生成删除语句
         }.flatten().toTypedArray()
@@ -89,7 +93,6 @@ object CascadeDeleteClause {
             val refDbName = "`${ref.kronosTableName()}`"
 
             when(item.cascade) {
-                RESTRICT -> throw IllegalStateException("cascade = RESTRICT is not supported") //TODO
                 SET_NULL -> {
                     kOpType = KOperationType.UPDATE
                     item.targetColumns.forEach {
@@ -113,6 +116,37 @@ object CascadeDeleteClause {
                 pojoDbName + "." + "`${item.targetColumns[i]}`" + " = " + refDbName + "." + "`${item.referenceColumns[i]}`"
             }.joinToString(" AND ")
 
+            fun withOtherReferenced(): Boolean {
+
+                val columns = ref.kronosColumns().filter { !it.isColumn }
+                return columns.filter { it.referenceKClassName != pojo::class.qualifiedName }.any {col ->
+
+                    //关联的其他类
+                    val mapperBy = Class.forName(
+                        col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
+                    ).kotlin.createInstance() as KPojo
+
+                    val refInfo = mapperBy.kronosColumns()
+                        .find { it.referenceKClassName == ref::class.qualifiedName }?.reference ?: throw RuntimeException()
+
+                    //判断维护关系是不是在对方
+                    if (col.reference == null || col.reference.mapperBy == mapperBy.kronosTableName() || refInfo.mapperBy == mapperBy.kronosTableName()) {
+
+                        //拼接sql语句，查找关联的记录数
+                        var sql = ""
+
+                        val cnt = KronosAtomicQueryTask(sql , mapOf() , KOperationType.SELECT).queryOne<Int>()
+                        return cnt > 0
+                    }
+
+                    false
+                }
+            }
+
+            if (item.cascade == RESTRICT && withOtherReferenced()) {
+                throw UnsupportedOperationException("The target is referenced by other records!")
+            }
+
             val sql = listOfNotNull(
                 when(kOpType) {
                     KOperationType.DELETE -> "DELETE $refDbName FROM"
@@ -127,7 +161,7 @@ object CascadeDeleteClause {
                 whereClauseSql
             ).joinToString(" ")
 
-            KronosAtomicActionTask(sql , paramMap , kOpType)
+            KronosAtomicActionTask(sql , paramMap , KOperationType.DELETE)
         }
     }
 }

@@ -74,7 +74,7 @@ val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
-val UseSerializeResolverAnnotationsFqName = FqName("com.kotlinorm.annotations.UseSerializeResolver")
+val ColumnDeserializeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnDeserialize")
 
 /**
  * Returns the column name of the given IrExpression.
@@ -150,14 +150,14 @@ fun getColumnName(
         irString(referenceTypeKClassName),
         irBoolean(
             /**
-             * for custom serialization, the property is a column if it has a `@UseSerializeResolver` annotation
+             * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
              * for properties that are not columns, we need to check if :
              * 1. the type is a KPojo
              * 2. has a KPojo in its super types
              * 3. is a Collection of KPojo
              * 4. has Annotation `@Reference`
              */
-            irProperty.hasAnnotation(UseSerializeResolverAnnotationsFqName) ||
+            irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
                     (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
                             !irProperty.backingField!!.type.isKronosColumn() &&
                             irProperty.backingField!!.type.subType()?.isKronosColumn() != true)

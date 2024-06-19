@@ -53,7 +53,7 @@ object LineHumpNamingStrategy : KronosNamingStrategy {
     }
 }
 
-class NoneNamingStrategy : KronosNamingStrategy {
+object NoneNamingStrategy : KronosNamingStrategy {
     override fun k2db(name: String): String = name
     override fun db2k(name: String): String = name
 }

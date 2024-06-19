@@ -4,7 +4,7 @@ import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
-import com.kotlinorm.plugins.utils.kTable.UseSerializeResolverAnnotationsFqName
+import com.kotlinorm.plugins.utils.kTable.ColumnDeserializeAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -143,7 +143,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                         ),
                         irGet(map),
                         irString(it.name.asString()),
-                        irBoolean(it.hasAnnotation(UseSerializeResolverAnnotationsFqName))
+                        irBoolean(it.hasAnnotation(ColumnDeserializeAnnotationsFqName))
                     )
                 ),
                 listOf(),

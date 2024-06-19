@@ -1,5 +1,7 @@
 package com.kotlinorm.orm.relationQuery
 
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.relationQuery.oneToMany.GroupClass
 import com.kotlinorm.orm.relationQuery.oneToMany.Student
@@ -9,6 +11,11 @@ import org.junit.jupiter.api.Test
 import kotlin.reflect.full.memberProperties
 
 class RelationQuery {
+    init {
+        Kronos.tableNamingStrategy = LineHumpNamingStrategy
+        Kronos.fieldNamingStrategy = LineHumpNamingStrategy
+    }
+
     @Test
     fun a() {
         val student = Student().select().where { it.id == 1 && it.groupClass!!.groupNo.isNull }.queryOne()
@@ -51,7 +58,8 @@ class RelationQuery {
             }
         }
         groupClass.students = students
-        groupClass.delete().where().execute()
+        val task = groupClass.delete().where().build()
+        println(task.component3().size)
     }
 
     @Test

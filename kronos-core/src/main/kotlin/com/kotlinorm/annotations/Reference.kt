@@ -16,7 +16,9 @@
 
 package com.kotlinorm.annotations
 
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeAction
+import kotlin.reflect.KClass
 
 /**
  * Annotation to specify the reference between two database tables.
@@ -36,7 +38,7 @@ import com.kotlinorm.enums.CascadeAction
 annotation class Reference(
     val referenceColumns: Array<String>,
     val targetColumns: Array<String>,
-    val cascade: String = CascadeAction.CASCADE,
+    val onDelete: String = CascadeAction.NO_ACTION,
     val defaultValue: String = "",
-    val mapperBy: Array<String> = []
+    val mapperBy: KClass<out KPojo> = KPojo::class
 )

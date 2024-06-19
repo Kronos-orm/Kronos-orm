@@ -1,9 +1,9 @@
 package com.kotlinorm
 
+import com.kotlinorm.annotations.ColumnDeserialize
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.Reference
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.annotations.UseSerializeResolver
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.join.join
@@ -12,7 +12,7 @@ import java.util.*
 @Table(name = "tb_user")
 data class User(
     var id: Int? = null,
-    @UseSerializeResolver
+    @ColumnDeserialize
     var username: String? = null,
     var gender: Int? = null,
     @CreateTime

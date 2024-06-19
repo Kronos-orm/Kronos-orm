@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.utils.fieldDb2k
+import kotlin.reflect.full.createInstance
 
 /**
  * Field
@@ -45,7 +46,8 @@ class Field(
     fun quoted(showTable: Boolean = false): String =
         "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
 
-    fun equation(showTable: Boolean = false): String = ("`$tableName`.".takeIf { showTable } ?: "") + "`$columnName` = :$name"
+    fun equation(showTable: Boolean = false): String =
+        ("`$tableName`.".takeIf { showTable } ?: "") + "`$columnName` = :$name"
 
     /**
      * Check if this object is equal to another object.
@@ -84,4 +86,9 @@ class Field(
         columnName,
         name + other
     )
+
+    fun cascadeMapperBy(table: String = tableName): Boolean {
+        return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
+            .kronosTableName() == table)
+    }
 }

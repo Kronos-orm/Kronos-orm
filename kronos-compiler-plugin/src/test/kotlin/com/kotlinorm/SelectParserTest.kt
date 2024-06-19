@@ -37,7 +37,7 @@ class SelectParserTest {
             import com.kotlinorm.annotations.CreateTime
             import com.kotlinorm.orm.select.select
             import java.util.Date
-            import com.kotlinorm.annotations.UseSerializeResolver
+            import com.kotlinorm.annotations.ColumnDeserialize
             import com.kotlinorm.utils.Extensions.safeMapperTo
             import com.kotlinorm.annotations.LogicDelete
             import com.kotlinorm.annotations.UpdateTime
@@ -45,7 +45,7 @@ class SelectParserTest {
             @Table(name = "tb_user")
             data class User(
                 var id: Int? = null,
-                @UseSerializeResolver
+                @ColumnDeserialize
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime

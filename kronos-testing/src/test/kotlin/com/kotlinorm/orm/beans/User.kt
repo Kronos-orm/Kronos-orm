@@ -15,5 +15,6 @@ data class User(
     @UpdateTime
     var updateTime: Date? = null,
     @LogicDelete
-    var deleted: Boolean? = null
+    var deleted: Boolean? = null,
+    var relation: UserRelation? = null
 ) : KPojo()

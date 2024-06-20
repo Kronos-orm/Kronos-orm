@@ -190,21 +190,17 @@ object CascadeDeleteClause {
             }
 
             SET_DEFAULT -> {
-                val randomKey = {
-                    var key = "defaultVal${(0..10).random()}"
-                    while (paramMap.containsKey(key)) {
-                        key = "defaultVal${(0..10).random()}"
-                    }
-                    key
+                var key = "defaultVal${(0..10).random()}"
+                while (paramMap.containsKey(key)) {
+                    key = "defaultVal${(0..10).random()}"
                 }
+                val randomKey = key
                 KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
-                    toUpdateFields.joinToString(", ") {
-                        reference.referenceColumns.joinToString(", ") {
-                            "`${pojo.kronosTableName()}`.`$it` = :defaultVal$randomKey"
-                        }
+                    reference.referenceColumns.joinToString(", ") {
+                        "`${pojo.kronosTableName()}`.`$it` = :$randomKey"
                     }
                 } WHERE $newWhereClauseSql", paramMap.apply {
-                    put(randomKey(), reference.defaultValue)
+                    put(randomKey, reference.defaultValue)
                 })
             }
 

@@ -76,7 +76,7 @@ object CascadeDeleteClause {
                 ).joinToString(" ")
                 val randomTempTableId = generateRandomCode()
                 val newWhereClauseSql =
-                    "$refColumnSql IN ( SELECT $targetColumnSql from ($selectClause) as KRONOS_TEMP_TABLE_$randomTempTableId)"
+                    "$refColumnSql IN ( SELECT ${targetColumns.joinToString { "`$it`" }} from ($selectClause) as KRONOS_TEMP_TABLE_$randomTempTableId)"
                 val validReferences = findValidRefs(refPojo.kronosColumns().filter { !it.isColumn })
                 val nextStepTask =
                     generateReferenceDeleteSql(

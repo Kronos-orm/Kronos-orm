@@ -8,5 +8,5 @@ class KReference(
     val targetColumns: Array<String> = arrayOf(),
     val onDelete: String = NO_ACTION,
     val defaultValue: Array<String> = arrayOf(),
-    val mapperBy: KClass<out KPojo>
+    val mapperBy: KClass<out KPojo> = KPojo::class
 )

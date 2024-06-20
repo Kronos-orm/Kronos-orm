@@ -148,9 +148,11 @@ object CascadeDeleteClause {
         paramMap: MutableMap<String, Any?>,
         prevTask: KronosAtomicActionTask
     ): List<KronosAtomicActionTask>? {
+
         val toUpdateFields = mutableListOf<Field>()
         var condition = whereClauseSql?.asSql()
         val logicDeleteStrategy = pojo.kronosLogicDelete()
+        var params = paramMap
 
         if (logicDeleteStrategy.enabled) {
             setCommonStrategy(logicDeleteStrategy) { field, value ->
@@ -183,11 +185,11 @@ object CascadeDeleteClause {
                                     true
                                 )
                             }
-                        } WHERE $newWhereClauseSql", paramMap, KOperationType.DELETE)
+                        } WHERE $newWhereClauseSql", params, KOperationType.DELETE)
                     } else {
                         KronosAtomicActionTask(
                             "DELETE FROM `${pojo.kronosTableName()}` WHERE $newWhereClauseSql",
-                            paramMap,
+                            params,
                             KOperationType.DELETE
                         )
                     },
@@ -209,7 +211,7 @@ object CascadeDeleteClause {
                         reference.referenceColumns.joinToString(", ") {
                             "`${pojo.kronosTableName()}`.`$it` = null"
                         }
-                    } WHERE $newWhereClauseSql", paramMap, KOperationType.DELETE),
+                    } WHERE $newWhereClauseSql", params, KOperationType.DELETE),
                     prevTask
                 )
             }
@@ -218,8 +220,8 @@ object CascadeDeleteClause {
                 listOf(
                     KronosAtomicActionTask(
                         "UPDATE `${pojo.kronosTableName()}` SET ${
-                            getDefaultUpdates(pojo.kronosTableName(), reference, paramMap)
-                        } WHERE $newWhereClauseSql", paramMap
+                            getDefaultUpdates(pojo.kronosTableName(), reference, params)
+                        } WHERE $newWhereClauseSql", params
                     ),
                     prevTask
                 )

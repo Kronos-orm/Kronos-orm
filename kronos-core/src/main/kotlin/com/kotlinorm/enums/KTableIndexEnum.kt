@@ -145,15 +145,7 @@ object SqlServer {
      * It contains two constants, CLUSTERED and NONCLUSTERED, which represent the clustered and non-clustered index methods respectively.
      */
     object KIndexMethod {
-        /**
-         * This constant represents the clustered index method.
-         */
-        const val CLUSTERED = "CLUSTERED"
-
-        /**
-         * This constant represents the non-clustered index method.
-         */
-        const val NONCLUSTERED = "NONCLUSTERED"
+        const val UNIQUE = "UNIQUE"
     }
 
     /**
@@ -163,24 +155,24 @@ object SqlServer {
      */
     object KIndexType {
         /**
-         * This constant represents the normal index type.
-         */
-        const val NORMAL = "NORMAL"
-
-        /**
-         * This constant represents the unique index type.
-         */
-        const val UNIQUE = "UNIQUE"
-
-        /**
-         * This constant represents the clustered index type.
+         * This constant represents the clustered index method.
          */
         const val CLUSTERED = "CLUSTERED"
 
         /**
-         * This constant represents the non-clustered index type.
+         * This constant represents the non-clustered index method.
          */
         const val NONCLUSTERED = "NONCLUSTERED"
+
+        /**
+         * This constant represents the XML index method.
+         */
+        const val XML = "XML"
+
+        /**
+         * This constant represents the spatial index method.
+         */
+        const val SPATIAL = "SPATIAL"
     }
 }
 
@@ -201,28 +193,10 @@ object Postgres {
      * It contains five constants, BTREE, HASH, GIST, SPGIST, and GIN, which represent the B-tree, hash, GiST, SP-GiST, and GIN index methods respectively.
      */
     object KIndexMethod {
-        /**
-         * This constant represents the B-tree index method.
-         */
-        const val BTREE = "BTREE"
-
-        /**
-         * This constant represents the hash index method.
-         */
-        const val HASH = "HASH"
-
-        /**
-         * This constant represents the GiST index method.
-         */
-        const val GIST = "GIST"
-        const val SPGIST = "SPGIST"
-        const val GIN = "GIN"
-        const val BRIN = "BRIN"
+        const val UNIQUE = "UNIQUE"
     }
 
     object KIndexType {
-        const val NORMAL = "NORMAL"
-        const val UNIQUE = "UNIQUE"
         const val BTREE = "BTREE"
         const val HASH = "HASH"
         const val GIST = "GIST"

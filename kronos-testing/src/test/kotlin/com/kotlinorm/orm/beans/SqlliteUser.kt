@@ -17,8 +17,8 @@ data class SqlliteUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     var username: String? = null,
-    @Column("gender")
-    @ColumnType(INT)
+    @Column("gender1")
+    @ColumnType(INT, length = 1)
     @Default("0")
     var gender: Int? = null,
 //    @ColumnType(INT)

@@ -54,7 +54,7 @@ object DBHelper {
                 DBType.Oracle -> "NUMBER(3)"
                 DBType.Mssql -> "TINYINT"
                 DBType.Postgres -> "SMALLINT"
-                DBType.SQLite -> "INTEGER"
+                DBType.SQLite -> "INT2"
                 else -> throw RuntimeException("Unsupported database type for Byte.")
             }
 
@@ -63,7 +63,7 @@ object DBHelper {
                 DBType.Oracle -> "NUMBER(5)"
                 DBType.Mssql -> "SMALLINT"
                 DBType.Postgres -> "SMALLINT"
-                DBType.SQLite -> "INTEGER"
+                DBType.SQLite -> "INT2"
                 else -> throw RuntimeException("Unsupported database type for Short.")
             }
 
@@ -71,7 +71,7 @@ object DBHelper {
                 DBType.Mysql -> "INT"
                 DBType.Oracle -> "NUMBER(10)"
                 DBType.Mssql -> "INT"
-                DBType.Postgres -> "INTEGER"
+                DBType.Postgres -> "INT4"
                 DBType.SQLite -> "INTEGER"
                 else -> throw RuntimeException("Unsupported database type for Int.")
             }
@@ -386,12 +386,24 @@ object DBHelper {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException()
             }
+
+            "XML" -> when (dbType) {
+                DBType.Mysql -> "XML"
+                DBType.Oracle -> "XML"
+                DBType.Mssql -> "XML"
+                DBType.Postgres -> "XML"
+                DBType.SQLite -> "TEXT"
+                else -> throw RuntimeException()
+            }
             // 这里可以继续添加其他类型的处理逻辑
             else -> throw RuntimeException("Unsupported type: $type")
         }.let {
             when {
-                primaryKey -> it + " NOT NULL" + " PRIMARY KEY"
+                dbType == DBType.Postgres && primaryKey ->{
+                     " SERIAL PRIMARY KEY "
+                }
                 !nullable -> it + " NOT NULL"
+                primaryKey -> it + " NOT NULL" + " PRIMARY KEY"
                 else -> it
             }
         }

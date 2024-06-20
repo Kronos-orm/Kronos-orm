@@ -43,6 +43,6 @@ enum class DBType {
          * @param name the name of the enum constant to find
          * @return the enum constant that matches the given [name], or null if no such constant exists
          */
-        fun fromName(name: String) = entries.firstOrNull { it.name.uppercase() == name.uppercase() }
+        fun fromName(name: String) = Mssql.takeIf { name == "Microsoft SQL Server" } ?:Postgres.takeIf { name == "PostgreSQL" } ?: entries.firstOrNull { it.name.uppercase() == name.uppercase() }
     }
 }

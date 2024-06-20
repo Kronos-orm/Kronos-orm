@@ -91,8 +91,8 @@ object CascadeDeleteClause {
 
                 val validReferences = findValidRefs(refPojo.kronosColumns().filter { !it.isColumn })
                 val nextStepTask = generateReferenceDeleteSql(
-                    refPojo, newWhereClauseSql, ref, logic, paramMap, rootTask , layerCnt + 1
-                )
+                    refPojo, newWhereClauseSql, ref, logic, paramMap, rootTask
+                ).toMutableList()
 
                 if (stackOfTask.none { it.sql == nextStepTask.first().sql }) { // 若出现循环引用，不再递归
                     if (nextStepTask.size > 1) { // 如果级联删除的sql只有一个任务，说明为RESTRICT，不需要再次递归
@@ -111,6 +111,7 @@ object CascadeDeleteClause {
                             }.flatten().toTypedArray()
                         )
                     }
+                    if (nextStepTask.isNotEmpty() && layerCnt > 0) nextStepTask.removeLast()
                     tasks.addAll(nextStepTask)
                 }
                 stackOfTask.addAll(tasks)
@@ -201,7 +202,6 @@ object CascadeDeleteClause {
         logic: Boolean,
         paramMap: MutableMap<String, Any?>,
         prevTask: KronosAtomicActionTask,
-        layerCnt: Int = 0
     ): List<KronosAtomicActionTask> {
         val toUpdateFields = mutableListOf<Field>()
         var condition = whereClauseSql?.asSql()
@@ -229,9 +229,9 @@ object CascadeDeleteClause {
             setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateInsertFields)
         }
 
-        val tasks = when (reference.onDelete) {
+        return when (reference.onDelete) {
             CASCADE -> {
-                mutableListOf(if (logic) {
+                listOf(if (logic) {
                     KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
                         toUpdateFields.joinToString {
                             it.equation(
@@ -245,40 +245,34 @@ object CascadeDeleteClause {
                         params,
                         KOperationType.DELETE
                     )
-                })
+                }, prevTask)
             }
 
             RESTRICT -> {
-                mutableListOf(prevTask.apply {
+                listOf(prevTask.apply {
                     sql += " AND (SELECT count(1) FROM `${pojo.kronosTableName()}` WHERE $newWhereClauseSql LIMIT 1) = 0"
                 })
             }
 
             SET_NULL -> {
-                mutableListOf(KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
+                listOf(KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
                     reference.referenceColumns.joinToString(", ") {
                         "`${pojo.kronosTableName()}`.`$it` = null"
                     }
-                } WHERE $newWhereClauseSql", params, KOperationType.DELETE))
+                } WHERE $newWhereClauseSql", params, KOperationType.DELETE), prevTask)
             }
 
             SET_DEFAULT -> {
-                mutableListOf(
+                listOf(
                     KronosAtomicActionTask(
                         "UPDATE `${pojo.kronosTableName()}` SET ${
                             getDefaultUpdates(pojo.kronosTableName(), reference, params)
                         } WHERE $newWhereClauseSql", params
-                    )
+                    ), prevTask
                 )
             }
 
-            else -> mutableListOf()
-        }
-
-        return tasks.apply {
-            if (layerCnt <= 1) {
-                tasks.add(prevTask)
-            }
+            else -> listOf(prevTask)
         }
     }
 

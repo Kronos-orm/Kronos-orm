@@ -20,6 +20,27 @@ import kotlin.reflect.full.createInstance
  * 用于构建级联删除子句。
  */
 object CascadeDeleteClause {
+    /**
+     * Generates a list of KronosAtomicActionTask for the given original KPojo, whereClauseSql, logic, and paramMap.
+     *
+     * This function iterates over each reference in the references list and generates a SQL select clause for each reference.
+     * It then creates a new where clause by checking if the target columns in the referenced table are in the select clause.
+     * It finds the valid references for the referenced KPojo and generates tasks for each valid reference.
+     * It also generates a delete SQL for the referenced KPojo and adds it to the tasks list.
+     * Finally, it returns the list of tasks.
+     *
+     * 此函数遍历引用列表中的每个引用，并为每个引用生成一个 SQL select 子句。
+     * 然后，它通过检查引用表中的目标列是否在 select 子句中来创建一个新的 where 子句。
+     * 它找到引用的 KPojo 的有效引用，并为每个有效引用生成任务。
+     * 它还为引用的 KPojo 生成一个删除 SQL，并将其添加到任务列表中。
+     * 最后，它返回任务列表。
+     *
+     * @param original KPojo the original KPojo for which to generate the tasks.
+     * @param whereClauseSql String? the SQL where clause to use in the select clause. If it is null, the where clause is not included in the select clause.
+     * @param logic Boolean the logic to use when generating the tasks. If it is true, a logic delete is performed. If it is false, a physical delete is performed.
+     * @param paramMap Map<String, Any?> the map of parameters to use in the SQL statements.
+     * @return List<KronosAtomicActionTask> returns a list of KronosAtomicActionTask generated for the original KPojo.
+     */
     data class ValidRef(
         val references: List<KReference>, val refPojo: KPojo
     ) {
@@ -34,14 +55,14 @@ object CascadeDeleteClause {
                 val refTableName = refPojo.kronosTableName()
                 val selectClause = listOfNotNull(
                     "SELECT",
-                    refColumns.joinToString(", ") { "`$tableName`.`${it}`" },
+                    targetColumns.joinToString(", ") { "`$tableName`.`${it}`" },
                     "FROM",
                     "`$tableName`",
                     "WHERE".takeIf { whereClauseSql != null },
                     whereClauseSql
                 ).joinToString(" ")
                 val newWhereClauseSql =
-                    "${targetColumns.joinToString(", ") { "`$refTableName`.`${it}`" }} IN ($selectClause LIMIT 1)"
+                    "${refColumns.joinToString(", ") { "`$refTableName`.`${it}`" }} IN ($selectClause LIMIT 1)"
                 //TODO: LIMIT 1 is not supported in all databases, need to be fixed
                 val validReferences = findValidRefs(refPojo.kronosColumns().filter { !it.isColumn })
                 tasks.addAll(validReferences.map { it.generateTask(refPojo, newWhereClauseSql, logic, paramMap) }

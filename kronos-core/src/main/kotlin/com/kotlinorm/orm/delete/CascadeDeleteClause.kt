@@ -77,6 +77,8 @@ object CascadeDeleteClause {
         }
     }
 
+    var counter = 0
+
     /**
      * Build a cascade delete clause.
      * 构建级联删除子句。
@@ -190,9 +192,9 @@ object CascadeDeleteClause {
             }
 
             SET_DEFAULT -> {
-                var key = "defaultVal${(0..10).random()}"
+                var key = "defaultVal${counter++}"
                 while (paramMap.containsKey(key)) {
-                    key = "defaultVal${(0..10).random()}"
+                    key = "defaultVal${counter++}"
                 }
                 val randomKey = key
                 KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${

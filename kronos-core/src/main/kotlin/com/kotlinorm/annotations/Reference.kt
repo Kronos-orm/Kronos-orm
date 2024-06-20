@@ -17,7 +17,7 @@
 package com.kotlinorm.annotations
 
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.enums.CascadeAction
+import com.kotlinorm.enums.CascadeAction.Companion.NO_ACTION
 import kotlin.reflect.KClass
 
 /**
@@ -29,8 +29,10 @@ import kotlin.reflect.KClass
  *
  * @property referenceColumns The names of the columns in the referencing table.
  * @property targetColumns The names of the columns in the referenced table.
- * @property cascade The cascade action to apply when a referenced row is deleted or updated. The default value is CASCADE.
+ * @property onDelete The cascade action to apply when a referenced row is deleted or updated. The default value is CASCADE.
  * @property defaultValue The default value to use when a referenced row is deleted or updated and the cascade action is SET DEFAULT.
+ * @property mapperBy The class that maps the referenced table.
+ * @property usage The usage of the reference: insert, update, delete, select.
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
@@ -38,7 +40,8 @@ import kotlin.reflect.KClass
 annotation class Reference(
     val referenceColumns: Array<String>,
     val targetColumns: Array<String>,
-    val onDelete: String = CascadeAction.NO_ACTION,
+    val onDelete: String = NO_ACTION,
     val defaultValue: Array<String> = [],
-    val mapperBy: KClass<out KPojo> = KPojo::class
+    val mapperBy: KClass<out KPojo> = KPojo::class,
+    val usage: Array<String> = ["insert", "update", "delete", "select"]
 )

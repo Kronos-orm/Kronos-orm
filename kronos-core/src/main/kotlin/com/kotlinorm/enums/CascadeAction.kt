@@ -5,11 +5,11 @@ package com.kotlinorm.enums
  */
 @Suppress("UNUSED_PARAMETER")
 enum class CascadeAction(name: String) {
-    CASCADE(Companion.CASCADE),
-    RESTRICT(Companion.RESTRICT),
-    SET_NULL(Companion.SET_NULL),
-    NO_ACTION(Companion.NO_ACTION),
-    SET_DEFAULT(Companion.SET_DEFAULT);
+    Cascade(Companion.CASCADE),
+    Restrict(Companion.RESTRICT),
+    SetNull(Companion.SET_NULL),
+    NoAction(Companion.NO_ACTION),
+    SetDefault(Companion.SET_DEFAULT);
 
     object Companion {
         /**
@@ -44,11 +44,11 @@ enum class CascadeAction(name: String) {
 
         fun from(name: String): CascadeAction {
             return when (name) {
-                CASCADE -> CascadeAction.CASCADE
-                RESTRICT -> CascadeAction.RESTRICT
-                SET_NULL -> CascadeAction.SET_NULL
-                NO_ACTION -> CascadeAction.NO_ACTION
-                SET_DEFAULT -> CascadeAction.SET_DEFAULT
+                CASCADE -> Cascade
+                RESTRICT -> Restrict
+                SET_NULL -> SetNull
+                NO_ACTION -> NoAction
+                SET_DEFAULT -> SetDefault
                 else -> throw IllegalArgumentException("Invalid cascade action: $name")
             }
         }

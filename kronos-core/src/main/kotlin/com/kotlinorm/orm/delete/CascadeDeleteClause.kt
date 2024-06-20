@@ -269,7 +269,7 @@ object CascadeDeleteClause {
                 )
             }
 
-            else -> null
+            else -> listOf(prevTask)
         }
     }
 

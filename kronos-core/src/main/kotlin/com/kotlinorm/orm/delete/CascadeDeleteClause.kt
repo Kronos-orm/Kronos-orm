@@ -77,8 +77,6 @@ object CascadeDeleteClause {
         }
     }
 
-    var counter = 0
-
     /**
      * Build a cascade delete clause.
      * 构建级联删除子句。
@@ -192,21 +190,32 @@ object CascadeDeleteClause {
             }
 
             SET_DEFAULT -> {
-                var key = "defaultVal${counter++}"
-                while (paramMap.containsKey(key)) {
-                    key = "defaultVal${counter++}"
-                }
-                val randomKey = key
-                KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
-                    reference.referenceColumns.joinToString(", ") {
-                        "`${pojo.kronosTableName()}`.`$it` = :$randomKey"
-                    }
-                } WHERE $newWhereClauseSql", paramMap.apply {
-                    put(randomKey, reference.defaultValue)
-                })
+                KronosAtomicActionTask(
+                    "UPDATE `${pojo.kronosTableName()}` SET ${
+                        getDefaultUpdates(pojo.kronosTableName() , reference , paramMap)
+                    } WHERE $newWhereClauseSql", paramMap
+                )
             }
 
             else -> null
         }
     }
+
+    private fun getDefaultUpdates(tableName: String , reference: KReference , paramMap: MutableMap<String, Any?>): String {
+        var counter = 0
+        var key = "defaultVal${counter++}"
+        var randomKey = ""
+        val defaults = reference.referenceColumns.mapIndexed { i, _ ->
+            while (paramMap.containsKey(key)) {
+                key = "defaultVal${counter++}"
+            }
+            randomKey = key
+            paramMap[randomKey] = reference.defaultValue[i]
+            reference.referenceColumns[i] to key
+        }
+        return defaults.joinToString(", ") {
+            "`${tableName}`.`${it.first}` = :${it.second}"
+        }
+    }
+
 }

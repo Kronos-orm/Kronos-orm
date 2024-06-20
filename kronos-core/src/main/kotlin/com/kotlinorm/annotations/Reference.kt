@@ -39,6 +39,6 @@ annotation class Reference(
     val referenceColumns: Array<String>,
     val targetColumns: Array<String>,
     val onDelete: String = CascadeAction.NO_ACTION,
-    val defaultValue: String = "",
+    val defaultValue: Array<String> = [],
     val mapperBy: KClass<out KPojo> = KPojo::class
 )

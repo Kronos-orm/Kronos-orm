@@ -30,11 +30,7 @@ object ConditionSqlBuilder {
         val paramMap: MutableMap<String, Any?>
     ) {
         fun toWhereClause(): Pair<String?, MutableMap<String, Any?>> {
-            return if (sql != null) {
-                "WHERE $sql"
-            } else {
-                null
-            } to paramMap
+            return toWhereSql(sql) to paramMap
         }
 
         fun toOnClause(): Pair<String?, MutableMap<String, Any?>> {
@@ -50,6 +46,14 @@ object ConditionSqlBuilder {
         var initialized: Boolean = false,
         var metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
     )
+
+    fun toWhereSql(sql: String?): String? {
+        return if (sql != null) {
+            "WHERE $sql"
+        } else {
+            null
+        }
+    }
 
     /**
      * 根据给定的条件类型构建对应的SQL查询条件。这里处理的是逻辑操作符（AND, OR）的情况。
@@ -111,13 +115,15 @@ object ConditionSqlBuilder {
         val sql = when (condition.type) {
             Root -> {
                 listOf(
-                    buildConditionSqlWithParams(condition.children.firstOrNull(), paramMap , showTable = showTable).sql
+                    buildConditionSqlWithParams(condition.children.firstOrNull(), paramMap, showTable = showTable).sql
                 )
             }
 
             Equal -> {
-                if (condition.value is Field)  listOfNotNull(
-                    condition.field.quoted(showTable), "!=".takeIf { condition.not } ?: "=", (condition.value as Field).quoted(showTable))
+                if (condition.value is Field) listOfNotNull(
+                    condition.field.quoted(showTable),
+                    "!=".takeIf { condition.not } ?: "=",
+                    (condition.value as Field).quoted(showTable))
                 else {
                     val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                     paramMap[safeKey] = condition.value
@@ -132,7 +138,7 @@ object ConditionSqlBuilder {
             SQL -> listOf(condition.value.toString())
 
             Like -> {
-                val safeKey = getSafeKey(condition.field.name , keyCounters , paramMap , condition)
+                val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                 paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
                     condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
@@ -140,7 +146,7 @@ object ConditionSqlBuilder {
             }
 
             In -> {
-                val safeKey = getSafeKey(condition.field.name + "List" , keyCounters , paramMap , condition)
+                val safeKey = getSafeKey(condition.field.name + "List", keyCounters, paramMap, condition)
                 paramMap[safeKey] = condition.value
                 listOfNotNull(
                     condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "IN", "(:${safeKey})"
@@ -149,8 +155,11 @@ object ConditionSqlBuilder {
 
             GT, GE, LT, LE -> {
                 val sign = mapOf(GT to ">", GE to ">=", LT to "<", LE to "<=")
-                if (condition.value is Field)  listOfNotNull(
-                    condition.field.quoted(showTable), sign[condition.type], (condition.value as Field).quoted(showTable))
+                if (condition.value is Field) listOfNotNull(
+                    condition.field.quoted(showTable),
+                    sign[condition.type],
+                    (condition.value as Field).quoted(showTable)
+                )
                 else {
                     val suffix = "Min".takeIf { condition.type in listOf(GT, GE) } ?: "Max"
                     val safeKey = getSafeKey(condition.field.name + suffix, keyCounters, paramMap, condition)
@@ -162,8 +171,8 @@ object ConditionSqlBuilder {
             }
 
             BETWEEN -> {
-                val safeKeyMin = getSafeKey(condition.field.name + "Min" , keyCounters , paramMap , condition)
-                val safeKeyMax = getSafeKey(condition.field.name + "Max" , keyCounters , paramMap , condition)
+                val safeKeyMin = getSafeKey(condition.field.name + "Min", keyCounters, paramMap, condition)
+                val safeKeyMax = getSafeKey(condition.field.name + "Max", keyCounters, paramMap, condition)
                 val rangeValue = condition.value as ClosedRange<*>
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive

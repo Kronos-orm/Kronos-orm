@@ -89,7 +89,8 @@ object CascadeDeleteClause {
                 val newWhereClauseSql = // 生成新的 where 子句
                     "$refColumnSql IN ( SELECT ${ref.targetColumns.joinToString { "`$it`" }} from ($subSelectClause) as KRONOS_TEMP_TABLE_${tempTableIndex.counter})"
 
-                val validReferences = findValidRefs(refPojo.kronosColumns().filter { !it.isColumn })
+                val validReferences =
+                    findValidRefs(refPojo.kronosColumns().filter { !it.isColumn && it.refUseFor("delete") })
                 val nextStepTask = generateReferenceDeleteSql(
                     refPojo, newWhereClauseSql, ref, logic, paramMap, rootTask
                 ).toMutableList()
@@ -139,7 +140,7 @@ object CascadeDeleteClause {
         deleteTask: KronosAtomicActionTask
     ): List<KronosAtomicActionTask>? {
         val counter = Counter()
-        val validReferences = findValidRefs(pojo.kronosColumns().filter { !it.isColumn })
+        val validReferences = findValidRefs(pojo.kronosColumns().filter { !it.isColumn && it.refUseFor("delete") })
         if (validReferences.isEmpty()) {
             return null
         }
@@ -166,10 +167,10 @@ object CascadeDeleteClause {
      */
     private fun findValidRefs(columns: List<Field>): List<ValidRef> {
         return columns.map { col ->
+
             val ref = Class.forName(
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo
-
             ValidRef(if (col.cascadeMapperBy()) {
                 listOf(col.reference!!)
             } else {

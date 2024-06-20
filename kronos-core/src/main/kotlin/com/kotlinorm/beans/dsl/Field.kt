@@ -91,4 +91,8 @@ class Field(
         return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
             .kronosTableName() == table)
     }
+
+    fun refUseFor(usage: String): Boolean {
+        return reference != null && reference.usage.contains(usage)
+    }
 }

@@ -45,7 +45,7 @@ object CascadeDeleteClause {
         val references: List<KReference>, val refPojo: KPojo
     ) {
         fun generateTask(
-            original: KPojo, whereClauseSql: String?, logic: Boolean, paramMap: Map<String, Any?>
+            original: KPojo, whereClauseSql: String?, logic: Boolean, paramMap: MutableMap<String, Any?>
         ): List<KronosAtomicActionTask> {
             val tasks = mutableListOf<KronosAtomicActionTask>()
             references.forEach { ref ->
@@ -89,7 +89,7 @@ object CascadeDeleteClause {
         pojo: T,
         whereClauseSql: String?,
         logic: Boolean,
-        paramMap: Map<String, Any?>,
+        paramMap: MutableMap<String, Any?>,
         deleteTask: KronosAtomicActionTask
     ): Array<KronosAtomicActionTask> {
         val validReferences = findValidRefs(pojo.kronosColumns().filter { !it.isColumn })
@@ -115,7 +115,7 @@ object CascadeDeleteClause {
     }
 
     private fun <K : KPojo> generateReferenceDeleteSql(
-        pojo: K, whereClauseSql: String?, reference: KReference, logic: Boolean, paramMap: Map<String, Any?>
+        pojo: K, whereClauseSql: String?, reference: KReference, logic: Boolean, paramMap: MutableMap<String, Any?>
     ): KronosAtomicActionTask? {
         val toUpdateFields = mutableListOf<Field>()
         var condition = whereClauseSql?.asSql()
@@ -183,26 +183,29 @@ object CascadeDeleteClause {
 
             SET_NULL -> {
                 KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
-                    toUpdateFields.joinToString(", ") {
-                        "${
-                            it.quoted(
-                                true
-                            )
-                        } = null"
+                    reference.referenceColumns.joinToString(", ") {
+                        "`${pojo.kronosTableName()}`.`$it` = null"
                     }
                 } WHERE $newWhereClauseSql", paramMap, KOperationType.DELETE)
             }
 
             SET_DEFAULT -> {
+                val randomKey = {
+                    var key = "defaultVal${(0..10).random()}"
+                    while (paramMap.containsKey(key)) {
+                        key = "defaultVal${(0..10).random()}"
+                    }
+                    key
+                }
                 KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${
                     toUpdateFields.joinToString(", ") {
-                        "${
-                            it.quoted(
-                                true
-                            )
-                        } = ${reference.defaultValue}"
+                        reference.referenceColumns.joinToString(", ") {
+                            "`${pojo.kronosTableName()}`.`$it` = :defaultVal$randomKey"
+                        }
                     }
-                } WHERE $newWhereClauseSql", paramMap)
+                } WHERE $newWhereClauseSql", paramMap.apply {
+                    put(randomKey(), reference.defaultValue)
+                })
             }
 
             else -> null

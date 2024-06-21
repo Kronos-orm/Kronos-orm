@@ -4,10 +4,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.enums.CascadeAction.Companion.CASCADE
-import com.kotlinorm.enums.CascadeAction.Companion.RESTRICT
-import com.kotlinorm.enums.CascadeAction.Companion.SET_DEFAULT
-import com.kotlinorm.enums.CascadeAction.Companion.SET_NULL
+import com.kotlinorm.enums.CascadeDeleteAction.*
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.ConditionSqlBuilder.toWhereSql

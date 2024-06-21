@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.fieldDb2k
 import kotlin.reflect.full.createInstance
 
@@ -92,7 +93,7 @@ class Field(
             .kronosTableName() == table)
     }
 
-    fun refUseFor(usage: String): Boolean {
+    fun refUseFor(usage: KOperationType): Boolean {
         return reference != null && reference.usage.contains(usage)
     }
 }

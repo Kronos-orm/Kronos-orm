@@ -24,6 +24,7 @@ import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.Oracle
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -78,19 +79,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 ps.setObject(index + 1, any)
             }
             rs = ps.executeQuery()
-            val metaData = rs.metaData
-            val columnCount = metaData.columnCount
-            val list = mutableListOf<Map<String, Any>>()
-            while (rs.next()) {
-                val map = mutableMapOf<String, Any>()
-                for (i in 1..columnCount) {
-                    if (rs.getObject(i) != null) {
-                        map[metaData.getColumnLabel(i)] = rs.getObject(i)
-                    }
-                }
-                list.add(map)
-            }
-            return list
+            return rs.toList()
         } catch (e: SQLException) {
             defaultLogger(this).error(
                 kMsgOf(
@@ -121,45 +110,13 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             val conn = dataSource.connection
             var ps: PreparedStatement? = null
             var rs: ResultSet? = null
-            val list = mutableListOf<Any>()
             try {
                 ps = conn.prepareStatement(sql)
                 paramList.forEachIndexed { index, any ->
                     ps.setObject(index + 1, any)
                 }
                 rs = ps.executeQuery()
-                if (dbType == DBType.Oracle) {
-                    // fix for Oracle: ORA 17027 Stream has already been closed
-                    val indexOfLong = mutableListOf<Int>()
-                    val metaData = rs.metaData
-                    for (i in 1..metaData.columnCount) {
-                        val columnTypeName = metaData.getColumnTypeName(i)
-                        if (columnTypeName.uppercase() == "LONG") {
-                            indexOfLong.add(i)
-                        }
-                    }
-                    val map = mutableMapOf<String, Any>()
-                    while (rs.next()) {
-                        for (i in 1..metaData.columnCount) {
-                            if (indexOfLong.contains(i)) {
-                                map[metaData.getColumnLabel(i)] = rs.getBinaryStream(i)
-                            }
-                        }
-                    }
-                    rs.beforeFirst()
-                    while (rs.next()) {
-                        for (i in 1..metaData.columnCount) {
-                            if (!indexOfLong.contains(i)) {
-                                map[metaData.getColumnLabel(i)] = rs.getObject(i)
-                            }
-                        }
-                    }
-                    list.add(map)
-                } else {
-                    while (rs.next()) {
-                        list.add(rs.getObject(1, kClass.java))
-                    }
-                }
+                return rs.toList(kClass.java)
             } catch (e: SQLException) {
                 defaultLogger(this).error(
                     kMsgOf(
@@ -172,7 +129,6 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 ps?.close()
                 conn.close()
             }
-            return list
         }
     }
 
@@ -194,19 +150,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 ps.setObject(index + 1, any)
             }
             rs = ps.executeQuery()
-            val list = mutableListOf<Map<String, Any>>()
-            val metaData = rs.metaData
-            val columnCount = metaData.columnCount
-            while (rs.next()) {
-                val map = mutableMapOf<String, Any>()
-                for (i in 1..columnCount) {
-                    rs.getObject(i)?.let {
-                        map[metaData.getColumnLabel(i)] = it
-                    }
-                }
-                list.add(map)
-            }
-            return list.firstOrNull()
+            return rs.toList().firstOrNull()
         } catch (e: SQLException) {
             defaultLogger(this).error(
                 kMsgOf(
@@ -340,5 +284,55 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             }
             return res!!
         }
+    }
+
+    private fun ResultSet.toList(javaClass: Class<*>? = null): List<Map<String, Any>> {
+        val md = metaData
+        val columnCount = md.columnCount
+        val list = mutableListOf<MutableMap<String, Any>>()
+        if (dbType == Oracle.type) {
+            // fix for Oracle: ORA 17027 Stream has already been closed
+            val indexOfLong = mutableListOf<Int>()
+            for (i in 1..md.columnCount) {
+                val columnTypeName = md.getColumnTypeName(i)
+                if (columnTypeName.uppercase() == "LONG") {
+                    indexOfLong.add(i)
+                }
+            }
+            val mapOfLong = mutableMapOf<String, Any>()
+            while (next()) {
+                for (i in 1..md.columnCount) {
+                    if (indexOfLong.contains(i)) {
+                        mapOfLong[md.getColumnLabel(i)] = getBinaryStream(i)
+                    }
+                }
+                list.add(mapOfLong)
+            }
+            beforeFirst()
+            val mapOfOther = mutableMapOf<String, Any>()
+            var idx = 0
+            while (next()) {
+                for (i in 1..md.columnCount) {
+                    if (!indexOfLong.contains(i)) {
+                        if (javaClass != null) {
+                            mapOfOther[md.getColumnLabel(i)] = getObject(i, javaClass)
+                        } else {
+                            mapOfOther[md.getColumnLabel(i)] = getObject(i)
+
+                        }
+                    }
+                }
+                list[idx++] += mapOfOther
+            }
+        } else {
+            while (next()) {
+                val map = mutableMapOf<String, Any>()
+                for (i in 1..columnCount) {
+                    map[md.getColumnLabel(i)] = getObject(i)
+                }
+                list.add(map)
+            }
+        }
+        return list
     }
 }

@@ -74,7 +74,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         var ps: PreparedStatement? = null
         var rs: ResultSet? = null
         try {
-            ps = conn.prepareStatement(sql)
+            ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
             paramList.forEachIndexed { index, any ->
                 ps.setObject(index + 1, any)
             }
@@ -111,7 +111,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             var ps: PreparedStatement? = null
             var rs: ResultSet? = null
             try {
-                ps = conn.prepareStatement(sql)
+                ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
                 paramList.forEachIndexed { index, any ->
                     ps.setObject(index + 1, any)
                 }
@@ -145,7 +145,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         var ps: PreparedStatement? = null
         var rs: ResultSet? = null
         try {
-            ps = conn.prepareStatement(sql)
+            ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
             paramList.forEachIndexed { index, any ->
                 ps.setObject(index + 1, any)
             }

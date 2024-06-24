@@ -128,8 +128,37 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                     ps.setObject(index + 1, any)
                 }
                 rs = ps.executeQuery()
-                while (rs.next()) {
-                    list.add(rs.getObject(1, kClass.java))
+                if (dbType == DBType.Oracle) {
+                    // fix for Oracle: ORA 17027 Stream has already been closed
+                    val indexOfLong = mutableListOf<Int>()
+                    val metaData = rs.metaData
+                    for (i in 1..metaData.columnCount) {
+                        val columnTypeName = metaData.getColumnTypeName(i)
+                        if (columnTypeName.uppercase() == "LONG") {
+                            indexOfLong.add(i)
+                        }
+                    }
+                    val map = mutableMapOf<String, Any>()
+                    while (rs.next()) {
+                        for (i in 1..metaData.columnCount) {
+                            if (indexOfLong.contains(i)) {
+                                map[metaData.getColumnLabel(i)] = rs.getBinaryStream(i)
+                            }
+                        }
+                    }
+                    rs.beforeFirst()
+                    while (rs.next()) {
+                        for (i in 1..metaData.columnCount) {
+                            if (!indexOfLong.contains(i)) {
+                                map[metaData.getColumnLabel(i)] = rs.getObject(i)
+                            }
+                        }
+                    }
+                    list.add(map)
+                } else {
+                    while (rs.next()) {
+                        list.add(rs.getObject(1, kClass.java))
+                    }
                 }
             } catch (e: SQLException) {
                 defaultLogger(this).error(

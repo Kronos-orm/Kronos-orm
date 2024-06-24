@@ -299,29 +299,37 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                     indexOfLong.add(i)
                 }
             }
-            val mapOfLong = mutableMapOf<String, Any>()
             while (next()) {
+                val mapOfLong = mutableMapOf<String, Any>()
                 for (i in 1..md.columnCount) {
                     if (indexOfLong.contains(i)) {
                         if (javaClass != null) {
-                            mapOfLong[md.getColumnLabel(i)] = getObject(i, javaClass)
+                            getObject(i, javaClass).let {
+                                mapOfLong[md.getColumnLabel(i)] = it
+                            }
                         } else {
-                            mapOfLong[md.getColumnLabel(i)] = getObject(i)
+                            getObject(i).let {
+                                mapOfLong[md.getColumnLabel(i)] = it
+                            }
                         }
                     }
                 }
                 list.add(mapOfLong)
             }
             beforeFirst()
-            val mapOfOther = mutableMapOf<String, Any>()
             var idx = 0
             while (next()) {
+                val mapOfOther = mutableMapOf<String, Any>()
                 for (i in 1..md.columnCount) {
                     if (!indexOfLong.contains(i)) {
                         if (javaClass != null) {
-                            mapOfOther[md.getColumnLabel(i)] = getObject(i, javaClass)
+                            getObject(i, javaClass).let {
+                                mapOfOther[md.getColumnLabel(i)] = it
+                            }
                         } else {
-                            mapOfOther[md.getColumnLabel(i)] = getObject(i)
+                            getObject(i).let {
+                                mapOfOther[md.getColumnLabel(i)] = it
+                            }
                         }
                     }
                 }

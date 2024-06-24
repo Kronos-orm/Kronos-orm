@@ -303,7 +303,11 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             while (next()) {
                 for (i in 1..md.columnCount) {
                     if (indexOfLong.contains(i)) {
-                        mapOfLong[md.getColumnLabel(i)] = getBinaryStream(i)
+                        if (javaClass != null) {
+                            mapOfLong[md.getColumnLabel(i)] = getObject(i, javaClass)
+                        } else {
+                            mapOfLong[md.getColumnLabel(i)] = getObject(i)
+                        }
                     }
                 }
                 list.add(mapOfLong)
@@ -318,7 +322,6 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                             mapOfOther[md.getColumnLabel(i)] = getObject(i, javaClass)
                         } else {
                             mapOfOther[md.getColumnLabel(i)] = getObject(i)
-
                         }
                     }
                 }

@@ -335,7 +335,9 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             while (next()) {
                 val map = mutableMapOf<String, Any>()
                 for (i in 1..columnCount) {
-                    map[meta.getColumnLabel(i)] = getObject(i)
+                    getObject(i)?.let {
+                        map[meta.getColumnLabel(i)] = it
+                    }
                 }
                 list.add(map)
             }

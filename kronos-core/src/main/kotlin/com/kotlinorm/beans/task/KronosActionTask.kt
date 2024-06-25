@@ -29,11 +29,18 @@ class KronosActionTask {
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault()
         val groupedTasks = atomicTasks.groupBy { it.sql }.map {
-            KronosAtomicBatchTask(
-                it.key,
-                it.value.map { task -> task.paramMap }.toTypedArray(),
-                it.value.first().operationType
-            )
+            if (it.value.size > 1) {
+                KronosAtomicBatchTask(
+                    it.key,
+                    it.value.map { task -> task.paramMap }.toTypedArray(),
+                    it.value.first().operationType
+                )
+            } else {
+                KronosAtomicActionTask(
+                    it.key, it.value.first().paramMap,
+                    it.value.first().operationType
+                )
+            }
         }
         val results = dataSource.transact {
             groupedTasks.map {
@@ -57,9 +64,9 @@ class KronosActionTask {
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
         fun List<KronosAtomicActionTask>.toKronosActionTask(): KronosActionTask {
-            val task = KronosActionTask()
-            task.atomicTasks.addAll(map { it.trySplitOut() }.flatten())
-            return task
+            return KronosActionTask().apply {
+                atomicTasks.addAll(map { it.trySplitOut() }.flatten())
+            }
         }
 
         /**
@@ -73,9 +80,9 @@ class KronosActionTask {
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
         fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
-            val task = KronosActionTask()
-            task.atomicTasks.addAll(trySplitOut())
-            return task
+            return KronosActionTask().apply {
+                atomicTasks.addAll(trySplitOut())
+            }
         }
 
         /**
@@ -89,9 +96,9 @@ class KronosActionTask {
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from each KronosActionTask in the list.
          */
         fun List<KronosActionTask>.merge(): KronosActionTask {
-            val task = KronosActionTask()
-            task.atomicTasks.addAll(this.flatMap { it.atomicTasks })
-            return task
+            return KronosActionTask().apply {
+                atomicTasks.addAll(flatMap { it.atomicTasks })
+            }
         }
     }
 

@@ -206,7 +206,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param someFields the fields to set the condition for
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> List<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
+        fun <T : KPojo> Iterable<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
             return map { it.by(someFields) }
         }
 
@@ -216,7 +216,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param updateCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> List<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
+        fun <T : KPojo> Iterable<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
             return map { it.where(updateCondition) }
         }
 
@@ -226,17 +226,57 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo> List<DeleteClause<T>>.build(): KronosActionTask {
+        fun <T : KPojo> Iterable<DeleteClause<T>>.build(): KronosActionTask {
             return map { it.build() }.merge()
         }
 
         /**
-         * Executes a list of UpdateClause objects and returns the result of the execution.
+         * Executes an array of UpdateClause objects and returns the result of the execution.
          *
          * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
          * @return The KronosOperationResult of the execution.
          */
-        fun <T : KPojo> List<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+        fun <T : KPojo> Iterable<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+            return build().execute(wrapper)
+        }
+
+        /**
+         * Applies the `by` operation to each update clause in the array based on the provided fields.
+         *
+         * @param someFields the fields to set the condition for
+         * @return a list of UpdateClause objects with the updated condition
+         */
+        fun <T : KPojo> Array<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
+            return map { it.by(someFields) }
+        }
+
+        /**
+         * Applies the `where` operation to each update clause in the array based on the provided update condition.
+         *
+         * @param updateCondition the condition for the update clause. Defaults to null.
+         * @return a list of UpdateClause objects with the updated condition
+         */
+        fun <T : KPojo> Array<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
+            return map { it.where(updateCondition) }
+        }
+
+        /**
+         * Builds a KronosAtomicBatchTask from an array of UpdateClause objects.
+         *
+         * @param T The type of KPojo objects in the list.
+         * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
+         */
+        fun <T : KPojo> Array<DeleteClause<T>>.build(): KronosActionTask {
+            return map { it.build() }.merge()
+        }
+
+        /**
+         * Executes an array of UpdateClause objects and returns the result of the execution.
+         *
+         * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
+         * @return The KronosOperationResult of the execution.
+         */
+        fun <T : KPojo> Array<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
             return build().execute(wrapper)
         }
     }

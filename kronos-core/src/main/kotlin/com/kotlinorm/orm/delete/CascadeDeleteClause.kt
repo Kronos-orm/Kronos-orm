@@ -87,7 +87,7 @@ object CascadeDeleteClause {
                     "$refColumnSql IN ( SELECT ${ref.targetColumns.joinToString { "`$it`" }} from ($subSelectClause) as KRONOS_TEMP_TABLE_${tempTableIndex.counter})"
 
                 val validReferences =
-                    findValidRefs(refPojo.kronosColumns().filter { !it.isColumn && it.refUseFor("delete") })
+                    findValidRefs(refPojo.kronosColumns().filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) })
                 val nextStepTask = generateReferenceDeleteSql(
                     refPojo, newWhereClauseSql, ref, logic, paramMap, rootTask
                 ).toMutableList()
@@ -137,7 +137,7 @@ object CascadeDeleteClause {
         deleteTask: KronosAtomicActionTask
     ): List<KronosAtomicActionTask>? {
         val counter = Counter()
-        val validReferences = findValidRefs(pojo.kronosColumns().filter { !it.isColumn && it.refUseFor("delete") })
+        val validReferences = findValidRefs(pojo.kronosColumns().filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) })
         if (validReferences.isEmpty()) {
             return null
         }

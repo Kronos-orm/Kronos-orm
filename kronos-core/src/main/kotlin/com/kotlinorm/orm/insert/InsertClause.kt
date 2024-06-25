@@ -38,14 +38,14 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private val toInsertFields = linkedSetOf<Field>()
 
     private val updateInsertFields = { field: Field, value: Any? ->
-        if (value != null) {
+        if (field.isColumn && value != null) {
             toInsertFields += field
             paramMap[field.name] = value
         }
     }
 
     fun build(): KronosActionTask {
-        toInsertFields.addAll(allFields.filter { it.name in paramMap.keys })
+        toInsertFields.addAll(allFields.filter { it.isColumn && it.name in paramMap.keys })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
@@ -58,7 +58,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return listOf(
             KronosAtomicActionTask(
                 sql,
-                paramMap,
+                paramMap.filter { it.key in  toInsertFields.map { item -> item.name } },
                 operationType = KOperationType.INSERT
             ),
             *CascadeInsertClause.build(pojo)

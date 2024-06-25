@@ -43,7 +43,6 @@ annotation class Reference(
     val referenceColumns: Array<String>,
     val targetColumns: Array<String>,
     val onDelete: CascadeDeleteAction = CascadeDeleteAction.NO_ACTION,
-    val onInsert: CascadeInsertAction = CascadeInsertAction.NO_ACTION,
     val defaultValue: Array<String> = [],
     val mapperBy: KClass<out KPojo> = KPojo::class,
     val usage: Array<KOperationType> = [KOperationType.INSERT, KOperationType.UPDATE, KOperationType.DELETE, KOperationType.SELECT, KOperationType.UPSERT]

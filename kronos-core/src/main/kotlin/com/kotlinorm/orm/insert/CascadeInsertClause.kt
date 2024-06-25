@@ -9,7 +9,7 @@ import kotlin.reflect.full.createInstance
 
 object CascadeInsertClause {
     fun <T : KPojo> build(pojo: T): Array<KronosAtomicActionTask> {
-        return generateTask(pojo.toDataMap(), pojo.kronosColumns()).toTypedArray()
+        return generateTask(pojo.toDataMap(), pojo.kronosColumns().filter { !it.isColumn }).toTypedArray()
     }
 
     /**
@@ -39,6 +39,11 @@ object CascadeInsertClause {
             val ref = Class.forName(
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo
+
+            val cascadeMB = col.cascadeMapperBy()
+            val refCascadeMB = ref.kronosColumns().any { it.cascadeMapperBy(col.tableName) }
+            val refUseForInsert = ref.kronosColumns().any { it.refUseFor(KOperationType.INSERT) }
+
             if ((col.cascadeMapperBy() || ref.kronosColumns()
                     .any { it.cascadeMapperBy(col.tableName) }) && col.refUseFor(
                     KOperationType.INSERT

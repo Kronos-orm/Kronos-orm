@@ -40,14 +40,8 @@ object CascadeInsertClause {
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo
 
-            val cascadeMB = col.cascadeMapperBy()
-            val refCascadeMB = ref.kronosColumns().any { it.cascadeMapperBy(col.tableName) }
-            val refUseForInsert = ref.kronosColumns().any { it.refUseFor(KOperationType.INSERT) }
-
-            if ((col.cascadeMapperBy() || ref.kronosColumns()
-                    .any { it.cascadeMapperBy(col.tableName) }) && col.refUseFor(
-                    KOperationType.INSERT
-                )
+            if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.INSERT)) || ref.kronosColumns()
+                    .any { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.INSERT) }
             ) {
                 listOfData.insert().build().component3()
             } else {

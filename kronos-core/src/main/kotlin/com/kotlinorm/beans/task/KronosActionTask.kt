@@ -28,6 +28,10 @@ class KronosActionTask {
     private val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf()
     private var afterExecute: KronosOperationResult.() -> Any = {}
 
+    fun setBeforeExecute(beforeExecute: () -> Any?) {
+        this.beforeExecute = beforeExecute
+    }
+
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault()
         beforeExecute()

@@ -9,7 +9,6 @@ import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import org.junit.jupiter.api.Test
-import kotlin.reflect.full.memberProperties
 import kotlin.test.assertEquals
 
 class RelationQuery {
@@ -166,13 +165,5 @@ class RelationQuery {
         school.groupClass = groupClasses
         val tasks = school.delete().where().build()
         println(tasks.component3().size)
-    }
-
-    @Test
-    fun testCascadeUpdate() {
-        val groupClass = GroupClass(1)
-        val ans = groupClass::class.memberProperties.find { it.name == "students" }!!.annotations.first()
-        val value = ans.annotationClass.members.first().call(ans)
-        print(value.toString())
     }
 }

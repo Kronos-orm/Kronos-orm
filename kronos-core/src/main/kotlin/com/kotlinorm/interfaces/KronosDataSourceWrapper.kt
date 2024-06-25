@@ -41,6 +41,8 @@ interface KronosDataSourceWrapper {
      */
     val url: String
 
+    val userName: String
+
     /**
      * The type of database being used.
      *

@@ -45,10 +45,14 @@ import kotlin.reflect.full.isSuperclassOf
  **/
 class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceWrapper {
     private var _metaUrl: String
+    private var _userName: String
     private var _metaDbType: DBType
 
     override val url: String
         get() = _metaUrl
+
+    override val userName: String
+        get() = _userName
 
     override val dbType: DBType
         get() = _metaDbType
@@ -57,6 +61,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         val conn = dataSource.connection
         _metaUrl = conn.metaData.url
         _metaDbType = DBType.fromName(conn.metaData.databaseProductName)
+        _userName = conn.metaData.userName
             ?: throw UnsupportedTypeException("Unsupported database type [${conn.metaData.databaseProductName}].")
         conn.close()
     }
@@ -299,26 +304,37 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                     indexOfLong.add(i)
                 }
             }
-            val mapOfLong = mutableMapOf<String, Any>()
             while (next()) {
+                val mapOfLong = mutableMapOf<String, Any>()
                 for (i in 1..md.columnCount) {
                     if (indexOfLong.contains(i)) {
-                        mapOfLong[md.getColumnLabel(i)] = getBinaryStream(i)
+                        if (javaClass != null) {
+                            getObject(i, javaClass)?.let {
+                                mapOfLong[md.getColumnLabel(i)] = it
+                            }
+                        } else {
+                            getObject(i)?.let {
+                                mapOfLong[md.getColumnLabel(i)] = it
+                            }
+                        }
                     }
                 }
                 list.add(mapOfLong)
             }
             beforeFirst()
-            val mapOfOther = mutableMapOf<String, Any>()
             var idx = 0
             while (next()) {
+                val mapOfOther = mutableMapOf<String, Any>()
                 for (i in 1..md.columnCount) {
                     if (!indexOfLong.contains(i)) {
                         if (javaClass != null) {
-                            mapOfOther[md.getColumnLabel(i)] = getObject(i, javaClass)
+                            getObject(i, javaClass)?.let {
+                                mapOfOther[md.getColumnLabel(i)] = it
+                            }
                         } else {
-                            mapOfOther[md.getColumnLabel(i)] = getObject(i)
-
+                            getObject(i)?.let {
+                                mapOfOther[md.getColumnLabel(i)] = it
+                            }
                         }
                     }
                 }

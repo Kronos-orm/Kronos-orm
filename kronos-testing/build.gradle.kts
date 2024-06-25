@@ -19,6 +19,8 @@ dependencies {
     testImplementation("com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview")
     // postgresql
     testImplementation("org.postgresql:postgresql:42.7.3")
+    // oracle
+    testImplementation("com.oracle.database.jdbc:ojdbc8:23.2.0.0")
     testImplementation("com.google.code.gson:gson:2.11.0")
 }
 

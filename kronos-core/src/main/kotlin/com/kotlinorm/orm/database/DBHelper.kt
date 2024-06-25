@@ -25,7 +25,7 @@ object DBHelper {
         return when (wrapper.dbType) {
             DBType.Mysql -> wrapper.url.split("?").first().split("//")[1].split("/").last()
             DBType.SQLite -> wrapper.url.split("//").last()
-            DBType.Oracle -> wrapper.url.split("@").last()
+            DBType.Oracle -> wrapper.userName
             DBType.Mssql -> wrapper.url.split("//").last().split(";").first()
             DBType.Postgres -> wrapper.url.split("//").last().split("/").first()
             else -> throw UnsupportedDatabaseTypeException()
@@ -51,7 +51,7 @@ object DBHelper {
 
             "TINYINT" -> when (dbType) {
                 DBType.Mysql -> "TINYINT"
-                DBType.Oracle -> "NUMBER(3)"
+                DBType.Oracle -> "NUMBER"
                 DBType.Mssql -> "TINYINT"
                 DBType.Postgres -> "SMALLINT"
                 DBType.SQLite -> "INT2"
@@ -69,7 +69,7 @@ object DBHelper {
 
             "INT" -> when (dbType) {
                 DBType.Mysql -> "INT"
-                DBType.Oracle -> "NUMBER(10)"
+                DBType.Oracle -> "NUMBER"
                 DBType.Mssql -> "INT"
                 DBType.Postgres -> "INT4"
                 DBType.SQLite -> "INTEGER"
@@ -395,6 +395,20 @@ object DBHelper {
                 DBType.SQLite -> "TEXT"
                 else -> throw RuntimeException()
             }
+
+            "NUMBER" -> when (dbType) {
+                DBType.Mysql -> "NUMBER"
+                DBType.Oracle -> "NUMBER"
+                DBType.Mssql -> "NUMBER"
+                DBType.Postgres -> "NUMBER"
+                DBType.SQLite -> "NUMBER"
+                else -> throw RuntimeException("Unsupported database type for NUMBER.")
+            }
+
+            "VARCHAR2" -> when (dbType) {
+                DBType.Oracle -> "VARCHAR(${length})"
+                else -> throw RuntimeException("Unsupported database type for VARCHAR2.")
+            }
             // 这里可以继续添加其他类型的处理逻辑
             else -> throw RuntimeException("Unsupported type: $type")
         }.let {
@@ -402,8 +416,8 @@ object DBHelper {
                 dbType == DBType.Postgres && primaryKey ->{
                      " SERIAL PRIMARY KEY "
                 }
-                !nullable -> it + " NOT NULL"
-                primaryKey -> it + " NOT NULL" + " PRIMARY KEY"
+                primaryKey -> "$it NOT NULL PRIMARY KEY"
+                !nullable -> "$it NOT NULL"
                 else -> it
             }
         }

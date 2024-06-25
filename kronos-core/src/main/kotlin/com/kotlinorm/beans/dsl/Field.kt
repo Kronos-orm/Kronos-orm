@@ -27,7 +27,7 @@ import com.kotlinorm.utils.fieldDb2k
  * @property name the name of the field in Kotlin
  */
 class Field(
-    val columnName: String,
+    var columnName: String,
     var name: String = fieldDb2k(columnName),
     val type: String = "",
     var primaryKey: Boolean = false,

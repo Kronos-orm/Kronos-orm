@@ -7,6 +7,7 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.beans.*
 import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
+import com.kotlinorm.orm.database.DBHelper.getDBNameFromUrl
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import org.apache.commons.dbcp.BasicDataSource
@@ -53,16 +54,27 @@ class TableOperation {
 //    }
 //    val user = SsqlUser()
 
-    // 初始化Postgres数据库连接池
+//    // 初始化Postgres数据库连接池
+//    private val ds = BasicDataSource().apply {
+//        driverClassName = "org.postgresql.Driver" // Postgres驱动类名
+//        url = "jdbc:postgresql://localhost:5432/postgres" // Postgres数据库URL
+//        username = "postgres" // Postgres用户名
+//        password = "root" // Postgres密码
+//        maxIdle = 10 // 最大空闲连接数
+//        maxActive = 10 // 最大活动连接数
+//    }
+//    val user = PgUser()
+
+    // 初始化oracle数据库连接池
     private val ds = BasicDataSource().apply {
-        driverClassName = "org.postgresql.Driver" // Postgres驱动类名
-        url = "jdbc:postgresql://localhost:5432/postgres" // Postgres数据库URL
-        username = "postgres" // Postgres用户名
-        password = "root" // Postgres密码
+        driverClassName = "oracle.jdbc.OracleDriver" // Oracle驱动类名
+        url = "jdbc:oracle:thin:@localhost:1521:orcl" // Oracle数据库URL
+        username = "YF" // Oracle用户名
+        password = "root" // Oracle密码
         maxIdle = 10 // 最大空闲连接数
         maxActive = 10 // 最大活动连接数
     }
-    val user = PgUser()
+    val user = OracleUser()
 
 
     init {
@@ -88,7 +100,7 @@ class TableOperation {
 //        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
-        assertEquals(true, exists)
+        assertEquals(false, exists)
 //        // 创建表
 //        dataSource.table.createTable(user)
 //        // 判断表是否存在
@@ -120,10 +132,50 @@ class TableOperation {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.Mysql,actualColumn.type,column.length,true,false), convertToSqlColumnType(DBType.Mysql,column.type,column.length,true,false) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(DBType.Mysql, actualColumn.type, column.length, true, false),
+                convertToSqlColumnType(DBType.Mysql, column.type, column.length, true, false),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
     }
+
+    /**
+     * 测试oracle动态创建表功能。
+     * 此方法应完成一个测试用例，动态创建一个表，并使用assertEquals断言结果正确性。
+     */
+    @Test
+    fun testCreateTable_oracle() {
+        println(getDBNameFromUrl(dataSource()))
+        // 不管有没有先删
+        dataSource.table.dropTable(user)
+        // 创建表
+        dataSource.table.createTable(user)
+        // 判断表是否存在
+        val exists = dataSource.table.exists(user)
+        assertEquals(exists, true)
+
+        val actualColumns = dataSource.table.getTableColumns("tb_user")
+
+        // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
+        val expectedColumns = user.kronosColumns()
+        println("actualColumns_columnName" + actualColumns.map { it.columnName })
+        println("aexpectedColumns_columnName" + expectedColumns.map { it.columnName })
+
+        // 确保所有期望的列都存在于实际的列列表中，且类型一致
+        expectedColumns.forEach { column ->
+            val actualColumn = actualColumns.find { it.columnName == column.columnName }
+            assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
+            assertEquals(
+                convertToSqlColumnType(DBType.Oracle, actualColumn.type, column.length, true, false),
+                convertToSqlColumnType(DBType.Oracle, column.type, column.length, true, false),
+                "列 '$column' 的类型应一致"
+            )
+            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
+        }
+    }
+
 
     /**
      * 测试sqlite动态创建表功能。
@@ -148,7 +200,17 @@ class TableOperation {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.SQLite,actualColumn.type,actualColumn.length,actualColumn.nullable,false), convertToSqlColumnType(DBType.SQLite,column.type,column.length,column.nullable,false) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(
+                    DBType.SQLite,
+                    actualColumn.type,
+                    actualColumn.length,
+                    actualColumn.nullable,
+                    false
+                ),
+                convertToSqlColumnType(DBType.SQLite, column.type, column.length, column.nullable, false),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
     }
@@ -176,7 +238,17 @@ class TableOperation {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.Mysql,actualColumn.type,actualColumn.length,actualColumn.nullable,false), convertToSqlColumnType(DBType.Mssql,column.type,0,column.nullable,false) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(
+                    DBType.Mysql,
+                    actualColumn.type,
+                    actualColumn.length,
+                    actualColumn.nullable,
+                    false
+                ),
+                convertToSqlColumnType(DBType.Mssql, column.type, 0, column.nullable, false),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
     }
@@ -200,17 +272,27 @@ class TableOperation {
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 
-        println("actualColumns"+actualColumns.map { it.nullable })
-        println("expectedColumns"+expectedColumns.map { it.nullable })
+        println("actualColumns" + actualColumns.map { it.nullable })
+        println("expectedColumns" + expectedColumns.map { it.nullable })
 
-        println("actualColumns"+actualColumns.map { it.primaryKey })
-        println("expectedColumns"+expectedColumns.map { it.primaryKey })
+        println("actualColumns" + actualColumns.map { it.primaryKey })
+        println("expectedColumns" + expectedColumns.map { it.primaryKey })
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.Postgres,actualColumn.type,actualColumn.length,actualColumn.nullable,actualColumn.primaryKey), convertToSqlColumnType(DBType.Postgres,column.type,column.length,column.nullable,column.primaryKey) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(
+                    DBType.Postgres,
+                    actualColumn.type,
+                    actualColumn.length,
+                    actualColumn.nullable,
+                    actualColumn.primaryKey
+                ),
+                convertToSqlColumnType(DBType.Postgres, column.type, column.length, column.nullable, column.primaryKey),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
     }
@@ -259,7 +341,54 @@ class TableOperation {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.Mysql,actualColumn.type,column.length,true,false), convertToSqlColumnType(DBType.Mysql,column.type,0,true,false) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(DBType.Mysql, actualColumn.type, column.length, true, false),
+                convertToSqlColumnType(DBType.Mysql, column.type, 0, true, false),
+                "列 '$column' 的类型应一致"
+            )
+            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
+        }
+
+        // 可选：进一步验证列的属性，如类型、是否为主键等，这通常需要更复杂的数据库查询和比较逻辑
+
+        println("表结构同步测试成功")
+    }
+
+    /**
+     * 测试oracle结构同步功能。
+     * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
+     */
+    @Test
+    fun testSyncTable_oracle() {
+        // 同步user表结构
+        val structureSync = dataSource.table.structureSync(user)
+        if (!structureSync) {
+            println("表结构相同无需同步")
+        }
+
+        // 索引
+//        val list = user.kronosTableIndex()
+
+        // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
+        val expectedColumns = user.kronosColumns().map {
+            it.columnName = it.columnName.uppercase()
+            it
+        }
+
+        // 确保所有期望的列都存在于实际的列列表中，且类型一致
+        val actualColumns = dataSource.table.getTableColumns("TB_USER")
+        println("actualColumns:" + actualColumns.map { it.columnName })
+        println("expectedColumns:" + expectedColumns.map { it.columnName })
+
+        // 确保所有期望的列都存在于实际的列列表中，且类型一致
+        expectedColumns.forEach { column ->
+            val actualColumn = actualColumns.find { it.columnName == column.columnName }
+            assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
+            assertEquals(
+                convertToSqlColumnType(DBType.Oracle, actualColumn.type, column.length, true, false),
+                convertToSqlColumnType(DBType.Oracle, column.type, column.length, true, false),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 
@@ -292,7 +421,11 @@ class TableOperation {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.SQLite,actualColumn.type,0,true,false), convertToSqlColumnType(DBType.SQLite,column.type,0,true,false) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(DBType.SQLite, actualColumn.type, 0, true, false),
+                convertToSqlColumnType(DBType.SQLite, column.type, 0, true, false),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 
@@ -326,7 +459,11 @@ class TableOperation {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.Mssql,actualColumn.type,column.length,true,false), convertToSqlColumnType(DBType.Mssql,column.type,column.length,true,false) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(DBType.Mssql, actualColumn.type, column.length, true, false),
+                convertToSqlColumnType(DBType.Mssql, column.type, column.length, true, false),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 
@@ -355,14 +492,24 @@ class TableOperation {
         val expectedColumns = user.kronosColumns()
 
         val actualColumns = dataSource.table.getTableColumns("tb_user")
-        println("expectedColumns: "+expectedColumns.map { it.nullable })
-        println("actualColumns: "+actualColumns.map { it.nullable })
+        println("expectedColumns: " + expectedColumns.map { it.nullable })
+        println("actualColumns: " + actualColumns.map { it.nullable })
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(convertToSqlColumnType(DBType.Postgres,actualColumn.type,column.length,actualColumn.nullable,actualColumn.primaryKey), convertToSqlColumnType(DBType.Postgres,column.type,column.length,column.nullable,column.primaryKey) , "列 '$column' 的类型应一致")
+            assertEquals(
+                convertToSqlColumnType(
+                    DBType.Postgres,
+                    actualColumn.type,
+                    column.length,
+                    actualColumn.nullable,
+                    actualColumn.primaryKey
+                ),
+                convertToSqlColumnType(DBType.Postgres, column.type, column.length, column.nullable, column.primaryKey),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 

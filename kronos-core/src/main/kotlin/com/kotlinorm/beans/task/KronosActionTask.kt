@@ -24,21 +24,21 @@ import com.kotlinorm.utils.execute
  * KronosActionTask class represents a Kronos action task used to execute multiple Kronos atomic action tasks.
  */
 class KronosActionTask {
+    private var beforeExecute: () -> Any? = {}
     private val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf()
+    private var afterExecute: KronosOperationResult.() -> Any = {}
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault()
+        beforeExecute()
         val groupedTasks = atomicTasks.groupBy { it.sql }.map {
             if (it.value.size > 1) {
                 KronosAtomicBatchTask(
-                    it.key,
-                    it.value.map { task -> task.paramMap }.toTypedArray(),
-                    it.value.first().operationType
+                    it.key, it.value.map { task -> task.paramMap }.toTypedArray(), it.value.first().operationType
                 )
             } else {
                 KronosAtomicActionTask(
-                    it.key, it.value.first().paramMap,
-                    it.value.first().operationType
+                    it.key, it.value.first().paramMap, it.value.first().operationType
                 )
             }
         }
@@ -49,7 +49,9 @@ class KronosActionTask {
         }
         val affectRows = results.sumOf { it.affectedRows }
         val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull()
-        return KronosOperationResult(affectRows, lastInsertId)
+        return KronosOperationResult(affectRows, lastInsertId).apply {
+            afterExecute(this)
+        }
     }
 
     companion object {
@@ -63,9 +65,10 @@ class KronosActionTask {
          * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
-        fun List<KronosAtomicActionTask>.toKronosActionTask(): KronosActionTask {
+        fun List<KronosAtomicActionTask>.toKronosActionTask(postAction: KronosOperationResult.() -> Unit = {}): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(map { it.trySplitOut() }.flatten())
+                afterExecute = postAction
             }
         }
 
@@ -79,9 +82,10 @@ class KronosActionTask {
          * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
-        fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
+        fun KronosAtomicActionTask.toKronosActionTask(postAction: KronosOperationResult.() -> Unit = {}): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(trySplitOut())
+                afterExecute = postAction
             }
         }
 
@@ -98,6 +102,7 @@ class KronosActionTask {
         fun List<KronosActionTask>.merge(): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(flatMap { it.atomicTasks })
+                afterExecute = { forEach { it.afterExecute(this) } }
             }
         }
     }

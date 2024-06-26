@@ -20,7 +20,7 @@ dependencies {
     // postgresql
     testImplementation("org.postgresql:postgresql:42.7.3")
     // oracle
-    testImplementation("com.oracle.database.jdbc:ojdbc8:23.2.0.0")
+    testImplementation("com.oracle.database.jdbc:ojdbc8:23.4.0.24.05")
     testImplementation("com.google.code.gson:gson:2.11.0")
 }
 

@@ -1,22 +1,18 @@
 package com.kotlinorm
 
-import com.kotlinorm.annotations.CreateTime
-import com.kotlinorm.annotations.Table
-import com.kotlinorm.annotations.TableIndex
-import com.kotlinorm.annotations.UseSerializeResolver
+import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.join.join
-import java.util.*
-
-import com.kotlinorm.annotations.*
 import com.kotlinorm.enums.KColumnType.CHAR
 import com.kotlinorm.enums.SQLite
+import com.kotlinorm.orm.join.join
 import java.time.LocalDateTime
+import java.util.*
+
 @Table(name = "tb_user")
 @TableIndex("aaa", ["username"], SQLite.KIndexType.BINARY, SQLite.KIndexMethod.UNIQUE)
-@TableIndex(  "bbb",columns = ["username","gender"], type = SQLite.KIndexType.NOCASE)
-@TableIndex(  "ccc",columns = ["gender"])
+@TableIndex("bbb", columns = ["username", "gender"], type = SQLite.KIndexType.NOCASE)
+@TableIndex("ccc", columns = ["gender"])
 data class SqlliteUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
@@ -38,11 +34,12 @@ data class SqlliteUser(
     @NotNull
     var deleted: Boolean? = null
 ) : KPojo()
+
 @Table(name = "tb_user")
 @TableIndex(name = "idx_user_id", columns = ["id"], type = "UNIQUE", method = "BTREE")
 data class User(
     var id: Int? = null,
-    @UseSerializeResolver
+    @ColumnDeserialize
     var username: String? = null,
     var gender: Int? = null,
     @CreateTime
@@ -55,8 +52,6 @@ data class UserRelation(
     var gender: Int? = null,
     var id2: Int? = null
 ) : KPojo()
-
-
 
 
 fun main() {

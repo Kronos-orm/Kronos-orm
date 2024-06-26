@@ -16,7 +16,9 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.fieldDb2k
+import kotlin.reflect.full.createInstance
 
 /**
  * Field
@@ -33,6 +35,9 @@ class Field(
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",
+    val reference: KReference? = null,
+    val referenceKClassName: String? = null,
+    val isColumn: Boolean = true,
     val length: Int = 0,
     val defaultValue: String? = null,
     val identity: Boolean = false,
@@ -43,8 +48,11 @@ class Field(
         return name
     }
 
-    fun quoted(showTable: Boolean = false): String = "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
-    fun equation(): String = "`$columnName` = :$name"
+    fun quoted(showTable: Boolean = false): String =
+        "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
+
+    fun equation(showTable: Boolean = false): String =
+        ("`$tableName`.".takeIf { showTable } ?: "") + "`$columnName` = :$name"
 
     /**
      * Check if this object is equal to another object.
@@ -83,4 +91,13 @@ class Field(
         columnName,
         name + other
     )
+
+    fun cascadeMapperBy(table: String = tableName): Boolean {
+        return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
+            .kronosTableName() == table)
+    }
+
+    fun refUseFor(usage: KOperationType): Boolean {
+        return reference != null && reference.usage.contains(usage)
+    }
 }

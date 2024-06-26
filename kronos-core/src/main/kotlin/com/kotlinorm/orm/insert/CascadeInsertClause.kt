@@ -11,7 +11,8 @@ import kotlin.reflect.full.createInstance
 
 object CascadeInsertClause {
     fun <T : KPojo> build(pojo: T, rootTask: KronosAtomicActionTask): KronosActionTask {
-        val columns = pojo.kronosColumns()
+        val columns = pojo.kronosColumns() // get all columns of the pojo
+        // TODO: 下面的primaryKey需要在合并分支后换成identity
         return generateTask(pojo.toDataMap(), columns.find { it.primaryKey }, columns.filter { !it.isColumn }, rootTask)
     }
 
@@ -36,41 +37,43 @@ object CascadeInsertClause {
         columns: List<Field>,
         prevTask: KronosAtomicActionTask
     ): KronosActionTask {
-        return prevTask.toKronosActionTask {
+        return prevTask.toKronosActionTask().doAfterExecute { //在执行之后执行的操作
+            //为何要放在doAfterExecute中执行：因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键）
             columns.mapNotNull { col ->
-                val dataVal = dataMap[col.name]
-                if (dataVal == null || (dataVal is Collection<*> && dataVal.isEmpty())) return@mapNotNull null
-                val listOfData = if (dataVal is Collection<*>) {
-                    dataVal.toList()
-                } else {
-                    listOf(dataVal)
+                val dataVal = dataMap[col.name] // 获取KPojo或者Collection<KPojo>的数据值，有值才需要级联插入
+                if (dataVal == null || (dataVal is Collection<*> && dataVal.isEmpty())) return@mapNotNull null // 数据值为空，不需要级联插入
+                val listOfData = if (dataVal is Collection<*>) { // 数据值是集合
+                    dataVal.toList() // 转换为列表
+                } else { // 数据值是单个对象
+                    listOf(dataVal) // 转换为列表
                 } as List<KPojo>
 
                 val ref = Class.forName(
                     col.referenceKClassName
                         ?: throw UnsupportedOperationException("The reference class is not supported!")
-                ).kotlin.createInstance() as KPojo
+                ).kotlin.createInstance() as KPojo // 创建引用的POJO对象
 
                 val cascadeRefs = ref.kronosColumns()
-                    .filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.INSERT) }
+                    .filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.INSERT) } // 获取引用的POJO对象中级联引用的列
 
                 return@mapNotNull if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.INSERT)) || cascadeRefs.isNotEmpty()
-                ) {
-                    val listOfTask = listOfData.insert().build().component3()
-                    if (identityCol != null) {
-                        val references = (cascadeRefs.map { it.reference } + col.reference)
-                        references.forEach {
-                            if (it != null) {
-                                val index = it.targetColumns.indexOf(identityCol.columnName)
-                                if (index > -1) {
+                ) { // 如果当前列有级联映射器，或者引用的POJO对象中有级联映射器才需要级联插入
+                    val listOfTask = listOfData.insert().build().component3() // 生成插入任务
+                    if (identityCol != null) { // 如果有自增主键的话，需要将自增主键的值传递给引用的POJO对象
+                        val references = (cascadeRefs.map { it.reference } + col.reference) // 获取引用的POJO对象中的引用
+                        references.forEach { // 遍历引用
+                            if (it != null) { // 引用不为空
+                                val index = it.targetColumns.indexOf(identityCol.columnName) // 获取自增主键的索引
+                                if (index > -1) { // 索引大于-1
                                     val refIdCol =
-                                        ref.kronosColumns().find { o -> o.columnName == it.referenceColumns[index] }
-                                    if (refIdCol != null) {
-                                        listOfTask.forEach { task ->
+                                        ref.kronosColumns()
+                                            .find { o -> o.columnName == it.referenceColumns[index] } // 获取引用的POJO对象中的自增主键列
+                                    if (refIdCol != null) { // 自增主键列不为空
+                                        listOfTask.forEach { task -> // 遍历插入任务
                                             task.paramMap = mutableMapOf<String, Any?>().apply {
                                                 putAll(task.paramMap)
                                                 put(refIdCol.name, lastInsertId ?: dataMap[identityCol.name])
-                                            }
+                                            } // 将自增主键的值传递给引用的POJO对象
                                         }
                                     }
                                 }

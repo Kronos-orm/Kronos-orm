@@ -65,30 +65,32 @@ object CascadeDeleteClause {
             logic: Boolean,
             paramMap: MutableMap<String, Any?>,
             rootTask: KronosAtomicActionTask,
-            stackOfTask: Stack<KronosAtomicActionTask> = Stack(),
+            stackOfTask: Stack<KronosAtomicActionTask> = Stack(), //用于防止循环引用
             tempTableIndex: Counter,
             layerCnt: Int = 0
         ): List<KronosAtomicActionTask> {
+            // 生成删除任务列表
             val tasks = mutableListOf<KronosAtomicActionTask>()
             references.forEach { ref ->
-                val tableName = original.kronosTableName() // 获取原始表名
+                val tableName = original.kronosTableName() // 获取本表名
                 val refTableName = refPojo.kronosTableName() // 获取引用表名
-                val targetColumnSql = ref.targetColumns.joinToString(", ") { "`$tableName`.`${it}`" } // 获取目标列的SQL
-                val refColumnSql = ref.referenceColumns.joinToString(", ") { "`$refTableName`.`${it}`" } // 获取引用列的SQL
+                val refColumnSql = ref.referenceColumns.joinToString(", ") { "`$refTableName`.`${it}`" } // 获取引用表本表的引用列
+                val targetColumnSql = ref.targetColumns.joinToString(", ") { "`$tableName`.`${it}`" } // 获取目标表对应的引用列的SQL
                 val subSelectClause = listOfNotNull(
                     "SELECT",
                     targetColumnSql,
                     "FROM",
                     "`$tableName`",
                     toWhereSql(whereClauseSql)
-                ).joinToString(" ")
+                ).joinToString(" ")// 构建子查询语句
 
                 val newWhereClauseSql = // 生成新的 where 子句
                     "$refColumnSql IN ( SELECT ${ref.targetColumns.joinToString { "`$it`" }} from ($subSelectClause) as KRONOS_TEMP_TABLE_${tempTableIndex.counter})"
 
-                val validReferences =
-                    findValidRefs(refPojo.kronosColumns().filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) })
-                val nextStepTask = generateReferenceDeleteSql(
+                val validReferences = //递归获取下一级的引用
+                    findValidRefs(
+                        refPojo.kronosColumns().filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) })
+                val nextStepTask = generateReferenceDeleteSql( // 递归生成下一级的级联删除语句
                     refPojo, newWhereClauseSql, ref, logic, paramMap, rootTask
                 ).toMutableList()
 
@@ -110,9 +112,9 @@ object CascadeDeleteClause {
                         )
                     }
                     if (nextStepTask.isNotEmpty() && layerCnt > 0) nextStepTask.removeLast() // 防止生成重复任务
-                    tasks.addAll(nextStepTask)
+                    tasks.addAll(nextStepTask) // 添加任务
                 }
-                stackOfTask.addAll(tasks)
+                stackOfTask.addAll(tasks) // 添加任务到栈
             }
             return tasks
         }
@@ -136,13 +138,20 @@ object CascadeDeleteClause {
         paramMap: MutableMap<String, Any?>,
         deleteTask: KronosAtomicActionTask
     ): List<KronosAtomicActionTask>? {
-        val counter = Counter()
-        val validReferences = findValidRefs(pojo.kronosColumns().filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) })
+        val counter = Counter() //创建一个计数器，用于生成临时表的表名，防止临时表名发生重名
+        val validReferences =
+            findValidRefs(
+                pojo.kronosColumns()
+                    .filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) }) // 获取所有的非数据库列、有关联注解且用于删除操作
         if (validReferences.isEmpty()) {
+            // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
+            // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
             return null
         }
 
         return validReferences.map {
+            // 生成删除任务列表
+            // 为何要传入最初的deleteTask: 若cascade删除为RESTRICT，需要在deleteTask的sql语句中加入限制条件
             it.generateTask(
                 pojo, whereClauseSql, logic, paramMap, deleteTask, tempTableIndex = counter
             )
@@ -163,14 +172,16 @@ object CascadeDeleteClause {
      * @throws UnsupportedOperationException if the reference class is not supported.
      */
     private fun findValidRefs(columns: List<Field>): List<ValidRef> {
+        //columns 为的非数据库列、有关联注解且用于删除操作的Field
         return columns.map { col ->
             val ref = Class.forName(
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
-            ).kotlin.createInstance() as KPojo
+            ).kotlin.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             ValidRef(if (col.cascadeMapperBy()) {
-                listOf(col.reference!!)
+                listOf(col.reference!!) // 若有级联映射，返回引用
             } else {
-                ref.kronosColumns().filter { it.cascadeMapperBy(col.tableName) }.map { it.reference!! }
+                ref.kronosColumns().filter { it.cascadeMapperBy(col.tableName) }
+                    .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
             }, ref)
         }
     }

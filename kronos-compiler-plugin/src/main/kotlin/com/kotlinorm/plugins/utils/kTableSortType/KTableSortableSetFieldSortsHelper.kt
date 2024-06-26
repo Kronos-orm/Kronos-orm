@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 /**
  * Recursively traverses the given IrElement and extracts the sort fields.
  *
- * @param element The IrElement to traverse.
+ * @param irReturn The IrReturn to traverse.
  * @return A mutable list of IrExpressions representing the sort fields.
  */
 context(IrBlockBuilder, IrPluginContext, IrFunction)

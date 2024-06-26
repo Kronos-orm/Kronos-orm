@@ -106,7 +106,7 @@ class Join {
                 }
                 where { user.id == 1 }
                 orderBy { user.id.desc() }
-                page(1 , 10)
+                page(1, 10)
             }.withTotal().build()
 
         assertEquals(

@@ -17,13 +17,13 @@
 package com.kotlinorm.annotations
 
 /**
- * DateTime Format
+ * Primary Key
  *
- * Annotation to specify the format of the column in the database table.
+ * Annotation to specify if the column is Primary Key
  *
- * @property pattern The dateTime format of the column in the database table.
+ * @property identity If the column is auto-incremented
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class DateTimeFormat(val pattern: String)
+annotation class PrimaryKey(val identity: Boolean = false)

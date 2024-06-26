@@ -34,8 +34,6 @@ import kotlin.reflect.full.findAnnotation
  * or `setValue(Field(columnName, optionalName), value)`
  *
  * @param T the type of the table
- *
- * @property it the instance of the table
  */
 open class KTable<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()

@@ -25,8 +25,6 @@ import com.kotlinorm.enums.NoValueStrategy
  * DSL Class of Kronos, which the compiler plugin use to generate the `where` code.
  *
  * @param T the type of the table
- *
- * @property it the instance of the table
  */
 open class KTableConditional<T : KPojo> : KTable<T>() {
     var criteria: Criteria? = null

@@ -17,13 +17,14 @@
 package com.kotlinorm.annotations
 
 /**
- * DateTime Format
+ * Column
  *
- * Annotation to specify the format of the column in the database table.
+ * Annotation to specify the name of a column in a database table.
  *
- * @property pattern The dateTime format of the column in the database table.
+ * @property type The type of the column, if empty, inferred by Kotlin Type
+ * @property length The length of the column in the database table.
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class DateTimeFormat(val pattern: String)
+annotation class ColumnType(val type: String , val length: Int = 0)

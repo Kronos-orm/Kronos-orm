@@ -16,11 +16,13 @@
 
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.execute
@@ -44,15 +46,22 @@ class InsertClause<T : KPojo>(pojo: T) {
     }
 
     fun build(): KronosAtomicActionTask {
-        toInsertFields.addAll(allFields.filter { it.name in paramMap.keys })
+        toInsertFields.addAll(allFields.filter { it.name in paramMap.keys && paramMap[it.name] != null })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
 
-        val sql = """
+        var sql = ""
+        if (dataSource().dbType == DBType.Oracle) {
+            sql = """
+                INSERT INTO $tableName (${toInsertFields.joinToString { it.columnName.uppercase() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
+        """.trimIndent()
+        } else if (dataSource().dbType == DBType.Mysql) {
+            sql = """
             INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
         """.trimIndent()
+        }
 
         return KronosAtomicActionTask(
             sql,

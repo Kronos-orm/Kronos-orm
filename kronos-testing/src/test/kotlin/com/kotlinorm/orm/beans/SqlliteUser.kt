@@ -3,21 +3,22 @@ package com.kotlinorm.orm.beans
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KColumnType.CHAR
-import com.kotlinorm.enums.KColumnType.TINYINT
-import com.kotlinorm.enums.KColumnType.VARCHAR
+import com.kotlinorm.enums.KColumnType.INT
+import com.kotlinorm.enums.KColumnType.TEXT
 import com.kotlinorm.enums.Mysql
+import com.kotlinorm.enums.SQLite
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["username"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
-@TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
-data class User(
+@TableIndex("aaa", ["username"], SQLite.KIndexType.BINARY, SQLite.KIndexMethod.UNIQUE)
+@TableIndex(  "bbb",columns = ["username","gender"], type = SQLite.KIndexType.NOCASE, method = SQLite.KIndexMethod.UNIQUE)
+@TableIndex(  "ccc",columns = ["gender"])
+data class SqlliteUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
-    @ColumnType(VARCHAR,254)
     var username: String? = null,
     @Column("gender1")
-    @ColumnType(TINYINT)
+    @ColumnType(INT, length = 1)
     @Default("0")
     var gender: Int? = null,
 //    @ColumnType(INT)

@@ -37,13 +37,13 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
 fun lastInsertIdObtainSql(dbType: DBType): String {
     return when (dbType) {
-        DBType.Mysql, DBType.H2, DBType.OceanBase -> "SELECT LAST_INSERT_ID();"
-        DBType.Oracle -> "SELECT * FROM DUAL;"
-        DBType.Mssql -> "SELECT SCOPE_IDENTITY();"
-        DBType.Postgres -> "SELECT LASTVAL();"
-        DBType.DB2 -> "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1;"
-        DBType.Sybase -> "SELECT @@IDENTITY;"
-        DBType.SQLite -> "SELECT last_insert_rowid();"
+        DBType.Mysql, DBType.H2, DBType.OceanBase -> "SELECT LAST_INSERT_ID()"
+        DBType.Oracle -> "SELECT * FROM DUAL"
+        DBType.Mssql -> "SELECT SCOPE_IDENTITY()"
+        DBType.Postgres -> "SELECT LASTVAL()"
+        DBType.DB2 -> "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1"
+        DBType.Sybase -> "SELECT @@IDENTITY"
+        DBType.SQLite -> "SELECT last_insert_rowid()"
         else -> throw UnsupportedOperationException("Unsupported database type: $dbType")
     }
 }

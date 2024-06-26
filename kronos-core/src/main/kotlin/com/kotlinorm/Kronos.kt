@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
@@ -8,7 +24,6 @@ import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.namingStrategy.NoneNamingStrategy
 import com.kotlinorm.beans.serializeResolver.NoneSerializeResolver
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
-import com.kotlinorm.enums.ColorPrintCode.Companion.Yellow
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.NoValueStrategy
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -16,7 +31,6 @@ import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeResolver
 import com.kotlinorm.types.KLoggerFactory
 import kotlinx.datetime.TimeZone.Companion.currentSystemDefault
-import kotlin.reflect.full.declaredFunctions
 
 object Kronos {
     // 默认日志适配器
@@ -61,25 +75,6 @@ object Kronos {
 
     // 默认日期格式
     var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
-
-    /**
-     * detect logger implementation if kronos-logging is used
-     */
-    private fun detectLoggerImplementation() {
-        try {
-            val kronosClass = Class.forName("com.kotlinorm.KronosLoggerApp").kotlin
-            kronosClass.declaredFunctions.first { it.name == "detectLoggerImplementation" }
-                .call(kronosClass.objectInstance)
-        } catch (e: ClassNotFoundException) {
-            defaultLogger(this).info(
-                kMsgOf("Kronos-logging is not used.", Yellow).endl().toArray()
-            )
-        }
-    }
-
-    fun KLoggerFactory.useCustomLogger() {
-        detectLoggerImplementation()
-    }
 
     init {
         defaultLogger(this).info(

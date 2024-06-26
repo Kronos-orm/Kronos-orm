@@ -28,24 +28,59 @@ class SelectParserTest {
                 "main.kt", """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.Table
+            import com.kotlinorm.annotations.TableIndex
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
             import com.kotlinorm.beans.dsl.KPojo
             import com.kotlinorm.orm.delete.delete
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by
             import com.kotlinorm.annotations.CreateTime
+            import com.kotlinorm.annotations.Default
             import com.kotlinorm.orm.select.select
             import java.util.Date
             import com.kotlinorm.annotations.UseSerializeResolver
             import com.kotlinorm.utils.Extensions.safeMapperTo
-                    
+            import com.kotlinorm.annotations.*
+            import com.kotlinorm.enums.KColumnType.CHAR
+            import com.kotlinorm.enums.SQLite
+            import java.time.LocalDateTime
+
             @Table(name = "tb_user")
+            @TableIndex("aaa", ["username"], SQLite.KIndexType.BINARY, SQLite.KIndexMethod.UNIQUE)
+            @TableIndex(  "bbb",columns = ["username","gender"], type = SQLite.KIndexType.NOCASE)
+            @TableIndex(  "ccc",columns = ["gender"])
+            data class SqlliteUser(
+                @PrimaryKey(identity = true)
+                var id: Int? = null,
+                var username: String? = null,
+                @Column("gender")
+                @ColumnType(CHAR)
+                @Default("0")
+                var gender: Int? = null,
+            //    @ColumnType(INT)
+            //    var age: Int? = null,
+                @CreateTime
+                @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
+                @NotNull
+                var createTime: String? = null,
+                @UpdateTime
+                @NotNull
+                var updateTime: LocalDateTime? = null,
+                @LogicDelete
+                @NotNull
+                var deleted: Boolean? = null
+            ) : KPojo()    
+            @Table(name = "tb_user")
+            @TableIndex(name = "idx_user_id", columns = ["id"], type = "UNIQUE", method = "BTREE")
+            @TableIndex(name = "idx_user_name", columns = ["username"], type = "UNIQUE", method = "BTREE")
+            @TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
             data class User(
                 var id: Int? = null,
                 @UseSerializeResolver
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime
+                @Default("now()")
                 var createTime: Date? = null
             ) : KPojo()
 
@@ -62,7 +97,7 @@ class SelectParserTest {
                 val m = mapOf("id" to 2)
                 val u = m.safeMapperTo<User>()
                                 
-                val (sql, paramMap) = user.select { it.username.alias("name") + it.gender }.build()
+                val (sql, paramMap) = user.select { it.username.`as`("name") + it.gender }.build()
                 println(user.toDataMap())
             }        
       """.trimIndent()

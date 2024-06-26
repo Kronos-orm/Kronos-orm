@@ -44,6 +44,7 @@ class KronosIrClassNewTransformer(
                         "safeFromMapData" -> declaration.body = createSafeFromMapValueFunction(irClass, declaration)
                         "fromMapData" -> declaration.body = createFromMapValueFunction(irClass, declaration)
                         "kronosTableName" -> declaration.body = createKronosTableName(irClass)
+                        "kronosTableIndex" -> declaration.body = createKronosTableIndex(irClass)
                         "kronosColumns" -> declaration.body = createGetFieldsFunction(irClass)
                         "kronosCreateTime" -> declaration.body = createKronosCreateTime(irClass)
                         "kronosUpdateTime" -> declaration.body = createKronosUpdateTime(irClass)

@@ -17,13 +17,19 @@
 package com.kotlinorm.annotations
 
 /**
- * DateTime Format
+ * Table Index
  *
- * Annotation to specify the format of the column in the database table.
+ * Annotation to specify the index of a table in a database.
  *
- * @property pattern The dateTime format of the column in the database table.
+ * @property name The name of the index in the database.
+ * @property columns The columns of the index in the database.
+ * @property type The type of the index in the database.
+ * @property method The method of the index in the database.
  * @author OUSC
  */
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class DateTimeFormat(val pattern: String)
+@Repeatable
+annotation class TableIndex(
+    val name: String, val columns: Array<String>, val type: String = "", val method: String = ""
+)

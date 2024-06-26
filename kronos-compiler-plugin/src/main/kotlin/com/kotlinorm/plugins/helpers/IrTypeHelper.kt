@@ -1,11 +1,8 @@
 package com.kotlinorm.plugins.helpers
 
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.toKotlinType
 import org.jetbrains.kotlin.ir.types.typeOrFail
-import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
 
 /**
  * Casts the given IrType to an IrSimpleType.

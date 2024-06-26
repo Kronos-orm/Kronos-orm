@@ -24,12 +24,12 @@ import com.kotlinorm.utils.execute
  * KronosActionTask class represents a Kronos action task used to execute multiple Kronos atomic action tasks.
  */
 class KronosActionTask {
-    private var beforeExecute: () -> Any? = {} //在执行之前执行的操作
+    private var beforeExecute: KronosActionTask.() -> Any? = {} //在执行之前执行的操作
     private val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
     private var afterExecute: (KronosOperationResult.() -> KronosActionTask)? =
         null //在执行之后执行的操作(返回一个新的KronosActionTask)
 
-    fun doBeforeExecute(beforeExecute: () -> Any?): KronosActionTask { //设置在执行之前执行的操作
+    fun doBeforeExecute(beforeExecute: KronosActionTask.() -> Any?): KronosActionTask { //设置在执行之前执行的操作
         this.beforeExecute = beforeExecute
         return this
     }

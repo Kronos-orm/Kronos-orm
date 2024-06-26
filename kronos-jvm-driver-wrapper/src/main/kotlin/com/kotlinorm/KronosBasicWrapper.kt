@@ -313,7 +313,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                             getObject(i, javaClass)
                         } else {
                             getObject(i)
-                        }.let {
+                        }?.let {
                             mapOfLong[meta.getColumnLabel(i)] = it
                         }
                     }
@@ -331,7 +331,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                             getObject(i, javaClass)
                         } else {
                             getObject(i)
-                        }.let {
+                        }?.let {
                             mapOfOther[meta.getColumnLabel(i)] = it
                         }
                     }

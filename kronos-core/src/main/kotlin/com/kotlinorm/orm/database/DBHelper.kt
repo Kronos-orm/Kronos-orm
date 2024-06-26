@@ -37,7 +37,8 @@ object DBHelper {
         type: String,
         length: Int,
         nullable: Boolean,
-        primaryKey: Boolean
+        primaryKey: Boolean,
+        autoIncrement: Boolean = false
     ): String {
         return when (type) {
             "BIT" -> when (dbType) {
@@ -416,6 +417,7 @@ object DBHelper {
                 dbType == DBType.Postgres && primaryKey ->{
                      " SERIAL PRIMARY KEY "
                 }
+                primaryKey && autoIncrement && dbType == DBType.Oracle -> "$it GENERATED ALWAYS AS IDENTITY"
                 primaryKey -> "$it NOT NULL PRIMARY KEY"
                 !nullable -> "$it NOT NULL"
                 else -> it

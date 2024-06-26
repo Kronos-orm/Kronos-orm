@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @TableIndex("idx_username", ["username"], Oracle.KIndexType.UNIQUE)
 @TableIndex(name = "idx_multi", columns = ["id", "username"], type = "BITMAP")
 data class OracleUser(
-    @PrimaryKey
+    @PrimaryKey(identity = true)
     var id: Int? = null, // 移除了identity=true，因为Oracle使用序列和触发器实现自增主键
     @ColumnType(VARCHAR, 254)
     var username: String? = null,
@@ -28,6 +28,7 @@ data class OracleUser(
     @NotNull
     var createTime: LocalDateTime? = null, // 更改类型为LocalDateTime以匹配Oracle的日期时间处理
     @UpdateTime
+    @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     @NotNull
     var updateTime: LocalDateTime? = null,
     @LogicDelete

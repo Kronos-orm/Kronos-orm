@@ -9,6 +9,7 @@ import com.kotlinorm.orm.beans.*
 import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
 import com.kotlinorm.orm.database.DBHelper.getDBNameFromUrl
 import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
@@ -68,7 +69,7 @@ class TableOperation {
     // 初始化oracle数据库连接池
     private val ds = BasicDataSource().apply {
         driverClassName = "oracle.jdbc.OracleDriver" // Oracle驱动类名
-        url = "jdbc:oracle:thin:@localhost:1521:orcl" // Oracle数据库URL
+        url = "jdbc:oracle:thin:@localhost:1521/orclpdb" // Oracle数据库URL
         username = "YF" // Oracle用户名
         password = "root" // Oracle密码
         maxIdle = 10 // 最大空闲连接数
@@ -156,12 +157,15 @@ class TableOperation {
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = dataSource.table.getTableColumns("TB_USER")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
-        val expectedColumns = user.kronosColumns()
+        val expectedColumns = user.kronosColumns().map {
+            it.columnName = it.columnName.uppercase()
+            it
+        }
         println("actualColumns_columnName" + actualColumns.map { it.columnName })
-        println("aexpectedColumns_columnName" + expectedColumns.map { it.columnName })
+        println("expectedColumns_columnName" + expectedColumns.map { it.columnName })
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
@@ -516,5 +520,22 @@ class TableOperation {
         // 可选：进一步验证列的属性，如类型、是否为主键等，这通常需要更复杂的数据库查询和比较逻辑
 
         println("表结构同步测试成功")
+    }
+
+    /**
+     * 测试获取自增主键
+     */
+    @Test
+    fun testLastInsertId(){
+        val newUser = OracleUser(
+            username = "yf",
+            gender = 93
+        )
+        val (_, lastInsertId) = newUser.insert().execute()
+        if (lastInsertId != null) {
+            println("插入成功，新记录的ID为：$lastInsertId")
+        } else {
+            println("插入失败")
+        }
     }
 }

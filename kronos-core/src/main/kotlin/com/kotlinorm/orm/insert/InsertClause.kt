@@ -16,12 +16,14 @@
 
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.setCommonStrategy
@@ -44,7 +46,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun build(): KronosActionTask {
-        toInsertFields.addAll(allFields.filter { it.isColumn && it.name in paramMap.keys })
+        toInsertFields.addAll(allFields.filter { it.name in paramMap.keys && paramMap[it.name] != null })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)

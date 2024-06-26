@@ -1,13 +1,11 @@
 package com.kotlinorm.orm.beans
 
-import com.kotlinorm.annotations.Reference
+import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.beans.dsl.KPojo
 
 data class UserRelation(
-    var id: Int? = null,
+    @PrimaryKey() var id: Int? = null,
     var username: String? = null,
     var gender: Int? = null,
-    var id2: Int? = null,
-    @Reference(["id2"], ["id"])
-    var user: User? = null
+    var id2: Int? = null
 ) : KPojo()

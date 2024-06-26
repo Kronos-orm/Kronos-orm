@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
@@ -8,6 +24,7 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.JoinType
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -23,7 +40,6 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.query
 import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.tableCache.TableCache.getTable
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -295,7 +311,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         var buildCondition = condition
 
         // 初始化所有字段集合
-        allFields = getTable(wrapper.orDefault(), tableName).columns.toLinkedSet()
+        allFields = pojo.kronosColumns().toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields
@@ -409,7 +425,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             selectKeyword,
             selectFields.joinToString(", ") { field ->
                 field.let { item ->
-                    if (item.type == "string") field.toString()
+                    if (item.type == CUSTOM_CRITERIA_SQL) field.toString()
                     else "${item.quoted(true)} AS `${selectFieldsWithNames.filterKeys { selectFieldsWithNames[it] == item }.keys.first()}`"
                 }
             },

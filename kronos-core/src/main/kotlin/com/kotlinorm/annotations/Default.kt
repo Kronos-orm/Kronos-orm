@@ -14,9 +14,16 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.utils.tableCache
+package com.kotlinorm.annotations
 
-class Node(var key: String?, var value: TableObject?) {
-    var prev: Node? = null
-    var next: Node? = null
-}
+/**
+ * Default
+ *
+ * Annotation to specify the default value of a column in the database table.
+ *
+ * @property value the default value of the column
+ * @author OUSC
+ */
+@Target(AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Default(val value: String)

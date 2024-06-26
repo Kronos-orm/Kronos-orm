@@ -24,7 +24,6 @@ import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.namingStrategy.NoneNamingStrategy
 import com.kotlinorm.beans.serializeResolver.NoneSerializeResolver
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
-import com.kotlinorm.enums.ColorPrintCode.Companion.Yellow
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.NoValueStrategy
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -32,7 +31,6 @@ import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeResolver
 import com.kotlinorm.types.KLoggerFactory
 import kotlinx.datetime.TimeZone.Companion.currentSystemDefault
-import kotlin.reflect.full.declaredFunctions
 
 object Kronos {
     // 默认日志适配器
@@ -77,25 +75,6 @@ object Kronos {
 
     // 默认日期格式
     var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
-
-    /**
-     * detect logger implementation if kronos-logging is used
-     */
-    private fun detectLoggerImplementation() {
-        try {
-            val kronosClass = Class.forName("com.kotlinorm.KronosLoggerApp").kotlin
-            kronosClass.declaredFunctions.first { it.name == "detectLoggerImplementation" }
-                .call(kronosClass.objectInstance)
-        } catch (e: ClassNotFoundException) {
-            defaultLogger(this).info(
-                kMsgOf("Kronos-logging is not used.", Yellow).endl().toArray()
-            )
-        }
-    }
-
-    fun KLoggerFactory.useCustomLogger() {
-        detectLoggerImplementation()
-    }
 
     init {
         defaultLogger(this).info(

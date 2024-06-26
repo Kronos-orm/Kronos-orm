@@ -29,7 +29,7 @@ import kotlin.reflect.full.createInstance
  * @property name the name of the field in Kotlin
  */
 class Field(
-    val columnName: String,
+    var columnName: String,
     var name: String = fieldDb2k(columnName),
     val type: String = "",
     var primaryKey: Boolean = false,
@@ -37,7 +37,11 @@ class Field(
     val tableName: String = "",
     val reference: KReference? = null,
     val referenceKClassName: String? = null,
-    val isColumn: Boolean = true
+    val isColumn: Boolean = true,
+    val length: Int = 0,
+    val defaultValue: String? = null,
+    val identity: Boolean = false,
+    val nullable: Boolean = true
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

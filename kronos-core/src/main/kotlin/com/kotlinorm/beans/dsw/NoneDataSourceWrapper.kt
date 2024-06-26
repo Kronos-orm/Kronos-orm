@@ -37,6 +37,8 @@ import kotlin.reflect.KClass
 object NoneDataSourceWrapper : KronosDataSourceWrapper {
     override val url: String
         get() = throw NoDataSourceException(noDataSourceMessage)
+    override val userName: String
+        get() = throw NoDataSourceException(noDataSourceMessage)
     override val dbType: DBType
         get() = throw NoDataSourceException(noDataSourceMessage)
 

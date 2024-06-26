@@ -26,6 +26,7 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -40,7 +41,6 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.tableCache.TableCache.getTable
 
 class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: KTableField<T, Any?> = null
@@ -233,7 +233,7 @@ class SelectClause<T : KPojo>(
     override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
         var buildCondition = condition
         // 初始化所有字段集合
-        allFields = getTable(wrapper.orDefault(), tableName).columns.filter { it.isColumn }.toLinkedSet()
+        allFields = pojo.kronosColumns().toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields
@@ -327,7 +327,7 @@ class SelectClause<T : KPojo>(
             selectFields.joinToString(", ") {
                 it.let {
                     when {
-                        it.type == "string" -> it.toString()
+                        it.type == CUSTOM_CRITERIA_SQL -> it.toString()
                         it.name != it.columnName -> "${it.quoted()} AS `$it`"
                         else -> it.quoted()
                     }

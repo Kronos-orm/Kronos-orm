@@ -16,12 +16,8 @@
 
 package com.kotlinorm.plugins.utils
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.asIrCall
-import com.kotlinorm.plugins.helpers.findByFqName
-import com.kotlinorm.plugins.helpers.subType
+import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.kTable.getColumnName
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
@@ -52,20 +48,16 @@ internal val globalUpdateTimeSymbol
     ).first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val globalLogicDeleteSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.getLogicDeleteStrategy")).first()
+    get() = referenceFunctions("com.kotlinorm.utils", "getLogicDeleteStrategy").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val globalCreateTimeSymbol
-    get() = referenceFunctions(FqName("com.kotlinorm.utils.getCreateTimeStrategy"))
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "getCreateTimeStrategy").first()
 
 context(IrPluginContext)
-@OptIn(FirIncompatiblePluginAPI::class)
 internal val commonStrategySymbol
-    get() = referenceClass(FqName("com.kotlinorm.beans.config.KronosCommonStrategy"))!!.constructors.first()
+    get() = referenceClass("com.kotlinorm.beans.config.KronosCommonStrategy")!!.constructors.first()
 
 val UpdateTimeFqName = FqName("com.kotlinorm.annotations.UpdateTime")
 
@@ -76,7 +68,7 @@ val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 /**
  * Returns the `num`-th subtype of the class represented by the given `IrCall`.
  *
- * @param num the number of subtypes to traverse (default: 1)
+ * @param depth the number of subtypes to traverse (default: 1)
  * @return the `IrClass` representing the `num`-th subtype of the class represented by the `IrCall`
  * @throws IllegalArgumentException if `num` is negative
  */

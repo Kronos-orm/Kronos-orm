@@ -10,6 +10,8 @@ import kotlin.reflect.KClass
 object TestWrapper : KronosDataSourceWrapper {
     override val url: String
         get() = "jdbc:mysql://localhost:3306/eqm?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true"
+    override val userName: String
+        get() = ""
     override val dbType: DBType
         get() = DBType.Mysql
 

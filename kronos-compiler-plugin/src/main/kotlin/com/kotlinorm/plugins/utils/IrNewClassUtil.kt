@@ -5,6 +5,8 @@ import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTable.ColumnDeserializeAnnotationsFqName
+import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -13,6 +15,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 
@@ -37,6 +40,11 @@ val createStringListSymbol
         .first()
 
 context(IrPluginContext)
+val createTableIndexListSymbol
+    get() = referenceFunctions("com.kotlinorm.utils", "createTableIndexList")
+        .first()
+
+context(IrPluginContext)
 private val getSafeValueSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue")
         .first()
@@ -49,13 +57,17 @@ context(IrPluginContext)
 private val mapGetterSymbol
     get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")
 
+context(IrPluginContext)
+private val KTableIndexSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTableIndex")!!
+
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
  * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.
  *
  * @param declaration The IrClass to be converted to a map.
  * @param irFunction The IrFunction that contains the instance of the IrClass.
- * @return The IrBlockBody that represents the function.
+ * @return the `IrBlockBody` that represents the function.
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
@@ -86,7 +98,7 @@ fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBo
  *
  * @param declaration the IrClass instance whose properties will be set
  * @param irFunction the IrFunction that contains the map parameter
- * @return an IrBlockBody that sets the properties of the IrClass instance using values from the map
+ * @return an `IrBlockBody` that sets the properties of the IrClass instance using values from the map
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
@@ -116,7 +128,7 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
  *
  * @param declaration The IrClass declaration.
  * @param irFunction The IrFunction to create the safe from map value function for.
- * @return An IrBlockBody containing the generated code.
+ * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
@@ -162,7 +174,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
  * getTableName function with the given IrClass declaration as an argument.
  *
  * @param declaration the IrClass declaration to generate the table name for
- * @return an IrBlockBody containing an IrReturn statement with the generated table name
+ * @return an `IrBlockBody` containing an IrReturn statement with the generated table name
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosTableName(declaration: IrClass): IrBlockBody {
@@ -173,11 +185,36 @@ fun createKronosTableName(declaration: IrClass): IrBlockBody {
     }
 }
 
+context(IrBuilderWithScope, IrPluginContext)
+fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
+    return irBlockBody {
+        val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
+        val listOfIndexObj = indexesAnnotations.map {
+            applyIrCall(
+                KTableIndexSymbol.constructors.first(),
+                it.getValueArgument(0),
+                it.getValueArgument(1),
+                it.getValueArgument(2),
+                it.getValueArgument(3),
+            )
+        }
+        +irReturn(
+            applyIrCall(
+                createTableIndexListSymbol,
+                irVararg(
+                    KTableIndexSymbol.defaultType,
+                    listOfIndexObj
+                )
+            )
+        )
+    }
+}
+
 /**
  * Creates a safe from map value function for the given declaration and irFunction.
  *
  * @param declaration The IrClass declaration.
- * @return An IrBlockBody containing the generated code.
+ * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
@@ -201,7 +238,7 @@ fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
  * CreateTimeFqName as arguments.
  *
  * @param declaration The IrClass declaration to generate the IrBlockBody for.
- * @return An IrBlockBody containing the generated code.
+ * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
@@ -218,7 +255,7 @@ fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
  * UpdateTimeFqName as arguments.
  *
  * @param declaration The IrClass declaration to generate the IrBlockBody for.
- * @return An IrBlockBody containing the generated code.
+ * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
@@ -234,7 +271,7 @@ fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
  * with the properties of the given IrClass as arguments.
  *
  * @param declaration the IrClass whose properties will be used as arguments for createFieldListSymbol
- * @return an IrBlockBody containing an irCall to createFieldListSymbol
+ * @return an `IrBlockBody` containing an irCall to createFieldListSymbol
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {

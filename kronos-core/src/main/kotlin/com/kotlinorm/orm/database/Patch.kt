@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.utils.tableCache
+package com.kotlinorm.orm.database
 
-import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
-/**
- * Table object
- *
- * @property columns the table columns
- * @property tableName the table name
- * @constructor Create empty Table object
- * @author ousc
- * @create 2022/11/12 14:19
- */
-data class TableObject(
-    val columns: List<Field>,
-    val tableName: String
-)
+val KronosDataSourceWrapper.table get() = TableOperation(this)
+val (() -> KronosDataSourceWrapper).table get() = TableOperation(this())

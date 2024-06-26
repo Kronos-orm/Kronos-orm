@@ -48,11 +48,11 @@ class KTableSortable<T : KPojo> : KTable<T>() {
 
     @Suppress("UNUSED")
     fun Any?.desc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to DESC
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to Desc
 
     @Suppress("UNUSED")
     fun Any?.asc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to ASC
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to Asc
 
     companion object {
         /**

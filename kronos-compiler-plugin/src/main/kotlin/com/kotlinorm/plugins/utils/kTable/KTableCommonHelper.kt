@@ -17,6 +17,7 @@
 package com.kotlinorm.plugins.utils.kTable
 
 import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.getSqlType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -149,6 +150,23 @@ fun getColumnName(
     val primaryKeyAnnotation =
         irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName)
     val identity = primaryKeyAnnotation?.getValueArgument(0) ?: irBoolean(false)
+    val isColumn = irBoolean(
+        /**
+         * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
+         * for properties that are not columns, we need to check if :
+         * 1. the type is a KPojo
+         * 2. has a KPojo in its super types
+         * 3. is a Collection of KPojo
+         * 4. has Annotation `@Reference`
+         */
+        irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
+                (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
+                        !irProperty.backingField!!.type.isKronosColumn() &&
+                        irProperty.backingField!!.type.subType()?.isKronosColumn() != true)
+    )
+
+    val columnNotNull =
+        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
@@ -163,25 +181,15 @@ fun getColumnName(
                 irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
             )
 
-
             else -> irString((tableName as IrConst<*>).value.toString())
         },
         reference,
         irString(referenceTypeKClassName),
-        irBoolean(
-            /**
-             * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
-             * for properties that are not columns, we need to check if :
-             * 1. the type is a KPojo
-             * 2. has a KPojo in its super types
-             * 3. is a Collection of KPojo
-             * 4. has Annotation `@Reference`
-             */
-            irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
-                    (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
-                            !irProperty.backingField!!.type.isKronosColumn() &&
-                            irProperty.backingField!!.type.subType()?.isKronosColumn() != true)
-        )
+        isColumn,
+        columnTypeLength,
+        columnDefaultValue,
+        identity,
+        columnNotNull
     )
 }
 

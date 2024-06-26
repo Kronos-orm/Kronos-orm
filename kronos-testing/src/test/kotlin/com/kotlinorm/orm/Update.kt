@@ -943,7 +943,7 @@ class Update {
                     "genderNew" to 2, "id" to 1, "updateTimeNew" to (list[1].paramMap
                         .get("updateTimeNew") ?: "")
                 )
-            ).toList(), list.map { it.paramMap }
+            ).toList(), list.map { it.paramMap.toMap() }
         )
     }
 

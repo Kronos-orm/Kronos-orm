@@ -90,7 +90,7 @@ class Delete {
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), list.map { it.paramMap }
+            ).toList(), list.map { it.paramMap.toMap() }
 
         )
     }
@@ -106,7 +106,7 @@ class Delete {
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), list.map { it.paramMap }
+            ).toList(), list.map { it.paramMap.toMap() }
 
         )
     }

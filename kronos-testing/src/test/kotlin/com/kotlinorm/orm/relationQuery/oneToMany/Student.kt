@@ -2,11 +2,13 @@ package com.kotlinorm.orm.relationQuery.oneToMany
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
+import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Reference
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
 
 data class Student(
+    @PrimaryKey(identity = true)
     var id: Int? = null,
     var name: String? = null,
     var studentNo: String? = null,

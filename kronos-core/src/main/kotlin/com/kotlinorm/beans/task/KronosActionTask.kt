@@ -24,9 +24,9 @@ import com.kotlinorm.utils.execute
  * KronosActionTask class represents a Kronos action task used to execute multiple Kronos atomic action tasks.
  */
 class KronosActionTask {
-    private var beforeExecute: KronosActionTask.() -> Any? = {} //在执行之前执行的操作
-    private val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
-    private var afterExecute: (KronosOperationResult.() -> KronosActionTask)? =
+    internal val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
+    var beforeExecute: KronosActionTask.() -> Any? = {} //在执行之前执行的操作
+    var afterExecute: (KronosOperationResult.() -> KronosActionTask)? =
         null //在执行之后执行的操作(返回一个新的KronosActionTask)
 
     fun doBeforeExecute(beforeExecute: KronosActionTask.() -> Any?): KronosActionTask { //设置在执行之前执行的操作
@@ -61,7 +61,7 @@ class KronosActionTask {
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull() //最后插入的id
         return KronosOperationResult(affectRows, lastInsertId).apply {
-            afterExecute?.invoke(this) //在执行之后执行的操作
+            afterExecute?.invoke(this)?.execute(dataSource) //在执行之后执行的操作
         }
     }
 

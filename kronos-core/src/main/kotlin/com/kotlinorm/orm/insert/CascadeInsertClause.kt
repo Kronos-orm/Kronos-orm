@@ -13,7 +13,12 @@ object CascadeInsertClause {
     fun <T : KPojo> build(pojo: T, rootTask: KronosAtomicActionTask): KronosActionTask {
         val columns = pojo.kronosColumns() // get all columns of the pojo
         // TODO: 下面的primaryKey需要在合并分支后换成identity
-        return generateTask(pojo.toDataMap(), columns.find { it.primaryKey }, columns.filter { !it.isColumn }, rootTask)
+        return generateTask(
+            pojo.toDataMap(),
+            columns.find { it.primaryKey || it.columnName == "id" },
+            columns.filter { !it.isColumn },
+            rootTask
+        )
     }
 
     /**
@@ -58,7 +63,7 @@ object CascadeInsertClause {
 
                 return@mapNotNull if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.INSERT)) || cascadeRefs.isNotEmpty()
                 ) { // 如果当前列有级联映射器，或者引用的POJO对象中有级联映射器才需要级联插入
-                    val listOfTask = listOfData.insert().build().component3() // 生成插入任务
+                    val listOfTask = listOfData.insert().build().atomicTasks // 生成插入任务
                     if (identityCol != null) { // 如果有自增主键的话，需要将自增主键的值传递给引用的POJO对象
                         val references = (cascadeRefs.map { it.reference } + col.reference) // 获取引用的POJO对象中的引用
                         references.forEach { // 遍历引用
@@ -72,7 +77,7 @@ object CascadeInsertClause {
                                         listOfTask.forEach { task -> // 遍历插入任务
                                             task.paramMap = mutableMapOf<String, Any?>().apply {
                                                 putAll(task.paramMap)
-                                                put(refIdCol.name, lastInsertId ?: dataMap[identityCol.name])
+                                                put(refIdCol.name, dataMap[identityCol.name] ?: lastInsertId)
                                             } // 将自增主键的值传递给引用的POJO对象
                                         }
                                     }

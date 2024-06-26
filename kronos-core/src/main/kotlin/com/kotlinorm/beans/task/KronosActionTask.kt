@@ -26,7 +26,7 @@ import com.kotlinorm.utils.execute
 class KronosActionTask {
     private var beforeExecute: () -> Any? = {}
     private val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf()
-    private var afterExecute: KronosOperationResult.() -> Any = {}
+    private var afterExecute: (KronosOperationResult.() -> KronosActionTask)? = null
 
     fun setBeforeExecute(beforeExecute: () -> Any?) {
         this.beforeExecute = beforeExecute
@@ -54,7 +54,7 @@ class KronosActionTask {
         val affectRows = results.sumOf { it.affectedRows }
         val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull()
         return KronosOperationResult(affectRows, lastInsertId).apply {
-            afterExecute(this)
+            afterExecute?.invoke(this)
         }
     }
 
@@ -69,10 +69,10 @@ class KronosActionTask {
          * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
-        fun List<KronosAtomicActionTask>.toKronosActionTask(postAction: KronosOperationResult.() -> Unit = {}): KronosActionTask {
+        fun List<KronosAtomicActionTask>.toKronosActionTask(doAfterExecute: (KronosOperationResult.() -> KronosActionTask)? = null): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(map { it.trySplitOut() }.flatten())
-                afterExecute = postAction
+                afterExecute = doAfterExecute
             }
         }
 
@@ -86,10 +86,10 @@ class KronosActionTask {
          * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
-        fun KronosAtomicActionTask.toKronosActionTask(postAction: KronosOperationResult.() -> Unit = {}): KronosActionTask {
+        fun KronosAtomicActionTask.toKronosActionTask(doAfterExecute: (KronosOperationResult.() -> KronosActionTask)? = null): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(trySplitOut())
-                afterExecute = postAction
+                afterExecute = doAfterExecute
             }
         }
 
@@ -106,7 +106,7 @@ class KronosActionTask {
         fun List<KronosActionTask>.merge(): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(flatMap { it.atomicTasks })
-                afterExecute = { forEach { it.afterExecute(this) } }
+                afterExecute = { mapNotNull { it.afterExecute?.invoke(this) }.merge() }
             }
         }
     }

@@ -20,7 +20,6 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
-import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
@@ -55,14 +54,14 @@ class InsertClause<T : KPojo>(val pojo: T) {
             INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
         """.trimIndent()
 
-        return listOf(
+        return CascadeInsertClause.build(
+            pojo,
             KronosAtomicActionTask(
                 sql,
                 paramMap.filter { it.key in toInsertFields.map { item -> item.name } },
                 operationType = KOperationType.INSERT
-            ),
-            *CascadeInsertClause.build(pojo)
-        ).toKronosActionTask()
+            )
+        )
 
     }
 

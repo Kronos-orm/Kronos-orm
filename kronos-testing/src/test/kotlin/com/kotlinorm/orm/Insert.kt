@@ -37,4 +37,12 @@ class Insert {
         )
     }
 
+    fun testLastInsertId() {
+        val newUser = User(
+            username = "yf",
+            gender = 93
+        )
+        val (_, lastInsertId) = newUser.insert().execute()
+    }
+
 }

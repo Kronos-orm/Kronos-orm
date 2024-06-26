@@ -109,7 +109,7 @@ object CascadeDeleteClause {
                             }.flatten().toTypedArray()
                         )
                     }
-                    if (nextStepTask.isNotEmpty() && layerCnt > 0) nextStepTask.removeLast()
+                    if (nextStepTask.isNotEmpty() && layerCnt > 0) nextStepTask.removeLast() // 防止生成重复任务
                     tasks.addAll(nextStepTask)
                 }
                 stackOfTask.addAll(tasks)
@@ -164,7 +164,6 @@ object CascadeDeleteClause {
      */
     private fun findValidRefs(columns: List<Field>): List<ValidRef> {
         return columns.map { col ->
-
             val ref = Class.forName(
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo
@@ -218,7 +217,7 @@ object CascadeDeleteClause {
             condition, mutableMapOf(), showTable = true
         )
 
-        if (logicDeleteStrategy.enabled) {
+        if (logicDeleteStrategy.enabled) { //判断是否为逻辑删除
             val updateInsertFields = { field: Field, _: Any? ->
                 toUpdateFields += Field(
                     columnName = field.name, name = field.name + "New", tableName = pojo.kronosTableName()
@@ -227,7 +226,7 @@ object CascadeDeleteClause {
             setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateInsertFields)
         }
 
-        return when (reference.onDelete) {
+        return when (reference.onDelete) { // 生成删除语句
             CASCADE -> {
                 listOf(if (logic) {
                     KronosAtomicActionTask("UPDATE `${pojo.kronosTableName()}` SET ${

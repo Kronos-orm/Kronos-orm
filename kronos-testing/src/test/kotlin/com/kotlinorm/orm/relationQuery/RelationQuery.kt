@@ -3,6 +3,8 @@ package com.kotlinorm.orm.relationQuery
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.insert.InsertClause.Companion.execute
+import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.relationQuery.oneToMany.GroupClass
 import com.kotlinorm.orm.relationQuery.oneToMany.School
 import com.kotlinorm.orm.relationQuery.oneToMany.Student
@@ -163,7 +165,28 @@ class RelationQuery {
         }
 
         school.groupClass = groupClasses
+        school.insert().execute()
+        school.groupClass?.insert()?.execute()
+
         val tasks = school.delete().where().build()
         println(tasks.component3().size)
+    }
+
+    @Test
+    fun testUpdate() {
+        val groupClass = GroupClass(
+            schoolId = 3
+        ).select().where { it.schoolId.eq }.queryOne()
+
+        groupClass.school = School(
+            name = "实验小学"
+        )
+        groupClass.update().execute()
+
+        val school = School(1).select().by { it.id }.queryOne()
+
+        groupClass.school = school
+
+        groupClass.update().execute()
     }
 }

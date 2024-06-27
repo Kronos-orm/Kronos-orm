@@ -823,7 +823,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             }
 
             DBType.SQLite -> {
-                val sql = "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name = 'tb_user';"
+                val sql = "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name = '${kronosTableName}';"
 
                 dataSource.forList(KronosAtomicQueryTask(sql)).map {
                     val name = it["name"] as String
@@ -839,7 +839,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     FROM 
                      sys.indexes
                     WHERE 
-                     object_id = object_id('tb_user') AND 
+                     object_id = object_id('${kronosTableName}') AND 
                      name NOT LIKE 'PK__${kronosTableName}__%'  
                 """
                 dataSource.forList(KronosAtomicQueryTask(sql)).map {
@@ -1028,9 +1028,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     tableName = tableName,
                     nullable = it["is_nullable"] == true,
                     primaryKey = it["primary_key"] == true,
-                    // 如果defaultValue =  "('tb_user_id_seq'::regclass)" 设置成 null
+                    // 如果defaultValue =  "('${tableName}_id_seq'::regclass)" 设置成 null
                     defaultValue = (it["column_default"] as String?).let {
-                        if (it == "nextval('tb_user_id_seq'::regclass)")
+                        if (it == "nextval('${tableName}_id_seq'::regclass)")
                             null
                         else it
                     }

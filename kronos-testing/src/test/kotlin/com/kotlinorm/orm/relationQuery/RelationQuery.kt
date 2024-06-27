@@ -62,7 +62,6 @@ class RelationQuery {
                     )
                 ),
                 GroupClass(
-                    id = 12,
                     name = "二年级",
                     students = listOf(
                         Student(

@@ -50,6 +50,7 @@ fun lastInsertIdObtainSql(dbType: DBType): String {
 
 fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
     val affectRows = if (this is KBatchTask) {
+        doTaskLog()
         wrapper.orDefault().batchUpdate(this as KronosAtomicBatchTask).sum()
     } else {
         doTaskLog()
@@ -98,19 +99,37 @@ inline fun <reified T> KAtomicQueryTask.queryOneOrNull(wrapper: KronosDataSource
 }
 
 var howToLog: (KAtomicTask) -> Unit = { task ->
-    defaultLogger(Kronos).info(
-        arrayOf(
-            kMsgOf("Executing [", Green),
-            kMsgOf(task.operationType.name, Red, Bold),
-            kMsgOf("] task:", Green).endl(),
-            kMsgOf("SQL:\t", Black, Bold),
-            kMsgOf(task.sql, Blue).endl(),
-            kMsgOf("PARAM:\t", Black, Bold),
-            kMsgOf(task.paramMap.filterNot { it.value == null }.toString(), Magenta).endl(),
-            kMsgOf("Task execution result:", Black, Bold).endl(),
-            kMsgOf("-----------------------", Black, Bold).endl(),
+    if (task is KronosAtomicBatchTask) {
+        defaultLogger(Kronos).info(
+            arrayOf(
+                kMsgOf("Executing [", Green),
+                kMsgOf(task.operationType.name, Red, Bold),
+                kMsgOf("] task:", Green).endl(),
+                kMsgOf("SQL:\t", Black, Bold),
+                kMsgOf(task.sql, Blue).endl(),
+                kMsgOf("PARAM:\t", Black, Bold),
+                *(task.paramMapArr ?: arrayOf()).map { map ->
+                    kMsgOf(map.filterNot { it.value == null }.toString(), Magenta).endl()
+                }.toTypedArray(),
+                kMsgOf("Task execution result:", Black, Bold).endl(),
+                kMsgOf("-----------------------", Black, Bold).endl(),
+            )
         )
-    )
+    } else {
+        defaultLogger(Kronos).info(
+            arrayOf(
+                kMsgOf("Executing [", Green),
+                kMsgOf(task.operationType.name, Red, Bold),
+                kMsgOf("] task:", Green).endl(),
+                kMsgOf("SQL:\t", Black, Bold),
+                kMsgOf(task.sql, Blue).endl(),
+                kMsgOf("PARAM:\t", Black, Bold),
+                kMsgOf(task.paramMap.filterNot { it.value == null }.toString(), Magenta).endl(),
+                kMsgOf("Task execution result:", Black, Bold).endl(),
+                kMsgOf("-----------------------", Black, Bold).endl(),
+            )
+        )
+    }
 }
 
 fun KAtomicTask.doTaskLog() {

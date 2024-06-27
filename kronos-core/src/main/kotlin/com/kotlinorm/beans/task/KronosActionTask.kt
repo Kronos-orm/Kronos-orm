@@ -25,7 +25,7 @@ import com.kotlinorm.utils.execute
  */
 class KronosActionTask {
     internal val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
-    var beforeExecute: KronosActionTask.() -> Any? = {} //在执行之前执行的操作
+    var beforeExecute: (KronosActionTask.() -> Any?)? = null //在执行之前执行的操作
     var afterExecute: (KronosOperationResult.() -> KronosActionTask)? =
         null //在执行之后执行的操作(返回一个新的KronosActionTask)
 
@@ -41,7 +41,7 @@ class KronosActionTask {
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault() //获取数据源
-        beforeExecute() // 在执行之前执行的操作
+        beforeExecute?.invoke(this) // 在执行之前执行的操作
         val groupedTasks = atomicTasks.groupBy { it.sql }.map { //按照sql分组
             if (it.value.size > 1) { //如果有多个任务
                 KronosAtomicBatchTask( //创建一个批量任务
@@ -111,7 +111,9 @@ class KronosActionTask {
         fun List<KronosActionTask>.merge(): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(flatMap { it.atomicTasks })
-                afterExecute = { mapNotNull { it.afterExecute?.invoke(this) }.merge() }
+                if (any { it.afterExecute != null }) {
+                    afterExecute = { mapNotNull { it.afterExecute?.invoke(this) }.merge() }
+                }
             }
         }
     }

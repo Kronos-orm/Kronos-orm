@@ -13,7 +13,7 @@ data class GroupClass(
     val groupNo: String? = null,
     @NotNull
     var schoolName: String? = null,
-    @Reference(["school_id"], ["name"], CascadeDeleteAction.CASCADE, mapperBy = School::class)
+    @Reference(["school_name"], ["name"], CascadeDeleteAction.CASCADE, mapperBy = School::class)
     var school: School? = null,
     var students: List<Student>? = null
 ) : KPojo()

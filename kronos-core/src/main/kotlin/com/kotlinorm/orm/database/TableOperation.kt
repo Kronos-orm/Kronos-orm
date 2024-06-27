@@ -19,7 +19,6 @@ package com.kotlinorm.orm.database
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.beans.dsw.NoneDataSourceWrapper.dbType
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
@@ -140,7 +139,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         // 从实例中获取表名
         val kronosTableName = instance.kronosTableName()
         // 从实例中获取列定义
-        val kronosColumns = instance.kronosColumns()
+        val kronosColumns = instance.kronosColumns().filter { it.isColumn }
         // 从实例中获取索引
         val kronosIndexes = instance.kronosTableIndex()
         // 根据不同的数据库类型，生成并执行创建表的SQL语句
@@ -196,7 +195,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     "$columnName $columnType $defaultValue"
                 }
                 val indexDefinitions = kronosIndexes.map { index ->
-                    "CREATE ${index.type.uppercase(Locale.getDefault())} INDEX ${index.name} ON ${kronosTableName} (${
+                    "CREATE ${index.type.uppercase(Locale.getDefault())} INDEX ${index.name} ON $kronosTableName (${
                         index.columns.joinToString(
                             ", "
                         )
@@ -297,7 +296,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                      BEGIN
                     CREATE TABLE [dbo].[$kronosTableName]
                     (
-                        ${columnDefinitions}
+                        $columnDefinitions
                     );
                 END;
                      """
@@ -331,7 +330,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 //ON "_tb_user_old_20240617" (
                 //  "password"
                 //);
-                val kronosIndexeSqls = kronosIndexes.map { index ->
+                val kronosIndexSqls = kronosIndexes.map { index ->
                     val columnsWithTypes = index.columns.map { column ->
                         if (index.type.isNotEmpty())
                             "$column COLLATE ${index.type}"
@@ -344,7 +343,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 // 执行创建表的SQL语句
                 val sqls = listOf(
                     "CREATE TABLE IF NOT EXISTS $kronosTableName (${columnDefinitions}) ;"
-                ) + kronosIndexeSqls
+                ) + kronosIndexSqls
 
                 val result = sqls.sumOf { dataSource.update(KronosAtomicActionTask(it)) }
                 return result > 0
@@ -443,7 +442,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             )
         }.filter {
             // 筛掉不在current中的列
-            if (it.columnName !in current.map { it.columnName }) {
+            if (it.columnName !in current.map { field -> field.columnName }) {
                 return@filter false
             } else {
                 return@filter true
@@ -495,7 +494,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         val tableColumns = getTableColumns(kronosTableName)
         // 获取实际表索引信息
         val tableIndexes = getTableIndexes(kronosTableName)
-        println("实际表索引信息" + tableIndexes)
+        println("实际表索引信息$tableIndexes")
         println("实体类列信息" + kronosColumns.map { it.columnName })
         println("实际表字段信息" + tableColumns.map { it.columnName })
         println("实体类列nullable信息" + kronosColumns.map { it.nullable })
@@ -507,8 +506,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         println("删除字段" + toDelete.map { it.columnName })
         // 需要新增与删除的索引
         val (toAddIndex, todeleteIndex) = differIndex(kronosIndexes, tableIndexes)
-        println("toAddIndex:   " + toAddIndex)
-        println("todeleteIndex:   " + todeleteIndex)
+        println("toAddIndex:   $toAddIndex")
+        println("todeleteIndex:   $todeleteIndex")
         // 根据数据库类型执行不同的创建/修改表语句
         when (dbType) {
             DBType.Mysql -> {
@@ -526,22 +525,22 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                                 it.primaryKey
                             )
                         } ${if (it.identity) "AUTO_INCREMENT" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""};"
-                    } + toModified.map {
-                        "ALTER TABLE $kronosTableName MODIFY COLUMN ${it.columnName} ${
+                    } + toModified.map { field ->
+                        "ALTER TABLE $kronosTableName MODIFY COLUMN ${field.columnName} ${
                             convertToSqlColumnType(
                                 DBType.Mysql,
-                                it.type,
-                                it.length,
-                                it.nullable,
-                                it.primaryKey
+                                field.type,
+                                field.length,
+                                field.nullable,
+                                field.primaryKey
                             )
-                        } ${if (it.identity) "AUTO_INCREMENT" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""};"
+                        } ${if (field.identity) "AUTO_INCREMENT" else ""} ${if (field.defaultValue != null) "DEFAULT '${field.defaultValue}'" else ""};"
                             .let {
                                 // 判断主键是否有改动 如果有 先删除主键 DROP PRIMARY KEY
                                 if (
                                     it.contains("PRIMARY KEY")
                                 ) {
-                                    "ALTER TABLE $kronosTableName DROP PRIMARY KEY;" + it
+                                    "ALTER TABLE $kronosTableName DROP PRIMARY KEY;$it"
                                 } else {
                                     it
                                 }
@@ -594,7 +593,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                             }.joinToString("\",\"")
                         }\")"
                     }
-                println("listOfSql" + listOfSql)
+                println("listOfSql$listOfSql")
                 if (listOfSql.isNotEmpty()) {
                     listOfSql.forEach {
                         dataSource.update(KronosAtomicActionTask(it))
@@ -749,7 +748,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         "CREATE ${it.method} INDEX ${it.name} ON $kronosTableName (${
                             it.columns.map { column ->
                                 if (it.type.isNotEmpty())
-                                    "${column} COLLATE ${it.type}"
+                                    "$column COLLATE ${it.type}"
                                 else
                                     column
                             }
@@ -1028,10 +1027,10 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     nullable = it["is_nullable"] == true,
                     primaryKey = it["primary_key"] == true,
                     // 如果defaultValue =  "('tb_user_id_seq'::regclass)" 设置成 null
-                    defaultValue = (it["column_default"] as String?).let {
-                        if (it == "nextval('tb_user_id_seq'::regclass)")
+                    defaultValue = (it["column_default"] as String?).let { o ->
+                        if (o == "nextval('tb_user_id_seq'::regclass)")
                             null
-                        else it
+                        else o
                     }
                 )
 

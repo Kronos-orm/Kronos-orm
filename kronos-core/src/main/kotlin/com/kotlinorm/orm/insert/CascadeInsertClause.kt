@@ -60,25 +60,37 @@ object CascadeInsertClause {
 
                 return@mapNotNull if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.INSERT)) || cascadeRefs.isNotEmpty()
                 ) { // 如果当前列有级联映射器，或者引用的POJO对象中有级联映射器才需要级联插入
-                    listOfData.mapNotNull nextPojo@{ refPojo ->
-                        val task = refPojo.insert().build().atomicTasks.first() // 生成插入任务
-                        val references = (cascadeRefs.map { it.reference } + col.reference) // 获取引用的POJO对象中的引用
-                        references.forEach { reference -> // 遍历引用
-                            reference?.targetColumns?.forEachIndexed { indexOfTargetField, it -> // 遍历引用的POJO对象中的列
-                                val refField =
-                                    columns.find { o -> o.columnName == reference.referenceColumns[indexOfTargetField] } // 获取引用的POJO对象中的列
-                                val targetField = ref.kronosColumns().getOrNull(indexOfTargetField) // 获取引用的POJO对象中的列
-                                if (refField != null && targetField != null) { // 列不为空
-                                    if (task.paramMap[targetField.name] != null) return@nextPojo null // 如果引用的POJO对象中的列已经有值了，就不需要再传递值了（避免覆盖已有值的情况）
-                                    if (refField.identity) {
-                                        task.paramMap[targetField.name] =
-                                            dataMap[refField.name] ?: lastInsertId // 将当前列的值传递给引用的POJO对象
-                                    } else {
-                                        task.paramMap[targetField.name] = dataMap[col.name] // 将当前列的值传递给引用的POJO对象
+                    listOfData.map nextPojo@{ refPojo ->
+                        val updateFactory: (Map<String, Any?>) -> Map<Field, Any?> =
+                            { paramMap -> //要先获取到父插入任务的paramMap，再去构建sql语句
+                                val toUpdate = mutableMapOf<Field, Any?>()
+                                val references = (cascadeRefs.map { it.reference } + col.reference) // 获取引用的POJO对象中的引用
+                                references.forEach { reference -> // 遍历引用
+                                    reference?.targetColumns?.forEachIndexed { indexOfTargetField, target -> // 遍历引用的POJO对象中的列
+                                        val targetField =
+                                            ref.kronosColumns()
+                                                .find { o -> o.columnName == reference.referenceColumns[indexOfTargetField] } // 获取引用的POJO对象中的列
+                                        val refField =
+                                            columns.find { o -> o.columnName == target } // 获取引用的POJO对象中的列
+                                        if (refField != null && targetField != null) { // 列不为空
+                                            if (paramMap[targetField.name] != null) return@forEach // 如果引用的POJO对象中的列已经有值了，就不需要再传递值了（避免覆盖已有值的情况）
+                                            if (refField.identity) { // 如果引用的POJO对象中的列是自增主键
+                                                toUpdate[targetField] = dataMap[refField.name]
+                                                    ?: lastInsertId // 将当前列的值传递给引用的POJO对象, 如果当前列的值为空，就传递上一次插入的主键值
+                                            } else {
+                                                toUpdate[targetField] = dataMap[refField.name] // 将当前列的值传递给引用的POJO对象
+                                            }
+                                        }
                                     }
                                 }
+                                toUpdate
                             }
-                        }
+                        val toUpdateFields = updateFactory(refPojo.toDataMap()) // 获取要更新值的引用列
+                        val task = refPojo.insert().apply {
+                            toUpdateFields.forEach { // 将引用的POJO对象中的列的值传递给引用的POJO对象
+                                updateInsertFields(it.key, it.value)
+                            }
+                        }.build().atomicTasks.first() // 生成插入任务
                         return@nextPojo build(refPojo, task)
                     }.merge()
                 } else {

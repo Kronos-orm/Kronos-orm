@@ -64,9 +64,7 @@ object CascadeInsertClause {
                         val task = refPojo.insert().build().atomicTasks.first() // 生成插入任务
                         val references = (cascadeRefs.map { it.reference } + col.reference) // 获取引用的POJO对象中的引用
                         references.forEach { reference -> // 遍历引用
-                            reference?.targetColumns?.forEach {
-                                val indexOfTargetField =
-                                    ref.kronosColumns().indexOfFirst { o -> o.columnName == it } // 获取引用的POJO对象中的列
+                            reference?.targetColumns?.forEachIndexed { indexOfTargetField, it -> // 遍历引用的POJO对象中的列
                                 val refField =
                                     columns.find { o -> o.columnName == reference.referenceColumns[indexOfTargetField] } // 获取引用的POJO对象中的列
                                 val targetField = ref.kronosColumns().getOrNull(indexOfTargetField) // 获取引用的POJO对象中的列

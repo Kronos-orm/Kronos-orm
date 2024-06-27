@@ -44,7 +44,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun build(): KronosActionTask {
-        toInsertFields.addAll(allFields.filter { it.name in paramMap.keys && paramMap[it.name] != null })
+        toInsertFields.addAll(allFields.filter { it.name in paramMap.keys && it.isColumn && paramMap[it.name] != null })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)

@@ -180,7 +180,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             )
             return (cascadeTasks ?: listOf(
                 KronosAtomicActionTask(
-                    sql(whereClauseSql), paramMap, operationType = KOperationType.DELETE
+                    sql(toWhereSql(whereClauseSql)), paramMap, operationType = KOperationType.DELETE
                 )
             )).toKronosActionTask()
         }

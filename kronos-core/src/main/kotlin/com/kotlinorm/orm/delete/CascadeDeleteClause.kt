@@ -89,7 +89,7 @@ object CascadeDeleteClause {
 
                 val validReferences = //递归获取下一级的引用
                     findValidRefs(
-                        refPojo.kronosColumns().filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) })
+                        refPojo.kronosColumns().filter { !it.isColumn })
                 val nextStepTask = generateReferenceDeleteSql( // 递归生成下一级的级联删除语句
                     refPojo, newWhereClauseSql, ref, logic, paramMap, rootTask
                 ).toMutableList()
@@ -138,11 +138,13 @@ object CascadeDeleteClause {
         paramMap: MutableMap<String, Any?>,
         deleteTask: KronosAtomicActionTask
     ): List<KronosAtomicActionTask>? {
+        val columns = pojo.kronosColumns()
+        print(columns)
         val counter = Counter() //创建一个计数器，用于生成临时表的表名，防止临时表名发生重名
         val validReferences =
             findValidRefs(
                 pojo.kronosColumns()
-                    .filter { !it.isColumn && it.refUseFor(KOperationType.DELETE) }) // 获取所有的非数据库列、有关联注解且用于删除操作
+                    .filter { !it.isColumn }) // 获取所有的非数据库列、有关联注解且用于删除操作
         if (validReferences.isEmpty()) {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
@@ -177,10 +179,10 @@ object CascadeDeleteClause {
             val ref = Class.forName(
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-            ValidRef(if (col.cascadeMapperBy()) {
+            ValidRef(if (col.cascadeMapperBy() && col.refUseFor(KOperationType.DELETE)) {
                 listOf(col.reference!!) // 若有级联映射，返回引用
             } else {
-                ref.kronosColumns().filter { it.cascadeMapperBy(col.tableName) }
+                ref.kronosColumns().filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.DELETE) }
                     .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
             }, ref)
         }

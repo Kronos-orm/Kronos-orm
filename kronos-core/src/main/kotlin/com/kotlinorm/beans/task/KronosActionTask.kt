@@ -42,15 +42,40 @@ class KronosActionTask {
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault() //获取数据源
         beforeExecute?.invoke(this) // 在执行之前执行的操作
-        val groupedTasks = atomicTasks.groupBy { it.sql }.map { //按照sql分组
-            if (it.value.size > 1) { //如果有多个任务
+
+        /**
+         * Groups a list of KronosAtomicActionTask by their SQL statements.
+         *
+         * This function takes a list of KronosAtomicActionTask as input and groups them by their SQL statements.
+         * It uses the fold function to iterate over the list of tasks and groups them into sublists.
+         * If the accumulator list is empty or the SQL statement of the last task in the last sublist is not the same as the SQL statement of the current task,
+         * it adds a new sublist to the accumulator list with the current task as its first element.
+         * Otherwise, it adds the current task to the last sublist in the accumulator list.
+         * The function returns the accumulator list which is a list of sub lists of tasks grouped by their SQL statements.
+         *
+         * 保证只有连续的sql语句才会被分组，[a, a, b, b, b, c, c, a, a] => [[a, a], [b, b, b], [c, c], [a, a]]
+         *
+         * @param listOfTask List<KronosAtomicActionTask> the list of KronosAtomicActionTask to group.
+         * @return List<List<KronosAtomicActionTask>> returns a list of sub lists of KronosAtomicActionTask grouped by their SQL statements.
+         */
+        fun groupBySql(listOfTask: List<KronosAtomicActionTask>): List<List<KronosAtomicActionTask>> {
+            return listOfTask.fold(mutableListOf<MutableList<KronosAtomicActionTask>>()) { acc, task ->
+                if (acc.isEmpty() || acc.last().last().sql != task.sql) {
+                    acc.add(mutableListOf(task))
+                } else {
+                    acc.last().add(task)
+                }
+                acc
+            }
+        }
+
+        val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
+            if (it.size > 1) { //如果有多个任务
                 KronosAtomicBatchTask( //创建一个批量任务
-                    it.key, it.value.map { task -> task.paramMap }.toTypedArray(), it.value.first().operationType
+                    it.first().sql, it.map { task -> task.paramMap }.toTypedArray(), it.first().operationType
                 )
             } else { //如果只有一个任务
-                KronosAtomicActionTask( //创建一个原子任务
-                    it.key, it.value.first().paramMap, it.value.first().operationType
-                )
+                it.first()
             }
         }
         val results = dataSource.transact { //执行事务

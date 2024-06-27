@@ -48,6 +48,13 @@ fun lastInsertIdObtainSql(dbType: DBType): String {
     }
 }
 
+/**
+ * Executes the given atomic action task using the provided data source wrapper.
+ *
+ * @param wrapper The data source wrapper to use for executing the task. Can be null.
+ * @return A KronosOperationResult object containing the number of affected rows and the last inserted ID (if applicable).
+ *         If the ID of the operation is specified by the user, the ID after the previous auto-increment is returned
+ */
 fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
     val affectRows = if (this is KBatchTask) {
         doTaskLog()

@@ -161,8 +161,8 @@ class UpdateClause<T : KPojo>(
      */
     fun build(): KronosActionTask {
 
-        updateTimeStrategy.enabled = true
-        logicDeleteStrategy.enabled = true
+        updateTimeStrategy.enabled = this.updateTimeStrategy.enabled
+        logicDeleteStrategy.enabled = this.logicDeleteStrategy.enabled
 
         // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
         if (isExcept) {
@@ -218,14 +218,14 @@ class UpdateClause<T : KPojo>(
         // 合并参数映射，准备执行SQL所需的参数
         paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
         // 返回构建好的KronosAtomicTask实例
-        return listOf(
-            KronosAtomicActionTask(
-                sql,
-                paramMap,
-                operationType = KOperationType.UPDATE
-            ),
-            *CascadeUpdateClause.build(pojo, condition)
-        ).toKronosActionTask()
+
+        val rootTask = KronosAtomicActionTask(
+            sql,
+            paramMap,
+            operationType = KOperationType.UPDATE
+        )
+
+        return CascadeUpdateClause.build(pojo, whereClauseSql, paramMap , rootTask).apply { atomicTasks.add(rootTask) }
     }
 
     /**

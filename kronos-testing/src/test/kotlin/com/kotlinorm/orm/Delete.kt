@@ -2,7 +2,7 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
 import com.kotlinorm.orm.delete.delete
@@ -17,8 +17,8 @@ class Delete {
         }
     }
 
-    private val user = User(1)
-    private val testUser = User(1, "username")
+    private val user = MysqlUser(1)
+    private val testUser = MysqlUser(1,"username")
 
     @Test
     fun testDelete() {
@@ -81,7 +81,7 @@ class Delete {
 
     @Test
     fun testDeleteArray() {
-        val (sql, _, list) = arrayOf(user, testUser).delete().where {
+        val (sql, paramMapArr) = arrayOf(user,testUser).delete().where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
@@ -90,14 +90,14 @@ class Delete {
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), list.map { it.paramMap.toMap() }
+            ).toList(), paramMapArr!!.toList()
 
         )
     }
 
     @Test
     fun testDeleteIter() {
-        val (sql, _, list) = listOf(user, testUser).delete().where {
+        val (sql, paramMapArr) = listOf(user,testUser).delete().where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
@@ -106,7 +106,7 @@ class Delete {
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), list.map { it.paramMap.toMap() }
+            ).toList(), paramMapArr!!.toList()
 
         )
     }

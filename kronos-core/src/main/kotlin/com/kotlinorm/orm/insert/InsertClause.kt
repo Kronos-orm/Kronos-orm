@@ -16,18 +16,20 @@
 
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.task.KronosActionTask
-import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
-class InsertClause<T : KPojo>(val pojo: T) {
+class InsertClause<T : KPojo>(pojo: T) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var createTimeStrategy = pojo.kronosCreateTime()
@@ -37,30 +39,34 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private val toInsertFields = linkedSetOf<Field>()
 
     private val updateInsertFields = { field: Field, value: Any? ->
-        if (field.isColumn && value != null) {
+        if (value != null) {
             toInsertFields += field
             paramMap[field.name] = value
         }
     }
 
-    fun build(): KronosActionTask {
+    fun build(): KronosAtomicActionTask {
         toInsertFields.addAll(allFields.filter { it.name in paramMap.keys && paramMap[it.name] != null })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
 
-        val sql = """
+        var sql = ""
+        if (dataSource().dbType == DBType.Oracle) {
+            sql = """
+                INSERT INTO $tableName (${toInsertFields.joinToString { it.columnName.uppercase() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
+        """.trimIndent()
+        } else if (dataSource().dbType == DBType.Mysql) {
+            sql = """
             INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
         """.trimIndent()
+        }
 
-        return CascadeInsertClause.build(
-            pojo,
-            KronosAtomicActionTask(
-                sql,
-                paramMap.filter { it.key in toInsertFields.map { item -> item.name } }.toMutableMap(),
-                operationType = KOperationType.INSERT
-            )
+        return KronosAtomicActionTask(
+            sql,
+            paramMap,
+            operationType = KOperationType.INSERT
         )
 
     }
@@ -70,54 +76,16 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     companion object {
-        /**
-         * Builds a KronosActionTask for each InsertClause in the list.
-         *
-         * This function maps each InsertClause in the Iterable to a KronosActionTask by calling the build function of the InsertClause.
-         * It then merges all the KronosActionTasks into a single KronosActionTask using the merge function and returns it.
-         *
-         * @return KronosActionTask returns a single KronosActionTask that represents the merged tasks for all the InsertClauses in the Iterable.
-         */
-        fun <T : KPojo> Iterable<InsertClause<T>>.build(): KronosActionTask {
-            return this.map { it.build() }.merge()
+        fun <T : KPojo> List<InsertClause<T>>.build(): KronosAtomicBatchTask {
+            val tasks = this.map { it.build() }
+            return KronosAtomicBatchTask(
+                sql = tasks.first().sql,
+                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
+                operationType = KOperationType.INSERT
+            )
         }
 
-        /**
-         * Executes the KronosActionTask built for each InsertClause in the Iterable.
-         *
-         * This function first builds a KronosActionTask for each InsertClause in the Iterable by calling the build function.
-         * It then executes the built KronosActionTask and returns the result.
-         *
-         * @param wrapper KronosDataSourceWrapper? (optional) the data source wrapper to use for the execution. If not provided, the default data source wrapper is used.
-         * @return KronosOperationResult returns the result of the execution of the KronosActionTask.
-         */
-        fun <T : KPojo> Iterable<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
-        }
-
-        /**
-         * Builds a KronosActionTask for each InsertClause in the Array.
-         *
-         * This function maps each InsertClause in the Iterable to a KronosActionTask by calling the build function of the InsertClause.
-         * It then merges all the KronosActionTasks into a single KronosActionTask using the merge function and returns it.
-         *
-         * @return KronosActionTask returns a single KronosActionTask that represents the merged tasks for all the InsertClauses in the Iterable.
-         */
-        fun <T : KPojo> Array<InsertClause<T>>.build(): KronosActionTask {
-            return this.map { it.build() }.merge()
-        }
-
-
-        /**
-         * Executes the KronosActionTask built for each InsertClause in the array.
-         *
-         * This function first builds a KronosActionTask for each InsertClause in the Iterable by calling the build function.
-         * It then executes the built KronosActionTask and returns the result.
-         *
-         * @param wrapper KronosDataSourceWrapper? (optional) the data source wrapper to use for the execution. If not provided, the default data source wrapper is used.
-         * @return KronosOperationResult returns the result of the execution of the KronosActionTask.
-         */
-        fun <T : KPojo> Array<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+        fun <T : KPojo> List<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
             return build().execute(wrapper)
         }
     }

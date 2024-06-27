@@ -16,9 +16,9 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.enums.ASC
+import com.kotlinorm.enums.DESC
 import com.kotlinorm.enums.SortType
-import com.kotlinorm.enums.SortType.Companion.Asc
-import com.kotlinorm.enums.SortType.Companion.Desc
 
 /**
  * KTableSortable
@@ -37,22 +37,22 @@ class KTableSortable<T : KPojo> : KTable<T>() {
             }
 
             is String -> {
-                sortFields.add(Field(field, field, type = "string") to Asc)
+                sortFields.add(Field(field, field, type = "string") to ASC)
             }
 
             else -> {
-                sortFields.add((field to Asc) as Pair<Field, SortType>)
+                sortFields.add((field to ASC) as Pair<Field, SortType>)
             }
         }
     }
 
     @Suppress("UNUSED")
     fun Any?.desc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to Desc
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to DESC
 
     @Suppress("UNUSED")
     fun Any?.asc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to Asc
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to ASC
 
     companion object {
         /**

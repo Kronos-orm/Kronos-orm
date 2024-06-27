@@ -21,10 +21,8 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
-import com.kotlinorm.beans.task.KronosActionTask
-import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
-import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -32,10 +30,10 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
-import com.kotlinorm.utils.ConditionSqlBuilder.toWhereSql
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -49,8 +47,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var allFields = pojo.kronosColumns().toLinkedSet()
 
     fun logic(): DeleteClause<T> {
-        // 若logicDeleteStrategy.enabled为false则抛出异常
-        // 若updateTimeStrategy.enabled为false则不更新updateTime
+        // TODO：这里有问题
+        // 这里逻辑是错的，若logicDeleteStrategy.enabled为false则抛出异常
+        // 若updateTimeStrategy.enabled为false则不更新updateTime，而不是强制更新
         if (!this.logicDeleteStrategy.enabled) {
             throw NeedFieldsException()
         }
@@ -76,7 +75,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
 
             // 根据fields中的字段及其值构建删除条件
-            condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this
     }
@@ -93,8 +92,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
         if (deleteCondition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition = allFields.filter { it.isColumn }.mapNotNull { field ->
-                field.eq(paramMap[field.name]).takeIf { it.value != null }
+            condition = paramMap.keys.mapNotNull { propName ->
+                allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
             }.toCriteria()
             return this
         }
@@ -114,7 +113,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      *
      * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
      */
-    fun build(): KronosActionTask {
+    fun build(): KronosAtomicActionTask {
         // 设置逻辑删除的策略
         if (logic) {
             setCommonStrategy(logicDeleteStrategy) { field, value ->
@@ -125,14 +124,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         // 构建条件SQL语句及参数映射
-        val (cascadeWhereClauseSql, _) = ConditionSqlBuilder.buildConditionSqlWithParams(
-            condition, mutableMapOf(), showTable = true
-        )
-
-        // 构建条件SQL语句及参数映射
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(
-            condition, mutableMapOf()
-        )
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+            .toWhereClause()
 
         // 处理逻辑删除时的更新字段逻辑
         if (logic) {
@@ -147,42 +140,24 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
             // 构建将要更新的字段字符串
             val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
-            val sql: (String?) -> String = { sqlOfWhereClause ->
-                listOfNotNull(
-                    "UPDATE", "`$tableName`", "SET", updateFields, sqlOfWhereClause
-                ).joinToString(" ")
-            }
 
             // 组装UPDATE语句并返回KronosAtomicTask对象
-            val cascadeTasks = CascadeDeleteClause.build(
-                pojo, cascadeWhereClauseSql, true, paramMap, KronosAtomicActionTask(
-                    sql(cascadeWhereClauseSql), paramMap, operationType = KOperationType.DELETE
-                )
-            )
-            return (cascadeTasks ?: listOf(
-                KronosAtomicActionTask(
-                    sql(toWhereSql(whereClauseSql)), paramMap, operationType = KOperationType.DELETE
-                )
-            )).toKronosActionTask()
+            val sql = listOfNotNull(
+                "UPDATE",
+                "`$tableName`",
+                "SET",
+                updateFields,
+                whereClauseSql
+            ).joinToString(" ")
+            return KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE)
         } else {
             // 构建DELETE语句并返回KronosAtomicTask对象
-            val sql: (String?) -> String = { sqlOfWhereClause ->
-                listOfNotNull(
-                    "DELETE FROM", "`$tableName`", sqlOfWhereClause
-                ).joinToString(" ")
-            }
-
-            // 组装UPDATE语句并返回KronosAtomicTask对象
-            val cascadeTasks = CascadeDeleteClause.build(
-                pojo, cascadeWhereClauseSql, false, paramMap, KronosAtomicActionTask(
-                    sql(toWhereSql(whereClauseSql)), paramMap, operationType = KOperationType.DELETE
-                )
-            )
-            return (cascadeTasks ?: listOf(
-                KronosAtomicActionTask(
-                    sql(whereClauseSql), paramMap, operationType = KOperationType.DELETE
-                )
-            )).toKronosActionTask()
+            val sql = listOfNotNull(
+                "DELETE FROM",
+                "`$tableName`",
+                whereClauseSql
+            ).joinToString(" ")
+            return KronosAtomicActionTask(sql, paramMap, operationType = KOperationType.DELETE)
         }
     }
 
@@ -206,7 +181,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param someFields the fields to set the condition for
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Iterable<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
+        fun <T : KPojo> List<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
             return map { it.by(someFields) }
         }
 
@@ -216,7 +191,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param updateCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Iterable<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
+        fun <T : KPojo> List<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
             return map { it.where(updateCondition) }
         }
 
@@ -226,57 +201,22 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo> Iterable<DeleteClause<T>>.build(): KronosActionTask {
-            return map { it.build() }.merge()
+        fun <T : KPojo> List<DeleteClause<T>>.build(): KronosAtomicBatchTask {
+            val tasks = this.map { it.build() }
+            return KronosAtomicBatchTask(
+                sql = tasks.first().sql,
+                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
+                operationType = KOperationType.DELETE
+            )
         }
 
         /**
-         * Executes an array of UpdateClause objects and returns the result of the execution.
+         * Executes a list of UpdateClause objects and returns the result of the execution.
          *
          * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
          * @return The KronosOperationResult of the execution.
          */
-        fun <T : KPojo> Iterable<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
-        }
-
-        /**
-         * Applies the `by` operation to each update clause in the array based on the provided fields.
-         *
-         * @param someFields the fields to set the condition for
-         * @return a list of UpdateClause objects with the updated condition
-         */
-        fun <T : KPojo> Array<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
-            return map { it.by(someFields) }
-        }
-
-        /**
-         * Applies the `where` operation to each update clause in the array based on the provided update condition.
-         *
-         * @param updateCondition the condition for the update clause. Defaults to null.
-         * @return a list of UpdateClause objects with the updated condition
-         */
-        fun <T : KPojo> Array<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
-            return map { it.where(updateCondition) }
-        }
-
-        /**
-         * Builds a KronosAtomicBatchTask from an array of UpdateClause objects.
-         *
-         * @param T The type of KPojo objects in the list.
-         * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
-         */
-        fun <T : KPojo> Array<DeleteClause<T>>.build(): KronosActionTask {
-            return map { it.build() }.merge()
-        }
-
-        /**
-         * Executes an array of UpdateClause objects and returns the result of the execution.
-         *
-         * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
-         * @return The KronosOperationResult of the execution.
-         */
-        fun <T : KPojo> Array<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+        fun <T : KPojo> List<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
             return build().execute(wrapper)
         }
     }

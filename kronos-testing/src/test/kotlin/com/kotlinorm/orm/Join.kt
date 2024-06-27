@@ -1,14 +1,14 @@
 package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.beans.ProductLog
-import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.tableoperationbeans.ProductLog
+import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
-import com.kotlinorm.orm.utils.TestWrapper
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -25,7 +25,7 @@ class Join {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { TestWrapper }
+            dataSource = { KronosBasicWrapper(ds) }
             serializeResolver = GsonResolver
         }
     }
@@ -33,7 +33,7 @@ class Join {
     @Test
     fun testJoinOneTable() {
         val (sql, paramMap) =
-            User(1).join(
+            MysqlUser(1).join(
                 UserRelation(1, "123", 1, 1),
             ) { user, relation ->
                 leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
@@ -59,7 +59,7 @@ class Join {
     @Test
     fun testJoinMultipleTables() {
         val (sql, paramMap) =
-            User(1).join(
+            MysqlUser(1).join(
                 UserRelation(1, "123", 1, 1),
                 Movie(1),
                 ProductLog(1)
@@ -93,7 +93,7 @@ class Join {
     @Test
     fun testWithTotal() {
         val (cnt, rcd) =
-            User(1).join(
+            MysqlUser(1).join(
                 UserRelation(1, "123", 1, 1),
                 Movie(1),
                 ProductLog(1)

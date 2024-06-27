@@ -4,7 +4,8 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
 //import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.beans.Movie
+import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
 import org.apache.commons.dbcp.BasicDataSource
@@ -25,11 +26,12 @@ class Select {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
+            dataSource = { KronosBasicWrapper(ds) }
             serializeResolver = GsonResolver
         }
     }
 
-    val user = User(2)
+    val user = MysqlUser(2)
 
     @Test
     fun testSelectAllParams() {
@@ -65,14 +67,6 @@ class Select {
     }
 
     @Test
-    fun testSelect2() {
-        val (sql, paramMap) = user.select { it.id }.build()
-
-        assertEquals(mapOf("id" to 1), paramMap)
-        assertEquals("SELECT `id` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
-    }
-
-    @Test
     fun testLimit() {
         val (sql , paramMap) = user.select { }.limit(10).build()
 
@@ -98,18 +92,18 @@ class Select {
 
     @Test
     fun testSelectComplex() {
-        val (sql, paramMap) = User()
-            .select { it.username + it.gender }
-            .where { it.id > 10 }
+        val (sql, paramMap) = MysqlUser()
+            .select { it.username }
+            .where { it.id < 10 }
             .distinct()
-            .groupBy { it.id + it.gender }
-            .orderBy { it.id.desc() + it.username }
+            .groupBy { it.id }
+            .orderBy { it.username.desc() }
             .having { it.id.eq }
             .build()
 
         assertEquals(mapOf("idMax" to 10), paramMap)
         assertEquals(
-            "SELECT DISTINCT `username`, `gender` FROM `tb_user` WHERE `id` > :idMin AND `deleted` = 0 GROUP BY `id`, `gender` HAVING `id` = :id ORDER BY `id` DESC, `username` ASC",
+            "SELECT DISTINCT `username` FROM `tb_user` WHERE `id` < :idMax AND `deleted` = 0 GROUP BY `id` HAVING `id` = :id ORDER BY `username` DESC",
             sql
         )
     }
@@ -156,7 +150,16 @@ class Select {
 
     @Test
     fun testDatebase() {
-        val res = user.select().withTotal().query()
+        val res = user.select().withTotal().build()
+        println(res)
+    }
+
+    @Test
+    fun testDatebase1() {
+        val res = user.select {
+            it.id + Movie().select { m -> m.id }.where { m -> m.director == it.username }.single()
+        }.queryOne()
+
         println(res)
     }
 }

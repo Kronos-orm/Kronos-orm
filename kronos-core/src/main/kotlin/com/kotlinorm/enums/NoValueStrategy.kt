@@ -21,13 +21,5 @@ enum class NoValueStrategy {
     False,
     True,
     JudgeNull,
-    Smart;
-
-    companion object {
-        val ignore = Ignore
-        val alwaysFalse = False
-        val alwaysTrue = True
-        val judgeNull = JudgeNull
-        val smart = Smart
-    }
+    Smart
 }

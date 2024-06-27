@@ -28,6 +28,7 @@ import com.kotlinorm.enums.Oracle
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.safeMapperTo
 import com.kotlinorm.utils.getTypeSafeValue
 import java.sql.PreparedStatement
@@ -43,7 +44,7 @@ import kotlin.reflect.full.isSuperclassOf
  * A wrapper class for JDBC data sources that implements the `KronosDataSourceWrapper` interface.
  * @author: OUSC
  **/
-class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
+class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceWrapper {
     private var _metaUrl: String
     private var _userName: String
     private var _metaDbType: DBType
@@ -61,8 +62,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         val conn = dataSource.connection
         _metaUrl = conn.metaData.url
         _metaDbType = DBType.fromName(conn.metaData.databaseProductName)
-        _userName = conn.metaData.userName
-            ?: throw UnsupportedTypeException("Unsupported database type [${conn.metaData.databaseProductName}].")
+        _userName = conn.metaData.userName?:""
         conn.close()
     }
 
@@ -79,7 +79,11 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         var ps: PreparedStatement? = null
         var rs: ResultSet? = null
         try {
-            ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+            ps = if(dbType == Oracle.type){
+                conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+            } else {
+                conn.prepareStatement(sql)
+            }
             paramList.forEachIndexed { index, any ->
                 ps.setObject(index + 1, any)
             }
@@ -116,7 +120,11 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
             var ps: PreparedStatement? = null
             var rs: ResultSet? = null
             try {
-                ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+                ps = if(dbType == Oracle.type){
+                    conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+                } else {
+                    conn.prepareStatement(sql)
+                }
                 paramList.forEachIndexed { index, any ->
                     ps.setObject(index + 1, any)
                 }
@@ -150,7 +158,11 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         var ps: PreparedStatement? = null
         var rs: ResultSet? = null
         try {
-            ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+            ps = if(dbType == Oracle.type){
+                conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+            } else {
+                conn.prepareStatement(sql)
+            }
             paramList.forEachIndexed { index, any ->
                 ps.setObject(index + 1, any)
             }
@@ -265,28 +277,30 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         return result
     }
 
-    /**
-     * Perform database operations in a transaction
-     *
-     * @param T the return type
-     * @param dataSource the data source
-     * @param block the block of code to execute in the transaction
-     * @return T the result of the block
-     */
-    override fun <T> transact(block: () -> T): T {
-        val res: T?
-        val conn = dataSource.connection
-        conn.autoCommit = false
-        try {
-            res = block()
-            conn.commit()
-        } catch (e: Exception) {
-            conn.rollback()
-            throw e
-        } finally {
-            conn.close()
+    companion object {
+        /**
+         * Perform database operations in a transaction
+         *
+         * @param T the return type
+         * @param dataSource the data source
+         * @param block the block of code to execute in the transaction
+         * @return T the result of the block
+         */
+        inline fun <reified T> transact(dataSource: DataSource, block: (DataSource) -> T): T {
+            val res: T?
+            val conn = dataSource.connection
+            conn.autoCommit = false
+            try {
+                res = block(dataSource)
+                conn.commit()
+            } catch (e: Exception) {
+                conn.rollback()
+                throw e
+            } finally {
+                conn.close()
+            }
+            return res!!
         }
-        return res!!
     }
 
     private fun ResultSet.toList(javaClass: Class<*>? = null): List<Map<String, Any>> {

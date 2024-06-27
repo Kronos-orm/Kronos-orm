@@ -410,6 +410,11 @@ object DBHelper {
                 DBType.Oracle -> "VARCHAR(${length})"
                 else -> throw RuntimeException("Unsupported database type for VARCHAR2.")
             }
+
+            "INT2" -> when (dbType) {
+                DBType.SQLite -> "INT2"
+                else -> throw RuntimeException("Unsupported database type for INT2.")
+            }
             // 这里可以继续添加其他类型的处理逻辑
             else -> throw RuntimeException("Unsupported type: $type")
         }.let {

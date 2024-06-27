@@ -2,12 +2,11 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka") apply false
     id("com.vanniktech.maven.publish") apply false
-//    id("com.kotlinorm.kronos-compiler-plugin")
+    id("com.kotlinorm.kronos-compiler-plugin")
 }
 
 dependencies {
     testImplementation(kotlin("test"))
-    testImplementation(kotlin("reflect"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jvm-driver-wrapper"))

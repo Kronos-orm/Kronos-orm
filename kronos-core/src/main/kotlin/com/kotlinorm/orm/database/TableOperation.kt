@@ -372,6 +372,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         return when (dataSource.dbType) {
             DBType.Mysql -> {
                 val sql = "DROP TABLE IF EXISTS $kronosTableName"
+                println(sql)
                 dataSource.update(KronosAtomicActionTask(sql))
                 DeleteClause(instance)
             }
@@ -791,7 +792,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         return when (wrapper.orDefault().dbType) {
             DBType.Mysql -> {
                 val sql = """
-                    SELECT 
+                    SELECT DISTINCT
                         INDEX_NAME AS name
                     FROM 
                      INFORMATION_SCHEMA.STATISTICS
@@ -887,7 +888,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 SELECT 
                     c.COLUMN_NAME, 
                     c.DATA_TYPE, 
-                    c.CHARACTER_MAXIMUM_LENGTH, 
+                    c.CHARACTER_MAXIMUM_LENGTH LENGTH, 
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
                     (CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NO' END) AS PRIMARY_KEY
@@ -1001,7 +1002,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 DBType.Mysql, DBType.Mssql -> Field(
                     columnName = it["COLUMN_NAME"].toString(),
                     type = it["DATA_TYPE"].toString().uppercase(Locale.getDefault()),
-                    length = it["LENGTH"] as Int? ?: 0,
+                    length = (it["LENGTH"] as Long? ?: 0).toInt(),
                     tableName = tableName,
                     nullable = it["IS_NULLABLE"] == "YES",
                     primaryKey = it["PRIMARY_KEY"] == "YES",

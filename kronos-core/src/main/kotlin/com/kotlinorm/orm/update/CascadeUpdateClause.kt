@@ -13,6 +13,15 @@ import kotlin.reflect.full.createInstance
 
 object CascadeUpdateClause {
 
+    /**
+     * Builds a KronosActionTask based on the provided parameters.
+     *
+     * @param pojo The KPojo object representing the data to be updated.
+     * @param whereClauseSql The SQL where clause for filtering the data to be updated. Can be null.
+     * @param paramMap A mutable map containing the updated parameters. The keys should be in the format of column name + "New".
+     * @param rootTask The root task of the KronosAtomicActionTask.
+     * @return A KronosActionTask representing the update operation.
+     */
     fun <T : KPojo> build(
         pojo: T,
         whereClauseSql: String?,
@@ -31,6 +40,17 @@ object CascadeUpdateClause {
         return generateTask(pojo, paramMap, columns.filter {!it.isColumn }, updatedColumns, rootTask, whereClauseSql)
     }
 
+    /**
+     * Generates a KronosActionTask based on the provided parameters.
+     *
+     * @param originalPojo The KPojo object representing the original data.
+     * @param paramMap A mutable map containing the updated parameters. The keys should be in the format of column name + "New".
+     * @param columns The list of columns to be updated.
+     * @param updatedColumns The list of columns that have been updated.
+     * @param prevTask The previous KronosAtomicActionTask.
+     * @param whereClauseSql The SQL where clause for filtering the data to be updated. Can be null.
+     * @return A KronosActionTask representing the update operation.
+     */
     private fun generateTask(
         originalPojo: KPojo,
         paramMap: MutableMap<String, Any?>,
@@ -73,6 +93,13 @@ object CascadeUpdateClause {
                 val logicDeleteStrategy = ref.kronosLogicDelete()
                 val updateTimeStrategy = ref.kronosUpdateTime()
 
+                /**
+                 * Generates a KronosAtomicActionTask for updating a referenced table based on the provided reference columns and target columns.
+                 *
+                 * @param refColumns An array of strings representing the reference columns.
+                 * @param targetColumns An array of strings representing the target columns.
+                 * @return A KronosAtomicActionTask for updating the referenced table.
+                 */
                 fun generateUpdateTask(
                     refColumns: Array<String>,
                     targetColumns: Array<String>

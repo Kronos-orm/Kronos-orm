@@ -16,6 +16,8 @@
 
 package com.kotlinorm.annotations
 
+import com.kotlinorm.enums.KColumnType
+
 /**
  * Column
  *
@@ -27,4 +29,4 @@ package com.kotlinorm.annotations
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ColumnType(val type: String , val length: Int = 0)
+annotation class ColumnType(val type: KColumnType, val length: Int = 0)

@@ -5,7 +5,6 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.getSqlType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.OracleUser

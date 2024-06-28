@@ -5,11 +5,11 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
 import com.kotlinorm.orm.tableoperationbeans.PgUser
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -93,14 +93,8 @@ class TableOperationPostgres {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(
-                    DBType.Postgres,
-                    actualColumn.type,
-                    actualColumn.length,
-                    actualColumn.nullable,
-                    actualColumn.primaryKey
-                ),
-                convertToSqlColumnType(DBType.Postgres, column.type, column.length, column.nullable, column.primaryKey),
+                columnCreateDefSql(DBType.Postgres, actualColumn),
+                columnCreateDefSql(DBType.Postgres, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -155,14 +149,8 @@ class TableOperationPostgres {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(
-                    DBType.Postgres,
-                    actualColumn.type,
-                    column.length,
-                    actualColumn.nullable,
-                    actualColumn.primaryKey
-                ),
-                convertToSqlColumnType(DBType.Postgres, column.type, column.length, column.nullable, column.primaryKey),
+                columnCreateDefSql(DBType.Postgres, actualColumn),
+                columnCreateDefSql(DBType.Postgres, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

@@ -22,11 +22,12 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
-import com.kotlinorm.orm.database.DBHelper.getDBNameFromUrl
-import com.kotlinorm.orm.database.DBHelper.getSqlType
 import com.kotlinorm.orm.delete.DeleteClause
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getDBNameFromUrl
+import com.kotlinorm.sql.SqlManager.getTableCreateSqlList
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import java.math.BigDecimal
 import java.util.*
@@ -50,12 +51,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      * @return Boolean, Boolean value indicating whether the table exists.
      * 表示表是否存在的布尔值。
      */
-    inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()): Boolean {
-        // 通过实例获取表名
-        val kronosTableName = instance.kronosTableName()
-        // 调用查询方法，检查表是否存在
-        return queryTableExistence(kronosTableName)
-    }
+    inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()) =
+        queryTableExistence(instance.kronosTableName())
 
     /**
      * 查询数据库中指定表是否存在。
@@ -101,6 +98,8 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
             DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 ->
                 // 对于不支持的数据库类型，抛出异常
                 throw NotImplementedError("Support for this database type is not implemented yet.")
+
+            DBType.Other -> TODO()
         }
 
         // 执行查询，返回结果大于0表示表存在
@@ -136,223 +135,12 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
      *
      * 创建的表的实例。
      */
-    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()): Boolean {
-        // 从实例中获取表名
-        val kronosTableName = instance.kronosTableName()
-        // 从实例中获取列定义
-        val kronosColumns = instance.kronosColumns()
-        // 从实例中获取索引
-        val kronosIndexes = instance.kronosTableIndex()
-        // 根据不同的数据库类型，生成并执行创建表的SQL语句
-        when (dataSource.dbType) {
-            DBType.Mysql -> {
-                val columnDefinitions = kronosColumns.joinToString(", ") { column ->
-                    val columnName = column.columnName
-                    val columnType = convertToSqlColumnType(
-                        DBType.Mysql,
-                        column.type,
-                        column.length,
-                        column.nullable,
-                        column.primaryKey
-                    )
-                    val identity = if (column.identity) " AUTO_INCREMENT" else " "
-                    val defaultValue = if (column.defaultValue != null) "DEFAULT ${column.defaultValue}" else ""
-                    "$columnName $columnType$identity$defaultValue"
-                }
-
-                val indexDefinitions = kronosIndexes.joinToString(",\n") { index ->
-                    "${index.type.uppercase(Locale.getDefault())} KEY `${index.name}` (`${index.columns.joinToString("`, `")}`) USING ${index.method}"
-                }.let {
-                    if (it.isNotEmpty()) {
-                        ",$it"
-                    } else {
-                        ""
-                    }
-                }
-
-                val sql = "CREATE TABLE IF NOT EXISTS $kronosTableName (${columnDefinitions}\n${indexDefinitions}) ;"
-                println(sql)
-                val result = dataSource.update(KronosAtomicActionTask(sql))
-                return result > 0
-            }
-
-            DBType.Oracle -> {
-                // 生成Oracle的列定义字符串
-                val columnDefinitions = kronosColumns.joinToString(", ") { column ->
-                    // 列名
-                    val columnName = column.columnName
-                    // 列类型
-                    val columnType =
-                        convertToSqlColumnType(
-                            DBType.Oracle,
-                            column.type,
-                            column.length,
-                            column.nullable,
-                            column.primaryKey,
-                            column.identity
-                        )
-                    // 默认值
-                    val defaultValue = if (column.defaultValue != null) "DEFAULT ${column.defaultValue}" else ""
-                    "$columnName $columnType $defaultValue"
-                }
-                val indexDefinitions = kronosIndexes.map { index ->
-                    "CREATE ${index.type.uppercase(Locale.getDefault())} INDEX ${index.name} ON ${kronosTableName} (${
-                        index.columns.joinToString(
-                            ", "
-                        )
-                    })"
-                }
-                // 执行创建表的SQL语句
-                val sqls =
-                    listOf("CREATE TABLE $kronosTableName (${columnDefinitions}) ") + indexDefinitions
-                println(sqls)
-                println(sqls.size)
-                val result = sqls.sumOf { dataSource.update(KronosAtomicActionTask(it)) }
-                return result > 0
-            }
-
-            DBType.Postgres -> {
-                // 生成PostgreSQL的列定义字符串
-                val columnDefinitions = kronosColumns.joinToString(", ") { column ->
-                    // 列名
-                    val columnName = column.columnName
-                    // 列类型
-                    val columnType =
-                        convertToSqlColumnType(
-                            DBType.Postgres,
-                            column.type,
-                            column.length,
-                            column.nullable,
-                            column.primaryKey
-                        ).let {
-                            // 主键及递增属性
-                            if (column.primaryKey) {
-                                "SERIAL PRIMARY KEY"
-                            } else {
-                                it
-                            }
-                        }
-                    // 默认值
-                    val defaultValue = if (column.defaultValue != null) "DEFAULT ${column.defaultValue}" else ""
-                    "$columnName $columnType $defaultValue"
-                }
-                val indexDefinitions = kronosIndexes.map { index ->
-                    "CREATE ${index.method.uppercase(Locale.getDefault())} INDEX ${index.name} ON $kronosTableName USING ${index.type}(${
-                        index.columns.joinToString(
-                            ","
-                        )
-                    });"
-                }
-
-                // 执行创建表的SQL语句
-                val sqls =
-                    (listOf("CREATE TABLE IF NOT EXISTS $kronosTableName (${columnDefinitions}) ;") + indexDefinitions)
-                        .filter { it.isNotBlank() }
-                println(sqls)
-                val result = sqls.sumOf { dataSource.update(KronosAtomicActionTask(it)) }
-                return result > 0
-            }
-
-            DBType.Mssql -> {
-                // 生成Microsoft SQL Server的列定义字符串
-                val columnDefinitions = kronosColumns.joinToString(", ") { column ->
-                    // 列名
-                    val columnName = column.columnName
-                    // 列类型
-                    val columnType =
-                        convertToSqlColumnType(
-                            DBType.Mssql,
-                            column.type,
-                            column.length,
-                            column.nullable,
-                            column.primaryKey
-                        ) // 可能需要根据MSSQL调整类型
-                    // 主键及递增属性
-                    val identity = if (column.identity) " IDENTITY" else " "
-                    // 默认值
-                    val defaultValue = if (column.defaultValue != null) "DEFAULT ${column.defaultValue}" else ""
-                    "$columnName $columnType $identity $defaultValue"
-                }
-                val indexDefinitions = kronosIndexes.map { index ->
-                    "CREATE ${index.method} ${index.type} INDEX [${index.name}]\nON [dbo].[$kronosTableName] ([${
-                        index.columns.joinToString(
-                            "],["
-                        )
-                    }]);".let {
-                        if (index.type == "XML") {
-                            "CREATE ${index.method} PRIMARY ${index.type} INDEX [${index.name}] ON [dbo].[$kronosTableName] ([${
-                                index.columns.joinToString(
-                                    "],["
-                                )
-                            }]);"
-                        } else {
-                            it
-                        }
-                    }
-                }
-                // 执行创建表的SQL语句
-                val sqls = listOf(
-                    """
-                     IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$kronosTableName]') AND type in (N'U')) 
-                     BEGIN
-                    CREATE TABLE [dbo].[$kronosTableName]
-                    (
-                        ${columnDefinitions}
-                    );
-                END;
-                     """
-                ) + indexDefinitions
-                println(sqls)
-                val result = sqls.sumOf { dataSource.update(KronosAtomicActionTask(it)) }
-                return result > 0
-            }
-
-            DBType.SQLite -> {
-                // 生成SQLite的列定义字符串
-                val columnDefinitions = kronosColumns.joinToString(", ") { column ->
-                    // 列名
-                    val columnName = column.columnName
-                    // 列类型
-                    val columnType =
-                        convertToSqlColumnType(
-                            DBType.SQLite,
-                            column.type,
-                            column.length,
-                            column.nullable,
-                            column.primaryKey
-                        )
-                    // 主键属性
-                    val identity = if (column.identity) " AUTOINCREMENT" else " "
-                    // 默认值
-                    val defaultValue = if (column.defaultValue != null) "DEFAULT ${column.defaultValue}" else ""
-                    "$columnName $columnType $identity $defaultValue"
-                }
-                // 索引 CREATE INDEX "dfsdf"
-                //ON "_tb_user_old_20240617" (
-                //  "password"
-                //);
-                val kronosIndexeSqls = kronosIndexes.map { index ->
-                    val columnsWithTypes = index.columns.map { column ->
-                        if (index.type.isNotEmpty())
-                            "$column COLLATE ${index.type}"
-                        else
-                            column
-                    }
-                    val columnsString = columnsWithTypes.joinToString(", ") { it }
-                    "CREATE ${index.method} INDEX IF NOT EXISTS ${index.name} ON $kronosTableName (${columnsString});"
-                }
-                // 执行创建表的SQL语句
-                val sqls = listOf(
-                    "CREATE TABLE IF NOT EXISTS $kronosTableName (${columnDefinitions}) ;"
-                ) + kronosIndexeSqls
-
-                val result = sqls.sumOf { dataSource.update(KronosAtomicActionTask(it)) }
-                return result > 0
-            }
-
-            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
-        }
-    }
+    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
+        dataSource.dbType,
+        instance.kronosTableName(),
+        instance.kronosColumns(),
+        instance.kronosTableIndex()
+    ).sumOf { dataSource.update(KronosAtomicActionTask(it)) } > 0
 
     /**
      * Function to drop the specified table, and execute the corresponding delete statement according to different database types.
@@ -412,7 +200,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 DeleteClause(instance)
             }
 
-            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
+            else -> throw NotImplementedError("Unsupported database types")
         }
     }
 
@@ -425,13 +213,10 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         val toModified = expect.filter { col ->
             val tableColumn = current.find { col.columnName == it.columnName }
             tableColumn == null ||
-                    col.defaultValue != tableColumn.defaultValue ||
-                    col.nullable != tableColumn.nullable ||
-                    getSqlType(col.type, dbType, col.length) != tableColumn.type ||
-                    col.primaryKey != tableColumn.primaryKey
+                    columnCreateDefSql(dbType, col) != columnCreateDefSql(dbType, col)
         }.filter {
             // 筛掉不在current中的列
-            if (it.columnName !in current.map { it.columnName }) {
+            if (it.columnName !in current.map { f -> f.columnName }) {
                 return@filter false
             } else {
                 return@filter true
@@ -506,22 +291,16 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         "ALTER TABLE $kronosTableName DROP INDEX ${it.name};"
                     } + toAdd.map {
                         "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${
-                            convertToSqlColumnType(
+                            columnCreateDefSql(
                                 DBType.Mysql,
-                                it.type,
-                                it.length,
-                                it.nullable,
-                                it.primaryKey
+                                it
                             )
                         } ${if (it.identity) "AUTO_INCREMENT" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""};"
                     } + toModified.map {
                         "ALTER TABLE $kronosTableName MODIFY COLUMN ${it.columnName} ${
-                            convertToSqlColumnType(
+                            columnCreateDefSql(
                                 DBType.Mysql,
-                                it.type,
-                                it.length,
-                                it.nullable,
-                                it.primaryKey
+                                it
                             )
                         } ${if (it.identity) "AUTO_INCREMENT" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""};"
                             .let {
@@ -564,13 +343,9 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         "ALTER TABLE $kronosTableName DROP COLUMN \"${it.columnName}\""
                     } + toAdd.map {
                         "ALTER TABLE $kronosTableName ADD ${it.columnName} ${
-                            convertToSqlColumnType(
+                            columnCreateDefSql(
                                 DBType.Oracle,
-                                it.type,
-                                it.length,
-                                it.nullable,
-                                it.primaryKey,
-                                it.identity
+                                it
                             )
                         } ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""}"
                     } + toAddIndex.map {
@@ -602,22 +377,16 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                         "DROP INDEX \"public\".${it.name};"
                     } + toAdd.map {
                         "ALTER TABLE \"public\".$kronosTableName ADD COLUMN ${it.columnName} ${
-                            convertToSqlColumnType(
+                            columnCreateDefSql(
                                 DBType.Postgres,
-                                it.type,
-                                it.length,
-                                it.nullable,
-                                it.primaryKey
+                                it
                             )
                         } ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "NOT NULL" else ""};"
                     } + toModified.map {
                         "ALTER TABLE \"public\".$kronosTableName ALTER COLUMN ${it.columnName} TYPE ${
-                            convertToSqlColumnType(
+                            columnCreateDefSql(
                                 DBType.Postgres,
-                                it.type,
-                                0,
-                                true,
-                                false
+                                it
                             )
                         } ${if (it.defaultValue != null) ",AlTER COLUMN ${it.columnName} SET DEFAULT ${it.defaultValue}" else ""} ${
                             if (it.nullable) ",ALTER COLUMN ${it.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.columnName} SET NOT NULL"
@@ -673,7 +442,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     } + toDelete.map {
                         "ALTER TABLE [dbo].[$kronosTableName] DROP COLUMN [${it.columnName}];"
                     } + toAdd.map {
-                        "ALTER TABLE $kronosTableName ADD [${it.columnName}] ${it.type} ${if (it.length > 0 && it.type != "TINYINT") "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
+                        "ALTER TABLE $kronosTableName ADD [${it.columnName}] ${it.type} ${if (it.length > 0 && it.type != KColumnType.TINYINT) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
                     } + toAddIndex.map {
                         "CREATE ${it.type} INDEX [${it.name}] ON [dbo].[$kronosTableName] ([${it.columns.joinToString("],[")}]);"
                             .let { value ->
@@ -708,7 +477,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                             END
                         """.trimIndent()
                     } + toModified.map {
-                        "ALTER TABLE [dbo].[${kronosTableName}] ALTER COLUMN [${it.columnName}] ${it.type} ${if (it.length > 0 && it.type != "TINYINT") "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.nullable) "" else "NOT NULL"}"
+                        "ALTER TABLE [dbo].[${kronosTableName}] ALTER COLUMN [${it.columnName}] ${it.type} ${if (it.length > 0 && it.type != KColumnType.TINYINT) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.nullable) "" else "NOT NULL"}"
                     }
                 println(listOfSql)
                 if (listOfSql.isNotEmpty()) {
@@ -726,15 +495,13 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     // 先删索引 避免删除列出错
                     todeleteIndex.map {
                         "DROP INDEX ${it.name};"
-                    }+ toDelete.map {
-                        "ALTER TABLE $kronosTableName DROP COLUMN ${it.columnName};"
                     } + toAdd.map {
-                        "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${convertToSqlColumnType(dataSource.dbType, it.type, it.length, it.nullable,it.primaryKey,it.identity)} ${if (it.defaultValue != null) "DEFAULT ${it.defaultValue}" else ""};"
+                        "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${it.type} ${if (it.length > 0) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
                     } + toModified.map {
+                        "ALTER TABLE $kronosTableName MODIFY COLUMN ${it.columnName} ${it.type} ${if (it.length > 0) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
+                    } + toDelete.map {
                         "ALTER TABLE $kronosTableName DROP COLUMN ${it.columnName};"
-                    }  + toModified.map {
-                        "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${convertToSqlColumnType(dataSource.dbType, it.type, it.length, it.nullable,it.primaryKey,it.identity)} ${if (it.defaultValue != null) "DEFAULT ${it.defaultValue}" else ""};"
-                    }  + toAddIndex.map {
+                    } + toAddIndex.map {
                         // CREATE INDEX "aaa" ON "tb_user" ("username" COLLATE RTRIM )  如果${it.type}不是空 需要 在每个column后面加 COLLATE ${it.type} (${it.columns.joinToString(",")})需要改
                         "CREATE ${it.method} INDEX ${it.name} ON $kronosTableName (${
                             it.columns.map { column ->
@@ -758,7 +525,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                 }
             }
 
-            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
+            else -> throw NotImplementedError("Unsupported database types")
         }
     }
 
@@ -983,14 +750,14 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
             DBType.SQLite -> "PRAGMA table_info('${tableName}')"
 
-            DBType.DB2, DBType.Sybase, DBType.H2, DBType.OceanBase, DBType.DM8 -> throw NotImplementedError("Unsupported database types")
+            else -> throw NotImplementedError("Unsupported database types")
         }
         println(sql)
         return wrapper.orDefault().forList(KronosAtomicQueryTask(sql)).map {
             when (wrapper.orDefault().dbType) {
                 DBType.Mysql, DBType.Mssql -> Field(
                     columnName = it["COLUMN_NAME"].toString(),
-                    type = it["DATA_TYPE"].toString().uppercase(Locale.getDefault()),
+                    type = KColumnType.fromString(it["DATA_TYPE"].toString()),
                     length = (it["LENGTH"] as Long? ?: 0).toInt(),
                     tableName = tableName,
                     nullable = it["IS_NULLABLE"] == "YES",
@@ -1001,7 +768,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
                 DBType.Oracle -> Field(
                     columnName = it["COLUMN_NAME"].toString(),
-                    type = it["DATE_TYPE"].toString().uppercase(Locale.getDefault()),
+                    type = KColumnType.fromString(it["DATA_TYPE"].toString()),
                     length = (it["LENGTH"] as BigDecimal? ?: BigDecimal.ZERO).toInt(),
                     tableName = tableName.uppercase(Locale.getDefault()),
                     nullable = it["IS_NULLABLE"] == "Y",
@@ -1012,7 +779,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
                 DBType.Postgres -> Field(
                     columnName = it["column_name"].toString(),
-                    type = it["data_type"].toString().uppercase(Locale.getDefault()),
+                    type = KColumnType.fromString(it["data_type"].toString()),
                     length = it["length"] as Int? ?: 0,
                     tableName = tableName,
                     nullable = it["is_nullable"] == true,
@@ -1027,7 +794,7 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
 
                 DBType.SQLite -> Field(
                     columnName = it["name"].toString(),
-                    type = it["type"].toString().split('(')[0].uppercase(Locale.getDefault()), // 处理类型
+                    type = KColumnType.fromString(it["type"].toString().split('(').first()), // 处理类型
                     length = 0,
                     tableName = tableName,
                     nullable = it["notnull"] as Int == 0, // 直接使用notnull字段判断是否可空

@@ -4,8 +4,8 @@ import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KColumnType.TINYINT
 import com.kotlinorm.enums.KColumnType.VARCHAR
+import com.kotlinorm.enums.KColumnType.XML
 import com.kotlinorm.enums.SqlServer
-import com.kotlinorm.enums.SqlServer.KIndexType.XML
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")

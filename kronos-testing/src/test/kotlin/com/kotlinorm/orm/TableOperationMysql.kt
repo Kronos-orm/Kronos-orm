@@ -5,11 +5,11 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -89,8 +89,8 @@ class TableOperationMysql {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Mysql, actualColumn.type, column.length, true, false),
-                convertToSqlColumnType(DBType.Mysql, column.type, column.length, true, false),
+                columnCreateDefSql(DBType.Mysql, actualColumn),
+                columnCreateDefSql(DBType.Mysql, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -142,8 +142,8 @@ class TableOperationMysql {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Mysql, actualColumn.type, actualColumn.length, true, false),
-                convertToSqlColumnType(DBType.Mysql, column.type, column.length, true, false),
+                columnCreateDefSql(DBType.Mysql, actualColumn),
+                columnCreateDefSql(DBType.Mysql, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

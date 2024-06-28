@@ -161,9 +161,6 @@ class UpdateClause<T : KPojo>(
      */
     fun build(): KronosActionTask {
 
-        updateTimeStrategy.enabled = this.updateTimeStrategy.enabled
-        logicDeleteStrategy.enabled = this.logicDeleteStrategy.enabled
-
         // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
         if (isExcept) {
             // 移除指定字段并处理"create_time"字段的特殊情况

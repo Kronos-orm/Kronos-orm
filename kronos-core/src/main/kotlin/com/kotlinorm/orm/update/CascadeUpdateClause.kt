@@ -9,18 +9,10 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.query
 import com.kotlinorm.utils.setCommonStrategy
-import java.util.*
 import kotlin.reflect.full.createInstance
 
 object CascadeUpdateClause {
-    /**
-     * Build a cascade update clause.
-     * 构建级联更新子句。
-     *
-     * @param pojo The pojo to be deleted.
-     * @param condition The condition to be met.
-     * @return The list of atomic tasks.
-     */
+
     fun <T : KPojo> build(
         pojo: T,
         whereClauseSql: String?,
@@ -61,15 +53,6 @@ object CascadeUpdateClause {
                 ).joinToString(" "),
                 paramMap
             ).query()
-
-//            val updatedColumnVals: MutableMap<String, MutableList<Any?>> = mutableMapOf()
-//            updatedColumnRecords.forEach { item ->
-//                item.keys.forEach { key ->
-//                    val newKey = key + "List"
-//                    if (updatedColumnVals.contains(newKey)) updatedColumnVals[key]!!.add(item[key])
-//                    else updatedColumnVals[newKey] = mutableListOf(item[key])
-//                }
-//            }
 
             updatedColumnRecords.forEachIndexed { i, r ->
                 r.keys.forEach {
@@ -128,7 +111,7 @@ object CascadeUpdateClause {
                         // 具体帅选条件+逻辑删除条件
                         "WHERE " + listOfNotNull(
                             //可能的所有取值的条件并列
-                            "( " + updatedColumnRecords.mapIndexed { i , r ->
+                            "( " + List(updatedColumnRecords.size) { i ->
                                 //单种取值方式需要满足的条件
                                 "( " + targetColumns.mapIndexed { j, _ ->
                                     "`${targetColumns[j]}` = :${referred[j]}RecordValue${i}"

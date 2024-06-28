@@ -5,7 +5,7 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
+import com.kotlinorm.orm.database.DBHelper.getSqlType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
@@ -83,17 +83,11 @@ class TableOperationSqlite {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(
-                convertToSqlColumnType(
-                    DBType.SQLite,
-                    actualColumn.type,
-                    actualColumn.length,
-                    actualColumn.nullable,
-                    false
-                ),
-                convertToSqlColumnType(DBType.SQLite, column.type, column.length, column.nullable, false),
-                "列 '$column' 的类型应一致"
-            )
+
+            assertEquals(actualColumn.nullable, column.nullable, "列 '$column' 的可空性应一致")
+            assertEquals(actualColumn.length, column.length, "列 '$column' 的长度应一致")
+            assertEquals(actualColumn.defaultValue, column.defaultValue, "列 '$column' 的默认值应一致")
+            assertEquals(actualColumn.type,getSqlType(column.type,DBType.SQLite,column.length), "列 '$column' 的类型应一致")
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
     }
@@ -142,11 +136,11 @@ class TableOperationSqlite {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(
-                convertToSqlColumnType(DBType.SQLite, actualColumn.type, 0, true, false),
-                convertToSqlColumnType(DBType.SQLite, column.type, 0, true, false),
-                "列 '$column' 的类型应一致"
-            )
+            assertEquals(actualColumn.nullable, column.nullable, "列 '$column' 的可空性应一致")
+            assertEquals(actualColumn.length, column.length, "列 '$column' 的长度应一致")
+            assertEquals(actualColumn.defaultValue, column.defaultValue, "列 '$column' 的默认值应一致")
+            assertEquals(actualColumn.type,getSqlType(column.type,DBType.SQLite,column.length), "列 '$column' 的类型应一致")
+            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 
@@ -159,7 +153,7 @@ class TableOperationSqlite {
      * 测试获取自增主键
      */
     @Test
-    fun testLastInsertId(){
+    fun testLastInsertId() {
         val newUser = OracleUser(
             username = "yf",
             gender = 93

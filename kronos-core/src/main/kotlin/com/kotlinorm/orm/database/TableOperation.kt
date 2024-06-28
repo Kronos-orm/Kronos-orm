@@ -19,13 +19,13 @@ package com.kotlinorm.orm.database
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.beans.dsw.NoneDataSourceWrapper.dbType
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
 import com.kotlinorm.orm.database.DBHelper.getDBNameFromUrl
+import com.kotlinorm.orm.database.DBHelper.getSqlType
 import com.kotlinorm.orm.delete.DeleteClause
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import java.math.BigDecimal
@@ -425,23 +425,10 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
         val toModified = expect.filter { col ->
             val tableColumn = current.find { col.columnName == it.columnName }
             tableColumn == null ||
-                    /* col.primaryKey != tableColumn.primaryKey ||*/
                     col.defaultValue != tableColumn.defaultValue ||
-                    convertToSqlColumnType(
-                        dbType,
-                        col.type,
-                        col.length,
-                        col.nullable,
-                        col.primaryKey,
-                        col.identity
-                    ) != convertToSqlColumnType(
-                dbType,
-                tableColumn.type,
-                tableColumn.length,
-                tableColumn.nullable,
-                tableColumn.primaryKey,
-                tableColumn.identity
-            )
+                    col.nullable != tableColumn.nullable ||
+                    getSqlType(col.type, dbType, col.length) != tableColumn.type ||
+                    col.primaryKey != tableColumn.primaryKey
         }.filter {
             // 筛掉不在current中的列
             if (it.columnName !in current.map { it.columnName }) {
@@ -739,13 +726,15 @@ class TableOperation(val wrapper: KronosDataSourceWrapper) {
                     // 先删索引 避免删除列出错
                     todeleteIndex.map {
                         "DROP INDEX ${it.name};"
-                    } + toAdd.map {
-                        "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${it.type} ${if (it.length > 0) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
-                    } + toModified.map {
-                        "ALTER TABLE $kronosTableName MODIFY COLUMN ${it.columnName} ${it.type} ${if (it.length > 0) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
-                    } + toDelete.map {
+                    }+ toDelete.map {
                         "ALTER TABLE $kronosTableName DROP COLUMN ${it.columnName};"
-                    } + toAddIndex.map {
+                    } + toAdd.map {
+                        "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${convertToSqlColumnType(dataSource.dbType, it.type, it.length, it.nullable,it.primaryKey,it.identity)} ${if (it.defaultValue != null) "DEFAULT ${it.defaultValue}" else ""};"
+                    } + toModified.map {
+                        "ALTER TABLE $kronosTableName DROP COLUMN ${it.columnName};"
+                    }  + toModified.map {
+                        "ALTER TABLE $kronosTableName ADD COLUMN ${it.columnName} ${convertToSqlColumnType(dataSource.dbType, it.type, it.length, it.nullable,it.primaryKey,it.identity)} ${if (it.defaultValue != null) "DEFAULT ${it.defaultValue}" else ""};"
+                    }  + toAddIndex.map {
                         // CREATE INDEX "aaa" ON "tb_user" ("username" COLLATE RTRIM )  如果${it.type}不是空 需要 在每个column后面加 COLLATE ${it.type} (${it.columns.joinToString(",")})需要改
                         "CREATE ${it.method} INDEX ${it.name} ON $kronosTableName (${
                             it.columns.map { column ->

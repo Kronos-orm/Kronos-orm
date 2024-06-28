@@ -39,8 +39,8 @@ dependencies {
     kapt("com.google.auto.service:auto-service:1.1.1")
     testImplementation(kotlin("test"))
     testImplementation(project(":kronos-core"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("dev.zacsweers.kctfork:core:0.4.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
+    testImplementation("dev.zacsweers.kctfork:core:0.5.0")
 }
 
 tasks.test {

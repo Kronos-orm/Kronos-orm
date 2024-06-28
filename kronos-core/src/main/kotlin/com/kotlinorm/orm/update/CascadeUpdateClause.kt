@@ -62,12 +62,18 @@ object CascadeUpdateClause {
                 paramMap
             ).query()
 
-            val updatedColumnVals: MutableMap<String, MutableList<Any?>> = mutableMapOf()
-            updatedColumnRecords.forEach { item ->
-                item.keys.forEach { key ->
-                    val newKey = key + "List"
-                    if (updatedColumnVals.contains(newKey)) updatedColumnVals[key]!!.add(item[key])
-                    else updatedColumnVals[newKey] = mutableListOf(item[key])
+//            val updatedColumnVals: MutableMap<String, MutableList<Any?>> = mutableMapOf()
+//            updatedColumnRecords.forEach { item ->
+//                item.keys.forEach { key ->
+//                    val newKey = key + "List"
+//                    if (updatedColumnVals.contains(newKey)) updatedColumnVals[key]!!.add(item[key])
+//                    else updatedColumnVals[newKey] = mutableListOf(item[key])
+//                }
+//            }
+
+            updatedColumnRecords.forEachIndexed { i, r ->
+                r.keys.forEach {
+                    paramMap["${it}RecordValue${i}"] = r[it]
                 }
             }
 
@@ -115,14 +121,19 @@ object CascadeUpdateClause {
                         } else null
                     }.joinToString(", ")
                     if (updateTimeStrategy.enabled) {
-                        updateFields += ", ${updateColumn!!.quoted()} = :${updateColumn!! + "New"}"
+                        updateFields += ", ${updateColumn!!.quoted()} = :${updateColumn!!.name}New"
                     }
 
                     val whereSql =
+                        // 具体帅选条件+逻辑删除条件
                         "WHERE " + listOfNotNull(
-                            targetColumns.mapIndexed { i, _ ->
-                                "`${targetColumns[i]}` IN (:${refColumns[i] + "List"})"
-                            }.joinToString(" AND "),
+                            //可能的所有取值的条件并列
+                            "( " + updatedColumnRecords.mapIndexed { i , r ->
+                                //单种取值方式需要满足的条件
+                                "( " + targetColumns.mapIndexed { j, _ ->
+                                    "`${targetColumns[j]}` = :${referred[j]}RecordValue${i}"
+                                }.joinToString(" AND ") + " )"
+                            }.joinToString(" OR ") + " )",
                             if (logicDeleteStrategy.enabled) "${logicColumn!!.quoted()} = :${logicColumn}" else null
                         ).joinToString(" AND ")
 
@@ -134,7 +145,7 @@ object CascadeUpdateClause {
                         whereSql
                     ).joinToString(" ")
 
-                    paramMapNew += updatedColumnVals + paramMap
+                   paramMapNew += paramMap
                     return KronosAtomicActionTask(
                         sql,
                         paramMapNew,
@@ -148,18 +159,18 @@ object CascadeUpdateClause {
                         //主表关联字段
                         val refColumns = col.reference!!.referenceColumns
                         //子表关联字段
-                        val targetCloumns = col.reference.targetColumns
+                        val targetColumns = col.reference.targetColumns
 
-                        atomicTasks.add(generateUpdateTask(refColumns, targetCloumns))
+                        atomicTasks.add(generateUpdateTask(refColumns, targetColumns))
 
                     } else {                    //维护关系定义在子表
                         cascadeRefs.forEach {
                             //主表关联字段
                             val refColumns = it.reference!!.targetColumns
                             //子表关联字段
-                            val targetCloumns = it.reference.referenceColumns
+                            val targetColumns = it.reference.referenceColumns
 
-                            atomicTasks.add(generateUpdateTask(refColumns, targetCloumns))
+                            atomicTasks.add(generateUpdateTask(refColumns, targetColumns))
                         }
                     }
                 } else null

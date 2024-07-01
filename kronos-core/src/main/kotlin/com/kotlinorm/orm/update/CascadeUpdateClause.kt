@@ -125,7 +125,7 @@ object CascadeUpdateClause {
                         paramMapNew[field.name + "New"] = value
                     }
 
-                    var updateFields = refColumns.mapIndexed { i, _ ->
+                    var updateFields = refColumns.mapIndexedNotNull { i, _ ->
                         if (paramMap.contains(refColumns[i] + "New") && null != paramMap[refColumns[i] + "New"]) {
                             "`${targetColumns[i]}` = :${referred[i] + "New"}"
                         } else null

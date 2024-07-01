@@ -10,6 +10,7 @@ import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getTableColumns
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -25,7 +26,7 @@ class TableOperationMysql {
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
         url =
-            "jdbc:mysql://localhost:3306/eqm?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false" // 数据库URL
+            "jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false" // 数据库URL
         username = "root" // 数据库用户名
         password = "******" // 数据库密码
         maxIdle = 10 // 最大空闲连接数
@@ -71,14 +72,14 @@ class TableOperationMysql {
     @Test
     fun testCreateTable_mysql() {
         // 不管有没有先删
-        dataSource.table.dropTable(user)
-        // 创建表
+        dataSource.table.
+            // 创建表
         dataSource.table.createTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
@@ -89,8 +90,8 @@ class TableOperationMysql {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(DBType.Mysql, actualColumn),
                 columnCreateDefSql(DBType.Mysql, column),
+                columnCreateDefSql(DBType.Mysql, actualColumn),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -122,10 +123,10 @@ class TableOperationMysql {
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncTable_mysql() {
+    fun testSyncScheme_mysql() {
         // 同步user表结构
-        val structureSync = dataSource.table.structureSync(user)
-        if (!structureSync) {
+        val schemeSync = dataSource.table.schemeSync(user)
+        if (!schemeSync) {
             println("表结构相同无需同步")
         }
 
@@ -135,15 +136,15 @@ class TableOperationMysql {
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(DBType.Mysql, actualColumn),
                 columnCreateDefSql(DBType.Mysql, column),
+                columnCreateDefSql(DBType.Mysql, actualColumn),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

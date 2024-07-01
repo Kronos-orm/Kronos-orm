@@ -2,9 +2,13 @@ package com.kotlinorm.sql.mssql
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.DatabasesSupport
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.database.TableColumnDiff
+import com.kotlinorm.orm.database.TableIndexDiff
 
 object MssqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
@@ -74,8 +78,138 @@ object MssqlSupport : DatabasesSupport {
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
-            "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql) go",
+            "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
             *indexesSql.toTypedArray()
         )
+    }
+
+    override fun getTableExistenceSql(dbType: DBType) = "select count(1) from sys.objects where name = :tableName"
+
+    override fun getTableDropSql(dbType: DBType, tableName: String) =
+        "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'$tableName') AND type in (N'U')) BEGIN DROP TABLE $tableName END"
+
+    override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
+        return dataSource.forList(
+            KronosAtomicQueryTask(
+                """
+                SELECT 
+                    c.COLUMN_NAME, 
+                    c.DATA_TYPE, 
+                    CASE 
+                        WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar') THEN c.CHARACTER_MAXIMUM_LENGTH
+                        ELSE NULL  
+                    END AS CHARACTER_MAXIMUM_LENGTH,
+                    c.IS_NULLABLE,
+                    c.COLUMN_DEFAULT,
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 
+                            FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu
+                            INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc 
+                                ON ccu.Constraint_Name = tc.Constraint_Name 
+                                AND tc.Constraint_Type = 'PRIMARY KEY'
+                            WHERE ccu.COLUMN_NAME = c.COLUMN_NAME AND ccu.TABLE_NAME = c.TABLE_NAME
+                        ) THEN 'YES' ELSE 'NO' 
+                    END AS PRIMARY_KEY
+                FROM 
+                    INFORMATION_SCHEMA.COLUMNS c
+                WHERE 
+                    c.TABLE_CATALOG = DB_NAME() AND 
+                    c.TABLE_NAME = :tableName
+            """.trimIndent(),
+                mapOf("tableName" to tableName)
+            )
+        ).map {
+            Field(
+                columnName = it["COLUMN_NAME"].toString(),
+                type = KColumnType.fromString(it["DATA_TYPE"].toString()),
+                length = (it["LENGTH"] as Long? ?: 0).toInt(),
+                tableName = tableName,
+                nullable = it["IS_NULLABLE"] == "YES",
+                primaryKey = it["PRIMARY_KEY"] == "YES",
+                defaultValue = it["COLUMN_DEFAULT"] as String?
+            )
+        }
+    }
+
+    override fun getTableIndexes(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+    ): List<KTableIndex> {
+        return dataSource.forList(
+            KronosAtomicQueryTask(
+                """
+                    SELECT 
+                        name AS name
+                    FROM 
+                     sys.indexes
+                    WHERE 
+                     object_id = object_id(:tableName) AND 
+                     name NOT LIKE 'PK__${tableName}__%'  
+                """, mapOf(
+                    "tableName" to tableName
+                )
+            )
+        ).map {
+            KTableIndex(it["name"] as String, arrayOf(), "", "")
+        }
+    }
+
+    override fun getTableSyncSqlList(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        columns: TableColumnDiff,
+        indexes: TableIndexDiff
+    ): List<String> {
+        val dbType = dataSource.dbType
+        return indexes.toDelete.map {
+            "DROP INDEX [${it.name}] ON [dbo].[$tableName]"
+        } + columns.toDelete.map {
+            // 删除默认值约束
+            """
+                DECLARE @ConstraintName NVARCHAR(128);
+                SET @ConstraintName = (
+                    SELECT name
+                    FROM sys.default_constraints
+                    WHERE parent_object_id = OBJECT_ID(N'dbo.$tableName') 
+                    AND COL_NAME(parent_object_id, parent_column_id) = N'${it.name}' 
+                );
+
+                IF @ConstraintName IS NOT NULL
+                BEGIN
+                    DECLARE @DropStmt NVARCHAR(MAX) = N'ALTER TABLE dbo.$tableName DROP CONSTRAINT ' + QUOTENAME(@ConstraintName);
+                    EXEC sp_executesql @DropStmt;
+                END
+            """.trimIndent()
+        } + columns.toDelete.map {
+            "ALTER TABLE [dbo].[$tableName] DROP COLUMN [${it.columnName}]"
+        } + columns.toAdd.map {
+            "ALTER TABLE $tableName ADD [${it.columnName}] ${it.type} ${if (it.length > 0 && it.type != KColumnType.TINYINT) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
+        } + columns.toModified.map {
+            // 删除默认值约束
+            """
+                DECLARE @ConstraintName NVARCHAR(128);
+                SET @ConstraintName = (
+                    SELECT name
+                    FROM sys.default_constraints
+                    WHERE parent_object_id = OBJECT_ID(N'dbo.$tableName') 
+                    AND COL_NAME(parent_object_id, parent_column_id) = N'${it.name}' 
+                );
+
+                IF @ConstraintName IS NOT NULL
+                BEGIN
+                    DECLARE @DropStmt NVARCHAR(MAX) = N'ALTER TABLE dbo.$tableName DROP CONSTRAINT ' + QUOTENAME(@ConstraintName);
+                    EXEC sp_executesql @DropStmt;
+                END
+                ELSE
+                BEGIN
+                    PRINT 'No default constraint found on the specified column.';
+                END
+            """.trimIndent()
+        } + columns.toModified.map {
+            "ALTER TABLE [dbo].[$tableName] ALTER COLUMN ${getColumnCreateSql(dbType, it)}"
+        } + indexes.toAdd.map {
+            getIndexCreateSql(dbType, tableName, it)
+        }
     }
 }

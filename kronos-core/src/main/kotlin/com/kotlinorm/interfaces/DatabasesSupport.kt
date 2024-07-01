@@ -4,6 +4,8 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.orm.database.TableColumnDiff
+import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import com.kotlinorm.sql.SqlManager.indexCreateDefSql
 import com.kotlinorm.sql.SqlManager.sqlColumnType
@@ -42,4 +44,30 @@ interface DatabasesSupport {
             *indexesSql.toTypedArray()
         )
     }
+
+    fun getTableExistenceSql(
+        dbType: DBType
+    ): String
+
+    fun getTableDropSql(
+        dbType: DBType,
+        tableName: String
+    ) = "DROP TABLE IF EXISTS $tableName"
+
+    fun getTableColumns(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+    ): List<Field>
+
+    fun getTableIndexes(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+    ): List<KTableIndex>
+
+    fun getTableSyncSqlList(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        columns: TableColumnDiff,
+        indexes: TableIndexDiff,
+    ): List<String>
 }

@@ -4,11 +4,11 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
 import com.kotlinorm.orm.tableoperationbeans.SqlliteUser
+import com.kotlinorm.sql.SqlManager.getTableColumns
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -73,7 +73,7 @@ class TableOperationSqlite {
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
@@ -86,7 +86,11 @@ class TableOperationSqlite {
             assertEquals(actualColumn.nullable, column.nullable, "列 '$column' 的可空性应一致")
             assertEquals(actualColumn.length, column.length, "列 '$column' 的长度应一致")
             assertEquals(actualColumn.defaultValue, column.defaultValue, "列 '$column' 的默认值应一致")
-            assertEquals(actualColumn.type,getSqlType(column.type,DBType.SQLite,column.length), "列 '$column' 的类型应一致")
+            assertEquals(
+                actualColumn.type,
+                column.type,
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
     }
@@ -116,10 +120,10 @@ class TableOperationSqlite {
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncTable_sqlite() {
+    fun testSyncScheme_sqlite() {
         // 同步user表结构
-        val structureSync = dataSource.table.structureSync(user)
-        if (!structureSync) {
+        val schemeSync = dataSource.table.schemeSync(user)
+        if (!schemeSync) {
             println("表结构相同无需同步")
         }
 
@@ -129,7 +133,7 @@ class TableOperationSqlite {
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
@@ -138,7 +142,7 @@ class TableOperationSqlite {
             assertEquals(actualColumn.nullable, column.nullable, "列 '$column' 的可空性应一致")
             assertEquals(actualColumn.length, column.length, "列 '$column' 的长度应一致")
             assertEquals(actualColumn.defaultValue, column.defaultValue, "列 '$column' 的默认值应一致")
-            assertEquals(actualColumn.type,getSqlType(column.type,DBType.SQLite,column.length), "列 '$column' 的类型应一致")
+            assertEquals(actualColumn.type, column.type, "列 '$column' 的类型应一致")
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }

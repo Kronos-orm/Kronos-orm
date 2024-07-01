@@ -24,17 +24,7 @@ package com.kotlinorm.enums
  * @author OUSC
  */
 enum class DBType {
-    Mysql,
-    Oracle,
-    Postgres,
-    Mssql,
-    SQLite,
-    DB2,
-    Sybase,
-    H2,
-    OceanBase,
-    DM8,
-    Other;
+    Mysql, Oracle, Postgres, Mssql, SQLite, DB2, Sybase, H2, OceanBase, DM8, Other;
 
     companion object {
         /**
@@ -45,18 +35,11 @@ enum class DBType {
          * @return the enum constant that matches the given [name], or null if no such constant exists
          */
         fun fromName(name: String) = when (name) {
-            "Mysql" -> Mysql
-            "Oracle" -> Oracle
             "PostgreSQL" -> Postgres
             "Microsoft SQL Server" -> Mssql
-            "SQLite" -> SQLite
-            "DB2" -> DB2
-            "Sybase" -> Sybase
-            "H2" -> H2
-            "OceanBase" -> OceanBase
-            "DM8" -> DM8
-            "Other" -> Other
-            else -> null
+            else -> {
+                entries.find { it.name.uppercase() == name.uppercase() } ?: Other
+            }
         }
     }
 }

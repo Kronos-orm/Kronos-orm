@@ -10,6 +10,7 @@ import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
 import com.kotlinorm.orm.tableoperationbeans.PgUser
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getTableColumns
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -77,7 +78,7 @@ class TableOperationPostgres {
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
@@ -126,11 +127,11 @@ class TableOperationPostgres {
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncTable_postgresql() {
+    fun testSyncScheme_postgresql() {
         println(user.kronosColumns().map { it.columnName })
         // 同步user表结构
-        val structureSync = dataSource.table.structureSync(user)
-        if (!structureSync) {
+        val schemeSync = dataSource.table.schemeSync(user)
+        if (!schemeSync) {
             println("表结构相同无需同步")
         }
 
@@ -140,7 +141,7 @@ class TableOperationPostgres {
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
         println("expectedColumns: " + expectedColumns.map { it.nullable })
         println("actualColumns: " + actualColumns.map { it.nullable })
 

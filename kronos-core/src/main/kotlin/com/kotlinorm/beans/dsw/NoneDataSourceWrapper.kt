@@ -23,6 +23,7 @@ import com.kotlinorm.i18n.Noun.noDataSourceMessage
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import javax.sql.DataSource
 import kotlin.reflect.KClass
 
 /**
@@ -63,6 +64,10 @@ object NoneDataSourceWrapper : KronosDataSourceWrapper {
     }
 
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
+        throw NoDataSourceException(noDataSourceMessage)
+    }
+
+    override fun transact(block: (DataSource) -> Any?): Any? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 }

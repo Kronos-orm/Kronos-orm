@@ -27,8 +27,4 @@ data class KTableIndex(
         result = 31 * result + method.hashCode()
         return result
     }
-
-    fun columns(vararg columns: String) {
-        this.columns = this.columns.plus(columns)
-    }
 }

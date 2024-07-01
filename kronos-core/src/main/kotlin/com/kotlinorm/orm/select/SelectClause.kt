@@ -272,7 +272,7 @@ class SelectClause<T : KPojo>(
         //检查是否设置排序
         val orderByKeywords = if (isOrder && orderByFields.isNotEmpty()) "ORDER BY " +
                 orderByFields.joinToString(", ") {
-                    if (it.first.type == "string") it.first.toString() else it.first.quoted() +
+                    if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted() +
                             " " + it.second
                 } else null
 

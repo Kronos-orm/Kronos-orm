@@ -16,6 +16,8 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.utils.fieldDb2k
 
 /**
@@ -29,7 +31,7 @@ import com.kotlinorm.utils.fieldDb2k
 class Field(
     var columnName: String,
     var name: String = fieldDb2k(columnName),
-    val type: String = "",
+    val type: KColumnType = UNDEFINED,
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",

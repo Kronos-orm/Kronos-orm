@@ -5,11 +5,11 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
-import com.kotlinorm.orm.database.DBHelper.getDBNameFromUrl
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.tableoperationbeans.OracleUser
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getTableColumns
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -69,7 +69,6 @@ class TableOperationOracle {
      */
     @Test
     fun testCreateTable_oracle() {
-        println(getDBNameFromUrl(dataSource()))
         // 不管有没有先删
         dataSource.table.dropTable(user)
         // 创建表
@@ -78,7 +77,7 @@ class TableOperationOracle {
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("TB_USER")
+        val actualColumns = getTableColumns(dataSource(), "TB_USER")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns().map {
@@ -93,8 +92,8 @@ class TableOperationOracle {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Oracle, actualColumn.type, column.length, true, false),
-                convertToSqlColumnType(DBType.Oracle, column.type, column.length, true, false),
+                columnCreateDefSql(DBType.Oracle, actualColumn),
+                columnCreateDefSql(DBType.Oracle, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -127,10 +126,10 @@ class TableOperationOracle {
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncTable_oracle() {
+    fun testSyncScheme_oracle() {
         // 同步user表结构
-        val structureSync = dataSource.table.structureSync(user)
-        if (!structureSync) {
+        val schemeSync = dataSource.table.schemeSync(user)
+        if (!schemeSync) {
             println("表结构相同无需同步")
         }
 
@@ -144,7 +143,7 @@ class TableOperationOracle {
         }
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
-        val actualColumns = dataSource.table.getTableColumns("TB_USER")
+        val actualColumns = getTableColumns(dataSource(), "TB_USER")
         println("actualColumns:" + actualColumns.map { it.columnName })
         println("expectedColumns:" + expectedColumns.map { it.columnName })
 
@@ -153,8 +152,8 @@ class TableOperationOracle {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Oracle, actualColumn.type, column.length, true, false),
-                convertToSqlColumnType(DBType.Oracle, column.type, column.length, true, false),
+                columnCreateDefSql(DBType.Oracle, actualColumn),
+                columnCreateDefSql(DBType.Oracle, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

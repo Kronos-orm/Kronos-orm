@@ -64,7 +64,7 @@ dataSource.table.createTable<Movie>()
 dataSource.table.deleteTable<Movie>()
 
 //sync table structure
-dataSource.table.structureSync<Movie>()
+dataSource.table.schemeSync<Movie>()
 ```
 
 ------

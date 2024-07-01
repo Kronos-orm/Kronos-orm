@@ -116,7 +116,7 @@ object CascadeUpdateClause {
                     var updateColumn: Field? = null
                     var logicColumn: Field? = null
 
-                    setCommonStrategy(logicDeleteStrategy, true) { field, value ->
+                    setCommonStrategy(logicDeleteStrategy) { field, value ->
                         logicColumn = field
                         paramMapNew[field.name] = value
                     }

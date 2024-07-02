@@ -76,6 +76,13 @@ object PostgesqlSupport : DatabasesSupport {
     override fun getTableExistenceSql(dbType: DBType): String =
         "select count(1) from pg_class where relname = :tableName"
 
+    override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
+        "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON $tableName USING ${index.method}(${
+            index.columns.joinToString(
+                ","
+            ) { col -> "\"$col\"" }
+        })"
+
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         return dataSource.forList(
@@ -125,6 +132,7 @@ object PostgesqlSupport : DatabasesSupport {
                 tableName = tableName,
                 nullable = it["is_nullable"] == true,
                 primaryKey = it["primary_key"] == true,
+                identity = it["column_default"]?.toString()?.startsWith("nextval(") == true,
                 // 如果defaultValue =  "('${tableName}_id_seq'::regclass)" 设置成 null
                 defaultValue = if (it["column_default"]?.toString()?.startsWith("nextval(") == true) {
                     null
@@ -174,18 +182,14 @@ object PostgesqlSupport : DatabasesSupport {
             }"
         } + columns.toModified.map {
             "ALTER TABLE \"public\".$tableName ALTER COLUMN ${it.columnName} TYPE ${
-                columnCreateDefSql(
-                    DBType.Postgres, it
-                )
+                getColumnType(it.type, it.length)
             } ${if (it.defaultValue != null) ",AlTER COLUMN ${it.columnName} SET DEFAULT ${it.defaultValue}" else ""} ${
                 if (it.nullable) ",ALTER COLUMN ${it.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.columnName} SET NOT NULL"
             }"
         } + columns.toDelete.map {
             "ALTER TABLE \"public\".$tableName DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {
-            "CREATE ${if (it.method == "UNIQUE") "UNIQUE" else ""} INDEX ${it.name} ON \"public\".$tableName USING ${it.type} (${
-                it.columns.joinToString(",") { col -> "\"$col\"" }
-            })"
+            getIndexCreateSql(DBType.Postgres, "\"public\".$tableName", it)
         }
     }
 }

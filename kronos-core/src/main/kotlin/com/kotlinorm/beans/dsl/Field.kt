@@ -45,7 +45,9 @@ class Field(
         return name
     }
 
-    fun quoted(showTable: Boolean = false): String = "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
+    fun quoted(showTable: Boolean = false): String =
+        "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
+
     fun equation(): String = "`$columnName` = :$name"
 
     /**
@@ -85,4 +87,30 @@ class Field(
         columnName,
         name + other
     )
+
+    fun copy(
+        columnName: String = this.columnName,
+        name: String = this.name,
+        type: KColumnType = this.type,
+        primaryKey: Boolean = this.primaryKey,
+        dateFormat: String? = this.dateFormat,
+        tableName: String = this.tableName,
+        length: Int = this.length,
+        defaultValue: String? = this.defaultValue,
+        identity: Boolean = this.identity,
+        nullable: Boolean = this.nullable
+    ): Field {
+        return Field(
+            columnName,
+            name,
+            type,
+            primaryKey,
+            dateFormat,
+            tableName,
+            length,
+            defaultValue,
+            identity,
+            nullable
+        )
+    }
 }

@@ -1,16 +1,16 @@
-package com.kotlinorm.orm.tableoperationbeans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KColumnType.TINYINT
 import com.kotlinorm.enums.KColumnType.VARCHAR
-import com.kotlinorm.enums.Postgres
+import com.kotlinorm.enums.Mysql
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["username"], Postgres.KIndexType.HASH)
-@TableIndex(name = "idx_multi", columns = ["id", "username"], type = "BTREE", method = Postgres.KIndexMethod.UNIQUE)
-data class PgUser(
+@TableIndex("idx_username", ["username"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
+@TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
+data class MysqlUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     @ColumnType(VARCHAR, 254)
@@ -18,9 +18,7 @@ data class PgUser(
     @Column("gender1")
     @ColumnType(TINYINT)
     @Default("0")
-    @NotNull
     var gender: Int? = null,
-    var age: Int? = 0,
 //    @ColumnType(INT)
 //    var age: Int? = null,
     @CreateTime

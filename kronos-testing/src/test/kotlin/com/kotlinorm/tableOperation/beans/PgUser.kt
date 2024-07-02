@@ -1,23 +1,31 @@
-package com.kotlinorm.orm.tableoperationbeans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.enums.KColumnType.INT
-import com.kotlinorm.enums.SQLite
+import com.kotlinorm.enums.KColumnType.TINYINT
+import com.kotlinorm.enums.KColumnType.VARCHAR
+import com.kotlinorm.enums.Postgres
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("aaa", ["username"], SQLite.KIndexType.BINARY, SQLite.KIndexMethod.UNIQUE)
-@TableIndex(  "bbb",columns = ["username","gender1"], type = SQLite.KIndexType.NOCASE, method = SQLite.KIndexMethod.UNIQUE)
-@TableIndex(  "ccc",columns = ["gender1"])
-data class SqlliteUser(
+@TableIndex("idx_username", ["username"], method = Postgres.KIndexType.HASH, concurrently = true)
+@TableIndex(
+    name = "idx_multi",
+    columns = ["id", "username"],
+    type = Postgres.KIndexMethod.UNIQUE,
+    method = Postgres.KIndexType.BTREE
+)
+data class PgUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
+    @ColumnType(VARCHAR, 254)
     var username: String? = null,
     @Column("gender1")
-    @ColumnType(INT)
+    @ColumnType(TINYINT)
     @Default("0")
+    @NotNull
     var gender: Int? = null,
+    var age: Int? = 0,
 //    @ColumnType(INT)
 //    var age: Int? = null,
     @CreateTime

@@ -5,6 +5,7 @@ import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -188,10 +189,7 @@ fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
         val listOfIndexObj = indexesAnnotations.map {
             applyIrCall(
                 KTableIndexSymbol.constructors.first(),
-                it.getValueArgument(0),
-                it.getValueArgument(1),
-                it.getValueArgument(2),
-                it.getValueArgument(3),
+                *it.valueArguments.toTypedArray()
             )
         }
         +irReturn(

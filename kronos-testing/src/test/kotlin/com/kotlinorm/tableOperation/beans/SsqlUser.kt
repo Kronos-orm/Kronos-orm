@@ -1,10 +1,8 @@
-package com.kotlinorm.orm.tableoperationbeans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.enums.KColumnType.TINYINT
-import com.kotlinorm.enums.KColumnType.VARCHAR
-import com.kotlinorm.enums.KColumnType.XML
+import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.SqlServer
 import java.time.LocalDateTime
 
@@ -18,7 +16,7 @@ data class SsqlUser(
     @ColumnType(VARCHAR, 254)
     var username: String? = null,
     @Column("gender1")
-    @ColumnType(TINYINT,1)
+    @ColumnType(TINYINT, 1)
     @Default("0")
     var gender: Int? = null,
 //    @ColumnType(INT)

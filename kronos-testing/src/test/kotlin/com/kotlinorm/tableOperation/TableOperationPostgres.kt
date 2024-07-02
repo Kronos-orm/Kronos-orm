@@ -1,4 +1,4 @@
-package com.kotlinorm.orm
+package com.kotlinorm.tableOperation
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
@@ -7,10 +7,10 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.tableoperationbeans.OracleUser
-import com.kotlinorm.orm.tableoperationbeans.PgUser
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import com.kotlinorm.sql.SqlManager.getTableColumns
+import com.kotlinorm.tableOperation.beans.OracleUser
+import com.kotlinorm.tableOperation.beans.PgUser
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -83,19 +83,13 @@ class TableOperationPostgres {
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 
-        println("actualColumns" + actualColumns.map { it.nullable })
-        println("expectedColumns" + expectedColumns.map { it.nullable })
-
-        println("actualColumns" + actualColumns.map { it.primaryKey })
-        println("expectedColumns" + expectedColumns.map { it.primaryKey })
-
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(DBType.Postgres, actualColumn),
                 columnCreateDefSql(DBType.Postgres, column),
+                columnCreateDefSql(DBType.Postgres, actualColumn),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -142,8 +136,6 @@ class TableOperationPostgres {
         val expectedColumns = user.kronosColumns()
 
         val actualColumns = getTableColumns(dataSource(), "tb_user")
-        println("expectedColumns: " + expectedColumns.map { it.nullable })
-        println("actualColumns: " + actualColumns.map { it.nullable })
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->

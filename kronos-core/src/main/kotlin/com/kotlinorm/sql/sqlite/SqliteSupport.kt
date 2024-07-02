@@ -14,64 +14,63 @@ import com.kotlinorm.sql.SqlManager.sqlColumnType
 object SqliteSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
-            KColumnType.BIT -> "TINYINT(1)"
-            KColumnType.TINYINT -> "TINYINT"
-            KColumnType.SMALLINT -> "SMALLINT"
-            KColumnType.INT -> "INT"
-            KColumnType.MEDIUMINT -> "MEDIUMINT"
-            KColumnType.BIGINT -> "BIGINT"
+            KColumnType.BIT -> "INTEGER"
+            KColumnType.TINYINT -> "INTEGER"
+            KColumnType.SMALLINT -> "INTEGER"
+            KColumnType.INT -> "INTEGER"
+            KColumnType.MEDIUMINT -> "INTEGER"
+            KColumnType.BIGINT -> "INTEGER"
             KColumnType.REAL -> "REAL"
-            KColumnType.FLOAT -> "FLOAT"
-            KColumnType.DOUBLE -> "DOUBLE"
-            KColumnType.DECIMAL -> "DECIMAL"
+            KColumnType.FLOAT -> "REAL"
+            KColumnType.DOUBLE -> "REAL"
+            KColumnType.DECIMAL -> "NUMERIC"
             KColumnType.NUMERIC -> "NUMERIC"
-            KColumnType.CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.VARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            KColumnType.CHAR -> "TEXT"
+            KColumnType.VARCHAR -> "TEXT"
             KColumnType.TEXT -> "TEXT"
-            KColumnType.MEDIUMTEXT -> "MEDIUMTEXT"
-            KColumnType.LONGTEXT -> "LONGTEXT"
-            KColumnType.DATE -> "DATE"
-            KColumnType.TIME -> "TIME"
-            KColumnType.DATETIME -> "DATETIME"
-            KColumnType.TIMESTAMP -> "TIMESTAMP"
-            KColumnType.BINARY -> "BINARY"
-            KColumnType.VARBINARY -> "VARBINARY"
-            KColumnType.LONGVARBINARY -> "LONGBLOB"
+            KColumnType.MEDIUMTEXT -> "TEXT"
+            KColumnType.LONGTEXT -> "TEXT"
+            KColumnType.DATE -> "TEXT"
+            KColumnType.TIME -> "TEXT"
+            KColumnType.DATETIME -> "TEXT"
+            KColumnType.TIMESTAMP -> "TEXT"
+            KColumnType.BINARY -> "BLOB"
+            KColumnType.VARBINARY -> "BLOB"
+            KColumnType.LONGVARBINARY -> "BLOB"
             KColumnType.BLOB -> "BLOB"
-            KColumnType.MEDIUMBLOB -> "MEDIUMBLOB"
-            KColumnType.LONGBLOB -> "LONGBLOB"
-            KColumnType.CLOB -> "CLOB"
-            KColumnType.JSON -> "JSON"
-            KColumnType.ENUM -> "ENUM"
-            KColumnType.NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCLOB -> "NCLOB"
-            KColumnType.UUID -> "CHAR(36)"
-            KColumnType.SERIAL -> "INT"
-            KColumnType.YEAR -> "YEAR"
-            KColumnType.SET -> "SET"
-            KColumnType.GEOMETRY -> "GEOMETRY"
-            KColumnType.POINT -> "POINT"
-            KColumnType.LINESTRING -> "LINESTRING"
+            KColumnType.MEDIUMBLOB -> "BLOB"
+            KColumnType.LONGBLOB -> "BLOB"
+            KColumnType.CLOB -> "TEXT"
+            KColumnType.JSON -> "TEXT"
+            KColumnType.ENUM -> "TEXT"
+            KColumnType.NVARCHAR -> "TEXT"
+            KColumnType.NCHAR -> "TEXT"
+            KColumnType.NCLOB -> "TEXT"
+            KColumnType.UUID -> "TEXT"
+            KColumnType.SERIAL -> "INTEGER"
+            KColumnType.YEAR -> "INTEGER"
+            KColumnType.SET -> "TEXT"
+            KColumnType.GEOMETRY -> "TEXT"
+            KColumnType.POINT -> "TEXT"
+            KColumnType.LINESTRING -> "TEXT"
             KColumnType.XML -> "TEXT"
-            else -> "VARCHAR(255)"
+            else -> "TEXT"
         }
     }
 
-    override fun getColumnCreateSql(dbType: DBType, column: Field): String =
-        "${
-            column.columnName
-        }${
-            " ${sqlColumnType(dbType, column.type, column.length)}"
-        }${
-            if (column.nullable) "" else " NOT NULL"
-        }${
-            if (column.primaryKey) " PRIMARY KEY" else ""
-        }${
-            if (column.identity) " AUTOINCREMENT" else ""
-        }${
-            if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
-        }"
+    override fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
+        column.columnName
+    }${
+        " ${sqlColumnType(dbType, column.type, column.length)}"
+    }${
+        if (column.nullable) "" else " NOT NULL"
+    }${
+        if (column.primaryKey) " PRIMARY KEY" else ""
+    }${
+        if (column.identity) " AUTOINCREMENT" else ""
+    }${
+        if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+    }"
 
     // 生成SQLite的列定义字符串
     // 索引 CREATE INDEX "dfsdf"
@@ -81,10 +80,8 @@ object SqliteSupport : DatabasesSupport {
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String {
         return "CREATE ${index.method} INDEX IF NOT EXISTS ${index.name} ON $tableName (${
             index.columns.joinToString(",") { column ->
-                if (index.type.isNotEmpty())
-                    "$column COLLATE ${index.type}"
-                else
-                    column
+                if (index.type.isNotEmpty()) "$column COLLATE ${index.type}"
+                else column
             }
         });"
     }
@@ -100,8 +97,23 @@ object SqliteSupport : DatabasesSupport {
             return matchResult?.groupValues?.get(1)?.toInt() ?: 0
         }
         return dataSource.forList(
-            KronosAtomicQueryTask("PRAGMA table_info(:tableName)", mapOf("tableName" to tableName))
+            KronosAtomicQueryTask("PRAGMA table_info($tableName)")
         ).map {
+            var identity = false
+            if (it["pk"] as Int == 1) {
+                val sql = dataSource.forObject(
+                    KronosAtomicQueryTask(
+                        "SELECT sql FROM sqlite_master WHERE tbl_name=:tableName AND sql LIKE '%AUTOINCREMENT%'",
+                        mapOf("tableName" to tableName)
+                    ), String::class
+                ) as String?
+                if (sql != null && Regex("""(\w+)\sINTEGER\sNOT\sNULL\sPRIMARY\sKEY\sAUTOINCREMENT""").find(sql)?.groupValues?.get(
+                        1
+                    ) == it["name"] as String
+                ) {
+                    identity = true
+                }
+            }
             Field(
                 columnName = it["name"].toString(),
                 type = KColumnType.fromString(it["type"].toString().split('(').first()), // 处理类型
@@ -109,6 +121,7 @@ object SqliteSupport : DatabasesSupport {
                 tableName = tableName,
                 nullable = it["notnull"] as Int == 0, // 直接使用notnull字段判断是否可空
                 primaryKey = it["pk"] as Int == 1,
+                identity = identity,
                 defaultValue = it["dflt_value"] as String?
             )
         }
@@ -120,8 +133,7 @@ object SqliteSupport : DatabasesSupport {
     ): List<KTableIndex> {
         return dataSource.forList(
             KronosAtomicQueryTask(
-                "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name = :tableName",
-                mapOf(
+                "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name = :tableName", mapOf(
                     "tableName" to tableName
                 )
             )
@@ -131,10 +143,7 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper,
-        tableName: String,
-        columns: TableColumnDiff,
-        indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
         return indexes.toDelete.map {

@@ -1,14 +1,16 @@
-package com.kotlinorm.orm
+package com.kotlinorm.tableOperation
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.tableoperationbeans.OracleUser
-import com.kotlinorm.orm.tableoperationbeans.SqlliteUser
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import com.kotlinorm.sql.SqlManager.getTableColumns
+import com.kotlinorm.tableOperation.beans.OracleUser
+import com.kotlinorm.tableOperation.beans.SsqlUser
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -18,16 +20,18 @@ import kotlin.test.assertTrue
  * 此类演示了如何使用KotlinORM进行数据库表的操作，包括查询表是否存在、动态创建表、删除表以及结构同步。
  * 通过与数据库交互，实现了基于实体类的表管理功能。
  */
-class TableOperationSqlite {
+class TableOperationSqlserver {
 
-    // 初始化sqllite数据库连接池
+    // 初始化SQLserver数据库连接池
     private val ds = BasicDataSource().apply {
-        driverClassName = "org.sqlite.JDBC" // SQLite驱动类名
-        url = "jdbc:sqlite:D:/develop/sqllite/db/myDatabase.db" // SQLite数据库文件路径
+        driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver" // SQLServer驱动类名
+        url = "jdbc:sqlserver://localhost:1433;databaseName=myDatabase;encrypt=true;trustServerCertificate=true"
+        username = "sa" // SQLServer用户名
+        password = "******" // SQLServer密码
         maxIdle = 10 // 最大空闲连接数
         maxActive = 10 // 最大活动连接数
     }
-    val user = SqlliteUser()
+    val user = SsqlUser()
 
     init {
         // 配置Kronos ORM框架的基本设置
@@ -41,6 +45,7 @@ class TableOperationSqlite {
         }
     }
 
+
     /**
      * 测试表是否存在功能。
      * 此方法应完成一个测试用例，验证某个表是否存在，并使用assertEquals断言结果正确性。
@@ -51,7 +56,7 @@ class TableOperationSqlite {
 //        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
-        assertEquals(true, exists)
+        assertEquals(false, exists)
 //        // 创建表
 //        dataSource.table.createTable(user)
 //        // 判断表是否存在
@@ -60,11 +65,11 @@ class TableOperationSqlite {
     }
 
     /**
-     * 测试sqlite动态创建表功能。
+     * 测试Sqlserver动态创建表功能。
      * 此方法应完成一个测试用例，动态创建一个表，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testCreateTable_sqlite() {
+    fun testCreateTable_myssql() {
         // 不管有没有先删
         dataSource.table.dropTable(user)
         // 创建表
@@ -82,13 +87,12 @@ class TableOperationSqlite {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-
-            assertEquals(actualColumn.nullable, column.nullable, "列 '$column' 的可空性应一致")
-            assertEquals(actualColumn.length, column.length, "列 '$column' 的长度应一致")
-            assertEquals(actualColumn.defaultValue, column.defaultValue, "列 '$column' 的默认值应一致")
             assertEquals(
-                actualColumn.type,
-                column.type,
+                columnCreateDefSql(
+                    DBType.Mssql,
+                    actualColumn
+                ),
+                columnCreateDefSql(DBType.Mssql, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -116,11 +120,12 @@ class TableOperationSqlite {
     }
 
     /**
-     * 测试sqlite结构同步功能。
+     * 测试SQLServer结构同步功能。
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncScheme_sqlite() {
+    fun testSyncScheme_ssql() {
+        println(user.kronosColumns().map { it.columnName })
         // 同步user表结构
         val schemeSync = dataSource.table.schemeSync(user)
         if (!schemeSync) {
@@ -139,11 +144,14 @@ class TableOperationSqlite {
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-            assertEquals(actualColumn.nullable, column.nullable, "列 '$column' 的可空性应一致")
-            assertEquals(actualColumn.length, column.length, "列 '$column' 的长度应一致")
-            assertEquals(actualColumn.defaultValue, column.defaultValue, "列 '$column' 的默认值应一致")
-            assertEquals(actualColumn.type, column.type, "列 '$column' 的类型应一致")
-            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
+            assertEquals(
+                columnCreateDefSql(
+                    DBType.Mssql,
+                    actualColumn
+                ),
+                columnCreateDefSql(DBType.Mssql, column),
+                "列 '$column' 的类型应一致"
+            )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 

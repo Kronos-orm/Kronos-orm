@@ -16,12 +16,10 @@
 
 package com.kotlinorm.enums
 
-import java.util.*
-
 /**
  * Column types.
  */
-enum class KColumnType(type: String) {
+enum class KColumnType(val type: String) {
     UNDEFINED("UNDEFINED"), // 未定义
     BIT("BIT"), // 存储 0/1
     TINYINT("TINYINT"), // 整数值（没有小数点），精度 3。
@@ -67,7 +65,10 @@ enum class KColumnType(type: String) {
 
     companion object {
         fun fromString(type: String): KColumnType {
-            return entries.firstOrNull { it.name == type.uppercase() } ?: UNDEFINED
+            return when (type) {
+                "INTEGER" -> INT
+                else -> entries.firstOrNull { it.name == type.uppercase() } ?: UNDEFINED
+            }
         }
     }
 }

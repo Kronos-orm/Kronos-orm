@@ -1,4 +1,4 @@
-package com.kotlinorm.orm
+package com.kotlinorm.tableOperation
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
@@ -7,10 +7,10 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
-import com.kotlinorm.orm.tableoperationbeans.OracleUser
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import com.kotlinorm.sql.SqlManager.getTableColumns
+import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.tableOperation.beans.OracleUser
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

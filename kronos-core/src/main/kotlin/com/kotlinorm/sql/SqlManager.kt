@@ -140,8 +140,8 @@ object SqlManager {
             DBType.Mysql -> MysqlSupport.getTableColumns(dataSource, tableName)
             DBType.Postgres -> PostgesqlSupport.getTableColumns(dataSource, tableName)
             DBType.Oracle -> OracleSupport.getTableColumns(dataSource, tableName)
-            DBType.SQLite -> MysqlSupport.getTableColumns(dataSource, tableName)
-            DBType.Mssql -> MysqlSupport.getTableColumns(dataSource, tableName)
+            DBType.SQLite -> SqliteSupport.getTableColumns(dataSource, tableName)
+            DBType.Mssql -> MssqlSupport.getTableColumns(dataSource, tableName)
             else -> tryGetTableColumnsCustom(dataSource, tableName)
                 ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
         }
@@ -156,7 +156,7 @@ object SqlManager {
             DBType.Postgres -> PostgesqlSupport.getTableIndexes(dataSource, tableName)
             DBType.Oracle -> OracleSupport.getTableIndexes(dataSource, tableName)
             DBType.SQLite -> SqliteSupport.getTableIndexes(dataSource, tableName)
-            DBType.Mssql -> MysqlSupport.getTableIndexes(dataSource, tableName)
+            DBType.Mssql -> MssqlSupport.getTableIndexes(dataSource, tableName)
             else -> tryGetTableIndexesCustom(dataSource, tableName)
                 ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
         }

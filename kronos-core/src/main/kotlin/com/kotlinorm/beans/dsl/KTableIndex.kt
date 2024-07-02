@@ -4,7 +4,8 @@ data class KTableIndex(
     var name: String,
     var columns: Array<String>,
     var type: String = "",
-    var method: String = ""
+    var method: String = "",
+    var concurrently: Boolean = false
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -1,15 +1,15 @@
 package com.kotlinorm.orm
 
+//import com.kotlinorm.KronosBasicWrapper
+//import org.apache.commons.dbcp.BasicDataSource
 import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
-//import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.tableOperation.beans.MysqlUser
 import org.apache.commons.dbcp.BasicDataSource
-//import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -19,7 +19,7 @@ class Select {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password  = "rootroot"
+        password = "rootroot"
     }
 
     init {
@@ -38,7 +38,10 @@ class Select {
         val (sql, paramMap) = user.select { }.build()
 
         assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals(
+            "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            sql
+        )
     }
 
     @Test
@@ -60,24 +63,30 @@ class Select {
 
     @Test
     fun testSingle() {
-        val (sql , paramMap) = user.select { }.single().build()
+        val (sql, paramMap) = user.select { }.single().build()
 
         assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1", sql)
+        assertEquals(
+            "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1",
+            sql
+        )
     }
 
     @Test
     fun testLimit() {
-        val (sql , paramMap) = user.select { }.limit(10).build()
+        val (sql, paramMap) = user.select { }.limit(10).build()
 
         assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10", sql)
+        assertEquals(
+            "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10",
+            sql
+        )
     }
 
     @Test
     fun testPage() {
 
-        val (cnt , data) = user.select { }.page(1, 10).withTotal().build()
+        val (cnt, data) = user.select { }.page(1, 10).withTotal().build()
 
         assertEquals(
             "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0",
@@ -85,7 +94,10 @@ class Select {
         )
         assertEquals(mapOf("id" to 2), data.paramMap)
 
-        assertEquals("SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0) AS t", cnt.sql)
+        assertEquals(
+            "SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0) AS t",
+            cnt.sql
+        )
         assertEquals(mapOf("id" to 2), cnt.paramMap)
 
     }
@@ -124,7 +136,7 @@ class Select {
     @Test
     fun testAlias() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name")}
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
             .where { it.gender == 0 }
             .build()
 
@@ -137,7 +149,7 @@ class Select {
 
     @Test
     fun testGetKey() {
-        val (sql, paramMap) = user.select { it.id + it.username}
+        val (sql, paramMap) = user.select { it.id + it.username }
             .where { it.id == 0 || it.id == 2 || it.id == 3 }
             .build()
 

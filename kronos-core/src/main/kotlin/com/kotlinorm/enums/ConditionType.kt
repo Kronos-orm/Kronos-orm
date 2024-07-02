@@ -34,5 +34,6 @@ enum class ConditionType {
     BETWEEN,
     AND,
     OR,
+    REGEXP,
     ROOT
 }

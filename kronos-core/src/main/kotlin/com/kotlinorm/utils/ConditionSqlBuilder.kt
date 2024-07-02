@@ -98,7 +98,7 @@ object ConditionSqlBuilder {
                     * */
                     when (condition.type) {
                         Equal -> condition.type = ISNULL
-                        Like, In, BETWEEN -> return KotoBuildResultSet((!condition.not).toString(), paramMap)
+                        Like, In, BETWEEN, REGEXP -> return KotoBuildResultSet((!condition.not).toString(), paramMap)
                         GT, GE, LT, LE -> return KotoBuildResultSet("false", paramMap)
                         else -> return KotoBuildResultSet(null, paramMap)
                     }
@@ -174,6 +174,14 @@ object ConditionSqlBuilder {
                     ":${safeKeyMin}",
                     "AND",
                     ":${safeKeyMax}"
+                )
+            }
+
+            REGEXP -> {
+                val safeKey = getSafeKey(condition.field.name + "Pattern" , keyCounters , paramMap , condition)
+                paramMap[safeKey] = "${condition.value}"
+                listOfNotNull(
+                    condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "REGEXP", ":${safeKey}"
                 )
             }
 

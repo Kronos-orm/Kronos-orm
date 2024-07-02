@@ -71,7 +71,7 @@ class ParsedSql(private var originalSql: String = "") {
         get() {
             var sql = originalSql
             for (parameterName in parameterNames) {
-                sql = sql.replace(":$parameterName", "?")
+                sql = sql.replaceFirst(":$parameterName", "?")
             }
             return sql
         }

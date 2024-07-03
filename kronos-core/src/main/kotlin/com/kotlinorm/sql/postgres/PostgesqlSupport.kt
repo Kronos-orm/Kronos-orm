@@ -5,57 +5,51 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
 import com.kotlinorm.sql.SqlManager.getDBNameFrom
+import com.kotlinorm.sql.SqlManager.getKotlinColumnType
 
 object PostgesqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
-            KColumnType.BIT -> "BOOLEAN"
-            KColumnType.TINYINT -> "SMALLINT"
-            KColumnType.SMALLINT -> "SMALLINT"
-            KColumnType.INT -> "INTEGER"
-            KColumnType.MEDIUMINT -> "INTEGER"
-            KColumnType.BIGINT -> "BIGINT"
-            KColumnType.REAL -> "REAL"
-            KColumnType.FLOAT -> "FLOAT"
-            KColumnType.DOUBLE -> "DOUBLE"
-            KColumnType.DECIMAL -> "DECIMAL"
-            KColumnType.NUMERIC -> "NUMERIC"
-            KColumnType.CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.VARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.TEXT -> "TEXT"
-            KColumnType.MEDIUMTEXT -> "TEXT"
-            KColumnType.LONGTEXT -> "TEXT"
-            KColumnType.DATE -> "DATE"
-            KColumnType.TIME -> "TIME"
-            KColumnType.DATETIME -> "TIMESTAMP"
-            KColumnType.TIMESTAMP -> "TIMESTAMP"
-            KColumnType.BINARY -> "BYTEA"
-            KColumnType.VARBINARY -> "BYTEA"
-            KColumnType.LONGVARBINARY -> "BYTEA"
-            KColumnType.BLOB -> "BYTEA"
-            KColumnType.MEDIUMBLOB -> "BYTEA"
-            KColumnType.LONGBLOB -> "BYTEA"
-            KColumnType.CLOB -> "TEXT"
-            KColumnType.JSON -> "JSON"
-            KColumnType.ENUM -> "TEXT"
-            KColumnType.NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCLOB -> "TEXT"
-            KColumnType.UUID -> "UUID"
-            KColumnType.SERIAL -> "SERIAL"
-            KColumnType.YEAR -> "SMALLINT"
-            KColumnType.SET -> "TEXT"
-            KColumnType.GEOMETRY -> "GEOMETRY"
-            KColumnType.POINT -> "POINT"
-            KColumnType.LINESTRING -> "LINESTRING"
-            KColumnType.XML -> "XML"
+            BIT -> "BOOLEAN"
+            TINYINT, SMALLINT, YEAR -> "SMALLINT"
+            INT, MEDIUMINT -> "INTEGER"
+            BIGINT -> "BIGINT"
+            REAL -> "REAL"
+            FLOAT -> "FLOAT"
+            DOUBLE -> "DOUBLE"
+            DECIMAL -> "DECIMAL"
+            NUMERIC -> "NUMERIC"
+            CHAR, NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
+            VARCHAR, NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            TEXT, CLOB, MEDIUMTEXT, LONGTEXT, ENUM, NCLOB, SET -> "TEXT"
+            DATE -> "DATE"
+            TIME -> "TIME"
+            DATETIME, TIMESTAMP -> "TIMESTAMP"
+            BINARY, VARBINARY, LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -> "BYTEA"
+            JSON -> "JSON"
+            UUID -> "UUID"
+            SERIAL -> "SERIAL"
+            GEOMETRY -> "GEOMETRY"
+            POINT -> "POINT"
+            LINESTRING -> "LINESTRING"
+            XML -> "XML"
             else -> "VARCHAR(255)"
+        }
+    }
+
+    override fun getKColumnType(type: String, length: Int): KColumnType {
+        return when (type) {
+            "INTEGER" -> INT
+            "BYTEA" -> BLOB
+            "BOOLEAN" -> BIT
+            else -> super.getKColumnType(type, length)
         }
     }
 
@@ -127,7 +121,7 @@ object PostgesqlSupport : DatabasesSupport {
         ).map {
             Field(
                 columnName = it["column_name"].toString(),
-                type = KColumnType.fromString(it["data_type"].toString()),
+                type = getKotlinColumnType(DBType.Postgres, it["data_type"].toString(), it["length"] as Int? ?: 0),
                 length = it["length"] as Int? ?: 0,
                 tableName = tableName,
                 nullable = it["is_nullable"] == true,

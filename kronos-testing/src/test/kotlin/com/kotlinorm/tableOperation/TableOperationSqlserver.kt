@@ -25,7 +25,7 @@ class TableOperationSqlserver {
     // 初始化SQLserver数据库连接池
     private val ds = BasicDataSource().apply {
         driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver" // SQLServer驱动类名
-        url = "jdbc:sqlserver://localhost:1433;databaseName=myDatabase;encrypt=true;trustServerCertificate=true"
+        url = "jdbc:sqlserver://localhost:1433;databaseName=test;encrypt=true;trustServerCertificate=true"
         username = "sa" // SQLServer用户名
         password = "******" // SQLServer密码
         maxIdle = 10 // 最大空闲连接数
@@ -88,11 +88,11 @@ class TableOperationSqlserver {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
+                columnCreateDefSql(DBType.Mssql, column),
                 columnCreateDefSql(
                     DBType.Mssql,
                     actualColumn
                 ),
-                columnCreateDefSql(DBType.Mssql, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

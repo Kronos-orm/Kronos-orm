@@ -24,9 +24,9 @@ class TableOperationOracle {
     // 初始化oracle数据库连接池
     private val ds = BasicDataSource().apply {
         driverClassName = "oracle.jdbc.OracleDriver" // Oracle驱动类名
-        url = "jdbc:oracle:thin:@localhost:1521/orclpdb" // Oracle数据库URL
-        username = "YF" // Oracle用户名
-        password = "******" // Oracle密码
+        url = "jdbc:oracle:thin:@localhost:1521/FREEPDB1" // Oracle数据库URL
+        username = "sdy" // Oracle用户名
+        password = "********" // Oracle密码
         maxIdle = 10 // 最大空闲连接数
         maxActive = 10 // 最大活动连接数
     }
@@ -81,19 +81,16 @@ class TableOperationOracle {
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns().map {
-            it.columnName = it.columnName.uppercase()
-            it
+            it.copy(it.columnName.uppercase())
         }
-        println("actualColumns_columnName" + actualColumns.map { it.columnName })
-        println("expectedColumns_columnName" + expectedColumns.map { it.columnName })
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(DBType.Oracle, actualColumn),
                 columnCreateDefSql(DBType.Oracle, column),
+                columnCreateDefSql(DBType.Oracle, actualColumn),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -144,8 +141,6 @@ class TableOperationOracle {
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         val actualColumns = getTableColumns(dataSource(), "TB_USER")
-        println("actualColumns:" + actualColumns.map { it.columnName })
-        println("expectedColumns:" + expectedColumns.map { it.columnName })
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->

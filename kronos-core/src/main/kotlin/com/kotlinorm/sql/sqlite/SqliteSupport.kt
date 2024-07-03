@@ -5,6 +5,7 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -14,47 +15,19 @@ import com.kotlinorm.sql.SqlManager.sqlColumnType
 object SqliteSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
-            KColumnType.BIT -> "INTEGER"
-            KColumnType.TINYINT -> "INTEGER"
-            KColumnType.SMALLINT -> "INTEGER"
-            KColumnType.INT -> "INTEGER"
-            KColumnType.MEDIUMINT -> "INTEGER"
-            KColumnType.BIGINT -> "INTEGER"
-            KColumnType.REAL -> "REAL"
-            KColumnType.FLOAT -> "REAL"
-            KColumnType.DOUBLE -> "REAL"
-            KColumnType.DECIMAL -> "NUMERIC"
-            KColumnType.NUMERIC -> "NUMERIC"
-            KColumnType.CHAR -> "TEXT"
-            KColumnType.VARCHAR -> "TEXT"
-            KColumnType.TEXT -> "TEXT"
-            KColumnType.MEDIUMTEXT -> "TEXT"
-            KColumnType.LONGTEXT -> "TEXT"
-            KColumnType.DATE -> "TEXT"
-            KColumnType.TIME -> "TEXT"
-            KColumnType.DATETIME -> "TEXT"
-            KColumnType.TIMESTAMP -> "TEXT"
-            KColumnType.BINARY -> "BLOB"
-            KColumnType.VARBINARY -> "BLOB"
-            KColumnType.LONGVARBINARY -> "BLOB"
-            KColumnType.BLOB -> "BLOB"
-            KColumnType.MEDIUMBLOB -> "BLOB"
-            KColumnType.LONGBLOB -> "BLOB"
-            KColumnType.CLOB -> "TEXT"
-            KColumnType.JSON -> "TEXT"
-            KColumnType.ENUM -> "TEXT"
-            KColumnType.NVARCHAR -> "TEXT"
-            KColumnType.NCHAR -> "TEXT"
-            KColumnType.NCLOB -> "TEXT"
-            KColumnType.UUID -> "TEXT"
-            KColumnType.SERIAL -> "INTEGER"
-            KColumnType.YEAR -> "INTEGER"
-            KColumnType.SET -> "TEXT"
-            KColumnType.GEOMETRY -> "TEXT"
-            KColumnType.POINT -> "TEXT"
-            KColumnType.LINESTRING -> "TEXT"
-            KColumnType.XML -> "TEXT"
-            else -> "TEXT"
+            BIT, TINYINT, SMALLINT, INT, MEDIUMINT, BIGINT, SERIAL, YEAR, SET -> "INTEGER"
+            REAL, FLOAT, DOUBLE -> "REAL"
+            DECIMAL, NUMERIC -> "NUMERIC"
+            CHAR, VARCHAR, TEXT, MEDIUMTEXT, LONGTEXT, DATE, TIME, DATETIME, TIMESTAMP, CLOB, JSON, ENUM, NVARCHAR, NCHAR, NCLOB, UUID, GEOMETRY, POINT, LINESTRING, XML -> "TEXT"
+            BINARY, VARBINARY, LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -> "BLOB"
+            else -> "NONE"
+        }
+    }
+
+    override fun getKColumnType(type: String, length: Int): KColumnType {
+        return when (type) {
+            "INTEGER" -> INT
+            else -> super.getKColumnType(type, length)
         }
     }
 
@@ -114,10 +87,11 @@ object SqliteSupport : DatabasesSupport {
                     identity = true
                 }
             }
+            val length = extractNumberInParentheses(it["type"].toString())
             Field(
                 columnName = it["name"].toString(),
-                type = KColumnType.fromString(it["type"].toString().split('(').first()), // 处理类型
-                length = extractNumberInParentheses(it["type"].toString()), // 处理长度
+                type = getKColumnType(it["type"].toString().split('(').first(), length), // 处理类型
+                length = length, // 处理长度
                 tableName = tableName,
                 nullable = it["notnull"] as Int == 0, // 直接使用notnull字段判断是否可空
                 primaryKey = it["pk"] as Int == 1,

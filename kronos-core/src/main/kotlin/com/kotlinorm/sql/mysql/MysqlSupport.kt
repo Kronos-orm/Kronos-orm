@@ -5,55 +5,52 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getKotlinColumnType
 
 object MysqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
-            KColumnType.BIT -> "TINYINT(1)"
-            KColumnType.TINYINT -> "TINYINT"
-            KColumnType.SMALLINT -> "SMALLINT"
-            KColumnType.INT -> "INT"
-            KColumnType.MEDIUMINT -> "MEDIUMINT"
-            KColumnType.BIGINT -> "BIGINT"
-            KColumnType.REAL -> "REAL"
-            KColumnType.FLOAT -> "FLOAT"
-            KColumnType.DOUBLE -> "DOUBLE"
-            KColumnType.DECIMAL -> "DECIMAL"
-            KColumnType.NUMERIC -> "NUMERIC"
-            KColumnType.CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.VARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.TEXT -> "TEXT"
-            KColumnType.MEDIUMTEXT -> "MEDIUMTEXT"
-            KColumnType.LONGTEXT -> "LONGTEXT"
-            KColumnType.DATE -> "DATE"
-            KColumnType.TIME -> "TIME"
-            KColumnType.DATETIME -> "DATETIME"
-            KColumnType.TIMESTAMP -> "TIMESTAMP"
-            KColumnType.BINARY -> "BINARY"
-            KColumnType.VARBINARY -> "VARBINARY"
-            KColumnType.LONGVARBINARY -> "LONGBLOB"
-            KColumnType.BLOB -> "BLOB"
-            KColumnType.MEDIUMBLOB -> "MEDIUMBLOB"
-            KColumnType.LONGBLOB -> "LONGBLOB"
-            KColumnType.CLOB -> "CLOB"
-            KColumnType.JSON -> "JSON"
-            KColumnType.ENUM -> "ENUM"
-            KColumnType.NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCLOB -> "NCLOB"
-            KColumnType.UUID -> "CHAR(36)"
-            KColumnType.SERIAL -> "INT"
-            KColumnType.YEAR -> "YEAR"
-            KColumnType.SET -> "SET"
-            KColumnType.GEOMETRY -> "GEOMETRY"
-            KColumnType.POINT -> "POINT"
-            KColumnType.LINESTRING -> "LINESTRING"
-            KColumnType.XML -> "TEXT"
+            BIT -> "TINYINT(1)"
+            TINYINT -> "TINYINT"
+            SMALLINT -> "SMALLINT"
+            INT, SERIAL -> "INT"
+            MEDIUMINT -> "MEDIUMINT"
+            BIGINT -> "BIGINT"
+            REAL -> "REAL"
+            FLOAT -> "FLOAT"
+            DOUBLE -> "DOUBLE"
+            DECIMAL -> "DECIMAL"
+            NUMERIC -> "NUMERIC"
+            CHAR, NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
+            VARCHAR, NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            TEXT, XML -> "TEXT"
+            MEDIUMTEXT -> "MEDIUMTEXT"
+            LONGTEXT -> "LONGTEXT"
+            DATE -> "DATE"
+            TIME -> "TIME"
+            DATETIME -> "DATETIME"
+            TIMESTAMP -> "TIMESTAMP"
+            BINARY -> "BINARY"
+            VARBINARY -> "VARBINARY"
+            LONGVARBINARY, LONGBLOB -> "LONGBLOB"
+            BLOB -> "BLOB"
+            MEDIUMBLOB -> "MEDIUMBLOB"
+            CLOB -> "CLOB"
+            JSON -> "JSON"
+            ENUM -> "ENUM"
+            NCLOB -> "NCLOB"
+            UUID -> "CHAR(36)"
+            YEAR -> "YEAR"
+            SET -> "SET"
+            GEOMETRY -> "GEOMETRY"
+            POINT -> "POINT"
+            LINESTRING -> "LINESTRING"
             else -> "VARCHAR(255)"
         }
     }
@@ -84,7 +81,11 @@ object MysqlSupport : DatabasesSupport {
         ).map {
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
-                type = KColumnType.fromString(it["DATA_TYPE"].toString()),
+                type = getKotlinColumnType(
+                    DBType.Mysql,
+                    it["DATA_TYPE"].toString(),
+                    (it["LENGTH"] as Long? ?: 0).toInt()
+                ),
                 length = (it["LENGTH"] as Long? ?: 0).toInt(),
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",

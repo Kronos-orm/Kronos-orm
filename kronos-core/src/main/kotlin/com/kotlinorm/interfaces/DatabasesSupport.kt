@@ -13,6 +13,8 @@ import com.kotlinorm.sql.SqlManager.sqlColumnType
 interface DatabasesSupport {
     fun getColumnType(type: KColumnType, length: Int): String
 
+    fun getKColumnType(type: String, length: Int = 0): KColumnType = KColumnType.fromString(type)
+
     fun getColumnCreateSql(dbType: DBType, column: Field): String =
         "${
             column.columnName

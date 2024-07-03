@@ -55,6 +55,21 @@ object SqlManager {
         }
     }
 
+    fun getKotlinColumnType(
+        dbType: DBType,
+        sqlType: String,
+        length: Int
+    ): KColumnType {
+        return when (dbType) {
+            DBType.Mysql -> MysqlSupport.getKColumnType(sqlType, length)
+            DBType.Postgres -> PostgesqlSupport.getKColumnType(sqlType, length)
+            DBType.Oracle -> OracleSupport.getKColumnType(sqlType, length)
+            DBType.SQLite -> SqliteSupport.getKColumnType(sqlType, length)
+            DBType.Mssql -> MssqlSupport.getKColumnType(sqlType, length)
+            else -> throw RuntimeException("Unsupported database type: $dbType")
+        }
+    }
+
     fun columnCreateDefSql(
         dbType: DBType,
         column: Field

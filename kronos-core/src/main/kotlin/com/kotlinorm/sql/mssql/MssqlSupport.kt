@@ -9,6 +9,9 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getKotlinColumnType
+import com.kotlinorm.sql.SqlManager.sqlColumnType
 
 object MssqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
@@ -57,6 +60,22 @@ object MssqlSupport : DatabasesSupport {
         }
     }
 
+    override
+
+    fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
+        column.columnName
+    }${
+        " ${sqlColumnType(dbType, column.type, column.length)}"
+    }${
+        if (column.nullable) "" else " NOT NULL"
+    }${
+        if (column.primaryKey) " PRIMARY KEY" else ""
+    }${
+        if (column.identity) " IDENTITY" else ""
+    }${
+        if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+    }"
+
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String {
         return "CREATE ${index.method}${
             if (index.type == "XML") {
@@ -75,7 +94,7 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
-        val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
+        val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
@@ -89,6 +108,16 @@ object MssqlSupport : DatabasesSupport {
         "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'$tableName') AND type in (N'U')) BEGIN DROP TABLE $tableName END"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
+        fun removeOuterParentheses(input: String?): String? {
+            input ?: return null
+
+            var result: String = input
+            while (result.first() == '(' && result.last() == ')') {
+                result = result.substring(1, result.length - 1)
+            }
+            return result
+        }
+
         return dataSource.forList(
             KronosAtomicQueryTask(
                 """
@@ -110,24 +139,35 @@ object MssqlSupport : DatabasesSupport {
                                 AND tc.Constraint_Type = 'PRIMARY KEY'
                             WHERE ccu.COLUMN_NAME = c.COLUMN_NAME AND ccu.TABLE_NAME = c.TABLE_NAME
                         ) THEN 'YES' ELSE 'NO' 
-                    END AS PRIMARY_KEY
+                    END AS PRIMARY_KEY,
+                    CASE 
+                        WHEN EXISTS(
+                            SELECT 1
+                            FROM sysobjects a inner join syscolumns b on a.id = b.id
+                            WHERE columnproperty(a.id, b.name, 'isIdentity') = 1
+                                and objectproperty(a.id, 'isTable') = 1
+                                and a.name = 'tb_user'
+                                and b.name = c.COLUMN_NAME
+                        ) THEN 'YES' ELSE 'NO' 
+                    END AS AUTOINCREAMENT
                 FROM 
                     INFORMATION_SCHEMA.COLUMNS c
                 WHERE 
                     c.TABLE_CATALOG = DB_NAME() AND 
                     c.TABLE_NAME = :tableName
-            """.trimIndent(),
-                mapOf("tableName" to tableName)
+            """.trimIndent(), mapOf("tableName" to tableName)
             )
         ).map {
+            val length = it["CHARACTER_MAXIMUM_LENGTH"] as Int? ?: 0
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
-                type = KColumnType.fromString(it["DATA_TYPE"].toString()),
-                length = (it["LENGTH"] as Long? ?: 0).toInt(),
+                type = getKotlinColumnType(DBType.Mssql, it["DATA_TYPE"].toString(), length),
+                length = length,
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = it["PRIMARY_KEY"] == "YES",
-                defaultValue = it["COLUMN_DEFAULT"] as String?
+                identity = it["AUTOINCREAMENT"] == "YES",
+                defaultValue = removeOuterParentheses(it["COLUMN_DEFAULT"] as String?)
             )
         }
     }
@@ -156,10 +196,7 @@ object MssqlSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper,
-        tableName: String,
-        columns: TableColumnDiff,
-        indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
@@ -207,7 +244,7 @@ object MssqlSupport : DatabasesSupport {
                 END
             """.trimIndent()
         } + columns.toModified.map {
-            "ALTER TABLE [dbo].[$tableName] ALTER COLUMN ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE [dbo].[$tableName] ALTER COLUMN ${columnCreateDefSql(dbType, it)}"
         } + indexes.toAdd.map {
             getIndexCreateSql(dbType, tableName, it)
         }

@@ -65,10 +65,7 @@ enum class KColumnType(val type: String) {
 
     companion object {
         fun fromString(type: String): KColumnType {
-            return when (type) {
-                "INTEGER" -> INT
-                else -> entries.firstOrNull { it.name == type.uppercase() } ?: UNDEFINED
-            }
+            return entries.firstOrNull { it.name == type.uppercase() } ?: UNDEFINED
         }
     }
 }

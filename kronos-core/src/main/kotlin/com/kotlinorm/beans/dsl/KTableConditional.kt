@@ -187,6 +187,9 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      */
     infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?) = true
 
+
+    infix fun Comparable<*>?.regexp(@Suppress("UNUSED_PARAMETER") other: String?) = true
+
     /**
      * Checks if the given value is null.
      *
@@ -366,6 +369,9 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      */
     @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.ge get() = true
+
+    @Suppress("UnusedReceiverParameter")
+    val Comparable<*>?.regexp get() = true
 
     companion object {
         /**

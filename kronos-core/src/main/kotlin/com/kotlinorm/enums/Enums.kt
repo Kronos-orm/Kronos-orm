@@ -33,6 +33,7 @@ val LE = ConditionType.LE
 val BETWEEN = ConditionType.BETWEEN
 val AND = ConditionType.AND
 val OR = ConditionType.OR
+val REGEXP = ConditionType.REGEXP
 
 val ASC = SortType.ASC
 val DESC = SortType.DESC

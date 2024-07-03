@@ -38,7 +38,7 @@ class UpdateParserTest {
           var gender: Int? = null,
           @UpdateTime var updateTime: String? = null,
           @LogicDelete var deleted: String? = null
-      ) : KPojo()
+      ) : KPojo
 
       fun main() {
         Kronos.apply {

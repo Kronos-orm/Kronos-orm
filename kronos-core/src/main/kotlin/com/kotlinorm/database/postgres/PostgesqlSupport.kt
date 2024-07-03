@@ -1,8 +1,11 @@
-package com.kotlinorm.sql.postgres
+package com.kotlinorm.database.postgres
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.SqlManager.columnCreateDefSql
+import com.kotlinorm.database.SqlManager.getDBNameFrom
+import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -10,9 +13,6 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.sql.SqlManager.columnCreateDefSql
-import com.kotlinorm.sql.SqlManager.getDBNameFrom
-import com.kotlinorm.sql.SqlManager.getKotlinColumnType
 
 object PostgesqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {

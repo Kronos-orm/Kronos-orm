@@ -31,4 +31,4 @@ data class MysqlUser(
     @LogicDelete
     @NotNull
     var deleted: Boolean? = null
-) : KPojo()
+) : KPojo

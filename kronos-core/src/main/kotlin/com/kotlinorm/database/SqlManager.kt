@@ -1,28 +1,28 @@
-package com.kotlinorm.sql
+package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
+import com.kotlinorm.database.SqlManagerCustom.tryGetColumnCreateSqlCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetDBNameFromUrlCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetIndexCreateSqlCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetSqlColumnTypeCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableColumnsCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableCreateSqlListCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableDropSqlCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableExistenceSqlCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableIndexesCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableSyncSqlListCustom
+import com.kotlinorm.database.mssql.MssqlSupport
+import com.kotlinorm.database.mysql.MysqlSupport
+import com.kotlinorm.database.oracle.OracleSupport
+import com.kotlinorm.database.postgres.PostgesqlSupport
+import com.kotlinorm.database.sqlite.SqliteSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.sql.SqlManagerCustom.tryGetColumnCreateSqlCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetDBNameFromUrlCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetIndexCreateSqlCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetSqlColumnTypeCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetTableColumnsCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetTableCreateSqlListCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetTableDropSqlCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetTableExistenceSqlCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetTableIndexesCustom
-import com.kotlinorm.sql.SqlManagerCustom.tryGetTableSyncSqlListCustom
-import com.kotlinorm.sql.mssql.MssqlSupport
-import com.kotlinorm.sql.mysql.MysqlSupport
-import com.kotlinorm.sql.oracle.OracleSupport
-import com.kotlinorm.sql.postgres.PostgesqlSupport
-import com.kotlinorm.sql.sqlite.SqliteSupport
 
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {

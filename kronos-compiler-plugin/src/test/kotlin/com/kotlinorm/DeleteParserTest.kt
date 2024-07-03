@@ -43,7 +43,7 @@ class DeleteParserTest {
                 var gender: Int? = null,
                 @CreateTime
                 var createTime: String? = null
-            ) : KPojo()
+            ) : KPojo
 
 
             fun main() {

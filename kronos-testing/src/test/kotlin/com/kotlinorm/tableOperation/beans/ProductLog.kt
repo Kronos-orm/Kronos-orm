@@ -60,4 +60,4 @@ data class ProductLog(
 
     @Column(name = "audit_roles")
     var auditRoles: Any? = null, // Assuming it's a JSON object or array
-) : KPojo()
+) : KPojo

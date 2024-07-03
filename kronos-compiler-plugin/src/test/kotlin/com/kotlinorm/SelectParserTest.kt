@@ -69,7 +69,7 @@ class SelectParserTest {
                 @LogicDelete
                 @NotNull
                 var deleted: Boolean? = null
-            ) : KPojo()    
+            ) : KPojo    
             @Table(name = "tb_user")
             @TableIndex(name = "idx_user_id", columns = ["id"], type = "UNIQUE", method = "BTREE")
             @TableIndex(name = "idx_user_name", columns = ["username"], type = "UNIQUE", method = "BTREE")
@@ -82,7 +82,7 @@ class SelectParserTest {
                 @CreateTime
                 @Default("now()")
                 var createTime: Date? = null
-            ) : KPojo()
+            ) : KPojo
 
 
             fun main() {

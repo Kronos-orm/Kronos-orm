@@ -35,4 +35,4 @@ data class SqlliteUser(
     @LogicDelete
     @NotNull
     var deleted: Boolean? = null
-) : KPojo()
+) : KPojo

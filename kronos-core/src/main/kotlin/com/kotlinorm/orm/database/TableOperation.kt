@@ -18,13 +18,13 @@ package com.kotlinorm.orm.database
 
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.database.SqlManager.getTableColumns
+import com.kotlinorm.database.SqlManager.getTableCreateSqlList
+import com.kotlinorm.database.SqlManager.getTableDropSql
+import com.kotlinorm.database.SqlManager.getTableIndexes
+import com.kotlinorm.database.SqlManager.getTableSyncSqlList
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.sql.SqlManager.getTableColumns
-import com.kotlinorm.sql.SqlManager.getTableCreateSqlList
-import com.kotlinorm.sql.SqlManager.getTableDropSql
-import com.kotlinorm.sql.SqlManager.getTableIndexes
-import com.kotlinorm.sql.SqlManager.getTableSyncSqlList
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import kotlin.reflect.full.createInstance
 

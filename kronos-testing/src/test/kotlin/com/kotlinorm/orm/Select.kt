@@ -1,13 +1,12 @@
 package com.kotlinorm.orm
 
-//import com.kotlinorm.KronosBasicWrapper
-//import org.apache.commons.dbcp.BasicDataSource
 import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.utils.query
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
@@ -158,6 +157,30 @@ class Select {
             sql
         )
         assertEquals(mapOf("gender" to 0), paramMap)
+    }
+
+    @Test
+    fun testRegexp() {
+        val task = user.select { it.id + it.username }
+            .where { (it.id == 0 || it.id == 2 || it.id == 3) && it.username.regexp("\\d+") }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE (`id` = :id OR `id` = :id@1 OR `id` = :id@2) AND `username` REGEXP :usernamePattern AND `deleted` = 0",
+            task.sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 0,
+                "id@1" to 2,
+                "id@2" to 3,
+                "usernamePattern" to "\\d+"
+            ), task.paramMap
+        )
+
+        val data = task.query()
+
+        println(data)
     }
 
     @Test

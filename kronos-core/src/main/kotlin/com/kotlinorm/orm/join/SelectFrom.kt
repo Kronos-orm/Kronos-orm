@@ -33,14 +33,11 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.*
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.query
-import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.toLinkedSet
 
 /**
  * Select From
@@ -169,7 +166,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             selectFields += fields
             fields.forEach { field ->
                 val safeKey = ConditionSqlBuilder.getSafeKey(
-                    field.columnName,
+                    field.name,
                     keyCounters,
                     selectFieldsWithNames as MutableMap<String, Any?>,
                     field
@@ -309,6 +306,53 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      */
     fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
         return this.build().query(wrapper)
+    }
+
+    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        return this.build().queryList(wrapper)
+    }
+
+    @JvmName("queryForList")
+    @Suppress("UNCHECKED_CAST")
+    fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T1> {
+        return this.build().let {
+            wrapper.orDefault().forList(it, pojo::class)
+        } as List<T1>
+    }
+
+
+    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+        return this.build().queryMap(wrapper)
+    }
+
+    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+        return this.build().queryMapOrNull(wrapper)
+    }
+
+    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
+        return this.build().queryOne(wrapper)
+    }
+
+    @JvmName("queryForObject")
+    @Suppress("UNCHECKED_CAST")
+    fun queryOne(wrapper: KronosDataSourceWrapper? = null): T1 {
+        return this.build().let {
+            it.doTaskLog()
+            wrapper.orDefault().forObject(it, pojo::class) ?: throw NullPointerException("No such record")
+        } as T1
+    }
+
+    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        return this.build().queryOneOrNull(wrapper)
+    }
+
+    @JvmName("queryForObjectOrNull")
+    @Suppress("UNCHECKED_CAST")
+    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T1? {
+        return this.build().let {
+            it.doTaskLog()
+            wrapper.orDefault().forObject(it, pojo::class)
+        } as T1?
     }
 
     /**

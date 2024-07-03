@@ -21,7 +21,7 @@ class SqlStatement {
     }
 
     companion object {
-        fun buildSql(segments: SqlStatement.() -> Unit) = SqlStatement().apply(segments)
+        fun sql(segments: SqlStatement.() -> Unit) = SqlStatement().apply(segments)
     }
 
     fun toSqlString(): String {

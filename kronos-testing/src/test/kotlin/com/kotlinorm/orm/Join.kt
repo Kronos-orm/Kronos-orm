@@ -1,14 +1,20 @@
 package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.tableoperationbeans.ProductLog
 import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.beans.UserRelation
+import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.utils.queryList
+import com.kotlinorm.utils.queryMap
+import com.kotlinorm.utils.queryOne
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -17,8 +23,6 @@ class Join {
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
-        username = ""
-        password = ""
     }
 
     init {
@@ -129,4 +133,42 @@ class Join {
         )
         assertEquals(mapOf("id" to 1), cnt.paramMap)
     }
+
+    @Test
+    fun testQuery() {
+
+        dataSource.table.dropTable<MysqlUser>()
+        dataSource.table.dropTable<UserRelation>()
+        dataSource.table.dropTable<Movie>()
+        dataSource.table.createTable<MysqlUser>()
+        dataSource.table.createTable<UserRelation>()
+        dataSource.table.createTable<Movie>()
+
+        val user = MysqlUser(1)
+        val relation = UserRelation(1, "123", 1, 1)
+        val movie = Movie(1 , year = 1)
+
+        user.insert().execute()
+        relation.insert().execute()
+        movie.insert().execute()
+
+        val task =
+            user.join(
+                relation,
+                movie
+            ) { u, r, m ->
+                leftJoin(r) { u.id == r.id }
+                rightJoin(m) { m.year == u.id }
+                select {
+                    u.id + r.gender + m.id.`as`("username")
+                }
+                where { u.id == 1 }
+                orderBy { u.id.desc() }
+            }.build()
+
+        val data = task.queryList<MysqlUser>()
+
+        println()
+    }
+
 }

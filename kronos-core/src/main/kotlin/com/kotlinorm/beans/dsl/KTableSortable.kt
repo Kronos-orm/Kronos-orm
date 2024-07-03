@@ -18,6 +18,7 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.enums.ASC
 import com.kotlinorm.enums.DESC
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.SortType
 
 /**
@@ -37,7 +38,7 @@ class KTableSortable<T : KPojo> : KTable<T>() {
             }
 
             is String -> {
-                sortFields.add(Field(field, field, type = "string") to ASC)
+                sortFields.add(Field(field, field, type = KColumnType.CUSTOM_CRITERIA_SQL) to ASC)
             }
 
             else -> {
@@ -48,11 +49,19 @@ class KTableSortable<T : KPojo> : KTable<T>() {
 
     @Suppress("UNUSED")
     fun Any?.desc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to DESC
+        (this.takeUnless { it is String } ?: Field(
+            this.toString(),
+            this.toString(),
+            type = KColumnType.CUSTOM_CRITERIA_SQL
+        )) to DESC
 
     @Suppress("UNUSED")
     fun Any?.asc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = "string")) to ASC
+        (this.takeUnless { it is String } ?: Field(
+            this.toString(),
+            this.toString(),
+            type = KColumnType.CUSTOM_CRITERIA_SQL
+        )) to ASC
 
     companion object {
         /**

@@ -1,15 +1,15 @@
-package com.kotlinorm.orm
+package com.kotlinorm.tableOperation
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
-import com.kotlinorm.orm.tableoperationbeans.OracleUser
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getTableColumns
+import com.kotlinorm.tableOperation.beans.OracleUser
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -19,19 +19,18 @@ import kotlin.test.assertTrue
  * 此类演示了如何使用KotlinORM进行数据库表的操作，包括查询表是否存在、动态创建表、删除表以及结构同步。
  * 通过与数据库交互，实现了基于实体类的表管理功能。
  */
-class TableOperationMysql {
+class TableOperationOracle {
 
-    // 初始化mysql数据库连接池
+    // 初始化oracle数据库连接池
     private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
-        url =
-            "jdbc:mysql://localhost:3306/eqm?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false" // 数据库URL
-        username = "root" // 数据库用户名
-        password = "******" // 数据库密码
+        driverClassName = "oracle.jdbc.OracleDriver" // Oracle驱动类名
+        url = "jdbc:oracle:thin:@localhost:1521/FREEPDB1" // Oracle数据库URL
+        username = "sdy" // Oracle用户名
+        password = "********" // Oracle密码
         maxIdle = 10 // 最大空闲连接数
         maxActive = 10 // 最大活动连接数
     }
-    val user = MysqlUser()
+    val user = OracleUser()
 
     init {
         // 配置Kronos ORM框架的基本设置
@@ -65,11 +64,11 @@ class TableOperationMysql {
     }
 
     /**
-     * 测试mysql动态创建表功能。
+     * 测试oracle动态创建表功能。
      * 此方法应完成一个测试用例，动态创建一个表，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testCreateTable_mysql() {
+    fun testCreateTable_oracle() {
         // 不管有没有先删
         dataSource.table.dropTable(user)
         // 创建表
@@ -78,19 +77,20 @@ class TableOperationMysql {
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "TB_USER")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
-        val expectedColumns = user.kronosColumns()
-        println(actualColumns)
+        val expectedColumns = user.kronosColumns().map {
+            it.copy(it.columnName.uppercase())
+        }
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Mysql, actualColumn.type, column.length, true, false),
-                convertToSqlColumnType(DBType.Mysql, column.type, column.length, true, false),
+                columnCreateDefSql(DBType.Oracle, column),
+                columnCreateDefSql(DBType.Oracle, actualColumn),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -117,15 +117,16 @@ class TableOperationMysql {
         assertEquals(exists2, false)
     }
 
+
     /**
-     * 测试mysql结构同步功能。
+     * 测试oracle结构同步功能。
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncTable_mysql() {
+    fun testSyncScheme_oracle() {
         // 同步user表结构
-        val structureSync = dataSource.table.structureSync(user)
-        if (!structureSync) {
+        val schemeSync = dataSource.table.schemeSync(user)
+        if (!schemeSync) {
             println("表结构相同无需同步")
         }
 
@@ -133,17 +134,21 @@ class TableOperationMysql {
 //        val list = user.kronosTableIndex()
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
-        val expectedColumns = user.kronosColumns()
+        val expectedColumns = user.kronosColumns().map {
+            it.columnName = it.columnName.uppercase()
+            it
+        }
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        // 确保所有期望的列都存在于实际的列列表中，且类型一致
+        val actualColumns = getTableColumns(dataSource(), "TB_USER")
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Mysql, actualColumn.type, actualColumn.length, true, false),
-                convertToSqlColumnType(DBType.Mysql, column.type, column.length, true, false),
+                columnCreateDefSql(DBType.Oracle, actualColumn),
+                columnCreateDefSql(DBType.Oracle, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -153,7 +158,6 @@ class TableOperationMysql {
 
         println("表结构同步测试成功")
     }
-
 
     /**
      * 测试获取自增主键

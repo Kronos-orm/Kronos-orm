@@ -19,6 +19,7 @@ package com.kotlinorm.interfaces
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.NoDataSourceException
+import javax.sql.DataSource
 import kotlin.reflect.KClass
 
 /**
@@ -148,4 +149,6 @@ interface KronosDataSourceWrapper {
      * @throws NoDataSourceException If there is no data source configured for the current environment.
      */
     fun batchUpdate(task: KronosAtomicBatchTask): IntArray
+
+    fun transact(block: (DataSource) -> Any?): Any?
 }

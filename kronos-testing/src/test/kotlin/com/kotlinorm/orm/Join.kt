@@ -4,11 +4,11 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.tableoperationbeans.ProductLog
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.tableOperation.beans.ProductLog
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

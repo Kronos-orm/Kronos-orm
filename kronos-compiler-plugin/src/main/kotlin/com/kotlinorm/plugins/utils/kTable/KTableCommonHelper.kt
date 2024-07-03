@@ -20,7 +20,7 @@ import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.findByFqName
 import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.helpers.referenceFunctions
-import com.kotlinorm.plugins.utils.getSqlType
+import com.kotlinorm.plugins.utils.getKColumnType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -125,7 +125,7 @@ fun getColumnName(
         irProperty.annotations.findByFqName(ColumnTypeAnnotationsFqName)
     val propertyType = irProperty.backingField!!.type.classFqName!!.asString()
     val columnType =
-        columnTypeAnnotation?.getValueArgument(0) ?: irString(getSqlType(propertyType))
+        columnTypeAnnotation?.getValueArgument(0) ?: getKColumnType(propertyType)
     val columnTypeLength =
         columnTypeAnnotation?.getValueArgument(1) ?: irInt(0)
     val columnDefaultValue =

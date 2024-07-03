@@ -20,13 +20,13 @@ import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.extensionBy
 import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.utils.getKColumnType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.util.constructors
@@ -116,7 +116,14 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
         is IrConst<*> -> {
             // Add constant values directly to the field names list.
             // 直接将常量值添加到字段名列表。
-            fieldNames.add(applyIrCall(fieldSymbol.constructors.first(), element, element, irString("CUSTOM_CRITERIA_SQL")))
+            fieldNames.add(
+                applyIrCall(
+                    fieldSymbol.constructors.first(),
+                    element,
+                    element,
+                    getKColumnType("CUSTOM_CRITERIA_SQL")
+                )
+            )
         }
 
         is IrReturn -> {

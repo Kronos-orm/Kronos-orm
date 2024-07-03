@@ -1,4 +1,4 @@
-package com.kotlinorm.orm.tableoperationbeans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 data class MysqlUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
-    @ColumnType(VARCHAR,254)
+    @ColumnType(VARCHAR, 254)
     var username: String? = null,
     @Column("gender1")
     @ColumnType(TINYINT)

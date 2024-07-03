@@ -1,15 +1,16 @@
-package com.kotlinorm.orm
+package com.kotlinorm.tableOperation
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.DBHelper.convertToSqlColumnType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.tableoperationbeans.OracleUser
-import com.kotlinorm.orm.tableoperationbeans.SsqlUser
+import com.kotlinorm.sql.SqlManager.columnCreateDefSql
+import com.kotlinorm.sql.SqlManager.getTableColumns
+import com.kotlinorm.tableOperation.beans.OracleUser
+import com.kotlinorm.tableOperation.beans.SsqlUser
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -24,7 +25,7 @@ class TableOperationSqlserver {
     // 初始化SQLserver数据库连接池
     private val ds = BasicDataSource().apply {
         driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver" // SQLServer驱动类名
-        url = "jdbc:sqlserver://localhost:1433;databaseName=myDatabase;encrypt=true;trustServerCertificate=true"
+        url = "jdbc:sqlserver://localhost:1433;databaseName=test;encrypt=true;trustServerCertificate=true"
         username = "sa" // SQLServer用户名
         password = "******" // SQLServer密码
         maxIdle = 10 // 最大空闲连接数
@@ -77,7 +78,7 @@ class TableOperationSqlserver {
         val exists = dataSource.table.exists(user)
         assertEquals(exists, true)
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
@@ -87,14 +88,11 @@ class TableOperationSqlserver {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(
-                    DBType.Mysql,
-                    actualColumn.type,
-                    actualColumn.length,
-                    actualColumn.nullable,
-                    false
+                columnCreateDefSql(DBType.Mssql, column),
+                columnCreateDefSql(
+                    DBType.Mssql,
+                    actualColumn
                 ),
-                convertToSqlColumnType(DBType.Mssql, column.type, 0, column.nullable, false),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -126,11 +124,11 @@ class TableOperationSqlserver {
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncTable_ssql() {
+    fun testSyncScheme_ssql() {
         println(user.kronosColumns().map { it.columnName })
         // 同步user表结构
-        val structureSync = dataSource.table.structureSync(user)
-        if (!structureSync) {
+        val schemeSync = dataSource.table.schemeSync(user)
+        if (!schemeSync) {
             println("表结构相同无需同步")
         }
 
@@ -140,15 +138,18 @@ class TableOperationSqlserver {
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
 
-        val actualColumns = dataSource.table.getTableColumns("tb_user")
+        val actualColumns = getTableColumns(dataSource(), "tb_user")
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                convertToSqlColumnType(DBType.Mssql, actualColumn.type, column.length, true, false),
-                convertToSqlColumnType(DBType.Mssql, column.type, column.length, true, false),
+                columnCreateDefSql(
+                    DBType.Mssql,
+                    actualColumn
+                ),
+                columnCreateDefSql(DBType.Mssql, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

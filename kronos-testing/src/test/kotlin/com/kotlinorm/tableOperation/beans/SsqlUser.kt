@@ -1,26 +1,24 @@
-package com.kotlinorm.orm.tableoperationbeans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.enums.KColumnType.TINYINT
-import com.kotlinorm.enums.KColumnType.VARCHAR
-import com.kotlinorm.enums.Postgres
+import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.enums.SqlServer
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["username"], Postgres.KIndexType.HASH)
-@TableIndex(name = "idx_multi", columns = ["id", "username"], type = "BTREE", method = Postgres.KIndexMethod.UNIQUE)
-data class PgUser(
+@TableIndex("idx_username", ["username"], SqlServer.KIndexType.NONCLUSTERED, SqlServer.KIndexMethod.UNIQUE)
+@TableIndex("idx_username_createTime", ["username", "create_time"], SqlServer.KIndexType.NONCLUSTERED)
+@TableIndex(name = "idx_multi", columns = ["xml"], type = "XML")
+data class SsqlUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     @ColumnType(VARCHAR, 254)
     var username: String? = null,
     @Column("gender1")
-    @ColumnType(TINYINT)
+    @ColumnType(TINYINT, 1)
     @Default("0")
-    @NotNull
     var gender: Int? = null,
-    var age: Int? = 0,
 //    @ColumnType(INT)
 //    var age: Int? = null,
     @CreateTime
@@ -32,5 +30,7 @@ data class PgUser(
     var updateTime: LocalDateTime? = null,
     @LogicDelete
     @NotNull
-    var deleted: Boolean? = null
+    var deleted: Boolean? = null,
+    @ColumnType(XML)
+    var xml: String? = null
 ) : KPojo()

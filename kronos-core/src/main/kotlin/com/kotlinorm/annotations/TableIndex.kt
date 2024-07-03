@@ -25,11 +25,16 @@ package com.kotlinorm.annotations
  * @property columns The columns of the index in the database.
  * @property type The type of the index in the database.
  * @property method The method of the index in the database.
+ * @property concurrently Whether to create the index concurrently, **only for PostgreSQL**.
  * @author OUSC
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Repeatable
 annotation class TableIndex(
-    val name: String, val columns: Array<String>, val type: String = "", val method: String = ""
+    val name: String,
+    val columns: Array<String>,
+    val type: String = "",
+    val method: String = "",
+    val concurrently: Boolean = false
 )

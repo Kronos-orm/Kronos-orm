@@ -16,6 +16,8 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.utils.fieldDb2k
 
 /**
@@ -29,7 +31,7 @@ import com.kotlinorm.utils.fieldDb2k
 class Field(
     var columnName: String,
     var name: String = fieldDb2k(columnName),
-    val type: String = "",
+    val type: KColumnType = UNDEFINED,
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",
@@ -43,7 +45,9 @@ class Field(
         return name
     }
 
-    fun quoted(showTable: Boolean = false): String = "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
+    fun quoted(showTable: Boolean = false): String =
+        "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
+
     fun equation(): String = "`$columnName` = :$name"
 
     /**
@@ -83,4 +87,30 @@ class Field(
         columnName,
         name + other
     )
+
+    fun copy(
+        columnName: String = this.columnName,
+        name: String = this.name,
+        type: KColumnType = this.type,
+        primaryKey: Boolean = this.primaryKey,
+        dateFormat: String? = this.dateFormat,
+        tableName: String = this.tableName,
+        length: Int = this.length,
+        defaultValue: String? = this.defaultValue,
+        identity: Boolean = this.identity,
+        nullable: Boolean = this.nullable
+    ): Field {
+        return Field(
+            columnName,
+            name,
+            type,
+            primaryKey,
+            dateFormat,
+            tableName,
+            length,
+            defaultValue,
+            identity,
+            nullable
+        )
+    }
 }

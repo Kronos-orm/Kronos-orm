@@ -2,12 +2,12 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.build
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
 import com.kotlinorm.orm.upsert.upsert
 import com.kotlinorm.orm.upsert.upsertExcept
 import com.kotlinorm.orm.utils.TestWrapper
+import com.kotlinorm.tableOperation.beans.MysqlUser
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -24,7 +24,7 @@ class Upsert {
     fun testUpsert() {
         val user = MysqlUser(1)
 
-        val (sql, paramMap) = user.upsert {it.username}
+        val (sql, paramMap) = user.upsert { it.username }
             .on { it.id }.build()
 
         assertEquals(
@@ -99,7 +99,15 @@ class Upsert {
             "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
             sql
         )
-        assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"]), paramMap)
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "username" to "test",
+                "deleted" to 0,
+                "updateTime" to paramMap["updateTime"],
+                "createTime" to paramMap["createTime"]
+            ), paramMap
+        )
     }
 
     @Test
@@ -112,7 +120,15 @@ class Upsert {
             "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
             sql
         )
-        assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"]), paramMap)
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "username" to "test",
+                "deleted" to 0,
+                "updateTime" to paramMap["updateTime"],
+                "createTime" to paramMap["createTime"]
+            ), paramMap
+        )
     }
 
     @Test
@@ -125,7 +141,16 @@ class Upsert {
             "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) SELECT :id, :username, :createTime, :updateTime, :deleted FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = :deleted); UPDATE `tb_user` SET `id` = :id, `gender` = :gender WHERE `id` = :id AND `deleted` = :deleted",
             sql
         )
-        assertEquals(mapOf("id" to 1, "username" to "test", "deleted" to 0, "updateTime" to paramMap["updateTime"], "createTime" to paramMap["createTime"], "gender" to null), paramMap)
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "username" to "test",
+                "deleted" to 0,
+                "updateTime" to paramMap["updateTime"],
+                "createTime" to paramMap["createTime"],
+                "gender" to null
+            ), paramMap
+        )
     }
 
     //  支持批量upsert

@@ -4,13 +4,13 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.update.updateExcept
+import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.utils.Extensions.mapperTo
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

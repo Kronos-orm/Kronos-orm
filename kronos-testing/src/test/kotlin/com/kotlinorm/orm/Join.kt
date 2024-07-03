@@ -5,8 +5,6 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.tableoperationbeans.ProductLog
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
@@ -15,6 +13,8 @@ import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.utils.queryList
 import com.kotlinorm.utils.queryMap
 import com.kotlinorm.utils.queryOne
+import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.tableOperation.beans.ProductLog
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

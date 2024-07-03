@@ -423,7 +423,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         //检查是否设置排序
         val orderByKeywords = if (isOrder && orderByFields.isNotEmpty()) "ORDER BY " +
                 orderByFields.joinToString(", ") {
-                    if (it.first.type == "string") it.first.toString() else it.first.quoted(true) +
+                    if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(true) +
                             " " + it.second
                 } else null
 

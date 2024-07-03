@@ -1,4 +1,4 @@
-package com.kotlinorm.orm.tableoperationbeans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
@@ -8,8 +8,13 @@ import java.time.LocalDateTime
 
 @Table(name = "tb_user")
 @TableIndex("aaa", ["username"], SQLite.KIndexType.BINARY, SQLite.KIndexMethod.UNIQUE)
-@TableIndex(  "bbb",columns = ["username","gender1"], type = SQLite.KIndexType.NOCASE, method = SQLite.KIndexMethod.UNIQUE)
-@TableIndex(  "ccc",columns = ["gender1"])
+@TableIndex(
+    "bbb",
+    columns = ["username", "gender1"],
+    type = SQLite.KIndexType.NOCASE,
+    method = SQLite.KIndexMethod.UNIQUE
+)
+@TableIndex("ccc", columns = ["gender1"])
 data class SqlliteUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,

@@ -28,7 +28,6 @@ import com.kotlinorm.enums.Oracle
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.safeMapperTo
 import com.kotlinorm.utils.getTypeSafeValue
 import java.sql.PreparedStatement
@@ -62,7 +61,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         val conn = dataSource.connection
         _metaUrl = conn.metaData.url
         _metaDbType = DBType.fromName(conn.metaData.databaseProductName)
-        _userName = conn.metaData.userName?:""
+        _userName = conn.metaData.userName ?: ""
         conn.close()
     }
 
@@ -79,7 +78,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         var ps: PreparedStatement? = null
         var rs: ResultSet? = null
         try {
-            ps = if(dbType == Oracle.type){
+            ps = if (dbType == Oracle.type) {
                 conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
             } else {
                 conn.prepareStatement(sql)
@@ -120,7 +119,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             var ps: PreparedStatement? = null
             var rs: ResultSet? = null
             try {
-                ps = if(dbType == Oracle.type){
+                ps = if (dbType == Oracle.type) {
                     conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
                 } else {
                     conn.prepareStatement(sql)
@@ -158,7 +157,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         var ps: PreparedStatement? = null
         var rs: ResultSet? = null
         try {
-            ps = if(dbType == Oracle.type){
+            ps = if (dbType == Oracle.type) {
                 conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
             } else {
                 conn.prepareStatement(sql)
@@ -277,30 +276,38 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         return result
     }
 
-    companion object {
-        /**
-         * Perform database operations in a transaction
-         *
-         * @param T the return type
-         * @param dataSource the data source
-         * @param block the block of code to execute in the transaction
-         * @return T the result of the block
-         */
-        inline fun <reified T> transact(dataSource: DataSource, block: (DataSource) -> T): T {
-            val res: T?
-            val conn = dataSource.connection
-            conn.autoCommit = false
-            try {
-                res = block(dataSource)
-                conn.commit()
-            } catch (e: Exception) {
-                conn.rollback()
-                throw e
-            } finally {
-                conn.close()
-            }
-            return res!!
+    /**
+     * Perform database operations in a transaction
+     *
+     * @param block the block of code to execute in the transaction
+     * @return Any? the return value of block
+     */
+    override fun transact(block: (DataSource) -> Any?): Any? {
+        val res: Any?
+        val conn = dataSource.connection
+        conn.autoCommit = false
+        try {
+            res = block(dataSource)
+            conn.commit()
+        } catch (e: Exception) {
+            conn.rollback()
+            throw e
+        } finally {
+            conn.close()
         }
+        return res
+    }
+
+    /**
+     * Perform database operations in a transaction
+     *
+     * @param T the return type
+     * @param block the block of code to execute in the transaction
+     * @return T the result of the block
+     */
+    @JvmName("transactT")
+    inline fun <reified T> transact(noinline block: (DataSource) -> T): T {
+        return transact(block) as T
     }
 
     private fun ResultSet.toList(javaClass: Class<*>? = null): List<Map<String, Any>> {
@@ -316,7 +323,6 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                     indexOfLong.add(i)
                 }
             }
-            val mapOfLong = mutableMapOf<String, Any>()
             while (next()) {
                 val mapOfLong = mutableMapOf<String, Any>()
                 for (i in 1..meta.columnCount) {
@@ -333,7 +339,6 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 list.add(mapOfLong)
             }
             beforeFirst()
-            val mapOfOther = mutableMapOf<String, Any>()
             var idx = 0
             while (next()) {
                 val mapOfOther = mutableMapOf<String, Any>()

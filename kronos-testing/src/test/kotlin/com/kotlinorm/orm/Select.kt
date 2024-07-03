@@ -2,15 +2,13 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
-//import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.tableoperationbeans.MysqlUser
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.utils.query
+import com.kotlinorm.tableOperation.beans.MysqlUser
 import org.apache.commons.dbcp.BasicDataSource
-//import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

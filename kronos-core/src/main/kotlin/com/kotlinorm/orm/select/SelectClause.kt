@@ -236,7 +236,7 @@ class SelectClause<T : KPojo>(
         allFields = pojo.kronosColumns().toLinkedSet()
 
         if (selectFields.isEmpty()) {
-            selectFields += allFields
+            selectFields += allFields.filter { it.isColumn }
         }
 
         // 如果条件为空，则根据paramMap构建查询条件

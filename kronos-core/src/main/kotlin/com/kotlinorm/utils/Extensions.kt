@@ -34,6 +34,16 @@ object Extensions {
         return kClass.createInstance().fromMapData(this)
     }
 
+    @JvmName("safeMapperToOutKClass")
+    fun Map<String, Any?>.safeMapperTo(kClass: KClass<out KPojo>): Any {
+        return kClass.createInstance().safeFromMapData(this)
+    }
+
+    @JvmName("mapperToOutKClass")
+    fun Map<String, Any?>.mapperTo(kClass: KClass<out KPojo>): Any {
+        return kClass.createInstance().fromMapData(this)
+    }
+
     inline fun <reified K : KPojo> Map<String, Any?>.safeMapperTo(): K {
         return K::class.createInstance().safeFromMapData(this)
     }

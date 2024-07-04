@@ -22,22 +22,24 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.enums.DBType
-import com.kotlinorm.enums.JoinType
+import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
+import com.kotlinorm.enums.*
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
-import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.*
+import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.doTaskLog
+import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.toLinkedSet
 
 /**
  * Select From
@@ -315,9 +317,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @JvmName("queryForList")
     @Suppress("UNCHECKED_CAST")
     fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T1> {
-        return this.build().let {
-            wrapper.orDefault().forList(it, pojo::class)
-        } as List<T1>
+        with(this.build()) {
+            beforeQuery?.invoke(this)
+            atomicTask.doTaskLog()
+            val result = wrapper.orDefault().forList(atomicTask, pojo::class) as List<T1>
+            afterQuery?.invoke(result, QueryType.QueryList)
+            return result
+        }
     }
 
 
@@ -336,10 +342,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @JvmName("queryForObject")
     @Suppress("UNCHECKED_CAST")
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T1 {
-        return this.build().let {
-            it.doTaskLog()
-            wrapper.orDefault().forObject(it, pojo::class) ?: throw NullPointerException("No such record")
-        } as T1
+        with(this.build()) {
+            beforeQuery?.invoke(this)
+            atomicTask.doTaskLog()
+            val result =
+                (wrapper.orDefault().forObject(atomicTask, pojo::class)
+                    ?: throw NullPointerException("No such record")) as T1
+            afterQuery?.invoke(result, QueryType.QueryOne)
+            return result
+        }
     }
 
     inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
@@ -349,10 +360,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @JvmName("queryForObjectOrNull")
     @Suppress("UNCHECKED_CAST")
     fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T1? {
-        return this.build().let {
-            it.doTaskLog()
-            wrapper.orDefault().forObject(it, pojo::class)
-        } as T1?
+        with(this.build()) {
+            beforeQuery?.invoke(this)
+            atomicTask.doTaskLog()
+            val result =
+                wrapper.orDefault().forObject(atomicTask, pojo::class) as T1?
+            afterQuery?.invoke(result, QueryType.QueryOneOrNull)
+            return result
+        }
     }
 
     /**
@@ -361,7 +376,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
      * @return a KronosAtomicQueryTask object representing the query.
      */
-    override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
+    override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         var buildCondition = condition
 
         // 初始化所有字段集合
@@ -497,6 +512,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             sql,
             paramMap,
             operationType = KOperationType.SELECT
-        )
+        ).toKronosQueryTask()
     }
 }

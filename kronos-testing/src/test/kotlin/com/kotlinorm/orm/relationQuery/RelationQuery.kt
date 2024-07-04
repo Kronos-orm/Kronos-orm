@@ -4,7 +4,6 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
@@ -14,7 +13,6 @@ import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.utils.GsonResolver
-import com.kotlinorm.utils.query
 import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -24,24 +22,7 @@ class RelationQuery {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "rootroot"
-    }
-
-    // 级联查询
-    @Test
-    fun testCascadeSelect() {
-        val school = School(
-            id = 1,
-            name = "School"
-        )
-
-        val task = school.select().build()
-        val res = task.query()
-        res.map {
-            println(it)
-        }
-        val afterQuery = task.toKronosQueryTask().afterQuery?.invoke(res)
-        println(afterQuery.toString())
+        password = "******"
     }
 
     init {
@@ -202,5 +183,25 @@ class RelationQuery {
         val task = groupClass.update().set { it.id = 999 }.by { it.id }.build()
         val (_, lastInsertId) = task.execute()
         println(lastInsertId)
+    }
+
+    @Test
+    fun testSelect() {
+        dataSource.table.dropTable<School>()
+        dataSource.table.dropTable<GroupClass>()
+        dataSource.table.dropTable<Student>()
+        dataSource.table.createTable<School>()
+        dataSource.table.createTable<GroupClass>()
+        dataSource.table.createTable<Student>()
+
+        val groupClass = GroupClass(1)
+        val stus = (1..10).map {
+            Student(it, groupClassId = 1)
+        }
+        groupClass.students = stus
+        groupClass.insert().execute()
+
+        val result = groupClass.select().where().queryOne()
+        println(result)
     }
 }

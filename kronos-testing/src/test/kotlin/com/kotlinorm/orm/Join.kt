@@ -10,9 +10,6 @@ import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
-import com.kotlinorm.utils.queryList
-import com.kotlinorm.utils.queryMap
-import com.kotlinorm.utils.queryOne
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.tableOperation.beans.ProductLog
 import org.apache.commons.dbcp.BasicDataSource
@@ -112,6 +109,8 @@ class Join {
                 orderBy { user.id.desc() }
                 page(1, 10)
             }.withTotal().build()
+        val (sql, paramMap) = cnt
+        val (sql2, paramMap2) = rcd
 
         assertEquals(
             "SELECT COUNT(1) " +
@@ -129,9 +128,9 @@ class Join {
                     "ORDER BY `tb_user`.`id` DESC " +
                     "LIMIT 10 OFFSET 0" +
                     ") AS t",
-            cnt.sql
+            sql
         )
-        assertEquals(mapOf("id" to 1), cnt.paramMap)
+        assertEquals(mapOf("id" to 1), paramMap)
     }
 
     @Test
@@ -146,7 +145,7 @@ class Join {
 
         val user = MysqlUser(1)
         val relation = UserRelation(1, "123", 1, 1)
-        val movie = Movie(1 , year = 1)
+        val movie = Movie(1, year = 1)
 
         user.insert().execute()
         relation.insert().execute()

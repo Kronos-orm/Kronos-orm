@@ -154,8 +154,6 @@ object CascadeDeleteClause {
         paramMap: MutableMap<String, Any?>,
         deleteTask: KronosAtomicActionTask
     ): List<KronosAtomicActionTask>? {
-        val columns = pojo.kronosColumns()
-        print(columns)
         val counter = Counter() //创建一个计数器，用于生成临时表的表名，防止临时表名发生重名
         val validReferences =
             findValidRefs(

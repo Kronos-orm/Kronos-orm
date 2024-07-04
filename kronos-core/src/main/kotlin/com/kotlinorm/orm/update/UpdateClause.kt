@@ -222,7 +222,7 @@ class UpdateClause<T : KPojo>(
             operationType = KOperationType.UPDATE
         )
 
-        return CascadeUpdateClause.build(pojo, whereClauseSql, paramMap , rootTask).apply { atomicTasks.add(rootTask) }
+        return CascadeUpdateClause.build(pojo, whereClauseSql, paramMap , rootTask)
     }
 
     /**

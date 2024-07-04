@@ -1,5 +1,4 @@
-
-package com.kotlinorm.orm.beans
+package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo

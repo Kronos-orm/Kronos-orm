@@ -69,7 +69,7 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
     if (operationType == KOperationType.INSERT) {
         lastInsertId = wrapper.orDefault().forObject(
             KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
-        ) as Long?
+        ) as Long
     }
     return KronosOperationResult(affectRows, lastInsertId)
 }

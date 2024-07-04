@@ -1,15 +1,11 @@
 package com.kotlinorm.plugins.utils
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.dispatchBy
-import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
-import com.kotlinorm.plugins.utils.kTable.ColumnDeserializeAnnotationsFqName
 import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -18,6 +14,7 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
 val createPairSymbol
@@ -155,7 +152,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                         ),
                         irGet(map),
                         irString(it.name.asString()),
-                        irBoolean(it.hasAnnotation(ColumnDeserializeAnnotationsFqName))
+                        irBoolean(it.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))
                     )
                 ),
                 listOf(),
@@ -192,10 +189,7 @@ fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
         val listOfIndexObj = indexesAnnotations.map {
             applyIrCall(
                 KTableIndexSymbol.constructors.first(),
-                it.getValueArgument(0),
-                it.getValueArgument(1),
-                it.getValueArgument(2),
-                it.getValueArgument(3),
+                *it.valueArguments.toTypedArray()
             )
         }
         +irReturn(

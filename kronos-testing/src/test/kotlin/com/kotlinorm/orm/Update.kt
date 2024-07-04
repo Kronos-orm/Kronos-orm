@@ -4,13 +4,13 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.update.updateExcept
+import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.utils.Extensions.mapperTo
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -26,9 +26,9 @@ class Update {
     }
 
 
-    private val user = User(1)
-    private val testUser = User(1, "test")
-    private val testUser1 = User(1, "test", 1)
+    private val user = MysqlUser(1)
+    private val testUser = MysqlUser(1, "test")
+    private val testUser1 = MysqlUser(1, "test", 1)
 
     @Test
     fun testUpdateWithSetAndBy() {
@@ -858,7 +858,7 @@ class Update {
 
         assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0", sql)
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
-        assertEquals(testUser.mapperTo<User>().equals(testUser), true)
+        assertEquals(testUser.mapperTo<MysqlUser>().equals(testUser), true)
         // Update tb_user set username = 'test' where id = 1
     }
 
@@ -882,7 +882,7 @@ class Update {
 
     @Test
     fun testBatchUpdateBy() {
-        val (sql, _, list) = arrayOf(user, testUser).update { it.username }.by { it.id }.build()
+        val (sql, paramMapArr) = arrayOf(user, testUser).update { it.username }.by { it.id }.build()
         assertEquals(
             "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -890,18 +890,20 @@ class Update {
         assertEquals(
             arrayOf(
                 mapOf(
-                    "usernameNew" to null, "id" to 1, "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
+                    "usernameNew" to null, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 ),
                 mapOf(
-                    "usernameNew" to "test", "id" to 1, "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
+                    "usernameNew" to "test", "id" to 1, "updateTimeNew" to (paramMapArr?.get(1)
+                        ?.get("updateTimeNew") ?: "")
                 )
-            ).toList(), list.map { it.paramMap }
+            ).toList(), paramMapArr!!.toList()
         )
     }
 
     @Test
     fun testBatchUpdateExceptBy() {
-        val (sql, _, list) = arrayOf(user, testUser).updateExcept { it.username }.by { it.id }.build()
+        val (sql, paramMapArr) = arrayOf(user, testUser).updateExcept { it.username }.by { it.id }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -913,22 +915,24 @@ class Update {
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
+                    "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 ),
                 mapOf(
                     "usernameNew" to "test",
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
+                    "updateTimeNew" to (paramMapArr?.get(1)
+                        ?.get("updateTimeNew") ?: "")
                 )
-            ).toList(), list.map { it.paramMap }
+            ).toList(), paramMapArr!!.toList()
         )
     }
 
     @Test
     fun testBatchUpdateWhere() {
-        val (sql, _, list) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
+        val (sql, paramMapArr) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -936,20 +940,20 @@ class Update {
         assertEquals(
             arrayOf(
                 mapOf(
-                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (list[0].paramMap
-                        .get("updateTimeNew") ?: "")
+                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 ),
                 mapOf(
-                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (list[1].paramMap
-                        .get("updateTimeNew") ?: "")
+                    "genderNew" to 2, "id" to 1, "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 )
-            ).toList(), list.map { it.paramMap.toMap() }
+            ).toList(), paramMapArr!!.toList()
         )
     }
 
     @Test
     fun testBatchUpdateIterWhere() {
-        val (sql, _, list) = listOf(user, testUser).updateExcept { it.username }.where { it.id.eq }.build()
+        val (sql, paramMapArr) = listOf(user, testUser).updateExcept { it.username }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -961,22 +965,24 @@ class Update {
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
+                    "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 ),
                 mapOf(
                     "usernameNew" to "test",
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
-                    "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
+                    "updateTimeNew" to (paramMapArr?.get(1)
+                        ?.get("updateTimeNew") ?: "")
                 )
-            ).toList(), list.map { it.paramMap }
+            ).toList(), paramMapArr!!.toList()
         )
     }
 
     @Test
     fun testBatchUpdateExceptIterWhere() {
-        val (sql, _, list) = listOf(user, testUser).updateExcept { it.gender }.where { it.id.eq }.build()
+        val (sql, paramMapArr) = listOf(user, testUser).updateExcept { it.gender }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -988,16 +994,18 @@ class Update {
                     "id" to 1,
                     "idNew" to 1,
                     "usernameNew" to null,
-                    "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
+                    "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 ),
                 mapOf(
                     "genderNew" to null,
                     "id" to 1,
                     "idNew" to 1,
                     "usernameNew" to "test",
-                    "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
+                    "updateTimeNew" to (paramMapArr?.get(0)
+                        ?.get("updateTimeNew") ?: "")
                 )
-            ).toList(), list.map { it.paramMap }
+            ).toList(), paramMapArr!!.toList()
         )
     }
 }

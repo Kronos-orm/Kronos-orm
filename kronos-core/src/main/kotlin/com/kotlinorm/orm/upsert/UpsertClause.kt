@@ -19,10 +19,8 @@ package com.kotlinorm.orm.upsert
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
-import com.kotlinorm.beans.task.KronosActionTask
-import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
-import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
@@ -31,6 +29,7 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -112,20 +111,20 @@ class UpsertClause<T : KPojo>(
         return build(wrapper).execute(wrapper)
     }
 
-    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicActionTask {
         val dataSource = wrapper.orDefault()
         val dbType = dataSource.dbType
 
         if (isExcept) {
-            toUpdateFields = (allFields.filter { it.isColumn } - toUpdateFields.toSet()).toLinkedSet()
+            toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet<Field>
         }
 
         if (toInsertFields.isEmpty()) {
-            toInsertFields = allFields.filter { null != paramMap[it.name] && it.isColumn }.toLinkedSet()
+            toInsertFields = allFields.filter { null != paramMap[it.name] }.toLinkedSet()
         }
 
         if (toUpdateFields.isEmpty()) {
-            toUpdateFields = allFields.filter { it.isColumn }.toLinkedSet()
+            toUpdateFields = allFields.toLinkedSet()
         }
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateUpsertFields())
@@ -163,14 +162,11 @@ class UpsertClause<T : KPojo>(
             generateOnExistSql(dataSource)
         }
 
-        return listOf(
-            KronosAtomicActionTask(
-                sql,
-                paramMap,
-                operationType = KOperationType.UPSERT
-            ),
-            *CascadeUpsertClause.build(pojo, onFields, toUpdateFields, toInsertFields)
-        ).toKronosActionTask()
+        return KronosAtomicActionTask(
+            sql,
+            paramMap,
+            operationType = KOperationType.UPSERT
+        )
     }
 
     private fun generateOnExistSql(wrapper: KronosDataSourceWrapper): String {
@@ -186,7 +182,7 @@ class UpsertClause<T : KPojo>(
     }
 
     companion object {
-        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: KTableField<T, Any?>): List<UpsertClause<T>> {
+        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: KTableField<T, Unit>): List<UpsertClause<T>> {
             return map { it.on(someFields) }
         }
 
@@ -194,8 +190,13 @@ class UpsertClause<T : KPojo>(
             return map { it.onDuplicateKey() }
         }
 
-        fun <T : KPojo> List<UpsertClause<T>>.build(): KronosActionTask {
-            return map { it.build() }.merge()
+        fun <T : KPojo> List<UpsertClause<T>>.build(): KronosAtomicBatchTask {
+            val tasks = this.map { it.build() }
+            return KronosAtomicBatchTask(
+                sql = tasks.first().sql,
+                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
+                operationType = KOperationType.UPSERT
+            )
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {

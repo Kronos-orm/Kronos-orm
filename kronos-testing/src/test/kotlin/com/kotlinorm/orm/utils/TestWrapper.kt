@@ -5,6 +5,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import javax.sql.DataSource
 import kotlin.reflect.KClass
 
 object TestWrapper : KronosDataSourceWrapper {
@@ -65,7 +66,7 @@ object TestWrapper : KronosDataSourceWrapper {
         return intArrayOf(1)
     }
 
-    override fun <T> transact(block: () -> T): T {
-        return block()
+    override fun transact(block: (DataSource) -> Any?): Any? {
+        return null
     }
 }

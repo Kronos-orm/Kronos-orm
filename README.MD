@@ -30,7 +30,7 @@ data class Movie(
     val year: Int? = null, // the year of the movie
     val director: String? = null, // director
     val actor: String? = null, // actor
-    @ColumnDeserialize
+    @UseSerializeResolver
     val type: List<String>? = null, // type
     val country: String? = null, // country
     val language: String? = null, // language
@@ -64,7 +64,7 @@ dataSource.table.createTable<Movie>()
 dataSource.table.deleteTable<Movie>()
 
 //sync table structure
-dataSource.table.structureSync<Movie>()
+dataSource.table.schemeSync<Movie>()
 ```
 
 ------

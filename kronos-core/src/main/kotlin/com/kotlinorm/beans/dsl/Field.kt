@@ -16,9 +16,9 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.utils.fieldDb2k
-import kotlin.reflect.full.createInstance
 
 /**
  * Field
@@ -31,13 +31,10 @@ import kotlin.reflect.full.createInstance
 class Field(
     var columnName: String,
     var name: String = fieldDb2k(columnName),
-    val type: String = "",
+    val type: KColumnType = UNDEFINED,
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",
-    val reference: KReference? = null,
-    val referenceKClassName: String? = null,
-    val isColumn: Boolean = true,
     val length: Int = 0,
     val defaultValue: String? = null,
     val identity: Boolean = false,
@@ -51,8 +48,7 @@ class Field(
     fun quoted(showTable: Boolean = false): String =
         "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
 
-    fun equation(showTable: Boolean = false): String =
-        ("`$tableName`.".takeIf { showTable } ?: "") + "`$columnName` = :$name"
+    fun equation(): String = "`$columnName` = :$name"
 
     /**
      * Check if this object is equal to another object.
@@ -92,12 +88,29 @@ class Field(
         name + other
     )
 
-    fun cascadeMapperBy(table: String = tableName): Boolean {
-        return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
-            .kronosTableName() == table)
-    }
-
-    fun refUseFor(usage: KOperationType): Boolean {
-        return reference != null && reference.usage.contains(usage)
+    fun copy(
+        columnName: String = this.columnName,
+        name: String = this.name,
+        type: KColumnType = this.type,
+        primaryKey: Boolean = this.primaryKey,
+        dateFormat: String? = this.dateFormat,
+        tableName: String = this.tableName,
+        length: Int = this.length,
+        defaultValue: String? = this.defaultValue,
+        identity: Boolean = this.identity,
+        nullable: Boolean = this.nullable
+    ): Field {
+        return Field(
+            columnName,
+            name,
+            type,
+            primaryKey,
+            dateFormat,
+            tableName,
+            length,
+            defaultValue,
+            identity,
+            nullable
+        )
     }
 }

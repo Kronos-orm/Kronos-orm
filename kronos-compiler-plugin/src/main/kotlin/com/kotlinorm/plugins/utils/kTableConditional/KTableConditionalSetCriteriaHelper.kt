@@ -177,7 +177,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
-                "between", "like", "notBetween", "notLike" -> {
+                "between", "like", "notBetween", "notLike", "regexp" -> {
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = if (args.isEmpty()) {
                         applyIrCall(

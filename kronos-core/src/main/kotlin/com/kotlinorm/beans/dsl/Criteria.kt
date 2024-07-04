@@ -1,12 +1,6 @@
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.enums.ConditionType.Companion.And
-import com.kotlinorm.enums.ConditionType.Companion.IsNull
-import com.kotlinorm.enums.ConditionType.Companion.Or
-import com.kotlinorm.enums.ConditionType.Companion.Root
-import com.kotlinorm.enums.NoValueStrategy
-import com.kotlinorm.enums.NoValueStrategy.Companion.smart
+import com.kotlinorm.enums.*
 
 /**
  * Criteria
@@ -32,7 +26,7 @@ class Criteria(
 ) {
 
     internal val valueAcceptable: Boolean
-        get() = type != IsNull && type != And && type != Or && type != Root
+        get() = type != ISNULL && type != AND && type != OR && type != Root
 
     /**
      * Adds a child criteria to the list of children.

@@ -160,7 +160,7 @@ fun getTypeSafeValue(
  * @param superTypes
  * @param map
  * @param key
- * @param columnDeserialize
+ * @param useSerializeResolver
  * @return
  */
 @Suppress("UNUSED")
@@ -170,7 +170,7 @@ fun getSafeValue(
     superTypes: List<String>,
     map: Map<String, Any?>,
     key: String,
-    columnDeserialize: Boolean
+    useSerializeResolver: Boolean
 ): Any? {
     if (strictSetValue) {
         return map[key]
@@ -184,7 +184,7 @@ fun getSafeValue(
         else -> {
             val kClassOfVal = map[safeKey]!!::class
             if (kotlinType != kClassOfVal.qualifiedName) {
-                if (columnDeserialize) {
+                if (useSerializeResolver) {
                     return serializeResolver.deserializeObj(
                         map[safeKey].toString(), kotlinBuiltInClassMap[kotlinType] ?: Class.forName(kotlinType).kotlin
                     )

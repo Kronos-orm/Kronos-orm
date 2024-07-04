@@ -59,10 +59,10 @@ object Kronos {
     var serializeResolver: KronosSerializeResolver = NoneSerializeResolver
 
     // 列名策略
-    var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy
+    var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
 
     // 表名策略
-    var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy
+    var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
 
     // 更新时间策略
     var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))

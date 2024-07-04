@@ -18,25 +18,7 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.enums.ConditionType.Companion.And
-import com.kotlinorm.enums.ConditionType.Companion.Between
-import com.kotlinorm.enums.ConditionType.Companion.Equal
-import com.kotlinorm.enums.ConditionType.Companion.Ge
-import com.kotlinorm.enums.ConditionType.Companion.Gt
-import com.kotlinorm.enums.ConditionType.Companion.In
-import com.kotlinorm.enums.ConditionType.Companion.IsNull
-import com.kotlinorm.enums.ConditionType.Companion.Le
-import com.kotlinorm.enums.ConditionType.Companion.Like
-import com.kotlinorm.enums.ConditionType.Companion.Lt
-import com.kotlinorm.enums.ConditionType.Companion.Or
-import com.kotlinorm.enums.ConditionType.Companion.Root
-import com.kotlinorm.enums.ConditionType.Companion.Sql
-import com.kotlinorm.enums.NoValueStrategy.Companion.alwaysFalse
-import com.kotlinorm.enums.NoValueStrategy.Companion.alwaysTrue
-import com.kotlinorm.enums.NoValueStrategy.Companion.ignore
-import com.kotlinorm.enums.NoValueStrategy.Companion.judgeNull
-import com.kotlinorm.enums.NoValueStrategy.Companion.smart
+import com.kotlinorm.enums.*
 
 /**
  * 工具类，用于根据条件对象构建 SQL 查询中的 WHERE 条件部分。
@@ -48,7 +30,11 @@ object ConditionSqlBuilder {
         val paramMap: MutableMap<String, Any?>
     ) {
         fun toWhereClause(): Pair<String?, MutableMap<String, Any?>> {
-            return toWhereSql(sql) to paramMap
+            return if (sql != null) {
+                "WHERE $sql"
+            } else {
+                null
+            } to paramMap
         }
 
         fun toOnClause(): Pair<String?, MutableMap<String, Any?>> {
@@ -64,14 +50,6 @@ object ConditionSqlBuilder {
         var initialized: Boolean = false,
         var metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
     )
-
-    fun toWhereSql(sql: String?): String? {
-        return if (sql != null) {
-            "WHERE $sql"
-        } else {
-            null
-        }
-    }
 
     /**
      * 根据给定的条件类型构建对应的SQL查询条件。这里处理的是逻辑操作符（AND, OR）的情况。
@@ -97,16 +75,16 @@ object ConditionSqlBuilder {
             when (condition.noValueStrategy) {
                 ignore -> return KotoBuildResultSet(null, paramMap) // 直接返回
                 judgeNull -> {
-                    condition.type = IsNull
+                    condition.type = ISNULL
                 } // 条件转为 ISNULL
 
                 alwaysTrue -> {
-                    condition.type = Sql
+                    condition.type = SQL
                     condition.value = "true"
                 } // 条件转为 TRUE
 
                 alwaysFalse -> {
-                    condition.type = Sql
+                    condition.type = SQL
                     condition.value = "false"
                 } // 条件转为 FALSE
 
@@ -119,9 +97,9 @@ object ConditionSqlBuilder {
                     *
                     * */
                     when (condition.type) {
-                        Equal -> condition.type = IsNull
-                        Like, In, Between -> return KotoBuildResultSet((!condition.not).toString(), paramMap)
-                        Gt, Ge, Lt, Le -> return KotoBuildResultSet("false", paramMap)
+                        Equal -> condition.type = ISNULL
+                        Like, In, BETWEEN, REGEXP -> return KotoBuildResultSet((!condition.not).toString(), paramMap)
+                        GT, GE, LT, LE -> return KotoBuildResultSet("false", paramMap)
                         else -> return KotoBuildResultSet(null, paramMap)
                     }
                 }
@@ -133,15 +111,13 @@ object ConditionSqlBuilder {
         val sql = when (condition.type) {
             Root -> {
                 listOf(
-                    buildConditionSqlWithParams(condition.children.firstOrNull(), paramMap, showTable = showTable).sql
+                    buildConditionSqlWithParams(condition.children.firstOrNull(), paramMap , showTable = showTable).sql
                 )
             }
 
             Equal -> {
-                if (condition.value is Field) listOfNotNull(
-                    condition.field.quoted(showTable),
-                    "!=".takeIf { condition.not } ?: "=",
-                    (condition.value as Field).quoted(showTable))
+                if (condition.value is Field)  listOfNotNull(
+                    condition.field.quoted(showTable), "!=".takeIf { condition.not } ?: "=", (condition.value as Field).quoted(showTable))
                 else {
                     val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                     paramMap[safeKey] = condition.value
@@ -149,14 +125,14 @@ object ConditionSqlBuilder {
                 }
             }
 
-            IsNull -> listOfNotNull(
+            ISNULL -> listOfNotNull(
                 condition.field.quoted(showTable), "IS", "NOT".takeIf { condition.not }, "NULL"
             )
 
-            Sql -> listOf(condition.value.toString())
+            SQL -> listOf(condition.value.toString())
 
             Like -> {
-                val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
+                val safeKey = getSafeKey(condition.field.name , keyCounters , paramMap , condition)
                 paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
                     condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "LIKE", ":${safeKey}"
@@ -164,32 +140,30 @@ object ConditionSqlBuilder {
             }
 
             In -> {
-                val safeKey = getSafeKey(condition.field.name + "List", keyCounters, paramMap, condition)
+                val safeKey = getSafeKey(condition.field.name + "List" , keyCounters , paramMap , condition)
                 paramMap[safeKey] = condition.value
                 listOfNotNull(
                     condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "IN", "(:${safeKey})"
                 )
             }
 
-            Gt, Ge, Lt, Le -> {
-                if (condition.value is Field) listOfNotNull(
-                    condition.field.quoted(showTable),
-                    condition.type.value,
-                    (condition.value as Field).quoted(showTable)
-                )
+            GT, GE, LT, LE -> {
+                val sign = mapOf(GT to ">", GE to ">=", LT to "<", LE to "<=")
+                if (condition.value is Field)  listOfNotNull(
+                    condition.field.quoted(showTable), sign[condition.type], (condition.value as Field).quoted(showTable))
                 else {
-                    val suffix = "Min".takeIf { condition.type in listOf(Gt, Ge) } ?: "Max"
+                    val suffix = "Min".takeIf { condition.type in listOf(GT, GE) } ?: "Max"
                     val safeKey = getSafeKey(condition.field.name + suffix, keyCounters, paramMap, condition)
                     paramMap[safeKey] = condition.value
                     listOf(
-                        condition.field.quoted(showTable), condition.type.value, ":${safeKey}"
+                        condition.field.quoted(showTable), sign[condition.type], ":${safeKey}"
                     )
                 }
             }
 
-            Between -> {
-                val safeKeyMin = getSafeKey(condition.field.name + "Min", keyCounters, paramMap, condition)
-                val safeKeyMax = getSafeKey(condition.field.name + "Max", keyCounters, paramMap, condition)
+            BETWEEN -> {
+                val safeKeyMin = getSafeKey(condition.field.name + "Min" , keyCounters , paramMap , condition)
+                val safeKeyMax = getSafeKey(condition.field.name + "Max" , keyCounters , paramMap , condition)
                 val rangeValue = condition.value as ClosedRange<*>
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive
@@ -203,7 +177,15 @@ object ConditionSqlBuilder {
                 )
             }
 
-            And, Or -> {
+            REGEXP -> {
+                val safeKey = getSafeKey(condition.field.name + "Pattern" , keyCounters , paramMap , condition)
+                paramMap[safeKey] = "${condition.value}"
+                listOfNotNull(
+                    condition.field.quoted(showTable), "NOT".takeIf { condition.not }, "REGEXP", ":${safeKey}"
+                )
+            }
+
+            AND, OR -> {
                 // 将子条件转换为SQL字符串，并根据需要添加括号。
                 val branches = condition.children.mapNotNull { child ->
                     val (childSql, _) = buildConditionSqlWithParams(
@@ -232,7 +214,7 @@ object ConditionSqlBuilder {
     }
 
     // 辅助扩展函数，用于判断是否为逻辑操作符类型
-    private fun ConditionType?.isLogicalOperator(): Boolean = this == And || this == Or
+    private fun ConditionType?.isLogicalOperator(): Boolean = this == AND || this == OR
 
     // 这个函数用于生成一个安全的键名，以避免与现有的键名冲突
     fun getSafeKey(

@@ -22,10 +22,5 @@ package com.kotlinorm.enums
  * @author OUSC
  */
 enum class SortType {
-    ASC, DESC;
-
-    companion object {
-        val Asc = ASC
-        val Desc = DESC
-    }
+    ASC, DESC
 }

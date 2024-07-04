@@ -2,13 +2,13 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
-//import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.utils.query
+import com.kotlinorm.tableOperation.beans.MysqlUser
 import org.apache.commons.dbcp.BasicDataSource
-//import org.apache.commons.dbcp.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -18,25 +18,29 @@ class Select {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password  = "rootroot"
+        password = "rootroot"
     }
 
     init {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
+            dataSource = { KronosBasicWrapper(ds) }
             serializeResolver = GsonResolver
         }
     }
 
-    val user = User(2)
+    val user = MysqlUser(2)
 
     @Test
     fun testSelectAllParams() {
         val (sql, paramMap) = user.select { }.build()
 
         assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals(
+            "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            sql
+        )
     }
 
     @Test
@@ -58,32 +62,30 @@ class Select {
 
     @Test
     fun testSingle() {
-        val (sql , paramMap) = user.select { }.single().build()
+        val (sql, paramMap) = user.select { }.single().build()
 
         assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1", sql)
-    }
-
-    @Test
-    fun testSelect2() {
-        val (sql, paramMap) = user.select { it.id }.build()
-
-        assertEquals(mapOf("id" to 1), paramMap)
-        assertEquals("SELECT `id` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals(
+            "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1",
+            sql
+        )
     }
 
     @Test
     fun testLimit() {
-        val (sql , paramMap) = user.select { }.limit(10).build()
+        val (sql, paramMap) = user.select { }.limit(10).build()
 
         assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10", sql)
+        assertEquals(
+            "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10",
+            sql
+        )
     }
 
     @Test
     fun testPage() {
 
-        val (cnt , data) = user.select { }.page(1, 10).withTotal().build()
+        val (cnt, data) = user.select { }.page(1, 10).withTotal().build()
 
         assertEquals(
             "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0",
@@ -91,25 +93,28 @@ class Select {
         )
         assertEquals(mapOf("id" to 2), data.paramMap)
 
-        assertEquals("SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0) AS t", cnt.sql)
+        assertEquals(
+            "SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0) AS t",
+            cnt.sql
+        )
         assertEquals(mapOf("id" to 2), cnt.paramMap)
 
     }
 
     @Test
     fun testSelectComplex() {
-        val (sql, paramMap) = User()
-            .select { it.username + it.gender }
-            .where { it.id > 10 }
+        val (sql, paramMap) = MysqlUser()
+            .select { it.username }
+            .where { it.id < 10 }
             .distinct()
-            .groupBy { it.id + it.gender }
-            .orderBy { it.id.desc() + it.username }
+            .groupBy { it.id }
+            .orderBy { it.username.desc() }
             .having { it.id.eq }
             .build()
 
         assertEquals(mapOf("idMax" to 10), paramMap)
         assertEquals(
-            "SELECT DISTINCT `username`, `gender` FROM `tb_user` WHERE `id` > :idMin AND `deleted` = 0 GROUP BY `id`, `gender` HAVING `id` = :id ORDER BY `id` DESC, `username` ASC",
+            "SELECT DISTINCT `username` FROM `tb_user` WHERE `id` < :idMax AND `deleted` = 0 GROUP BY `id` HAVING `id` = :id ORDER BY `username` DESC",
             sql
         )
     }
@@ -130,7 +135,7 @@ class Select {
     @Test
     fun testAlias() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name")}
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
             .where { it.gender == 0 }
             .build()
 
@@ -143,7 +148,7 @@ class Select {
 
     @Test
     fun testGetKey() {
-        val (sql, paramMap) = user.select { it.id + it.username}
+        val (sql, paramMap) = user.select { it.id + it.username }
             .where { it.id == 0 || it.id == 2 || it.id == 3 }
             .build()
 
@@ -155,8 +160,41 @@ class Select {
     }
 
     @Test
+    fun testRegexp() {
+        val task = user.select { it.id + it.username }
+            .where { (it.id == 0 || it.id == 2 || it.id == 3) && it.username.regexp("\\d+") }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE (`id` = :id OR `id` = :id@1 OR `id` = :id@2) AND `username` REGEXP :usernamePattern AND `deleted` = 0",
+            task.sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 0,
+                "id@1" to 2,
+                "id@2" to 3,
+                "usernamePattern" to "\\d+"
+            ), task.paramMap
+        )
+
+        val data = task.query()
+
+        println(data)
+    }
+
+    @Test
     fun testDatebase() {
-        val res = user.select().withTotal().query()
+        val res = user.select().withTotal().build()
+        println(res)
+    }
+
+    @Test
+    fun testDatebase1() {
+        val res = user.select {
+            it.id + Movie().select { m -> m.id }.where { m -> m.director == it.username }.single()
+        }.queryOne()
+
         println(res)
     }
 }

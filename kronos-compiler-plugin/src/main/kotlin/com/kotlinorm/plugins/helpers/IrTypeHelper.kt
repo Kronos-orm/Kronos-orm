@@ -17,4 +17,4 @@ internal fun IrType.asSimpleType() = this as IrSimpleType
  *
  * @return The first type argument of the given IrType as an IrSimpleType.
  */
-internal fun IrType.subType() = asSimpleType().arguments.firstOrNull()?.typeOrFail?.asSimpleType()
+internal fun IrType.subType() = asSimpleType().arguments[0].typeOrFail.asSimpleType()

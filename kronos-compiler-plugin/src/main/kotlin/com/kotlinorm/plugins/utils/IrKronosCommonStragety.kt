@@ -26,10 +26,7 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
-import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getValueArgument
@@ -73,11 +70,11 @@ val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
  * @throws IllegalArgumentException if `num` is negative
  */
 internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
-    var type: IrType? = this.type
+    var type = this.type
     for (i in 1..depth) {
-        type = type!!.subType()
+        type = type.subType()
     }
-    return type!!.getClass()!!
+    return type.getClass()!!
 }
 
 /**
@@ -91,7 +88,7 @@ internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
 context(IrBuilderWithScope, IrPluginContext)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
     var strategy: IrExpression = applyIrCall(globalSymbol).asIrCall()
-    val tableSetting = irClass.annotations.findByFqName(fqName)?.getValueArgument(0)
+    val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
     if (tableSetting == null || (tableSetting is IrConst<*> && tableSetting.value == true)) {
         var annotation: IrConstructorCall?
         var config: IrConst<*>? = null

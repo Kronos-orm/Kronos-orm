@@ -19,6 +19,7 @@ package com.kotlinorm.interfaces
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.NoDataSourceException
+import javax.sql.DataSource
 import kotlin.reflect.KClass
 
 /**
@@ -149,5 +150,5 @@ interface KronosDataSourceWrapper {
      */
     fun batchUpdate(task: KronosAtomicBatchTask): IntArray
 
-    fun <T> transact(block: () -> T): T
+    fun transact(block: (DataSource) -> Any?): Any?
 }

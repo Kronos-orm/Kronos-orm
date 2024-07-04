@@ -23,4 +23,4 @@ data class Movie(
     val favorite: Int? = null, // 收藏人数
     @LogicDelete val deleted: Boolean? = null, // 逻辑删除
     @UpdateTime val updateTime: String? = null, // 逻辑删除
-) : KPojo()
+) : KPojo

@@ -72,7 +72,7 @@ val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
     var type = this.type
     for (i in 1..depth) {
-        type = type.subType()
+        type = type.subType()!!
     }
     return type.getClass()!!
 }

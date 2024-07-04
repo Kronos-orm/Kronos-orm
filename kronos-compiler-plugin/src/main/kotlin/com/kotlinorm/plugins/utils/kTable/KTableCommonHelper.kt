@@ -16,10 +16,7 @@
 
 package com.kotlinorm.plugins.utils.kTable
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.findByFqName
-import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
+import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.getKColumnType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -29,11 +26,10 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
 
 
@@ -71,12 +67,18 @@ context(IrPluginContext)
 internal val tableK2dbSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
 
+context(IrPluginContext)
+internal val kReferenceSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.KReference")!!
+
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val TableIndexAnnotationsFqName = FqName("com.kotlinorm.annotations.TableIndex")
 val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
+val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
+val ColumnDeserializeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnDeserialize")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
 
@@ -131,10 +133,40 @@ fun getColumnName(
     val columnDefaultValue =
         irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
+    val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
+    var referenceTypeKClassName = irProperty.backingField!!.type.getClass()!!.classId!!.asFqNameString()
+    if (referenceTypeKClassName.startsWith("kotlin.collections")) {
+        referenceTypeKClassName = irProperty.backingField!!.type.subType()!!.getClass()!!.classId!!.asFqNameString()
+    }
+    val reference = if (referenceAnnotation != null) {
+        applyIrCall(
+            kReferenceSymbol.constructors.first(),
+            *referenceAnnotation.valueArguments.toTypedArray()
+        )
+    } else {
+        irNull()
+    }
 
     val primaryKeyAnnotation =
         irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName)
     val identity = primaryKeyAnnotation?.getValueArgument(0) ?: irBoolean(false)
+    val isColumn = irBoolean(
+        /**
+         * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
+         * for properties that are not columns, we need to check if :
+         * 1. the type is a KPojo
+         * 2. has a KPojo in its super types
+         * 3. is a Collection of KPojo
+         * 4. has Annotation `@Reference`
+         */
+        irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
+                (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
+                        !irProperty.backingField!!.type.isKronosColumn() &&
+                        irProperty.backingField!!.type.subType()?.isKronosColumn() != true)
+    )
+
+    val columnNotNull =
+        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
 
     return applyIrCall(
         fieldSymbol.constructors.first(),
@@ -149,12 +181,15 @@ fun getColumnName(
                 irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
             )
 
-            else -> tableName
+            else -> irString((tableName as IrConst<*>).value.toString())
         },
+        reference,
+        irString(referenceTypeKClassName),
+        isColumn,
         columnTypeLength,
         columnDefaultValue,
         identity,
-        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
+        columnNotNull
     )
 }
 
@@ -242,10 +277,18 @@ fun IrExpression?.isKronosColumn(): Boolean {
         IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
     ) && this.let {
         val propertyName = correspondingName!!.asString()
-        val irProperty = dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
-        val parent = irProperty.parent as IrClass
-        parent.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+        (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKronosColumn()
     }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrClass.isKronosColumn(): Boolean {
+    return superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrType.isKronosColumn(): Boolean {
+    return superTypes().any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
 }
 
 /**

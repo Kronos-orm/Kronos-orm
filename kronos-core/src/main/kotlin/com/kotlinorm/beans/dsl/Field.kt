@@ -18,7 +18,9 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.fieldDb2k
+import kotlin.reflect.full.createInstance
 
 /**
  * Field
@@ -35,6 +37,9 @@ class Field(
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",
+    val reference: KReference? = null,
+    val referenceKClassName: String? = null,
+    val isColumn: Boolean = true,
     val length: Int = 0,
     val defaultValue: String? = null,
     val identity: Boolean = false,
@@ -48,7 +53,9 @@ class Field(
     fun quoted(showTable: Boolean = false): String =
         "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
 
-    fun equation(): String = "`$columnName` = :$name"
+    fun equation(showTable: Boolean = false): String =
+        ("`$tableName`.".takeIf { showTable } ?: "") + "`$columnName` = :$name"
+
 
     /**
      * Check if this object is equal to another object.
@@ -88,6 +95,15 @@ class Field(
         name + other
     )
 
+    fun cascadeMapperBy(table: String = tableName): Boolean {
+        return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
+            .kronosTableName() == table)
+    }
+
+    fun refUseFor(usage: KOperationType): Boolean {
+        return reference != null && reference.usage.contains(usage)
+    }
+
     fun copy(
         columnName: String = this.columnName,
         name: String = this.name,
@@ -95,6 +111,9 @@ class Field(
         primaryKey: Boolean = this.primaryKey,
         dateFormat: String? = this.dateFormat,
         tableName: String = this.tableName,
+        reference: KReference? = this.reference,
+        referenceKClassName: String? = this.referenceKClassName,
+        isColumn: Boolean = this.isColumn,
         length: Int = this.length,
         defaultValue: String? = this.defaultValue,
         identity: Boolean = this.identity,
@@ -107,6 +126,9 @@ class Field(
             primaryKey,
             dateFormat,
             tableName,
+            reference,
+            referenceKClassName,
+            isColumn,
             length,
             defaultValue,
             identity,

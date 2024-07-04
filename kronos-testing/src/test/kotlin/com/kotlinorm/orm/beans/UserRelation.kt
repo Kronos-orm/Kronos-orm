@@ -8,4 +8,4 @@ data class UserRelation(
     var username: String? = null,
     var gender: Int? = null,
     var id2: Int? = null
-) : KPojo()
+) : KPojo

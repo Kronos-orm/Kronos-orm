@@ -38,4 +38,4 @@ data class PgUser(
     @LogicDelete
     @NotNull
     var deleted: Boolean? = null
-) : KPojo()
+) : KPojo

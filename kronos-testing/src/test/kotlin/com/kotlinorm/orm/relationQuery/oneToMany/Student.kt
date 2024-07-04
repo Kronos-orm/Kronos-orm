@@ -24,4 +24,4 @@ data class Student(
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
     val createTime: String? = null
-) : KPojo()
+) : KPojo

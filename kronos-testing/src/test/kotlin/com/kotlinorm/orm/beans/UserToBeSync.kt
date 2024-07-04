@@ -16,4 +16,4 @@ data class UserToBeSync(
     var updateTime: String? = null,
     @LogicDelete
     var deleted: String? = null
-) : KPojo()
+) : KPojo

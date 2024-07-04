@@ -1,4 +1,4 @@
-package com.kotlinorm.sql
+package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex

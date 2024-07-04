@@ -78,11 +78,13 @@ class KronosActionTask {
                 it.first()
             }
         }
+
+        @Suppress("UNCHECKED_CAST")
         val results = dataSource.transact { //执行事务
             groupedTasks.map {
                 it.execute(dataSource)
             }
-        }
+        } as List<KronosOperationResult>
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull() //最后插入的id
         return KronosOperationResult(affectRows, lastInsertId).apply {

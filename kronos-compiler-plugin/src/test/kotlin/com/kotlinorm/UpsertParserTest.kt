@@ -6,8 +6,8 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 /**
  *@program: kronos-orm
@@ -42,7 +42,7 @@ class UpsertParserTest {
                 @UpdateTime var updateTime: String? = null,
                 @CreateTime var createTime: String? = null,
                 @LogicDelete var deleted: Int = 0
-            ) : KPojo()
+            ) : KPojo
             
             fun main() {
                 Kronos.apply {

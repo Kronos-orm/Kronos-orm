@@ -199,9 +199,9 @@ object Postgres {
     object KIndexType {
         const val BTREE = "BTREE"
         const val HASH = "HASH"
-        const val GiST = "GiST"
+        const val GIST = "GIST"
+        const val SPGIST = "SPGIST"
         const val GIN = "GIN"
-        const val SP_GiST = "SP-GiST"
         const val BRIN = "BRIN"
     }
 }

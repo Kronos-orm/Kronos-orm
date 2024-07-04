@@ -33,4 +33,4 @@ data class OracleUser(
     @LogicDelete
     @NotNull
     var deleted: Boolean? = null
-) : KPojo()
+) : KPojo

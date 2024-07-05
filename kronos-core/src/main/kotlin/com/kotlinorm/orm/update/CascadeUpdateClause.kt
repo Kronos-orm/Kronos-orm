@@ -37,7 +37,7 @@ object CascadeUpdateClause {
             if (updatedData != null) updatedColumns.add(updatedData)
         }
 
-        return generateTask(pojo, paramMap, columns.filter {!it.isColumn }, updatedColumns, rootTask, whereClauseSql)
+        return generateTask(pojo, paramMap, columns.filter { !it.isColumn }, updatedColumns, rootTask, whereClauseSql)
     }
 
     /**
@@ -80,7 +80,7 @@ object CascadeUpdateClause {
                 }
             }
 
-            columns.map { col ->
+            columns.forEach { col ->
 
                 val ref = Class.forName(
                     col.referenceKClassName
@@ -155,7 +155,7 @@ object CascadeUpdateClause {
                         whereSql
                     ).joinToString(" ")
 
-                   paramMapNew += paramMap
+                    paramMapNew += paramMap
                     return KronosAtomicActionTask(
                         sql,
                         paramMapNew,
@@ -163,8 +163,7 @@ object CascadeUpdateClause {
                     )
                 }
 
-                return@map if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.UPDATE)) || cascadeRefs.isNotEmpty()) {
-
+                if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.UPDATE)) || cascadeRefs.isNotEmpty()) {
                     if (cascadeRefs.isEmpty()) { //维护关系定义在主表
                         //主表关联字段
                         val refColumns = col.reference!!.referenceColumns
@@ -183,7 +182,7 @@ object CascadeUpdateClause {
                             atomicTasks.add(generateUpdateTask(refColumns, targetColumns))
                         }
                     }
-                } else null
+                }
             }
         }
     }

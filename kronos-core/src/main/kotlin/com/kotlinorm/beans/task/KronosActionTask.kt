@@ -25,16 +25,16 @@ import com.kotlinorm.utils.execute
  */
 class KronosActionTask {
     internal val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
-    var beforeExecute: (KronosActionTask.() -> Any?)? = null //在执行之前执行的操作
-    var afterExecute: (KronosOperationResult.() -> KronosActionTask)? =
+    private var beforeExecute: (KronosActionTask.() -> Unit)? = null //在执行之前执行的操作
+    var afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)? =
         null //在执行之后执行的操作(返回一个新的KronosActionTask)
 
-    fun doBeforeExecute(beforeExecute: KronosActionTask.() -> Any?): KronosActionTask { //设置在执行之前执行的操作
+    fun doBeforeExecute(beforeExecute: KronosActionTask.() -> Unit): KronosActionTask { //设置在执行之前执行的操作
         this.beforeExecute = beforeExecute
         return this
     }
 
-    fun doAfterExecute(afterExecute: (KronosOperationResult.() -> KronosActionTask)?): KronosActionTask { //设置在执行之前执行的操作
+    fun doAfterExecute(afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)?): KronosActionTask { //设置在执行之前执行的操作
         this.afterExecute = afterExecute
         return this
     }
@@ -88,7 +88,7 @@ class KronosActionTask {
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull() //最后插入的id
         return KronosOperationResult(affectRows, lastInsertId).apply {
-            afterExecute?.invoke(this)?.execute(dataSource) //在执行之后执行的操作
+            afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
         }
     }
 
@@ -139,7 +139,7 @@ class KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(flatMap { it.atomicTasks })
                 if (any { it.afterExecute != null }) {
-                    afterExecute = { mapNotNull { it.afterExecute?.invoke(this) }.merge() }
+                    afterExecute = { wrapper -> forEach { it.afterExecute?.invoke(this, wrapper) } }
                 }
             }
         }

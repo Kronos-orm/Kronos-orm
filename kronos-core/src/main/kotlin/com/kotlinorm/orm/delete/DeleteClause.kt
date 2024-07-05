@@ -23,7 +23,6 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
-import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
@@ -147,42 +146,22 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
             // 构建将要更新的字段字符串
             val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
-            val sql: (String?) -> String = { sqlOfWhereClause ->
-                listOfNotNull(
-                    "UPDATE", "`$tableName`", "SET", updateFields, sqlOfWhereClause
-                ).joinToString(" ")
-            }
-
-            // 组装UPDATE语句并返回KronosAtomicTask对象
-            val cascadeTasks = CascadeDeleteClause.build(
-                pojo, cascadeWhereClauseSql, true, paramMap, KronosAtomicActionTask(
-                    sql(cascadeWhereClauseSql), paramMap, operationType = KOperationType.DELETE
+            return NewCascadeDeleteClause.build(
+                pojo, false, paramMap, KronosAtomicActionTask(
+                    listOfNotNull(
+                        "UPDATE", "`$tableName`", "SET", updateFields, toWhereSql(whereClauseSql)
+                    ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
                 )
             )
-            return (cascadeTasks ?: listOf(
-                KronosAtomicActionTask(
-                    sql(toWhereSql(whereClauseSql)), paramMap, operationType = KOperationType.DELETE
-                )
-            )).toKronosActionTask()
         } else {
-            // 构建DELETE语句并返回KronosAtomicTask对象
-            val sql: (String?) -> String = { sqlOfWhereClause ->
-                listOfNotNull(
-                    "DELETE FROM", "`$tableName`", sqlOfWhereClause
-                ).joinToString(" ")
-            }
-
             // 组装UPDATE语句并返回KronosAtomicTask对象
-            val cascadeTasks = CascadeDeleteClause.build(
-                pojo, cascadeWhereClauseSql, false, paramMap, KronosAtomicActionTask(
-                    sql(toWhereSql(whereClauseSql)), paramMap, operationType = KOperationType.DELETE
+            return NewCascadeDeleteClause.build(
+                pojo, false, paramMap, KronosAtomicActionTask(
+                    listOfNotNull(
+                        "DELETE FROM", "`$tableName`", toWhereSql(whereClauseSql)
+                    ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
                 )
             )
-            return (cascadeTasks ?: listOf(
-                KronosAtomicActionTask(
-                    sql(toWhereSql(whereClauseSql)), paramMap, operationType = KOperationType.DELETE
-                )
-            )).toKronosActionTask()
         }
     }
 

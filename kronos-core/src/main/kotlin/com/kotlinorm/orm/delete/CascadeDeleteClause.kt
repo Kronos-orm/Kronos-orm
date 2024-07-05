@@ -101,7 +101,7 @@ object CascadeDeleteClause {
                 ).joinToString(" ")// 构建子查询语句
 
                 val newWhereClauseSql = // 生成新的 where 子句
-                    "$refColumnSql IN ( SELECT ${ref.targetColumns.joinToString { "`$it`" }} from ($subSelectClause) as KRONOS_TEMP_TABLE_${tempTableIndex.counter})"
+                    "$refColumnSql IN ( SELECT ${ref.targetColumns.joinToString { "`$it`" }} from ($subSelectClause) as K_TMP_TB_${tempTableIndex.counter})"
 
                 val validReferences = //递归获取下一级的引用
                     findValidRefs(

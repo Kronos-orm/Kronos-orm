@@ -125,7 +125,8 @@ fun getColumnName(
 
     val columnTypeAnnotation =
         irProperty.annotations.findByFqName(ColumnTypeAnnotationsFqName)
-    val propertyType = irProperty.backingField!!.type.classFqName!!.asString()
+    val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
+    val propertyType = irPropertyType.classFqName!!.asString()
     val columnType =
         columnTypeAnnotation?.getValueArgument(0) ?: getKColumnType(propertyType)
     val columnTypeLength =
@@ -134,9 +135,9 @@ fun getColumnName(
         irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
     val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
-    var referenceTypeKClassName = irProperty.backingField!!.type.getClass()!!.classId!!.asFqNameString()
+    var referenceTypeKClassName = irPropertyType.getClass()!!.classId!!.asFqNameString()
     if (referenceTypeKClassName.startsWith("kotlin.collections")) {
-        referenceTypeKClassName = irProperty.backingField!!.type.subType()!!.getClass()!!.classId!!.asFqNameString()
+        referenceTypeKClassName = irPropertyType.subType()!!.getClass()!!.classId!!.asFqNameString()
     }
     val reference = if (referenceAnnotation != null) {
         applyIrCall(
@@ -161,8 +162,8 @@ fun getColumnName(
          */
         irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
                 (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
-                        !irProperty.backingField!!.type.isKronosColumn() &&
-                        irProperty.backingField!!.type.subType()?.isKronosColumn() != true)
+                        !irPropertyType.isKronosColumn() &&
+                        irPropertyType.subType()?.isKronosColumn() != true)
     )
 
     val columnNotNull =

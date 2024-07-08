@@ -6,6 +6,7 @@ import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.insert.InsertClause.Companion.execute
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.relationQuery.oneToMany.GroupClass
 import com.kotlinorm.orm.relationQuery.oneToMany.School
@@ -22,7 +23,7 @@ class RelationQuery {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "******"
+        password = "Leinbo2103221541@"
     }
 
     init {
@@ -73,10 +74,7 @@ class RelationQuery {
             )
         )
 
-        val task2 = school.insert().build()
-        val res2 = task2.execute()
-        val afterExecute2 = task2.afterExecute?.invoke(res2)
-        println(afterExecute2)
+        val task2 = school.insert().execute()
     }
 
     @Test
@@ -88,7 +86,8 @@ class RelationQuery {
 
     @Test
     fun testCascadeDelete() {
-        School(name = "School1").delete().where().execute()
+        val res = School(name = "School1").delete().where().build()
+        println(res)
     }
 
     @Test
@@ -194,14 +193,17 @@ class RelationQuery {
         dataSource.table.createTable<GroupClass>()
         dataSource.table.createTable<Student>()
 
-        val groupClass = GroupClass(1)
-        val stus = (1..10).map {
-            Student(it, groupClassId = 1)
+        val listOfGroupClass = (1..100).map { gl ->
+            val groupClass = GroupClass(gl)
+            val stus = (1..10).map {
+                Student(gl * 1000 + it, "name${gl * 1000 + it}", groupClassId = gl)
+            }
+            groupClass.students = stus
+            groupClass
         }
-        groupClass.students = stus
-        groupClass.insert().execute()
+        listOfGroupClass.insert().execute()
 
-        val result = groupClass.select().where().queryOne()
+        val result = GroupClass().select().queryList()
         println(result)
     }
 }

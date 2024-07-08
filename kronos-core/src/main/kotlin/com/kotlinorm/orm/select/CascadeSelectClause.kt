@@ -5,10 +5,16 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.enums.QueryType.*
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.utils.Extensions.mapperTo
+import com.kotlinorm.utils.Extensions.patchTo
+import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 
 /**
  * 用于构建级联选择子句的对象。
@@ -17,7 +23,7 @@ import kotlin.reflect.full.createInstance
 
 object CascadeSelectClause {
     data class ValidRef(
-        val field: Field, val references: List<KReference>, val refPojo: List<KPojo>
+        val field: Field, val reference: KReference, val refPojo: KPojo
     )
 
     fun <T : KPojo> build(pojo: T, rootTask: KronosAtomicQueryTask): KronosQueryTask {
@@ -44,34 +50,19 @@ object CascadeSelectClause {
                 col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
             ).kotlin.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
 
-            val references = ref.kronosColumns()
-                .filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.SELECT) }
-                .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
-
-            val refColumns = ref.kronosColumns()
-            val listOfRef = mutableListOf<KPojo>()
-
-            references.forEach { reference ->
-                val temp = mutableMapOf<String, Any?>()
-                reference.targetColumns.forEachIndexed { index, targetColumn ->
-                    temp[
-                        refColumns.first { it.columnName == reference.referenceColumns[index] }.name
-                    ] = dataMap[
-                        columns.first { it.columnName == targetColumn }.name
-                    ] // 从dataMap中获取引用的列名和值
-                }
-                listOfRef.add(temp.mapperTo(ref::class) as KPojo)
-            }
-
-            ValidRef(col, if (col.cascadeMapperBy() && col.refUseFor(KOperationType.SELECT)) {
+            if (col.cascadeMapperBy() && col.refUseFor(KOperationType.SELECT)) {
                 listOf(col.reference!!) // 若有级联映射，返回引用
             } else {
-                ref.kronosColumns().filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.SELECT) }
+                ref.kronosColumns()
+                    .filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.SELECT) }
                     .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
-            }, listOfRef)
-        }
+            }.map { reference ->
+                ValidRef(col, reference, ref)
+            }
+        }.flatten()
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun generateQueryTask(
         pojo: KPojo,
         columns: List<Field>,
@@ -81,7 +72,6 @@ object CascadeSelectClause {
             findValidRefs(
                 columns, pojo.toDataMap()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
-                .filter { it.refPojo.isNotEmpty() }
         if (validReferences.isEmpty()) {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
@@ -89,17 +79,63 @@ object CascadeSelectClause {
         } else {
             return prevTask.toKronosQueryTask().doAfterQuery { queryType, wrapper ->
                 validReferences.forEach { validRef ->
-                    validRef.refPojo.forEach { refPojo ->
-                        when (queryType) {
-                            QueryList -> {
-                                val listOfPojo = refPojo.select().where().queryList(wrapper)
-                            }
+                    when (queryType) {
+                        QueryList -> { // 若是查询KPojo列表
+                            val lastStepResult = this as List<KPojo> // this为主表查询的结果
+                            lastStepResult.forEach rowMapper@{
+                                val dataMap = it.toDataMap() // 将KPojo转为Map，该map将用于级联查询
+                                val listOfPair = mutableListOf<Pair<String, Any?>>()
+                                validRef.reference.targetColumns.forEachIndexed { index, targetColumn ->
+                                    val targetColumnValue =
+                                        dataMap[columns.first { col -> col.columnName == targetColumn }.name]
+                                    if (targetColumnValue == null) return@rowMapper
+                                    val originalColumn =
+                                        validRef.refPojo.kronosColumns()
+                                            .first { col -> col.columnName == validRef.reference.referenceColumns[index] }.name
+                                    listOfPair.add(originalColumn to targetColumnValue)
+                                }
+                                val refPojo = validRef.refPojo.patchTo(
+                                    validRef.refPojo::class,
+                                    *listOfPair.toTypedArray()
+                                ) // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
 
-                            else -> {}
+                                val prop =
+                                    it::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+
+                                if (prop.isIterable) { // 判断属性是否为集合
+                                    it[prop] = refPojo.select().where().queryList(wrapper) // 查询级联的POJO
+                                } else {
+                                    it[prop] = refPojo.select().where().queryOneOrNull(wrapper) // 查询级联的POJO
+                                }
+                            }
                         }
+
+                        Query -> {}
+                        QueryOneOrNull -> {}
+                        QueryOne -> {}
+                        QueryMap -> {}
+                        QueryMapOrNull -> {}
                     }
                 }
             }
         }
+    }
+
+
+    private val mapOfProp = mutableMapOf<KClass<out KPojo>, KMutableProperty<*>>() // 用于存储级联字段的属性
+    private fun KClass<out KPojo>.findPropByName(name: String): KMutableProperty<*> { // 通过反射获取级联字段的属性
+        return mapOfProp.getOrPut(this) {
+            this.memberProperties.find { prop -> prop.name == name && prop is KMutableProperty<*> } as KMutableProperty<*>?
+                ?: throw UnsupportedOperationException("The property[${this::class.qualifiedName}.$this.$name] to cascade select is not mutable.")
+        }
+    }
+
+    private val KProperty<*>.isIterable
+        get(): Boolean { // 判断属性是否为集合
+            return this.returnType.classifier?.starProjectedType?.isSubtypeOf(Iterable::class.starProjectedType) == true
+        }
+
+    private operator fun KPojo.set(prop: KMutableProperty<*>, value: Any?) { // 通过反射设置属性值
+        prop.setter.call(this, value)
     }
 }

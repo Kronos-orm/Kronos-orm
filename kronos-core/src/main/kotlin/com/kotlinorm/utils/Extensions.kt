@@ -68,6 +68,19 @@ object Extensions {
         return K::class.createInstance().fromMapData(toDataMap())
     }
 
+    fun KPojo.patchTo(kClass: KClass<KPojo>, vararg data: Pair<String, Any?>): KPojo {
+        return this.toDataMap().apply {
+            data.forEach { (k, v) -> this[k] = v }
+        }.mapperTo(kClass) as KPojo
+    }
+
+    @JvmName("mapperPatchToOutKClass")
+    fun KPojo.patchTo(kClass: KClass<out KPojo>, vararg data: Pair<String, Any?>): KPojo {
+        return this.toDataMap().apply {
+            data.forEach { (k, v) -> this[k] = v }
+        }.mapperTo(kClass) as KPojo
+    }
+
     internal fun List<Criteria>.toCriteria(): Criteria {
         return Criteria(type = And, children = this.toMutableList())
     }

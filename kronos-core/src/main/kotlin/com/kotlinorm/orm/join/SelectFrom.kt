@@ -321,7 +321,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             beforeQuery?.invoke(this)
             atomicTask.doTaskLog()
             val result = wrapper.orDefault().forList(atomicTask, pojo::class) as List<T1>
-            afterQuery?.invoke(result, QueryType.QueryList)
+            afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
             return result
         }
     }
@@ -348,7 +348,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             val result =
                 (wrapper.orDefault().forObject(atomicTask, pojo::class)
                     ?: throw NullPointerException("No such record")) as T1
-            afterQuery?.invoke(result, QueryType.QueryOne)
+            afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
             return result
         }
     }
@@ -365,7 +365,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             atomicTask.doTaskLog()
             val result =
                 wrapper.orDefault().forObject(atomicTask, pojo::class) as T1?
-            afterQuery?.invoke(result, QueryType.QueryOneOrNull)
+            afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
             return result
         }
     }

@@ -54,7 +54,7 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
             val records =
                 (wrapper.orDefault().forObject(atomicTask, selectClause.pojo::class)
                     ?: throw NullPointerException("No such record")) as T
-            afterQuery?.invoke(records, QueryType.QueryList)
+            afterQuery?.invoke(records, QueryType.QueryList, wrapper.orDefault())
             return total to records as List<T>
         }
     }

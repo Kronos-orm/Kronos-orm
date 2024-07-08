@@ -25,11 +25,11 @@ import com.kotlinorm.utils.execute
  */
 class KronosActionTask {
     internal val atomicTasks: MutableList<KronosAtomicActionTask> = mutableListOf() //原子任务列表
-    private var beforeExecute: (KronosActionTask.() -> Unit)? = null //在执行之前执行的操作
+    private var beforeExecute: (KronosActionTask.(KronosDataSourceWrapper) -> Unit)? = null //在执行之前执行的操作
     var afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -> Unit)? =
         null //在执行之后执行的操作(返回一个新的KronosActionTask)
 
-    fun doBeforeExecute(beforeExecute: KronosActionTask.() -> Unit): KronosActionTask { //设置在执行之前执行的操作
+    fun doBeforeExecute(beforeExecute: KronosActionTask.(KronosDataSourceWrapper) -> Unit): KronosActionTask { //设置在执行之前执行的操作
         this.beforeExecute = beforeExecute
         return this
     }
@@ -41,7 +41,7 @@ class KronosActionTask {
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault() //获取数据源
-        beforeExecute?.invoke(this) // 在执行之前执行的操作
+        beforeExecute?.invoke(this, dataSource) // 在执行之前执行的操作
 
         /**
          * Groups a list of KronosAtomicActionTask by their SQL statements.

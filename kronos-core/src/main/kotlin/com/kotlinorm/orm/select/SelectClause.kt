@@ -62,11 +62,12 @@ class SelectClause<T : KPojo>(
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var limitCapacity = 0
-    private var isDistinct = false
-    private var isPage = false
-    private var isGroup = false
-    private var isHaving = false
-    private var isOrder = false
+    private var distinctEnabled = false
+    private var pageEnabled = false
+    private var groupEnabled = false
+    private var havingEnabled = false
+    private var orderEnabled = false
+    private var cascadeEnabled = true
     private var ps = 0
     private var pi = 0
 
@@ -106,7 +107,7 @@ class SelectClause<T : KPojo>(
     fun orderBy(someFields: KTableSortableField<T, Any?>): SelectClause<T> {
         if (someFields == null) throw NeedFieldsException()
 
-        isOrder = true
+        orderEnabled = true
         pojo.sortableRun {
             someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
             orderByFields = sortFields.toLinkedSet()
@@ -123,7 +124,7 @@ class SelectClause<T : KPojo>(
      * @throws NeedFieldsException 如果 someFields 为空，则抛出此异常。
      */
     fun groupBy(someFields: KTableField<T, Any?>): SelectClause<T> {
-        isGroup = true
+        groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (someFields == null) throw NeedFieldsException()
         pojo.tableRun {
@@ -141,7 +142,7 @@ class SelectClause<T : KPojo>(
      * @return [SelectClause<T>] 返回当前选择语句实例，允许链式调用。
      */
     fun distinct(): SelectClause<T> {
-        isDistinct = true // 标记为Distinct，去除结果中的重复项
+        distinctEnabled = true // 标记为Distinct，去除结果中的重复项
         return this
     }
 
@@ -154,9 +155,14 @@ class SelectClause<T : KPojo>(
      * @return 返回 SelectClause<T> 实例，支持链式调用。
      */
     fun page(pi: Int, ps: Int): SelectClause<T> {
-        isPage = true
+        pageEnabled = true
         this.ps = ps
         this.pi = pi
+        return this
+    }
+
+    fun cascade(enabled: Boolean): SelectClause<T> {
+        cascadeEnabled = enabled
         return this
     }
 
@@ -207,7 +213,7 @@ class SelectClause<T : KPojo>(
      * @throws NeedFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
      */
     fun having(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
-        isHaving = true // 标记为HAVING条件
+        havingEnabled = true // 标记为HAVING条件
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
         pojo.conditionalRun {
@@ -268,28 +274,28 @@ class SelectClause<T : KPojo>(
             .toWhereClause()
 
         // 检查并设置是否使用去重（DISTINCT）
-        val selectKeyword = if (isDistinct) "SELECT DISTINCT" else "SELECT"
+        val selectKeyword = if (distinctEnabled) "SELECT DISTINCT" else "SELECT"
 
         //检查是否设置排序
-        val orderByKeywords = if (isOrder && orderByFields.isNotEmpty()) "ORDER BY " +
+        val orderByKeywords = if (orderEnabled && orderByFields.isNotEmpty()) "ORDER BY " +
                 orderByFields.joinToString(", ") {
                     if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted() +
                             " " + it.second
                 } else null
 
         // 检查并设置是否分组
-        val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
+        val groupByKeyword = if (groupEnabled) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
             ?.joinToString(", ") { it.quoted() }) else null
 
         // 检查并设置是否使用HAVING条件
-        val havingKeyword = if (isHaving) "HAVING " + (havingCondition.let {
+        val havingKeyword = if (havingEnabled) "HAVING " + (havingCondition.let {
             it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
         }) else null
 
         // 如果分页，则将分页参数添加到SQL中
         var limitedPrefix: String? = null
         var limitedSuffix: String? = null
-        if (isPage) when (wrapper.orDefault().dbType) {
+        if (pageEnabled) when (wrapper.orDefault().dbType) {
             DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
             DBType.Oracle -> {
                 limitedPrefix = "SELECT * FROM ("

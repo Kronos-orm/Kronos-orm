@@ -19,6 +19,8 @@ package com.kotlinorm.orm.delete
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KReference
+import com.kotlinorm.beans.task.KronosActionTask
+import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.CascadeDeleteAction.*
 import com.kotlinorm.enums.KOperationType
@@ -144,7 +146,7 @@ object CascadeDeleteClause {
      * @param whereClauseSql The condition to be met.
      * @param logic The logic to be used.
      * @param paramMap The map of parameters.
-     * @param deleteTask The delete task.
+     * @param rootTask The delete task.
      * @return The list of atomic tasks.
      */
     fun <T : KPojo> build(
@@ -152,8 +154,8 @@ object CascadeDeleteClause {
         whereClauseSql: String?,
         logic: Boolean,
         paramMap: MutableMap<String, Any?>,
-        deleteTask: KronosAtomicActionTask
-    ): List<KronosAtomicActionTask>? {
+        rootTask: KronosAtomicActionTask
+    ): KronosActionTask {
         val counter = Counter() //创建一个计数器，用于生成临时表的表名，防止临时表名发生重名
         val validReferences =
             findValidRefs(
@@ -162,16 +164,16 @@ object CascadeDeleteClause {
         if (validReferences.isEmpty()) {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
-            return null
+            return rootTask.toKronosActionTask()
         }
 
         return validReferences.map {
             // 生成删除任务列表
             // 为何要传入最初的deleteTask: 若cascade删除为RESTRICT，需要在deleteTask的sql语句中加入限制条件
             it.generateTask(
-                pojo, whereClauseSql, logic, paramMap, deleteTask, tempTableIndex = counter
+                pojo, whereClauseSql, logic, paramMap, rootTask, tempTableIndex = counter
             )
-        }.flatten()
+        }.flatten().toKronosActionTask()
     }
 
     /**

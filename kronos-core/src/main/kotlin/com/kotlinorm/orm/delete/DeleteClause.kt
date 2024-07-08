@@ -47,13 +47,13 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()
 
-    fun logic(): DeleteClause<T> {
+    fun logic(enabled: Boolean = true): DeleteClause<T> {
         // 若logicDeleteStrategy.enabled为false则抛出异常
         // 若updateTimeStrategy.enabled为false则不更新updateTime
-        if (!this.logicDeleteStrategy.enabled) {
+        if (!this.logicDeleteStrategy.enabled && enabled) {
             throw NeedFieldsException()
         }
-        this.logic = true
+        this.logic = enabled
         return this
     }
 
@@ -146,8 +146,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
             // 构建将要更新的字段字符串
             val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
-            return NewCascadeDeleteClause.build(
-                pojo, false, paramMap, KronosAtomicActionTask(
+            return CascadeDeleteClause.build(
+                pojo, cascadeWhereClauseSql, false, paramMap, KronosAtomicActionTask(
                     listOfNotNull(
                         "UPDATE", "`$tableName`", "SET", updateFields, toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
@@ -155,8 +155,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             )
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
-            return NewCascadeDeleteClause.build(
-                pojo, false, paramMap, KronosAtomicActionTask(
+            return CascadeDeleteClause.build(
+                pojo, cascadeWhereClauseSql, false, paramMap, KronosAtomicActionTask(
                     listOfNotNull(
                         "DELETE FROM", "`$tableName`", toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE

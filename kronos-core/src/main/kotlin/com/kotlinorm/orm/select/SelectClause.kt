@@ -188,12 +188,7 @@ class SelectClause<T : KPojo>(
      * @return [SelectClause] 的实例，代表了一个查询的选择子句。
      */
     fun where(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
-        if (selectCondition == null) return this.apply {
-            // 当没有提供选择条件时，构建一个查询所有字段的条件
-            condition = paramMap.keys.map { propName ->
-                allFields.first { it.name == propName }.eq(paramMap[propName])
-            }.toCriteria()
-        }
+        if (selectCondition == null) return this
         pojo.conditionalRun {
             propParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
@@ -249,8 +244,8 @@ class SelectClause<T : KPojo>(
         if (buildCondition == null) {
             buildCondition = paramMap.keys.filter {
                 paramMap[it] != null
-            }.map { propName ->
-                allFields.first { it.name == propName }.eq(paramMap[propName])
+            }.mapNotNull { propName ->
+                allFields.filter { it.isColumn }.find { it.name == propName }?.eq(paramMap[propName])
             }.toCriteria()
         }
 
@@ -379,10 +374,8 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             atomicTask.doTaskLog()
-            val result =
-                (wrapper.orDefault().forObject(atomicTask, pojo::class)
-                    ?: throw NullPointerException("No such record")) as List<T>
-            afterQuery?.invoke(result, QueryType.QueryList)
+            val result = wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>
+            afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
             return result
         }
     }
@@ -409,7 +402,7 @@ class SelectClause<T : KPojo>(
             val result =
                 (wrapper.orDefault().forObject(atomicTask, pojo::class)
                     ?: throw NullPointerException("No such record")) as T
-            afterQuery?.invoke(result, QueryType.QueryOne)
+            afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
             return result
         }
     }
@@ -426,7 +419,7 @@ class SelectClause<T : KPojo>(
             atomicTask.doTaskLog()
             val result =
                 wrapper.orDefault().forObject(atomicTask, pojo::class) as T?
-            afterQuery?.invoke(result, QueryType.QueryOneOrNull)
+            afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
             return result
         }
     }

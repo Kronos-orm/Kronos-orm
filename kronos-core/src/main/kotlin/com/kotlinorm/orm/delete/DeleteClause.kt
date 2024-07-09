@@ -124,11 +124,6 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         // 构建条件SQL语句及参数映射
-        val (cascadeWhereClauseSql, _) = ConditionSqlBuilder.buildConditionSqlWithParams(
-            condition, mutableMapOf(), showTable = true
-        )
-
-        // 构建条件SQL语句及参数映射
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(
             condition, mutableMapOf()
         )
@@ -146,8 +141,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
             // 构建将要更新的字段字符串
             val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
-            return CascadeDeleteClause.build(
-                pojo, cascadeWhereClauseSql, false, paramMap, KronosAtomicActionTask(
+            return NewCascadeDeleteClause.build(
+                pojo, whereClauseSql, false, paramMap, KronosAtomicActionTask(
                     listOfNotNull(
                         "UPDATE", "`$tableName`", "SET", updateFields, toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
@@ -155,8 +150,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             )
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
-            return CascadeDeleteClause.build(
-                pojo, cascadeWhereClauseSql, false, paramMap, KronosAtomicActionTask(
+            return NewCascadeDeleteClause.build(
+                pojo, whereClauseSql, false, paramMap, KronosAtomicActionTask(
                     listOfNotNull(
                         "DELETE FROM", "`$tableName`", toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE

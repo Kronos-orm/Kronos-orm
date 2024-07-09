@@ -146,7 +146,7 @@ object CascadeDeleteClause {
      * @param whereClauseSql The condition to be met.
      * @param logic The logic to be used.
      * @param paramMap The map of parameters.
-     * @param rootTask The delete task.
+     * @param deleteTask The delete task.
      * @return The list of atomic tasks.
      */
     fun <T : KPojo> build(

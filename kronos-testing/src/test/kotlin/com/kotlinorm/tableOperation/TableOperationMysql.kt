@@ -11,7 +11,7 @@ import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.tableOperation.beans.OracleUser
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,7 +30,6 @@ class TableOperationMysql {
         username = "root" // 数据库用户名
         password = "******" // 数据库密码
         maxIdle = 10 // 最大空闲连接数
-        maxActive = 10 // 最大活动连接数
     }
     val user = MysqlUser()
 

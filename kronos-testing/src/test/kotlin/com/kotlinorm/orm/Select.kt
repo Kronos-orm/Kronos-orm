@@ -7,7 +7,7 @@ import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.tableOperation.beans.MysqlUser
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

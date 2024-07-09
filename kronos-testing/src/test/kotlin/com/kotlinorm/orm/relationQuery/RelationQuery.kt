@@ -14,7 +14,7 @@ import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.utils.GsonResolver
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -203,7 +203,7 @@ class RelationQuery {
         }
         listOfGroupClass.insert().execute()
 
-        val result = GroupClass().select().queryList()
+        val result = GroupClass().select { it.id }.queryList<Int>()
         println(result)
     }
 }

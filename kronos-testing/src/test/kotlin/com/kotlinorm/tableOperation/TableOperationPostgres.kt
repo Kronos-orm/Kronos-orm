@@ -11,7 +11,7 @@ import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.tableOperation.beans.OracleUser
 import com.kotlinorm.tableOperation.beans.PgUser
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -29,7 +29,6 @@ class TableOperationPostgres {
         username = "postgres" // Postgres用户名
         password = "******" // Postgres密码
         maxIdle = 10 // 最大空闲连接数
-        maxActive = 10 // 最大活动连接数
     }
     val user = PgUser()
 

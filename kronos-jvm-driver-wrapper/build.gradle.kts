@@ -10,7 +10,7 @@ dependencies {
     compileOnly(project(":kronos-core"))
     implementation(kotlin("reflect"))
     testImplementation(project(":kronos-core"))
-    testImplementation("commons-dbcp:commons-dbcp:1.4")
+    testImplementation("org.apache.commons:commons-dbcp2:2.12.0")
     testImplementation(kotlin("test"))
 }
 

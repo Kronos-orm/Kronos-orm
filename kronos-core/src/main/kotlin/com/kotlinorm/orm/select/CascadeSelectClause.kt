@@ -27,8 +27,8 @@ object CascadeSelectClause {
         val field: Field, val reference: KReference, val refPojo: KPojo
     )
 
-    fun <T : KPojo> build(pojo: T, rootTask: KronosAtomicQueryTask): KronosQueryTask {
-        return generateQueryTask(pojo, pojo.kronosColumns(), rootTask)
+    fun <T : KPojo> build(pojo: T, rootTask: KronosAtomicQueryTask , selectFields: LinkedHashSet<Field>): KronosQueryTask {
+        return generateQueryTask(pojo, pojo.kronosColumns().filter { selectFields.contains(it) }, rootTask)
     }
 
     /**

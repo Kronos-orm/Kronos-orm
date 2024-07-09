@@ -355,7 +355,8 @@ class SelectClause<T : KPojo>(
                 sql,
                 paramMap,
                 operationType = KOperationType.SELECT
-            )
+            ),
+            selectFields
         )
     }
 

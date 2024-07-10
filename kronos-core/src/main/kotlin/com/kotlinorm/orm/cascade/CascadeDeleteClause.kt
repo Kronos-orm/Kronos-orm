@@ -92,7 +92,7 @@ object CascadeDeleteClause {
                         if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
                             throw UnsupportedOperationException(
                                 "The record cannot be deleted because it is restricted by a reference." +
-                                        "${record.kronosTableName()}.${reference.reference.referenceColumns} is restricted by ${reference.reference.targetColumns}, " +
+                                        "${record.kronosTableName()}.${reference.reference.referenceFields} is restricted by ${reference.reference.targetFields}, " +
                                         "and the value is ${valueOfPojo}."
                             )
                         }

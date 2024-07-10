@@ -166,18 +166,18 @@ object CascadeUpdateClause {
                 if ((col.cascadeMapperBy() && col.refUseFor(KOperationType.UPDATE)) || cascadeRefs.isNotEmpty()) {
                     if (cascadeRefs.isEmpty()) { //维护关系定义在主表
                         //主表关联字段
-                        val refColumns = col.reference!!.referenceColumns
+                        val refColumns = col.reference!!.referenceFields // TODO: 此处已改为属性名，需要修改代码
                         //子表关联字段
-                        val targetColumns = col.reference.targetColumns
+                        val targetColumns = col.reference.targetFields // TODO: 此处已改为属性名，需要修改代码
 
                         atomicTasks.add(generateUpdateTask(refColumns, targetColumns))
 
                     } else {                    //维护关系定义在子表
                         cascadeRefs.forEach {
                             //主表关联字段
-                            val refColumns = it.reference!!.targetColumns
+                            val refColumns = it.reference!!.targetFields // TODO: 此处已改为属性名，需要修改代码
                             //子表关联字段
-                            val targetColumns = it.reference.referenceColumns
+                            val targetColumns = it.reference.referenceFields // TODO: 此处已改为属性名，需要修改代码
 
                             atomicTasks.add(generateUpdateTask(refColumns, targetColumns))
                         }

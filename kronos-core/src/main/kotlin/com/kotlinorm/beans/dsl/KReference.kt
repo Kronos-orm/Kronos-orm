@@ -6,8 +6,8 @@ import com.kotlinorm.enums.KOperationType
 import kotlin.reflect.KClass
 
 class KReference(
-    val referenceColumns: Array<String> = arrayOf(),
-    val targetColumns: Array<String> = arrayOf(),
+    val referenceFields: Array<String> = arrayOf(),
+    val targetFields: Array<String> = arrayOf(),
     val onDelete: CascadeDeleteAction = NO_ACTION,
     val defaultValue: Array<String> = arrayOf(),
     val mapperBy: KClass<out KPojo> = KPojo::class,

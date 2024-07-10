@@ -12,8 +12,7 @@ import com.kotlinorm.enums.CascadeDeleteAction
  **/
 data class Student2Role(
     val id: Int? = null,
-
     val studentId: Int? = null,
-    @Reference(["student_id"], ["id"], CascadeDeleteAction.SET_NULL, mapperBy = Student2Role::class)
+    @Reference(["studentId"], ["id"], CascadeDeleteAction.SET_NULL, mapperBy = Student2Role::class)
     val student: Student? = null,
 ) : KPojo

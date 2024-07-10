@@ -75,12 +75,9 @@ object CascadeSelectClause {
         wrapper: KronosDataSourceWrapper
     ) { // 将KPojo转为Map，该map将用于级联查询
         val dataMap = pojo.toDataMap()
-        val listOfPair = validRef.reference.targetColumns.mapIndexed { index, targetColumn ->
-            val targetColumnValue =
-                dataMap[columns.first { col -> col.columnName == targetColumn }.name] ?: return
-            val originalColumn =
-                validRef.refPojo.kronosColumns()
-                    .first { col -> col.columnName == validRef.reference.referenceColumns[index] }.name
+        val listOfPair = validRef.reference.targetFields.mapIndexed { index, targetColumn ->
+            val targetColumnValue = dataMap[targetColumn] ?: return
+            val originalColumn = validRef.reference.referenceFields[index]
             originalColumn to targetColumnValue
         }
         val refPojo = validRef.refPojo.patchTo(

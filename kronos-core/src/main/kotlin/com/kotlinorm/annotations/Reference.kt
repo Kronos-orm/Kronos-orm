@@ -28,8 +28,8 @@ import kotlin.reflect.KClass
  * It is applied to a property in a data class that represents a database table.
  * The property should be of type Array<String> and should contain the names of the columns in the referencing table.
  *
- * @property referenceColumns The names of the columns in the referencing table.
- * @property targetColumns The names of the columns in the referenced table.
+ * @property referenceFields The names of the columns in the referencing table.
+ * @property targetFields The names of the columns in the referenced table.
  * @property onDelete The cascade action to apply when a referenced row is deleted or updated. The default value is CASCADE.
  * @property defaultValue The default value to use when a referenced row is deleted or updated and the cascade action is SET DEFAULT.
  * @property mapperBy The class that maps the referenced table.
@@ -39,8 +39,8 @@ import kotlin.reflect.KClass
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Reference(
-    val referenceColumns: Array<String>,
-    val targetColumns: Array<String>,
+    val referenceFields: Array<String>,
+    val targetFields: Array<String>,
     val onDelete: CascadeDeleteAction = CascadeDeleteAction.NO_ACTION,
     val defaultValue: Array<String> = [],
     val mapperBy: KClass<out KPojo> = KPojo::class,

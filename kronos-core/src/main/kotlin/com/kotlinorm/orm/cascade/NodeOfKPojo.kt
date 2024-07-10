@@ -53,12 +53,9 @@ data class NodeOfKPojo(
     private fun patchFromParent() {
         if (!updateReferenceValue || parent == null) return
         val validRef = parent.validRefs.find { it.field == field } ?: return
-        val listOfPair = validRef.reference.targetColumns.mapNotNull {
-            val targetColumnValue = parent.dataMap[parent.columns.first { col -> col.columnName == it }.name]
-            if (targetColumnValue == null) return@mapNotNull null
-            val originalColumn = columns.first { col ->
-                col.columnName == validRef.reference.referenceColumns[validRef.reference.targetColumns.indexOf(it)]
-            }.name
+        val listOfPair = validRef.reference.targetFields.mapNotNull {
+            val targetColumnValue = parent.dataMap[it] ?: return@mapNotNull null
+            val originalColumn = validRef.reference.referenceFields[validRef.reference.targetFields.indexOf(it)]
             kPojo::class.findPropByName(originalColumn) to targetColumnValue
         }
         listOfPair.forEach { (prop, value) ->

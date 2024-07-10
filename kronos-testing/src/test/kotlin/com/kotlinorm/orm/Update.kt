@@ -1,6 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategy
 import com.kotlinorm.orm.beans.Movie
@@ -35,7 +36,7 @@ class Update {
         val (sql, paramMap) =
             user.update()
                 .set {
-                    // Field("username").setValue("123")
+                    Field("username").setValue("123")
                     it.username = "123"
                     it.gender = 1
                 }
@@ -552,7 +553,7 @@ class Update {
     fun testAutoWhere() {
         val (sql, paramMap) = testUser.update().set {
             it.username = "ZhangSan"
-        }.where().build()
+        }.build()
         assertEquals(
             "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
             sql

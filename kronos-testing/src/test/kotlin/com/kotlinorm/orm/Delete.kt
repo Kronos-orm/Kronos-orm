@@ -30,7 +30,7 @@ class Delete {
 
     @Test
     fun testDelete2() {
-        val (sql, paramMap) = user.delete().where().build()
+        val (sql, paramMap) = user.delete().build()
         //delete from tb_user where id = 1 and deleted = 0
         assertEquals("DELETE FROM `tb_user` WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1), paramMap)

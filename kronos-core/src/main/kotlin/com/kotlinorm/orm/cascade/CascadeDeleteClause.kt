@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.delete
+package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.enums.CascadeDeleteAction.*
+import com.kotlinorm.enums.CascadeDeleteAction.RESTRICT
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
+import com.kotlinorm.orm.delete.DeleteClause.Companion.build
+import com.kotlinorm.orm.delete.DeleteClause.Companion.cascade
+import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
+import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.select.select
 import java.util.*
-import kotlin.reflect.full.createInstance
 
 /**
  * Used to build a cascade delete clause.
@@ -44,84 +47,81 @@ import kotlin.reflect.full.createInstance
  * generateReferenceDeleteSql, which generates a delete SQL statement for a referenced POJO, and getDefaultUpdates, which generates a default update SQL clause.
  *
  */
-object NewCascadeDeleteClause {
-    data class ValidRef(
-        val field: Field, val reference: KReference
-    )
-
+object CascadeDeleteClause {
     /**
      * Build a cascade delete clause.
      * 构建级联删除子句。
      *
+     * @param cascadeEnabled Whether the cascade is enabled.
      * @param pojo The pojo to be deleted.
      * @param whereClauseSql The condition to be met.
      * @param logic The logic to be used.
-     * @param paramMap The map of parameters.
-     * @param deleteTask The delete task.
+     * @param rootTask The delete task.
      * @return The list of atomic tasks.
      */
     fun <T : KPojo> build(
+        cascadeEnabled: Boolean,
         pojo: T,
         whereClauseSql: String?,
         logic: Boolean,
-        paramMap: MutableMap<String, Any?>,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
-        return generateDeleteTask(pojo, whereClauseSql, pojo.kronosColumns(), logic, paramMap, rootTask)
+        if (!cascadeEnabled) return rootTask.toKronosActionTask()
+        return generateDeleteTask(pojo, whereClauseSql, pojo.kronosColumns(), logic, rootTask)
     }
 
-    fun <T : KPojo> generateDeleteTask(
+    private fun <T : KPojo> generateDeleteTask(
         pojo: T,
         whereClauseSql: String?,
         columns: List<Field>,
         logic: Boolean,
-        paramMap: MutableMap<String, Any?>,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val toDeleteRecords: MutableList<KPojo> = mutableListOf()
-        val validReferences = findValidRefs(columns)
+        val validReferences = findValidRefs(columns, KOperationType.DELETE)
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
                 toDeleteRecords.addAll(pojo.select().where { whereClauseSql.asSql() }.queryList(wrapper))
+                if (toDeleteRecords.isEmpty()) return@doBeforeExecute
                 val restrictReferences = validReferences.filter { it.reference.onDelete == RESTRICT }
-                if (toDeleteRecords.isNotEmpty()) {
-                    toDeleteRecords.forEach { record ->
-                        restrictReferences.forEach { referece ->
-                            val valueOfPojo = record.toDataMap()[referece.field.name]
-                            if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
-                                throw UnsupportedOperationException(
-                                    "The record cannot be deleted because it is restricted by a reference." +
-                                            "${record.kronosTableName()}.${referece.reference.referenceColumns} is restricted by ${referece.reference.targetColumns}, " +
-                                            "and the value is ${valueOfPojo}."
-                                )
-                            }
+                toDeleteRecords.forEach { record ->
+                    restrictReferences.forEach { reference ->
+                        val valueOfPojo = record.toDataMap()[reference.field.name]
+                        if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
+                            throw UnsupportedOperationException(
+                                "The record cannot be deleted because it is restricted by a reference." +
+                                        "${record.kronosTableName()}.${reference.reference.referenceColumns} is restricted by ${reference.reference.targetColumns}, " +
+                                        "and the value is ${valueOfPojo}."
+                            )
                         }
                     }
                 }
-            }
 
-            doAfterExecute { wrapper ->
+                val forestOfKPojo = toDeleteRecords.map { it.toTreeNode() }
+                if (forestOfKPojo.any { it.children.isNotEmpty() }) {
+                    this.atomicTasks.clear() // 清空原有的任务
+                    val list = mutableListOf<NodeOfKPojo>()
+                    forestOfKPojo.forEach { tree ->
+                        val stack = Stack<NodeOfKPojo>() // 用于深度优先遍历
+                        val all = Stack<NodeOfKPojo>() // 用于存储所有的节点
+                        stack.push(tree) // 将根节点压入栈
+                        var tmp: NodeOfKPojo
+                        while (!stack.isEmpty()) { // 深度优先遍历
+                            tmp = stack.pop()
+                            all.push(tmp)
+                            tmp.children.forEach {
+                                stack.push(it) // 将子节点压入栈
+                            }
+                        }
+                        while (!all.isEmpty()) {
+                            list.add(all.pop()) // 将所有节点压入list
+                        }
+                    }
+                    atomicTasks.addAll(
+                        list.map { it.kPojo }.delete().logic(logic).cascade(false).build().atomicTasks
+                    )
+                }
             }
         }
     }
-
-    private fun findValidRefs(columns: List<Field>): List<ValidRef> {
-        //columns 为的非数据库列、有关联注解且用于删除操作的Field
-        return columns.filter { !it.isColumn }.map { col ->
-            val ref = Class.forName(
-                col.referenceKClassName ?: throw UnsupportedOperationException("The reference class is not supported!")
-            ).kotlin.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-
-            if (col.cascadeMapperBy() && col.refUseFor(KOperationType.DELETE)) {
-                listOf(col.reference!!) // 若有级联映射，返回引用
-            } else {
-                ref.kronosColumns()
-                    .filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(KOperationType.DELETE) }
-                    .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
-            }.map { reference ->
-                ValidRef(col, reference)
-            }
-        }.flatten()
-    }
-
 }

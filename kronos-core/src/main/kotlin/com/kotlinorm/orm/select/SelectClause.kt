@@ -16,7 +16,6 @@
 
 package com.kotlinorm.orm.select
 
-import CascadeSelectClause
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
@@ -35,6 +34,7 @@ import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.cascade.CascadeSelectClause
 import com.kotlinorm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
@@ -68,6 +68,7 @@ class SelectClause<T : KPojo>(
     private var havingEnabled = false
     private var orderEnabled = false
     private var cascadeEnabled = true
+    private var selectAll = true
     private var ps = 0
     private var pi = 0
 
@@ -82,6 +83,9 @@ class SelectClause<T : KPojo>(
             pojo.tableRun {
                 setSelectFields(it) // 设置选择的字段
                 selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
+                if (selectFields.isNotEmpty()) {
+                    selectAll = false
+                }
             }
         }
     }
@@ -242,7 +246,7 @@ class SelectClause<T : KPojo>(
         // 初始化所有字段集合
         allFields = pojo.kronosColumns().toLinkedSet()
 
-        if (selectFields.isEmpty()) {
+        if (selectAll) {
             selectFields += allFields.filter { it.isColumn }
         }
 
@@ -350,13 +354,14 @@ class SelectClause<T : KPojo>(
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
+            cascadeEnabled,
             pojo,
             KronosAtomicQueryTask(
                 sql,
                 paramMap,
                 operationType = KOperationType.SELECT
             ),
-            selectFields
+            if (selectAll) allFields else selectFields
         )
     }
 

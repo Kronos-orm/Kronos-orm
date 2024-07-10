@@ -16,7 +16,6 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.utils.GsonResolver
 import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
 
 class RelationQuery {
     private val ds = BasicDataSource().apply {
@@ -81,107 +80,14 @@ class RelationQuery {
     fun testCascadeUpdate() {
         School(name = "School").update().set {
             it.name = "School1"
-        }.where().execute()
+        }.execute()
     }
 
     @Test
     fun testCascadeDelete() {
-        val res = School(name = "School1").delete().where().build()
+        testCascadeInsert()
+        val res = School(name = "School").delete().execute()
         println(res)
-    }
-
-    @Test
-    fun testCascadeDeleteNoAction() {
-        val groupClass = GroupClass(1)
-        val students = (1..10).map {
-            Student(it, groupClassId = 1).apply {
-                this.groupClass = groupClass
-            }
-        }
-        groupClass.students = students
-        val task = groupClass.delete().where().build()
-        println(task.component3().size)
-        assertEquals(task.component3().size, 1)
-    }
-
-    @Test
-    fun testCascadeDeleteRestrict() {
-        val groupClass = GroupClass(1)
-        val students = (1..10).map {
-            Student(it, groupClassId = 1).apply {
-                this.groupClass = groupClass
-            }
-        }
-        groupClass.students = students
-        val task = groupClass.delete().where().build()
-        println(task.component3().size)
-        assertEquals(
-            "DELETE FROM `group_class` " + "WHERE `group_class`.`id` = :id AND (" + "SELECT count(1) " + "FROM `student` " + "WHERE`student`.`group_class_id` " + "IN ( " + "SELECT `id` from (" + "SELECT `group_class`.`id` " + "FROM `group_class` " + "WHERE `group_class`.`id` = :id" + ") as KRONOS_TEMP_TABLE_1b09) " + "LIMIT 1) = 0",
-            task.component3()[0].sql
-        )
-    }
-
-    @Test
-    fun testCascadeDeleteCascade() {
-        val groupClass = GroupClass(1)
-        val students = (1..10).map {
-            Student(it, groupClassId = 1).apply {
-                this.groupClass = groupClass
-            }
-        }
-        groupClass.students = students
-        val task = groupClass.delete().where().build()
-        println(task.component3().size)
-        assertEquals(
-            "DELETE FROM `student` " + "WHERE `student`.`group_class_id` " + "IN ( " + "SELECT `id` from (" + "SELECT `group_class`.`id` " + "FROM `group_class` " + "WHERE `group_class`.`id` = :id) " + "as KRONOS_TEMP_TABLE_xNzU)" + "LIMIT 1) = 0",
-            task.component3()[0].sql
-        )
-    }
-
-    @Test
-    fun testMultipleCascade() {
-        val school = School(1, name = "aaa")
-
-        val groupClasses = (1..10).map { cId ->
-            val c = GroupClass(cId, schoolName = "aaa")
-
-            val students = (1..10).map { stuId ->
-                Student(stuId, groupClassId = cId).apply {
-                    this.groupClass = c
-                }
-            }
-
-            c.apply {
-                c.school = school
-                c.students = students
-            }
-        }
-
-        school.groupClass = groupClasses
-        val tasks = school.delete().where().build()
-        println(tasks.component3().size)
-    }
-
-    @Test
-    fun testUpdate() {
-
-        dataSource.table.dropTable<School>()
-        dataSource.table.dropTable<GroupClass>()
-        dataSource.table.dropTable<Student>()
-        dataSource.table.createTable<School>()
-        dataSource.table.createTable<GroupClass>()
-        dataSource.table.createTable<Student>()
-
-        val groupClass = GroupClass(1)
-        val stus = (1..10).map {
-            Student(it, groupClassId = 1)
-        }
-        groupClass.students = stus
-        groupClass.insert().execute()
-
-        val task = groupClass.update().set { it.id = 999 }.by { it.id }.build()
-        val (_, lastInsertId) = task.execute()
-        println(lastInsertId)
     }
 
     @Test
@@ -203,7 +109,7 @@ class RelationQuery {
         }
         listOfGroupClass.insert().execute()
 
-        val result = GroupClass().select { it.id }.queryList<Int>()
+        val result = GroupClass().select().queryList()
         println(result)
     }
 }

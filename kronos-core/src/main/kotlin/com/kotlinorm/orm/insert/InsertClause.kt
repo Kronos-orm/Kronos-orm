@@ -24,6 +24,7 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 

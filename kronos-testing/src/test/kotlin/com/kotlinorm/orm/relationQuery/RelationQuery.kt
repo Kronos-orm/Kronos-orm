@@ -22,7 +22,7 @@ class RelationQuery {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "Leinbo2103221541@"
+        password = "******"
     }
 
     init {

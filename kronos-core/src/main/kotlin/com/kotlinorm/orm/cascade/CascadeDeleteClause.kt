@@ -29,7 +29,9 @@ import com.kotlinorm.orm.delete.DeleteClause.Companion.cascade
 import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.select.select
-import java.util.*
+import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.pop
+import com.kotlinorm.utils.push
 
 /**
  * Used to build a cascade delete clause.
@@ -102,8 +104,8 @@ object CascadeDeleteClause {
                     this.atomicTasks.clear() // 清空原有的任务
                     val list = mutableListOf<NodeOfKPojo>()
                     forestOfKPojo.forEach { tree ->
-                        val stack = Stack<NodeOfKPojo>() // 用于深度优先遍历
-                        val all = Stack<NodeOfKPojo>() // 用于存储所有的节点
+                        val stack = KStack<NodeOfKPojo>() // 用于深度优先遍历
+                        val all = KStack<NodeOfKPojo>() // 用于存储所有的节点
                         stack.push(tree) // 将根节点压入栈
                         var tmp: NodeOfKPojo
                         while (!stack.isEmpty()) { // 深度优先遍历

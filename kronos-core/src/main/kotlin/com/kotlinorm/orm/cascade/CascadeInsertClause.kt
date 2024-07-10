@@ -22,7 +22,9 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.InsertClause.Companion.execute
 import com.kotlinorm.orm.insert.insert
-import java.util.*
+import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.pop
+import com.kotlinorm.utils.push
 
 object CascadeInsertClause {
     fun <T : KPojo> build(cascadeEnabled: Boolean, pojo: T, rootTask: KronosAtomicActionTask) =
@@ -33,7 +35,7 @@ object CascadeInsertClause {
     ) = prevTask.toKronosActionTask().doAfterExecute { wrapper -> //在执行之后执行的操作
         //为何要放在doAfterExecute中执行：因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键）
         val listOfPojo = mutableListOf<NodeOfKPojo>()// 前序遍历 非递归
-        val stack = Stack<NodeOfKPojo>()
+        val stack = KStack<NodeOfKPojo>()
         stack.push(pojo.toTreeNode(true))
         while (stack.isNotEmpty()) {
             val node = stack.pop()

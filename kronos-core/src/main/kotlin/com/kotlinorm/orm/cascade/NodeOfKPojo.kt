@@ -17,7 +17,6 @@ data class NodeOfKPojo(
     val parent: NodeOfKPojo? = null,
     val field: Field? = null
 ) {
-    private val columns = kPojo.kronosColumns()
     private val dataMap = kPojo.toDataMap()
     private val validRefs = findValidRefs(kPojo.kronosColumns(), KOperationType.DELETE)
     val children: MutableList<NodeOfKPojo> = mutableListOf()

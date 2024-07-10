@@ -36,12 +36,18 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private val toInsertFields = linkedSetOf<Field>()
+    private var cascadeEnabled = true
 
-    internal val updateInsertFields = { field: Field, value: Any? ->
+    private val updateInsertFields = { field: Field, value: Any? ->
         if (field.isColumn && value != null) {
             toInsertFields += field
             paramMap[field.name] = value
         }
+    }
+
+    fun cascade(enabled: Boolean): InsertClause<T> {
+        cascadeEnabled = enabled
+        return this
     }
 
     fun build(): KronosActionTask {
@@ -56,6 +62,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         """.trimIndent()
 
         return CascadeInsertClause.build(
+            cascadeEnabled,
             pojo,
             KronosAtomicActionTask(
                 sql,
@@ -71,6 +78,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     companion object {
+        fun <T : KPojo> Iterable<InsertClause<T>>.cascade(enabled: Boolean): Iterable<InsertClause<T>> {
+            return this.onEach { it.cascade(enabled) }
+        }
+
         /**
          * Builds a KronosActionTask for each InsertClause in the list.
          *
@@ -94,6 +105,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
          */
         fun <T : KPojo> Iterable<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
             return build().execute(wrapper)
+        }
+
+        fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean): Array<out InsertClause<T>> {
+            return this.onEach { it.cascade(enabled) }
         }
 
         /**

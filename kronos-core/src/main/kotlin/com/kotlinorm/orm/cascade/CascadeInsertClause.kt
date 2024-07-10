@@ -25,7 +25,8 @@ import com.kotlinorm.orm.insert.insert
 import java.util.*
 
 object CascadeInsertClause {
-    fun <T : KPojo> build(pojo: T, rootTask: KronosAtomicActionTask) = generateTask(pojo, rootTask)
+    fun <T : KPojo> build(cascadeEnabled: Boolean, pojo: T, rootTask: KronosAtomicActionTask) =
+        if (cascadeEnabled) generateTask(pojo, rootTask) else rootTask.toKronosActionTask()
 
     private fun generateTask(
         pojo: KPojo, prevTask: KronosAtomicActionTask

@@ -24,13 +24,16 @@ object CascadeSelectClause {
         pojo: T,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>
-    ): KronosQueryTask {
-        if (!cascade || limit == 0) return rootTask.toKronosQueryTask()
-        return generateQueryTask(limit, pojo, pojo.kronosColumns().filter { selectFields.contains(it) }, rootTask)
-    }
+    ) =
+        if (cascade && limit != 0) generateTask(
+            limit,
+            pojo,
+            pojo.kronosColumns().filter { selectFields.contains(it) },
+            rootTask
+        ) else rootTask.toKronosQueryTask()
 
     @Suppress("UNCHECKED_CAST")
-    private fun generateQueryTask(
+    private fun generateTask(
         limit: Int,
         pojo: KPojo,
         columns: List<Field>,

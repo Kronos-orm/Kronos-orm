@@ -73,7 +73,7 @@ class RelationQuery {
             )
         )
 
-        val task2 = school.insert().execute()
+        val task2 = school.insert().cascade(true).execute()
     }
 
     @Test

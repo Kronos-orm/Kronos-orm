@@ -48,6 +48,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
         // 若logicDeleteStrategy.enabled为false则抛出异常
@@ -82,8 +83,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         return this
     }
 
-    fun cascade(enabled: Boolean = true): DeleteClause<T> {
+    fun cascade(enabled: Boolean = true, depth: Int = -1): DeleteClause<T> {
         this.cascadeEnabled = enabled
+        this.cascadeLimit = depth
         return this
     }
 
@@ -150,7 +152,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             // 构建将要更新的字段字符串
             val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
             return CascadeDeleteClause.build(
-                cascadeEnabled, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
+                cascadeEnabled, cascadeLimit, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
                     listOfNotNull(
                         "UPDATE", "`$tableName`", "SET", updateFields, toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
@@ -159,7 +161,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
             return CascadeDeleteClause.build(
-                cascadeEnabled, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
+                cascadeEnabled, cascadeLimit, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
                     listOfNotNull(
                         "DELETE FROM", "`$tableName`", toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
@@ -206,8 +208,11 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             return map { it.logic(enabled) }
         }
 
-        fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(enabled: Boolean = true): List<DeleteClause<T>> {
-            return map { it.cascade(enabled) }
+        fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(
+            enabled: Boolean = true,
+            depth: Int = -1
+        ): List<DeleteClause<T>> {
+            return map { it.cascade(enabled, depth) }
         }
 
         /**
@@ -254,8 +259,11 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             return map { it.logic(enabled) }
         }
 
-        fun <T : KPojo> Array<DeleteClause<T>>.cascade(enabled: Boolean = true): List<DeleteClause<T>> {
-            return map { it.cascade(enabled) }
+        fun <T : KPojo> Array<DeleteClause<T>>.cascade(
+            enabled: Boolean = true,
+            depth: Int = -1
+        ): List<DeleteClause<T>> {
+            return map { it.cascade(enabled, depth) }
         }
 
 

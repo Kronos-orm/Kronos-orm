@@ -54,7 +54,7 @@ object CascadeDeleteClause {
      * Build a cascade delete clause.
      * 构建级联删除子句。
      *
-     * @param cascadeEnabled Whether the cascade is enabled.
+     * @param cascade Whether the cascade is enabled.
      * @param pojo The pojo to be deleted.
      * @param whereClauseSql The condition to be met.
      * @param logic The logic to be used.
@@ -62,18 +62,26 @@ object CascadeDeleteClause {
      * @return The list of atomic tasks.
      */
     fun <T : KPojo> build(
-        cascadeEnabled: Boolean,
+        cascade: Boolean,
+        limit: Int,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
         logic: Boolean,
         rootTask: KronosAtomicActionTask
-    ): KronosActionTask {
-        if (!cascadeEnabled) return rootTask.toKronosActionTask()
-        return generateDeleteTask(pojo, whereClauseSql, paramMap, pojo.kronosColumns(), logic, rootTask)
-    }
+    ) =
+        if (cascade && limit != 0) generateTask(
+            limit,
+            pojo,
+            whereClauseSql,
+            paramMap,
+            pojo.kronosColumns(),
+            logic,
+            rootTask
+        ) else rootTask.toKronosActionTask()
 
-    private fun <T : KPojo> generateDeleteTask(
+    private fun <T : KPojo> generateTask(
+        limit: Int,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
@@ -86,6 +94,7 @@ object CascadeDeleteClause {
             doBeforeExecute { wrapper ->
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
+                        .cascade(true, limit)
                         .queryList(wrapper)
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute
                 val restrictReferences = validReferences.filter { it.reference.onDelete == RESTRICT }

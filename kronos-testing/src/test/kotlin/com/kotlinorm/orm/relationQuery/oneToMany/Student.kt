@@ -12,10 +12,11 @@ data class Student(
     var id: Int? = null,
     var name: String? = null,
     var studentNo: String? = null,
-    var groupClassId: Int? = null,
+    var schoolName: Int? = null,
+    var groupClassName: Int? = null,
     @Reference(
-        ["groupClassId"],
-        ["id"],
+        ["groupClassName", "schoolName"],
+        ["name", "schoolName"],
         CascadeDeleteAction.SET_DEFAULT,
         defaultValue = ["9"],
         mapperBy = GroupClass::class

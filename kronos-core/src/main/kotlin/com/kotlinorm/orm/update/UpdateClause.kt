@@ -64,6 +64,7 @@ class UpdateClause<T : KPojo>(
     private var condition: Criteria? = null
     internal var paramMapNew = mutableMapOf<Field, Any?>()
     private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。
@@ -107,8 +108,9 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
-    fun cascade(enabled: Boolean = true): UpdateClause<T> {
+    fun cascade(enabled: Boolean = true, depth: Int = -1): UpdateClause<T> {
         this.cascadeEnabled = enabled
+        this.cascadeLimit = depth
         return this
     }
 
@@ -237,6 +239,7 @@ class UpdateClause<T : KPojo>(
 
         return CascadeUpdateClause.build(
             cascadeEnabled,
+            cascadeLimit,
             pojo,
             paramMap.toMap(),
             whereClauseSql,
@@ -265,8 +268,8 @@ class UpdateClause<T : KPojo>(
             return map { it.set(rowData) }
         }
 
-        fun <T : KPojo> List<UpdateClause<T>>.cascade(enabled: Boolean = true): List<UpdateClause<T>> {
-            return map { it.cascade(enabled) }
+        fun <T : KPojo> List<UpdateClause<T>>.cascade(enabled: Boolean = true, depth: Int = -1): List<UpdateClause<T>> {
+            return map { it.cascade(enabled, depth) }
         }
 
         /**

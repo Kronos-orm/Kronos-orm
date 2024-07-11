@@ -81,14 +81,14 @@ fun getTypeSafeValue(
     }
 
     return when (kotlinType) {
-        "kotlin.Int", "kotlin.Int?" -> value.safeCast(Number::toInt, String::toInt)
-        "kotlin.Long", "kotlin.Long?" -> value.safeCast(Number::toLong, String::toLong)
-        "kotlin.Short", "kotlin.Short?" -> value.safeCast(Number::toShort, String::toShort)
-        "kotlin.Float", "kotlin.Float?" -> value.safeCast(Number::toFloat, String::toFloat)
-        "kotlin.Double", "kotlin.Double?" -> value.safeCast(Number::toDouble, String::toDouble)
-        "kotlin.Byte", "kotlin.Byte?" -> value.safeCast(Number::toByte, String::toByte)
-        "kotlin.Char", "kotlin.Char?" -> value.toString().firstOrNull()
-        "kotlin.String", "kotlin.String?" -> {
+        "kotlin.Int" -> value.safeCast(Number::toInt, String::toInt)
+        "kotlin.Long" -> value.safeCast(Number::toLong, String::toLong)
+        "kotlin.Short" -> value.safeCast(Number::toShort, String::toShort)
+        "kotlin.Float" -> value.safeCast(Number::toFloat, String::toFloat)
+        "kotlin.Double" -> value.safeCast(Number::toDouble, String::toDouble)
+        "kotlin.Byte" -> value.safeCast(Number::toByte, String::toByte)
+        "kotlin.Char" -> value.toString().firstOrNull()
+        "kotlin.String" -> {
             val typeOfValue =
                 listOf(kClassOfVal.qualifiedName, *kClassOfVal.supertypes.map { it.toString() }.toTypedArray())
             when {

@@ -22,17 +22,18 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.utils.getTypeSafeValue
+import kotlin.reflect.full.withNullability
 
 object CascadeInsertClause {
-    fun <T : KPojo> build(cascadeEnabled: Boolean, pojo: T, rootTask: KronosAtomicActionTask) =
-        if (cascadeEnabled) generateTask(pojo, rootTask) else rootTask.toKronosActionTask()
+    fun <T : KPojo> build(cascade: Boolean, limit: Int, pojo: T, rootTask: KronosAtomicActionTask) =
+        if (cascade && limit != 0) generateTask(limit, pojo, rootTask) else rootTask.toKronosActionTask()
 
     private fun generateTask(
-        pojo: KPojo, prevTask: KronosAtomicActionTask
+        limit: Int, pojo: KPojo, prevTask: KronosAtomicActionTask
     ) = prevTask.toKronosActionTask().doAfterExecute { wrapper -> //在执行之后执行的操作
         //为何要放在doAfterExecute中执行：因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键）
         val operationResult = this
-        pojo.toTreeNode(NodeInfo(true)) {
+        pojo.toTreeNode(NodeInfo(true), limit) {
             val identity = kPojo.kronosColumns().find { it.identity } ?: return@toTreeNode
             val (_, lastInsertId) = if (kPojo != pojo) {
                 kPojo.insert().cascade(false).execute(wrapper)
@@ -43,7 +44,7 @@ object CascadeInsertClause {
                 val prop = kPojo::class.findPropByName(identity.name)
                 val typeSafeId =
                     getTypeSafeValue(
-                        prop.returnType.toString(),
+                        prop.returnType.withNullability(false).toString(),
                         lastInsertId
                     )
                 dataMap[identity.name] = typeSafeId

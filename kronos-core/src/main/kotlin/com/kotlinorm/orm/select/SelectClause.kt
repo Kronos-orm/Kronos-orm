@@ -166,9 +166,9 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun cascade(enabled: Boolean, limit: Int = -1): SelectClause<T> {
+    fun cascade(enabled: Boolean, depth: Int = -1): SelectClause<T> {
         cascadeEnabled = enabled
-        cascadeLimit = limit
+        cascadeLimit = depth
         return this
     }
 
@@ -446,8 +446,12 @@ class SelectClause<T : KPojo>(
 
     companion object {
 
-        fun <T : KPojo> List<SelectClause<T>>.by(someFields: KTableField<T, Any?>): List<SelectClause<T>> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.by(someFields: KTableField<T, Any?>): List<SelectClause<T>> {
             return map { it.by(someFields) }
+        }
+
+        fun <T : KPojo> Iterable<SelectClause<T>>.cascade(enabled: Boolean, depth: Int = -1): List<SelectClause<T>> {
+            return map { it.cascade(enabled, depth) }
         }
 
         /**
@@ -456,7 +460,7 @@ class SelectClause<T : KPojo>(
          * @param selectCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> List<SelectClause<T>>.where(selectCondition: KTableConditionalField<T, Boolean?> = null): List<SelectClause<T>> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.where(selectCondition: KTableConditionalField<T, Boolean?> = null): List<SelectClause<T>> {
             return map { it.where(selectCondition) }
         }
 
@@ -466,7 +470,7 @@ class SelectClause<T : KPojo>(
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo> List<SelectClause<T>>.build(): KronosAtomicBatchTask {
+        fun <T : KPojo> Iterable<SelectClause<T>>.build(): KronosAtomicBatchTask {
             val tasks = this.map { it.build() }
             return KronosAtomicBatchTask(
                 sql = tasks.first().component1(),
@@ -475,27 +479,27 @@ class SelectClause<T : KPojo>(
             )
         }
 
-        fun <T : KPojo> List<SelectClause<T>>.query(wrapper: KronosDataSourceWrapper? = null): List<List<Map<String, Any>>> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.query(wrapper: KronosDataSourceWrapper? = null): List<List<Map<String, Any>>> {
             return map { it.query(wrapper) }
         }
 
-        inline fun <reified T : KPojo> List<SelectClause<T>>.queryList(wrapper: KronosDataSourceWrapper? = null): List<List<T>> {
+        inline fun <reified T : KPojo> Iterable<SelectClause<T>>.queryList(wrapper: KronosDataSourceWrapper? = null): List<List<T>> {
             return map { it.queryList<T>(wrapper) }
         }
 
-        fun <T : KPojo> List<SelectClause<T>>.queryMap(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.queryMap(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
             return map { it.queryMap(wrapper) }
         }
 
-        fun <T : KPojo> List<SelectClause<T>>.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>?> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>?> {
             return map { it.queryMapOrNull(wrapper) }
         }
 
-        inline fun <reified T : KPojo> List<SelectClause<T>>.queryOne(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        inline fun <reified T : KPojo> Iterable<SelectClause<T>>.queryOne(wrapper: KronosDataSourceWrapper? = null): List<T> {
             return map { it.queryOne(wrapper) }
         }
 
-        inline fun <reified T : KPojo> List<SelectClause<T>>.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): List<T?> {
+        inline fun <reified T : KPojo> Iterable<SelectClause<T>>.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): List<T?> {
             return map { it.queryOneOrNull(wrapper) }
         }
     }

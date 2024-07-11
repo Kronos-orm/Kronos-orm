@@ -14,17 +14,19 @@ import com.kotlinorm.orm.update.update
 object CascadeUpdateClause {
 
     fun <T : KPojo> build(
-        cascadeEnabled: Boolean,
+        cascade: Boolean,
+        limit: Int,
         pojo: T,
-        paramMap: Map<String , Any?>,
+        paramMap: Map<String, Any?>,
         whereClauseSql: String?,
         rootTask: KronosAtomicActionTask
-    ): KronosActionTask {
-        if (!cascadeEnabled) return rootTask.toKronosActionTask()
-        return generateUpdateTask(pojo , paramMap, whereClauseSql, pojo.kronosColumns(), rootTask)
-    }
+    ) =
+        if (cascade && limit != 0) generateTask(
+            limit, pojo, paramMap, whereClauseSql, pojo.kronosColumns(), rootTask
+        ) else rootTask.toKronosActionTask()
 
-    private fun <T : KPojo> generateUpdateTask(
+    private fun <T : KPojo> generateTask(
+        limit: Int,
         pojo: T,
         paramMap: Map<String, Any?>,
         whereClauseSql: String?,
@@ -39,7 +41,7 @@ object CascadeUpdateClause {
             doBeforeExecute { wrapper ->
                 toUpdateRecords.addAll(
                     pojo.select()
-                        .cascade(true , 1)
+                        .cascade(true, limit)
                         .where { whereClauseSql.asSql() }
                         .patch(*paramMap.toList().toTypedArray())
                         .queryList(wrapper)

@@ -37,6 +37,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private val toInsertFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
 
     private val updateInsertFields = { field: Field, value: Any? ->
         if (field.isColumn && value != null) {
@@ -45,8 +46,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
     }
 
-    fun cascade(enabled: Boolean): InsertClause<T> {
+    fun cascade(enabled: Boolean, depth: Int = -1): InsertClause<T> {
         cascadeEnabled = enabled
+        cascadeLimit = depth
         return this
     }
 
@@ -63,6 +65,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
         return CascadeInsertClause.build(
             cascadeEnabled,
+            cascadeLimit,
             pojo,
             KronosAtomicActionTask(
                 sql,
@@ -78,8 +81,11 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     companion object {
-        fun <T : KPojo> Iterable<InsertClause<T>>.cascade(enabled: Boolean): Iterable<InsertClause<T>> {
-            return this.onEach { it.cascade(enabled) }
+        fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
+            enabled: Boolean,
+            depth: Int = -1
+        ): Iterable<InsertClause<T>> {
+            return this.onEach { it.cascade(enabled, depth) }
         }
 
         /**
@@ -107,8 +113,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
             return build().execute(wrapper)
         }
 
-        fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean): Array<out InsertClause<T>> {
-            return this.onEach { it.cascade(enabled) }
+        fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean, depth: Int = -1): Array<out InsertClause<T>> {
+            return this.onEach { it.cascade(enabled, depth) }
         }
 
         /**

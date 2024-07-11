@@ -60,9 +60,9 @@ fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply {
 fun getTypeSafeValue(
     kotlinType: String,
     value: Any,
+    superTypes: List<String> = listOf(),
     dateTimeFormat: String? = null,
-    kClassOfVal: KClass<*> = value::class,
-    superTypes: List<String> = listOf()
+    kClassOfVal: KClass<*> = value::class
 ): Any? {
     fun getEpochSecond(): Long {
         return when (value) {
@@ -193,7 +193,7 @@ fun getSafeValue(
                         map[safeKey].toString(), kotlinBuiltInClassMap[kotlinType] ?: Class.forName(kotlinType).kotlin
                     )
                 }
-                getTypeSafeValue(kotlinType, map[safeKey]!!, column.dateFormat, kClassOfVal, superTypes)
+                getTypeSafeValue(kotlinType, map[safeKey]!!, superTypes, column.dateFormat, kClassOfVal)
             } else {
                 map[safeKey]
             }

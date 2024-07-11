@@ -50,7 +50,11 @@ data class NodeOfKPojo(
                 } else if (value is KPojo) {
                     children.add(
                         value.toTreeNode(
-                            NodeInfo(data?.updateReferenceValue == true, this, ref.field),
+                            NodeInfo(
+                                data?.updateReferenceValue == true,
+                                this,
+                                ref.field
+                            ),
                             onInit
                         )
                     )

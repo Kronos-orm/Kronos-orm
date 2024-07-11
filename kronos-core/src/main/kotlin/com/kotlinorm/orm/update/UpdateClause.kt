@@ -23,12 +23,12 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
-import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.cascade.CascadeUpdateClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
@@ -59,10 +59,11 @@ class UpdateClause<T : KPojo>(
     private var tableName = pojo.kronosTableName()
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var allFields = pojo.kronosColumns().toLinkedSet()
-    private var toUpdateFields = linkedSetOf<Field>()
+    internal var allFields = pojo.kronosColumns().toLinkedSet()
+    internal var toUpdateFields = linkedSetOf<Field>()
     private var condition: Criteria? = null
-    private var paramMapNew = mutableMapOf<Field, Any?>()
+    internal var paramMapNew = mutableMapOf<Field, Any?>()
+    private var cascadeEnabled = true
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。
@@ -103,6 +104,11 @@ class UpdateClause<T : KPojo>(
             }
             paramMapNew.putAll(fieldParamMap.map { e -> e.key + "New" to e.value })
         }
+        return this
+    }
+
+    fun cascade(enabled: Boolean = true): UpdateClause<T> {
+        this.cascadeEnabled = enabled
         return this
     }
 
@@ -160,6 +166,13 @@ class UpdateClause<T : KPojo>(
      * @return The constructed KronosAtomicTask.
      */
     fun build(): KronosActionTask {
+
+        if (condition == null) {
+            // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
+            condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+                field.eq(paramMap[field.name]).takeIf { it.value != null }
+            }.toCriteria()
+        }
 
         // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
         if (isExcept) {
@@ -222,7 +235,13 @@ class UpdateClause<T : KPojo>(
             operationType = KOperationType.UPDATE
         )
 
-        return CascadeUpdateClause.build(pojo, whereClauseSql, paramMap , rootTask)
+        return CascadeUpdateClause.build(
+            cascadeEnabled,
+            pojo,
+            paramMap.toMap(),
+            whereClauseSql,
+            rootTask
+        )
     }
 
     /**
@@ -244,6 +263,10 @@ class UpdateClause<T : KPojo>(
          */
         fun <T : KPojo> List<UpdateClause<T>>.set(rowData: KTableField<T, Unit>): List<UpdateClause<T>> {
             return map { it.set(rowData) }
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.cascade(enabled: Boolean = true): List<UpdateClause<T>> {
+            return map { it.cascade(enabled) }
         }
 
         /**

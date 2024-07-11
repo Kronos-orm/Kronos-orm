@@ -65,25 +65,28 @@ object CascadeDeleteClause {
         cascadeEnabled: Boolean,
         pojo: T,
         whereClauseSql: String?,
+        paramMap: Map<String, Any?>,
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         if (!cascadeEnabled) return rootTask.toKronosActionTask()
-        return generateDeleteTask(pojo, whereClauseSql, pojo.kronosColumns(), logic, rootTask)
+        return generateDeleteTask(pojo, whereClauseSql, paramMap, pojo.kronosColumns(), logic, rootTask)
     }
 
     private fun <T : KPojo> generateDeleteTask(
         pojo: T,
         whereClauseSql: String?,
+        paramMap: Map<String, Any?>,
         columns: List<Field>,
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
-        val toDeleteRecords: MutableList<KPojo> = mutableListOf()
         val validReferences = findValidRefs(columns, KOperationType.DELETE)
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
-                toDeleteRecords.addAll(pojo.select().where { whereClauseSql.asSql() }.queryList(wrapper))
+                val toDeleteRecords =
+                    pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
+                        .queryList(wrapper)
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute
                 val restrictReferences = validReferences.filter { it.reference.onDelete == RESTRICT }
                 toDeleteRecords.forEach { record ->

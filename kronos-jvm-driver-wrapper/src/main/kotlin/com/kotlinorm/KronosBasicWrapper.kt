@@ -207,8 +207,6 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 getTypeSafeValue(
                     kClass.qualifiedName!!,
                     map.values.first(),
-                    null,
-                    map.values.first()::class,
                     kClass.supertypes.map { it.toString() }
                 )
             }

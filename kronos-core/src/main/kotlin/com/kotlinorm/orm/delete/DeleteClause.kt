@@ -150,7 +150,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             // 构建将要更新的字段字符串
             val updateFields = toUpdateFields.joinToString(", ") { it.equation() }
             return CascadeDeleteClause.build(
-                cascadeEnabled, pojo, whereClauseSql, true, KronosAtomicActionTask(
+                cascadeEnabled, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
                     listOfNotNull(
                         "UPDATE", "`$tableName`", "SET", updateFields, toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE
@@ -159,7 +159,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
             return CascadeDeleteClause.build(
-                cascadeEnabled, pojo, whereClauseSql, false, KronosAtomicActionTask(
+                cascadeEnabled, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
                     listOfNotNull(
                         "DELETE FROM", "`$tableName`", toWhereSql(whereClauseSql)
                     ).joinToString(" "), paramMap, operationType = KOperationType.DELETE

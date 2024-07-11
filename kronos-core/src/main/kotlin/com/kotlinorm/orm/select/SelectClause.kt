@@ -52,7 +52,7 @@ class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: KTableField<T, Any?> = null
 ) : KSelectable<T>(pojo) {
     private var tableName = pojo.kronosTableName()
-    private var paramMap = pojo.toDataMap()
+    internal var paramMap = pojo.toDataMap()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     internal var condition: Criteria? = null
@@ -230,6 +230,11 @@ class SelectClause<T : KPojo>(
 
     fun withTotal(): PagedClause<T, SelectClause<T>> {
         return PagedClause(this)
+    }
+
+    fun patch(vararg pairs: Pair<String, Any?>): SelectClause<T> {
+        paramMap.putAll(pairs)
+        return this
     }
 
     /**

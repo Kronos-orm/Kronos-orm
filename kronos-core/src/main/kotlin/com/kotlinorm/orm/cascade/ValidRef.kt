@@ -60,7 +60,7 @@ fun findValidRefs(columns: List<Field>, operationType: KOperationType): List<Val
     }.flatten()
 }
 
-private val lruCacheOfConstructor = LRUCache<String, KFunction<*>>(100) // 用于存储实例化的对象
+private val lruCacheOfConstructor = LRUCache<String, KFunction<*>>(128) // 用于存储实例化的对象
 
 /**
  * Instantiates an object from a class name string, utilizing a cache to improve performance.

@@ -11,29 +11,49 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.starProjectedType
 
-data class NodeOfKPojo(
-    val kPojo: KPojo,
+data class NodeInfo(
     val updateReferenceValue: Boolean = false,
     val parent: NodeOfKPojo? = null,
-    val field: Field? = null
+    val fieldOfParent: Field? = null
+)
+
+data class NodeOfKPojo(
+    val kPojo: KPojo,
+    val data: NodeInfo? = null,
+    val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
-    private val dataMap = kPojo.toDataMap()
+    internal val dataMap = kPojo.toDataMap()
     private val validRefs = findValidRefs(kPojo.kronosColumns(), KOperationType.DELETE)
     val children: MutableList<NodeOfKPojo> = mutableListOf()
 
     init {
         patchFromParent()
+        onInit?.invoke(this)
         validRefs.forEach { ref ->
             val value = dataMap[ref.field.name]
             if (value != null) {
                 if (value is Collection<*>) {
                     value.forEach { child ->
                         if (child is KPojo) {
-                            children.add(child.toTreeNode(updateReferenceValue, this, ref.field))
+                            children.add(
+                                child.toTreeNode(
+                                    NodeInfo(
+                                        data?.updateReferenceValue == true,
+                                        this,
+                                        ref.field
+                                    ),
+                                    onInit
+                                )
+                            )
                         }
                     }
                 } else if (value is KPojo) {
-                    children.add(value.toTreeNode(updateReferenceValue, this, ref.field))
+                    children.add(
+                        value.toTreeNode(
+                            NodeInfo(data?.updateReferenceValue == true, this, ref.field),
+                            onInit
+                        )
+                    )
                 }
             }
         }
@@ -41,19 +61,18 @@ data class NodeOfKPojo(
 
     companion object {
         internal fun KPojo.toTreeNode(
-            updateReferenceValue: Boolean = false,
-            parent: NodeOfKPojo? = null,
-            field: Field? = null
+            data: NodeInfo? = null,
+            onInit: (NodeOfKPojo.() -> Unit)? = null
         ): NodeOfKPojo {
-            return NodeOfKPojo(this, updateReferenceValue, parent, field)
+            return NodeOfKPojo(this, data, onInit)
         }
     }
 
     private fun patchFromParent() {
-        if (!updateReferenceValue || parent == null) return
-        val validRef = parent.validRefs.find { it.field == field } ?: return
+        if (data == null || !data.updateReferenceValue || data.parent == null) return
+        val validRef = data.parent.validRefs.find { it.field == data.fieldOfParent } ?: return
         val listOfPair = validRef.reference.targetFields.mapNotNull {
-            val targetColumnValue = parent.dataMap[it] ?: return@mapNotNull null
+            val targetColumnValue = data.parent.dataMap[it] ?: return@mapNotNull null
             val originalColumn = validRef.reference.referenceFields[validRef.reference.targetFields.indexOf(it)]
             kPojo::class.findPropByName(originalColumn) to targetColumnValue
         }

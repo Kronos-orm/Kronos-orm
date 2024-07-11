@@ -58,7 +58,11 @@ fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply {
 
 @OptIn(FormatStringsInDatetimeFormats::class)
 fun getTypeSafeValue(
-    kotlinType: String, superTypes: List<String>, value: Any, dateTimeFormat: String?, kClassOfVal: KClass<*>
+    kotlinType: String,
+    value: Any,
+    dateTimeFormat: String? = null,
+    kClassOfVal: KClass<*> = value::class,
+    superTypes: List<String> = listOf()
 ): Any? {
     fun getEpochSecond(): Long {
         return when (value) {
@@ -77,14 +81,14 @@ fun getTypeSafeValue(
     }
 
     return when (kotlinType) {
-        "kotlin.Int" -> value.safeCast(Number::toInt, String::toInt)
-        "kotlin.Long" -> value.safeCast(Number::toLong, String::toLong)
-        "kotlin.Short" -> value.safeCast(Number::toShort, String::toShort)
-        "kotlin.Float" -> value.safeCast(Number::toFloat, String::toFloat)
-        "kotlin.Double" -> value.safeCast(Number::toDouble, String::toDouble)
-        "kotlin.Byte" -> value.safeCast(Number::toByte, String::toByte)
-        "kotlin.Char" -> value.toString().firstOrNull()
-        "kotlin.String" -> {
+        "kotlin.Int", "kotlin.Int?" -> value.safeCast(Number::toInt, String::toInt)
+        "kotlin.Long", "kotlin.Long?" -> value.safeCast(Number::toLong, String::toLong)
+        "kotlin.Short", "kotlin.Short?" -> value.safeCast(Number::toShort, String::toShort)
+        "kotlin.Float", "kotlin.Float?" -> value.safeCast(Number::toFloat, String::toFloat)
+        "kotlin.Double", "kotlin.Double?" -> value.safeCast(Number::toDouble, String::toDouble)
+        "kotlin.Byte", "kotlin.Byte?" -> value.safeCast(Number::toByte, String::toByte)
+        "kotlin.Char", "kotlin.Char?" -> value.toString().firstOrNull()
+        "kotlin.String", "kotlin.String?" -> {
             val typeOfValue =
                 listOf(kClassOfVal.qualifiedName, *kClassOfVal.supertypes.map { it.toString() }.toTypedArray())
             when {
@@ -189,7 +193,7 @@ fun getSafeValue(
                         map[safeKey].toString(), kotlinBuiltInClassMap[kotlinType] ?: Class.forName(kotlinType).kotlin
                     )
                 }
-                getTypeSafeValue(kotlinType, superTypes, map[safeKey]!!, column.dateFormat, kClassOfVal)
+                getTypeSafeValue(kotlinType, map[safeKey]!!, column.dateFormat, kClassOfVal, superTypes)
             } else {
                 map[safeKey]
             }

@@ -20,11 +20,8 @@ import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
-import com.kotlinorm.orm.insert.InsertClause.Companion.execute
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.utils.KStack
-import com.kotlinorm.utils.pop
-import com.kotlinorm.utils.push
+import com.kotlinorm.utils.getTypeSafeValue
 
 object CascadeInsertClause {
     fun <T : KPojo> build(cascadeEnabled: Boolean, pojo: T, rootTask: KronosAtomicActionTask) =
@@ -34,16 +31,24 @@ object CascadeInsertClause {
         pojo: KPojo, prevTask: KronosAtomicActionTask
     ) = prevTask.toKronosActionTask().doAfterExecute { wrapper -> //在执行之后执行的操作
         //为何要放在doAfterExecute中执行：因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键）
-        val listOfPojo = mutableListOf<NodeOfKPojo>()// 前序遍历 非递归
-        val stack = KStack<NodeOfKPojo>()
-        stack.push(pojo.toTreeNode(true))
-        while (stack.isNotEmpty()) {
-            val node = stack.pop()
-            listOfPojo.add(node)
-            node.children.forEach {
-                stack.push(it)
+        val operationResult = this
+        pojo.toTreeNode(NodeInfo(true)) {
+            val identity = kPojo.kronosColumns().find { it.identity } ?: return@toTreeNode
+            val (_, lastInsertId) = if (kPojo != pojo) {
+                kPojo.insert().cascade(false).execute(wrapper)
+            } else {
+                operationResult
+            }
+            if (lastInsertId != null && lastInsertId != 0L && dataMap[identity.name] == null) {
+                val prop = kPojo::class.findPropByName(identity.name)
+                val typeSafeId =
+                    getTypeSafeValue(
+                        prop.returnType.toString(),
+                        lastInsertId
+                    )
+                dataMap[identity.name] = typeSafeId
+                kPojo[prop] = typeSafeId
             }
         }
-        listOfPojo.drop(1).map { it.kPojo }.insert().execute(wrapper)
     }
 }

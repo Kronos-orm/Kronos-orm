@@ -14,7 +14,7 @@ data class Student(
     var studentNo: String? = null,
     var groupClassId: Int? = null,
     @Reference(
-        ["group_class_id"],
+        ["groupClassId"],
         ["id"],
         CascadeDeleteAction.SET_DEFAULT,
         defaultValue = ["9"],

@@ -22,10 +22,11 @@ data class NodeOfKPojo(
     val kPojo: KPojo,
     val data: NodeInfo? = null,
     val limitDepth: Int = -1, // limit the depth of the tree, -1 means no limit
+    val operationType: KOperationType,
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
-    internal val dataMap = kPojo.toDataMap()
-    private val validRefs = findValidRefs(kPojo.kronosColumns(), KOperationType.DELETE)
+    internal val dataMap by lazy { kPojo.toDataMap() }
+    private val validRefs by lazy { findValidRefs(kPojo.kronosColumns(), operationType) }
     val children: MutableList<NodeOfKPojo> = mutableListOf()
 
     init {
@@ -40,9 +41,10 @@ data class NodeOfKPojo(
         internal fun KPojo.toTreeNode(
             data: NodeInfo? = null,
             limitDepth: Int = -1,
+            operationType: KOperationType,
             onInit: (NodeOfKPojo.() -> Unit)? = null
         ): NodeOfKPojo {
-            return NodeOfKPojo(this, data, limitDepth, onInit)
+            return NodeOfKPojo(this, data, limitDepth, operationType, onInit)
         }
     }
 
@@ -73,6 +75,7 @@ data class NodeOfKPojo(
                                         this,
                                         ref.field
                                     ),
+                                    operationType = operationType,
                                     onInit = onInit
                                 )
                             )
@@ -86,6 +89,7 @@ data class NodeOfKPojo(
                                 this,
                                 ref.field
                             ),
+                            operationType = operationType,
                             onInit = onInit
                         )
                     )

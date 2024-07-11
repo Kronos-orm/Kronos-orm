@@ -111,7 +111,7 @@ object CascadeDeleteClause {
                     }
                 }
 
-                val forestOfKPojo = toDeleteRecords.map { it.toTreeNode() }
+                val forestOfKPojo = toDeleteRecords.map { it.toTreeNode(operationType = KOperationType.DELETE) }
                 if (forestOfKPojo.any { it.children.isNotEmpty() }) {
                     this.atomicTasks.clear() // 清空原有的任务
                     val list = mutableListOf<NodeOfKPojo>()

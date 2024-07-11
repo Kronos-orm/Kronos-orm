@@ -47,7 +47,7 @@ object CascadeUpdateClause {
                         .queryList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
-                val forest = toUpdateRecords.map { it.toTreeNode() }
+                val forest = toUpdateRecords.map { it.toTreeNode(operationType = KOperationType.UPDATE) }
 
                 forest.forEach { tree ->
                     tree.children.forEach { child ->

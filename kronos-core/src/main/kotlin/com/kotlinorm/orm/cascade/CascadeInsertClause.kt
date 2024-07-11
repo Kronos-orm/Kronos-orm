@@ -19,6 +19,7 @@ package com.kotlinorm.orm.cascade
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.utils.getTypeSafeValue
@@ -33,7 +34,7 @@ object CascadeInsertClause {
     ) = prevTask.toKronosActionTask().doAfterExecute { wrapper -> //在执行之后执行的操作
         //为何要放在doAfterExecute中执行：因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键）
         val operationResult = this
-        pojo.toTreeNode(NodeInfo(true), limit) {
+        pojo.toTreeNode(NodeInfo(true), limit, KOperationType.INSERT) {
             val identity = kPojo.kronosColumns().find { it.identity } ?: return@toTreeNode
             val (_, lastInsertId) = if (kPojo != pojo) {
                 kPojo.insert().cascade(false).execute(wrapper)

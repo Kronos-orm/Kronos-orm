@@ -14,12 +14,14 @@ import kotlin.reflect.full.starProjectedType
 data class NodeInfo(
     val updateReferenceValue: Boolean = false,
     val parent: NodeOfKPojo? = null,
-    val fieldOfParent: Field? = null
+    val fieldOfParent: Field? = null,
+    val depth: Int = parent?.data?.depth?.plus(1) ?: 0
 )
 
 data class NodeOfKPojo(
     val kPojo: KPojo,
     val data: NodeInfo? = null,
+    val limitDepth: Int = -1, // limit the depth of the tree, -1 means no limit
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     internal val dataMap = kPojo.toDataMap()
@@ -29,46 +31,18 @@ data class NodeOfKPojo(
     init {
         patchFromParent()
         onInit?.invoke(this)
-        validRefs.forEach { ref ->
-            val value = dataMap[ref.field.name]
-            if (value != null) {
-                if (value is Collection<*>) {
-                    value.forEach { child ->
-                        if (child is KPojo) {
-                            children.add(
-                                child.toTreeNode(
-                                    NodeInfo(
-                                        data?.updateReferenceValue == true,
-                                        this,
-                                        ref.field
-                                    ),
-                                    onInit
-                                )
-                            )
-                        }
-                    }
-                } else if (value is KPojo) {
-                    children.add(
-                        value.toTreeNode(
-                            NodeInfo(
-                                data?.updateReferenceValue == true,
-                                this,
-                                ref.field
-                            ),
-                            onInit
-                        )
-                    )
-                }
-            }
+        if (limitDepth < 0 || (data?.depth ?: 0) < limitDepth) {
+            buildChildren()
         }
     }
 
     companion object {
         internal fun KPojo.toTreeNode(
             data: NodeInfo? = null,
+            limitDepth: Int = -1,
             onInit: (NodeOfKPojo.() -> Unit)? = null
         ): NodeOfKPojo {
-            return NodeOfKPojo(this, data, onInit)
+            return NodeOfKPojo(this, data, limitDepth, onInit)
         }
     }
 
@@ -82,6 +56,41 @@ data class NodeOfKPojo(
         }
         listOfPair.forEach { (prop, value) ->
             kPojo[prop] = value
+        }
+    }
+
+    private fun buildChildren() {
+        validRefs.forEach { ref ->
+            val value = dataMap[ref.field.name]
+            if (value != null) {
+                if (value is Collection<*>) {
+                    value.forEach { child ->
+                        if (child is KPojo) {
+                            children.add(
+                                child.toTreeNode(
+                                    NodeInfo(
+                                        data?.updateReferenceValue == true,
+                                        this,
+                                        ref.field
+                                    ),
+                                    onInit = onInit
+                                )
+                            )
+                        }
+                    }
+                } else if (value is KPojo) {
+                    children.add(
+                        value.toTreeNode(
+                            NodeInfo(
+                                data?.updateReferenceValue == true,
+                                this,
+                                ref.field
+                            ),
+                            onInit = onInit
+                        )
+                    )
+                }
+            }
         }
     }
 }

@@ -20,16 +20,18 @@ import kotlin.reflect.KMutableProperty
 object CascadeSelectClause {
     fun <T : KPojo> build(
         cascade: Boolean,
+        limit: Int,
         pojo: T,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>
     ): KronosQueryTask {
-        if (!cascade) return rootTask.toKronosQueryTask()
-        return generateQueryTask(pojo, pojo.kronosColumns().filter { selectFields.contains(it) }, rootTask)
+        if (!cascade || limit == 0) return rootTask.toKronosQueryTask()
+        return generateQueryTask(limit, pojo, pojo.kronosColumns().filter { selectFields.contains(it) }, rootTask)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun generateQueryTask(
+        limit: Int,
         pojo: KPojo,
         columns: List<Field>,
         prevTask: KronosAtomicQueryTask
@@ -51,12 +53,12 @@ object CascadeSelectClause {
                             QueryList -> { // 若是查询KPojo列表
                                 val lastStepResult = this as List<KPojo> // this为主表查询的结果
                                 lastStepResult.forEach rowMapper@{
-                                    setValues(it, prop, validRef, columns, wrapper)
+                                    setValues(it, prop, validRef, limit, wrapper)
                                 }
                             }
 
                             QueryOne, QueryOneOrNull -> {
-                                setValues(this as KPojo, prop, validRef, columns, wrapper)
+                                setValues(this as KPojo, prop, validRef, limit, wrapper)
                             }
 
                             else -> {}
@@ -71,7 +73,7 @@ object CascadeSelectClause {
         pojo: KPojo,
         prop: KMutableProperty<*>,
         validRef: ValidRef,
-        columns: List<Field>,
+        limit: Int,
         wrapper: KronosDataSourceWrapper
     ) { // 将KPojo转为Map，该map将用于级联查询
         val dataMap = pojo.toDataMap()
@@ -86,9 +88,9 @@ object CascadeSelectClause {
         ) // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
 
         pojo[prop] = if (prop.isIterable) { // 判断属性是否为集合
-            refPojo.select().queryList(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(true, limit - 1).queryList(wrapper) // 查询级联的POJO
         } else {
-            refPojo.select().queryOneOrNull(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(true, limit - 1).queryOneOrNull(wrapper) // 查询级联的POJO
         }
 
     }

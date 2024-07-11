@@ -68,6 +68,7 @@ class SelectClause<T : KPojo>(
     private var havingEnabled = false
     private var orderEnabled = false
     private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var selectAll = true
     private var ps = 0
     private var pi = 0
@@ -165,8 +166,9 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun cascade(enabled: Boolean): SelectClause<T> {
+    fun cascade(enabled: Boolean, limit: Int = -1): SelectClause<T> {
         cascadeEnabled = enabled
+        cascadeLimit = limit
         return this
     }
 
@@ -360,6 +362,7 @@ class SelectClause<T : KPojo>(
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
             cascadeEnabled,
+            cascadeLimit,
             pojo,
             KronosAtomicQueryTask(
                 sql,

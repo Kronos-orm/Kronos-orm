@@ -12,8 +12,8 @@ data class Student(
     var id: Int? = null,
     var name: String? = null,
     var studentNo: String? = null,
-    var schoolName: Int? = null,
-    var groupClassName: Int? = null,
+    var schoolName: String? = null,
+    var groupClassName: String? = null,
     @Reference(
         ["groupClassName", "schoolName"],
         ["name", "schoolName"],

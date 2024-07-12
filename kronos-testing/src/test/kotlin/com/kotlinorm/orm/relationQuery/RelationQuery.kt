@@ -78,9 +78,9 @@ class RelationQuery {
 
     @Test
     fun testCascadeUpdate() {
-        School(name = "School").update().set {
-            it.name = "School1"
-        }.execute()
+        testCascadeInsert()
+        val res = School(name = "School").update().set { it.name = "School2" }.execute()
+        println(res)
     }
 
     @Test
@@ -102,7 +102,7 @@ class RelationQuery {
         val listOfGroupClass = (1..100).map { gl ->
             val groupClass = GroupClass(gl)
             val stus = (1..10).map {
-                Student(gl * 1000 + it, "name${gl * 1000 + it}", groupClassId = gl)
+                Student(gl * 1000 + it, "name${gl * 1000 + it}")
             }
             groupClass.students = stus
             groupClass

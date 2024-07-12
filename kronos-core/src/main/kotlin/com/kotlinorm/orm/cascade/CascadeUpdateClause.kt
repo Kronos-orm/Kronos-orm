@@ -27,7 +27,7 @@ object CascadeUpdateClause {
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade && limit != 0) generateTask(
-            limit, pojo, paramMap, toUpdateFields, whereClauseSql, pojo.kronosColumns(), rootTask
+            limit, pojo, paramMap, toUpdateFields, whereClauseSql, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
@@ -36,7 +36,6 @@ object CascadeUpdateClause {
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         whereClauseSql: String?,
-        columns: List<Field>,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
@@ -51,10 +50,17 @@ object CascadeUpdateClause {
                         .queryList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
-                val forest = toUpdateRecords.map { it.toTreeNode(operationType = KOperationType.UPDATE) }
+                val forest = toUpdateRecords.map { record ->
+                    record.toTreeNode(
+                        NodeInfo(),
+                        operationType = KOperationType.UPDATE,
+                        toUpdateFields = toUpdateFields.map {
+                            CascadeInfo(it.name, it.name, it.name)
+                        }.toMutableList()
+                    )
+                }
 
                 if (forest.any { it.children.isNotEmpty() }) {
-                    val rootTask = this.atomicTasks.first()
                     this.atomicTasks.clear() // 清空原有的任务
                     val list = mutableListOf<NodeOfKPojo>()
                     forest.forEach { tree ->
@@ -78,7 +84,6 @@ object CascadeUpdateClause {
                             getTask(it, paramMap)?.atomicTasks
                         }.flatten()
                     )
-                    atomicTasks.add(rootTask)
                 }
             }
         }
@@ -89,19 +94,12 @@ object CascadeUpdateClause {
         paramMap: Map<String, Any?>
     ): KronosActionTask? {
         if (null == child.data) return null
-        val validReferences = child.data.parent?.validRefs ?: return null
-        val ref = validReferences.find { it.field == child.data.fieldOfParent }
-            ?: throw NeedFieldsException("The field corresponding to the annotation could not be found in the entity")
 
-        return  child.kPojo.update().apply {
-            ref.reference.referenceFields.forEachIndexed { index, referenceField ->
-                val targetField = ref.reference.targetFields[index]
-
-                val updateField = this.allFields.find { it.name == referenceField }
-                    ?: throw NeedFieldsException("The field corresponding to the annotation could not be found in the entity")
-
+        return child.kPojo.update().apply {
+            child.newUpdateFields.forEach { newUpdateField ->
+                val updateField = this.allFields.first { it.name == newUpdateField.fieldName }
                 this.toUpdateFields += updateField
-                this.paramMapNew[updateField + "New"] = paramMap[targetField + "New"]
+                this.paramMapNew[updateField + "New"] = paramMap[newUpdateField.sourceFieldName + "New"]
             }
         }.build()
     }

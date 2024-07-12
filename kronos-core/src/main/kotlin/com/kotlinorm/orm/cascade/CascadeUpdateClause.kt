@@ -54,6 +54,7 @@ object CascadeUpdateClause {
                 val forest = toUpdateRecords.map { it.toTreeNode(operationType = KOperationType.UPDATE) }
 
                 if (forest.any { it.children.isNotEmpty() }) {
+                    val rootTask = this.atomicTasks.first()
                     this.atomicTasks.clear() // 清空原有的任务
                     val list = mutableListOf<NodeOfKPojo>()
                     forest.forEach { tree ->
@@ -76,8 +77,8 @@ object CascadeUpdateClause {
                         list.mapNotNull {
                             getTask(it, paramMap)?.atomicTasks
                         }.flatten()
-
                     )
+                    atomicTasks.add(rootTask)
                 }
             }
         }

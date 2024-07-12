@@ -59,10 +59,12 @@ data class NodeOfKPojo(
             kPojo::class.findPropByName(originalColumn) to targetColumnValue
         }
         listOfPair.forEach { (prop, value) ->
-            kPojo[prop] = value
-            validRef.reference.targetFields.forEach { field ->
-                if (data.parent.updateParams[field] != null) {
-                    updateParams[prop.name] = data.parent.updateParams[field]!!
+            if(kPojo[prop] != value) {
+                kPojo[prop] = value
+                validRef.reference.targetFields.forEachIndexed { index, field ->
+                    if (data.parent.updateParams[field] != null) {
+                        updateParams[validRef.reference.referenceFields[index]] = data.parent.updateParams[field]!!
+                    }
                 }
             }
         }
@@ -89,7 +91,7 @@ data class NodeOfKPojo(
                                     ),
                                     limitDepth,
                                     operationType,
-                                    updateParams,
+                                    mutableMapOf(),
                                     onInit
                                 )
                             )
@@ -105,7 +107,7 @@ data class NodeOfKPojo(
                             ),
                             limitDepth,
                             operationType,
-                            updateParams,
+                            mutableMapOf(),
                             onInit
                         )
                     )

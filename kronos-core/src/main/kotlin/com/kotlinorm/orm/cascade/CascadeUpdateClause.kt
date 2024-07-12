@@ -86,13 +86,13 @@ object CascadeUpdateClause {
     }
 
     private fun getTask(
-        child: NodeOfKPojo,
+        node: NodeOfKPojo,
         paramMap: Map<String, Any?>
     ): KronosActionTask? {
-        if (null == child.data) return null
+        if (null == node.data) return null
 
-        return child.kPojo.update().apply {
-            child.updateParams.forEach { (key, value) ->
+        return node.kPojo.update().apply {
+            node.updateParams.forEach { (key, value) ->
                 val updateField = this.allFields.first { it.name == key }
                 this.toUpdateFields += updateField
                 this.paramMapNew[updateField + "New"] = paramMap[value + "New"]

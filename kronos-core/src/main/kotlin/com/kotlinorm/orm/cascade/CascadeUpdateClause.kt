@@ -6,14 +6,12 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
-import kotlin.collections.LinkedHashSet
 
 object CascadeUpdateClause {
 
@@ -52,11 +50,9 @@ object CascadeUpdateClause {
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { record ->
                     record.toTreeNode(
-                        NodeInfo(),
+                        NodeInfo(true),
                         operationType = KOperationType.UPDATE,
-                        toUpdateFields = toUpdateFields.map {
-                            CascadeInfo(it.name, it.name, it.name)
-                        }.toMutableList()
+                        updateParams = toUpdateFields.associateTo(mutableMapOf()) { it.name to it.name }
                     )
                 }
 
@@ -96,10 +92,10 @@ object CascadeUpdateClause {
         if (null == child.data) return null
 
         return child.kPojo.update().apply {
-            child.newUpdateFields.forEach { newUpdateField ->
-                val updateField = this.allFields.first { it.name == newUpdateField.fieldName }
+            child.updateParams.forEach { (key, value) ->
+                val updateField = this.allFields.first { it.name == key }
                 this.toUpdateFields += updateField
-                this.paramMapNew[updateField + "New"] = paramMap[newUpdateField.sourceFieldName + "New"]
+                this.paramMapNew[updateField + "New"] = paramMap[value + "New"]
             }
         }.build()
     }

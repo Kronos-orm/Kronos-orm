@@ -10,6 +10,10 @@ import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
+import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.pop
+import com.kotlinorm.utils.push
+import kotlin.collections.LinkedHashSet
 
 object CascadeUpdateClause {
 
@@ -18,25 +22,25 @@ object CascadeUpdateClause {
         limit: Int,
         pojo: T,
         paramMap: Map<String, Any?>,
+        toUpdateFields: LinkedHashSet<Field>,
         whereClauseSql: String?,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade && limit != 0) generateTask(
-            limit, pojo, paramMap, whereClauseSql, pojo.kronosColumns(), rootTask
+            limit, pojo, paramMap, toUpdateFields, whereClauseSql, pojo.kronosColumns(), rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
         limit: Int,
         pojo: T,
         paramMap: Map<String, Any?>,
+        toUpdateFields: LinkedHashSet<Field>,
         whereClauseSql: String?,
         columns: List<Field>,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
-        val validReferences = findValidRefs(columns, KOperationType.UPDATE).filter { ref ->
-            ref.reference.targetFields.all { paramMap.contains(it + "New") }
-        }
+
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
                 toUpdateRecords.addAll(
@@ -49,28 +53,56 @@ object CascadeUpdateClause {
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { it.toTreeNode(operationType = KOperationType.UPDATE) }
 
-                forest.forEach { tree ->
-                    tree.children.forEach { child ->
-                        val ref = validReferences.find { it.field == child.data?.fieldOfParent }
-                            ?: throw NeedFieldsException("The field corresponding to the annotation could not be found in the entity")
-
-                        child.kPojo.update().apply {
-                            ref.reference.referenceFields.forEachIndexed { index, referenceField ->
-                                val targetField = ref.reference.targetFields[index]
-
-                                val updateField = this.allFields.find { it.name == referenceField }
-                                    ?: throw NeedFieldsException("The field corresponding to the annotation could not be found in the entity")
-
-                                this.toUpdateFields += updateField
-                                this.paramMapNew[updateField + "New"] = paramMap[targetField + "New"]
-
-                                println()
+                if (forest.any { it.children.isNotEmpty() }) {
+                    this.atomicTasks.clear() // 清空原有的任务
+                    val list = mutableListOf<NodeOfKPojo>()
+                    forest.forEach { tree ->
+                        val stack = KStack<NodeOfKPojo>() // 用于深度优先遍历
+                        val all = KStack<NodeOfKPojo>() // 用于存储所有的节点
+                        stack.push(tree) // 将根节点压入栈
+                        var tmp: NodeOfKPojo
+                        while (!stack.isEmpty()) { // 深度优先遍历
+                            tmp = stack.pop()
+                            all.push(tmp)
+                            tmp.children.forEach {
+                                stack.push(it) // 将子节点压入栈
                             }
-                        }.execute()
+                        }
+                        while (!all.isEmpty()) {
+                            list.add(all.pop()) // 将所有节点压入list
+                        }
                     }
+                    atomicTasks.addAll(
+                        list.mapNotNull {
+                            getTask(it, paramMap)?.atomicTasks
+                        }.flatten()
+
+                    )
                 }
             }
         }
+    }
+
+    private fun getTask(
+        child: NodeOfKPojo,
+        paramMap: Map<String, Any?>
+    ): KronosActionTask? {
+        if (null == child.data) return null
+        val validReferences = child.data.parent?.validRefs ?: return null
+        val ref = validReferences.find { it.field == child.data.fieldOfParent }
+            ?: throw NeedFieldsException("The field corresponding to the annotation could not be found in the entity")
+
+        return  child.kPojo.update().apply {
+            ref.reference.referenceFields.forEachIndexed { index, referenceField ->
+                val targetField = ref.reference.targetFields[index]
+
+                val updateField = this.allFields.find { it.name == referenceField }
+                    ?: throw NeedFieldsException("The field corresponding to the annotation could not be found in the entity")
+
+                this.toUpdateFields += updateField
+                this.paramMapNew[updateField + "New"] = paramMap[targetField + "New"]
+            }
+        }.build()
     }
 
 }

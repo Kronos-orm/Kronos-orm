@@ -242,6 +242,7 @@ class UpdateClause<T : KPojo>(
             cascadeLimit,
             pojo,
             paramMap.toMap(),
+            toUpdateFields,
             whereClauseSql,
             rootTask
         )

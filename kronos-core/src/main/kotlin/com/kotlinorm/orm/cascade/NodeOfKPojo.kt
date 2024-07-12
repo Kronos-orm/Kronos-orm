@@ -26,7 +26,7 @@ data class NodeOfKPojo(
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     internal val dataMap by lazy { kPojo.toDataMap() }
-    private val validRefs by lazy { findValidRefs(kPojo.kronosColumns(), operationType) }
+    internal val validRefs by lazy { findValidRefs(kPojo.kronosColumns(), operationType) }
     val children: MutableList<NodeOfKPojo> = mutableListOf()
 
     init {

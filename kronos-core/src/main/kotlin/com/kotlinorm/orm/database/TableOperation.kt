@@ -73,12 +73,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val dbType = dataSource.dbType
 
         // 实体类列信息
-        val kronosColumns = instance.kronosColumns().map { col ->
-            if (dbType == DBType.Oracle) {
-                col.columnName = col.columnName.uppercase()
+        val kronosColumns = instance.kronosColumns()
+            .filter { it.isColumn }
+            .map { col ->
+                if (dbType == DBType.Oracle) { col.columnName = col.columnName.uppercase() }
+                col
             }
-            col
-        }
 
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = instance.kronosTableIndex()

@@ -30,7 +30,8 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 data class KronosAtomicActionTask(
     override var sql: String,
     override val paramMap: MutableMap<String, Any?> = mutableMapOf(),
-    override val operationType: KOperationType = KOperationType.UPDATE
+    override val operationType: KOperationType = KOperationType.UPDATE,
+    override val useIdentity: Boolean = false
 ) : KAtomicActionTask {
 
     /**
@@ -42,11 +43,7 @@ data class KronosAtomicActionTask(
 
     fun trySplitOut(): List<KronosAtomicActionTask> {
         return sql.split(";").map {
-            KronosAtomicActionTask(
-                sql = it.trim(),
-                paramMap = paramMap,
-                operationType = operationType
-            )
+            KronosAtomicActionTask(it.trim(), paramMap, operationType, useIdentity)
         }
     }
 }

@@ -6,7 +6,6 @@ import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
-import com.kotlinorm.orm.insert.InsertClause.Companion.execute
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.relationQuery.oneToMany.GroupClass
 import com.kotlinorm.orm.relationQuery.oneToMany.School
@@ -73,7 +72,7 @@ class RelationQuery {
             )
         )
 
-        val task2 = school.insert().cascade(true).execute()
+        school.insert().cascade(true).execute()
     }
 
     @Test
@@ -86,30 +85,16 @@ class RelationQuery {
     @Test
     fun testCascadeDelete() {
         testCascadeInsert()
+        val result = School(name = "School").select().queryList()
+        println(result)
         val res = School(name = "School").delete().execute()
         println(res)
     }
 
     @Test
     fun testSelect() {
-        dataSource.table.dropTable<School>()
-        dataSource.table.dropTable<GroupClass>()
-        dataSource.table.dropTable<Student>()
-        dataSource.table.createTable<School>()
-        dataSource.table.createTable<GroupClass>()
-        dataSource.table.createTable<Student>()
-
-        val listOfGroupClass = (1..100).map { gl ->
-            val groupClass = GroupClass(gl)
-            val stus = (1..10).map {
-                Student(gl * 1000 + it, "name${gl * 1000 + it}")
-            }
-            groupClass.students = stus
-            groupClass
-        }
-        listOfGroupClass.insert().execute()
-
-        val result = GroupClass().select().queryList()
+        testCascadeInsert()
+        val result = School(name = "School").select().queryList()
         println(result)
     }
 }

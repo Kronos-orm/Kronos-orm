@@ -23,4 +23,6 @@ package com.kotlinorm.interfaces
  *
  * @author OUSC
  */
-interface KAtomicActionTask : KAtomicTask
+interface KAtomicActionTask : KAtomicTask {
+    val useIdentity: Boolean
+}

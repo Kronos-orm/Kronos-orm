@@ -37,7 +37,7 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.doTaskLog
+import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -319,8 +319,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T1> {
         with(this.build()) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
-            val result = wrapper.orDefault().forList(atomicTask, pojo::class) as List<T1>
+            val result = atomicTask.logAndReturn(
+                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T1>,
+                QueryType.QueryList
+            )
             afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
             return result
         }
@@ -344,10 +346,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T1 {
         with(this.build()) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
-            val result =
+            val result = atomicTask.logAndReturn(
                 (wrapper.orDefault().forObject(atomicTask, pojo::class)
-                    ?: throw NullPointerException("No such record")) as T1
+                    ?: throw NullPointerException("No such record")) as T1,
+                QueryType.QueryOne
+            )
             afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
             return result
         }
@@ -362,9 +365,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T1? {
         with(this.build()) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
-            val result =
-                wrapper.orDefault().forObject(atomicTask, pojo::class) as T1?
+            val result = atomicTask.logAndReturn(
+                wrapper.orDefault().forObject(atomicTask, pojo::class) as T1?,
+                QueryType.QueryOneOrNull
+            )
             afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
             return result
         }

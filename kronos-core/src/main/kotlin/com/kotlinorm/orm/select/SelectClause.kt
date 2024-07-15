@@ -29,13 +29,13 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType
+import com.kotlinorm.enums.QueryType.*
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
-import com.kotlinorm.pagination.PagedClause
+import com.kotlinorm.orm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
@@ -44,7 +44,7 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.doTaskLog
+import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -300,7 +300,7 @@ class SelectClause<T : KPojo>(
 
         // 检查并设置是否使用HAVING条件
         val havingKeyword = if (havingEnabled) "HAVING " + (havingCondition.let {
-            it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
+            it?.children?.joinToString(" AND ") { c -> c?.field?.equation().toString() }
         }) else null
 
         // 如果分页，则将分页参数添加到SQL中
@@ -323,7 +323,6 @@ class SelectClause<T : KPojo>(
 
         //检查并设置是否使用LIMIT条件
         if (limitCapacity > 0) when (wrapper.orDefault().dbType) {
-
             DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $limitCapacity"
             DBType.Oracle -> {
                 limitedPrefix = "SELECT * FROM ("
@@ -393,9 +392,11 @@ class SelectClause<T : KPojo>(
     fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
         with(this.build()) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
-            val result = wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>
-            afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
+            val result = atomicTask.logAndReturn(
+                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>,
+                QueryList
+            )
+            afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
         }
     }
@@ -418,11 +419,12 @@ class SelectClause<T : KPojo>(
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T {
         with(this.build()) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
-            val result =
+            val result = atomicTask.logAndReturn(
                 (wrapper.orDefault().forObject(atomicTask, pojo::class)
-                    ?: throw NullPointerException("No such record")) as T
-            afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
+                    ?: throw NullPointerException("No such record")) as T,
+                QueryOne
+            )
+            afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
             return result
         }
     }
@@ -436,10 +438,10 @@ class SelectClause<T : KPojo>(
     fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
         with(build()) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
-            val result =
-                wrapper.orDefault().forObject(atomicTask, pojo::class) as T?
-            afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
+            val result = atomicTask.logAndReturn(
+                wrapper.orDefault().forObject(atomicTask, pojo::class) as T?, QueryOneOrNull
+            )
+            afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
             return result
         }
     }

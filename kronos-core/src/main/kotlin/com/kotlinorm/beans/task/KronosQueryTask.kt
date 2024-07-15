@@ -4,7 +4,7 @@ import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.QueryType.*
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.doTaskLog
+import com.kotlinorm.utils.logAndReturn
 
 /**
  * KronosQueryTask class represents a collection of Kronos atomic query tasks used to execute SELECT operations.
@@ -26,8 +26,7 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
 
     fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
         beforeQuery?.invoke(this)
-        atomicTask.doTaskLog()
-        val result = wrapper.orDefault().forList(atomicTask)
+        val result = atomicTask.logAndReturn(wrapper.orDefault().forList(atomicTask), Query)
         afterQuery?.invoke(result, Query, wrapper.orDefault())
         return result
     }
@@ -35,42 +34,44 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
         beforeQuery?.invoke(this)
-        atomicTask.doTaskLog()
-        val result = wrapper.orDefault().forList(atomicTask, T::class) as List<T>
+        val result = atomicTask.logAndReturn(
+            wrapper.orDefault().forList(atomicTask, T::class) as List<T>, QueryList
+        )
         afterQuery?.invoke(result, QueryList, wrapper.orDefault())
         return result
     }
 
     fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
         beforeQuery?.invoke(this)
-        atomicTask.doTaskLog()
-        val result = wrapper.orDefault().forMap(atomicTask)!!
+        val result = atomicTask.logAndReturn(wrapper.orDefault().forMap(atomicTask)!!, QueryMap)
         afterQuery?.invoke(result, QueryMap, wrapper.orDefault())
         return result
     }
 
     fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
         beforeQuery?.invoke(this)
-        atomicTask.doTaskLog()
-        val result = wrapper.orDefault().forMap(atomicTask)
+        val result = atomicTask.logAndReturn(wrapper.orDefault().forMap(atomicTask), QueryMapOrNull)
         afterQuery?.invoke(result, QueryMapOrNull, wrapper.orDefault())
         return result
     }
 
     inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
         beforeQuery?.invoke(this)
-        atomicTask.doTaskLog()
-        val result =
-            wrapper.orDefault().forObject(atomicTask, T::class) as T ?: throw NullPointerException("No such record")
+        val result = atomicTask.logAndReturn(
+            wrapper.orDefault().forObject(atomicTask, T::class) as T ?: throw NullPointerException("No such record"),
+            QueryOne
+        )
         afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
         return result
     }
 
     inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
         beforeQuery?.invoke(this)
-        atomicTask.doTaskLog()
         val result =
-            wrapper.orDefault().forObject(atomicTask, T::class) as T?
+            atomicTask.logAndReturn(
+                wrapper.orDefault().forObject(atomicTask, T::class) as T?,
+                QueryOneOrNull
+            )
         afterQuery?.invoke(
             result, QueryOneOrNull, wrapper.orDefault()
         )

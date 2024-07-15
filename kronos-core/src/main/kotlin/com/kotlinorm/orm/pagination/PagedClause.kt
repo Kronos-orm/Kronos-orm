@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.pagination
+package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
-import com.kotlinorm.enums.QueryType
+import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.doTaskLog
+import com.kotlinorm.utils.logAndReturn
 
 class PagedClause<K : KPojo, T : KSelectable<K>>(
     private val selectClause: T
@@ -50,11 +50,13 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
         val total = tasks.first.queryOne<Int>()
         with(tasks.second) {
             beforeQuery?.invoke(this)
-            atomicTask.doTaskLog()
             val records =
-                (wrapper.orDefault().forObject(atomicTask, selectClause.pojo::class)
-                    ?: throw NullPointerException("No such record")) as T
-            afterQuery?.invoke(records, QueryType.QueryList, wrapper.orDefault())
+                atomicTask.logAndReturn(
+                    (wrapper.orDefault().forObject(atomicTask, selectClause.pojo::class)
+                        ?: throw NullPointerException("No such record")) as T, QueryList
+                )
+
+            afterQuery?.invoke(records, QueryList, wrapper.orDefault())
             return total to records as List<T>
         }
     }

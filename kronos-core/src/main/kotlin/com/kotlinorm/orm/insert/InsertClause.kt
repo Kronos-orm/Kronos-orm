@@ -70,7 +70,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
             KronosAtomicActionTask(
                 sql,
                 paramMap.filter { it.key in toInsertFields.map { item -> item.name } }.toMutableMap(),
-                operationType = KOperationType.INSERT
+                operationType = KOperationType.INSERT,
+                useIdentity = (allFields - toInsertFields).any { it.identity }
             )
         )
 

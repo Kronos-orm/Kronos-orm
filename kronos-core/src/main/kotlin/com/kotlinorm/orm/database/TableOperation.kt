@@ -76,9 +76,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val kronosColumns = instance.kronosColumns()
             .filter { it.isColumn }
             .map { col ->
-                if (dbType == DBType.Oracle) {
-                    col.columnName = col.columnName.uppercase()
-                }
+                if (dbType == DBType.Oracle) { col.columnName = col.columnName.uppercase() }
                 col
             }
 

@@ -37,7 +37,10 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     fun exists(tableName: String) = queryTableExistence(tableName, dataSource)
 
     inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
-        dataSource.dbType, instance.kronosTableName(), instance.kronosColumns(), instance.kronosTableIndex()
+        dataSource.dbType,
+        instance.kronosTableName(),
+        instance.kronosColumns().filter { it.isColumn },
+        instance.kronosTableIndex()
     ).forEach { dataSource.update(KronosAtomicActionTask(it)) }
 
     inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) {

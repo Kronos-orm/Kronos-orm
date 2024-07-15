@@ -59,7 +59,7 @@ data class NodeOfKPojo(
             kPojo::class.findPropByName(originalColumn) to targetColumnValue
         }
         listOfPair.forEach { (prop, value) ->
-            if(kPojo[prop] != value) {
+            if (kPojo[prop] != value) {
                 kPojo[prop] = value
                 validRef.reference.targetFields.forEachIndexed { index, field ->
                     if (data.parent.updateParams[field] != null) {
@@ -72,7 +72,8 @@ data class NodeOfKPojo(
 
     private fun buildChildren() {
         validRefs.filter { ref ->
-            (null != data && data.updateReferenceValue) ||
+            operationType == KOperationType.DELETE ||
+                    (null != data && data.updateReferenceValue) ||
                     ref.reference.targetFields.any {
                         updateParams.keys.contains(it)
                     }

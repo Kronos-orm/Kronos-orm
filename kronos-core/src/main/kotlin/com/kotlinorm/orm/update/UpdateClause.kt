@@ -61,7 +61,7 @@ class UpdateClause<T : KPojo>(
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     internal var allFields = pojo.kronosColumns().toLinkedSet()
     internal var toUpdateFields = linkedSetOf<Field>()
-    private var condition: Criteria? = null
+    internal var condition: Criteria? = null
     internal var paramMapNew = mutableMapOf<Field, Any?>()
     private var cascadeEnabled = true
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推

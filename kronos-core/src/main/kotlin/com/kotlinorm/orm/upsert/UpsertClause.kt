@@ -19,17 +19,24 @@ package com.kotlinorm.orm.upsert
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
+import com.kotlinorm.beans.task.KronosActionTask
+import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.update.update
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.Extensions.asSql
+import com.kotlinorm.utils.Extensions.eq
+import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -111,7 +118,7 @@ class UpsertClause<T : KPojo>(
         return build(wrapper).execute(wrapper)
     }
 
-    fun build(wrapper: KronosDataSourceWrapper? = null): KronosAtomicActionTask {
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
         val dbType = dataSource.dbType
 
@@ -135,8 +142,8 @@ class UpsertClause<T : KPojo>(
             it.key in (toUpdateFields + toInsertFields + onFields).map { it.name }
         }.toMutableMap()
 
-        val sql = if (onDuplicateKey) {
-            when (dbType) {
+        if (onDuplicateKey) {
+            val sql = when (dbType) {
                 DBType.Mysql, DBType.OceanBase -> mysqlOnDuplicateSql(
                     ConflictResolver(
                         tableName,
@@ -158,26 +165,35 @@ class UpsertClause<T : KPojo>(
                     }
                 }
             }
+
+            return KronosAtomicActionTask(
+                sql,
+                paramMap,
+                operationType = KOperationType.UPSERT
+            ).toKronosActionTask()
         } else {
-            generateOnExistSql(dataSource)
-        }
-
-        return KronosAtomicActionTask(
-            sql,
-            paramMap,
-            operationType = KOperationType.UPSERT
-        )
-    }
-
-    private fun generateOnExistSql(wrapper: KronosDataSourceWrapper): String {
-        val conflictResolver = ConflictResolver(tableName, onFields, toUpdateFields, toInsertFields)
-        return when (wrapper.dbType) {
-            DBType.Mysql, DBType.OceanBase -> mysqlOnExistSql(conflictResolver)
-            DBType.Postgres -> postgresOnExistSql(conflictResolver)
-            DBType.Mssql -> sqlServerOnExistSql(conflictResolver)
-            DBType.Oracle -> oracleOnExistSql(conflictResolver)
-            DBType.SQLite -> sqliteOnConflictSql(conflictResolver)
-            else -> throw UnsupportedDatabaseTypeException()
+            return listOf<KronosAtomicActionTask>().toKronosActionTask().doBeforeExecute {
+                if (pojo.select { "COUNT(1)".asSql() }
+                        .cascade(false)
+                        .apply {
+                            condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
+                                .map {
+                                    it.eq(paramMap[it.name])
+                                }.toCriteria()
+                        }.queryOne<Int>()
+                    > 0
+                ) {
+                    pojo.update()
+                        .apply {
+                            condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
+                                .map { it.eq(paramMap[it.name]) }.toCriteria()
+                            this@UpsertClause.toUpdateFields = this.toUpdateFields
+                        }
+                        .execute(wrapper)
+                } else {
+                    pojo.insert().execute(wrapper)
+                }
+            }
         }
     }
 
@@ -190,13 +206,8 @@ class UpsertClause<T : KPojo>(
             return map { it.onDuplicateKey() }
         }
 
-        fun <T : KPojo> List<UpsertClause<T>>.build(): KronosAtomicBatchTask {
-            val tasks = this.map { it.build() }
-            return KronosAtomicBatchTask(
-                sql = tasks.first().sql,
-                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
-                operationType = KOperationType.UPSERT
-            )
+        fun <T : KPojo> List<UpsertClause<T>>.build(): KronosActionTask {
+            return map { it.build() }.merge()
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {

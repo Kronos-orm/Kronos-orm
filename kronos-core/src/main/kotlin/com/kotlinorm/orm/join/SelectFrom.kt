@@ -23,12 +23,14 @@ import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
-import com.kotlinorm.enums.*
+import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.QueryType
+import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
@@ -55,6 +57,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var paramMap: MutableMap<String, Any?>
     open lateinit var logicDeleteStrategy: KronosCommonStrategy
     open lateinit var allFields: LinkedHashSet<Field>
+    open lateinit var listOfPojo: MutableList<KPojo>
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
@@ -71,6 +74,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var isLimit = false
     private var isPage = false
     private var limitCapacity = 0
+    private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var pi = 0
     private var ps = 0
 
@@ -176,6 +181,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 selectFieldsWithNames[safeKey] = field
             }
         }
+    }
+
+    fun cascade(enabled: Boolean, depth: Int = -1) {
+        cascadeEnabled = enabled
+        cascadeLimit = depth
     }
 
     /**
@@ -455,46 +465,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
         }) else null
 
-        // 如果分页，则将分页参数添加到SQL中
-        var limitedPrefix: String? = null
-        var limitedSuffix: String? = null
-        if (isPage) when (wrapper.orDefault().dbType) {
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix =
-                "LIMIT $ps" + " OFFSET " + "${ps * (pi - 1)}"
-
-            DBType.Oracle -> {
-                limitedPrefix = "SELECT * FROM ("
-                selectFields += Field("rownum", "R")
-                limitedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
-            }
-
-            DBType.Mssql -> {
-                limitedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-        }
-
-        //检查并设置是否使用LIMIT条件
-        if (limitCapacity > 0) when (wrapper.orDefault().dbType) {
-
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $limitCapacity"
-            DBType.Oracle -> {
-                limitedPrefix = "SELECT * FROM ("
-                selectFields += Field("rownum", "R")
-                limitedSuffix = ") WHERE R <= $limitCapacity"
-            }
-
-            DBType.Mssql -> {
-                limitedSuffix = "OFFSET 0 ROWS FETCH NEXT $limitCapacity ROWS ONLY"
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-        }
-
         // 组装最终的SQL语句
         val sql = listOfNotNull(
-            limitedPrefix,
             selectKeyword,
             selectFields.joinToString(", ") { field ->
                 field.let { item ->
@@ -507,15 +479,20 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             whereClauseSql,
             groupByKeyword,
             havingKeyword,
-            orderByKeywords,
-            limitedSuffix
+            orderByKeywords
         ).joinToString(" ")
 
         // 返回构建好的KronosAtomicTask对象
-        return KronosAtomicQueryTask(
-            sql,
-            paramMap,
-            operationType = KOperationType.SELECT
-        ).toKronosQueryTask()
+        return CascadeJoinClause.build(
+            cascadeEnabled,
+            cascadeLimit,
+            listOfPojo,
+            KronosAtomicQueryTask(
+                sql,
+                paramMap,
+                operationType = KOperationType.SELECT
+            ),
+            selectFieldsWithNames
+        )
     }
 }

@@ -27,7 +27,6 @@ object CascadeSelectClause {
     ) =
         if (cascade && limit != 0) generateTask(
             limit,
-            pojo,
             pojo.kronosColumns().filter { selectFields.contains(it) },
             rootTask
         ) else rootTask.toKronosQueryTask()
@@ -35,7 +34,6 @@ object CascadeSelectClause {
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
         limit: Int,
-        pojo: KPojo,
         columns: List<Field>,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {
@@ -49,19 +47,25 @@ object CascadeSelectClause {
             if (validReferences.isNotEmpty()) {
                 doAfterQuery { queryType, wrapper ->
                     validReferences.forEach { validRef ->
-                        val prop =
-                            pojo::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-
                         when (queryType) {
                             QueryList -> { // 若是查询KPojo列表
                                 val lastStepResult = this as List<KPojo> // this为主表查询的结果
-                                lastStepResult.forEach rowMapper@{
-                                    setValues(it, prop, validRef, limit, wrapper)
+                                if (lastStepResult.isNotEmpty()) {
+                                    val prop =
+                                        lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+                                    lastStepResult.forEach rowMapper@{
+                                        setValues(it, prop, validRef, limit, wrapper)
+                                    }
                                 }
                             }
 
                             QueryOne, QueryOneOrNull -> {
-                                setValues(this as KPojo, prop, validRef, limit, wrapper)
+                                val lastStepResult = this as KPojo? // this为主表查询的结果
+                                if (lastStepResult != null) {
+                                    val prop =
+                                        lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+                                    setValues(lastStepResult, prop, validRef, limit, wrapper)
+                                }
                             }
 
                             else -> {}

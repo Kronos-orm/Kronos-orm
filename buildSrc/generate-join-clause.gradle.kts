@@ -100,7 +100,7 @@ extra["export"] = {
                         |package com.kotlinorm.orm.join
                         |
                         |import com.kotlinorm.beans.dsl.KPojo
-                        |import com.kotlinorm.pagination.PagedClause
+                        |import com.kotlinorm.orm.pagination.PagedClause
                         |import com.kotlinorm.utils.toLinkedSet
                         |
                         |class SelectFrom$n<$nthOfType_>(
@@ -111,6 +111,7 @@ extra["export"] = {
                         |    override var paramMap = t1.toDataMap()
                         |    override var logicDeleteStrategy = t1.kronosLogicDelete()
                         |    override var allFields = t1.kronosColumns().toLinkedSet()
+                        |    override var listOfPojo: MutableList<KPojo> = mutableListOf(${range.joinToString(", ") { "t$it" }})
                         |    
                         |    fun withTotal(): PagedClause<T1, SelectFrom$n<$nthOfType>> {
                         |        return PagedClause(this)

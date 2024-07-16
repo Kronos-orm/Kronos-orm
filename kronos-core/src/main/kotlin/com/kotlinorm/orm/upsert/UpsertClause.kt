@@ -67,6 +67,8 @@ class UpsertClause<T : KPojo>(
     private var toInsertFields = linkedSetOf<Field>()
     private var toUpdateFields = linkedSetOf<Field>()
     private var onFields = linkedSetOf<Field>()
+    private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
 
     init {
         if (setUpsertFields != null) {
@@ -111,6 +113,12 @@ class UpsertClause<T : KPojo>(
      */
     fun onDuplicateKey(): UpsertClause<T> {
         onDuplicateKey = true
+        return this
+    }
+
+    fun cascade(enabled: Boolean = true, depth: Int = -1): UpsertClause<T> {
+        this.cascadeEnabled = enabled
+        this.cascadeLimit = depth
         return this
     }
 
@@ -183,7 +191,7 @@ class UpsertClause<T : KPojo>(
                         }.queryOne<Int>()
                     > 0
                 ) {
-                    pojo.update()
+                    pojo.update().cascade(cascadeEnabled , cascadeLimit)
                         .apply {
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
@@ -191,7 +199,7 @@ class UpsertClause<T : KPojo>(
                         }
                         .execute(wrapper)
                 } else {
-                    pojo.insert().execute(wrapper)
+                    pojo.insert().cascade(cascadeEnabled , cascadeLimit).execute(wrapper)
                 }
             }
         }
@@ -204,6 +212,10 @@ class UpsertClause<T : KPojo>(
 
         fun <T : KPojo> List<UpsertClause<T>>.onDuplicateKey(): List<UpsertClause<T>> {
             return map { it.onDuplicateKey() }
+        }
+
+        fun <T : KPojo> List<UpsertClause<T>>.cascade(enabled: Boolean = true, depth: Int = -1): List<UpsertClause<T>> {
+            return map { it.cascade(enabled, depth) }
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.build(): KronosActionTask {

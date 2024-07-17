@@ -3,6 +3,7 @@ package com.kotlinorm.database.mysql
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.enums.DBType
@@ -145,5 +146,12 @@ object MysqlSupport : DatabasesSupport {
         } + indexes.toAdd.map {
             "ALTER TABLE $tableName ADD ${it.type} INDEX ${it.name} (`${it.columns.joinToString("`, `")}`) USING ${it.method}"
         }
+    }
+
+    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+        val (tableName, _, toUpdateFields, toInsertFields) = conflictResolver
+        return "INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) " +
+                "VALUES (${toInsertFields.joinToString(", ") { ":$it" }}) " +
+                "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { it.equation() }}"
     }
 }

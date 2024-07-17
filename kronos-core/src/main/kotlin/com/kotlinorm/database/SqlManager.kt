@@ -5,6 +5,7 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.SqlManagerCustom.tryGetColumnCreateSqlCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetDBNameFromUrlCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetIndexCreateSqlCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetOnConflictSqlCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetSqlColumnTypeCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetTableColumnsCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetTableCreateSqlListCustom
@@ -18,6 +19,7 @@ import com.kotlinorm.database.oracle.OracleSupport
 import com.kotlinorm.database.postgres.PostgesqlSupport
 import com.kotlinorm.database.sqlite.SqliteSupport
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.DBType.*
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -27,11 +29,11 @@ import com.kotlinorm.orm.database.TableIndexDiff
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
     internal fun getDBNameFrom(wrapper: KronosDataSourceWrapper) = when (wrapper.dbType) {
-        DBType.Mysql -> wrapper.url.split("?").first().split("//")[1].split("/").last()
-        DBType.SQLite -> wrapper.url.split("//").last()
-        DBType.Oracle -> wrapper.userName
-        DBType.Mssql -> wrapper.url.split("//").last().split(";").first()
-        DBType.Postgres -> wrapper.url.split("//").last().split("/").first()
+        Mysql -> wrapper.url.split("?").first().split("//")[1].split("/").last()
+        SQLite -> wrapper.url.split("//").last()
+        Oracle -> wrapper.userName
+        Mssql -> wrapper.url.split("//").last().split(";").first()
+        Postgres -> wrapper.url.split("//").last().split("/").first()
         else -> tryGetDBNameFromUrlCustom(wrapper)
             ?: throw UnsupportedDatabaseTypeException("Unsupported database type: ${wrapper.dbType}")
     }
@@ -41,11 +43,11 @@ object SqlManager {
         type: KColumnType,
         length: Int
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getColumnType(type, length)
-        DBType.Oracle -> OracleSupport.getColumnType(type, length)
-        DBType.Mssql -> MssqlSupport.getColumnType(type, length)
-        DBType.Postgres -> PostgesqlSupport.getColumnType(type, length)
-        DBType.SQLite -> SqliteSupport.getColumnType(type, length)
+        Mysql -> MysqlSupport.getColumnType(type, length)
+        Oracle -> OracleSupport.getColumnType(type, length)
+        Mssql -> MssqlSupport.getColumnType(type, length)
+        Postgres -> PostgesqlSupport.getColumnType(type, length)
+        SQLite -> SqliteSupport.getColumnType(type, length)
         // For other database types, use the custom function if it exists, otherwise throw an exception.
         else -> tryGetSqlColumnTypeCustom(dbType, type, length)
             ?: throw RuntimeException("Unsupported database type: $dbType")
@@ -56,11 +58,11 @@ object SqlManager {
         sqlType: String,
         length: Int
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getKColumnType(sqlType, length)
-        DBType.Postgres -> PostgesqlSupport.getKColumnType(sqlType, length)
-        DBType.Oracle -> OracleSupport.getKColumnType(sqlType, length)
-        DBType.SQLite -> SqliteSupport.getKColumnType(sqlType, length)
-        DBType.Mssql -> MssqlSupport.getKColumnType(sqlType, length)
+        Mysql -> MysqlSupport.getKColumnType(sqlType, length)
+        Postgres -> PostgesqlSupport.getKColumnType(sqlType, length)
+        Oracle -> OracleSupport.getKColumnType(sqlType, length)
+        SQLite -> SqliteSupport.getKColumnType(sqlType, length)
+        Mssql -> MssqlSupport.getKColumnType(sqlType, length)
         else -> throw RuntimeException("Unsupported database type: $dbType")
     }
 
@@ -68,11 +70,11 @@ object SqlManager {
         dbType: DBType,
         column: Field
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getColumnCreateSql(dbType, column)
-        DBType.Postgres -> PostgesqlSupport.getColumnCreateSql(dbType, column)
-        DBType.Oracle -> OracleSupport.getColumnCreateSql(dbType, column)
-        DBType.SQLite -> SqliteSupport.getColumnCreateSql(dbType, column)
-        DBType.Mssql -> MssqlSupport.getColumnCreateSql(dbType, column)
+        Mysql -> MysqlSupport.getColumnCreateSql(dbType, column)
+        Postgres -> PostgesqlSupport.getColumnCreateSql(dbType, column)
+        Oracle -> OracleSupport.getColumnCreateSql(dbType, column)
+        SQLite -> SqliteSupport.getColumnCreateSql(dbType, column)
+        Mssql -> MssqlSupport.getColumnCreateSql(dbType, column)
         else -> tryGetColumnCreateSqlCustom(dbType, column)
             ?: throw RuntimeException("Unsupported database type: $dbType")
     }
@@ -82,11 +84,11 @@ object SqlManager {
         tableName: String,
         kTableIndex: KTableIndex
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
-        DBType.Postgres -> PostgesqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
-        DBType.Oracle -> OracleSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
-        DBType.SQLite -> SqliteSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
-        DBType.Mssql -> MssqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
+        Mysql -> MysqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
+        Postgres -> PostgesqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
+        Oracle -> OracleSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
+        SQLite -> SqliteSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
+        Mssql -> MssqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
         else -> tryGetIndexCreateSqlCustom(dbType, tableName, kTableIndex)
             ?: throw RuntimeException("Unsupported database type: $dbType")
     }
@@ -97,11 +99,11 @@ object SqlManager {
         columns: List<Field>,
         indexes: List<KTableIndex>
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
-        DBType.Postgres -> PostgesqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
-        DBType.Oracle -> OracleSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
-        DBType.SQLite -> SqliteSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
-        DBType.Mssql -> MssqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        Mysql -> MysqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        Postgres -> PostgesqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        Oracle -> OracleSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        SQLite -> SqliteSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        Mssql -> MssqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
         else -> tryGetTableCreateSqlListCustom(dbType, tableName, columns, indexes)
             ?: throw RuntimeException("Unsupported database type: $dbType")
     }
@@ -109,11 +111,11 @@ object SqlManager {
     fun getTableExistenceSql(
         dbType: DBType
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getTableExistenceSql(dbType)
-        DBType.Postgres -> PostgesqlSupport.getTableExistenceSql(dbType)
-        DBType.Oracle -> OracleSupport.getTableExistenceSql(dbType)
-        DBType.SQLite -> SqliteSupport.getTableExistenceSql(dbType)
-        DBType.Mssql -> MssqlSupport.getTableExistenceSql(dbType)
+        Mysql -> MysqlSupport.getTableExistenceSql(dbType)
+        Postgres -> PostgesqlSupport.getTableExistenceSql(dbType)
+        Oracle -> OracleSupport.getTableExistenceSql(dbType)
+        SQLite -> SqliteSupport.getTableExistenceSql(dbType)
+        Mssql -> MssqlSupport.getTableExistenceSql(dbType)
         else -> tryGetTableExistenceSqlCustom(dbType)
             ?: throw RuntimeException("Unsupported database type: $dbType")
     }
@@ -122,11 +124,11 @@ object SqlManager {
         dbType: DBType,
         tableName: String
     ) = when (dbType) {
-        DBType.Mysql -> MysqlSupport.getTableDropSql(dbType, tableName)
-        DBType.Postgres -> PostgesqlSupport.getTableDropSql(dbType, tableName)
-        DBType.Oracle -> OracleSupport.getTableDropSql(dbType, tableName)
-        DBType.SQLite -> SqliteSupport.getTableDropSql(dbType, tableName)
-        DBType.Mssql -> MssqlSupport.getTableDropSql(dbType, tableName)
+        Mysql -> MysqlSupport.getTableDropSql(dbType, tableName)
+        Postgres -> PostgesqlSupport.getTableDropSql(dbType, tableName)
+        Oracle -> OracleSupport.getTableDropSql(dbType, tableName)
+        SQLite -> SqliteSupport.getTableDropSql(dbType, tableName)
+        Mssql -> MssqlSupport.getTableDropSql(dbType, tableName)
         else -> tryGetTableDropSqlCustom(dbType, tableName)
             ?: throw RuntimeException("Unsupported database type: $dbType")
     }
@@ -135,11 +137,11 @@ object SqlManager {
         dataSource: KronosDataSourceWrapper,
         tableName: String
     ) = when (dataSource.dbType) {
-        DBType.Mysql -> MysqlSupport.getTableColumns(dataSource, tableName)
-        DBType.Postgres -> PostgesqlSupport.getTableColumns(dataSource, tableName)
-        DBType.Oracle -> OracleSupport.getTableColumns(dataSource, tableName)
-        DBType.SQLite -> SqliteSupport.getTableColumns(dataSource, tableName)
-        DBType.Mssql -> MssqlSupport.getTableColumns(dataSource, tableName)
+        Mysql -> MysqlSupport.getTableColumns(dataSource, tableName)
+        Postgres -> PostgesqlSupport.getTableColumns(dataSource, tableName)
+        Oracle -> OracleSupport.getTableColumns(dataSource, tableName)
+        SQLite -> SqliteSupport.getTableColumns(dataSource, tableName)
+        Mssql -> MssqlSupport.getTableColumns(dataSource, tableName)
         else -> tryGetTableColumnsCustom(dataSource, tableName)
             ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
@@ -148,11 +150,11 @@ object SqlManager {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
     ) = when (dataSource.dbType) {
-        DBType.Mysql -> MysqlSupport.getTableIndexes(dataSource, tableName)
-        DBType.Postgres -> PostgesqlSupport.getTableIndexes(dataSource, tableName)
-        DBType.Oracle -> OracleSupport.getTableIndexes(dataSource, tableName)
-        DBType.SQLite -> SqliteSupport.getTableIndexes(dataSource, tableName)
-        DBType.Mssql -> MssqlSupport.getTableIndexes(dataSource, tableName)
+        Mysql -> MysqlSupport.getTableIndexes(dataSource, tableName)
+        Postgres -> PostgesqlSupport.getTableIndexes(dataSource, tableName)
+        Oracle -> OracleSupport.getTableIndexes(dataSource, tableName)
+        SQLite -> SqliteSupport.getTableIndexes(dataSource, tableName)
+        Mssql -> MssqlSupport.getTableIndexes(dataSource, tableName)
         else -> tryGetTableIndexesCustom(dataSource, tableName)
             ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
@@ -163,12 +165,25 @@ object SqlManager {
         columns: TableColumnDiff,
         indexes: TableIndexDiff
     ) = when (dataSource.dbType) {
-        DBType.Mysql -> MysqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
-        DBType.Postgres -> PostgesqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
-        DBType.Oracle -> OracleSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
-        DBType.SQLite -> SqliteSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
-        DBType.Mssql -> MssqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        Mysql -> MysqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        Postgres -> PostgesqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        Oracle -> OracleSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        SQLite -> SqliteSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        Mssql -> MssqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
         else -> tryGetTableSyncSqlListCustom(dataSource, tableName, columns, indexes)
+            ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getOnConflictSql(
+        dataSource: KronosDataSourceWrapper,
+        conflictResolver: ConflictResolver
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getOnConflictSql(conflictResolver)
+        Postgres -> PostgesqlSupport.getOnConflictSql(conflictResolver)
+        Oracle -> OracleSupport.getOnConflictSql(conflictResolver)
+        SQLite -> SqliteSupport.getOnConflictSql(conflictResolver)
+        Mssql -> MssqlSupport.getOnConflictSql(conflictResolver)
+        else -> tryGetOnConflictSqlCustom(dataSource, conflictResolver)
             ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 

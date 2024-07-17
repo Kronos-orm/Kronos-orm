@@ -3,6 +3,7 @@ package com.kotlinorm.database.mssql
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
@@ -248,5 +249,20 @@ object MssqlSupport : DatabasesSupport {
         } + indexes.toAdd.map {
             getIndexCreateSql(dbType, tableName, it)
         }
+    }
+
+    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+        val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
+        return """
+            IF EXISTS (SELECT 1 FROM $tableName WHERE ${onFields.joinToString(" AND ") { it.equation() }})
+                BEGIN 
+                    UPDATE $tableName SET ${toUpdateFields.joinToString { it.equation() }}
+                END
+            ELSE 
+                BEGIN
+                    INSERT INTO $tableName (${toInsertFields.joinToString { it.quoted() }})
+                    VALUES (${toInsertFields.joinToString(", ") { ":$it" }})
+                END
+    """
     }
 }

@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
@@ -7,17 +23,35 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.*
-import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.select.select
-import com.kotlinorm.utils.Extensions.patchTo
-import kotlin.reflect.KMutableProperty
+import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
 
 /**
- * 用于构建级联选择子句的对象。
- * 该对象提供了一种方式来生成针对KPojo对象的级联查询任务。
+ * Defines the logic for building and executing cascade join clauses in the context of ORM operations.
+ *
+ * This object encapsulates methods for constructing and executing tasks that perform cascading operations
+ * on database entities. It supports operations where cascading is conditional based on the presence of
+ * cascade flags and limit constraints. The primary functionality includes generating tasks for cascading
+ * operations and setting values on target entities based on the results of these operations.
  */
-
 object CascadeJoinClause {
+    /**
+     * Builds a task for performing cascading operations based on the provided parameters.
+     *
+     * This function decides whether to proceed with generating a cascading task based on the `cascade` flag
+     * and the `limit` parameter. If cascading is enabled and the limit is not zero, it generates a task
+     * that performs cascading operations. Otherwise, it returns the root task without modifications.
+     *
+     * 根据提供的参数构建执行级联操作的任务。
+     *
+     * 此函数根据 `cascade` 标志 和 `limit` 参数决定是否继续生成级联任务。如果启用了级联且限制不为零，它将生成执行级联操作的任务。否则，它将返回不经修改的根任务。
+     *
+     * @param cascade Indicates whether cascading should be performed.
+     * @param limit The maximum depth of cascading. A limit of 0 indicates no cascading.
+     * @param listOfPojo A list of [KPojo] instances on which cascading operations are to be performed.
+     * @param rootTask The root [KronosAtomicQueryTask] from which cascading operations may be initiated.
+     * @param selectFields A map of field names to [Field] instances that are to be considered for cascading operations.
+     * @return A [KronosQueryTask] that represents the task to be executed, potentially including cascading operations.
+     */
     fun build(
         cascade: Boolean,
         limit: Int,
@@ -76,31 +110,5 @@ object CascadeJoinClause {
                 }
             }
         }
-    }
-
-    private fun setValues(
-        pojo: KPojo,
-        prop: KMutableProperty<*>,
-        validRef: ValidRef,
-        limit: Int,
-        wrapper: KronosDataSourceWrapper
-    ) { // 将KPojo转为Map，该map将用于级联查询
-        val dataMap = pojo.toDataMap()
-        val listOfPair = validRef.reference.targetFields.mapIndexed { index, targetColumn ->
-            val targetColumnValue = dataMap[targetColumn] ?: return
-            val originalColumn = validRef.reference.referenceFields[index]
-            originalColumn to targetColumnValue
-        }
-        val refPojo = validRef.refPojo.patchTo(
-            validRef.refPojo::class,
-            *listOfPair.toTypedArray()
-        ) // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
-
-        pojo[prop] = if (prop.isIterable) { // 判断属性是否为集合
-            refPojo.select().cascade(true, limit - 1).queryList(wrapper) // 查询级联的POJO
-        } else {
-            refPojo.select().cascade(true, limit - 1).queryOneOrNull(wrapper) // 查询级联的POJO
-        }
-
     }
 }

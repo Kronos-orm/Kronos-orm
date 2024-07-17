@@ -3,6 +3,7 @@ package com.kotlinorm.database.postgres
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
@@ -13,6 +14,7 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.utils.Extensions.rmRedundantBlk
 
 object PostgesqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
@@ -185,5 +187,25 @@ object PostgesqlSupport : DatabasesSupport {
         } + indexes.toAdd.map {
             getIndexCreateSql(DBType.Postgres, "\"public\".$tableName", it)
         }
+    }
+
+    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+        val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
+        return """
+            INSERT INTO $tableName 
+                (${toInsertFields.joinToString { it.quoted() }})
+            SELECT 
+               ${toInsertFields.joinToString(", ") { ":$it" }}
+            WHERE NOT EXISTS ( 
+               SELECT 1 FROM $tableName
+               WHERE ${onFields.joinToString(" AND ") { it.equation() }}
+            );
+            
+            UPDATE $tableName
+            SET
+               ${toUpdateFields.joinToString(", ") { it.equation() }}
+            WHERE
+               ${onFields.joinToString(" AND ") { it.equation() }};
+        """.rmRedundantBlk()
     }
 }

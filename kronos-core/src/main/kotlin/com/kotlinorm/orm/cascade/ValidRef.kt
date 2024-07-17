@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
@@ -12,6 +28,10 @@ import kotlin.reflect.KFunction
  *
  * This data class encapsulates a field, its corresponding reference, and the referenced POJO. It is primarily used
  * in operations that require knowledge of the relationships between different entities in the ORM, such as cascading deletes.
+ *
+ * ORM 操作上下文中的有效引用。
+ *
+ * 此数据类封装了一个字段、其对应的引用以及引用的 POJO。它主要用于需要了解 ORM 中不同实体之间关系的操作，例如级联删除。
  *
  * @property field The [Field] instance representing the field in the POJO that holds the reference.
  * @property reference The [KReference] instance representing the reference details such as the target table and columns.
@@ -71,7 +91,7 @@ private val lruCacheOfConstructor = LRUCache<String, KFunction<*>>(128) // 用�
  * If an instance of the specified class name already exists in the cache, it is returned directly to avoid redundant instantiation.
  * Otherwise, a new instance is created using reflection, added to the cache, and then returned.
  *
- *  从类名字符串实例化对象，利用缓存来提高性能。
+ * 从类名字符串实例化对象，利用缓存来提高性能。
  *
  * 此可空字符串对象的扩展函数尝试实例化字符串指定的类的对象。
  * 如果字符串为空或找不到该类，则会抛出 UnsupportedOperationException。

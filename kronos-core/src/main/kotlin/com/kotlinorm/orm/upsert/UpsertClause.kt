@@ -24,10 +24,10 @@ import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.enums.DBType
+import com.kotlinorm.database.ConflictResolver
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
@@ -128,7 +128,6 @@ class UpsertClause<T : KPojo>(
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
-        val dbType = dataSource.dbType
 
         if (isExcept) {
             toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet<Field>
@@ -151,31 +150,15 @@ class UpsertClause<T : KPojo>(
         }.toMutableMap()
 
         if (onDuplicateKey) {
-            val sql = when (dbType) {
-                DBType.Mysql, DBType.OceanBase -> mysqlOnDuplicateSql(
-                    ConflictResolver(
+            return KronosAtomicActionTask(
+                SqlManager.getOnConflictSql(
+                    dataSource, ConflictResolver(
                         tableName,
                         onFields,
                         toUpdateFields,
                         toInsertFields
                     )
-                )
-
-                else -> {
-                    val pks = pojo.kronosColumns().filter { it.primaryKey }.toLinkedSet()
-                    val conflictResolver = ConflictResolver(tableName, pks, toUpdateFields, toInsertFields)
-                    when (dbType) {
-                        DBType.Postgres -> postgresOnExistSql(conflictResolver)
-                        DBType.Oracle -> oracleOnConflictSql(conflictResolver)
-                        DBType.SQLite -> sqliteOnConflictSql(conflictResolver)
-                        DBType.Mssql -> sqlServerOnExistSql(conflictResolver)
-                        else -> throw UnsupportedDatabaseTypeException()
-                    }
-                }
-            }
-
-            return KronosAtomicActionTask(
-                sql,
+                ),
                 paramMap,
                 operationType = KOperationType.UPSERT
             ).toKronosActionTask()
@@ -191,7 +174,7 @@ class UpsertClause<T : KPojo>(
                         }.queryOne<Int>()
                     > 0
                 ) {
-                    pojo.update().cascade(cascadeEnabled , cascadeLimit)
+                    pojo.update().cascade(cascadeEnabled, cascadeLimit)
                         .apply {
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
@@ -199,7 +182,7 @@ class UpsertClause<T : KPojo>(
                         }
                         .execute(wrapper)
                 } else {
-                    pojo.insert().cascade(cascadeEnabled , cascadeLimit).execute(wrapper)
+                    pojo.insert().cascade(cascadeEnabled, cascadeLimit).execute(wrapper)
                 }
             }
         }

@@ -187,4 +187,28 @@ object SqlManager {
             ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 
+    fun getInsertSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        columns: List<Field>
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getInsertSql(dataSource, tableName, columns)
+        Postgres -> PostgesqlSupport.getInsertSql(dataSource, tableName, columns)
+        Oracle -> OracleSupport.getInsertSql(dataSource, tableName, columns)
+        SQLite -> SqliteSupport.getInsertSql(dataSource, tableName, columns)
+        Mssql -> MssqlSupport.getInsertSql(dataSource, tableName, columns)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun Field.quoted(
+        dataSource: KronosDataSourceWrapper,
+    ) = when (dataSource.dbType) {
+        Mysql -> "${MysqlSupport.quotes.first}$columnName${MysqlSupport.quotes.second}"
+        Postgres -> "${PostgesqlSupport.quotes.first}$columnName${PostgesqlSupport.quotes.second}"
+        Oracle -> "${OracleSupport.quotes.first}$columnName${OracleSupport.quotes.second}"
+        SQLite -> "${SqliteSupport.quotes.first}$columnName${SqliteSupport.quotes.second}"
+        Mssql -> "${MssqlSupport.quotes.first}$columnName${MssqlSupport.quotes.second}"
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
 }

@@ -17,6 +17,8 @@ import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.utils.Extensions.rmRedundantBlk
 
 object PostgesqlSupport : DatabasesSupport {
+    override var quotes = Pair("\"", "\"")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "BOOLEAN"
@@ -193,19 +195,24 @@ object PostgesqlSupport : DatabasesSupport {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
             INSERT INTO $tableName 
-                (${toInsertFields.joinToString { it.quoted() }})
+                (${toInsertFields.joinToString { quote(it) }})
             SELECT 
                ${toInsertFields.joinToString(", ") { ":$it" }}
             WHERE NOT EXISTS ( 
                SELECT 1 FROM $tableName
-               WHERE ${onFields.joinToString(" AND ") { it.equation() }}
+               WHERE ${onFields.joinToString(" AND ") { equation(it) }}
             );
             
             UPDATE $tableName
             SET
-               ${toUpdateFields.joinToString(", ") { it.equation() }}
+               ${toUpdateFields.joinToString(", ") { equation(it) }}
             WHERE
-               ${onFields.joinToString(" AND ") { it.equation() }};
+               ${onFields.joinToString(" AND ") { equation(it) }};
         """.rmRedundantBlk()
     }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+
+
 }

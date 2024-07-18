@@ -50,11 +50,6 @@ class Field(
         return name
     }
 
-    fun quoted(showTable: Boolean = false): String =
-        "`$tableName`.`$columnName`".takeIf { showTable } ?: "`$columnName`"
-
-    fun equation(showTable: Boolean = false): String = "${quoted(showTable)} = :$name"
-
     /**
      * Check if this object is equal to another object.
      *

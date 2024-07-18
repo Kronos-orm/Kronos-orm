@@ -116,7 +116,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      *
      * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
      */
-    fun build(): KronosActionTask {
+    fun build(wrapper: KronosDataSourceWrapper?): KronosActionTask {
         if (condition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
             condition = allFields.filter { it.isColumn }.mapNotNull { field ->

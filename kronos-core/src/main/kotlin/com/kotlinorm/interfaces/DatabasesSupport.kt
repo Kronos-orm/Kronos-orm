@@ -12,6 +12,15 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 
 interface DatabasesSupport {
+    var quotes: Pair<String, String>
+
+    fun quote(str: String): String = "${quotes.first}$str${quotes.second}"
+
+    fun quote(field: Field, showTable: Boolean = false): String =
+        "${if (showTable) quote(field.tableName) + "." else ""}${quote(field.columnName)}"
+
+    fun equation(field: Field, showTable: Boolean = false): String = "${quote(field, showTable)} = :${field.name}"
+
     fun getColumnType(type: KColumnType, length: Int): String
 
     fun getKColumnType(type: String, length: Int = 0): KColumnType = KColumnType.fromString(type)
@@ -75,4 +84,10 @@ interface DatabasesSupport {
     ): List<String>
 
     fun getOnConflictSql(conflictResolver: ConflictResolver): String
+
+    fun getInsertSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        columns: List<Field>
+    ): String
 }

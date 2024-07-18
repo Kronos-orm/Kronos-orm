@@ -15,6 +15,7 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 
 object MssqlSupport : DatabasesSupport {
+    override var quotes = Pair("[", "]")
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             KColumnType.BIT -> "BIT"
@@ -254,15 +255,18 @@ object MssqlSupport : DatabasesSupport {
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            IF EXISTS (SELECT 1 FROM $tableName WHERE ${onFields.joinToString(" AND ") { it.equation() }})
+            IF EXISTS (SELECT 1 FROM $tableName WHERE ${onFields.joinToString(" AND ") { equation(it) }})
                 BEGIN 
-                    UPDATE $tableName SET ${toUpdateFields.joinToString { it.equation() }}
+                    UPDATE $tableName SET ${toUpdateFields.joinToString { equation(it) }}
                 END
             ELSE 
                 BEGIN
-                    INSERT INTO $tableName (${toInsertFields.joinToString { it.quoted() }})
+                    INSERT INTO $tableName (${toInsertFields.joinToString { quote(it) }})
                     VALUES (${toInsertFields.joinToString(", ") { ":$it" }})
                 END
     """
     }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO [dbo].[$tableName] (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
 }

@@ -17,6 +17,8 @@ import com.kotlinorm.utils.Extensions.rmRedundantBlk
 import java.math.BigDecimal
 
 object OracleSupport : DatabasesSupport {
+    override var quotes = Pair("\"", "\"")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "NUMBER(1)"
@@ -224,7 +226,7 @@ object OracleSupport : DatabasesSupport {
         return """
             BEGIN
                 INSERT INTO "$tableName" 
-                    (${toInsertFields.joinToString { it.quoted() }})
+                    (${toInsertFields.joinToString { quote(it) }})
                 VALUES 
                 (${toInsertFields.joinToString(", ") { ":$it" }}) 
                 EXCEPTION 
@@ -233,10 +235,17 @@ object OracleSupport : DatabasesSupport {
                     THEN 
                         UPDATE "$tableName"
                         SET 
-                            ${toUpdateFields.joinToString(", ") { it.equation() }}
+                            ${toUpdateFields.joinToString(", ") { equation(it) }}
                         WHERE 
-                            ${onFields.joinToString(" AND ") { it.equation() }};
+                            ${onFields.joinToString(" AND ") { equation(it) }};
             END;
         """.rmRedundantBlk()
     }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName.uppercase())} (${
+            columns.joinToString {
+                quote(it.columnName.uppercase())
+            }
+        }) VALUES (${columns.joinToString { ":$it" }})"
 }

@@ -15,6 +15,8 @@ import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.utils.Extensions.rmRedundantBlk
 
 object SqliteSupport : DatabasesSupport {
+    override var quotes = Pair("\"", "\"")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT, TINYINT, SMALLINT, INT, MEDIUMINT, BIGINT, SERIAL, YEAR, SET -> "INTEGER"
@@ -145,13 +147,16 @@ object SqliteSupport : DatabasesSupport {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
             INSERT OR REPLACE INTO "$tableName" 
-                (${toInsertFields.joinToString { it.quoted() }}) 
+                (${toInsertFields.joinToString { quote(it) }}) 
             VALUES 
                 (${toInsertFields.joinToString(", ") { ":$it" }}) 
             ON CONFLICT 
-                (${onFields.joinToString(", ") { it.quoted() }})
+                (${onFields.joinToString(", ") { quote(it) }})
             DO UPDATE SET
-                ${toUpdateFields.joinToString(", ") { it.equation() }}
+                ${toUpdateFields.joinToString(", ") { equation(it) }}
         """.rmRedundantBlk()
     }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
 }

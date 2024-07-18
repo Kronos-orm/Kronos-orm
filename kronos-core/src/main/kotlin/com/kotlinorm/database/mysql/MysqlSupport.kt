@@ -15,6 +15,8 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 
 object MysqlSupport : DatabasesSupport {
+    override var quotes = Pair("`", "`")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "TINYINT(1)"
@@ -76,16 +78,13 @@ object MysqlSupport : DatabasesSupport {
                 WHERE 
                  c.TABLE_SCHEMA = DATABASE() AND 
                  c.TABLE_NAME = :tableName
-            """.trimIndent(),
-                mapOf("tableName" to tableName)
+            """.trimIndent(), mapOf("tableName" to tableName)
             )
         ).map {
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
                 type = getKotlinColumnType(
-                    DBType.Mysql,
-                    it["DATA_TYPE"].toString(),
-                    (it["LENGTH"] as Long? ?: 0).toInt()
+                    DBType.Mysql, it["DATA_TYPE"].toString(), (it["LENGTH"] as Long? ?: 0).toInt()
                 ),
                 length = (it["LENGTH"] as Long? ?: 0).toInt(),
                 tableName = tableName,
@@ -150,8 +149,13 @@ object MysqlSupport : DatabasesSupport {
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, _, toUpdateFields, toInsertFields) = conflictResolver
-        return "INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) " +
-                "VALUES (${toInsertFields.joinToString(", ") { ":$it" }}) " +
-                "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { it.equation() }}"
+        return "INSERT INTO `$tableName` (${toInsertFields.joinToString { quote(it) }}) " + "VALUES (${
+            toInsertFields.joinToString(
+                ", "
+            ) { ":$it" }
+        }) " + "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { equation(it) }}"
     }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO `$tableName` (${columns.joinToString { quote(it) }}) " + "VALUES (${columns.joinToString { ":$it" }})"
 }

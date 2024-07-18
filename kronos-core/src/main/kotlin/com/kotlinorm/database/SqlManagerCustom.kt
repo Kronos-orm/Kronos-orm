@@ -1,4 +1,4 @@
-package com.kotlinorm.sql
+package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
@@ -26,6 +26,9 @@ object SqlManagerCustom {
     private var listOfTableIndexesCustom: MutableList<(dataSource: KronosDataSourceWrapper, tableName: String) -> List<KTableIndex>?> =
         mutableListOf()
     private var listOfTableSyncSqlCustom: MutableList<(dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff) -> List<String>?> =
+        mutableListOf()
+
+    private var listOfOnConflictSqlCustom: MutableList<(dataSource: KronosDataSourceWrapper, conflictResolver: ConflictResolver) -> String?> =
         mutableListOf()
 
     fun addDBNameFromUrlCustom(function: (dataSource: KronosDataSourceWrapper) -> String?) {
@@ -66,6 +69,10 @@ object SqlManagerCustom {
 
     fun addTableSyncSqlCustom(function: (dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff) -> List<String>?) {
         listOfTableSyncSqlCustom.add(function)
+    }
+
+    fun addOnConflictSqlCustom(function: (dataSource: KronosDataSourceWrapper, conflictResolver: ConflictResolver) -> String?) {
+        listOfOnConflictSqlCustom.add(function)
     }
 
     fun tryGetDBNameFromUrlCustom(wrapper: KronosDataSourceWrapper): String? {
@@ -172,6 +179,19 @@ object SqlManagerCustom {
         for (customFunction in listOfTableSyncSqlCustom) {
             val result = customFunction(dataSource, tableName, columns, indexes)
             if (!result.isNullOrEmpty()) {
+                return result
+            }
+        }
+        return null
+    }
+
+    fun tryGetOnConflictSqlCustom(
+        dataSource: KronosDataSourceWrapper,
+        conflictResolver: ConflictResolver
+    ): String? {
+        for (customFunction in listOfOnConflictSqlCustom) {
+            val result = customFunction(dataSource, conflictResolver)
+            if (result != null) {
                 return result
             }
         }

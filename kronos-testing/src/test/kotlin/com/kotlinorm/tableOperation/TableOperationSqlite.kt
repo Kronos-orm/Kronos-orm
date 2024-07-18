@@ -4,14 +4,14 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.database.SqlManager.columnCreateDefSql
+import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.sql.SqlManager.columnCreateDefSql
-import com.kotlinorm.sql.SqlManager.getTableColumns
 import com.kotlinorm.tableOperation.beans.OracleUser
 import com.kotlinorm.tableOperation.beans.SqlliteUser
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -27,7 +27,6 @@ class TableOperationSqlite {
         driverClassName = "org.sqlite.JDBC" // SQLite驱动类名
         url = "jdbc:sqlite:D:/develop/sqllite/db/myDatabase.db" // SQLite数据库文件路径
         maxIdle = 10 // 最大空闲连接数
-        maxActive = 10 // 最大活动连接数
     }
     val user = SqlliteUser()
 

@@ -128,7 +128,11 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                     ps.setObject(index + 1, any)
                 }
                 rs = ps.executeQuery()
-                return rs.toList(kClass.java)
+                val list = mutableListOf<Any>()
+                while (rs.next()) {
+                    list.add(rs.getObject(1, kClass.java))
+                }
+                return list
             } catch (e: SQLException) {
                 defaultLogger(this).error(
                     kMsgOf(
@@ -202,10 +206,8 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
             } else {
                 getTypeSafeValue(
                     kClass.qualifiedName!!,
-                    kClass.supertypes.map { it.toString() },
                     map.values.first(),
-                    null,
-                    map.values.first()::class
+                    kClass.supertypes.map { it.toString() }
                 )
             }
         }
@@ -310,7 +312,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
         return transact(block) as T
     }
 
-    private fun ResultSet.toList(javaClass: Class<*>? = null): List<Map<String, Any>> {
+    private fun ResultSet.toList(): List<Map<String, Any>> {
         val meta = metaData
         val columnCount = meta.columnCount
         val list = mutableListOf<MutableMap<String, Any>>()
@@ -327,11 +329,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 val mapOfLong = mutableMapOf<String, Any>()
                 for (i in 1..meta.columnCount) {
                     if (indexOfLong.contains(i)) {
-                        if (javaClass != null) {
-                            getObject(i, javaClass)
-                        } else {
-                            getObject(i)
-                        }?.let {
+                        getObject(i)?.let {
                             mapOfLong[meta.getColumnLabel(i)] = it
                         }
                     }
@@ -344,11 +342,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 val mapOfOther = mutableMapOf<String, Any>()
                 for (i in 1..meta.columnCount) {
                     if (!indexOfLong.contains(i)) {
-                        if (javaClass != null) {
-                            getObject(i, javaClass)
-                        } else {
-                            getObject(i)
-                        }?.let {
+                        getObject(i)?.let {
                             mapOfOther[meta.getColumnLabel(i)] = it
                         }
                     }

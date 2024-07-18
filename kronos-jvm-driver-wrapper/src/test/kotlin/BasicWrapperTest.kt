@@ -1,7 +1,7 @@
 import com.kotlinorm.Kronos
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 
 class BasicWrapperTest {
     private val ds = BasicDataSource().apply {

@@ -23,8 +23,8 @@ data class TbUser(
     @UpdateTime()
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: Date? = null,
-) : KPojo()
+) : KPojo
 
 data class Ha(
     val id: Int? = null
-) : KPojo()
+) : KPojo

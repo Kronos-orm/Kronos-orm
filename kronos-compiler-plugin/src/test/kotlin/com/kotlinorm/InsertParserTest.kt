@@ -37,7 +37,7 @@ class InsertParserTest {
           var id: Int? = null,
           var username: String? = null,
           var gender: Int? = null
-      ) : KPojo()
+      ) : KPojo
 
       fun main() {
         Kronos.apply {

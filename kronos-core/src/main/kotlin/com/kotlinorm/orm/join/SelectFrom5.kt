@@ -17,7 +17,7 @@
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.pagination.PagedClause
+import com.kotlinorm.orm.pagination.PagedClause
 import com.kotlinorm.utils.toLinkedSet
 
 class SelectFrom5<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo>(
@@ -28,6 +28,7 @@ class SelectFrom5<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo>(
     override var paramMap = t1.toDataMap()
     override var logicDeleteStrategy = t1.kronosLogicDelete()
     override var allFields = t1.kronosColumns().toLinkedSet()
+    override var listOfPojo: MutableList<KPojo> = mutableListOf(t1, t2, t3, t4, t5)
     
     fun withTotal(): PagedClause<T1, SelectFrom5<T1, T2, T3, T4, T5>> {
         return PagedClause(this)

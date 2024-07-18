@@ -5,12 +5,12 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.SqlManager.columnCreateDefSql
+import com.kotlinorm.database.SqlManager.getDBNameFrom
+import com.kotlinorm.database.SqlManager.getTableExistenceSql
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.sql.SqlManager.columnCreateDefSql
-import com.kotlinorm.sql.SqlManager.getDBNameFrom
-import com.kotlinorm.sql.SqlManager.getTableExistenceSql
 
 
 /**

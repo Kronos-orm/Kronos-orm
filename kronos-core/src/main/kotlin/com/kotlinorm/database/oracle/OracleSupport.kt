@@ -1,8 +1,11 @@
-package com.kotlinorm.sql.oracle
+package com.kotlinorm.database.oracle
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.ConflictResolver
+import com.kotlinorm.database.SqlManager.getDBNameFrom
+import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -10,8 +13,7 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.sql.SqlManager.getDBNameFrom
-import com.kotlinorm.sql.SqlManager.getKotlinColumnType
+import com.kotlinorm.utils.Extensions.rmRedundantBlk
 import java.math.BigDecimal
 
 object OracleSupport : DatabasesSupport {
@@ -215,5 +217,26 @@ object OracleSupport : DatabasesSupport {
                 }
             })"
         }
+    }
+
+    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+        val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
+        return """
+            BEGIN
+                INSERT INTO "$tableName" 
+                    (${toInsertFields.joinToString { it.quoted() }})
+                VALUES 
+                (${toInsertFields.joinToString(", ") { ":$it" }}) 
+                EXCEPTION 
+                    WHEN 
+                        DUP_VAL_ON_INDEX 
+                    THEN 
+                        UPDATE "$tableName"
+                        SET 
+                            ${toUpdateFields.joinToString(", ") { it.equation() }}
+                        WHERE 
+                            ${onFields.joinToString(" AND ") { it.equation() }};
+            END;
+        """.rmRedundantBlk()
     }
 }

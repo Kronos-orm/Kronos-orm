@@ -19,8 +19,8 @@ package com.kotlinorm.utils
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.enums.AND
 import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.enums.ConditionType.Companion.And
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -31,6 +31,16 @@ object Extensions {
     }
 
     fun Map<String, Any?>.mapperTo(kClass: KClass<KPojo>): Any {
+        return kClass.createInstance().fromMapData(this)
+    }
+
+    @JvmName("safeMapperToOutKClass")
+    fun Map<String, Any?>.safeMapperTo(kClass: KClass<out KPojo>): Any {
+        return kClass.createInstance().safeFromMapData(this)
+    }
+
+    @JvmName("mapperToOutKClass")
+    fun Map<String, Any?>.mapperTo(kClass: KClass<out KPojo>): Any {
         return kClass.createInstance().fromMapData(this)
     }
 
@@ -58,8 +68,21 @@ object Extensions {
         return K::class.createInstance().fromMapData(toDataMap())
     }
 
+    fun KPojo.patchTo(kClass: KClass<KPojo>, vararg data: Pair<String, Any?>): KPojo {
+        return this.toDataMap().apply {
+            data.forEach { (k, v) -> this[k] = v }
+        }.mapperTo(kClass) as KPojo
+    }
+
+    @JvmName("mapperPatchToOutKClass")
+    fun KPojo.patchTo(kClass: KClass<out KPojo>, vararg data: Pair<String, Any?>): KPojo {
+        return this.toDataMap().apply {
+            data.forEach { (k, v) -> this[k] = v }
+        }.mapperTo(kClass) as KPojo
+    }
+
     internal fun List<Criteria>.toCriteria(): Criteria {
-        return Criteria(type = AND, children = this.toMutableList())
+        return Criteria(type = And, children = this.toMutableList())
     }
 
     internal infix fun Field.eq(value: Any?): Criteria {

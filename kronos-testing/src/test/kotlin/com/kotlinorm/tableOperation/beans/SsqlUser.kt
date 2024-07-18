@@ -33,4 +33,4 @@ data class SsqlUser(
     var deleted: Boolean? = null,
     @ColumnType(XML)
     var xml: String? = null
-) : KPojo()
+) : KPojo

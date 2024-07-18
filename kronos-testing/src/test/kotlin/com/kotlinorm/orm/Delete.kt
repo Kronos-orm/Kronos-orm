@@ -30,7 +30,7 @@ class Delete {
 
     @Test
     fun testDelete2() {
-        val (sql, paramMap) = user.delete().where().build()
+        val (sql, paramMap) = user.delete().build()
         //delete from tb_user where id = 1 and deleted = 0
         assertEquals("DELETE FROM `tb_user` WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1), paramMap)
@@ -75,38 +75,38 @@ class Delete {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
-        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender1` = :gender", sql)
         assertEquals(mapOf("username" to "John", "gender" to 0), paramMap)
     }
 
     @Test
     fun testDeleteArray() {
-        val (sql, paramMapArr) = arrayOf(user, testUser).delete().where {
+        val (sql, _, list) = arrayOf(user, testUser).delete().where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
-        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender1` = :gender", sql)
         assertEquals(
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap.toMap() }
 
         )
     }
 
     @Test
     fun testDeleteIter() {
-        val (sql, paramMapArr) = listOf(user, testUser).delete().where {
+        val (sql, _, list) = listOf(user, testUser).delete().where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
-        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender1` = :gender", sql)
         assertEquals(
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
                 mapOf("username" to "John", "gender" to 0)
-            ).toList(), paramMapArr!!.toList()
+            ).toList(), list.map { it.paramMap.toMap() }
 
         )
     }

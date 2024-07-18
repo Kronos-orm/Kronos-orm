@@ -6,9 +6,8 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
-import com.kotlinorm.utils.query
 import com.kotlinorm.tableOperation.beans.MysqlUser
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -18,7 +17,7 @@ class Select {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "rootroot"
+        password = "******"
     }
 
     init {
@@ -85,19 +84,21 @@ class Select {
     @Test
     fun testPage() {
 
-        val (cnt, data) = user.select { }.page(1, 10).withTotal().build()
+        val (total, task) = user.select { }.page(1, 10).withTotal().build()
+        val (sql, paramMap) = task
+        val (sql2, paramMap2) = total
 
         assertEquals(
             "SELECT `id`, `username`, `gender`, `habbits`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0",
-            data.sql
+            sql
         )
-        assertEquals(mapOf("id" to 2), data.paramMap)
+        assertEquals(mapOf("id" to 2), paramMap)
 
         assertEquals(
             "SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0) AS t",
-            cnt.sql
+            sql2
         )
-        assertEquals(mapOf("id" to 2), cnt.paramMap)
+        assertEquals(mapOf("id" to 2), paramMap2)
 
     }
 
@@ -161,13 +162,13 @@ class Select {
 
     @Test
     fun testRegexp() {
-        val task = user.select { it.id + it.username }
+        val (sql, paramMap, task) = user.select { it.id + it.username }
             .where { (it.id == 0 || it.id == 2 || it.id == 3) && it.username.regexp("\\d+") }
             .build()
 
         assertEquals(
             "SELECT `id`, `username` FROM `tb_user` WHERE (`id` = :id OR `id` = :id@1 OR `id` = :id@2) AND `username` REGEXP :usernamePattern AND `deleted` = 0",
-            task.sql
+            sql
         )
         assertEquals(
             mapOf(
@@ -175,7 +176,7 @@ class Select {
                 "id@1" to 2,
                 "id@2" to 3,
                 "usernamePattern" to "\\d+"
-            ), task.paramMap
+            ), paramMap
         )
 
         val data = task.query()

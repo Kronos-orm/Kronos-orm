@@ -18,13 +18,13 @@ package com.kotlinorm.orm.database
 
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.database.SqlManager.getTableColumns
+import com.kotlinorm.database.SqlManager.getTableCreateSqlList
+import com.kotlinorm.database.SqlManager.getTableDropSql
+import com.kotlinorm.database.SqlManager.getTableIndexes
+import com.kotlinorm.database.SqlManager.getTableSyncSqlList
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.sql.SqlManager.getTableColumns
-import com.kotlinorm.sql.SqlManager.getTableCreateSqlList
-import com.kotlinorm.sql.SqlManager.getTableDropSql
-import com.kotlinorm.sql.SqlManager.getTableIndexes
-import com.kotlinorm.sql.SqlManager.getTableSyncSqlList
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import kotlin.reflect.full.createInstance
 
@@ -37,7 +37,10 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     fun exists(tableName: String) = queryTableExistence(tableName, dataSource)
 
     inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
-        dataSource.dbType, instance.kronosTableName(), instance.kronosColumns(), instance.kronosTableIndex()
+        dataSource.dbType,
+        instance.kronosTableName(),
+        instance.kronosColumns().filter { it.isColumn },
+        instance.kronosTableIndex()
     ).forEach { dataSource.update(KronosAtomicActionTask(it)) }
 
     inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) {
@@ -70,12 +73,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val dbType = dataSource.dbType
 
         // 实体类列信息
-        val kronosColumns = instance.kronosColumns().map { col ->
-            if (dbType == DBType.Oracle) {
-                col.columnName = col.columnName.uppercase()
+        val kronosColumns = instance.kronosColumns()
+            .filter { it.isColumn }
+            .map { col ->
+                if (dbType == DBType.Oracle) { col.columnName = col.columnName.uppercase() }
+                col
             }
-            col
-        }
 
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = instance.kronosTableIndex()

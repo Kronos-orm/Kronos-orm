@@ -1,8 +1,11 @@
-package com.kotlinorm.sql.mysql
+package com.kotlinorm.database.mysql
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.ConflictResolver
+import com.kotlinorm.database.SqlManager.columnCreateDefSql
+import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -10,8 +13,6 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.sql.SqlManager.columnCreateDefSql
-import com.kotlinorm.sql.SqlManager.getKotlinColumnType
 
 object MysqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
@@ -145,5 +146,12 @@ object MysqlSupport : DatabasesSupport {
         } + indexes.toAdd.map {
             "ALTER TABLE $tableName ADD ${it.type} INDEX ${it.name} (`${it.columns.joinToString("`, `")}`) USING ${it.method}"
         }
+    }
+
+    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+        val (tableName, _, toUpdateFields, toInsertFields) = conflictResolver
+        return "INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) " +
+                "VALUES (${toInsertFields.joinToString(", ") { ":$it" }}) " +
+                "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { it.equation() }}"
     }
 }

@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.pagination
+package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
-import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.query
-import com.kotlinorm.utils.queryList
-import com.kotlinorm.utils.queryOne
+import com.kotlinorm.utils.logAndReturn
 
 class PagedClause<K : KPojo, T : KSelectable<K>>(
     private val selectClause: T
@@ -49,17 +48,24 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
     fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<T>> {
         val tasks = this.build()
         val total = tasks.first.queryOne<Int>()
-        val records = tasks.second.let {
-            wrapper.orDefault().forList(it, selectClause.pojo::class)
+        with(tasks.second) {
+            beforeQuery?.invoke(this)
+            val records =
+                atomicTask.logAndReturn(
+                    (wrapper.orDefault().forObject(atomicTask, selectClause.pojo::class)
+                        ?: throw NullPointerException("No such record")) as T, QueryList
+                )
+
+            afterQuery?.invoke(records, QueryList, wrapper.orDefault())
+            return total to records as List<T>
         }
-        return total to records as List<T>
     }
 
-    fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosAtomicQueryTask, KronosAtomicQueryTask> {
+    fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
         val recordsTask = selectClause.build(wrapper)
         selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
         val cntTask = selectClause.build(wrapper)
-        cntTask.sql = "SELECT COUNT(1) FROM (${cntTask.sql}) AS t"
+        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS t"
         return cntTask to recordsTask
     }
 }

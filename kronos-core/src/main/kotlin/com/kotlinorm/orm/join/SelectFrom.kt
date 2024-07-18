@@ -22,22 +22,26 @@ import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.enums.DBType
+import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.*
+import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.logAndReturn
+import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.toLinkedSet
 
 /**
  * Select From
@@ -53,6 +57,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var paramMap: MutableMap<String, Any?>
     open lateinit var logicDeleteStrategy: KronosCommonStrategy
     open lateinit var allFields: LinkedHashSet<Field>
+    open lateinit var listOfPojo: MutableList<KPojo>
     private var condition: Criteria? = null
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
@@ -69,6 +74,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var isLimit = false
     private var isPage = false
     private var limitCapacity = 0
+    private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var pi = 0
     private var ps = 0
 
@@ -174,6 +181,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 selectFieldsWithNames[safeKey] = field
             }
         }
+    }
+
+    fun cascade(enabled: Boolean, depth: Int = -1) {
+        cascadeEnabled = enabled
+        cascadeLimit = depth
     }
 
     /**
@@ -315,9 +327,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @JvmName("queryForList")
     @Suppress("UNCHECKED_CAST")
     fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T1> {
-        return this.build().let {
-            wrapper.orDefault().forList(it, pojo::class)
-        } as List<T1>
+        with(this.build()) {
+            beforeQuery?.invoke(this)
+            val result = atomicTask.logAndReturn(
+                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T1>,
+                QueryType.QueryList
+            )
+            afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
+            return result
+        }
     }
 
 
@@ -336,10 +354,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @JvmName("queryForObject")
     @Suppress("UNCHECKED_CAST")
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T1 {
-        return this.build().let {
-            it.doTaskLog()
-            wrapper.orDefault().forObject(it, pojo::class) ?: throw NullPointerException("No such record")
-        } as T1
+        with(this.build()) {
+            beforeQuery?.invoke(this)
+            val result = atomicTask.logAndReturn(
+                (wrapper.orDefault().forObject(atomicTask, pojo::class)
+                    ?: throw NullPointerException("No such record")) as T1,
+                QueryType.QueryOne
+            )
+            afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
+            return result
+        }
     }
 
     inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
@@ -349,10 +373,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @JvmName("queryForObjectOrNull")
     @Suppress("UNCHECKED_CAST")
     fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T1? {
-        return this.build().let {
-            it.doTaskLog()
-            wrapper.orDefault().forObject(it, pojo::class)
-        } as T1?
+        with(this.build()) {
+            beforeQuery?.invoke(this)
+            val result = atomicTask.logAndReturn(
+                wrapper.orDefault().forObject(atomicTask, pojo::class) as T1?,
+                QueryType.QueryOneOrNull
+            )
+            afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
+            return result
+        }
     }
 
     /**
@@ -361,7 +390,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
      * @return a KronosAtomicQueryTask object representing the query.
      */
-    override fun build(wrapper: KronosDataSourceWrapper?): KronosAtomicQueryTask {
+    override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         var buildCondition = condition
 
         // 初始化所有字段集合
@@ -436,46 +465,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
         }) else null
 
-        // 如果分页，则将分页参数添加到SQL中
-        var limitedPrefix: String? = null
-        var limitedSuffix: String? = null
-        if (isPage) when (wrapper.orDefault().dbType) {
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix =
-                "LIMIT $ps" + " OFFSET " + "${ps * (pi - 1)}"
-
-            DBType.Oracle -> {
-                limitedPrefix = "SELECT * FROM ("
-                selectFields += Field("rownum", "R")
-                limitedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
-            }
-
-            DBType.Mssql -> {
-                limitedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-        }
-
-        //检查并设置是否使用LIMIT条件
-        if (limitCapacity > 0) when (wrapper.orDefault().dbType) {
-
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $limitCapacity"
-            DBType.Oracle -> {
-                limitedPrefix = "SELECT * FROM ("
-                selectFields += Field("rownum", "R")
-                limitedSuffix = ") WHERE R <= $limitCapacity"
-            }
-
-            DBType.Mssql -> {
-                limitedSuffix = "OFFSET 0 ROWS FETCH NEXT $limitCapacity ROWS ONLY"
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-        }
-
         // 组装最终的SQL语句
         val sql = listOfNotNull(
-            limitedPrefix,
             selectKeyword,
             selectFields.joinToString(", ") { field ->
                 field.let { item ->
@@ -488,15 +479,20 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             whereClauseSql,
             groupByKeyword,
             havingKeyword,
-            orderByKeywords,
-            limitedSuffix
+            orderByKeywords
         ).joinToString(" ")
 
         // 返回构建好的KronosAtomicTask对象
-        return KronosAtomicQueryTask(
-            sql,
-            paramMap,
-            operationType = KOperationType.SELECT
+        return CascadeJoinClause.build(
+            cascadeEnabled,
+            cascadeLimit,
+            listOfPojo,
+            KronosAtomicQueryTask(
+                sql,
+                paramMap,
+                operationType = KOperationType.SELECT
+            ),
+            selectFieldsWithNames
         )
     }
 }

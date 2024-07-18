@@ -10,7 +10,7 @@ dependencies {
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jvm-driver-wrapper"))
-    testImplementation("commons-dbcp:commons-dbcp:1.4")
+    testImplementation("org.apache.commons:commons-dbcp2:2.12.0")
     // mysql
     testImplementation("com.mysql:mysql-connector-j:8.4.0")
     // sqlite

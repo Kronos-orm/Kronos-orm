@@ -21,19 +21,36 @@ package com.kotlinorm.enums
  *
  * @author ousc
  */
-enum class ConditionType {
-    LIKE,
-    EQUAL,
-    IN,
-    ISNULL,
-    SQL,
-    GT,
-    GE,
-    LT,
-    LE,
-    BETWEEN,
-    AND,
-    OR,
-    REGEXP,
-    ROOT
+enum class ConditionType(val value: String) {
+    LIKE("like"),
+    EQUAL("="),
+    IN("in"),
+    ISNULL("is null"),
+    SQL(""),
+    GT(">"),
+    GE(">="),
+    LT("<"),
+    LE("<="),
+    BETWEEN("between"),
+    REGEXP("regexp"),
+    AND("and"),
+    OR("or"),
+    ROOT("");
+
+    companion object {
+        val Root = ROOT
+        val Like = LIKE
+        val Equal = EQUAL
+        val In = IN
+        val IsNull = ISNULL
+        val Sql = SQL
+        val Gt = GT
+        val Ge = GE
+        val Lt = LT
+        val Le = LE
+        val Regexp = REGEXP
+        val Between = BETWEEN
+        val And = AND
+        val Or = OR
+    }
 }

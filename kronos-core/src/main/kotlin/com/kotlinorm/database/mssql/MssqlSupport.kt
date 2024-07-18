@@ -1,17 +1,18 @@
-package com.kotlinorm.sql.mssql
+package com.kotlinorm.database.mssql
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.ConflictResolver
+import com.kotlinorm.database.SqlManager.columnCreateDefSql
+import com.kotlinorm.database.SqlManager.getKotlinColumnType
+import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.sql.SqlManager.columnCreateDefSql
-import com.kotlinorm.sql.SqlManager.getKotlinColumnType
-import com.kotlinorm.sql.SqlManager.sqlColumnType
 
 object MssqlSupport : DatabasesSupport {
     override fun getColumnType(type: KColumnType, length: Int): String {
@@ -248,5 +249,20 @@ object MssqlSupport : DatabasesSupport {
         } + indexes.toAdd.map {
             getIndexCreateSql(dbType, tableName, it)
         }
+    }
+
+    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+        val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
+        return """
+            IF EXISTS (SELECT 1 FROM $tableName WHERE ${onFields.joinToString(" AND ") { it.equation() }})
+                BEGIN 
+                    UPDATE $tableName SET ${toUpdateFields.joinToString { it.equation() }}
+                END
+            ELSE 
+                BEGIN
+                    INSERT INTO $tableName (${toInsertFields.joinToString { it.quoted() }})
+                    VALUES (${toInsertFields.joinToString(", ") { ":$it" }})
+                END
+    """
     }
 }

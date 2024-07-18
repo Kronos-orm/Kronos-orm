@@ -2,6 +2,7 @@ package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
+import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.indexCreateDefSql
 import com.kotlinorm.database.SqlManager.sqlColumnType
@@ -72,4 +73,6 @@ interface DatabasesSupport {
         columns: TableColumnDiff,
         indexes: TableIndexDiff,
     ): List<String>
+
+    fun getOnConflictSql(conflictResolver: ConflictResolver): String
 }

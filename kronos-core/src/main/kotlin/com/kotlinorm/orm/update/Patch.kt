@@ -20,28 +20,28 @@ import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.types.KTableField
 
 
-inline fun <reified T : KPojo> T.update(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
+fun <T : KPojo> T.update(setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
     return UpdateClause(this, false, setUpdateFields)
 }
 
-inline fun <reified T : KPojo> T.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
+fun <T : KPojo> T.updateExcept(setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
     return UpdateClause(this, true, setUpdateFields)
 }
 
-inline fun <reified T : KPojo> Iterable<T>.update(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+fun <T : KPojo> Iterable<T>.update(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
     return map { UpdateClause(it, false, setUpdateFields) }
 }
 
 //  添加测试用例
-inline fun <reified T : KPojo> Iterable<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+fun <T : KPojo> Iterable<T>.updateExcept(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
     return map { UpdateClause(it, true, setUpdateFields) }
 }
 
-inline fun <reified T : KPojo> Array<T>.update(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+fun <T : KPojo> Array<T>.update(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
     return map { UpdateClause(it, false, setUpdateFields) }
 }
 
 //  添加测试用例
-inline fun <reified T : KPojo> Array<T>.updateExcept(noinline setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
+fun <T : KPojo> Array<T>.updateExcept(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
     return map { UpdateClause(it, true, setUpdateFields) }
 }

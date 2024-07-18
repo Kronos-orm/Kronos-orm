@@ -31,7 +31,8 @@ import com.kotlinorm.interfaces.KBatchTask
 data class KronosAtomicBatchTask(
     override val sql: String,
     override val paramMapArr: Array<Map<String, Any?>>? = null,
-    override val operationType: KOperationType
+    override val operationType: KOperationType,
+    override val useIdentity: Boolean = false
 ) : KAtomicActionTask, KBatchTask {
 
     @Deprecated("Please use 'paramMapArr' instead.")

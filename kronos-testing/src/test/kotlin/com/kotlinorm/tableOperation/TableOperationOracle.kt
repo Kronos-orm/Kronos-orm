@@ -10,7 +10,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.tableOperation.beans.OracleUser
-import org.apache.commons.dbcp.BasicDataSource
+import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -28,7 +28,6 @@ class TableOperationOracle {
         username = "sdy" // Oracle用户名
         password = "********" // Oracle密码
         maxIdle = 10 // 最大空闲连接数
-        maxActive = 10 // 最大活动连接数
     }
     val user = OracleUser()
 

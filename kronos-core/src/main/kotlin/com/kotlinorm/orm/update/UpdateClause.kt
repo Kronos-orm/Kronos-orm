@@ -21,19 +21,20 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
 import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.task.KronosActionTask
+import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.cascade.CascadeUpdateClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -58,10 +59,12 @@ class UpdateClause<T : KPojo>(
     private var tableName = pojo.kronosTableName()
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var allFields = pojo.kronosColumns().toLinkedSet()
-    private var toUpdateFields = linkedSetOf<Field>()
-    private var condition: Criteria? = null
-    private var paramMapNew = mutableMapOf<Field, Any?>()
+    internal var allFields = pojo.kronosColumns().toLinkedSet()
+    internal var toUpdateFields = linkedSetOf<Field>()
+    internal var condition: Criteria? = null
+    internal var paramMapNew = mutableMapOf<Field, Any?>()
+    private var cascadeEnabled = true
+    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。
@@ -100,8 +103,14 @@ class UpdateClause<T : KPojo>(
             } else {
                 toUpdateFields += fields
             }
-            paramMapNew.putAll(fieldParamMap.map { it.key + "New" to it.value })
+            paramMapNew.putAll(fieldParamMap.map { e -> e.key + "New" to e.value })
         }
+        return this
+    }
+
+    fun cascade(enabled: Boolean = true, depth: Int = -1): UpdateClause<T> {
+        this.cascadeEnabled = enabled
+        this.cascadeLimit = depth
         return this
     }
 
@@ -131,8 +140,8 @@ class UpdateClause<T : KPojo>(
         if (updateCondition == null) return this
             .apply {
                 // 获取所有字段 且去除null
-                condition = paramMap.keys.mapNotNull { propName ->
-                    allFields.first { it.name == propName }.eq(paramMap[propName]).takeIf { it.value != null }
+                condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+                    field.eq(paramMap[field.name]).takeIf { it.value != null }
                 }.toCriteria()
             }
         pojo.conditionalRun {
@@ -158,10 +167,14 @@ class UpdateClause<T : KPojo>(
      *
      * @return The constructed KronosAtomicTask.
      */
-    fun build(): KronosAtomicActionTask {
+    fun build(): KronosActionTask {
 
-        updateTimeStrategy.enabled = true
-        logicDeleteStrategy.enabled = true
+        if (condition == null) {
+            // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
+            condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+                field.eq(paramMap[field.name]).takeIf { it.value != null }
+            }.toCriteria()
+        }
 
         updateTimeStrategy.enabled = this.updateTimeStrategy.enabled
         logicDeleteStrategy.enabled = this.logicDeleteStrategy.enabled
@@ -169,7 +182,7 @@ class UpdateClause<T : KPojo>(
         // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
         if (isExcept) {
             // 移除指定字段并处理"create_time"字段的特殊情况
-            toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet
+            toUpdateFields = (allFields.filter { it.isColumn } - toUpdateFields.toSet()).toLinkedSet()
             toUpdateFields = toUpdateFields.filter { it.columnName != "create_time" }.toCollection(LinkedHashSet())
             // 为更新的字段生成新的参数映射
             toUpdateFields.forEach {
@@ -220,10 +233,21 @@ class UpdateClause<T : KPojo>(
         // 合并参数映射，准备执行SQL所需的参数
         paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
         // 返回构建好的KronosAtomicTask实例
-        return KronosAtomicActionTask(
+
+        val rootTask = KronosAtomicActionTask(
             sql,
             paramMap,
             operationType = KOperationType.UPDATE
+        )
+
+        return CascadeUpdateClause.build(
+            cascadeEnabled,
+            cascadeLimit,
+            pojo,
+            paramMap.toMap(),
+            toUpdateFields,
+            whereClauseSql,
+            rootTask
         )
     }
 
@@ -246,6 +270,10 @@ class UpdateClause<T : KPojo>(
          */
         fun <T : KPojo> List<UpdateClause<T>>.set(rowData: KTableField<T, Unit>): List<UpdateClause<T>> {
             return map { it.set(rowData) }
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.cascade(enabled: Boolean = true, depth: Int = -1): List<UpdateClause<T>> {
+            return map { it.cascade(enabled, depth) }
         }
 
         /**
@@ -274,13 +302,8 @@ class UpdateClause<T : KPojo>(
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo> List<UpdateClause<T>>.build(): KronosAtomicBatchTask {
-            val tasks = this.map { it.build() }
-            return KronosAtomicBatchTask(
-                sql = tasks.first().sql,
-                paramMapArr = tasks.map { it.paramMap }.toTypedArray(),
-                operationType = KOperationType.UPDATE
-            )
+        fun <T : KPojo> List<UpdateClause<T>>.build(): KronosActionTask {
+            return map { it.build() }.merge()
         }
 
         /**

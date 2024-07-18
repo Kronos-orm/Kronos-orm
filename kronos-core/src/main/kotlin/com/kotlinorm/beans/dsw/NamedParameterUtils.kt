@@ -26,12 +26,12 @@ import com.kotlinorm.exceptions.InvalidParameterException
  * All rights reserved.
  */
 object NamedParameterUtils {
-    private val START_SKIP = arrayOf("'", "\"", "--", "/*")
+    private val START_SKIP = arrayOf("'", "\"", "--", "/*", "`")
 
     /**
      * Set of characters that at are the corresponding comment or quotes ending characters.
      */
-    private val STOP_SKIP = arrayOf("'", "\"", "\n", "*/")
+    private val STOP_SKIP = arrayOf("'", "\"", "\n", "*/", "`")
 
     /**
      * Set of characters that qualify as parameter separators,
@@ -87,7 +87,7 @@ object NamedParameterUtils {
             if (i >= statement.size) {
                 break
             }
-            val c = statement[i]
+            var c = statement[i]
             if (c == ':' || c == '&') {
                 var j = i + 1
                 if ((c == ':') && j < statement.size && statement[j] == ':') {
@@ -122,7 +122,20 @@ object NamedParameterUtils {
                     }
                     j++
                 } else {
-                    while (j < statement.size && !isParameterSeparator(statement[j])) {
+                    var paramWithSquareBrackets = false
+                    while (j < statement.size) {
+                        c = statement[j]
+                        if (isParameterSeparator(c)) {
+                            break
+                        }
+                        if (c == '[') {
+                            paramWithSquareBrackets = true
+                        } else if (c == ']') {
+                            if (!paramWithSquareBrackets) {
+                                break
+                            }
+                            paramWithSquareBrackets = false
+                        }
                         j++
                     }
                     if (j - i > 1) {
@@ -166,6 +179,7 @@ object NamedParameterUtils {
         parsedSql.unnamedParameterCount = unnamedParameterCount
         parsedSql.totalParameterCount = totalParameterCount
         parsedSql.paramMap = paramMap
+        parsedSql.executeParse()
         return parsedSql
     }
 

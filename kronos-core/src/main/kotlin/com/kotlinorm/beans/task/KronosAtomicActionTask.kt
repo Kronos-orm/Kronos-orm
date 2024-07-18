@@ -28,9 +28,10 @@ import com.kotlinorm.interfaces.KAtomicActionTask
  * @author OUSC
  */
 data class KronosAtomicActionTask(
-    override val sql: String,
-    override val paramMap: Map<String, Any?> = mapOf(),
-    override val operationType: KOperationType = KOperationType.UPDATE
+    override var sql: String,
+    override val paramMap: MutableMap<String, Any?> = mutableMapOf(),
+    override val operationType: KOperationType = KOperationType.UPDATE,
+    override val useIdentity: Boolean = false
 ) : KAtomicActionTask {
 
     /**
@@ -40,13 +41,9 @@ data class KronosAtomicActionTask(
      */
     override fun parsed() = parseSqlStatement(sql, paramMap)
 
-    fun trySplitOut(): List<KAtomicActionTask> {
+    fun trySplitOut(): List<KronosAtomicActionTask> {
         return sql.split(";").map {
-            KronosAtomicActionTask(
-                sql = it,
-                paramMap = paramMap,
-                operationType = operationType
-            )
+            KronosAtomicActionTask(it.trim(), paramMap, operationType, useIdentity)
         }
     }
 }

@@ -28,6 +28,9 @@ object SqlManagerCustom {
     private var listOfTableSyncSqlCustom: MutableList<(dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff) -> List<String>?> =
         mutableListOf()
 
+    private var listOfOnConflictSqlCustom: MutableList<(dataSource: KronosDataSourceWrapper, conflictResolver: ConflictResolver) -> String?> =
+        mutableListOf()
+
     fun addDBNameFromUrlCustom(function: (dataSource: KronosDataSourceWrapper) -> String?) {
         listOfDBNameFromUrlCustom.add(function)
     }
@@ -66,6 +69,10 @@ object SqlManagerCustom {
 
     fun addTableSyncSqlCustom(function: (dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff) -> List<String>?) {
         listOfTableSyncSqlCustom.add(function)
+    }
+
+    fun addOnConflictSqlCustom(function: (dataSource: KronosDataSourceWrapper, conflictResolver: ConflictResolver) -> String?) {
+        listOfOnConflictSqlCustom.add(function)
     }
 
     fun tryGetDBNameFromUrlCustom(wrapper: KronosDataSourceWrapper): String? {
@@ -172,6 +179,19 @@ object SqlManagerCustom {
         for (customFunction in listOfTableSyncSqlCustom) {
             val result = customFunction(dataSource, tableName, columns, indexes)
             if (!result.isNullOrEmpty()) {
+                return result
+            }
+        }
+        return null
+    }
+
+    fun tryGetOnConflictSqlCustom(
+        dataSource: KronosDataSourceWrapper,
+        conflictResolver: ConflictResolver
+    ): String? {
+        for (customFunction in listOfOnConflictSqlCustom) {
+            val result = customFunction(dataSource, conflictResolver)
+            if (result != null) {
                 return result
             }
         }

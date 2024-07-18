@@ -16,10 +16,10 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.enums.ASC
-import com.kotlinorm.enums.DESC
-import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.SortType
+import com.kotlinorm.enums.SortType.Companion.Asc
+import com.kotlinorm.enums.SortType.Companion.Desc
 
 /**
  * KTableSortable
@@ -38,11 +38,11 @@ class KTableSortable<T : KPojo> : KTable<T>() {
             }
 
             is String -> {
-                sortFields.add(Field(field, field, type = KColumnType.CUSTOM_CRITERIA_SQL) to ASC)
+                sortFields.add(Field(field, field, type = CUSTOM_CRITERIA_SQL) to Asc)
             }
 
             else -> {
-                sortFields.add((field to ASC) as Pair<Field, SortType>)
+                sortFields.add((field to Asc) as Pair<Field, SortType>)
             }
         }
     }
@@ -52,16 +52,12 @@ class KTableSortable<T : KPojo> : KTable<T>() {
         (this.takeUnless { it is String } ?: Field(
             this.toString(),
             this.toString(),
-            type = KColumnType.CUSTOM_CRITERIA_SQL
-        )) to DESC
+            type = CUSTOM_CRITERIA_SQL
+        )) to Desc
 
     @Suppress("UNUSED")
     fun Any?.asc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(
-            this.toString(),
-            this.toString(),
-            type = KColumnType.CUSTOM_CRITERIA_SQL
-        )) to ASC
+        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = CUSTOM_CRITERIA_SQL)) to Asc
 
     companion object {
         /**

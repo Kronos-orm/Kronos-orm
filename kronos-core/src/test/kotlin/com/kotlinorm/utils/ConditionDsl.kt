@@ -2,9 +2,7 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.enums.AND
 import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.enums.OR
 
 infix fun Field.eq(value: Any?): Criteria {
     return Criteria(this, ConditionType.EQUAL, false, value)
@@ -75,11 +73,11 @@ fun Field.isNotNull(): Criteria {
 }
 
 infix fun Criteria.and(criteria: Criteria): Criteria {
-    return Criteria(type = AND, children = mutableListOf(this, criteria))
+    return Criteria(type = ConditionType.AND, children = mutableListOf(this, criteria))
 }
 
 infix fun Criteria.or(criteria: Criteria): Criteria {
-    return Criteria(type = OR, children = mutableListOf(this, criteria))
+    return Criteria(type = ConditionType.OR, children = mutableListOf(this, criteria))
 }
 
 infix fun String.eq(value: Any?): Criteria {

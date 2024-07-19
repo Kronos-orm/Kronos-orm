@@ -158,7 +158,7 @@ class Upsert {
     fun testBatchUpsert() {
         val testUser = MysqlUser(1, "test")
         val testUser2 = MysqlUser(2, "test2")
-        val (sql, paramMapArr) = listOf(testUser, testUser2).upsert { it.username }
+        val (sql, _, list) = listOf(testUser, testUser2).upsert { it.username }
             .on { it.id }.build()
 
         assertEquals(
@@ -171,17 +171,17 @@ class Upsert {
                     "id" to 1,
                     "username" to "test",
                     "deleted" to 0,
-                    "updateTime" to paramMapArr?.get(0)?.get("updateTime"),
-                    "createTime" to paramMapArr?.get(0)?.get("createTime")
+                    "updateTime" to list[0].paramMap["updateTime"],
+                    "createTime" to list[0].paramMap["createTime"]
                 ),
                 mapOf(
                     "id" to 2,
                     "username" to "test2",
                     "deleted" to 0,
-                    "updateTime" to paramMapArr?.get(1)?.get("updateTime"),
-                    "createTime" to paramMapArr?.get(1)?.get("createTime")
+                    "updateTime" to list[1].paramMap["updateTime"],
+                    "createTime" to list[1].paramMap["createTime"]
                 )
-            ), paramMapArr!!.toList()
+            ), list.map { it.paramMap }
         )
     }
 
@@ -189,7 +189,7 @@ class Upsert {
     fun testBatchUpsert1() {
         val testUser = MysqlUser(1, "test")
         val testUser2 = MysqlUser(2, "test2")
-        val (sql, paramMapArr) = arrayOf(testUser, testUser2).upsert { it.username }
+        val (sql, _, list) = arrayOf(testUser, testUser2).upsert { it.username }
             .on { it.id }.build()
 
         assertEquals(
@@ -202,17 +202,17 @@ class Upsert {
                     "id" to 1,
                     "username" to "test",
                     "deleted" to 0,
-                    "updateTime" to paramMapArr?.get(0)?.get("updateTime"),
-                    "createTime" to paramMapArr?.get(0)?.get("createTime")
+                    "updateTime" to list[0].paramMap["updateTime"],
+                    "createTime" to list[0].paramMap["createTime"]
                 ),
                 mapOf(
                     "id" to 2,
                     "username" to "test2",
                     "deleted" to 0,
-                    "updateTime" to paramMapArr?.get(1)?.get("updateTime"),
-                    "createTime" to paramMapArr?.get(1)?.get("createTime")
+                    "updateTime" to list[1].paramMap["updateTime"],
+                    "createTime" to list[1].paramMap["createTime"]
                 )
-            ), paramMapArr!!.toList()
+            ), list.map { it.paramMap }
         )
     }
 

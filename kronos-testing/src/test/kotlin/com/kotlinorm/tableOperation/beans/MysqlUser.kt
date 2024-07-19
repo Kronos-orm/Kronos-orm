@@ -15,7 +15,7 @@ data class MysqlUser(
     var id: Int? = null,
     @ColumnType(VARCHAR, 254)
     var username: String? = null,
-    @Column("gender1")
+    @Column("gender")
     @ColumnType(TINYINT)
     @Default("0")
     var gender: Int? = null,

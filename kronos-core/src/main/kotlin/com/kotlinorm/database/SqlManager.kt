@@ -25,6 +25,7 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 
 // Used to generate SQL that is independent of database type, including dialect differences.
@@ -249,6 +250,18 @@ object SqlManager {
         Oracle -> OracleSupport.getSelectSql(dataSource, selectClause)
         SQLite -> SqliteSupport.getSelectSql(dataSource, selectClause)
         Mssql -> MssqlSupport.getSelectSql(dataSource, selectClause)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getJoinSql(
+        dataSource: KronosDataSourceWrapper,
+        joinClause: JoinClauseInfo
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getJoinSql(dataSource, joinClause)
+        Postgres -> PostgesqlSupport.getJoinSql(dataSource, joinClause)
+        Oracle -> OracleSupport.getJoinSql(dataSource, joinClause)
+        SQLite -> SqliteSupport.getJoinSql(dataSource, joinClause)
+        Mssql -> MssqlSupport.getJoinSql(dataSource, joinClause)
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 }

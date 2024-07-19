@@ -200,18 +200,6 @@ object SqlManager {
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 
-    fun Field.equation(
-        dataSource: KronosDataSourceWrapper,
-        showTable: Boolean = false
-    ) = when (dataSource.dbType) {
-        Mysql -> MysqlSupport.equation(this, showTable)
-        Postgres -> PostgesqlSupport.equation(this, showTable)
-        Oracle -> OracleSupport.equation(this, showTable)
-        SQLite -> SqliteSupport.equation(this, showTable)
-        Mssql -> MssqlSupport.equation(this, showTable)
-        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
-    }
-
     fun getInsertSql(
         dataSource: KronosDataSourceWrapper,
         tableName: String,

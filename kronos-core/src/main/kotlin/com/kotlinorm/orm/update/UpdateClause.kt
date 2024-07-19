@@ -25,6 +25,8 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.database.SqlManager.getUpdateSql
+import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -32,6 +34,7 @@ import com.kotlinorm.orm.cascade.CascadeUpdateClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
@@ -167,7 +170,7 @@ class UpdateClause<T : KPojo>(
      *
      * @return The constructed KronosAtomicTask.
      */
-    fun build(): KronosActionTask {
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
 
         if (condition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
@@ -205,7 +208,7 @@ class UpdateClause<T : KPojo>(
             paramMapNew -= field + "New"
             // 构建逻辑删除的条件SQL
             condition = listOfNotNull(
-                condition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
+                condition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
             ).toCriteria()
         }
 
@@ -215,20 +218,11 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "New"] = value
         }
 
-        // 构建SQL语句中的更新字段部分
-        val updateFields = toUpdateFields.joinToString(", ") { "${it.quoted()} = :${it + "New"}" }
-
         // 构建完整的更新SQL语句，包括条件部分
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(condition, mutableMapOf())
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(wrapper, condition)
             .toWhereClause()
 
-        val sql = listOfNotNull(
-            "UPDATE",
-            "`$tableName`",
-            "SET",
-            updateFields,
-            whereClauseSql
-        ).joinToString(" ")
+        val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), whereClauseSql)
 
         // 合并参数映射，准备执行SQL所需的参数
         paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
@@ -302,8 +296,8 @@ class UpdateClause<T : KPojo>(
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo> List<UpdateClause<T>>.build(): KronosActionTask {
-            return map { it.build() }.merge()
+        fun <T : KPojo> List<UpdateClause<T>>.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+            return map { it.build(wrapper) }.merge()
         }
 
         /**

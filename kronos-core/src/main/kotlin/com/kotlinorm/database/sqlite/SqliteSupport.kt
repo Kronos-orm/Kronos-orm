@@ -170,7 +170,7 @@ object SqliteSupport : DatabasesSupport {
         toUpdateFields: List<Field>,
         whereClauseSql: String?
     ) =
-        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql.orEmpty()}"
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
         val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause

@@ -57,7 +57,15 @@ object ConditionSqlBuilder {
 
         fun toOnClause(): Pair<String?, MutableMap<String, Any?>> {
             return if (sql != null) {
-                "ON $sql"
+                " ON $sql"
+            } else {
+                null
+            } to paramMap
+        }
+
+        fun toHavingClause(): Pair<String?, MutableMap<String, Any?>> {
+            return if (sql != null) {
+                " HAVING $sql"
             } else {
                 null
             } to paramMap
@@ -71,7 +79,7 @@ object ConditionSqlBuilder {
 
     fun toWhereSql(sql: String?): String? {
         return if (sql != null) {
-            "WHERE $sql"
+            " WHERE $sql"
         } else {
             null
         }

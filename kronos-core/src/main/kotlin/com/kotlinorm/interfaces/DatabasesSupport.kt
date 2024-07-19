@@ -10,9 +10,12 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.select.SelectClauseInfo
 
 interface DatabasesSupport {
     var quotes: Pair<String, String>
+
+    fun String?.orEmpty(): String = this ?: ""
 
     fun quote(str: String): String = "${quotes.first}$str${quotes.second}"
 
@@ -102,5 +105,10 @@ interface DatabasesSupport {
         tableName: String,
         toUpdateFields: List<Field>,
         whereClauseSql: String?
+    ): String
+
+    fun getSelectSql(
+        dataSource: KronosDataSourceWrapper,
+        selectClause: SelectClauseInfo
     ): String
 }

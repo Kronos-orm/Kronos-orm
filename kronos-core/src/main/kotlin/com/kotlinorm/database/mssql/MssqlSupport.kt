@@ -9,10 +9,12 @@ import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.select.SelectClauseInfo
 
 object MssqlSupport : DatabasesSupport {
     override var quotes = Pair("[", "]")
@@ -271,7 +273,7 @@ object MssqlSupport : DatabasesSupport {
         "INSERT INTO [dbo].${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
 
     override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
-        "DELETE FROM [dbo].${quote(tableName)}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+        "DELETE FROM [dbo].${quote(tableName)}${whereClauseSql.orEmpty()}"
 
     override fun getUpdateSql(
         dataSource: KronosDataSourceWrapper,
@@ -279,5 +281,32 @@ object MssqlSupport : DatabasesSupport {
         toUpdateFields: List<Field>,
         whereClauseSql: String?
     ) =
-        "UPDATE [dbo].${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+        "UPDATE [dbo].${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql.orEmpty()}"
+
+    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it)}"
+                else -> quote(it)
+            }
+        }
+        val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null) " FETCH NEXT $limit ROWS ONLY" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
+            quote(tableName)
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
+    }
 }

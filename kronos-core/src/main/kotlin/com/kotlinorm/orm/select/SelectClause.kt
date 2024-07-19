@@ -26,20 +26,20 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.enums.DBType
+import com.kotlinorm.database.SqlManager.getSelectSql
+import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.*
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
-import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
 import com.kotlinorm.orm.pagination.PagedClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
@@ -239,6 +239,8 @@ class SelectClause<T : KPojo>(
         return this
     }
 
+    private var buildCondition: Criteria? = null
+
     /**
      * 构建一个KronosAtomicTask对象。
      *
@@ -249,7 +251,7 @@ class SelectClause<T : KPojo>(
      * @return 构建好的KronosAtomicTask对象，包含了完整的SQL查询语句和对应的参数映射。
      */
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
-        var buildCondition = condition
+        buildCondition = condition
         // 初始化所有字段集合
         allFields = pojo.kronosColumns().toLinkedSet()
 
@@ -269,7 +271,7 @@ class SelectClause<T : KPojo>(
         // 设置逻辑删除的条件
         if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
             buildCondition = listOfNotNull(
-                buildCondition, "${logicDeleteStrategy.field.quoted()} = $value".asSql()
+                buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
             ).toCriteria()
         }
 
@@ -280,95 +282,17 @@ class SelectClause<T : KPojo>(
             ).toCriteria()
         }
 
-        // 构建带有参数的查询条件SQL
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(buildCondition, mutableMapOf())
-            .toWhereClause()
-
-        // 检查并设置是否使用去重（DISTINCT）
-        val selectKeyword = if (distinctEnabled) "SELECT DISTINCT" else "SELECT"
-
-        //检查是否设置排序
-        val orderByKeywords = if (orderEnabled && orderByFields.isNotEmpty()) "ORDER BY " +
-                orderByFields.joinToString(", ") {
-                    if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted() +
-                            " " + it.second
-                } else null
-
-        // 检查并设置是否分组
-        val groupByKeyword = if (groupEnabled) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
-            ?.joinToString(", ") { it.quoted() }) else null
-
-        // 检查并设置是否使用HAVING条件
-        val havingKeyword = if (havingEnabled) "HAVING " + (havingCondition.let {
-            it?.children?.joinToString(" AND ") { c -> c?.field?.equation().toString() }
-        }) else null
-
-        // 如果分页，则将分页参数添加到SQL中
-        var limitedPrefix: String? = null
-        var limitedSuffix: String? = null
-        if (pageEnabled) when (wrapper.orDefault().dbType) {
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $ps OFFSET ${ps * (pi - 1)}"
-            DBType.Oracle -> {
-                limitedPrefix = "SELECT * FROM ("
-                selectFields += Field("rownum", "R")
-                limitedSuffix = ") WHERE R BETWEEN ${ps * (pi - 1) + 1} AND ${ps * pi}"
-            }
-
-            DBType.Mssql -> {
-                limitedSuffix = "OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT ${ps * pi} ROWS ONLY"
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-        }
-
-        //检查并设置是否使用LIMIT条件
-        if (limitCapacity > 0) when (wrapper.orDefault().dbType) {
-            DBType.Mysql, DBType.SQLite, DBType.Postgres -> limitedSuffix = "LIMIT $limitCapacity"
-            DBType.Oracle -> {
-                limitedPrefix = "SELECT * FROM ("
-                selectFields += Field("rownum", "R")
-                limitedSuffix = ") WHERE R <= $limitCapacity"
-            }
-
-            DBType.Mssql -> {
-                limitedSuffix = "OFFSET 0 ROWS FETCH NEXT $limitCapacity ROWS ONLY"
-            }
-
-            else -> throw UnsupportedDatabaseTypeException()
-        }
-
-        // 组装最终的SQL语句
-        val sql = listOfNotNull(
-            limitedPrefix,
-            selectKeyword,
-            selectFields.joinToString(", ") {
-                it.let {
-                    when {
-                        it.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                        it.name != it.columnName -> "${it.quoted()} AS `$it`"
-                        else -> it.quoted()
-                    }
-                }
-            },
-            "FROM `$tableName`",
-            whereClauseSql,
-            groupByKeyword,
-            havingKeyword,
-            orderByKeywords,
-            limitedSuffix
-        ).joinToString(" ")
+        val paramMap = mutableMapOf<String, Any?>()
+        // 构建查询条件SQL
+        val sql = getSelectSql(wrapper.orDefault(), toSelectClauseInfo(wrapper) {
+            paramMap.putAll(it)
+        })
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
-            cascadeEnabled,
-            cascadeLimit,
-            pojo,
-            KronosAtomicQueryTask(
-                sql,
-                paramMap,
-                operationType = KOperationType.SELECT
-            ),
-            if (selectAll) allFields else selectFields
+            cascadeEnabled, cascadeLimit, pojo, KronosAtomicQueryTask(
+                sql, paramMap, operationType = KOperationType.SELECT
+            ), if (selectAll) allFields else selectFields
         )
     }
 
@@ -393,8 +317,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>,
-                QueryList
+                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>, QueryList
             )
             afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
@@ -421,8 +344,7 @@ class SelectClause<T : KPojo>(
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
                 (wrapper.orDefault().forObject(atomicTask, pojo::class)
-                    ?: throw NullPointerException("No such record")) as T,
-                QueryOne
+                    ?: throw NullPointerException("No such record")) as T, QueryOne
             )
             afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
             return result
@@ -504,5 +426,39 @@ class SelectClause<T : KPojo>(
         inline fun <reified T : KPojo> Iterable<SelectClause<T>>.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): List<T?> {
             return map { it.queryOneOrNull(wrapper) }
         }
+    }
+
+    private fun toSelectClauseInfo(
+        wrapper: KronosDataSourceWrapper? = null, updateMap: (map: MutableMap<String, Any?>) -> Unit
+    ): SelectClauseInfo {
+        // 构建带有参数的查询条件SQL
+        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(wrapper, buildCondition).toWhereClause()
+        val groupByClauseSql =
+            if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
+                it.quoted(wrapper.orDefault())
+            }) else null
+        val orderByClauseSql =
+            if (orderEnabled && orderByFields.isNotEmpty()) " ORDER BY " + orderByFields.joinToString(", ") {
+                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(wrapper.orDefault()) + " " + it.second
+            } else null
+
+        val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
+            wrapper, havingCondition
+        ).toHavingClause() else null to mutableMapOf()
+        updateMap(mapOfWhere)
+        updateMap(mapOfHaving)
+        return SelectClauseInfo(
+            tableName,
+            selectFields.toList(),
+            distinctEnabled,
+            pageEnabled,
+            pi,
+            ps,
+            limitCapacity,
+            whereClauseSql,
+            groupByClauseSql,
+            orderByClauseSql,
+            havingClauseSql
+        )
     }
 }

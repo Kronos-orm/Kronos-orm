@@ -13,6 +13,7 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.Extensions.rmRedundantBlk
 import java.math.BigDecimal
 
@@ -250,14 +251,40 @@ object OracleSupport : DatabasesSupport {
         }) VALUES (${columns.joinToString { ":$it" }})"
 
     override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
-        "DELETE FROM ${quote(tableName.uppercase())}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+        "DELETE FROM ${quote(tableName.uppercase())}${whereClauseSql.orEmpty()}"
 
     override fun getUpdateSql(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
         whereClauseSql: String?
-    ) = "UPDATE ${quote(tableName.uppercase())} SET ${
-        toUpdateFields.joinToString { equation(it) }
-    }${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+    ) =
+        "UPDATE ${quote(tableName.uppercase())} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql.orEmpty()}"
+
+    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.name != it.columnName -> "${quote(it.columnName.uppercase())} AS ${quote(it)}"
+                else -> quote(it)
+            }
+        }
+        val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null) " FETCH FIRST $limit ROWS ONLY" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName.uppercase())
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
+    }
 }

@@ -14,7 +14,6 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.utils.Extensions.rmRedundantBlk
 
 object PostgesqlSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
@@ -171,48 +170,59 @@ object PostgesqlSupport : DatabasesSupport {
         indexes: TableIndexDiff
     ): List<String> {
         return indexes.toDelete.map {
-            "DROP INDEX \"public\".${it.name};"
+            "DROP INDEX ${quote("public")}.${it.name};"
         } + columns.toAdd.map {
-            "ALTER TABLE \"public\".$tableName ADD COLUMN ${it.columnName} ${
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.columnName} ${
                 columnCreateDefSql(
                     DBType.Postgres, it
                 )
             }"
         } + columns.toModified.map {
-            "ALTER TABLE \"public\".$tableName ALTER COLUMN ${it.columnName} TYPE ${
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.columnName} TYPE ${
                 getColumnType(it.type, it.length)
             } ${if (it.defaultValue != null) ",AlTER COLUMN ${it.columnName} SET DEFAULT ${it.defaultValue}" else ""} ${
                 if (it.nullable) ",ALTER COLUMN ${it.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.columnName} SET NOT NULL"
             }"
         } + columns.toDelete.map {
-            "ALTER TABLE \"public\".$tableName DROP COLUMN ${it.columnName}"
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {
-            getIndexCreateSql(DBType.Postgres, "\"public\".$tableName", it)
+            getIndexCreateSql(DBType.Postgres, "${quote("public")}.${quote(tableName)}", it)
         }
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            INSERT INTO $tableName 
-                (${toInsertFields.joinToString { quote(it) }})
-            SELECT 
-               ${toInsertFields.joinToString(", ") { ":$it" }}
-            WHERE NOT EXISTS ( 
-               SELECT 1 FROM $tableName
-               WHERE ${onFields.joinToString(" AND ") { equation(it) }}
+        INSERT INTO ${
+            quote(tableName)
+        } (${
+            toInsertFields.joinToString { quote(it) }
+        }) SELECT  ${
+            toInsertFields.joinToString(", ") { ":$it" }
+        } WHERE NOT EXISTS (
+               SELECT 1 FROM ${
+            quote(tableName)
+        } WHERE ${onFields.joinToString(" AND ") { equation(it) }}
             );
-            
-            UPDATE $tableName
-            SET
-               ${toUpdateFields.joinToString(", ") { equation(it) }}
-            WHERE
-               ${onFields.joinToString(" AND ") { equation(it) }};
-        """.rmRedundantBlk()
+            UPDATE ${quote(tableName)} SET ${
+            toUpdateFields.joinToString(", ") { equation(it) }
+        } WHERE ${
+            onFields.joinToString(" AND ") { equation(it) }
+        };
+        """.trimIndent()
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
         "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
 
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName)}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
 
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
 }

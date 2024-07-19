@@ -127,29 +127,31 @@ object MysqlSupport : DatabasesSupport {
         indexes: TableIndexDiff,
     ): List<String> {
         return indexes.toDelete.map {
-            "ALTER TABLE $tableName DROP INDEX ${it.name}"
+            "ALTER TABLE ${quote(tableName)} DROP INDEX ${it.name}"
         } + columns.toAdd.map {
-            "ALTER TABLE $tableName ADD COLUMN ${
+            "ALTER TABLE ${quote(tableName)} ADD COLUMN ${
                 columnCreateDefSql(
                     DBType.Mysql, it
                 )
             }"
         } + columns.toModified.map {
-            "ALTER TABLE $tableName MODIFY COLUMN ${
+            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${
                 columnCreateDefSql(
                     DBType.Mysql, it
                 )
-            } ${if (it.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (`${it.columnName}`)" else ""}"
+            } ${if (it.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${quote(it)})" else ""}"
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName DROP COLUMN ${it.columnName}"
+            "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {
-            "ALTER TABLE $tableName ADD ${it.type} INDEX ${it.name} (`${it.columns.joinToString("`, `")}`) USING ${it.method}"
+            "ALTER TABLE ${quote(tableName)} ADD ${it.type} INDEX ${it.name} (${
+                it.columns.joinToString(", ") { f -> quote(f) }
+            }) USING ${it.method}"
         }
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, _, toUpdateFields, toInsertFields) = conflictResolver
-        return "INSERT INTO `$tableName` (${toInsertFields.joinToString { quote(it) }}) " + "VALUES (${
+        return "INSERT INTO ${quote(tableName)} (${toInsertFields.joinToString { quote(it) }}) " + "VALUES (${
             toInsertFields.joinToString(
                 ", "
             ) { ":$it" }
@@ -157,5 +159,16 @@ object MysqlSupport : DatabasesSupport {
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
-        "INSERT INTO `$tableName` (${columns.joinToString { quote(it) }}) " + "VALUES (${columns.joinToString { ":$it" }})"
+        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) " + "VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName)}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
 }

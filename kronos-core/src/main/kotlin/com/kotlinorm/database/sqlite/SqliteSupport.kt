@@ -12,7 +12,6 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.utils.Extensions.rmRedundantBlk
 
 object SqliteSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
@@ -127,17 +126,17 @@ object SqliteSupport : DatabasesSupport {
         return indexes.toDelete.map {
             "DROP INDEX ${it.name}"
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName ADD COLUMN ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} ADD COLUMN ${getColumnCreateSql(dbType, it)}"
         } + columns.toModified.map {
-            "ALTER TABLE $tableName MODIFY COLUMN ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${getColumnCreateSql(dbType, it)}"
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName DROP COLUMN ${it.columnName}"
+            "ALTER TABLE ${quote(tableName)} DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {
             // CREATE INDEX "aaa" ON "tb_user" ("username" COLLATE RTRIM )  如果${it.type}不是空 需要 在每个column后面加 COLLATE ${it.type} (${it.columns.joinToString(",")})需要改
-            "CREATE ${it.method} INDEX ${it.name} ON $tableName (${
+            "CREATE ${it.method} INDEX ${it.name} ON ${quote(tableName)} (${
                 it.columns.joinToString(",") { column ->
-                    if (it.type.isNotEmpty()) "$column COLLATE ${it.type}"
-                    else column
+                    if (it.type.isNotEmpty()) "${quote(column)} COLLATE ${it.type}"
+                    else quote(column)
                 }
             })"
         }
@@ -146,17 +145,29 @@ object SqliteSupport : DatabasesSupport {
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            INSERT OR REPLACE INTO "$tableName" 
-                (${toInsertFields.joinToString { quote(it) }}) 
-            VALUES 
-                (${toInsertFields.joinToString(", ") { ":$it" }}) 
-            ON CONFLICT 
-                (${onFields.joinToString(", ") { quote(it) }})
-            DO UPDATE SET
-                ${toUpdateFields.joinToString(", ") { equation(it) }}
-        """.rmRedundantBlk()
+            INSERT OR REPLACE INTO ${
+            quote(tableName)
+        }(${toInsertFields.joinToString { quote(it) }}) VALUES (${
+            toInsertFields.joinToString(", ") { ":$it" }
+        }) ON CONFLICT (${
+            onFields.joinToString(", ") { quote(it) }
+        }) DO UPDATE SET ${
+            toUpdateFields.joinToString(", ") { equation(it) }
+        }
+        """.trimIndent()
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
         "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName)}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
 }

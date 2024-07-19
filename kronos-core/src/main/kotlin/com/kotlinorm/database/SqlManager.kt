@@ -187,6 +187,30 @@ object SqlManager {
             ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 
+    fun Field.quoted(
+        dataSource: KronosDataSourceWrapper,
+        showTable: Boolean = false
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.quote(this, showTable)
+        Postgres -> PostgesqlSupport.quote(this, showTable)
+        Oracle -> OracleSupport.quote(this, showTable)
+        SQLite -> SqliteSupport.quote(this, showTable)
+        Mssql -> MssqlSupport.quote(this, showTable)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun Field.equation(
+        dataSource: KronosDataSourceWrapper,
+        showTable: Boolean = false
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.equation(this, showTable)
+        Postgres -> PostgesqlSupport.equation(this, showTable)
+        Oracle -> OracleSupport.equation(this, showTable)
+        SQLite -> SqliteSupport.equation(this, showTable)
+        Mssql -> MssqlSupport.equation(this, showTable)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
     fun getInsertSql(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
@@ -200,15 +224,30 @@ object SqlManager {
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 
-    fun Field.quoted(
+    fun getDeleteSql(
         dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        whereClauseSql: String?
     ) = when (dataSource.dbType) {
-        Mysql -> "${MysqlSupport.quotes.first}$columnName${MysqlSupport.quotes.second}"
-        Postgres -> "${PostgesqlSupport.quotes.first}$columnName${PostgesqlSupport.quotes.second}"
-        Oracle -> "${OracleSupport.quotes.first}$columnName${OracleSupport.quotes.second}"
-        SQLite -> "${SqliteSupport.quotes.first}$columnName${SqliteSupport.quotes.second}"
-        Mssql -> "${MssqlSupport.quotes.first}$columnName${MssqlSupport.quotes.second}"
+        Mysql -> MysqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Postgres -> PostgesqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Oracle -> OracleSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        SQLite -> SqliteSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Mssql -> MssqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 
+    fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Postgres -> PostgesqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
 }

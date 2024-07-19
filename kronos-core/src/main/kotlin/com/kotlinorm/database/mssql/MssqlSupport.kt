@@ -255,18 +255,29 @@ object MssqlSupport : DatabasesSupport {
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            IF EXISTS (SELECT 1 FROM $tableName WHERE ${onFields.joinToString(" AND ") { equation(it) }})
+            IF EXISTS (SELECT 1 FROM ${quote(tableName)} WHERE ${onFields.joinToString(" AND ") { equation(it) }})
                 BEGIN 
-                    UPDATE $tableName SET ${toUpdateFields.joinToString { equation(it) }}
+                    UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}
                 END
             ELSE 
                 BEGIN
-                    INSERT INTO $tableName (${toInsertFields.joinToString { quote(it) }})
+                    INSERT INTO ${quote(tableName)} (${toInsertFields.joinToString { quote(it) }})
                     VALUES (${toInsertFields.joinToString(", ") { ":$it" }})
                 END
     """
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
-        "INSERT INTO [dbo].[$tableName] (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+        "INSERT INTO [dbo].${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM [dbo].${quote(tableName)}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE [dbo].${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it) }}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
 }

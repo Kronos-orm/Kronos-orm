@@ -126,8 +126,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
          *
          * @return KronosActionTask returns a single KronosActionTask that represents the merged tasks for all the InsertClauses in the Iterable.
          */
-        fun <T : KPojo> Array<InsertClause<T>>.build(): KronosActionTask {
-            return this.map { it.build() }.merge()
+        fun <T : KPojo> Array<InsertClause<T>>.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+            return this.map { it.build(wrapper) }.merge()
         }
 
 

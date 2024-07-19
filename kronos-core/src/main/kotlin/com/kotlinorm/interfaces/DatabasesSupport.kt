@@ -90,4 +90,17 @@ interface DatabasesSupport {
         tableName: String,
         columns: List<Field>
     ): String
+
+    fun getDeleteSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        whereClauseSql: String?
+    ): String
+
+    fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ): String
 }

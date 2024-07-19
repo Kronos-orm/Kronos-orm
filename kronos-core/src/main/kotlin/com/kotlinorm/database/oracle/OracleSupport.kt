@@ -90,7 +90,7 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE ${index.type.uppercase()} INDEX ${index.name} ON $tableName (${
+        "CREATE ${index.type.uppercase()} INDEX ${index.name} ON ${quote(tableName)} (${
             index.columns.joinToString(
                 ", "
             )
@@ -111,7 +111,7 @@ object OracleSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = """
             BEGIN
-               EXECUTE IMMEDIATE 'DROP TABLE $tableName';
+               EXECUTE IMMEDIATE 'DROP TABLE ${quote(tableName)}';
             EXCEPTION
                WHEN OTHERS THEN
                   IF SQLCODE != -942 THEN
@@ -205,17 +205,17 @@ object OracleSupport : DatabasesSupport {
         val dbType = dataSource.dbType
         val dbName = getDBNameFrom(dataSource)
         return indexes.toDelete.map {
-            "DROP INDEX \"$dbName\".\"${it.name}\""
+            "DROP INDEX ${quote(dbName)}.\"${it.name}\""
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName DROP COLUMN \"${it.columnName}\""
+            "ALTER TABLE ${quote(tableName)} DROP COLUMN \"${it.columnName}\""
         } + columns.toModified.map {
-            "ALTER TABLE $tableName MODIFY(${getColumnCreateSql(dbType, it)})"
+            "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it)})"
         } + columns.toAdd.map {
-            "ALTER TABLE $tableName ADD ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it)}"
         } + indexes.toAdd.map {
-            "CREATE ${it.type} INDEX ${it.name} ON \"$dbName\".\"$tableName\" (${
+            "CREATE ${it.type} INDEX ${it.name} ON ${quote(dbName)}.${quote(tableName)} (${
                 it.columns.joinToString(",") { col ->
-                    "\"${col.uppercase()}\""
+                    quote(col.uppercase())
                 }
             })"
         }
@@ -225,7 +225,7 @@ object OracleSupport : DatabasesSupport {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
             BEGIN
-                INSERT INTO "$tableName" 
+                INSERT INTO ${quote(tableName)}
                     (${toInsertFields.joinToString { quote(it) }})
                 VALUES 
                 (${toInsertFields.joinToString(", ") { ":$it" }}) 
@@ -233,7 +233,7 @@ object OracleSupport : DatabasesSupport {
                     WHEN 
                         DUP_VAL_ON_INDEX 
                     THEN 
-                        UPDATE "$tableName"
+                        UPDATE ${quote(tableName)}
                         SET 
                             ${toUpdateFields.joinToString(", ") { equation(it) }}
                         WHERE 
@@ -248,4 +248,16 @@ object OracleSupport : DatabasesSupport {
                 quote(it.columnName.uppercase())
             }
         }) VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName.uppercase())}${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) = "UPDATE ${quote(tableName.uppercase())} SET ${
+        toUpdateFields.joinToString { equation(it) }
+    }${whereClauseSql?.let { " $whereClauseSql" } ?: ""}"
 }

@@ -12,7 +12,6 @@ import com.kotlinorm.beans.dsl.KJoinable
 data class JoinClauseInfo(
     val tableName: String,
     val selectFields: List<Pair<String , Field>>,
-    val paramMap: MutableMap<String, Any?>,
     val distinct: Boolean,
     val pagination: Boolean,
     val pageIndex: Int,
@@ -22,5 +21,5 @@ data class JoinClauseInfo(
     val groupByClauseSql: String? = null,
     val orderByClauseSql: String? = null,
     val havingClauseSql: String? = null,
-    val joinables: MutableList<KJoinable> = mutableListOf()
+    val joinSql: String = ""
 )

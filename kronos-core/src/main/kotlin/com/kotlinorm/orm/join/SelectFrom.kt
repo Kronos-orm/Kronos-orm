@@ -24,8 +24,8 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.database.SqlManager.getJoinSql
-import com.kotlinorm.database.SqlManager.getSelectSql
 import com.kotlinorm.database.SqlManager.quoted
+import com.kotlinorm.database.mysql.MysqlSupport.quote
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
@@ -34,8 +34,6 @@ import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
-import com.kotlinorm.orm.cascade.CascadeSelectClause
-import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
@@ -416,7 +414,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         // 设置逻辑删除的条件
         if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
             buildCondition = listOfNotNull(
-                buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
+                buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault() , true)} = $value".asSql()
             ).toCriteria()
         }
 
@@ -427,88 +425,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             ).toCriteria()
         }
 
+        val paramMapNew = mutableMapOf<String, Any?>()
         val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper , buildCondition) {
-            paramMap.putAll(it)
+            paramMapNew.putAll(it)
         })
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeJoinClause.build(
             cascadeEnabled, cascadeLimit, listOfPojo, KronosAtomicQueryTask(
-                sql, paramMap, operationType = KOperationType.SELECT
+                sql, paramMapNew, operationType = KOperationType.SELECT
             ), selectFieldsWithNames
         )
-
-        // 构建带有参数的查询条件SQL
-//        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(
-//            buildCondition,
-//            mutableMapOf(),
-//            showTable = true
-//        )
-//            .toWhereClause()
-//
-//        val joinClauseSql = joinables.joinToString(" ") {
-//            var joinCondition = it.condition
-//            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
-//                joinCondition = listOfNotNull(
-//                    joinCondition, "${it.logicDeleteStrategy.field.quoted(true)} = $value".asSql()
-//                ).toCriteria()
-//            }
-//            listOfNotNull(
-//                it.joinType.value,
-//                "`${it.tableName}`",
-//                ConditionSqlBuilder.buildConditionSqlWithParams(joinCondition, paramMap, showTable = true)
-//                    .toOnClause().first
-//            ).joinToString(" ")
-//        }
-//
-//        // 检查并设置是否使用去重（DISTINCT）
-//        val selectKeyword = if (distinctEnabled) "SELECT DISTINCT" else "SELECT"
-//
-//        //检查是否设置排序
-//        val orderByKeywords = if (orderEnabled && orderByFields.isNotEmpty()) "ORDER BY " +
-//                orderByFields.joinToString(", ") {
-//                    if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(true) +
-//                            " " + it.second
-//                } else null
-//
-//        // 检查并设置是否分组
-//        val groupByKeyword = if (groupEnabled) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
-//            ?.joinToString(", ") { it.quoted(true) }) else null
-//
-//        // 检查并设置是否使用HAVING条件
-//        val havingKeyword = if (havingEnabled) "HAVING " + (havingCondition.let { it ->
-//            it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
-//        }) else null
-//
-//        // 组装最终的SQL语句
-//        val sql = listOfNotNull(
-//            selectKeyword,
-//            selectFields.joinToString(", ") { field ->
-//                field.let { item ->
-//                    if (item.type == CUSTOM_CRITERIA_SQL) field.toString()
-//                    else "${item.quoted(true)} AS `${selectFieldsWithNames.filterKeys { selectFieldsWithNames[it] == item }.keys.first()}`"
-//                }
-//            },
-//            "FROM `$tableName`",
-//            joinClauseSql,
-//            whereClauseSql,
-//            groupByKeyword,
-//            havingKeyword,
-//            orderByKeywords
-//        ).joinToString(" ")
-//
-//        // 返回构建好的KronosAtomicTask对象
-//        return CascadeJoinClause.build(
-//            cascadeEnabled,
-//            cascadeLimit,
-//            listOfPojo,
-//            KronosAtomicQueryTask(
-//                sql,
-//                paramMap,
-//                operationType = KOperationType.SELECT
-//            ),
-//            selectFieldsWithNames
-//        )
     }
 
     private fun toJoinClauseInfo(
@@ -516,14 +443,30 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         buildCondition: Criteria?,
         updateMap: (map: MutableMap<String, Any?>) -> Unit
     ): JoinClauseInfo {
-        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(wrapper, buildCondition).toWhereClause()
+        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(wrapper, buildCondition, showTable = true).toWhereClause()
+
+        val joinSql = " " + joinables.joinToString(" ") {
+            var joinCondition = it.condition
+            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
+                joinCondition = listOfNotNull(
+                    joinCondition, "${quote(it.logicDeleteStrategy.field, true)} = $value".asSql()
+                ).toCriteria()
+            }
+
+            val (onSql , mapOfOn) = buildConditionSqlWithParams(wrapper, joinCondition, paramMap, showTable = true)
+                .toOnClause()
+            updateMap(mapOfOn)
+
+            it.joinType.value + " " + "`${it.tableName}`" + onSql
+        }
+
         val groupByClauseSql =
             if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
-                it.quoted(wrapper.orDefault())
+                it.quoted(wrapper.orDefault() , true)
             }) else null
         val orderByClauseSql =
             if (orderEnabled && orderByFields.isNotEmpty()) " ORDER BY " + orderByFields.joinToString(", ") {
-                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(wrapper.orDefault()) + " " + it.second
+                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(wrapper.orDefault() , true) + " " + it.second
             } else null
         val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
             wrapper, havingCondition
@@ -533,7 +476,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return JoinClauseInfo(
             tableName,
             selectFieldsWithNames.toList(),
-            paramMap,
             distinctEnabled,
             pageEnabled,
             pi,
@@ -543,7 +485,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             groupByClauseSql,
             orderByClauseSql,
             havingClauseSql,
-            joinables
+            joinSql
         )
     }
 }

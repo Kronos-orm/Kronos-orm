@@ -204,35 +204,21 @@ object MysqlSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, paramMap, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinables) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
 
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                else -> "${quote(it.second , true)} AS ${quote(it.first)}"
+                else -> "${quote(it.second, true)} AS ${quote(it.first)}"
             }
         }
 
-        val joinSql = joinables.joinToString(" ") {
-            var joinCondition = it.condition
-            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
-                joinCondition = listOfNotNull(
-                    joinCondition, "${quote(it.logicDeleteStrategy.field , true)} = $value".asSql()
-                ).toCriteria()
-            }
-            listOfNotNull(
-                it.joinType.value,
-                "`${it.tableName}`",
-                buildConditionSqlWithParams(dataSource.orDefault(), joinCondition, paramMap, showTable = true)
-                    .toOnClause().first
-            ).joinToString(" ")
-        }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)
-        } ${
+        }${
             joinSql.orEmpty()
         }${
             whereClauseSql.orEmpty()

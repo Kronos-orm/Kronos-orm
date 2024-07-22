@@ -31,7 +31,7 @@ interface DatabasesSupport {
 
     fun getColumnCreateSql(dbType: DBType, column: Field): String =
         "${
-            column.columnName
+            quote(column.columnName)
         }${
             " ${sqlColumnType(dbType, column.type, column.length)}"
         }${
@@ -45,7 +45,7 @@ interface DatabasesSupport {
         }"
 
     fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE ${index.type} INDEX ${index.name} ON $tableName (${index.columns.joinToString(",")}) USING ${index.method}"
+        "CREATE ${index.type} INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
 
     fun getTableCreateSqlList(
         dbType: DBType,
@@ -56,7 +56,7 @@ interface DatabasesSupport {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE IF NOT EXISTS $tableName ($columnsSql)",
+            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
             *indexesSql.toTypedArray()
         )
     }

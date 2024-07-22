@@ -7,8 +7,6 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
-import com.kotlinorm.database.mssql.MssqlSupport.orEmpty
-import com.kotlinorm.database.oracle.OracleSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -80,7 +78,7 @@ object OracleSupport : DatabasesSupport {
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String {
         return "${
-            column.columnName
+            quote(column.columnName)
         }${
             " ${getColumnType(column.type, column.length)}"
         }${
@@ -98,7 +96,7 @@ object OracleSupport : DatabasesSupport {
         "CREATE ${index.type.uppercase()} INDEX ${index.name} ON ${quote(tableName)} (${
             index.columns.joinToString(
                 ", "
-            )
+            ) { quote(it) }
         })"
 
     override fun getTableCreateSqlList(
@@ -107,7 +105,7 @@ object OracleSupport : DatabasesSupport {
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE $tableName ($columnsSql)", *indexesSql.toTypedArray()
+            "CREATE TABLE ${quote(tableName.uppercase())} ($columnsSql)", *indexesSql.toTypedArray()
         )
     }
 
@@ -293,7 +291,7 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql , joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()

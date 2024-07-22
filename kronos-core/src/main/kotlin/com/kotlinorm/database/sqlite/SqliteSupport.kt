@@ -6,8 +6,6 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
-import com.kotlinorm.database.postgres.PostgesqlSupport.orEmpty
-import com.kotlinorm.database.sqlite.SqliteSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -40,7 +38,7 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
-        column.columnName
+        quote(column.columnName)
     }${
         " ${sqlColumnType(dbType, column.type, column.length)}"
     }${
@@ -59,12 +57,12 @@ object SqliteSupport : DatabasesSupport {
     //  "password"
     //);
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String {
-        return "CREATE ${index.method} INDEX IF NOT EXISTS ${index.name} ON $tableName (${
-            index.columns.joinToString(",") { column ->
-                if (index.type.isNotEmpty()) "$column COLLATE ${index.type}"
-                else column
+        return "CREATE ${index.type} INDEX IF NOT EXISTS ${index.name} ON ${quote(tableName)} (${
+            index.columns.joinToString(", ") { column ->
+                if (index.method.isNotEmpty()) "${quote(column)} COLLATE ${index.method}"
+                else quote(column)
             }
-        });"
+        })"
     }
 
     override fun getTableExistenceSql(dbType: DBType) =
@@ -204,7 +202,7 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql , joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()

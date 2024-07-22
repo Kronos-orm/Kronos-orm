@@ -8,8 +8,6 @@ import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
-import com.kotlinorm.database.oracle.OracleSupport.orEmpty
-import com.kotlinorm.database.postgres.PostgesqlSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -63,7 +61,7 @@ object PostgesqlSupport : DatabasesSupport {
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String {
         return "${
-            column.columnName
+            quote(column.columnName)
         }${
             if (column.identity) " SERIAL" else " ${getColumnType(column.type, column.length)}"
         }${
@@ -79,10 +77,12 @@ object PostgesqlSupport : DatabasesSupport {
         "select count(1) from pg_class where relname = :tableName"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON $tableName USING ${index.method}(${
+        "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
+            quote(tableName)
+        }${if (index.method.isNotEmpty()) " USING ${index.method}" else ""} (${
             index.columns.joinToString(
-                ","
-            ) { col -> "\"$col\"" }
+                ", "
+            ) { quote(it) }
         })"
 
 
@@ -259,7 +259,7 @@ object PostgesqlSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql , joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()

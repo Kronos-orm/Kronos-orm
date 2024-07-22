@@ -7,8 +7,6 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
-import com.kotlinorm.database.mssql.MssqlSupport.orEmpty
-import com.kotlinorm.database.mysql.MysqlSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
@@ -70,7 +68,7 @@ object MssqlSupport : DatabasesSupport {
     override
 
     fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
-        column.columnName
+        quote(column.columnName)
     }${
         " ${sqlColumnType(dbType, column.type, column.length)}"
     }${
@@ -314,7 +312,7 @@ object MssqlSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql , joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()

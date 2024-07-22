@@ -10,6 +10,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 
 interface DatabasesSupport {
@@ -110,5 +111,10 @@ interface DatabasesSupport {
     fun getSelectSql(
         dataSource: KronosDataSourceWrapper,
         selectClause: SelectClauseInfo
+    ): String
+
+    fun getJoinSql(
+        dataSource: KronosDataSourceWrapper,
+        joinClause: JoinClauseInfo
     ): String
 }

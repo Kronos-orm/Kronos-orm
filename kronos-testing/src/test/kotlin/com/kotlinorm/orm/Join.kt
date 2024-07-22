@@ -5,6 +5,7 @@ import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
+import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
@@ -20,6 +21,8 @@ class Join {
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
+        username = "root"
+        password = "rootroot"
     }
 
     init {

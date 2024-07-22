@@ -133,6 +133,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 else removeInMap(repeatCriteria , fieldTableName , criteriaMap)
             }
 
+            criteriaMap.putAll(constMap)
             criteriaMap.keys.forEach { key ->
                 joinables.add(KJoinable(key, JoinType.LEFT_JOIN , criteriaMap[key]!!.toCriteria() , listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()))
             }

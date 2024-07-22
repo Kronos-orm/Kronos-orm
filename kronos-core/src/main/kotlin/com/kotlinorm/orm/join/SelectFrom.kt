@@ -37,15 +37,13 @@ import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.*
 import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.logAndReturn
-import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.toLinkedSet
+import java.util.Stack
 
 /**
  * Select From
@@ -81,6 +79,77 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var pi = 0
     private var ps = 0
+
+    fun on(on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+
+        val criteriaMap = mutableMapOf<String , MutableList<Criteria>>()
+        val constMap = mutableMapOf<String , MutableList<Criteria>>()
+        val repeatlist = mutableListOf<Triple<Criteria , String , String>>()
+
+        t1.conditionalRun {
+            on(t1)
+            criteria
+
+            val stack = Stack<Criteria>()
+            var cur = criteria
+            var prev = criteria
+            while (null != cur || !stack.isEmpty()) {
+                while (null != cur) {
+                    stack.push(cur)
+                    cur = if (cur.children.size > 0) cur.children[0] else null
+                }
+                val top = stack.peek()
+                if (top.children.size <= 1 || top.children[1] == prev) {
+                    prev = top
+                    val topTableName = top.tableName
+                    if (!topTableName.isNullOrEmpty()) {
+
+                        val fieldTableName = top.field.tableName
+                        val valueTableName = if (top.value is Field) (top.value as Field).tableName else null
+
+                        if (null == valueTableName)
+                            setInMap(top , fieldTableName , constMap)
+                        else if (valueTableName == tableName || (fieldTableName!= tableName && !criteriaMap.contains(fieldTableName) && criteriaMap.contains(valueTableName))) //value侧为主表或目前field侧无条件而value侧有条件，直接将条件放入field侧
+                            setInMap(top , fieldTableName , criteriaMap)
+                        else if (fieldTableName == tableName || (valueTableName != tableName && criteriaMap.contains(fieldTableName))) //field侧为主表或目前value侧无条件而field侧有条件或两侧都有条件，可直接将条件放入vaule侧
+                            setInMap(top , valueTableName , criteriaMap)
+                        else  { // 条件两侧均未出现过，将条件放入两侧，后期再根据两端条件数量删除一侧
+                            setInMap(top , valueTableName , criteriaMap)
+                            setInMap(top , fieldTableName , criteriaMap)
+                            repeatlist.add(Triple(top , fieldTableName , valueTableName))
+                        }
+
+                    }
+
+                    stack.pop()
+                } else cur = top.children[1]
+            }
+
+            repeatlist.forEach {
+                val (repeatCriteria, fieldTableName, valueTableName) = it
+                if (null != criteriaMap[fieldTableName] && criteriaMap[fieldTableName]!!.size == 1)
+                    removeInMap(repeatCriteria , valueTableName , criteriaMap)
+                else removeInMap(repeatCriteria , fieldTableName , criteriaMap)
+            }
+
+            criteriaMap.keys.forEach { key ->
+                joinables.add(KJoinable(key, JoinType.LEFT_JOIN , criteriaMap[key]!!.toCriteria() , listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()))
+            }
+        }
+    }
+
+    private fun setInMap(criteria: Criteria , criteriaTableName: String , map: MutableMap<String , MutableList<Criteria>>) {
+        val criteriaList = map.getOrDefault(criteriaTableName , mutableListOf())
+        criteriaList.add(criteria)
+        map[criteriaTableName] = criteriaList
+    }
+
+    private fun removeInMap(criteria: Criteria , criteriaTableName: String , map: MutableMap<String , MutableList<Criteria>>) {
+        val criteriaList = map[criteriaTableName]!!
+        criteriaList.remove(criteria)
+        map[criteriaTableName] = criteriaList
+    }
 
     /**
      * Performs a left join operation between two tables.
@@ -339,7 +408,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             return result
         }
     }
-
 
     fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
         return this.build().queryMap(wrapper)

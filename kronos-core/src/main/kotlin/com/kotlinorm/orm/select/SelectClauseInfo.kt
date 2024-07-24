@@ -1,6 +1,7 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.enums.PessimisticLock
 
 data class SelectClauseInfo(
     val tableName: String,
@@ -10,6 +11,7 @@ data class SelectClauseInfo(
     val pageIndex: Int,
     val pageSize: Int,
     val limit: Int? = null,
+    val lock: PessimisticLock? = null,
     val whereClauseSql: String? = null,
     val groupByClauseSql: String? = null,
     val orderByClauseSql: String? = null,

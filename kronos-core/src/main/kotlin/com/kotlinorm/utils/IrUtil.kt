@@ -50,6 +50,10 @@ fun getLogicDeleteStrategy(): KronosCommonStrategy {
     return Kronos.logicDeleteStrategy
 }
 
+fun getOptimisticLockStrategy(): KronosCommonStrategy {
+    return Kronos.optimisticLockStrategy
+}
+
 fun createPair(first: String, second: Any?) = first to second
 
 fun createMutableMap(vararg pairs: Pair<String, Any?>) = mutableMapOf(*pairs)

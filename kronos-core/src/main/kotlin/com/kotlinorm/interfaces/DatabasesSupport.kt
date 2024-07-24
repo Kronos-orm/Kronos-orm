@@ -105,6 +105,7 @@ interface DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
+        versionField: String?,
         whereClauseSql: String?
     ): String
 

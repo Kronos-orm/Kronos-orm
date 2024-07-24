@@ -62,6 +62,7 @@ class UpdateClause<T : KPojo>(
     private var tableName = pojo.kronosTableName()
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var optimisticStrategy = pojo.kronosOptimisticLock()
     internal var allFields = pojo.kronosColumns().toLinkedSet()
     internal var toUpdateFields = linkedSetOf<Field>()
     internal var condition: Criteria? = null
@@ -218,11 +219,16 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "New"] = value
         }
 
+        var versionField: String? = null
+        setCommonStrategy(optimisticStrategy) {field, _ ->
+            versionField = field.columnName
+        }
+
         // 构建完整的更新SQL语句，包括条件部分
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(wrapper, condition)
             .toWhereClause()
 
-        val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), whereClauseSql)
+        val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), versionField, whereClauseSql)
 
         // 合并参数映射，准备执行SQL所需的参数
         paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())

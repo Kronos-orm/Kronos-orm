@@ -30,6 +30,7 @@ import com.kotlinorm.database.SqlManager.getSelectSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.QueryType.*
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -69,6 +70,7 @@ class SelectClause<T : KPojo>(
     private var orderEnabled = false
     private var cascadeEnabled = true
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var lock: PessimisticLock? = null
     private var selectAll = true
     private var ps = 0
     private var pi = 0
@@ -100,7 +102,6 @@ class SelectClause<T : KPojo>(
         limitCapacity = capacity
         return this
     }
-
 
     /**
      * 根据指定的字段对当前对象进行排序。
@@ -209,7 +210,6 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-
     /**
      * 设置HAVING条件的函数，用于在查询中添加基于聚合结果的条件限制。
      *
@@ -236,6 +236,11 @@ class SelectClause<T : KPojo>(
 
     fun patch(vararg pairs: Pair<String, Any?>): SelectClause<T> {
         paramMap.putAll(pairs)
+        return this
+    }
+
+    fun lock(lock:PessimisticLock? = PessimisticLock.X): SelectClause<T> {
+        this.lock = lock
         return this
     }
 
@@ -455,6 +460,7 @@ class SelectClause<T : KPojo>(
             pi,
             ps,
             limitCapacity,
+            lock,
             whereClauseSql,
             groupByClauseSql,
             orderByClauseSql,

@@ -9,17 +9,13 @@ import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
-import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
-import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.Extensions.asSql
-import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.setCommonStrategy
 
 object MysqlSupport : DatabasesSupport {
     override var quotes = Pair("`", "`")
@@ -172,12 +168,18 @@ object MysqlSupport : DatabasesSupport {
         "DELETE FROM ${quote(tableName)}${whereClauseSql.orEmpty()}"
 
     override fun getUpdateSql(
-        dataSource: KronosDataSourceWrapper, tableName: String, toUpdateFields: List<Field>, whereClauseSql: String?
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        versionField: String?,
+        whereClauseSql: String?
     ) =
-        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
+        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
+        whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -188,6 +190,11 @@ object MysqlSupport : DatabasesSupport {
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
         val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
+        val lockSql = when (lock) {
+            PessimisticLock.X -> " FOR UPDATE"
+            PessimisticLock.S -> " LOCK IN SHARE MODE"
+            else -> null
+        }
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)
         }${
@@ -200,6 +207,8 @@ object MysqlSupport : DatabasesSupport {
             orderByClauseSql.orEmpty()
         }${
             paginationSql ?: limitSql ?: ""
+        }${
+            lockSql.orEmpty()
         }"
     }
 

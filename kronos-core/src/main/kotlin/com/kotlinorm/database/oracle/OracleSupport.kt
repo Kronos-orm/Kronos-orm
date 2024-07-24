@@ -10,6 +10,7 @@ import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -259,12 +260,15 @@ object OracleSupport : DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
+        versionField: String?,
         whereClauseSql: String?
     ) =
-        "UPDATE ${quote(tableName.uppercase())} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+        "UPDATE ${quote(tableName.uppercase())} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
+        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
+        whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -275,6 +279,11 @@ object OracleSupport : DatabasesSupport {
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql = if (paginationSql == null && limit != null) " FETCH FIRST $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
+        val lockSql = when(lock) {
+            PessimisticLock.X -> " FOR UPDATE(NOWAIT)"
+            PessimisticLock.S -> " LOCK IN SHARE MODE"
+            else-> null
+        }
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName.uppercase())
         }${

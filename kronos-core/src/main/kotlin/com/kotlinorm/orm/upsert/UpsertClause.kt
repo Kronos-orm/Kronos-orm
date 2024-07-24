@@ -27,6 +27,7 @@ import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
@@ -59,9 +60,7 @@ class UpsertClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime()
-    private var updateTimeStrategy = pojo.kronosUpdateTime()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var optimisticStrategy = pojo.kronosOptimisticLock()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var onDuplicateKey = false
     private var toInsertFields = linkedSetOf<Field>()
@@ -69,6 +68,7 @@ class UpsertClause<T : KPojo>(
     private var onFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var lock:PessimisticLock? = null
 
     init {
         if (setUpsertFields != null) {
@@ -122,6 +122,12 @@ class UpsertClause<T : KPojo>(
         return this
     }
 
+    fun lock(lock: PessimisticLock = PessimisticLock.X): UpsertClause<T> {
+        optimisticStrategy.enabled = false
+        this.lock = lock
+        return this
+    }
+
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         return build(wrapper).execute(wrapper)
     }
@@ -140,10 +146,6 @@ class UpsertClause<T : KPojo>(
         if (toUpdateFields.isEmpty()) {
             toUpdateFields = allFields.toLinkedSet()
         }
-
-        setCommonStrategy(createTimeStrategy, true, callBack = updateUpsertFields())
-        setCommonStrategy(updateTimeStrategy, true, callBack = updateUpsertFields())
-        setCommonStrategy(logicDeleteStrategy, callBack = updateUpsertFields(true))
 
         paramMap = paramMap.filter { it ->
             it.key in (toUpdateFields + toInsertFields + onFields).map { it.name }
@@ -164,14 +166,18 @@ class UpsertClause<T : KPojo>(
             ).toKronosActionTask()
         } else {
             return listOf<KronosAtomicActionTask>().toKronosActionTask().doBeforeExecute {
-                if (pojo.select { "COUNT(1)".asSql() }
+
+                lock = lock ?: PessimisticLock.X.takeIf { !optimisticStrategy.enabled }
+
+                if ((pojo.select { "COUNT(1)".asSql() }
                         .cascade(false)
+                        .lock(lock)
                         .apply {
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map {
                                     it.eq(paramMap[it.name])
                                 }.toCriteria()
-                        }.queryOne<Int>()
+                        }.queryOneOrNull<Int>() ?: 0)
                     > 0
                 ) {
                     pojo.update().cascade(cascadeEnabled, cascadeLimit)
@@ -182,6 +188,7 @@ class UpsertClause<T : KPojo>(
                         }
                         .execute(wrapper)
                 } else {
+                    setCommonStrategy(optimisticStrategy, false, callBack = updateUpsertFields())
                     pojo.insert().cascade(cascadeEnabled, cascadeLimit).execute(wrapper)
                 }
             }

@@ -48,6 +48,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var tableName = pojo.kronosTableName()
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var optimisticStrategy = pojo.kronosOptimisticLock()
     private var logic = false
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()
@@ -151,9 +152,14 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             setCommonStrategy(updateTimeStrategy, true, callBack = updateFields)
             setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateFields)
 
+            var versionField: String? = null
+            setCommonStrategy(optimisticStrategy) {field, _ ->
+                versionField = field.columnName
+            }
+
             return CascadeDeleteClause.build(
                 cascadeEnabled, cascadeLimit, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
-                    getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields, toWhereSql(whereClauseSql)),
+                    getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields, versionField, toWhereSql(whereClauseSql)),
                     paramMap,
                     operationType = KOperationType.DELETE
                 )

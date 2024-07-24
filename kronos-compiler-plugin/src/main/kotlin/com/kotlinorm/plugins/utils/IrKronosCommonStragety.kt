@@ -49,6 +49,10 @@ internal val globalLogicDeleteSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getLogicDeleteStrategy").first()
 
 context(IrPluginContext)
+internal val globalOptimisticLockSymbol
+    get() = referenceFunctions("com.kotlinorm.utils", "getOptimisticLockStrategy").first()
+
+context(IrPluginContext)
 internal val globalCreateTimeSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getCreateTimeStrategy").first()
 
@@ -61,6 +65,8 @@ val UpdateTimeFqName = FqName("com.kotlinorm.annotations.UpdateTime")
 val LogicDeleteFqName = FqName("com.kotlinorm.annotations.LogicDelete")
 
 val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
+
+val OptimisticLockFqName = FqName("com.kotlinorm.annotations.Version")
 
 /**
  * Returns the `num`-th subtype of the class represented by the given `IrCall`.

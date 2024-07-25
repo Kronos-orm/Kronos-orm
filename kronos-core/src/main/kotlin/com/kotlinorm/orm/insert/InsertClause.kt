@@ -61,7 +61,6 @@ class InsertClause<T : KPojo>(val pojo: T) {
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
-        setCommonStrategy(optimisticStrategy, false, callBack = updateInsertFields)
 
         val sql = getInsertSql(wrapper.orDefault(), tableName, toInsertFields.toList())
 

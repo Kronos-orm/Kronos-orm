@@ -60,6 +60,7 @@ class UpdateClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
+    private var createTimeStrategy = pojo.kronosCreateTime()
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var optimisticStrategy = pojo.kronosOptimisticLock()
@@ -180,9 +181,6 @@ class UpdateClause<T : KPojo>(
             }.toCriteria()
         }
 
-        updateTimeStrategy.enabled = this.updateTimeStrategy.enabled
-        logicDeleteStrategy.enabled = this.logicDeleteStrategy.enabled
-
         // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
         if (isExcept) {
             // 移除指定字段并处理"create_time"字段的特殊情况
@@ -213,6 +211,11 @@ class UpdateClause<T : KPojo>(
             ).toCriteria()
         }
 
+        setCommonStrategy(createTimeStrategy) { field, _ ->
+            toUpdateFields -= field
+            paramMapNew -= field + "New"
+        }
+
         // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
         setCommonStrategy(updateTimeStrategy, true) { field, value ->
             toUpdateFields += field
@@ -220,7 +223,7 @@ class UpdateClause<T : KPojo>(
         }
 
         var versionField: String? = null
-        setCommonStrategy(optimisticStrategy) {field, _ ->
+        setCommonStrategy(optimisticStrategy) { field, _ ->
             versionField = field.columnName
         }
 

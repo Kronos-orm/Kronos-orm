@@ -26,6 +26,7 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.NeedFieldsException
@@ -169,15 +170,18 @@ class UpsertClause<T : KPojo>(
 
                 lock = lock ?: PessimisticLock.X.takeIf { !optimisticStrategy.enabled }
 
-                if ((pojo.select { "COUNT(1)".asSql() }
+                if ((pojo.select()
                         .cascade(false)
                         .lock(lock)
                         .apply {
+                            selectFields = linkedSetOf(Field("COUNT(1)", "COUNT(1)" , type = KColumnType.CUSTOM_CRITERIA_SQL))
+                            selectAll = false
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map {
                                     it.eq(paramMap[it.name])
                                 }.toCriteria()
-                        }.queryOneOrNull<Int>() ?: 0)
+                        }
+                        .queryOneOrNull<Int>() ?: 0)
                     > 0
                 ) {
                     pojo.update().cascade(cascadeEnabled, cascadeLimit)

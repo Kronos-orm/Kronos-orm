@@ -189,7 +189,7 @@ object SqliteSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
-        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
 
         if (null != lock) throw UnsupportedDatabaseTypeException("Sqlite doesn't support the lock() method because Sqlite only has database locks")
@@ -218,7 +218,7 @@ object SqliteSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
-        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)

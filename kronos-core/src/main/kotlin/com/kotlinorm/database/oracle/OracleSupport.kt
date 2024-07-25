@@ -277,7 +277,7 @@ object OracleSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null) " FETCH FIRST $limit ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         val lockSql = when(lock) {
             PessimisticLock.X -> " FOR UPDATE(NOWAIT)"
@@ -308,7 +308,7 @@ object OracleSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null) " FETCH FIRST $limit ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName.uppercase())

@@ -22,9 +22,11 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
+import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -52,16 +54,14 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return this
     }
 
-    fun build(): KronosActionTask {
+    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         toInsertFields.addAll(allFields.filter { it.isColumn && paramMap[it.name] != null })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
         setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
 
-        val sql = """
-            INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) VALUES (${toInsertFields.joinToString { ":$it" }})
-        """.trimIndent()
+        val sql = getInsertSql(wrapper.orDefault(), tableName, toInsertFields.toList())
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -126,8 +126,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
          *
          * @return KronosActionTask returns a single KronosActionTask that represents the merged tasks for all the InsertClauses in the Iterable.
          */
-        fun <T : KPojo> Array<InsertClause<T>>.build(): KronosActionTask {
-            return this.map { it.build() }.merge()
+        fun <T : KPojo> Array<InsertClause<T>>.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+            return this.map { it.build(wrapper) }.merge()
         }
 
 

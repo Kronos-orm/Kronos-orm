@@ -10,15 +10,28 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.join.JoinClauseInfo
+import com.kotlinorm.orm.select.SelectClauseInfo
 
 interface DatabasesSupport {
+    var quotes: Pair<String, String>
+
+    fun String?.orEmpty(): String = this ?: ""
+
+    fun quote(str: String): String = "${quotes.first}$str${quotes.second}"
+
+    fun quote(field: Field, showTable: Boolean = false): String =
+        "${if (showTable) quote(field.tableName) + "." else ""}${quote(field.columnName)}"
+
+    fun equation(field: Field, showTable: Boolean = false): String = "${quote(field, showTable)} = :${field.name}"
+
     fun getColumnType(type: KColumnType, length: Int): String
 
     fun getKColumnType(type: String, length: Int = 0): KColumnType = KColumnType.fromString(type)
 
     fun getColumnCreateSql(dbType: DBType, column: Field): String =
         "${
-            column.columnName
+            quote(column.columnName)
         }${
             " ${sqlColumnType(dbType, column.type, column.length)}"
         }${
@@ -32,7 +45,7 @@ interface DatabasesSupport {
         }"
 
     fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE ${index.type} INDEX ${index.name} ON $tableName (${index.columns.joinToString(",")}) USING ${index.method}"
+        "CREATE ${index.type} INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
 
     fun getTableCreateSqlList(
         dbType: DBType,
@@ -43,7 +56,7 @@ interface DatabasesSupport {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE IF NOT EXISTS $tableName ($columnsSql)",
+            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
             *indexesSql.toTypedArray()
         )
     }
@@ -75,4 +88,33 @@ interface DatabasesSupport {
     ): List<String>
 
     fun getOnConflictSql(conflictResolver: ConflictResolver): String
+
+    fun getInsertSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        columns: List<Field>
+    ): String
+
+    fun getDeleteSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        whereClauseSql: String?
+    ): String
+
+    fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ): String
+
+    fun getSelectSql(
+        dataSource: KronosDataSourceWrapper,
+        selectClause: SelectClauseInfo
+    ): String
+
+    fun getJoinSql(
+        dataSource: KronosDataSourceWrapper,
+        joinClause: JoinClauseInfo
+    ): String
 }

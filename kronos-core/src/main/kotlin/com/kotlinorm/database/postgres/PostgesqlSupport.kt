@@ -7,6 +7,7 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
+import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -14,9 +15,12 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.utils.Extensions.rmRedundantBlk
+import com.kotlinorm.orm.join.JoinClauseInfo
+import com.kotlinorm.orm.select.SelectClauseInfo
 
 object PostgesqlSupport : DatabasesSupport {
+    override var quotes = Pair("\"", "\"")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "BOOLEAN"
@@ -57,7 +61,7 @@ object PostgesqlSupport : DatabasesSupport {
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String {
         return "${
-            column.columnName
+            quote(column.columnName)
         }${
             if (column.identity) " SERIAL" else " ${getColumnType(column.type, column.length)}"
         }${
@@ -73,10 +77,12 @@ object PostgesqlSupport : DatabasesSupport {
         "select count(1) from pg_class where relname = :tableName"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON $tableName USING ${index.method}(${
+        "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
+            quote(tableName)
+        }${if (index.method.isNotEmpty()) " USING ${index.method}" else ""} (${
             index.columns.joinToString(
-                ","
-            ) { col -> "\"$col\"" }
+                ", "
+            ) { quote(it) }
         })"
 
 
@@ -169,43 +175,114 @@ object PostgesqlSupport : DatabasesSupport {
         indexes: TableIndexDiff
     ): List<String> {
         return indexes.toDelete.map {
-            "DROP INDEX \"public\".${it.name};"
+            "DROP INDEX ${quote("public")}.${it.name};"
         } + columns.toAdd.map {
-            "ALTER TABLE \"public\".$tableName ADD COLUMN ${it.columnName} ${
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.columnName} ${
                 columnCreateDefSql(
                     DBType.Postgres, it
                 )
             }"
         } + columns.toModified.map {
-            "ALTER TABLE \"public\".$tableName ALTER COLUMN ${it.columnName} TYPE ${
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.columnName} TYPE ${
                 getColumnType(it.type, it.length)
             } ${if (it.defaultValue != null) ",AlTER COLUMN ${it.columnName} SET DEFAULT ${it.defaultValue}" else ""} ${
                 if (it.nullable) ",ALTER COLUMN ${it.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.columnName} SET NOT NULL"
             }"
         } + columns.toDelete.map {
-            "ALTER TABLE \"public\".$tableName DROP COLUMN ${it.columnName}"
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {
-            getIndexCreateSql(DBType.Postgres, "\"public\".$tableName", it)
+            getIndexCreateSql(DBType.Postgres, "${quote("public")}.${quote(tableName)}", it)
         }
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            INSERT INTO $tableName 
-                (${toInsertFields.joinToString { it.quoted() }})
-            SELECT 
-               ${toInsertFields.joinToString(", ") { ":$it" }}
-            WHERE NOT EXISTS ( 
-               SELECT 1 FROM $tableName
-               WHERE ${onFields.joinToString(" AND ") { it.equation() }}
+        INSERT INTO ${
+            quote(tableName)
+        } (${
+            toInsertFields.joinToString { quote(it) }
+        }) SELECT  ${
+            toInsertFields.joinToString(", ") { ":$it" }
+        } WHERE NOT EXISTS (
+               SELECT 1 FROM ${
+            quote(tableName)
+        } WHERE ${onFields.joinToString(" AND ") { equation(it) }}
             );
-            
-            UPDATE $tableName
-            SET
-               ${toUpdateFields.joinToString(", ") { it.equation() }}
-            WHERE
-               ${onFields.joinToString(" AND ") { it.equation() }};
-        """.rmRedundantBlk()
+            UPDATE ${quote(tableName)} SET ${
+            toUpdateFields.joinToString(", ") { equation(it) }
+        } WHERE ${
+            onFields.joinToString(" AND ") { equation(it) }
+        };
+        """.trimIndent()
+    }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName)}${whereClauseSql.orEmpty()}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+
+    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it)}"
+                else -> quote(it)
+            }
+        }
+        val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
+        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName)
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
+    }
+
+    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                else -> "${quote(it.second, true)} AS ${MssqlSupport.quote(it.first)}"
+            }
+        }
+        val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
+        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName)
+        }${
+            joinSql.orEmpty()
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
     }
 }

@@ -23,6 +23,9 @@ import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
 import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.database.SqlManager.getJoinSql
+import com.kotlinorm.database.SqlManager.quoted
+import com.kotlinorm.database.mysql.MysqlSupport.quote
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
@@ -34,14 +37,13 @@ import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.KTableConditionalField
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.types.KTableSortableField
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.*
+import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.logAndReturn
-import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.toLinkedSet
+import java.util.Stack
 
 /**
  * Select From
@@ -67,17 +69,88 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     val joinables: MutableList<KJoinable> = mutableListOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
-    private var isDistinct = false
-    private var isGroup = false
-    private var isHaving = false
-    private var isOrder = false
-    private var isLimit = false
-    private var isPage = false
+    private var distinctEnabled = false
+    private var groupEnabled = false
+    private var havingEnabled = false
+    private var orderEnabled = false
+    private var pageEnabled = false
     private var limitCapacity = 0
     private var cascadeEnabled = true
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var pi = 0
     private var ps = 0
+
+    fun on(on: KTableConditionalField<T1, Boolean?>) {
+        if (null == on) throw NeedFieldsException()
+
+        val criteriaMap = mutableMapOf<String , MutableList<Criteria>>()
+        val constMap = mutableMapOf<String , MutableList<Criteria>>()
+        val repeatlist = mutableListOf<Triple<Criteria , String , String>>()
+
+        t1.conditionalRun {
+            on(t1)
+            criteria
+
+            val stack = Stack<Criteria>()
+            var cur = criteria
+            var prev = criteria
+            while (null != cur || !stack.isEmpty()) {
+                while (null != cur) {
+                    stack.push(cur)
+                    cur = if (cur.children.size > 0) cur.children[0] else null
+                }
+                val top = stack.peek()
+                if (top.children.size <= 1 || top.children[1] == prev) {
+                    prev = top
+                    val topTableName = top.tableName
+                    if (!topTableName.isNullOrEmpty()) {
+
+                        val fieldTableName = top.field.tableName
+                        val valueTableName = if (top.value is Field) (top.value as Field).tableName else null
+
+                        if (null == valueTableName)
+                            setInMap(top , fieldTableName , constMap)
+                        else if (valueTableName == tableName || (fieldTableName!= tableName && !criteriaMap.contains(fieldTableName) && criteriaMap.contains(valueTableName))) //value侧为主表或目前field侧无条件而value侧有条件，直接将条件放入field侧
+                            setInMap(top , fieldTableName , criteriaMap)
+                        else if (fieldTableName == tableName || (valueTableName != tableName && criteriaMap.contains(fieldTableName))) //field侧为主表或目前value侧无条件而field侧有条件或两侧都有条件，可直接将条件放入vaule侧
+                            setInMap(top , valueTableName , criteriaMap)
+                        else  { // 条件两侧均未出现过，将条件放入两侧，后期再根据两端条件数量删除一侧
+                            setInMap(top , valueTableName , criteriaMap)
+                            setInMap(top , fieldTableName , criteriaMap)
+                            repeatlist.add(Triple(top , fieldTableName , valueTableName))
+                        }
+
+                    }
+
+                    stack.pop()
+                } else cur = top.children[1]
+            }
+
+            repeatlist.forEach {
+                val (repeatCriteria, fieldTableName, valueTableName) = it
+                if (null != criteriaMap[fieldTableName] && criteriaMap[fieldTableName]!!.size == 1)
+                    removeInMap(repeatCriteria , valueTableName , criteriaMap)
+                else removeInMap(repeatCriteria , fieldTableName , criteriaMap)
+            }
+
+            criteriaMap.putAll(constMap)
+            criteriaMap.keys.forEach { key ->
+                joinables.add(KJoinable(key, JoinType.LEFT_JOIN , criteriaMap[key]!!.toCriteria() , listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()))
+            }
+        }
+    }
+
+    private fun setInMap(criteria: Criteria , criteriaTableName: String , map: MutableMap<String , MutableList<Criteria>>) {
+        val criteriaList = map.getOrDefault(criteriaTableName , mutableListOf())
+        criteriaList.add(criteria)
+        map[criteriaTableName] = criteriaList
+    }
+
+    private fun removeInMap(criteria: Criteria , criteriaTableName: String , map: MutableMap<String , MutableList<Criteria>>) {
+        val criteriaList = map[criteriaTableName]!!
+        criteriaList.remove(criteria)
+        map[criteriaTableName] = criteriaList
+    }
 
     /**
      * Performs a left join operation between two tables.
@@ -197,7 +270,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun orderBy(someFields: KTableSortableField<T1, Any?>) {
         if (someFields == null) throw NeedFieldsException()
 
-        isOrder = true
+        orderEnabled = true
         pojo.sortableRun {
             someFields(t1)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
             orderByFields = sortFields.toLinkedSet()
@@ -212,7 +285,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @throws NeedFieldsException If the `someFields` parameter is null.
      */
     fun groupBy(someFields: KTableField<T1, Any?>) {
-        isGroup = true
+        groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (null == someFields) throw NeedFieldsException()
         pojo.tableRun {
@@ -223,10 +296,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     }
 
     /**
-     * Sets the isDistinct flag to true, indicating that the result set should be distinct.
+     * Sets the distinctEnabled flag to true, indicating that the result set should be distinct.
      */
     fun distinct() {
-        this.isDistinct = true
+        this.distinctEnabled = true
     }
 
     /**
@@ -235,7 +308,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param num the number of records to limit the result set to
      */
     fun limit(num: Int) {
-        this.isLimit = true
         this.limitCapacity = num
     }
 
@@ -246,7 +318,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param ps the number of records per page, specifying the number of records to display per page
      */
     fun page(pi: Int, ps: Int) {
-        this.isPage = true
+        this.pageEnabled = true
         this.ps = ps
         this.pi = pi
     }
@@ -302,7 +374,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun having(selectCondition: KTableConditionalField<T1, Boolean?> = null) {
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
-        isHaving = true // 标记为HAVING条件
+        havingEnabled = true // 标记为HAVING条件
         pojo.conditionalRun {
             propParamMap = paramMap // 设置属性参数映射
             selectCondition(t1) // 执行传入的条件函数
@@ -337,7 +409,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             return result
         }
     }
-
 
     fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
         return this.build().queryMap(wrapper)
@@ -412,7 +483,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         // 设置逻辑删除的条件
         if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
             buildCondition = listOfNotNull(
-                buildCondition, "${logicDeleteStrategy.field.quoted(true)} = $value".asSql()
+                buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault() , true)} = $value".asSql()
             ).toCriteria()
         }
 
@@ -423,76 +494,67 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             ).toCriteria()
         }
 
-        // 构建带有参数的查询条件SQL
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(
-            buildCondition,
-            mutableMapOf(),
-            showTable = true
-        )
-            .toWhereClause()
-
-        val joinClauseSql = joinables.joinToString(" ") {
-            var joinCondition = it.condition
-            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
-                joinCondition = listOfNotNull(
-                    joinCondition, "${it.logicDeleteStrategy.field.quoted(true)} = $value".asSql()
-                ).toCriteria()
-            }
-            listOfNotNull(
-                it.joinType.value,
-                "`${it.tableName}`",
-                ConditionSqlBuilder.buildConditionSqlWithParams(joinCondition, paramMap, showTable = true)
-                    .toOnClause().first
-            ).joinToString(" ")
-        }
-
-        // 检查并设置是否使用去重（DISTINCT）
-        val selectKeyword = if (isDistinct) "SELECT DISTINCT" else "SELECT"
-
-        //检查是否设置排序
-        val orderByKeywords = if (isOrder && orderByFields.isNotEmpty()) "ORDER BY " +
-                orderByFields.joinToString(", ") {
-                    if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(true) +
-                            " " + it.second
-                } else null
-
-        // 检查并设置是否分组
-        val groupByKeyword = if (isGroup) "GROUP BY " + (groupByFields.takeIf { it.isNotEmpty() }
-            ?.joinToString(", ") { it.quoted(true) }) else null
-
-        // 检查并设置是否使用HAVING条件
-        val havingKeyword = if (isHaving) "HAVING " + (havingCondition.let { it ->
-            it?.children?.joinToString(" AND ") { it?.field?.equation().toString() }
-        }) else null
-
-        // 组装最终的SQL语句
-        val sql = listOfNotNull(
-            selectKeyword,
-            selectFields.joinToString(", ") { field ->
-                field.let { item ->
-                    if (item.type == CUSTOM_CRITERIA_SQL) field.toString()
-                    else "${item.quoted(true)} AS `${selectFieldsWithNames.filterKeys { selectFieldsWithNames[it] == item }.keys.first()}`"
-                }
-            },
-            "FROM `$tableName`",
-            joinClauseSql,
-            whereClauseSql,
-            groupByKeyword,
-            havingKeyword,
-            orderByKeywords
-        ).joinToString(" ")
+        val paramMapNew = mutableMapOf<String, Any?>()
+        val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper , buildCondition) {
+            paramMapNew.putAll(it)
+        })
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeJoinClause.build(
-            cascadeEnabled,
-            cascadeLimit,
-            listOfPojo,
-            KronosAtomicQueryTask(
-                sql,
-                paramMap,
-                operationType = KOperationType.SELECT
-            ),
-            selectFieldsWithNames
+            cascadeEnabled, cascadeLimit, listOfPojo, KronosAtomicQueryTask(
+                sql, paramMapNew, operationType = KOperationType.SELECT
+            ), selectFieldsWithNames
+        )
+    }
+
+    private fun toJoinClauseInfo(
+        wrapper: KronosDataSourceWrapper? = null,
+        buildCondition: Criteria?,
+        updateMap: (map: MutableMap<String, Any?>) -> Unit
+    ): JoinClauseInfo {
+        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(wrapper, buildCondition, showTable = true).toWhereClause()
+
+        val joinSql = " " + joinables.joinToString(" ") {
+            var joinCondition = it.condition
+            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
+                joinCondition = listOfNotNull(
+                    joinCondition, "${quote(it.logicDeleteStrategy.field, true)} = $value".asSql()
+                ).toCriteria()
+            }
+
+            val (onSql , mapOfOn) = buildConditionSqlWithParams(wrapper, joinCondition, paramMap, showTable = true)
+                .toOnClause()
+            updateMap(mapOfOn)
+
+            it.joinType.value + " " + "`${it.tableName}`" + onSql
+        }
+
+        val groupByClauseSql =
+            if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
+                it.quoted(wrapper.orDefault() , true)
+            }) else null
+        val orderByClauseSql =
+            if (orderEnabled && orderByFields.isNotEmpty()) " ORDER BY " + orderByFields.joinToString(", ") {
+                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(wrapper.orDefault() , true) + " " + it.second
+            } else null
+        val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
+            wrapper, havingCondition
+        ).toHavingClause() else null to mutableMapOf()
+        updateMap(mapOfWhere)
+        updateMap(mapOfHaving)
+        return JoinClauseInfo(
+            tableName,
+            selectFieldsWithNames.toList(),
+            distinctEnabled,
+            pageEnabled,
+            pi,
+            ps,
+            limitCapacity,
+            whereClauseSql,
+            groupByClauseSql,
+            orderByClauseSql,
+            havingClauseSql,
+            joinSql
         )
     }
 }

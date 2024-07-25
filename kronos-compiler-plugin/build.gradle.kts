@@ -13,7 +13,7 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:2.3.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.0")
     }
 }
 
@@ -40,7 +40,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(project(":kronos-core"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
-    testImplementation("dev.zacsweers.kctfork:core:0.5.0")
+    testImplementation("dev.zacsweers.kctfork:core:0.5.1")
 }
 
 tasks.test {

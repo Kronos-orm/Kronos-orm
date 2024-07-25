@@ -42,6 +42,11 @@ object Mysql {
          * This constant represents the hash index method.
          */
         const val HASH = "HASH"
+
+        /**
+         * This constant represents the full-text index method.
+         */
+        const val FULLTEXT = "FULLTEXT"
     }
 
     /**
@@ -69,16 +74,6 @@ object Mysql {
          * This constant represents the spatial index type.
          */
         const val SPATIAL = "SPATIAL"
-
-        /**
-         * This constant represents the B-tree index type.
-         */
-        const val BTREE = "BTREE"
-
-        /**
-         * This constant represents the hash index type.
-         */
-        const val HASH = "HASH"
     }
 }
 
@@ -92,18 +87,6 @@ object Oracle {
      * This property represents the type of the database, which is Oracle in this case.
      */
     val type = DBType.Oracle
-
-    /**
-     * This object represents the index methods supported by Oracle.
-     *
-     * It contains two constants, NORMAL and BITMAP, which represent the normal and bitmap index methods respectively.
-     */
-    object KIndexMethod {
-        /**
-         * This constant represents the normal index method.
-         */
-        const val BITMAP = "BITMAP"
-    }
 
     /**
      * This object represents the index types supported by Oracle.
@@ -193,16 +176,39 @@ object Postgres {
      * It contains five constants, BTREE, HASH, GIST, SPGIST, and GIN, which represent the B-tree, hash, GiST, SP-GiST, and GIN index methods respectively.
      */
     object KIndexMethod {
-        const val UNIQUE = "UNIQUE"
+        /**
+         * This constant represents the B-tree index method.
+         */
+        const val BTREE = "BTREE"
+
+        /**
+         * This constant represents the hash index method.
+         */
+        const val HASH = "HASH"
+
+        /**
+         * This constant represents the GiST index method.
+         */
+        const val GIST = "GIST"
+
+        /**
+         * This constant represents the SP-GiST index method.
+         */
+        const val SPGIST = "SPGIST"
+
+        /**
+         * This constant represents the GIN index method.
+         */
+        const val GIN = "GIN"
+
+        /**
+         * This constant represents the BRIN index method.
+         */
+        const val BRIN = "BRIN"
     }
 
     object KIndexType {
-        const val BTREE = "BTREE"
-        const val HASH = "HASH"
-        const val GIST = "GIST"
-        const val SPGIST = "SPGIST"
-        const val GIN = "GIN"
-        const val BRIN = "BRIN"
+        const val UNIQUE = "UNIQUE"
     }
 }
 

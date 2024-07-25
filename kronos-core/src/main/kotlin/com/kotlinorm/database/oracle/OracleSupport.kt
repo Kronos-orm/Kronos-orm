@@ -6,6 +6,7 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
+import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -13,10 +14,14 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.join.JoinClauseInfo
+import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.Extensions.rmRedundantBlk
 import java.math.BigDecimal
 
 object OracleSupport : DatabasesSupport {
+    override var quotes = Pair("\"", "\"")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "NUMBER(1)"
@@ -73,7 +78,7 @@ object OracleSupport : DatabasesSupport {
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String {
         return "${
-            column.columnName
+            quote(column.columnName)
         }${
             " ${getColumnType(column.type, column.length)}"
         }${
@@ -88,10 +93,10 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE ${index.type.uppercase()} INDEX ${index.name} ON $tableName (${
+        "CREATE ${index.type.uppercase()} INDEX ${index.name} ON ${quote(tableName)} (${
             index.columns.joinToString(
                 ", "
-            )
+            ) { quote(it) }
         })"
 
     override fun getTableCreateSqlList(
@@ -100,7 +105,7 @@ object OracleSupport : DatabasesSupport {
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE $tableName ($columnsSql)", *indexesSql.toTypedArray()
+            "CREATE TABLE ${quote(tableName.uppercase())} ($columnsSql)", *indexesSql.toTypedArray()
         )
     }
 
@@ -109,7 +114,7 @@ object OracleSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = """
             BEGIN
-               EXECUTE IMMEDIATE 'DROP TABLE $tableName';
+               EXECUTE IMMEDIATE 'DROP TABLE ${quote(tableName)}';
             EXCEPTION
                WHEN OTHERS THEN
                   IF SQLCODE != -942 THEN
@@ -203,17 +208,17 @@ object OracleSupport : DatabasesSupport {
         val dbType = dataSource.dbType
         val dbName = getDBNameFrom(dataSource)
         return indexes.toDelete.map {
-            "DROP INDEX \"$dbName\".\"${it.name}\""
+            "DROP INDEX ${quote(dbName)}.\"${it.name}\""
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName DROP COLUMN \"${it.columnName}\""
+            "ALTER TABLE ${quote(tableName)} DROP COLUMN \"${it.columnName}\""
         } + columns.toModified.map {
-            "ALTER TABLE $tableName MODIFY(${getColumnCreateSql(dbType, it)})"
+            "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it)})"
         } + columns.toAdd.map {
-            "ALTER TABLE $tableName ADD ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it)}"
         } + indexes.toAdd.map {
-            "CREATE ${it.type} INDEX ${it.name} ON \"$dbName\".\"$tableName\" (${
+            "CREATE ${it.type} INDEX ${it.name} ON ${quote(dbName)}.${quote(tableName)} (${
                 it.columns.joinToString(",") { col ->
-                    "\"${col.uppercase()}\""
+                    quote(col.uppercase())
                 }
             })"
         }
@@ -223,20 +228,93 @@ object OracleSupport : DatabasesSupport {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
             BEGIN
-                INSERT INTO "$tableName" 
-                    (${toInsertFields.joinToString { it.quoted() }})
+                INSERT INTO ${quote(tableName)}
+                    (${toInsertFields.joinToString { quote(it) }})
                 VALUES 
                 (${toInsertFields.joinToString(", ") { ":$it" }}) 
                 EXCEPTION 
                     WHEN 
                         DUP_VAL_ON_INDEX 
                     THEN 
-                        UPDATE "$tableName"
+                        UPDATE ${quote(tableName)}
                         SET 
-                            ${toUpdateFields.joinToString(", ") { it.equation() }}
+                            ${toUpdateFields.joinToString(", ") { equation(it) }}
                         WHERE 
-                            ${onFields.joinToString(" AND ") { it.equation() }};
+                            ${onFields.joinToString(" AND ") { equation(it) }};
             END;
         """.rmRedundantBlk()
+    }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName.uppercase())} (${
+            columns.joinToString {
+                quote(it.columnName.uppercase())
+            }
+        }) VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName.uppercase())}${whereClauseSql.orEmpty()}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName.uppercase())} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+
+    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.name != it.columnName -> "${quote(it.columnName.uppercase())} AS ${quote(it)}"
+                else -> quote(it)
+            }
+        }
+        val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null) " FETCH FIRST $limit ROWS ONLY" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName.uppercase())
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
+    }
+
+    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                else -> "${quote(it.second, true)} AS ${MssqlSupport.quote(it.first)}"
+            }
+        }
+        val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null) " FETCH FIRST $limit ROWS ONLY" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName.uppercase())
+        }${
+            joinSql.orEmpty()
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
     }
 }

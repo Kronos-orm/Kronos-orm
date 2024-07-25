@@ -16,10 +16,7 @@
 
 package com.kotlinorm.plugins.utils.kTableConditional
 
-import com.kotlinorm.plugins.helpers.applyIrCall
-import com.kotlinorm.plugins.helpers.dispatchBy
-import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
+import com.kotlinorm.plugins.helpers.*
 import com.kotlinorm.plugins.utils.kTable.correspondingName
 import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
 import com.kotlinorm.plugins.utils.kTable.isKronosColumn
@@ -31,7 +28,6 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
-import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter

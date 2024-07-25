@@ -13,8 +13,17 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.join.JoinClauseInfo
+import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
+import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.Extensions.asSql
+import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.setCommonStrategy
 
 object MysqlSupport : DatabasesSupport {
+    override var quotes = Pair("`", "`")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "TINYINT(1)"
@@ -76,16 +85,13 @@ object MysqlSupport : DatabasesSupport {
                 WHERE 
                  c.TABLE_SCHEMA = DATABASE() AND 
                  c.TABLE_NAME = :tableName
-            """.trimIndent(),
-                mapOf("tableName" to tableName)
+            """.trimIndent(), mapOf("tableName" to tableName)
             )
         ).map {
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
                 type = getKotlinColumnType(
-                    DBType.Mysql,
-                    it["DATA_TYPE"].toString(),
-                    (it["LENGTH"] as Long? ?: 0).toInt()
+                    DBType.Mysql, it["DATA_TYPE"].toString(), (it["LENGTH"] as Long? ?: 0).toInt()
                 ),
                 length = (it["LENGTH"] as Long? ?: 0).toInt(),
                 tableName = tableName,
@@ -128,30 +134,102 @@ object MysqlSupport : DatabasesSupport {
         indexes: TableIndexDiff,
     ): List<String> {
         return indexes.toDelete.map {
-            "ALTER TABLE $tableName DROP INDEX ${it.name}"
+            "ALTER TABLE ${quote(tableName)} DROP INDEX ${it.name}"
         } + columns.toAdd.map {
-            "ALTER TABLE $tableName ADD COLUMN ${
+            "ALTER TABLE ${quote(tableName)} ADD COLUMN ${
                 columnCreateDefSql(
                     DBType.Mysql, it
                 )
             }"
         } + columns.toModified.map {
-            "ALTER TABLE $tableName MODIFY COLUMN ${
+            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${
                 columnCreateDefSql(
                     DBType.Mysql, it
                 )
-            } ${if (it.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (`${it.columnName}`)" else ""}"
+            } ${if (it.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${quote(it)})" else ""}"
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName DROP COLUMN ${it.columnName}"
+            "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {
-            "ALTER TABLE $tableName ADD ${it.type} INDEX ${it.name} (`${it.columns.joinToString("`, `")}`) USING ${it.method}"
+            "ALTER TABLE ${quote(tableName)} ADD ${it.type} INDEX ${it.name} (${
+                it.columns.joinToString(", ") { f -> quote(f) }
+            }) USING ${it.method}"
         }
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, _, toUpdateFields, toInsertFields) = conflictResolver
-        return "INSERT INTO `$tableName` (${toInsertFields.joinToString { it.quoted() }}) " +
-                "VALUES (${toInsertFields.joinToString(", ") { ":$it" }}) " +
-                "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { it.equation() }}"
+        return "INSERT INTO ${quote(tableName)} (${toInsertFields.joinToString { quote(it) }}) " + "VALUES (${
+            toInsertFields.joinToString(
+                ", "
+            ) { ":$it" }
+        }) " + "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { equation(it) }}"
+    }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) " + "VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName)}${whereClauseSql.orEmpty()}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper, tableName: String, toUpdateFields: List<Field>, whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+
+    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it)}"
+                else -> quote(it)
+            }
+        }
+        val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
+        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName)
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
+    }
+
+    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                else -> "${quote(it.second, true)} AS ${quote(it.first)}"
+            }
+        }
+
+        val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName)
+        }${
+            joinSql.orEmpty()
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
     }
 }

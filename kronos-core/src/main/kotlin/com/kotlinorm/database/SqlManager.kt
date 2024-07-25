@@ -25,6 +25,8 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.join.JoinClauseInfo
+import com.kotlinorm.orm.select.SelectClauseInfo
 
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
@@ -187,4 +189,79 @@ object SqlManager {
             ?: throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 
+    fun Field.quoted(
+        dataSource: KronosDataSourceWrapper,
+        showTable: Boolean = false
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.quote(this, showTable)
+        Postgres -> PostgesqlSupport.quote(this, showTable)
+        Oracle -> OracleSupport.quote(this, showTable)
+        SQLite -> SqliteSupport.quote(this, showTable)
+        Mssql -> MssqlSupport.quote(this, showTable)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getInsertSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        columns: List<Field>
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getInsertSql(dataSource, tableName, columns)
+        Postgres -> PostgesqlSupport.getInsertSql(dataSource, tableName, columns)
+        Oracle -> OracleSupport.getInsertSql(dataSource, tableName, columns)
+        SQLite -> SqliteSupport.getInsertSql(dataSource, tableName, columns)
+        Mssql -> MssqlSupport.getInsertSql(dataSource, tableName, columns)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getDeleteSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        whereClauseSql: String?
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Postgres -> PostgesqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Oracle -> OracleSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        SQLite -> SqliteSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Mssql -> MssqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Postgres -> PostgesqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getSelectSql(
+        dataSource: KronosDataSourceWrapper,
+        selectClause: SelectClauseInfo
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getSelectSql(dataSource, selectClause)
+        Postgres -> PostgesqlSupport.getSelectSql(dataSource, selectClause)
+        Oracle -> OracleSupport.getSelectSql(dataSource, selectClause)
+        SQLite -> SqliteSupport.getSelectSql(dataSource, selectClause)
+        Mssql -> MssqlSupport.getSelectSql(dataSource, selectClause)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
+
+    fun getJoinSql(
+        dataSource: KronosDataSourceWrapper,
+        joinClause: JoinClauseInfo
+    ) = when (dataSource.dbType) {
+        Mysql -> MysqlSupport.getJoinSql(dataSource, joinClause)
+        Postgres -> PostgesqlSupport.getJoinSql(dataSource, joinClause)
+        Oracle -> OracleSupport.getJoinSql(dataSource, joinClause)
+        SQLite -> SqliteSupport.getJoinSql(dataSource, joinClause)
+        Mssql -> MssqlSupport.getJoinSql(dataSource, joinClause)
+        else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+    }
 }

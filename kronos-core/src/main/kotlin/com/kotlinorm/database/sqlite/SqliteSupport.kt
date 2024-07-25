@@ -5,6 +5,7 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.sqlColumnType
+import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -12,9 +13,12 @@ import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
-import com.kotlinorm.utils.Extensions.rmRedundantBlk
+import com.kotlinorm.orm.join.JoinClauseInfo
+import com.kotlinorm.orm.select.SelectClauseInfo
 
 object SqliteSupport : DatabasesSupport {
+    override var quotes = Pair("\"", "\"")
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT, TINYINT, SMALLINT, INT, MEDIUMINT, BIGINT, SERIAL, YEAR, SET -> "INTEGER"
@@ -34,7 +38,7 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
-        column.columnName
+        quote(column.columnName)
     }${
         " ${sqlColumnType(dbType, column.type, column.length)}"
     }${
@@ -53,12 +57,12 @@ object SqliteSupport : DatabasesSupport {
     //  "password"
     //);
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String {
-        return "CREATE ${index.method} INDEX IF NOT EXISTS ${index.name} ON $tableName (${
-            index.columns.joinToString(",") { column ->
-                if (index.type.isNotEmpty()) "$column COLLATE ${index.type}"
-                else column
+        return "CREATE ${index.type} INDEX IF NOT EXISTS ${index.name} ON ${quote(tableName)} (${
+            index.columns.joinToString(", ") { column ->
+                if (index.method.isNotEmpty()) "${quote(column)} COLLATE ${index.method}"
+                else quote(column)
             }
-        });"
+        })"
     }
 
     override fun getTableExistenceSql(dbType: DBType) =
@@ -125,17 +129,17 @@ object SqliteSupport : DatabasesSupport {
         return indexes.toDelete.map {
             "DROP INDEX ${it.name}"
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName ADD COLUMN ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} ADD COLUMN ${getColumnCreateSql(dbType, it)}"
         } + columns.toModified.map {
-            "ALTER TABLE $tableName MODIFY COLUMN ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${getColumnCreateSql(dbType, it)}"
         } + columns.toDelete.map {
-            "ALTER TABLE $tableName DROP COLUMN ${it.columnName}"
+            "ALTER TABLE ${quote(tableName)} DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {
             // CREATE INDEX "aaa" ON "tb_user" ("username" COLLATE RTRIM )  如果${it.type}不是空 需要 在每个column后面加 COLLATE ${it.type} (${it.columns.joinToString(",")})需要改
-            "CREATE ${it.method} INDEX ${it.name} ON $tableName (${
+            "CREATE ${it.method} INDEX ${it.name} ON ${quote(tableName)} (${
                 it.columns.joinToString(",") { column ->
-                    if (it.type.isNotEmpty()) "$column COLLATE ${it.type}"
-                    else column
+                    if (it.type.isNotEmpty()) "${quote(column)} COLLATE ${it.type}"
+                    else quote(column)
                 }
             })"
         }
@@ -144,14 +148,84 @@ object SqliteSupport : DatabasesSupport {
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            INSERT OR REPLACE INTO "$tableName" 
-                (${toInsertFields.joinToString { it.quoted() }}) 
-            VALUES 
-                (${toInsertFields.joinToString(", ") { ":$it" }}) 
-            ON CONFLICT 
-                (${onFields.joinToString(", ") { it.quoted() }})
-            DO UPDATE SET
-                ${toUpdateFields.joinToString(", ") { it.equation() }}
-        """.rmRedundantBlk()
+            INSERT OR REPLACE INTO ${
+            quote(tableName)
+        }(${toInsertFields.joinToString { quote(it) }}) VALUES (${
+            toInsertFields.joinToString(", ") { ":$it" }
+        }) ON CONFLICT (${
+            onFields.joinToString(", ") { quote(it) }
+        }) DO UPDATE SET ${
+            toUpdateFields.joinToString(", ") { equation(it) }
+        }
+        """.trimIndent()
+    }
+
+    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
+        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+
+    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+        "DELETE FROM ${quote(tableName)}${whereClauseSql.orEmpty()}"
+
+    override fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        toUpdateFields: List<Field>,
+        whereClauseSql: String?
+    ) =
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+
+    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it)}"
+                else -> quote(it)
+            }
+        }
+        val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
+        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName)
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
+    }
+
+    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val selectFieldsSql = selectFields.joinToString(", ") {
+            when {
+                it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                else -> "${quote(it.second, true)} AS ${MssqlSupport.quote(it.first)}"
+            }
+        }
+        val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
+        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val distinctSql = if (distinct) " DISTINCT" else null
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            quote(tableName)
+        }${
+            joinSql.orEmpty()
+        }${
+            whereClauseSql.orEmpty()
+        }${
+            groupByClauseSql.orEmpty()
+        }${
+            havingClauseSql.orEmpty()
+        }${
+            orderByClauseSql.orEmpty()
+        }${
+            paginationSql ?: limitSql ?: ""
+        }"
     }
 }

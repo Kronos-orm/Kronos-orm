@@ -192,7 +192,6 @@ class UpsertClause<T : KPojo>(
                         }
                         .execute(wrapper)
                 } else {
-                    setCommonStrategy(optimisticStrategy, false, callBack = updateUpsertFields())
                     pojo.insert().cascade(cascadeEnabled, cascadeLimit).execute(wrapper)
                 }
             }

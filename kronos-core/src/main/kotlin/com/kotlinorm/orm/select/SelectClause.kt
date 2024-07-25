@@ -209,7 +209,6 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-
     /**
      * 设置HAVING条件的函数，用于在查询中添加基于聚合结果的条件限制。
      *

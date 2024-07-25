@@ -1,11 +1,11 @@
 package com.kotlinorm.plugins.utils
 
+import com.kotlinorm.plugins.helpers.IrGetEnumValueImpl
 import com.kotlinorm.plugins.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.types.defaultType
 
 
@@ -48,5 +48,6 @@ fun kotlinTypeToKColumnType(propertyType: String) = when (propertyType) {
     "java.time.LocalTime", "kotlinx.datetime.LocalTime" -> "TIME"
     "java.time.LocalDateTime", "kotlinx.datetime.LocalDateTime" -> "DATETIME"
     "kotlin.ByteArray" -> "BINARY"
+    "CUSTOM_CRITERIA_SQL" -> "CUSTOM_CRITERIA_SQL"
     else -> "VARCHAR"
 }

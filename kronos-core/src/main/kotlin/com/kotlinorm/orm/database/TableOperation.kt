@@ -17,7 +17,7 @@
 package com.kotlinorm.orm.database
 
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.database.SqlHandler.execute
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.database.SqlManager.getTableCreateSqlList
 import com.kotlinorm.database.SqlManager.getTableDropSql
@@ -41,21 +41,17 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         instance.kronosTableName(),
         instance.kronosColumns().filter { it.isColumn },
         instance.kronosTableIndex()
-    ).forEach { dataSource.update(KronosAtomicActionTask(it)) }
+    ).forEach { dataSource.execute(it) }
 
     inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) {
-        dataSource.update(
-            KronosAtomicActionTask(
-                getTableDropSql(dataSource.dbType, instance.kronosTableName())
-            )
+        dataSource.execute(
+            getTableDropSql(dataSource.dbType, instance.kronosTableName())
         )
     }
 
     fun dropTable(tableName: String) {
-        dataSource.update(
-            KronosAtomicActionTask(
-                getTableDropSql(dataSource.dbType, tableName)
-            )
+        dataSource.execute(
+            getTableDropSql(dataSource.dbType, tableName)
         )
     }
 
@@ -73,12 +69,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val dbType = dataSource.dbType
 
         // 实体类列信息
-        val kronosColumns = instance.kronosColumns()
-            .filter { it.isColumn }
-            .map { col ->
-                if (dbType == DBType.Oracle) { col.columnName = col.columnName.uppercase() }
-                col
+        val kronosColumns = instance.kronosColumns().filter { it.isColumn }.map { col ->
+            if (dbType == DBType.Oracle) {
+                col.columnName = col.columnName.uppercase()
             }
+            col
+        }
 
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = instance.kronosTableIndex()
@@ -92,7 +88,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
 
         dataSource.transact {
             getTableSyncSqlList(dataSource, tableName, diffColumns, diffIndexes).forEach {
-                dataSource.update(KronosAtomicActionTask(it))
+                dataSource.execute(it)
             }
         }
         return true

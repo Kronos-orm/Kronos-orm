@@ -62,7 +62,7 @@ class UpsertClause<T : KPojo>(
     private var tableName = pojo.kronosTableName()
     private var optimisticStrategy = pojo.kronosOptimisticLock()
     private var allFields = pojo.kronosColumns().toLinkedSet()
-    private var onDuplicateKey = false
+    private var onConflict = false
     private var toInsertFields = linkedSetOf<Field>()
     private var toUpdateFields = linkedSetOf<Field>()
     private var onFields = linkedSetOf<Field>()
@@ -107,12 +107,12 @@ class UpsertClause<T : KPojo>(
     /**
      * On duplicate key update
      *
-     * **Please define constraints before using onDuplicateKey**
+     * **Please define constraints before using onConflict**
      *
      * @return the upsert UpdateClause object
      */
-    fun onDuplicateKey(): UpsertClause<T> {
-        onDuplicateKey = true
+    fun onConflict(): UpsertClause<T> {
+        onConflict = true
         return this
     }
 
@@ -151,7 +151,7 @@ class UpsertClause<T : KPojo>(
             it.key in (toUpdateFields + toInsertFields + onFields).map { it.name }
         }.toMutableMap()
 
-        if (onDuplicateKey) {
+        if (onConflict) {
             return KronosAtomicActionTask(
                 SqlManager.getOnConflictSql(
                     dataSource, ConflictResolver(
@@ -200,8 +200,8 @@ class UpsertClause<T : KPojo>(
             return map { it.on(someFields) }
         }
 
-        fun <T : KPojo> List<UpsertClause<T>>.onDuplicateKey(): List<UpsertClause<T>> {
-            return map { it.onDuplicateKey() }
+        fun <T : KPojo> List<UpsertClause<T>>.onConflict(): List<UpsertClause<T>> {
+            return map { it.onConflict() }
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.cascade(enabled: Boolean = true, depth: Int = -1): List<UpsertClause<T>> {

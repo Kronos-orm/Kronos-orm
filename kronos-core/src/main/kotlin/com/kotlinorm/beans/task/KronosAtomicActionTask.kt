@@ -29,7 +29,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
  */
 data class KronosAtomicActionTask(
     override var sql: String,
-    override val paramMap: MutableMap<String, Any?> = mutableMapOf(),
+    override val paramMap: Map<String, Any?> = mapOf(),
     override val operationType: KOperationType = KOperationType.UPDATE,
     override val useIdentity: Boolean = false
 ) : KAtomicActionTask {

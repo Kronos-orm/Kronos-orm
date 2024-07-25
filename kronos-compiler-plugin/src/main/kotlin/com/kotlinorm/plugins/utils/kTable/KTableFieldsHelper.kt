@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
 
 
@@ -58,6 +59,7 @@ fun addFieldList(irReturn: IrReturn): List<IrExpression> {
  * @return a mutable list of IR expressions representing the field names
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。

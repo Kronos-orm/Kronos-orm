@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
@@ -51,6 +52,7 @@ private val fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 private val mapGetterSymbol
     get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")
 
@@ -67,6 +69,7 @@ private val KTableIndexSymbol
  * @return the `IrBlockBody` that represents the function.
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     return irBlockBody {
         val pairs = declaration.properties.map {
@@ -183,6 +186,7 @@ fun createKronosTableName(declaration: IrClass): IrBlockBody {
 }
 
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
@@ -211,6 +215,7 @@ fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
  * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(

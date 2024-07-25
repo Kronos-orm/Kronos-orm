@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getValueArgument
@@ -53,6 +54,7 @@ internal val globalCreateTimeSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getCreateTimeStrategy").first()
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val commonStrategySymbol
     get() = referenceClass("com.kotlinorm.beans.config.KronosCommonStrategy")!!.constructors.first()
 
@@ -86,6 +88,7 @@ internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
  * @return The valid strategy as an IrExpression, or null if no valid strategy is found.
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
     var strategy: IrExpression = applyIrCall(globalSymbol).asIrCall()
     val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)

@@ -34,6 +34,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.statements
 
@@ -51,6 +52,7 @@ class KronosParserTransformer(
      *
      * @return The symbol of the `println` function.
      */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions("kotlin.io", "println").single {
         val parameters = it.owner.valueParameters
         parameters.size == 1 && parameters[0].type == irBuiltIns.anyNType

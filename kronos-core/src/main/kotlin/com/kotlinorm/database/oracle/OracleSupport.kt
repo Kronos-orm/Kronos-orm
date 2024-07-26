@@ -17,7 +17,6 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
-import com.kotlinorm.utils.Extensions.rmRedundantBlk
 import java.math.BigDecimal
 
 object OracleSupport : DatabasesSupport {
@@ -228,22 +227,22 @@ object OracleSupport : DatabasesSupport {
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            BEGIN
-                INSERT INTO ${quote(tableName)}
-                    (${toInsertFields.joinToString { quote(it) }})
-                VALUES 
-                (${toInsertFields.joinToString(", ") { ":$it" }}) 
-                EXCEPTION 
-                    WHEN 
-                        DUP_VAL_ON_INDEX 
-                    THEN 
-                        UPDATE ${quote(tableName)}
-                        SET 
-                            ${toUpdateFields.joinToString(", ") { equation(it) }}
-                        WHERE 
-                            ${onFields.joinToString(" AND ") { equation(it) }};
-            END;
-        """.rmRedundantBlk()
+            |BEGIN
+            |    INSERT INTO ${quote(tableName)}
+            |        (${toInsertFields.joinToString { quote(it) }})
+            |    VALUES 
+            |    (${toInsertFields.joinToString(", ") { ":$it" }}) 
+            |    EXCEPTION 
+            |        WHEN 
+            |            DUP_VAL_ON_INDEX 
+            |        THEN 
+            |            UPDATE ${quote(tableName)}
+            |            SET 
+            |                ${toUpdateFields.joinToString(", ") { equation(it) }}
+            |            WHERE 
+            |                ${onFields.joinToString(" AND ") { equation(it) }};
+            |END;
+        """.trimMargin()
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
@@ -264,8 +263,10 @@ object OracleSupport : DatabasesSupport {
         whereClauseSql: String?
     ) =
         "UPDATE ${quote(tableName.uppercase())} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
-        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
-        whereClauseSql.orEmpty()
+                if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else {
+                    ""
+                } +
+                whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
         val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
@@ -277,12 +278,13 @@ object OracleSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
+        val limitSql =
+            if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
-        val lockSql = when(lock) {
+        val lockSql = when (lock) {
             PessimisticLock.X -> " FOR UPDATE(NOWAIT)"
             PessimisticLock.S -> " LOCK IN SHARE MODE"
-            else-> null
+            else -> null
         }
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName.uppercase())
@@ -308,7 +310,8 @@ object OracleSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
+        val limitSql =
+            if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName.uppercase())

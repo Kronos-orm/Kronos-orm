@@ -41,7 +41,7 @@ import kotlin.reflect.KClass
 fun setCommonStrategy(
     strategy: KronosCommonStrategy,
     timeStrategy: Boolean = false,
-    deleted: Boolean = false,
+    defaultValue: Any = 0,
     callBack: (field: Field, value: Any?) -> Unit
 ) {
     if (strategy.enabled) {
@@ -49,7 +49,7 @@ fun setCommonStrategy(
             val format = (strategy.config ?: defaultDateFormat).toString()
             callBack(strategy.field, currentDateTime(format))
         } else {
-            callBack(strategy.field, 1.takeIf { deleted } ?: 0)
+            callBack(strategy.field, defaultValue)
         }
     }
 }

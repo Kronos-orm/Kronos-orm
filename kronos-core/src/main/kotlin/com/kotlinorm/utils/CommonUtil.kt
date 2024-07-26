@@ -95,10 +95,18 @@ fun getTypeSafeValue(
             when { //日期类型转换
                 typeOfValue.intersect(
                     setOf(
-                        "java.util.Date", "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime",
-                        "java.time.ZonedDateTime", "java.time.OffsetDateTime",
-                        "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime",
-                        "kotlinx.datetime.Instant", "org.intelligentsia.hirondelle.date4j.DateTime"
+                        "java.util.Date",
+                        "java.time.LocalDateTime",
+                        "java.time.LocalDate",
+                        "java.time.LocalTime",
+                        "java.time.Instant",
+                        "java.time.ZonedDateTime",
+                        "java.time.OffsetDateTime",
+                        "kotlinx.datetime.LocalDateTime",
+                        "kotlinx.datetime.LocalDate",
+                        "kotlinx.datetime.LocalTime",
+                        "kotlinx.datetime.Instant",
+                        "org.intelligentsia.hirondelle.date4j.DateTime"
                     )
                 ).isNotEmpty() -> {
                     LocalDateTime.parse(value.toString()).format(LocalDateTime.Format {
@@ -111,6 +119,8 @@ fun getTypeSafeValue(
         }
 
         "kotlin.Boolean" -> (value is Number && value != 0) || value.toString().ifBlank { "false" }.toBoolean()
+
+        "java.time.Instant" -> java.time.Instant.ofEpochSecond(getEpochSecond())
 
         "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime",
         "java.time.ZonedDateTime", "java.time.OffsetDateTime"

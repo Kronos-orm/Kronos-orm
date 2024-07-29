@@ -8,12 +8,12 @@ import com.kotlinorm.enums.Postgres
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["username"], method = Postgres.KIndexType.HASH, concurrently = true)
+@TableIndex("idx_username", ["username"], method = Postgres.KIndexMethod.HASH, concurrently = true)
 @TableIndex(
     name = "idx_multi",
     columns = ["id", "username"],
-    type = Postgres.KIndexMethod.UNIQUE,
-    method = Postgres.KIndexType.BTREE
+    type = Postgres.KIndexType.UNIQUE,
+    method = Postgres.KIndexMethod.BTREE
 )
 data class PgUser(
     @PrimaryKey(identity = true)

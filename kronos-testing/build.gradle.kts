@@ -22,6 +22,10 @@ dependencies {
     // oracle
     testImplementation("com.oracle.database.jdbc:ojdbc8:23.2.0.0")
     testImplementation("com.google.code.gson:gson:2.11.0")
+    testImplementation("org.springframework:spring-jdbc:5.3.23")
+    testImplementation("org.springframework:spring-tx:5.3.23")
+    testImplementation("org.springframework:spring-beans:5.3.23")
+    testImplementation("org.springframework:spring-core:5.3.23")
 }
 
 tasks.test {

@@ -1,10 +1,11 @@
-package com.kotlinorm
+package com.kotlinorm.kronosWrapper.springDataWrapper
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
@@ -41,25 +42,32 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
         conn.close()
     }
 
-    val namedJdbc: NamedParameterJdbcTemplate by lazy {
+    private val namedJdbc: NamedParameterJdbcTemplate by lazy {
         NamedParameterJdbcTemplate(dataSource)
     }
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
         return namedJdbc.queryForList(task.sql, task.paramMap)
-            ?: emptyList()
     }
 
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
-        return namedJdbc.queryForList(task.sql, task.paramMap, kClass.java) ?: emptyList()
+        return namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return namedJdbc.queryForMap(task.sql, task.paramMap)
+        return try {
+            namedJdbc.queryForMap(task.sql, task.paramMap)
+        } catch (e: DataAccessException) {
+            null
+        }
     }
 
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
-        return namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
+        return try {
+            namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
+        } catch (e: DataAccessException) {
+            null
+        }
     }
 
     override fun update(task: KAtomicActionTask): Int {
@@ -67,7 +75,7 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
     }
 
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
-        return namedJdbc.batchUpdate(task.sql, task.paramMapArr)
+        return namedJdbc.batchUpdate(task.sql, task.paramMapArr ?: emptyArray())
     }
 
     override fun transact(block: (DataSource) -> Any?): Any? {
@@ -89,11 +97,11 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
 
     companion object {
         fun JdbcTemplate.wrapper(): SpringDataWrapper {
-            return SpringDataWrapper(this.dataSource)
+            return SpringDataWrapper(this.dataSource!!)
         }
 
         fun NamedParameterJdbcTemplate.wrapper(): SpringDataWrapper {
-            return SpringDataWrapper(this.jdbcTemplate.dataSource)
+            return SpringDataWrapper(this.jdbcTemplate.dataSource!!)
         }
     }
 }

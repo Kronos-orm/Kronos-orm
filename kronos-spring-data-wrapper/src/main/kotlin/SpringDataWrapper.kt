@@ -8,10 +8,7 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
-import org.springframework.transaction.TransactionManager
 import org.springframework.transaction.support.TransactionTemplate
-import sun.rmi.runtime.Log
-import java.sql.DataTruncation
 import javax.sql.DataSource
 import kotlin.reflect.KClass
 

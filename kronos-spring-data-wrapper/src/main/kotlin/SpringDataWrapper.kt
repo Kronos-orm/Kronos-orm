@@ -2,10 +2,10 @@ package com.kotlinorm
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.exceptions.NoDataSourceException
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -18,11 +18,8 @@ import kotlin.reflect.KClass
  *@description:
  *@create: 2024/7/29 14:31
  **/
-class SpringDataWrapper() : KronosDataSourceWrapper {
-
-    private var namedJdbc: NamedParameterJdbcTemplate? = null
-    private var dynamic: (() -> NamedParameterJdbcTemplate)? = null
-
+@Suppress("SqlSourceToSinkFlow")
+class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWrapper {
     private var _metaUrl: String
     private var _userName: String
     private var _metaDbType: DBType
@@ -44,42 +41,38 @@ class SpringDataWrapper() : KronosDataSourceWrapper {
         conn.close()
     }
 
-    fun getNamedJdbc(jdbc: NamedParameterJdbcTemplate? = null): NamedParameterJdbcTemplate {
-        return jdbc ?: namedJdbc ?: dynamic?.invoke()
-        ?: throw NoDataSourceException("NamedParameterJdbcTemplate is null")
+    val namedJdbc: NamedParameterJdbcTemplate by lazy {
+        NamedParameterJdbcTemplate(dataSource)
     }
 
-    private val dataSource: DataSource
-        get() = (namedJdbc ?: dynamic?.invoke())?.jdbcTemplate?.dataSource
-            ?: throw NoDataSourceException("dataSource is null")
-
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-        return getNamedJdbc().queryForList(task.sql, task.paramMap) ?: emptyList()
+        return namedJdbc.queryForList(task.sql, task.paramMap)
+            ?: emptyList()
     }
 
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
-        return getNamedJdbc().queryForList(task.sql , task.paramMap , kClass.java) ?: emptyList()
+        return namedJdbc.queryForList(task.sql, task.paramMap, kClass.java) ?: emptyList()
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return getNamedJdbc().queryForMap(task.sql, task.paramMap)
+        return namedJdbc.queryForMap(task.sql, task.paramMap)
     }
 
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
-        return getNamedJdbc().queryForObject(task.sql, task.paramMap, kClass.java)
+        return namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
     }
 
     override fun update(task: KAtomicActionTask): Int {
-        return getNamedJdbc().update(task.sql, task.paramMap)
+        return namedJdbc.update(task.sql, task.paramMap)
     }
 
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
-        return getNamedJdbc().batchUpdate(task.sql, task.paramMapArr)
+        return namedJdbc.batchUpdate(task.sql, task.paramMapArr)
     }
 
     override fun transact(block: (DataSource) -> Any?): Any? {
-        val transactianManager = DataSourceTransactionManager(dataSource)
-        val transactionTemplate = TransactionTemplate(transactianManager)
+        val transactionManager = DataSourceTransactionManager(dataSource)
+        val transactionTemplate = TransactionTemplate(transactionManager)
 
         var res: Any? = null
 
@@ -92,5 +85,15 @@ class SpringDataWrapper() : KronosDataSourceWrapper {
         }
 
         return res
+    }
+
+    companion object {
+        fun JdbcTemplate.wrapper(): SpringDataWrapper {
+            return SpringDataWrapper(this.dataSource)
+        }
+
+        fun NamedParameterJdbcTemplate.wrapper(): SpringDataWrapper {
+            return SpringDataWrapper(this.jdbcTemplate.dataSource)
+        }
     }
 }

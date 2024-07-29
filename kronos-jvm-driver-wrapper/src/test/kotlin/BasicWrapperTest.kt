@@ -10,7 +10,6 @@ class BasicWrapperTest {
         username = "root"
         password = "root"
         maxIdle = 10
-        maxActive = 10
     }
 
     init {

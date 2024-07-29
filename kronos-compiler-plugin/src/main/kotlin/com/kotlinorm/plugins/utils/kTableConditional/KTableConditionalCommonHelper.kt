@@ -16,7 +16,10 @@
 
 package com.kotlinorm.plugins.utils.kTableConditional
 
-import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.dispatchBy
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTable.correspondingName
 import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
 import com.kotlinorm.plugins.utils.kTable.isKronosColumn
@@ -28,6 +31,8 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
@@ -46,6 +51,7 @@ internal val conditionTypeSymbol
  * @return The IrExpression representing the condition type enum value.
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal fun getConditionType(type: String): IrExpression {
     val enumEntries = conditionTypeSymbol.owner.declarations.filterIsInstance<IrEnumEntry>()
     val enumEntry = enumEntries.find { it.name.asString() == type.uppercase() }!!
@@ -53,6 +59,7 @@ internal fun getConditionType(type: String): IrExpression {
 }
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val criteriaSetterSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KTableConditional")!!.getPropertySetter("criteria")!!
 

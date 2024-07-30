@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka") apply false
     id("com.vanniktech.maven.publish") apply false
-//    id("com.kotlinorm.kronos-compiler-plugin")
+    id("com.kotlinorm.kronos-compiler-plugin")
 }
 
 dependencies {
@@ -11,6 +11,7 @@ dependencies {
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jvm-driver-wrapper"))
     testImplementation("org.apache.commons:commons-dbcp2:2.12.0")
+    testImplementation(kotlin("reflect"))
     // mysql
     testImplementation("com.mysql:mysql-connector-j:8.4.0")
     // sqlite

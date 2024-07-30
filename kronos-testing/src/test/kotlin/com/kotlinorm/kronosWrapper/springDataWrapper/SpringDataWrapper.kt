@@ -1,17 +1,23 @@
 package com.kotlinorm.kronosWrapper.springDataWrapper
 
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.beans.User
 import org.springframework.dao.DataAccessException
+import org.springframework.jdbc.core.BeanPropertyRowMapper
+import org.springframework.jdbc.core.DataClassRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import javax.sql.DataSource
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSuperclassOf
+
 
 /**
  *@program: kronos-orm
@@ -51,7 +57,8 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
     }
 
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
-        return namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
+        return if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.query(task.sql, task.paramMap, DataClassRowMapper(kClass.java))
+        else namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
@@ -64,7 +71,8 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
 
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         return try {
-            namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
+            if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForObject(task.sql, task.paramMap, DataClassRowMapper(kClass.java))
+            else namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
         } catch (e: DataAccessException) {
             null
         }

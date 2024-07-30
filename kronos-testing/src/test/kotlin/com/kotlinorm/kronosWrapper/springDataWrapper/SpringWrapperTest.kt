@@ -1,13 +1,12 @@
-package com.kotlinorm.kronosWrapper.jdbcDriverWrapper
+package com.kotlinorm.kronosWrapper.springDataWrapper
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
-import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.kronosWrapper.springDataWrapper.SpringDataWrapper
+import com.kotlinorm.kronosWrapper.jdbcDriverWrapper.MysqlUser
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp2.BasicDataSource
 import org.junit.jupiter.api.Test

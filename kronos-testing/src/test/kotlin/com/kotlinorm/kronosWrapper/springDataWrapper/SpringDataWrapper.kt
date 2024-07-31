@@ -6,9 +6,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.beans.User
 import org.springframework.dao.DataAccessException
-import org.springframework.jdbc.core.BeanPropertyRowMapper
 import org.springframework.jdbc.core.DataClassRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -57,7 +55,11 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
     }
 
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
-        return if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.query(task.sql, task.paramMap, DataClassRowMapper(kClass.java))
+        return if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.query(
+            task.sql,
+            task.paramMap,
+            DataClassRowMapper(kClass.java)
+        )
         else namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
     }
 
@@ -71,7 +73,11 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
 
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         return try {
-            if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForObject(task.sql, task.paramMap, DataClassRowMapper(kClass.java))
+            if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForObject(
+                task.sql,
+                task.paramMap,
+                DataClassRowMapper(kClass.java)
+            )
             else namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
         } catch (e: DataAccessException) {
             null

@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka") apply false
     id("com.vanniktech.maven.publish") apply false
-    id("com.kotlinorm.kronos-compiler-plugin")
+//    id("com.kotlinorm.kronos-compiler-plugin")
 }
 
 dependencies {
@@ -23,10 +23,12 @@ dependencies {
     // oracle
     testImplementation("com.oracle.database.jdbc:ojdbc8:23.2.0.0")
     testImplementation("com.google.code.gson:gson:2.11.0")
-    testImplementation("org.springframework:spring-jdbc:5.3.23")
-    testImplementation("org.springframework:spring-tx:5.3.23")
-    testImplementation("org.springframework:spring-beans:5.3.23")
-    testImplementation("org.springframework:spring-core:5.3.23")
+
+    //after additional testing, wrapper in spring-x 6.x also works, we will provide additional examples
+    testImplementation("org.springframework:spring-jdbc:5.3.37")
+    testImplementation("org.springframework:spring-tx:5.3.37")
+    testImplementation("org.springframework:spring-beans:5.3.37")
+    testImplementation("org.springframework:spring-core:5.3.37")
 }
 
 tasks.test {

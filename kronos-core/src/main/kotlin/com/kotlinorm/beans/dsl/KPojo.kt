@@ -18,6 +18,7 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.utils.getCreateTimeStrategy
 import com.kotlinorm.utils.getLogicDeleteStrategy
+import com.kotlinorm.utils.getOptimisticLockStrategy
 import com.kotlinorm.utils.getUpdateTimeStrategy
 
 /**
@@ -121,4 +122,6 @@ interface KPojo {
      * @return KronosCommonStrategy
      */
     fun kronosLogicDelete() = getLogicDeleteStrategy()
+
+    fun kronosOptimisticLock() = getOptimisticLockStrategy()
 }

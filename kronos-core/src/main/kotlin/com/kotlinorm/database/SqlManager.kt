@@ -231,13 +231,14 @@ object SqlManager {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
+        versionField: String?,
         whereClauseSql: String?
     ) = when (dataSource.dbType) {
-        Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
-        Postgres -> PostgesqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
-        Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
-        SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
-        Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql)
+        Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        Postgres -> PostgesqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 

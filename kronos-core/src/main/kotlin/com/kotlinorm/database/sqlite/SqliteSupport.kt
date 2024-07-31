@@ -6,9 +6,11 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
+import com.kotlinorm.database.oracle.OracleSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -170,12 +172,15 @@ object SqliteSupport : DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
+        versionField: String?,
         whereClauseSql: String?
     ) =
-        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
+        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
+        whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -184,8 +189,11 @@ object SqliteSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
-        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
+
+        if (null != lock) throw UnsupportedDatabaseTypeException("Sqlite doesn't support the lock() method because Sqlite only has database locks")
+
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)
         }${
@@ -210,7 +218,7 @@ object SqliteSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
-        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)

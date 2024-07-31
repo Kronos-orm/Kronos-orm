@@ -10,6 +10,7 @@ import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -280,12 +281,15 @@ object MssqlSupport : DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
+        versionField: String?,
         whereClauseSql: String?
     ) =
-        "UPDATE [dbo].${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}${whereClauseSql.orEmpty()}"
+        "UPDATE [dbo].${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
+        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
+        whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -294,10 +298,13 @@ object MssqlSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null) " FETCH NEXT $limit ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
+        val lockSql = if (null != lock) " ROWLOCK" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
             quote(tableName)
+        }${
+            lockSql.orEmpty()
         }${
             whereClauseSql.orEmpty()
         }${
@@ -320,7 +327,7 @@ object MssqlSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null) " FETCH NEXT $limit ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
             quote(tableName)

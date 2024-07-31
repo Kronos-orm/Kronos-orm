@@ -28,6 +28,7 @@ import com.kotlinorm.utils.KotlinClassMapper.kotlinBuiltInClassMap
 import kotlinx.datetime.*
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
+import java.util.TimeZone
 import kotlin.reflect.KClass
 
 
@@ -41,7 +42,7 @@ import kotlin.reflect.KClass
 fun setCommonStrategy(
     strategy: KronosCommonStrategy,
     timeStrategy: Boolean = false,
-    deleted: Boolean = false,
+    defaultValue: Any = 0,
     callBack: (field: Field, value: Any?) -> Unit
 ) {
     if (strategy.enabled) {
@@ -49,7 +50,7 @@ fun setCommonStrategy(
             val format = (strategy.config ?: defaultDateFormat).toString()
             callBack(strategy.field, currentDateTime(format))
         } else {
-            callBack(strategy.field, 1.takeIf { deleted } ?: 0)
+            callBack(strategy.field, defaultValue)
         }
     }
 }
@@ -90,12 +91,22 @@ fun getTypeSafeValue(
         "kotlin.Char" -> value.toString().firstOrNull()
         "kotlin.String" -> {
             val typeOfValue =
-                listOf(kClassOfVal.qualifiedName, *kClassOfVal.supertypes.map { it.toString() }.toTypedArray())
-            when {
+                setOf(kClassOfVal.qualifiedName, *kClassOfVal.supertypes.map { it.toString() }.toTypedArray())
+            when { //日期类型转换
                 typeOfValue.intersect(
-                    listOf(
-                        "java.util.Date", "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime",
-                        "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime"
+                    setOf(
+                        "java.util.Date",
+                        "java.time.LocalDateTime",
+                        "java.time.LocalDate",
+                        "java.time.LocalTime",
+                        "java.time.Instant",
+                        "java.time.ZonedDateTime",
+                        "java.time.OffsetDateTime",
+                        "kotlinx.datetime.LocalDateTime",
+                        "kotlinx.datetime.LocalDate",
+                        "kotlinx.datetime.LocalTime",
+                        "kotlinx.datetime.Instant",
+                        "org.intelligentsia.hirondelle.date4j.DateTime"
                     )
                 ).isNotEmpty() -> {
                     LocalDateTime.parse(value.toString()).format(LocalDateTime.Format {
@@ -107,17 +118,27 @@ fun getTypeSafeValue(
             }
         }
 
-        "kotlin.Boolean" -> (value is Number && value != 0) || value.toString().toBoolean()
+        "kotlin.Boolean" -> (value is Number && value != 0) || value.toString().ifBlank { "false" }.toBoolean()
 
-        "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime" -> {
+        "java.time.Instant" -> java.time.Instant.ofEpochSecond(getEpochSecond())
+
+        "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime",
+        "java.time.ZonedDateTime", "java.time.OffsetDateTime"
+        -> {
             val localDateTime =
                 java.time.Instant.ofEpochSecond(getEpochSecond()).atZone(timeZone.toJavaZoneId())
             when (kotlinType) {
-                "java.time.LocalDateTime" -> localDateTime
+                "java.time.ZonedDateTime" -> localDateTime
+                "java.time.LocalDateTime" -> localDateTime.toLocalDateTime()
                 "java.time.LocalDate" -> localDateTime.toLocalDate()
                 "java.time.LocalTime" -> localDateTime.toLocalTime()
+                "java.time.OffsetDateTime" -> localDateTime.toOffsetDateTime()
                 else -> value
             }
+        }
+
+        "kotlinx.datetime.Instant" -> {
+            Instant.parse(value.toString())
         }
 
         "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> {
@@ -132,9 +153,15 @@ fun getTypeSafeValue(
             }
         }
 
+        "org.intelligentsia.hirondelle.date4j.DateTime" -> {
+            Class.forName("org.intelligentsia.hirondelle.date4j.DateTime")
+                .getDeclaredMethod("forInstant", Long::class.java, TimeZone::class.java)
+                .invoke(null, getEpochSecond() * 1000, timeZone.toJavaZoneId())
+        }
+
         else -> {
             val typeOfProp =
-                listOf(kotlinType, *superTypes.toTypedArray())
+                setOf(kotlinType, *superTypes.toTypedArray())
             when {
                 "java.util.Date" in typeOfProp -> {
                     val constructor =

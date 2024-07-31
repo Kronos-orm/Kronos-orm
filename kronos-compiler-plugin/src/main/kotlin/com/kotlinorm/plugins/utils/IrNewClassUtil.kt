@@ -280,3 +280,12 @@ fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {
         )
     }
 }
+
+context(IrBuilderWithScope, IrPluginContext)
+fun createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
+    return irBlockBody {
+        +irReturn(
+            getValidStrategy(declaration, globalOptimisticLockSymbol, OptimisticLockFqName)
+        )
+    }
+}

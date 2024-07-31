@@ -49,6 +49,7 @@ class KronosIrClassNewTransformer(
                         "kronosCreateTime" -> declaration.body = createKronosCreateTime(irClass)
                         "kronosUpdateTime" -> declaration.body = createKronosUpdateTime(irClass)
                         "kronosLogicDelete" -> declaration.body = createKronosLogicDelete(irClass)
+                        "kronosOptimisticLock" -> declaration.body = createKronosOptimisticLock(irClass)
                     }
                 }
             }

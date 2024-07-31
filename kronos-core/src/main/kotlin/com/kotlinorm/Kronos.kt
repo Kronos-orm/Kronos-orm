@@ -73,6 +73,8 @@ object Kronos {
     // 逻辑删除策略
     var logicDeleteStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("deleted"))
 
+    var optimisticLockStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("version"))
+
     // 默认日期格式
     var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
 

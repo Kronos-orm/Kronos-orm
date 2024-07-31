@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
@@ -40,22 +41,27 @@ private val kTableSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KTable")!!
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val setValueSymbol
     get() = kTableSymbol.getSimpleFunction("setValue")!!
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val addFieldSymbol
     get() = kTableSymbol.getSimpleFunction("addField")!!
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val propParamSymbol
     get() = kTableSymbol.getSimpleFunction("getValueByFieldName")
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val aliasSymbol
     get() = kTableSymbol.getSimpleFunction("setAlias")!!
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val IrCall.correspondingName
     get() = symbol.owner.correspondingPropertySymbol?.owner?.name
 
@@ -89,6 +95,7 @@ val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
  * @return the `IrExpression` representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun getColumnName(expression: IrExpression): IrExpression {
     if (!expression.isKronosColumn()) {
         return expression
@@ -113,6 +120,7 @@ fun getColumnName(expression: IrExpression): IrExpression {
  * @return the `IrExpression` representing the column name
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun getColumnName(
     irProperty: IrProperty,
     propertyName: String = irProperty.name.asString()
@@ -272,6 +280,7 @@ fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> 
  * @return returns true if the IrExpression is a Kronos Column, false otherwise.
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrExpression?.isKronosColumn(): Boolean {
     if (this == null) return false
     return this is IrCallImpl && this.origin in listOf(

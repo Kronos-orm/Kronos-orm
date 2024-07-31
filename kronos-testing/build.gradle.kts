@@ -7,11 +7,14 @@ plugins {
 
 dependencies {
     testImplementation(kotlin("test"))
+    testImplementation(kotlin("reflect"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jvm-driver-wrapper"))
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
     testImplementation("org.apache.commons:commons-dbcp2:2.12.0")
-    testImplementation(kotlin("reflect"))
+
     // mysql
     testImplementation("com.mysql:mysql-connector-j:8.4.0")
     // sqlite

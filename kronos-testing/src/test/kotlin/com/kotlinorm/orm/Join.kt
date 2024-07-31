@@ -14,7 +14,7 @@ import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.tableOperation.beans.ProductLog
 import org.apache.commons.dbcp2.BasicDataSource
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Join {

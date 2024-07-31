@@ -12,7 +12,7 @@ import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.tableOperation.beans.OracleUser
 import com.kotlinorm.tableOperation.beans.SsqlUser
 import org.apache.commons.dbcp2.BasicDataSource
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

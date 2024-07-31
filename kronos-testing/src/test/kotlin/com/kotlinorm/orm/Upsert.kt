@@ -8,7 +8,7 @@ import com.kotlinorm.orm.upsert.upsert
 import com.kotlinorm.orm.upsert.upsertExcept
 import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.tableOperation.beans.MysqlUser
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Upsert {

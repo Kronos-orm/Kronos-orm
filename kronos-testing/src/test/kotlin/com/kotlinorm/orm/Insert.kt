@@ -4,7 +4,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.tableOperation.beans.MysqlUser
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Insert {

@@ -9,7 +9,7 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.kronosWrapper.jdbcDriverWrapper.MysqlUser
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp2.BasicDataSource
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SpringWrapperTest {

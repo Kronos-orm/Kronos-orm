@@ -14,7 +14,7 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.utils.GsonResolver
 import org.apache.commons.dbcp2.BasicDataSource
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class RelationQuery {
     private val ds = BasicDataSource().apply {

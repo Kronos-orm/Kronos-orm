@@ -9,7 +9,7 @@ import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp2.BasicDataSource
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class BasicWrapperTest {

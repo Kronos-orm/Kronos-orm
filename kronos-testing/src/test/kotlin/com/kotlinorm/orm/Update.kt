@@ -13,7 +13,7 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.update.updateExcept
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.utils.Extensions.mapperTo
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Update {

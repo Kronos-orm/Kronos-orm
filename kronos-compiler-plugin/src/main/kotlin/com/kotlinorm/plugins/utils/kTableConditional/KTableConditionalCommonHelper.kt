@@ -73,7 +73,7 @@ private val addCriteriaChild
 
 context(IrPluginContext)
 internal val stringPlusSymbol
-    get() = referenceFunctions("kotlin.String", "plus").first()
+    get() = referenceClass("kotlin.String")!!.getSimpleFunction("plus")!!
 
 /**
  * Returns a string representing the function name based on the IrExpression type and origin, with optional logic for setNot parameter.

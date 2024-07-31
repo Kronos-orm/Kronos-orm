@@ -93,7 +93,7 @@ class Upsert {
         val testUser = MysqlUser(1, "test")
 
         val (sql, paramMap) = testUser.upsert { it.username }
-            .onDuplicateKey().build()
+            .onConflict().build()
 
         assertEquals(
             "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
@@ -114,7 +114,7 @@ class Upsert {
     fun testUpsert5() {
         val testUser = MysqlUser(1, "test")
         val (sql, paramMap) = testUser.upsert { it.username }
-            .onDuplicateKey().build()
+            .onConflict().build()
 
         assertEquals(
             "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",

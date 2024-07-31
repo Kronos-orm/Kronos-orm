@@ -298,7 +298,7 @@ object MssqlSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null) " FETCH NEXT $limit ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         val lockSql = if (null != lock) " ROWLOCK" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
@@ -327,7 +327,7 @@ object MssqlSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
-        val limitSql = if (paginationSql == null && limit != null) " FETCH NEXT $limit ROWS ONLY" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
             quote(tableName)

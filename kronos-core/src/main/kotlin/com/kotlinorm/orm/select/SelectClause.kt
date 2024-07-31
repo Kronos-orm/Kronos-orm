@@ -71,7 +71,7 @@ class SelectClause<T : KPojo>(
     private var cascadeEnabled = true
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var lock: PessimisticLock? = null
-    private var selectAll = true
+    internal var selectAll = true
     private var ps = 0
     private var pi = 0
 

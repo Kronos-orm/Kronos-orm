@@ -19,18 +19,11 @@ internal fun IrPluginContext.referenceFunctions(
     functionName: String,
     className: String? = null
 ) = referenceFunctions(
-    if (className == null) {
-        CallableId(
-            FqName(packageName), Name.identifier(functionName)
-        )
-    } else {
-        CallableId(
-            ClassId(
-                FqName(packageName), Name.identifier(className)
-            ),
-            Name.identifier(functionName)
-        )
-    }
+    CallableId(
+        FqName(packageName),
+        className?.let { FqName(it) },
+        Name.identifier(functionName)
+    )
 )
 
 /**

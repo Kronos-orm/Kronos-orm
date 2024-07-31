@@ -1,5 +1,8 @@
 ![logo](https://cdn.leinbo.com/assets/images/kronos/logo_dark.png)
 
+[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/code_quality.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/code_quality.yml)
+[![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+
 # Re-define KotlinORM
 
 Kronos(Kotlin Reactive ORM, No-extra-class, Optimized, Simplified) is a lightweight framework that provides developers

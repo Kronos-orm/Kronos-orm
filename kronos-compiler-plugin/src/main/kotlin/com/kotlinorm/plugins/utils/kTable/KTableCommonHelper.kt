@@ -43,7 +43,7 @@ private val kTableSymbol
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val setValueSymbol
-    get() = kTableSymbol.getSimpleFunction("setValue")!!
+    get() = kTableSymbol.functions.first { it.owner.name.toString() == "setValue" && it.owner.valueParameters.size == 2 }
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)

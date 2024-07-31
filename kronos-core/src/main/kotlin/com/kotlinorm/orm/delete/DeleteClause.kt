@@ -150,16 +150,22 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
             // 设置更新时间和逻辑删除字段的策略
             setCommonStrategy(updateTimeStrategy, true, callBack = updateFields)
-            setCommonStrategy(logicDeleteStrategy, deleted = true, callBack = updateFields)
+            setCommonStrategy(logicDeleteStrategy, defaultValue = 1, callBack = updateFields)
 
             var versionField: String? = null
-            setCommonStrategy(optimisticStrategy) {field, _ ->
+            setCommonStrategy(optimisticStrategy) { field, _ ->
                 versionField = field.columnName
             }
 
             return CascadeDeleteClause.build(
                 cascadeEnabled, cascadeLimit, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
-                    getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields, versionField, toWhereSql(whereClauseSql)),
+                    getUpdateSql(
+                        wrapper.orDefault(),
+                        tableName,
+                        toUpdateFields,
+                        versionField,
+                        toWhereSql(whereClauseSql)
+                    ),
                     paramMap,
                     operationType = KOperationType.DELETE
                 )

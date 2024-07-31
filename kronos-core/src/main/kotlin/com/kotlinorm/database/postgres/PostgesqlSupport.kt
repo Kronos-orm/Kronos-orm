@@ -246,7 +246,7 @@ object PostgesqlSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
-        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         val lockSql = when(lock) {
             PessimisticLock.X -> " FOR UPDATE"
@@ -279,7 +279,7 @@ object PostgesqlSupport : DatabasesSupport {
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
-        val limitSql = if (paginationSql == null && limit != null) " LIMIT $limit" else null
+        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)

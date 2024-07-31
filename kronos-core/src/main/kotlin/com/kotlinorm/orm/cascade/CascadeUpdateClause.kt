@@ -56,6 +56,12 @@ object CascadeUpdateClause {
 
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
+
+                val rask = pojo.select()
+                    .cascade(true, limit)
+                    .where { whereClauseSql.asSql() }
+                    .patch(*paramMap.toList().toTypedArray()).build()
+
                 toUpdateRecords.addAll(
                     pojo.select()
                         .cascade(true, limit)

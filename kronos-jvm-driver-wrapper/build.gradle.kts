@@ -9,9 +9,6 @@ plugins {
 dependencies {
     compileOnly(project(":kronos-core"))
     implementation(kotlin("reflect"))
-    testImplementation(project(":kronos-core"))
-    testImplementation("org.apache.commons:commons-dbcp2:2.12.0")
-    testImplementation(kotlin("test"))
 }
 
 tasks.test {

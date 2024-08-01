@@ -34,11 +34,11 @@ import com.kotlinorm.enums.ConditionType.Companion.Or
 import com.kotlinorm.enums.ConditionType.Companion.Regexp
 import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.ConditionType.Companion.Sql
-import com.kotlinorm.enums.NoValueStrategy.Companion.alwaysFalse
-import com.kotlinorm.enums.NoValueStrategy.Companion.alwaysTrue
-import com.kotlinorm.enums.NoValueStrategy.Companion.ignore
-import com.kotlinorm.enums.NoValueStrategy.Companion.judgeNull
-import com.kotlinorm.enums.NoValueStrategy.Companion.smart
+import com.kotlinorm.enums.alwaysFalse
+import com.kotlinorm.enums.alwaysTrue
+import com.kotlinorm.enums.ignore
+import com.kotlinorm.enums.judgeNull
+import com.kotlinorm.enums.smart
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 

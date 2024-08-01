@@ -16,18 +16,18 @@
 
 package com.kotlinorm.enums
 
+import com.kotlinorm.enums.NoValueStrategy.*
+
 enum class NoValueStrategy {
     Ignore,
     False,
     True,
     JudgeNull,
     Smart;
-
-    companion object {
-        val ignore = Ignore
-        val alwaysFalse = False
-        val alwaysTrue = True
-        val judgeNull = JudgeNull
-        val smart = Smart
-    }
 }
+
+val ignore = Ignore
+val alwaysFalse = False
+val alwaysTrue = True
+val judgeNull = JudgeNull
+val smart = Smart

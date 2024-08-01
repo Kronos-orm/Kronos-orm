@@ -277,8 +277,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
-    fun <T : KPojo> db(another: T, databaseName: String) {
-        datebaseOfTable[another.kronosTableName()] = databaseName
+    fun <T : KPojo> db(vararg datebaseOfTables: Pair<KPojo, String>) {
+        datebaseOfTables.forEach {
+            datebaseOfTable[it.first.kronosTableName()] = it.second
+        }
     }
 
     fun cascade(enabled: Boolean, depth: Int = -1) {

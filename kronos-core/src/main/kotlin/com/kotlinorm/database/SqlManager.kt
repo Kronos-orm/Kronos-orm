@@ -16,7 +16,7 @@ import com.kotlinorm.database.SqlManagerCustom.tryGetTableSyncSqlListCustom
 import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.database.mysql.MysqlSupport
 import com.kotlinorm.database.oracle.OracleSupport
-import com.kotlinorm.database.postgres.PostgesqlSupport
+import com.kotlinorm.database.postgres.PostgresqlSupport
 import com.kotlinorm.database.sqlite.SqliteSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.DBType.*
@@ -48,7 +48,7 @@ object SqlManager {
         Mysql -> MysqlSupport.getColumnType(type, length)
         Oracle -> OracleSupport.getColumnType(type, length)
         Mssql -> MssqlSupport.getColumnType(type, length)
-        Postgres -> PostgesqlSupport.getColumnType(type, length)
+        Postgres -> PostgresqlSupport.getColumnType(type, length)
         SQLite -> SqliteSupport.getColumnType(type, length)
         // For other database types, use the custom function if it exists, otherwise throw an exception.
         else -> tryGetSqlColumnTypeCustom(dbType, type, length)
@@ -61,7 +61,7 @@ object SqlManager {
         length: Int
     ) = when (dbType) {
         Mysql -> MysqlSupport.getKColumnType(sqlType, length)
-        Postgres -> PostgesqlSupport.getKColumnType(sqlType, length)
+        Postgres -> PostgresqlSupport.getKColumnType(sqlType, length)
         Oracle -> OracleSupport.getKColumnType(sqlType, length)
         SQLite -> SqliteSupport.getKColumnType(sqlType, length)
         Mssql -> MssqlSupport.getKColumnType(sqlType, length)
@@ -73,7 +73,7 @@ object SqlManager {
         column: Field
     ) = when (dbType) {
         Mysql -> MysqlSupport.getColumnCreateSql(dbType, column)
-        Postgres -> PostgesqlSupport.getColumnCreateSql(dbType, column)
+        Postgres -> PostgresqlSupport.getColumnCreateSql(dbType, column)
         Oracle -> OracleSupport.getColumnCreateSql(dbType, column)
         SQLite -> SqliteSupport.getColumnCreateSql(dbType, column)
         Mssql -> MssqlSupport.getColumnCreateSql(dbType, column)
@@ -87,7 +87,7 @@ object SqlManager {
         kTableIndex: KTableIndex
     ) = when (dbType) {
         Mysql -> MysqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
-        Postgres -> PostgesqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
+        Postgres -> PostgresqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
         Oracle -> OracleSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
         SQLite -> SqliteSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
         Mssql -> MssqlSupport.getIndexCreateSql(dbType, tableName, kTableIndex)
@@ -102,7 +102,7 @@ object SqlManager {
         indexes: List<KTableIndex>
     ) = when (dbType) {
         Mysql -> MysqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
-        Postgres -> PostgesqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        Postgres -> PostgresqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
         Oracle -> OracleSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
         SQLite -> SqliteSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
         Mssql -> MssqlSupport.getTableCreateSqlList(dbType, tableName, columns, indexes)
@@ -114,7 +114,7 @@ object SqlManager {
         dbType: DBType
     ) = when (dbType) {
         Mysql -> MysqlSupport.getTableExistenceSql(dbType)
-        Postgres -> PostgesqlSupport.getTableExistenceSql(dbType)
+        Postgres -> PostgresqlSupport.getTableExistenceSql(dbType)
         Oracle -> OracleSupport.getTableExistenceSql(dbType)
         SQLite -> SqliteSupport.getTableExistenceSql(dbType)
         Mssql -> MssqlSupport.getTableExistenceSql(dbType)
@@ -127,7 +127,7 @@ object SqlManager {
         tableName: String
     ) = when (dbType) {
         Mysql -> MysqlSupport.getTableDropSql(dbType, tableName)
-        Postgres -> PostgesqlSupport.getTableDropSql(dbType, tableName)
+        Postgres -> PostgresqlSupport.getTableDropSql(dbType, tableName)
         Oracle -> OracleSupport.getTableDropSql(dbType, tableName)
         SQLite -> SqliteSupport.getTableDropSql(dbType, tableName)
         Mssql -> MssqlSupport.getTableDropSql(dbType, tableName)
@@ -140,7 +140,7 @@ object SqlManager {
         tableName: String
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getTableColumns(dataSource, tableName)
-        Postgres -> PostgesqlSupport.getTableColumns(dataSource, tableName)
+        Postgres -> PostgresqlSupport.getTableColumns(dataSource, tableName)
         Oracle -> OracleSupport.getTableColumns(dataSource, tableName)
         SQLite -> SqliteSupport.getTableColumns(dataSource, tableName)
         Mssql -> MssqlSupport.getTableColumns(dataSource, tableName)
@@ -153,7 +153,7 @@ object SqlManager {
         tableName: String,
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getTableIndexes(dataSource, tableName)
-        Postgres -> PostgesqlSupport.getTableIndexes(dataSource, tableName)
+        Postgres -> PostgresqlSupport.getTableIndexes(dataSource, tableName)
         Oracle -> OracleSupport.getTableIndexes(dataSource, tableName)
         SQLite -> SqliteSupport.getTableIndexes(dataSource, tableName)
         Mssql -> MssqlSupport.getTableIndexes(dataSource, tableName)
@@ -168,7 +168,7 @@ object SqlManager {
         indexes: TableIndexDiff
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
-        Postgres -> PostgesqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        Postgres -> PostgresqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
         Oracle -> OracleSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
         SQLite -> SqliteSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
         Mssql -> MssqlSupport.getTableSyncSqlList(dataSource, tableName, columns, indexes)
@@ -181,7 +181,7 @@ object SqlManager {
         conflictResolver: ConflictResolver
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getOnConflictSql(conflictResolver)
-        Postgres -> PostgesqlSupport.getOnConflictSql(conflictResolver)
+        Postgres -> PostgresqlSupport.getOnConflictSql(conflictResolver)
         Oracle -> OracleSupport.getOnConflictSql(conflictResolver)
         SQLite -> SqliteSupport.getOnConflictSql(conflictResolver)
         Mssql -> MssqlSupport.getOnConflictSql(conflictResolver)
@@ -194,12 +194,64 @@ object SqlManager {
         showTable: Boolean = false
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.quote(this, showTable)
-        Postgres -> PostgesqlSupport.quote(this, showTable)
+        Postgres -> PostgresqlSupport.quote(this, showTable)
         Oracle -> OracleSupport.quote(this, showTable)
         SQLite -> SqliteSupport.quote(this, showTable)
         Mssql -> MssqlSupport.quote(this, showTable)
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
+
+    fun quote(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        showTable: Boolean = false,
+        columnName: String? = null,
+        map: Map<String, String> = emptyMap()
+    ): String {
+
+        val databaseName = map[tableName]
+
+        return when (dataSource.dbType) {
+            Mysql -> listOfNotNull(
+                if (databaseName.isNullOrBlank()) null else MysqlSupport.quote(databaseName),
+                if (!showTable && databaseName.isNullOrBlank()) null else MysqlSupport.quote(tableName),
+                columnName?.let { MysqlSupport.quote(it) }
+            ).joinToString(".")
+
+            Postgres -> listOfNotNull(
+                if (databaseName.isNullOrBlank()) null else PostgresqlSupport.quote(databaseName),
+                if (!showTable && databaseName.isNullOrBlank()) null else PostgresqlSupport.quote(tableName),
+                columnName?.let { PostgresqlSupport.quote(it) }
+            ).joinToString(".")
+
+            Oracle -> listOfNotNull(
+                if (databaseName.isNullOrBlank()) null else OracleSupport.quote(databaseName),
+                if (!showTable && databaseName.isNullOrBlank()) null else OracleSupport.quote(tableName),
+                columnName?.let { OracleSupport.quote(it) }
+            ).joinToString(".")
+
+            SQLite -> listOfNotNull(
+                if (databaseName.isNullOrBlank()) null else SqliteSupport.quote(databaseName),
+                if (!showTable && databaseName.isNullOrBlank()) null else SqliteSupport.quote(tableName),
+                columnName?.let { SqliteSupport.quote(it) }
+            ).joinToString(".")
+
+            Mssql -> listOfNotNull(
+                if (databaseName.isNullOrBlank()) null else MssqlSupport.quote(databaseName),
+                if (!showTable && databaseName.isNullOrBlank()) null else MssqlSupport.quote(tableName),
+                columnName?.let { MssqlSupport.quote(it) }
+            ).joinToString(".")
+
+            else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
+        }
+    }
+
+    fun quote(
+        dataSource: KronosDataSourceWrapper,
+        field: Field,
+        showTable: Boolean = false,
+        map: Map<String, String> = emptyMap()
+    ) = quote(dataSource, field.tableName, showTable, field.columnName, map)
 
     fun getInsertSql(
         dataSource: KronosDataSourceWrapper,
@@ -207,7 +259,7 @@ object SqlManager {
         columns: List<Field>
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getInsertSql(dataSource, tableName, columns)
-        Postgres -> PostgesqlSupport.getInsertSql(dataSource, tableName, columns)
+        Postgres -> PostgresqlSupport.getInsertSql(dataSource, tableName, columns)
         Oracle -> OracleSupport.getInsertSql(dataSource, tableName, columns)
         SQLite -> SqliteSupport.getInsertSql(dataSource, tableName, columns)
         Mssql -> MssqlSupport.getInsertSql(dataSource, tableName, columns)
@@ -220,7 +272,7 @@ object SqlManager {
         whereClauseSql: String?
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
-        Postgres -> PostgesqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
+        Postgres -> PostgresqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
         Oracle -> OracleSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
         SQLite -> SqliteSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
         Mssql -> MssqlSupport.getDeleteSql(dataSource, tableName, whereClauseSql)
@@ -235,7 +287,14 @@ object SqlManager {
         whereClauseSql: String?
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
-        Postgres -> PostgesqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        Postgres -> PostgresqlSupport.getUpdateSql(
+            dataSource,
+            tableName,
+            toUpdateFields,
+            versionField,
+            whereClauseSql
+        )
+
         Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
         SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
         Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
@@ -247,7 +306,7 @@ object SqlManager {
         selectClause: SelectClauseInfo
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getSelectSql(dataSource, selectClause)
-        Postgres -> PostgesqlSupport.getSelectSql(dataSource, selectClause)
+        Postgres -> PostgresqlSupport.getSelectSql(dataSource, selectClause)
         Oracle -> OracleSupport.getSelectSql(dataSource, selectClause)
         SQLite -> SqliteSupport.getSelectSql(dataSource, selectClause)
         Mssql -> MssqlSupport.getSelectSql(dataSource, selectClause)
@@ -259,7 +318,7 @@ object SqlManager {
         joinClause: JoinClauseInfo
     ) = when (dataSource.dbType) {
         Mysql -> MysqlSupport.getJoinSql(dataSource, joinClause)
-        Postgres -> PostgesqlSupport.getJoinSql(dataSource, joinClause)
+        Postgres -> PostgresqlSupport.getJoinSql(dataSource, joinClause)
         Oracle -> OracleSupport.getJoinSql(dataSource, joinClause)
         SQLite -> SqliteSupport.getJoinSql(dataSource, joinClause)
         Mssql -> MssqlSupport.getJoinSql(dataSource, joinClause)

@@ -22,7 +22,7 @@ class Join {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "rootroot"
+        password = ""
     }
 
     init {
@@ -86,6 +86,40 @@ class Join {
                     "RIGHT JOIN `movie` " +
                     "ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 " +
                     "FULL JOIN `product_log` " +
+                    "ON `product_log`.`id` = `tb_user`.`id` " +
+                    "WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 " +
+                    "ORDER BY `tb_user`.`id` DESC",
+            sql
+        )
+        assertEquals(mapOf("id" to 1), paramMap)
+    }
+
+    @Test
+    fun testOnMultipleTables() {
+        val (sql, paramMap) =
+            MysqlUser(1).join(
+                UserRelation(1, "123", 1, 1),
+                Movie(1),
+                ProductLog(1)
+            ) { user, relation, movie, log ->
+                on {
+                    user.id == relation.id2 && user.gender == relation.gender && movie.year == user.id && log.id == user.id
+                }
+                select {
+                    user.id + relation.gender + movie.id
+                }
+                where { user.id == 1 }
+                orderBy { user.id.desc() }
+            }.build()
+
+        assertEquals(
+            "SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` " +
+                    "FROM `tb_user` " +
+                    "LEFT JOIN `user_relation` " +
+                    "ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender` " +
+                    "LEFT JOIN `movie` " +
+                    "ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 " +
+                    "LEFT JOIN `product_log` " +
                     "ON `product_log`.`id` = `tb_user`.`id` " +
                     "WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 " +
                     "ORDER BY `tb_user`.`id` DESC",
@@ -171,6 +205,32 @@ class Join {
         val data = task.queryList<MysqlUser>()
 
         println()
+    }
+
+    @Test
+    fun testSetDbName() {
+        val (sql, paramMap) =
+            MysqlUser(1).join(
+                UserRelation(1, "123", 1, 1),
+            ) { user, relation ->
+                leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
+                select {
+                    user.id + relation.gender
+                }
+                db(relation to "test")
+                where { user.id == 1 }
+                orderBy { user.id.desc() }
+            }.build()
+
+        assertEquals(
+            "SELECT `tb_user`.`id` AS `id`, `test`.`user_relation`.`gender` AS `gender` " +
+                    "FROM `tb_user` " +
+                    "LEFT JOIN `test`.`user_relation` " +
+                    "ON `tb_user`.`id` = `test`.`user_relation`.`id2` AND `tb_user`.`gender` = `test`.`user_relation`.`gender` " +
+                    "WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 " +
+                    "ORDER BY `tb_user`.`id` DESC",
+            sql
+        )
     }
 
 }

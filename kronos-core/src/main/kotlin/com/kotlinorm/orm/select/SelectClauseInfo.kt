@@ -4,6 +4,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.PessimisticLock
 
 data class SelectClauseInfo(
+    val databaseName: String?,
     val tableName: String,
     val selectFields: List<Field>,
     val distinct: Boolean,

@@ -4,6 +4,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.database.oracle.OracleSupport.orEmpty
@@ -180,7 +181,7 @@ object SqliteSupport : DatabasesSupport {
         whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -195,6 +196,8 @@ object SqliteSupport : DatabasesSupport {
         if (null != lock) throw UnsupportedDatabaseTypeException("Sqlite doesn't support the lock() method because Sqlite only has database locks")
 
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            databaseName?.let { quote(it) + "."} ?: ""
+        }${
             quote(tableName)
         }${
             whereClauseSql.orEmpty()
@@ -210,18 +213,18 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                else -> "${quote(it.second, true)} AS ${MssqlSupport.quote(it.first)}"
+                else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }
         val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
-            quote(tableName)
+            SqlManager.quote(dataSource, tableName, true, map = databaseOfTable)
         }${
             joinSql.orEmpty()
         }${

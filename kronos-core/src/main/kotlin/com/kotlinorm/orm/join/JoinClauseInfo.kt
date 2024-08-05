@@ -32,6 +32,7 @@ data class JoinClauseInfo(
     val pageIndex: Int,
     val pageSize: Int,
     val limit: Int? = null,
+    val datebaseOfTable: Map<String, String> = mapOf(),
     val whereClauseSql: String? = null,
     val groupByClauseSql: String? = null,
     val orderByClauseSql: String? = null,

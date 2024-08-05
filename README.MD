@@ -58,13 +58,13 @@ data class Movie(
 
 ```kotlin
 //is table exists
-dataSource.table.isTableExists<Movie>()
+dataSource.table.exists<Movie>()
 
 // create table
 dataSource.table.createTable<Movie>()
 
 // drop table
-dataSource.table.deleteTable<Movie>()
+dataSource.table.dropTable<Movie>()
 
 //sync table structure
 dataSource.table.schemeSync<Movie>()
@@ -96,11 +96,8 @@ val (total, list) = User()
 
 // multi-table query
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    leftJoin(relation) {
-        user.id == relation.userId
-    }
-    rightJoin(role) {
-        user.id == role.userId && relation.roleId == role.id
+    on(relation) {
+        user.id == relation.userId && user.id == role.userId && relation.roleId == role.id
     }
     select {
         user.id + user.username + relation.relation + role.role
@@ -163,8 +160,8 @@ user.delete()
 ```
 
 ------
-> [Read more](https://kotoframework.com/#v2)
+> [Read more](https://www.kotlinorm.com)
 >
-> [Official Website](https://kronos-orm.fun)
+> [Official Website](https://www.kotlinorm.com)
 >
-> [docs](https://kotlinorm.com/docs/)
+> [docs](https://www.kotlinorm.com)

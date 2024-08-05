@@ -53,6 +53,10 @@ data class Movie(
 ) : KPojo()
 ```
 
+> Why use annotations instead of Kotlin DSL?
+>
+> We read annotation information through a compiler plugin and store the information in the entity class definition, so that all table structure parsing occurs at compile time rather than runtime. While this approach sacrifices some flexibility, it helps avoid runtime performance overhead.
+
 ------
 **Table Operation:**
 
@@ -96,7 +100,7 @@ val (total, list) = User()
 
 // multi-table query
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    on(relation) {
+    on {
         user.id == relation.userId && user.id == role.userId && relation.roleId == role.id
     }
     select {
@@ -142,11 +146,12 @@ user.update { it.username + it.gender }
 // upsert on some columns
 user.upsert { it.username }
     .on { it.id }
+//  .lock(PessimisticLock.X) // You can specify the type of lock, and pessimistic lock is used by default
     .execute()
 
 // upsert on duplicate key
 user.upsert { it.username }
-    .onDuplicateKey()
+    .onConfict() // We have achieved compatibility with different databases
     .execute()
 ```
 

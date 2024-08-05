@@ -1,0 +1,79 @@
+/* You can add global styles to this file, and also import other style files */
+@import "primeng/resources/themes/md-dark-deeppurple/theme.css";
+@import "primeng/resources/primeng.min.css";
+@import "primeflex/primeflex.scss";
+@import "primeflex/themes/primeone-dark.scss";
+@import "primeicons/primeicons.css";
+
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 1.5rem 0 1rem;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--surface-900);
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-regular-subset.woff2?sha=3114f1256') format('woff2'), url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-regular-subset.woff?sha=3114f1256') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bold-subset.woff2?sha=3114f1256') format('woff2'), url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bold-subset.woff?sha=3114f1256') format('woff');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-italic-subset.woff2?sha=3114f1256') format('woff2'), url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-italic-webfont.woff?sha=3114f1256') format('woff');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bolditalic-subset.woff2?sha=3114f1256') format('woff2'), url('https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/fonts/hack-bolditalic-subset.woff?sha=3114f1256') format('woff');
+  font-weight: 700;
+  font-style: italic;
+}
+
+.p-megamenu-panel {
+  z-index: 3;
+}
+
+:root {
+  --ng-doc-primary: #7F52FF!important;
+  --ng-doc-link-color: #7F52FF!important;
+  --ng-doc-code-max-height: 520px!important;
+  --ng-doc-icon-width: 24px!important;
+}
+
+img {
+  user-drag: none;
+  -webkit-user-drag: none;
+}
+
+pre {
+  margin: var(--ng-doc-code-margin);
+
+  code {
+    white-space: unset;
+    box-shadow: inset 0px 6px 6px rgba(16, 19, 19, 0.32);
+    background-color: var(--ng-doc-code-background);
+  }
+}
+h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.ngde + h5.ngde, h1.ngde + h6.ngde, h2.ngde + h1.ngde, h2.ngde + h2.ngde, h2.ngde + h3.ngde, h2.ngde + h4.ngde, h2.ngde + h5.ngde, h2.ngde + h6.ngde, h3.ngde + h1.ngde, h3.ngde + h2.ngde, h3.ngde + h3.ngde, h3.ngde + h4.ngde, h3.ngde + h5.ngde, h3.ngde + h6.ngde, h4.ngde + h1.ngde, h4.ngde + h2.ngde, h4.ngde + h3.ngde, h4.ngde + h4.ngde, h4.ngde + h5.ngde, h4.ngde + h6.ngde, h5.ngde + h1.ngde, h5.ngde + h2.ngde, h5.ngde + h3.ngde, h5.ngde + h4.ngde, h5.ngde + h5.ngde, h5.ngde + h6.ngde, h6.ngde + h1.ngde, h6.ngde + h2.ngde, h6.ngde + h3.ngde, h6.ngde + h4.ngde, h6.ngde + h5.ngde, h6.ngde + h6.ngde {
+  margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
+}

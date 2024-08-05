@@ -1,0 +1,96 @@
+:host ::ng-deep {
+  .p-panelmenu {
+
+    .p-panelmenu-panel {
+      box-shadow: none !important;
+    }
+
+    .p-panelmenu-header {
+      .p-panelmenu-header-content {
+        color: #000 !important;
+        background-color: #FFF !important;
+      }
+
+      &:hover {
+        .p-panelmenu-header-content {
+          background-color: #F0F0F0 !important;
+        }
+      }
+
+      &:active {
+        .p-panelmenu-header-content {
+          background-color: #E2E2E2 !important;
+        }
+      }
+
+      .p-panelmenu-header-action {
+        color: #000 !important;
+        padding: 0.8rem 1rem !important;
+      }
+
+      .p-menuitem-text {
+        font-weight: 600;
+        font-size: 18px;
+      }
+
+      &.p-highlight {
+        .p-menuitem-text, .p-panelmenu-header-action {
+          color: #7F52FF !important;
+        }
+      }
+    }
+
+    .p-panelmenu-content {
+      background-color: #FFF !important;
+
+      .p-menuitem-icon {
+        font-size: 5px;
+        margin-right: 1rem;
+        visibility: hidden;
+      }
+    }
+
+    .p-panelmenu-content .p-menuitem > .p-menuitem-content .p-menuitem-link .p-menuitem-text {
+      color: #000 !important;
+    }
+
+    .p-panelmenu-content .p-menuitem > .p-menuitem-content .p-menuitem-link {
+      padding: 0.8rem 1rem !important;
+      border-radius: 0.5rem !important;
+
+      &:hover {
+        background-color: #F0F0F0 !important;
+      }
+    }
+
+    .p-panelmenu-content .p-menuitem > .p-menuitem-content .p-menuitem-link-active {
+
+      .p-menuitem-icon {
+        visibility: visible;
+        color: #7F52FF !important;
+        animation: scale .5s ease-out;
+      }
+
+      .p-menuitem-text {
+        color: #7F52FF !important;
+        font-weight: 400;
+      }
+    }
+  }
+
+  .p-toggleable-content.p-panelmenu-expanded {
+    height: auto !important;
+  }
+}
+
+@keyframes scale {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

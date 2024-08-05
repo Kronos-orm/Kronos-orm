@@ -1,0 +1,1 @@
+import"./chunk-ODN5LVDJ.js";var t=[{path:"",redirectTo:"quick-start",pathMatch:"full"},{path:"",title:"Getting Started",children:[{path:"quick-start",loadChildren:()=>import("./chunk-2CLFTUB2.js")},{path:"welcome",loadChildren:()=>import("./chunk-XJVY542Y.js")}]}],e=t;export{e as default};

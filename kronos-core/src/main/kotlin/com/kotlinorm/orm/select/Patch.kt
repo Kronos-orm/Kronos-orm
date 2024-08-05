@@ -23,3 +23,7 @@ import com.kotlinorm.types.KTableField
 fun <T : KPojo> T.select(fields: KTableField<T, Any?> = null): SelectClause<T> {
     return SelectClause(this, fields)
 }
+
+fun <T : KPojo> T.db(name: String) = this to name
+
+fun <T : KPojo> Pair<T, String>.select(fields: KTableField<T, Any?>) = this.first.select(fields).db(this.second)

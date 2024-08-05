@@ -74,6 +74,7 @@ class SelectClause<T : KPojo>(
     internal var selectAll = true
     private var ps = 0
     private var pi = 0
+    private var databaseName: String? = null
 
     /**
      * 初始化函数：用于在对象初始化时配置选择字段。
@@ -100,6 +101,11 @@ class SelectClause<T : KPojo>(
 
     fun limit(capacity: Int): SelectClause<T> {
         limitCapacity = capacity
+        return this
+    }
+
+    fun db(databaseName: String): SelectClause<T> {
+        if (databaseName.isNotBlank()) this.databaseName = databaseName
         return this
     }
 
@@ -453,6 +459,7 @@ class SelectClause<T : KPojo>(
         updateMap(mapOfWhere)
         updateMap(mapOfHaving)
         return SelectClauseInfo(
+            databaseName,
             tableName,
             selectFields.toList(),
             distinctEnabled,

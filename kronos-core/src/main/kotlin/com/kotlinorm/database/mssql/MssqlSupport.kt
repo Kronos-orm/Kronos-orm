@@ -4,6 +4,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
@@ -285,11 +286,13 @@ object MssqlSupport : DatabasesSupport {
         whereClauseSql: String?
     ) =
         "UPDATE [dbo].${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
-        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
-        whereClauseSql.orEmpty()
+                if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else {
+                    ""
+                } +
+                whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -301,7 +304,9 @@ object MssqlSupport : DatabasesSupport {
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         val lockSql = if (null != lock) " ROWLOCK" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
+        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+            databaseName?.let { quote(it) + "." } ?: ""
+        }[dbo].${
             quote(tableName)
         }${
             lockSql.orEmpty()
@@ -319,18 +324,18 @@ object MssqlSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                else -> "${quote(it.second, true)} AS ${quote(it.first)}"
+                else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
-            quote(tableName)
+            SqlManager.quote(dataSource, tableName, true, map = databaseOfTable)
         }${
             joinSql.orEmpty()
         }${

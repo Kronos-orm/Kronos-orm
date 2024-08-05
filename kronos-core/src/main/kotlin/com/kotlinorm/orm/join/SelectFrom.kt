@@ -24,8 +24,7 @@ import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.database.SqlManager.getJoinSql
-import com.kotlinorm.database.SqlManager.quoted
-import com.kotlinorm.database.mysql.MysqlSupport.quote
+import com.kotlinorm.database.SqlManager.quote
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
@@ -79,13 +78,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
     private var pi = 0
     private var ps = 0
+    private val datebaseOfTable: MutableMap<String, String> = mutableMapOf()
 
     fun on(on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
 
-        val criteriaMap = mutableMapOf<String , MutableList<Criteria>>()
-        val constMap = mutableMapOf<String , MutableList<Criteria>>()
-        val repeatlist = mutableListOf<Triple<Criteria , String , String>>()
+        val criteriaMap = mutableMapOf<String, MutableList<Criteria>>()
+        val constMap = mutableMapOf<String, MutableList<Criteria>>()
+        val repeatlist = mutableListOf<Triple<Criteria, String, String>>()
 
         t1.conditionalRun {
             on(t1)
@@ -109,15 +109,21 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                         val valueTableName = if (top.value is Field) (top.value as Field).tableName else null
 
                         if (null == valueTableName)
-                            setInMap(top , fieldTableName , constMap)
-                        else if (valueTableName == tableName || (fieldTableName!= tableName && !criteriaMap.contains(fieldTableName) && criteriaMap.contains(valueTableName))) //value侧为主表或目前field侧无条件而value侧有条件，直接将条件放入field侧
-                            setInMap(top , fieldTableName , criteriaMap)
-                        else if (fieldTableName == tableName || (valueTableName != tableName && criteriaMap.contains(fieldTableName))) //field侧为主表或目前value侧无条件而field侧有条件或两侧都有条件，可直接将条件放入vaule侧
-                            setInMap(top , valueTableName , criteriaMap)
-                        else  { // 条件两侧均未出现过，将条件放入两侧，后期再根据两端条件数量删除一侧
-                            setInMap(top , valueTableName , criteriaMap)
-                            setInMap(top , fieldTableName , criteriaMap)
-                            repeatlist.add(Triple(top , fieldTableName , valueTableName))
+                            setInMap(top, fieldTableName, constMap)
+                        else if (valueTableName == tableName || (fieldTableName != tableName && !criteriaMap.contains(
+                                fieldTableName
+                            ) && criteriaMap.contains(valueTableName))
+                        ) //value侧为主表或目前field侧无条件而value侧有条件，直接将条件放入field侧
+                            setInMap(top, fieldTableName, criteriaMap)
+                        else if (fieldTableName == tableName || (valueTableName != tableName && criteriaMap.contains(
+                                fieldTableName
+                            ))
+                        ) //field侧为主表或目前value侧无条件而field侧有条件或两侧都有条件，可直接将条件放入vaule侧
+                            setInMap(top, valueTableName, criteriaMap)
+                        else { // 条件两侧均未出现过，将条件放入两侧，后期再根据两端条件数量删除一侧
+                            setInMap(top, valueTableName, criteriaMap)
+                            setInMap(top, fieldTableName, criteriaMap)
+                            repeatlist.add(Triple(top, fieldTableName, valueTableName))
                         }
 
                     }
@@ -129,24 +135,39 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             repeatlist.forEach {
                 val (repeatCriteria, fieldTableName, valueTableName) = it
                 if (null != criteriaMap[fieldTableName] && criteriaMap[fieldTableName]!!.size == 1)
-                    removeInMap(repeatCriteria , valueTableName , criteriaMap)
-                else removeInMap(repeatCriteria , fieldTableName , criteriaMap)
+                    removeInMap(repeatCriteria, valueTableName, criteriaMap)
+                else removeInMap(repeatCriteria, fieldTableName, criteriaMap)
             }
 
             criteriaMap.putAll(constMap)
             criteriaMap.keys.forEach { key ->
-                joinables.add(KJoinable(key, JoinType.LEFT_JOIN , criteriaMap[key]!!.toCriteria() , listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()))
+                joinables.add(
+                    KJoinable(
+                        key,
+                        JoinType.LEFT_JOIN,
+                        criteriaMap[key]!!.toCriteria(),
+                        listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()
+                    )
+                )
             }
         }
     }
 
-    private fun setInMap(criteria: Criteria , criteriaTableName: String , map: MutableMap<String , MutableList<Criteria>>) {
-        val criteriaList = map.getOrDefault(criteriaTableName , mutableListOf())
+    private fun setInMap(
+        criteria: Criteria,
+        criteriaTableName: String,
+        map: MutableMap<String, MutableList<Criteria>>
+    ) {
+        val criteriaList = map.getOrDefault(criteriaTableName, mutableListOf())
         criteriaList.add(criteria)
         map[criteriaTableName] = criteriaList
     }
 
-    private fun removeInMap(criteria: Criteria , criteriaTableName: String , map: MutableMap<String , MutableList<Criteria>>) {
+    private fun removeInMap(
+        criteria: Criteria,
+        criteriaTableName: String,
+        map: MutableMap<String, MutableList<Criteria>>
+    ) {
         val criteriaList = map[criteriaTableName]!!
         criteriaList.remove(criteria)
         map[criteriaTableName] = criteriaList
@@ -253,6 +274,12 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 )
                 selectFieldsWithNames[safeKey] = field
             }
+        }
+    }
+
+    fun db(vararg datebaseOfTables: Pair<KPojo, String>) {
+        datebaseOfTables.forEach {
+            datebaseOfTable[it.first.kronosTableName()] = it.second
         }
     }
 
@@ -483,7 +510,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         // 设置逻辑删除的条件
         if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
             buildCondition = listOfNotNull(
-                buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault() , true)} = $value".asSql()
+                buildCondition,
+                "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, datebaseOfTable)} = $value".asSql()
             ).toCriteria()
         }
 
@@ -495,7 +523,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
 
         val paramMapNew = mutableMapOf<String, Any?>()
-        val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper , buildCondition) {
+        val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper, buildCondition) {
             paramMapNew.putAll(it)
         })
 
@@ -512,33 +540,57 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         buildCondition: Criteria?,
         updateMap: (map: MutableMap<String, Any?>) -> Unit
     ): JoinClauseInfo {
-        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(wrapper, buildCondition, showTable = true).toWhereClause()
+        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(
+            wrapper,
+            buildCondition,
+            showTable = true,
+            datebaseOfTable = datebaseOfTable
+        ).toWhereClause()
 
         val joinSql = " " + joinables.joinToString(" ") {
             var joinCondition = it.condition
             if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
                 joinCondition = listOfNotNull(
-                    joinCondition, "${quote(it.logicDeleteStrategy.field, true)} = $value".asSql()
+                    joinCondition,
+                    "${
+                        quote(
+                            wrapper.orDefault(),
+                            it.logicDeleteStrategy.field,
+                            true,
+                            datebaseOfTable
+                        )
+                    } = $value".asSql()
                 ).toCriteria()
             }
 
-            val (onSql , mapOfOn) = buildConditionSqlWithParams(wrapper, joinCondition, paramMap, showTable = true)
+            val (onSql, mapOfOn) = buildConditionSqlWithParams(
+                wrapper,
+                joinCondition,
+                paramMap,
+                showTable = true,
+                datebaseOfTable = datebaseOfTable
+            )
                 .toOnClause()
             updateMap(mapOfOn)
 
-            it.joinType.value + " " + "`${it.tableName}`" + onSql
+            it.joinType.value + " " + quote(wrapper.orDefault(), it.tableName, true, map = datebaseOfTable) + onSql
         }
 
         val groupByClauseSql =
             if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
-                it.quoted(wrapper.orDefault() , true)
+                quote(wrapper.orDefault(), it, true, datebaseOfTable)
             }) else null
         val orderByClauseSql =
             if (orderEnabled && orderByFields.isNotEmpty()) " ORDER BY " + orderByFields.joinToString(", ") {
-                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else it.first.quoted(wrapper.orDefault() , true) + " " + it.second
+                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else quote(
+                    wrapper.orDefault(),
+                    it.first,
+                    true,
+                    datebaseOfTable
+                ) + " " + it.second
             } else null
         val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
-            wrapper, havingCondition
+            wrapper, havingCondition, showTable = true, datebaseOfTable = datebaseOfTable
         ).toHavingClause() else null to mutableMapOf()
         updateMap(mapOfWhere)
         updateMap(mapOfHaving)
@@ -550,6 +602,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             pi,
             ps,
             limitCapacity,
+            datebaseOfTable,
             whereClauseSql,
             groupByClauseSql,
             orderByClauseSql,

@@ -1,9 +1,16 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.orm.beans.Movie
+import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.relationQuery.oneToMany.School
+import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.tableOperation.beans.MysqlUser
@@ -17,7 +24,7 @@ class Select {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "******"
+        password = ""
     }
 
     init {
@@ -123,7 +130,7 @@ class Select {
     @Test
     fun testAsSql() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }.lock(PessimisticLock.X)
             .build()
 
         assertEquals(
@@ -186,7 +193,13 @@ class Select {
 
     @Test
     fun testDatebase() {
-        val res = user.select().withTotal().build()
+        dataSource.table.dropTable<User>()
+        dataSource.table.createTable<User>()
+
+        val testU = User(1 , "a")
+        testU.insert().execute()
+
+        val res = testU.select {it.id}.queryOne<Int>()
         println(res)
     }
 
@@ -197,5 +210,18 @@ class Select {
         }.queryOne()
 
         println(res)
+    }
+
+    @Test
+    fun testSetDbName() {
+
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
+            .where { it.gender == 0 }.db("test")
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` AS `username` FROM `test`.`tb_user` WHERE `gender` = :gender AND `deleted` = 0",
+            sql
+        )
     }
 }

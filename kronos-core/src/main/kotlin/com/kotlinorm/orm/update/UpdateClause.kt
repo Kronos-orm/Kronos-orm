@@ -222,6 +222,8 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "New"] = value
         }
 
+        toUpdateFields = toUpdateFields.distinctBy { it.columnName }.toLinkedSet()
+
         var versionField: String? = null
         setCommonStrategy(optimisticStrategy) { field, _ ->
             versionField = field.columnName

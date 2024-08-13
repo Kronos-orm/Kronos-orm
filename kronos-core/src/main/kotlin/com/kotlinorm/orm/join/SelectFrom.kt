@@ -524,7 +524,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         val paramMapNew = mutableMapOf<String, Any?>()
         val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper, buildCondition) {
-            paramMapNew.putAll(it)
+            paramMapNew.putAll(it.filter { entry -> null != entry.value })
         })
 
         // 返回构建好的KronosAtomicTask对象

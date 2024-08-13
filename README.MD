@@ -1,6 +1,7 @@
 ![logo](https://cdn.leinbo.com/assets/images/kronos/logo_dark.png)
 
-[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/apisec-scan.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/apisec-scan.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # Re-define KotlinORM

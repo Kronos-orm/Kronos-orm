@@ -1,6 +1,7 @@
 ![logo](https://cdn.leinbo.com/assets/images/kronos/logo_dark.png)
 
-[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/code_quality.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/code_quality.yml)
+[![ktlint](https://img.shields.io/badge/ktlint%20code--style-%E2%9D%A4-FF4081)](https://pinterest.github.io/ktlint/)
+[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/codeql.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 # Re-define KotlinORM

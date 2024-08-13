@@ -25,4 +25,4 @@ jobs:
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
-          args: "-l jetbrains/qodana-jvm-community:2024.1"
+          args: "-l jetbrains/qodana-jvm-community"

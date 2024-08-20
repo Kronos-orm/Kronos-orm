@@ -1,60 +1,60 @@
 # {{ NgDocPage.title }}
 
-Kronos访问数据库通过`KronosDataSourceWrapper`实现。
+Kronos accesses the database through `KronosDataSourceWrapper`.
 
-`KronosDataSourceWrapper`是一个接口，是对数据库操作的封装，它不关心具体的数据库连接细节，与平台无关，只关心数据库操作的逻辑：
+`KronosDataSourceWrapper` is an interface that encapsulates database operations. It does not care about the specific database connection details and is independent of the platform. It only cares about the logic of database operations:
 
-- `dbType`：数据库类型
-- `url`：数据库连接地址
-- `username`：数据库用户名
-- `query`：执行查询
-  - `List<Map<String, Any>>`：返回查询结果
-  - `List<T>`：返回查询结果的第一列
-  - `Map<String, Any>`：返回查询结果的第一行
-  - `T`：返回查询结果的第一行的第一列
-- `execute`：执行更新
-- `batch`：批量执行更新
-- `transaction`：事务
+- `dbType`: database type
+- `url`: database connection address
+- `username`: database username
+- `query`: execute query
+- `List<Map<String, Any>>`: return query results
+- `List<T>`: return the first column of the query results
+- `Map<String, Any>`: return the first row of the query results
+- `T`: return the first column of the first row of the query results
+- `execute`: execute update
+- `batch`: batch update
+- `transaction`: transaction
 
 > **Note**
-> **KronosDataSourceWrapper**以扩展的形式在core中引入，这使得**支持多平台**、**新数据库扩展**和**第三方框架集成**成为可能。
+> **KronosDataSourceWrapper** is introduced in the core as an extension, which makes it possible to **support multiple platforms**, **new database extensions** and **third-party framework integration**.
 
-## 使用示例
+## Usage example
 
-官方提供了jvm平台的基于JDBC的数据库连接插件，可以通过以下方式引入：
+Officially provides a JDBC-based database connection plug-in for the jvm platform, which can be introduced in the following ways:
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jvm-driver-wrapper:1.0.0")
+implementation("com.kotlinorm.kronos-jvm-driver-wrapper:1.0.0")
 }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jvm-driver-wrapper:1.0.0'
+implementation 'com.kotlinorm:kronos-jvm-driver-wrapper:1.0.0'
 }
 ```
 
 ```xml group="import" name="maven" icon="maven"
 <project>
-  <dependencies>
-    <dependency>
-      <groupId>com.kotlinorm</groupId>
-      <artifactId>kronos-jvm-driver-wrapper</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-  </dependencies>
+<dependencies>
+<dependency>
+<groupId>com.kotlinorm</groupId>
+<artifactId>kronos-jvm-driver-wrapper</artifactId>
+<version>1.0.0</version>
+</dependency>
+</dependencies>
 </project>
 ```
 
-除此之外，可以通过如`kronos-spring-data-wrapper`、`kronos-jdbi-wrapper`、`kronos-mybatis-wrapper`等插件实现数据库连接，与Spring Data、JDBI、MyBatis等框架集成。
+In addition, you can use plugins such as `kronos-spring-data-wrapper`, `kronos-jdbi-wrapper`, `kronos-mybatis-wrapper` to connect to the database and integrate with Spring Data, JDBI, MyBatis and other frameworks.
 
-以下是对于`kronos-jvm-driver-wrapper`的使用示例
+The following is an example of using `kronos-jvm-driver-wrapper`
 
 > **Note**
-> **BasicDataSource**是Apache Commons DBCP的一个简单的数据源实现，您可以更换为其他数据源实现。
+> **BasicDataSource** is a simple data source implementation of Apache Commons DBCP. You can replace it with other data source implementations.
 
-### 1. Mysql数据库连接配置
+### 1. Mysql database connection configuration
 
 ```kotlin group="Mysql" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -111,7 +111,7 @@ Kronos.apply {
 }
 ```
 
-### 2. PostgreSQL数据库连接配置
+### 2. PostgreSQL database connection configuration
 
 ```kotlin group="PostgreSQL" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -166,7 +166,7 @@ Kronos.apply {
 }
 ```
 
-### 3. Oracle数据库连接配置
+### 3. Oracle database connection configuration
 
 ```kotlin group="Oracle" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -221,7 +221,7 @@ Kronos.apply {
 }
 ```
 
-### 4. SQL Server数据库连接配置
+### 4. SQL Server database connection configuration
 
 ```kotlin group="SQL Server" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -275,7 +275,7 @@ Kronos.apply {
 }
 ```
 
-### 5. SQLite数据库连接配置
+### 5. SQLite database connection configuration
 
 ```kotlin group="SQLite" name="gradle(kts)" icon="gradlekts"
 dependencies {

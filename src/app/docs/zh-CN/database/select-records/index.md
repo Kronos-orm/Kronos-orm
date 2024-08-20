@@ -353,7 +353,7 @@ SELECT "id", "name", "age" FROM "user" LOCK IN SHARE MODE
 在不同的数据库中，分页查询的语法有所不同，Kronos会根据不同的数据库生成相应的分页查询语句。
 
 > **Warning**
-> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请使用<a href="/documentation/database/select-records#使用withtotal查询带有总记录数的分页查询">withTotal方法</a>。
+> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请使用<a href="/documentation/zh-CN/database/select-records#使用withtotal查询带有总记录数的分页查询">withTotal方法</a>。
 
 ```kotlin group="Case 8" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()

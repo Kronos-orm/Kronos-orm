@@ -71,7 +71,7 @@ kronos-orm是一个多模块的项目，我们提供了多个模块供开发者�
 
 ## 配置数据库：
 
-这里仅介绍`kronos-jvm-driver-wrapper`模块Mysql下的使用，其他模块的使用方式类似，具体请参考[连接到数据库](/documentation/database/connect-to-db)。
+这里仅介绍`kronos-jvm-driver-wrapper`模块Mysql下的使用，其他模块的使用方式类似，具体请参考[连接到数据库](/documentation/zh-CN/database/connect-to-db)。
 
 需引入`commons-dbcp2`、`mysql-connector-java`等依赖。
 
@@ -130,6 +130,7 @@ data class Movie(
     @updateTime
     var updateTime: Date? = ""
 ): KPojo
+```
 
 ## 使用Kronos：
 
@@ -145,4 +146,6 @@ director.insert(director)
 director.update().set { it.name = "Kronos ORM" }.where { it.id == 1 }.execute()
 
 val directors: List<Director> = director.select().where { it.id == 1 }.queryList()
+
+val movies: List<Movie> = Movie().select().where { it.director!!.id == director.id.value }.queryList()
 

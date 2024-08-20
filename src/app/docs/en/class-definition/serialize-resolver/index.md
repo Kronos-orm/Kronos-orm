@@ -1,20 +1,20 @@
 # {{ NgDocPage.title }}
 
-`KronosSerializeResolver`是Kronos定义的序列化解析器接口，用于字符串和Kotlin实体类之间的序列化和反序列化转换。
+`KronosSerializeResolver` is a serialization resolver interface defined by Kronos, used for serialization and deserialization conversion between strings and Kotlin entity classes.
 
-## 成员函数：
+## Member functions:
 
 ### deserialize
 `fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T`
 
-用于将字符串反序列化为指定的类型T
+Used to deserialize a string to the specified type T
 
 ### deserializeObj
 `fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any`
 
-用于将字符串反序列化为指定的KClass
+Used to deserialize a string to the specified KClass
 
 ### serialize
 `fun serialize(obj: Any): String`
 
-用于将Kotlin对象序列化为String
+Used to serialize a Kotlin object to a String

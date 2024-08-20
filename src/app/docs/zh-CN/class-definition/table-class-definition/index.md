@@ -131,7 +131,7 @@ CREATE UNIQUE INDEX idx_multi ON "tb_user" ("id", "name");
 |-----------------------|------------------------|----------------------|
 | `tableNamingStrategy` | `KronosNamingStrategy` | `NoneNamingStrategy` |
 
-通过创建`KronosNamingStrategy`的实现类来自定义表名策略（详见：[命名策略](/documentation/class-definition/naming-strategy)），然后在配置文件中指定该实现类。
+通过创建`KronosNamingStrategy`的实现类来自定义表名策略（详见：[命名策略](/documentation/zh-CN/class-definition/naming-strategy)），然后在配置文件中指定该实现类。
 
 我们默认提供了`LineHumpNamingStrategy`表名策略：
 

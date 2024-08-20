@@ -30,16 +30,21 @@ import {AppService} from "../../../app.service";
       {{ ("DESCRIPTION3") | transloco }}
     </p>
     <div class="flex align-items-center gap-3">
-      <p-button [routerLink]="['/documentation/' + appService.language +'/getting-started/quick-start']" [label]="'GET_START' | transloco" icon="pi pi-arrow-right" severity="info" size="large"/>
-      <p-button severity="warning" size="large">
+      <p-button [routerLink]="['/documentation/' + appService.language +'/getting-started/welcome']" [label]="'GET_START' | transloco" icon="pi pi-arrow-right" severity="info" size="large"/>
+      <a href="https://github.com/Kronos-orm/Kronos-orm" target="_blank" 
+         class="p-ripple p-element p-button p-component font-bold p-button-lg p-button-warning">
         <i class="pi pi-github mr-3"></i>
         <span>{{ "GIVE_A_STAR" | transloco }}</span>
         <i class="pi pi-star-fill ml-3 text-yellow-500"></i>
-      </p-button>
+      </a>
     </div>
   `,
   standalone: true,
   styles: [`
+    a {
+      text-decoration: none;
+    }
+    
     .banner-img {
       background: url('/assets/images/banner.png') no-repeat center center;
       background-size: 100%;

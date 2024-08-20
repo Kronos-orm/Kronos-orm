@@ -9,7 +9,7 @@ import {
 import {provideNgDocContext} from "@ng-doc/generated";
 import { provideHttpClient, withInterceptorsFromDi, withFetch } from "@angular/common/http";
 import {ApplicationConfig, isDevMode} from '@angular/core';
-import {provideRouter, withInMemoryScrolling} from '@angular/router';
+import {provideRouter, withHashLocation, withInMemoryScrolling} from '@angular/router';
 import {routes} from './app.routes';
 import {provideAnimationsAsync} from "@angular/platform-browser/animations/async";
 import {provideTransloco} from "@jsverse/transloco";
@@ -22,8 +22,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi()),
     provideRouter(routes, withInMemoryScrolling({
       scrollPositionRestoration: "enabled",
-      anchorScrolling: "enabled"
-    })),
+      anchorScrolling: "enabled",
+    }), withHashLocation()),
     provideHttpClient(withInterceptorsFromDi(), withFetch()),
     provideNgDocContext(),
     provideNgDocApp(),

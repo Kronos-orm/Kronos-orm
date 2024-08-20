@@ -1,13 +1,13 @@
 # {{ NgDocPage.title }}
 
-`KronosNamingStrategy`是一个接口，用于定义表名和列名的转换策略。
+`KronosNamingStrategy` is an interface used to define the conversion strategy for table and column names.
 
-## 成员函数：
+## Member functions:
 
 ### `fun db2k(name: String): String`
 
-将数据库表/列名转为kotlin类名/属性名。
+Convert database table/column names to kotlin class names/property names.
 
 ### `fun k2db(name: String): String`
 
-将kotlin类名/属性名转为数据库表/列名。
+Convert kotlin class names/property names to database table/column names.

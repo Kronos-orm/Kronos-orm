@@ -109,7 +109,7 @@ DELETE FROM "user" WHERE "id" = :id and "name" like :name and "age" > :ageMin
 
 在Kronos中，我们可以使用`logic`方法设置逻辑删除，此时Kronos会生成逻辑删除的SQL语句。
 
-逻辑删除的开启与字段设置设置请参考 [逻辑删除策略](/documentation/class-definition/table-class-definition#逻辑删除策略)及[表逻辑删除](/documentation/class-definition/table-class-definition#表逻辑删除)
+逻辑删除的开启与字段设置设置请参考 [逻辑删除策略](/documentation/en/class-definition/table-class-definition#逻辑删除策略)及[表逻辑删除](/documentation/class-definition/table-class-definition#表逻辑删除)
   
 ```kotlin group="Case 4" name="kotlin" icon="kotlin" {5}
 val user: User = User(

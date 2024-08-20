@@ -1,8 +1,8 @@
 # {{ NgDocPage.title }}
 
-常见Kotlin类型与`Kronos列类型`的映射关系如下：
-在未使用ColumnType注解的情况下，Kronos会根据Kotlin类型自动推测数据库列类型，您可以参考以下表格查看Kotlin数据类型与Kronos列类型(`KColumnType`)的映射关系。
-Kronos列类型在不同数据库中的表现有所不同，具体请参考[Kronos列类型](/documentation/class-definition/kcolumn-type)。
+The mapping relationship between common Kotlin types and `Kronos column types` is as follows:
+When the ColumnType annotation is not used, Kronos will automatically infer the database column type based on the Kotlin type. You can refer to the following table to view the mapping relationship between Kotlin data types and Kronos column types (`KColumnType`).
+The performance of Kronos column types varies in different databases. For details, please refer to [Kronos column types](/documentation/en/class-definition/kcolumn-type).
 
 | Kotlin类型                                                                               | Kronos列类型  |
 |----------------------------------------------------------------------------------------|------------|

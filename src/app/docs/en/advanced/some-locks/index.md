@@ -1,14 +1,14 @@
 # {{ NgDocPage.title }}
 
-## 悲观锁
+## Pessimistic lock
 
-Kronos为**查询**`(select)`与**更新插入**`(upsert)`功能提供了**悲观锁**(`lock`)的功能，其锁等级为**行锁**
+Kronos provides a pessimistic lock (`lock`) function for **query**`(select)` and **update insert**`(upsert)` functions, and its lock level is **row lock**
 
-`lock()`方法可**不接受参数**或**接收一个参数**`lock`，其类型为枚举类`PessimisticLock`
+The `lock()` method can **take no parameters** or **take a parameter**`lock`, whose type is the enumeration class `PessimisticLock`
 
-目前可选择**独占锁**`PessimisticLock.X`或**共享锁**`PessimisticLock.S`两种类型的锁
+Currently, you can choose **exclusive lock**`PessimisticLock.X` or **shared lock**`PessimisticLock.S`
 
-以下仅为**查询**`(select)`时使用悲观锁的用法示例，在**更新插入**`(upsert)`时使用时仅需将`.select()`替换为`.upsert()`
+The following is only an example of using pessimistic lock when **query**`(select)`. When using it when **update insert**`(upsert)`, just replace `.select()` with `.upsert()`
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" 
 val listOfUser: List<User> = User().select()
                           .lock()
@@ -33,7 +33,7 @@ SELECT "id", "name", "age" FROM "user" FOR SHARE
 ```
 
 ```sql group="Case 1" name="SQLite" icon="sqlite"
-# 不支持对Sqlite添加行锁功能因为Sqlite本身没有行锁功能
+# It does not support adding row lock function to Sqlite because Sqlite itself does not have row lock function
 ```
 
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
@@ -46,12 +46,10 @@ SELECT "id", "name", "age" FROM "user" FOR UPDATE(NOWAIT)
 SELECT "id", "name", "age" FROM "user" LOCK IN SHARE MODE
 ```
 
-## 乐观锁
+## Optimistic lock
 
-Kronos提供**乐观锁**功能（具体的开启与使用方法见：<a href="/documentation/class-definition/table-class-definition#乐观锁策略">[乐观锁策略]</a>）
+Kronos provides the **optimistic lock** function (for specific activation and usage methods, see: （<a href="/documentation/en/class-definition/table-class-definition#optimistic-lock-strategy">Optimistic Lock Strategy</a>)
 
-被设置为**乐观锁**的列（默认为`version`，接下来均以该列为例）在记录新建时会被设置成0，后续每次更新`version = version + 1`
+The column set to **optimistic lock** (default is `version`, which is used as an example below) will be set to 0 when the record is created, and `version = version + 1` for each subsequent update
 
-在执行**更新插入**`(upsert)`操作时，会将`version`字段添加进筛选项，意为仅当Kpojo的该字段与数据库中修改次数一致时才会更新该条数据，否则则执行插入
-
-
+When performing the **update insert**` (upsert)` operation, the `version` field will be added to the filter item, which means that the data will be updated only when the field in Kpojo is consistent with the number of modifications in the database, otherwise the insert will be executed

@@ -48,7 +48,7 @@ SELECT "id", "name", "age" FROM "user" LOCK IN SHARE MODE
 
 ## 乐观锁
 
-Kronos提供**乐观锁**功能（具体的开启与使用方法见：<a href="/documentation/class-definition/table-class-definition#乐观锁策略">[乐观锁策略]</a>）
+Kronos提供**乐观锁**功能（具体的开启与使用方法见：<a href="/documentation/zh-CN/class-definition/table-class-definition#乐观锁策略">[乐观锁策略]</a>）
 
 被设置为**乐观锁**的列（默认为`version`，接下来均以该列为例）在记录新建时会被设置成0，后续每次更新`version = version + 1`
 

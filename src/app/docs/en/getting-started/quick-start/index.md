@@ -71,7 +71,7 @@ The modules are as follows:
 
 ## Configuring the Database:
 
-Here, we will only discuss the usage of the `kronos-jvm-driver-wrapper` module with MySQL. The usage for other modules is similar. For specifics, please refer to [Connecting to the Database](/documentation/database/connect-to-db).
+Here, we will only discuss the usage of the `kronos-jvm-driver-wrapper` module with MySQL. The usage for other modules is similar. For specifics, please refer to [Connecting to the Database](/documentation/en/database/connect-to-db).
 
 Dependencies such as `commons-dbcp2` and `mysql-connector-java` need to be included.
 
@@ -130,6 +130,7 @@ data class Movie(
     @updateTime
     var updateTime: Date? = ""
 ): KPojo
+```
 
 ## Using Kronos:
 
@@ -146,3 +147,5 @@ director.update().set { it.name = "Kronos ORM" }.where { it.id == 1 }.execute()
 
 val directors: List<Director> = director.select().where { it.id == 1 }.queryList()
 
+val movies: List<Movie> = Movie().select().where { it.director!!.id == director.id.value }.queryList()
+```

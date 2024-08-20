@@ -203,7 +203,7 @@ User(age = 18).select().where { it.age.le } // 等同于 where { it.age.le(18) }
 
 #### ifNoValue
 
-无值策略，接收参数`NoValueStrategy`，用于处理无值的情况，优先级高于Kronos默认的无值策略，详见：[无值策略](/documentation/database/no-value-strategy)
+无值策略，接收参数`NoValueStrategy`，用于处理无值的情况，优先级高于Kronos默认的无值策略，详见：[无值策略](/documentation/zh-CN/database/no-value-strategy)
 
 ```kotlin
 val age: Int? = null

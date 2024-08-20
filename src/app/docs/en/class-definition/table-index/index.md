@@ -2,180 +2,180 @@
 
 ## MySQL
 
-### 索引方法
+### Index Methods
 
 #### BTREE
 
 - `Mysql.KIndexMethod.BTREE`
 
-二叉树索引，最常见的索引类型，无需指定，MySQL默认使用该索引。
+Binary tree index is the most common index type. No need to specify it, MySQL uses this index by default.
 
 #### HASH
 
 - `Mysql.KIndexMethod.HASH`
 
-哈希索引，只有Memory引擎支持，不支持范围查询。
+Hash indexes are only supported by the Memory engine and do not support range queries.
 
-### 索引类型
+### Index Type
 
 #### NORMAL
 
 - `Mysql.KIndexType.NORMAL`
 
-普通索引，无需指定，MySQL默认使用该索引。
+Ordinary index, no need to specify, MySQL uses this index by default.
 
 #### UNIQUE
 
 - `Mysql.KIndexType.UNIQUE`
 
-唯一索引，用于保证数据唯一性。
+Unique index, used to ensure data uniqueness.
 
 #### FULLTEXT
 
 - `Mysql.KIndexType.FULLTEXT`
 
-全文索引，只有MyISAM引擎支持，用于全文搜索。
+Full-text indexing is supported only by the MyISAM engine and is used for full-text search.
 
 #### SPATIAL
 
 - `Mysql.KIndexType.SPATIAL`
 
-空间索引，用于空间数据类型，支持范围查询。
+Spatial index, used for spatial data types, supports range queries.
 
 ## PostgreSQL
 
-### 索引方法
+### Index Methods
 
 #### BTREE
 
 - `PostgreSQL.KIndexMethod.BTREE`
 
-二叉树索引，无需指定，PostgreSQL默认使用该索引。
+Binary tree index, no need to specify, PostgreSQL uses this index by default.
 
 #### HASH
 
 - `PostgreSQL.KIndexMethod.HASH`
 
-哈希索引，用于等值查询，不支持范围查询。
+Hash index is used for equality query and does not support range query.
 
 #### GIST
 
 - `PostgreSQL.KIndexMethod.GIST`
 
-通用索引，支持范围查询，支持空间索引。
+General index, supports range query, and supports spatial index.
 
 #### SPGIST
 
 - `PostgreSQL.KIndexMethod.SPGIST`
 
-空间索引，支持范围查询。
+Spatial index, supporting range queries.
 
 #### GIN
 
 - `PostgreSQL.KIndexMethod.GIN`
 
-通用倒排索引，用于全文搜索。
+General inverted index for full-text search.
 
 #### BRIN
 
 - `PostgreSQL.KIndexMethod.BRIN`
 
-区间索引，用于大表。
+Range index, used for large tables.
 
-### 索引类型
+### Index Type
 
 #### UNIQUE
 
 - `PostgreSQL.KIndexType.UNIQUE`
 
-唯一索引，用于保证数据唯一性。
+Unique index, used to ensure data uniqueness.
 
 ## Oracle
 
-### 索引类型
+### Index Type
 
 #### NORMAL
 
 - `Oracle.KIndexType.NORMAL`
 
-普通索引，无需指定，Oracle默认使用该索引。
+Ordinary index, no need to specify, Oracle uses this index by default.
 
 #### BITMAP
 
 - `Oracle.KIndexType.BITMAP`
 
-位图索引，用于高并发查询，适用于低基数列。
+Bitmap index, used for high-concurrency queries and suitable for low-cardinality columns.
 
 #### UNIQUE
 
 - `Oracle.KIndexType.UNIQUE`
 
-唯一索引，用于保证数据唯一性。
+Unique index, used to ensure data uniqueness.
 
 ## SQL Server
 
-### 索引方法
+### Index Methods
 
 #### UNIQUE
 
 - `SqlServer.KIndexMethod.UNIQUE`
 
-唯一索引，用于保证数据唯一性。
+Unique index, used to ensure data uniqueness.
 
-### 索引类型
+### Index Type
 
 #### CLUSTERED
 
 - `SqlServer.KIndexType.CLUSTERED`
 
-聚集索引，表中数据的物理顺序与索引的逻辑顺序一致。
+Clustered index, the physical order of the data in the table is consistent with the logical order of the index.
 
 #### NONCLUSTERED
 
 - `SqlServer.KIndexType.NONCLUSTERED`
 
-非聚集索引，表中数据的物理顺序与索引的逻辑顺序不一致。
+For non-clustered indexes, the physical order of the data in the table is inconsistent with the logical order of the index.
 
 #### XML
 
 - `SqlServer.KIndexType.XML`
 
-XML索引，用于XML数据类型。
+XML index, for XML data type.
 
 #### SPATIAL
 
 - `SqlServer.KIndexType.SPATIAL`
 
-空间索引，用于空间数据类型。
+Spatial index, used for spatial data types.
 
 ## SQLite
 
-### 索引方法
+### Index Methods
 
 #### UNIQUE
 
 - `SQLite.KIndexMethod.UNIQUE`
 
-唯一索引，用于保证数据唯一性。
+Unique index, used to ensure data uniqueness.
 
-### 索引类型
+### Index Type
 
 #### NOCASE
 
 - `SQLite.KIndexType.NOCASE`
 
-忽略大小写。
+Ignore case.
 
 #### RTRIM
 
 - `SQLite.KIndexType.RTRIM`
 
-忽略尾部空格。
+Trailing spaces are ignored.
 
 #### BINARY
 
 - `SQLite.KIndexType.BINARY`
 
-二进制比较。
+Binary comparison.
 
 

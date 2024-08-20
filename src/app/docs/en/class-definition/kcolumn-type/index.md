@@ -1,6 +1,6 @@
 # {{ NgDocPage.title }}
 
-各数据库类型与常用类型对应关系一览表：
+List of corresponding relationships between various database types and commonly used types:：
 
 ## **BIT**
 

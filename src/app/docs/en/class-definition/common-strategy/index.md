@@ -1,27 +1,25 @@
 # {{ NgDocPage.title }}
 
-`KronosCommonStrategy`是更新时间/创建时间/逻辑删除配置策略的通用配置策略接口。
+`KronosCommonStrategy` is a common configuration strategy interface for update time/create time/logical deletion configuration strategies.
 
-## 参数：
+## Parameters:
 
 ### <span style="color: #DD6666">enable</span>
 
-`Boolean`类型，表示是否启用该策略。
+`Boolean` type, indicating whether the strategy is enabled.
 
 ### <span style="color: #DD6666">field</span>
 
-`Field`类型，表示对应的字段名。
+`Field` type, indicating the corresponding field name.
 
-其中需要指定的字段名属性包括`name`和`columnName`。
+The field name attributes that need to be specified include `name` and `columnName`.
 
 ```kotlin name="demo" icon="kotlin"
 KronosCommonStrategy(
-    enable = true,
-    field = Field(
+        enable = true,
+        field = Field(
         name = "createTime",
-        columnName = "create_time" //此处若不指定，则默认为`name`的值执行列名转换后的结果
+        columnName = "create_time" //If not specified here, the default is the result of the column name conversion performed by the value of `name`
     )
 )
-
 ```
-

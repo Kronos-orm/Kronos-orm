@@ -4,36 +4,25 @@
 
 ## 添加依赖：
 
-kronos-orm是一个多模块的项目，我们提供了多个模块供开发者选择，开发者可以根据自己的需求选择对应的模块。
-
-其中：
-
-1. `kronos-core`是**必选模块**，它提供了基础的ORM功能
-2. `kronos-logging`是可选模块，它提供了多平台的日志功能
-3. `kronos-jvm-driver-wrapper`是可选模块，它提供了JVM驱动包装器。（您可以使用其他官方驱动包装器或自己编写包装类轻松地搭配第三方框架（如SpringData、Mybatis、Hibernate、Jdbi等）使用）
-4. `kronos-compiler-plugin`插件是**必选模块**，它为Kronos的ORM功能提供了编译时支持
+仅需引入`kronos-core`模块和`kronos-compiler-plugin`插件即可在您的项目中使用Kronos。
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
     dependencies {
-        implementation("com.kotlinorm.kronos-core:1.0.0")
-        implementation("com.kotlinorm.kronos-logging:1.0.0")
-        implementation("com.kotlinorm.kronos-jvm-driver-wrapper:1.0.0")
+        implementation("com.kotlinorm.kronos-core:2.0.0") // 供了基础的ORM功能
     }
     
     plugins {
-        id("com.kotlinorm.kronos-compiler-plugin") version "1.0.0"
+        id("com.kotlinorm.kronos-gradle-plugin") version "2.0.0" // 提供了编译时支持
     }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
     dependencies {
-        implementation 'com.kotlinorm:kronos-core:1.0.0'
-        implementation 'com.kotlinorm:kronos-logging:1.0.0'
-        implementation 'com.kotlinorm:kronos-jvm-driver-wrapper:1.0.0'
+        implementation 'com.kotlinorm:kronos-core:2.0.0' // 供了基础的ORM功能
     }
     
     plugins {
-        id 'com.kotlinorm.kronos-compiler-plugin' version '1.0.0'
+        id 'com.kotlinorm.kronos-gradle-plugin' version '2.0.0' // 提供了编译时支持
     }
 ```
 
@@ -42,11 +31,12 @@ kronos-orm是一个多模块的项目，我们提供了多个模块供开发者�
 <!--将插件添加到您的pom.xml文件中：-->
 <!--有关详细信息，请参考[https://kotlinlang.org/docs/all-open-plugin.html#maven]。-->
 <project>
+    <!--kronos-core提供了基础的ORM功能-->
     <dependencies>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>1.0.0</version>
+            <version>2.0.0</version>
         </dependency>
     </dependencies>
 
@@ -58,6 +48,7 @@ kronos-orm是一个多模块的项目，我们提供了多个模块供开发者�
                 <extensions>true</extensions>
                 <configuration>
                     <compilerPlugins>
+                        <!--kronos-maven-plugin提供了编译时支持-->
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
                 </configuration>
@@ -73,6 +64,12 @@ kronos-orm是一个多模块的项目，我们提供了多个模块供开发者�
     </build>
 </project>
 ```
+
+同时，我们提供了日志(`kronos-logging`)、数据库操作驱动包装器(`kronos-jvm-driver-wrapper`)等多种可选依赖。
+
+`kronos-jvm-driver-wrapper`是可选模块，它提供了jvm平台基于JDBC的驱动包装器，当然，您可以使用其他官方驱动包装器或自己编写包装类轻松地搭配第三方框架（如SpringData、Mybatis、Hibernate、Jdbi等）使用（参考[本文](/documentation/zh-CN/plugin/datasource-wrapper-and-third-part-framework)）。
+
+你可以在[这里](https://github.com/Kronos-orm?tab=repositories)找到一些如何开始一个项目的示例。
 
 ## 配置数据库：
 

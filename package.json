@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --host 192.168.10.160 --port 3307",
+    "start": "ng serve --host 0.0.0.0 --port 3307",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -32,9 +32,6 @@
     "@ng-doc/core": "17.6.16",
     "@ng-doc/ui-kit": "17.6.16",
     "codemirror": "6.0.1",
-    "echarts": "^5.5.0",
-    "echarts-wordcloud": "^2.1.0",
-    "ngx-echarts": "^18.0.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primeng": "^17.18.4",

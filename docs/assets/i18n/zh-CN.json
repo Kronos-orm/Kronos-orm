@@ -34,5 +34,6 @@
   "PLUGIN": "插件",
   "SUBTEXT_OF_PLUGIN": "插件系统介绍及使用",
   "CHANGELOG": "更新日志",
-  "SUBTEXT_OF_CHANGELOG": "版本更新日志"
+  "SUBTEXT_OF_CHANGELOG": "版本更新日志",
+  "INSTALL_PACKAGES": "安装依赖包"
 }

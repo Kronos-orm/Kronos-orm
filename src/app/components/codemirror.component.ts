@@ -17,6 +17,8 @@ import {kotlin} from "@codemirror/legacy-modes/mode/clike";
 import {oneDark} from "@codemirror/theme-one-dark";
 import {EditorView} from "@codemirror/view";
 import {SharedModule} from "../shared.module";
+import {groovy} from "@codemirror/legacy-modes/mode/groovy";
+import {xml} from "@codemirror/legacy-modes/mode/xml";
 
 @Component({
   selector: 'codemirror',
@@ -99,11 +101,19 @@ export class CodemirrorComponent implements AfterViewInit, ControlValueAccessor,
     this.editorView?.destroy();
   }
 
+  @Input() language: 'kotlin' | 'groovy' | 'xml' = 'kotlin';
+
   initEditor(ext: any[] = []) {
     if (typeof document !== 'undefined') {
       setTimeout(() => {
         let editorEle = this.editorInstance.nativeElement;
-        let extensions: Extension = [basicSetup, StreamLanguage.define(kotlin), oneDark, EditorView.updateListener.of((update) => {
+        let language = kotlin;
+        if (this.language === "groovy") {
+          language = groovy;
+        } else if (this.language === "xml") {
+          language = xml;
+        }
+        let extensions: Extension = [basicSetup, StreamLanguage.define(language), oneDark, EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             this._value = update.state.doc.toString();
             this.onChanged.emit(this._value);

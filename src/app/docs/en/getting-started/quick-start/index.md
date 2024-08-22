@@ -2,38 +2,27 @@
 
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Adding Dependencies:
+## Add dependencies:
 
-Kronos-orm is a multi-module project where we provide multiple modules for developers to choose from. Developers can select the modules according to their requirements.
-
-The modules are as follows:
-
-1. `kronos-core` is a **mandatory module** that provides basic ORM functionalities.
-2. `kronos-logging` is an optional module that offers logging functionalities across multiple platforms.
-3. `kronos-jvm-driver-wrapper` is an optional module that provides a JVM driver wrapper. (You can easily use other official driver wrappers or write your own wrapper classes to work with third-party frameworks like SpringData, Mybatis, Hibernate, Jdbi, etc.)
-4. The `kronos-compiler-plugin` plugin is a **mandatory module** that provides compile-time support for Kronos ORM functionalities.
+You can use Kronos in your project by simply importing the `kronos-core` module and the `kronos-compiler-plugin` plugin.
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
     dependencies {
-        implementation("com.kotlinorm.kronos-core:1.0.0")
-        implementation("com.kotlinorm.kronos-logging:1.0.0")
-        implementation("com.kotlinorm.kronos-jvm-driver-wrapper:1.0.0")
+        implementation("com.kotlinorm.kronos-core:2.0.0") // for the basic ORM feature
     }
     
     plugins {
-        id("com.kotlinorm.kronos-compiler-plugin") version "1.0.0"
+        id("com.kotlinorm.kronos-gradle-plugin") version "2.0.0" // for the compile-time support
     }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
     dependencies {
-        implementation 'com.kotlinorm:kronos-core:1.0.0'
-        implementation 'com.kotlinorm:kronos-logging:1.0.0'
-        implementation 'com.kotlinorm:kronos-jvm-driver-wrapper:1.0.0'
+        implementation 'com.kotlinorm:kronos-core:2.0.0' // for the basic ORM feature
     }
     
     plugins {
-        id 'com.kotlinorm.kronos-compiler-plugin' version '1.0.0'
+        id 'com.kotlinorm.kronos-gradle-plugin' version '2.0.0' // for the compile-time support
     }
 ```
 
@@ -42,10 +31,11 @@ The modules are as follows:
 <!--Please refer to the [https://kotlinlang.org/docs/all-open-plugin.html#maven] for the detailed information.-->
 <project>
   <dependencies>
+    <!--kronos-core provides the basic ORM feature-->
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-core</artifactId>
-      <version>1.0.0</version>
+      <version>2.0.0</version>
     </dependency>
   </dependencies>
 
@@ -57,6 +47,7 @@ The modules are as follows:
             <extensions>true</extensions>
             <configuration>
                 <compilerPlugins>
+                    <!--kronos-maven-plugin provides the compile-time support-->
                     <plugin>kronos-maven-plugin</plugin>
                 </compilerPlugins>
             </configuration>
@@ -72,6 +63,12 @@ The modules are as follows:
   </build>
 </project>
 ```
+
+At the same time, we provide a variety of optional dependencies such as logging (`kronos-logging`), database operation driver wrapper (`kronos-jvm-driver-wrapper`).
+
+`kronos-jvm-driver-wrapper` is an optional module that provides a driver wrapper based on JDBC for the jvm platform. Of course, you can use other official driver wrappers or write your own wrapper class to easily use with third-party frameworks (such as SpringData, Mybatis, Hibernate, Jdbi, etc.) (refer to [this article](/documentation/en/plugin/datasource-wrapper-and-third-part-framework)).
+
+You can find some examples of how to start a project [here](https://github.com/Kronos-orm?tab=repositories).
 
 ## Configuring the Database:
 

@@ -34,5 +34,6 @@
   "PLUGIN": "Plugin",
   "SUBTEXT_OF_PLUGIN": "Plugin of Kronos",
   "CHANGELOG": "Changelog",
-  "SUBTEXT_OF_CHANGELOG": "Changelog of Kronos"
+  "SUBTEXT_OF_CHANGELOG": "Changelog of Kronos",
+  "INSTALL_PACKAGES": "Install Packages"
 }

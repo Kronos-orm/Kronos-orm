@@ -185,7 +185,6 @@ class UpdateClause<T : KPojo>(
         if (isExcept) {
             // 移除指定字段并处理"create_time"字段的特殊情况
             toUpdateFields = (allFields.filter { it.isColumn } - toUpdateFields.toSet()).toLinkedSet()
-            toUpdateFields = toUpdateFields.filter { it.columnName != "create_time" }.toCollection(LinkedHashSet())
             // 为更新的字段生成新的参数映射
             toUpdateFields.forEach {
                 paramMapNew[it + "New"] = paramMap[it.name]
@@ -222,9 +221,14 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "New"] = value
         }
 
+        toUpdateFields = toUpdateFields.distinctBy { it.columnName }.toLinkedSet()
+
         var versionField: String? = null
         setCommonStrategy(optimisticStrategy) { field, _ ->
             versionField = field.columnName
+            if (toUpdateFields.any { it.columnName == versionField }) {
+                throw IllegalArgumentException("The version field cannot be updated manually.")
+            }
         }
 
         // 构建完整的更新SQL语句，包括条件部分

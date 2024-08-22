@@ -37,7 +37,9 @@ The modules are as follows:
     }
 ```
 
-```xml group="import" name="maven(NOT SUPPORT NOW)" icon="maven"
+```xml group="import" name="maven" icon="maven"
+<!--Add the plugin in your pom.xml file:-->
+<!--Please refer to the [https://kotlinlang.org/docs/all-open-plugin.html#maven] for the detailed information.-->
 <project>
   <dependencies>
     <dependency>
@@ -45,25 +47,27 @@ The modules are as follows:
       <artifactId>kronos-core</artifactId>
       <version>1.0.0</version>
     </dependency>
-    <dependency>
-      <groupId>com.kotlinorm</groupId>
-      <artifactId>kronos-logging</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.kotlinorm</groupId>
-      <artifactId>kronos-jvm-driver-wrapper</artifactId>
-      <version>1.0.0</version>
-    </dependency>
   </dependencies>
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>com.kotlinorm</groupId>
-        <artifactId>kronos-compiler-plugin</artifactId>
-        <version>1.0.0</version>
-      </plugin>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <extensions>true</extensions>
+            <configuration>
+                <compilerPlugins>
+                    <plugin>kronos-maven-plugin</plugin>
+                </compilerPlugins>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>com.kotlinorm</groupId>
+                    <artifactId>kronos-maven-plugin</artifactId>
+                    <version>${kronos.version}</version>
+                </dependency>
+            </dependencies>
+        </plugin>
     </plugins>
   </build>
 </project>

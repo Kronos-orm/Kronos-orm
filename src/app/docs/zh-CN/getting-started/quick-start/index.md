@@ -37,35 +37,40 @@ kronos-orm是一个多模块的项目，我们提供了多个模块供开发者�
     }
 ```
 
-```xml group="import" name="maven(NOT SUPPORT NOW)" icon="maven"
-<project>
-  <dependencies>
-    <dependency>
-      <groupId>com.kotlinorm</groupId>
-      <artifactId>kronos-core</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.kotlinorm</groupId>
-      <artifactId>kronos-logging</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.kotlinorm</groupId>
-      <artifactId>kronos-jvm-driver-wrapper</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-  </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.kotlinorm</groupId>
-        <artifactId>kronos-compiler-plugin</artifactId>
-        <version>1.0.0</version>
-      </plugin>
-    </plugins>
-  </build>
+```xml group="import" name="maven" icon="maven"
+<!--将插件添加到您的pom.xml文件中：-->
+<!--有关详细信息，请参考[https://kotlinlang.org/docs/all-open-plugin.html#maven]。-->
+<project>
+    <dependencies>
+        <dependency>
+            <groupId>com.kotlinorm</groupId>
+            <artifactId>kronos-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <compilerPlugins>
+                        <plugin>kronos-maven-plugin</plugin>
+                    </compilerPlugins>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.kotlinorm</groupId>
+                        <artifactId>kronos-maven-plugin</artifactId>
+                        <version>${kronos.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
 </project>
 ```
 

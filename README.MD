@@ -9,6 +9,10 @@
 Kronos(Kotlin Reactive ORM, No-extra-class, Optimized, Simplified) is a lightweight framework that provides developers
 with a concise and efficient data persistence solution.
 
+[Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start) 
+
+[官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)
+
 ❓ **Why Kronos?**
 
 - [x] K2 Compiler Plugin Powered
@@ -60,7 +64,7 @@ data class Movie(
 >
  what you write: 
  ```kotlin
-@Table(name = "tb_movie") data class Movie(val id: Long?, @Column("name1") val name: String?)
+@Table(name = "tb_movie") data class Movie(val id: Long? = null, @Column("name1") val name: String? = null)
  ```
  what really is:
  ```kotlin
@@ -72,6 +76,17 @@ data class Movie(
    ...
  }
  ```
+
+It's easy to transform `KPojo` to Map or from Map, and you can get the table name and column information through the `kronosTable` and `kronosColumns` methods in a **NO REFLECTION** way.
+
+```kotlin
+val movie = Movie()
+val dataMap: Map<String, Any?> = movie.toDataMap()
+val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class)
+val tableName = movie.kronosTable()
+val columns = movie.kronosColumns()
+```
+
 ------
 **Table Operation:**
 
@@ -180,8 +195,3 @@ user.delete()
 ```
 
 ------
-> [Read more](https://www.kotlinorm.com)
->
-> [Official Website](https://www.kotlinorm.com)
->
-> [docs](https://www.kotlinorm.com)

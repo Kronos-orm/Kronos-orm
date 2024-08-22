@@ -23,6 +23,7 @@ class KronosMavenPlugin : KotlinMavenPluginExtension {
         project: MavenProject,
         execution: MojoExecution
     ): MutableList<PluginOption> {
+        println("Loaded Maven plugin " + javaClass.name)
         return mutableListOf()
     }
 }

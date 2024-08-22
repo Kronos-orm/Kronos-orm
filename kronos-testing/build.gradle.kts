@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka") apply false
     id("com.vanniktech.maven.publish") apply false
-    id("com.kotlinorm.kronos-gradle-plugin")
+//    id("com.kotlinorm.kronos-gradle-plugin")
 }
 
 dependencies {

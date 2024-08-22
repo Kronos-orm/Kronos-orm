@@ -6,7 +6,7 @@ import com.kotlinorm.enums.ConditionType.Companion.IsNull
 import com.kotlinorm.enums.ConditionType.Companion.Or
 import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.NoValueStrategy
-import com.kotlinorm.enums.NoValueStrategy.Companion.smart
+import com.kotlinorm.enums.smart
 
 /**
  * Criteria

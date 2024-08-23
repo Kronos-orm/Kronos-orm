@@ -16,7 +16,7 @@ allprojects {
 plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka") version "latest.release"
-    id("com.vanniktech.maven.publish") version "latest.release"
+    id("com.vanniktech.maven.publish")
 }
 
 kotlin {

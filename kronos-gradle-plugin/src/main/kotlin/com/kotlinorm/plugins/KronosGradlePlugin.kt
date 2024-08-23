@@ -33,7 +33,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project) {
         super.apply(target)
         project = target
-        pluginId = "com.kotlinorm.kronos-compiler-plugin"
+        pluginId = "com.kotlinorm.kronos-compiler-gradle-plugin"
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
         version = "2.0.0-SNAPSHOT"

@@ -1,0 +1,12 @@
+<component-set>
+    <components>
+        <component>
+            <role>org.jetbrains.kotlin.maven.KotlinMavenPluginExtension</role>
+            <role-hint>kronos-maven-plugin</role-hint>
+            <implementation>
+                com.kotlinorm.plugins.KronosMavenPlugin
+            </implementation>
+            <configuration/>
+        </component>
+    </components>
+</component-set>

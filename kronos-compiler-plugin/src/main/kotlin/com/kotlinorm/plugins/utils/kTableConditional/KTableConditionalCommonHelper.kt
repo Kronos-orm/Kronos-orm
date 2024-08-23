@@ -82,26 +82,23 @@ internal val stringPlusSymbol
  * @return a string representing the function name
  */
 context(IrPluginContext)
-fun IrExpression.funcName(setNot: Boolean = false): String {
-    return when (this) {
-        is IrCall -> when (origin) {
-            IrStatementOrigin.EQEQ, IrStatementOrigin.EXCLEQ -> "equal"
-            IrStatementOrigin.GT -> "gt"
-            IrStatementOrigin.LT -> "lt"
-            IrStatementOrigin.GTEQ -> "ge"
-            IrStatementOrigin.LTEQ -> "le"
-            else -> correspondingName?.asString() ?: symbol.owner.name.asString()
-        }
-
-        is IrWhen -> when {
-            (origin == IrStatementOrigin.OROR && !setNot) || (origin == IrStatementOrigin.ANDAND && setNot) -> "OR"
-            (origin == IrStatementOrigin.ANDAND && !setNot) || (origin == IrStatementOrigin.OROR && setNot) -> "AND"
-            else -> origin.toString()
-        }
-
-        else -> ""
+fun IrExpression.funcName(setNot: Boolean = false) = when (this) {
+    is IrCall -> when (origin) {
+        IrStatementOrigin.EQEQ, IrStatementOrigin.EXCLEQ -> "equal"
+        IrStatementOrigin.GT -> "gt"
+        IrStatementOrigin.LT -> "lt"
+        IrStatementOrigin.GTEQ -> "ge"
+        IrStatementOrigin.LTEQ -> "le"
+        else -> correspondingName?.asString() ?: symbol.owner.name.asString()
     }
 
+    is IrWhen -> when {
+        (origin == IrStatementOrigin.OROR && !setNot) || (origin == IrStatementOrigin.ANDAND && setNot) -> "OR"
+        (origin == IrStatementOrigin.ANDAND && !setNot) || (origin == IrStatementOrigin.OROR && setNot) -> "AND"
+        else -> origin.toString()
+    }
+
+    else -> ""
 }
 
 /**
@@ -112,24 +109,22 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
  * @throws IllegalArgumentException If the condition type is unknown.
  */
 context(IrPluginContext)
-fun parseConditionType(funcName: String): Pair<String, Boolean> {
-    return when (funcName) {
-        "isNull" -> funcName to false
-        "notNull" -> "isNull" to true
-        "lt", "gt", "le", "ge" -> funcName to false
-        "equal" -> "equal" to false
-        "eq" -> "equal" to false
-        "neq" -> "equal" to true
-        "between" -> "between" to false
-        "notBetween" -> "between" to true
-        "like", "matchLeft", "matchRight", "matchBoth" -> "like" to false
-        "notLike" -> "like" to true
-        "contains" -> "in" to false
-        "asSql" -> "sql" to false
-        "ifNoValue" -> "ifNoValue" to false
-        "regexp" -> "regexp" to false
-        else -> throw IllegalArgumentException("Unknown condition type: $funcName")
-    }
+fun parseConditionType(funcName: String) = when (funcName) {
+    "isNull" -> funcName to false
+    "notNull" -> "isNull" to true
+    "lt", "gt", "le", "ge" -> funcName to false
+    "equal" -> "equal" to false
+    "eq" -> "equal" to false
+    "neq" -> "equal" to true
+    "between" -> "between" to false
+    "notBetween" -> "between" to true
+    "like", "matchLeft", "matchRight", "matchBoth" -> "like" to false
+    "notLike" -> "like" to true
+    "contains" -> "in" to false
+    "asSql" -> "sql" to false
+    "ifNoValue" -> "ifNoValue" to false
+    "regexp" -> "regexp" to false
+    else -> throw IllegalArgumentException("Unknown condition type: $funcName")
 }
 
 /**
@@ -205,12 +200,10 @@ fun runExpressionAnalysis(
  * @param operator the operator to reverse
  * @return the reversed operator or the original operator if it cannot be reversed
  */
-fun getOperatorRevered(operator: String): String {
-    return when (operator) {
-        "lt" -> "gt"
-        "le" -> "ge"
-        "ge" -> "le"
-        "gt" -> "lt"
-        else -> operator
-    }
+fun getOperatorRevered(operator: String) = when (operator) {
+    "lt" -> "gt"
+    "le" -> "ge"
+    "ge" -> "le"
+    "gt" -> "lt"
+    else -> operator
 }

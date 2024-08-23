@@ -70,27 +70,25 @@ private val KTableIndexSymbol
  */
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
-    return irBlockBody {
-        val pairs = declaration.properties.map {
-            applyIrCall(
-                createPairSymbol,
-                irString(it.name.asString()),
-                irGetField(
-                    irGet(irFunction.dispatchReceiverParameter!!),
-                    it.backingField!!
-                )
-            )
-        }.toList()
-        +irReturn(
-            applyIrCall(
-                createMutableMapSymbol, irVararg(
-                    createPairSymbol.owner.returnType,
-                    pairs
-                )
+fun createToMapFunction(declaration: IrClass, irFunction: IrFunction) = irBlockBody {
+    val pairs = declaration.properties.map {
+        applyIrCall(
+            createPairSymbol,
+            irString(it.name.asString()),
+            irGetField(
+                irGet(irFunction.dispatchReceiverParameter!!),
+                it.backingField!!
             )
         )
-    }
+    }.toList()
+    +irReturn(
+        applyIrCall(
+            createMutableMapSymbol, irVararg(
+                createPairSymbol.owner.returnType,
+                pairs
+            )
+        )
+    )
 }
 
 /**
@@ -177,35 +175,31 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
  * @return an `IrBlockBody` containing an IrReturn statement with the generated table name
  */
 context(IrBuilderWithScope, IrPluginContext)
-fun createKronosTableName(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        +irReturn(
-            getTableName(declaration)
-        )
-    }
+fun createKronosTableName(declaration: IrClass) = irBlockBody {
+    +irReturn(
+        getTableName(declaration)
+    )
 }
 
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
-        val listOfIndexObj = indexesAnnotations.map {
-            applyIrCall(
-                KTableIndexSymbol.constructors.first(),
-                *it.valueArguments.toTypedArray()
-            )
-        }
-        +irReturn(
-            applyIrCall(
-                createTableIndexListSymbol,
-                irVararg(
-                    KTableIndexSymbol.defaultType,
-                    listOfIndexObj
-                )
-            )
+fun createKronosTableIndex(declaration: IrClass) = irBlockBody {
+    val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
+    val listOfIndexObj = indexesAnnotations.map {
+        applyIrCall(
+            KTableIndexSymbol.constructors.first(),
+            *it.valueArguments.toTypedArray()
         )
     }
+    +irReturn(
+        applyIrCall(
+            createTableIndexListSymbol,
+            irVararg(
+                KTableIndexSymbol.defaultType,
+                listOfIndexObj
+            )
+        )
+    )
 }
 
 /**
@@ -216,19 +210,17 @@ fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
  */
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        +irReturn(
-            applyIrCall(
-                createFieldListSymbol, irVararg(
-                    fieldSymbol.owner.defaultType,
-                    declaration.properties.map {
-                        getColumnName(it)
-                    }.toList()
-                )
+fun createGetFieldsFunction(declaration: IrClass) = irBlockBody {
+    +irReturn(
+        applyIrCall(
+            createFieldListSymbol, irVararg(
+                fieldSymbol.owner.defaultType,
+                declaration.properties.map {
+                    getColumnName(it)
+                }.toList()
             )
         )
-    }
+    )
 }
 
 /**
@@ -240,12 +232,10 @@ fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
  * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
-fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        +irReturn(
-            getValidStrategy(declaration, globalCreateTimeSymbol, CreateTimeFqName)
-        )
-    }
+fun createKronosCreateTime(declaration: IrClass) = irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, globalCreateTimeSymbol, CreateTimeFqName)
+    )
 }
 
 /**
@@ -257,12 +247,10 @@ fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
  * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
-fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        +irReturn(
-            getValidStrategy(declaration, globalUpdateTimeSymbol, UpdateTimeFqName)
-        )
-    }
+fun createKronosUpdateTime(declaration: IrClass) = irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, globalUpdateTimeSymbol, UpdateTimeFqName)
+    )
 }
 
 /**
@@ -273,19 +261,15 @@ fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
  * @return an `IrBlockBody` containing an irCall to createFieldListSymbol
  */
 context(IrBuilderWithScope, IrPluginContext)
-fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        +irReturn(
-            getValidStrategy(declaration, globalLogicDeleteSymbol, LogicDeleteFqName)
-        )
-    }
+fun createKronosLogicDelete(declaration: IrClass) = irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, globalLogicDeleteSymbol, LogicDeleteFqName)
+    )
 }
 
 context(IrBuilderWithScope, IrPluginContext)
-fun createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
-    return irBlockBody {
-        +irReturn(
-            getValidStrategy(declaration, globalOptimisticLockSymbol, OptimisticLockFqName)
-        )
-    }
+fun createKronosOptimisticLock(declaration: IrClass) = irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, globalOptimisticLockSymbol, OptimisticLockFqName)
+    )
 }

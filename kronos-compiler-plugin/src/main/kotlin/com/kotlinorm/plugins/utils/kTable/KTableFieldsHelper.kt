@@ -44,12 +44,10 @@ internal val fieldSymbol
  * @return a list of IrExpressions representing the applied `addField` operations
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
-fun addFieldList(irReturn: IrReturn): List<IrExpression> {
-    return addFieldsNames(irReturn).map {
-        // Apply the `addField` operation to each field name gathered, passing the receiver.
-        // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
-        applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
-    }
+fun addFieldList(irReturn: IrReturn) = addFieldsNames(irReturn).map {
+    // Apply the `addField` operation to each field name gathered, passing the receiver.
+    // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
+    applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
 }
 
 /**

@@ -35,9 +35,7 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
  * @return The list of IR expressions representing the parameter mapping.
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
-fun putFieldParamMap(): List<IrExpression> {
-    return putParamMapStatements(irGet(extensionReceiverParameter!!), body!!)
-}
+fun putFieldParamMap() = putParamMapStatements(irGet(extensionReceiverParameter!!), body!!)
 
 /**
  * Constructs a list of IR expressions by processing assignment statements and mapping them to field parameters.

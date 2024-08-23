@@ -89,9 +89,7 @@ internal fun applyIrCall(
  *
  * @return The `IrCall` representation of the IrExpression.
  */
-internal fun IrExpression.asIrCall(): IrCall {
-    return this as IrCall
-}
+internal fun IrExpression.asIrCall() = this as IrCall
 
 /**
  * Finds the first IrConstructorCall in the iterable that has a containing descriptor with the given fqName.

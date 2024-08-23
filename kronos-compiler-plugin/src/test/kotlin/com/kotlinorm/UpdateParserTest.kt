@@ -79,7 +79,5 @@ class UpdateParserTest {
     fun compile(
         sourceFile: SourceFile,
         plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
-    ): JvmCompilationResult {
-        return compile(listOf(sourceFile), plugin)
-    }
+    ) = compile(listOf(sourceFile), plugin)
 }

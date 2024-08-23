@@ -257,16 +257,14 @@ fun IrExpression.findKronosColumn(): IrExpression? {
  * @throws IllegalStateException if no Kronos Column is found in the expression and the function name is not "value".
  */
 context(IrBlockBuilder, IrPluginContext)
-fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> {
-    return if (this.isKronosColumn()) {
-        KronosColumnValueType.ColumnName to this
-    } else if (this.funcName() == "value") {
-        KronosColumnValueType.Value to this
-    } else {
-        KronosColumnValueType.ColumnName to
-                (findKronosColumn()
-                    ?: throw IllegalStateException("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
-    }
+fun IrExpression.columnValueGetter() = if (this.isKronosColumn()) {
+    KronosColumnValueType.ColumnName to this
+} else if (this.funcName() == "value") {
+    KronosColumnValueType.Value to this
+} else {
+    KronosColumnValueType.ColumnName to
+            (findKronosColumn()
+                ?: throw IllegalStateException("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
 }
 
 /**
@@ -292,14 +290,10 @@ fun IrExpression?.isKronosColumn(): Boolean {
 }
 
 context(IrBuilderWithScope, IrPluginContext)
-fun IrClass.isKronosColumn(): Boolean {
-    return superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
-}
+fun IrClass.isKronosColumn() = superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
 
 context(IrBuilderWithScope, IrPluginContext)
-fun IrType.isKronosColumn(): Boolean {
-    return superTypes().any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
-}
+fun IrType.isKronosColumn() = superTypes().any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
 
 /**
  * Retrieves the column or value from the given IrExpression.

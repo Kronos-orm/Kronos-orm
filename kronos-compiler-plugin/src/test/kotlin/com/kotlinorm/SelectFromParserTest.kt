@@ -33,7 +33,7 @@ class JoinParserTest {
             import com.kotlinorm.orm.delete.delete
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by
-            import com.kotlinorm.annotations.CreateTime
+            import com.kotlinorm.annotations.*
             import com.kotlinorm.orm.select.select
             import java.util.Date
             import com.kotlinorm.annotations.UseSerializeResolver
@@ -42,6 +42,7 @@ class JoinParserTest {
                     
             @Table(name = "tb_user")
             data class User(
+                @NotNull
                 var id: Int? = null,
                 @UseSerializeResolver
                 var username: String? = null,
@@ -116,7 +117,5 @@ class JoinParserTest {
     fun compile(
         sourceFile: SourceFile,
         plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
-    ): JvmCompilationResult {
-        return compile(listOf(sourceFile), plugin)
-    }
+    ) = compile(listOf(sourceFile), plugin)
 }

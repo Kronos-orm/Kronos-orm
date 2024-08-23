@@ -56,7 +56,5 @@ class CriteriaIR(
      * @return an IrVariable representing the created criteria
      */
     context(IrBlockBuilder, IrPluginContext)
-    fun toIrVariable(): IrVariable {
-        return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategy)
-    }
+    fun toIrVariable() = createCriteria(parameterName, type, not, value, children, tableName, noValueStrategy)
 }

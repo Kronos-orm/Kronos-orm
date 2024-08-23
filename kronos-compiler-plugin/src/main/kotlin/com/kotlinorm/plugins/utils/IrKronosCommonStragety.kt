@@ -36,26 +36,28 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
+const val UTIL_PACKAGE = "com.kotlinorm.utils"
+
 context(IrPluginContext)
 internal val globalUpdateTimeSymbol
     get() = referenceFunctions(
         CallableId(
-            FqName("com.kotlinorm.utils"),
+            FqName(UTIL_PACKAGE),
             Name.identifier("getUpdateTimeStrategy")
         )
     ).first()
 
 context(IrPluginContext)
 internal val globalLogicDeleteSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getLogicDeleteStrategy").first()
+    get() = referenceFunctions(UTIL_PACKAGE, "getLogicDeleteStrategy").first()
 
 context(IrPluginContext)
 internal val globalOptimisticLockSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getOptimisticLockStrategy").first()
+    get() = referenceFunctions(UTIL_PACKAGE, "getOptimisticLockStrategy").first()
 
 context(IrPluginContext)
 internal val globalCreateTimeSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getCreateTimeStrategy").first()
+    get() = referenceFunctions(UTIL_PACKAGE, "getCreateTimeStrategy").first()
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)

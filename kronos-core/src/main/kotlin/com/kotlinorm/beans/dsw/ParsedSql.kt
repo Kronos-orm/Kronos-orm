@@ -70,16 +70,10 @@ class ParsedSql(private var originalSql: String = "") {
     /**
      * Exposes the original SQL String.
      */
-    override fun toString(): String {
-        return originalSql
-    }
+    override fun toString() = originalSql
 
-    operator fun component1(): String {
-        return jdbcSql
-    }
+    operator fun component1() = jdbcSql
 
-    operator fun component2(): List<Any?> {
-        return jdbcParamList
-    }
+    operator fun component2() = jdbcParamList
 
 }

@@ -58,8 +58,8 @@ class KronosActionTask {
          * @param listOfTask List<KronosAtomicActionTask> the list of KronosAtomicActionTask to group.
          * @return List<List<KronosAtomicActionTask>> returns a list of sub lists of KronosAtomicActionTask grouped by their SQL statements.
          */
-        fun groupBySql(listOfTask: List<KronosAtomicActionTask>): List<List<KronosAtomicActionTask>> {
-            return listOfTask.fold(mutableListOf<MutableList<KronosAtomicActionTask>>()) { acc, task ->
+        fun groupBySql(listOfTask: List<KronosAtomicActionTask>) =
+            listOfTask.fold(mutableListOf<MutableList<KronosAtomicActionTask>>()) { acc, task ->
                 if (acc.isEmpty() || acc.last().last().sql != task.sql) {
                     acc.add(mutableListOf(task))
                 } else {
@@ -67,7 +67,6 @@ class KronosActionTask {
                 }
                 acc
             }
-        }
 
         val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
             if (it.size > 1) { //如果有多个任务
@@ -103,10 +102,8 @@ class KronosActionTask {
          * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
-        fun List<KronosAtomicActionTask>.toKronosActionTask(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(map { it.trySplitOut() }.flatten())
-            }
+        fun List<KronosAtomicActionTask>.toKronosActionTask() = KronosActionTask().apply {
+            atomicTasks.addAll(map { it.trySplitOut() }.flatten())
         }
 
         /**
@@ -119,10 +116,8 @@ class KronosActionTask {
          * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
-        fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(trySplitOut())
-            }
+        fun KronosAtomicActionTask.toKronosActionTask() = KronosActionTask().apply {
+            atomicTasks.addAll(trySplitOut())
         }
 
         /**
@@ -135,27 +130,20 @@ class KronosActionTask {
          * @receiver List<KronosActionTask> the list of KronosActionTask to merge.
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from each KronosActionTask in the list.
          */
-        fun List<KronosActionTask>.merge(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(flatMap { it.atomicTasks })
-                if (any { it.afterExecute != null }) {
-                    afterExecute = { wrapper -> forEach { it.afterExecute?.invoke(this, wrapper) } }
-                }
+        fun List<KronosActionTask>.merge() = KronosActionTask().apply {
+            atomicTasks.addAll(flatMap { it.atomicTasks })
+            if (any { it.afterExecute != null }) {
+                afterExecute = { wrapper -> forEach { it.afterExecute?.invoke(this, wrapper) } }
             }
         }
     }
 
     private val firstTask by lazy { atomicTasks.first() }
 
-    operator fun component1(): String {
-        return firstTask.sql
-    }
+    operator fun component1() = firstTask.sql
 
-    operator fun component2(): Map<String, Any?> {
-        return firstTask.paramMap
-    }
+    operator fun component2() = firstTask.paramMap
 
-    operator fun component3(): MutableList<KronosAtomicActionTask> {
-        return atomicTasks
-    }
+    operator fun component3() = atomicTasks
+
 }

@@ -46,9 +46,7 @@ open class KTable<T : KPojo> {
      * @param fieldName the name of the field to retrieve the value for
      * @return the value associated with the provided 'fieldName', or null if not found
      */
-    fun getValueByFieldName(fieldName: String): Any? {
-        return propParamMap[fieldName]
-    }
+    fun getValueByFieldName(fieldName: String) = propParamMap[fieldName]
 
     /**
      * Overloaded operator function that adds two objects of type Any?.
@@ -119,9 +117,7 @@ open class KTable<T : KPojo> {
      * @return The converted Field object.
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun KProperty<*>.toField(): Field {
-        return Field(this.findAnnotation<Column>()?.name ?: fieldK2db(this.name), this.name)
-    }
+    fun KProperty<*>.toField() = Field(this.findAnnotation<Column>()?.name ?: fieldK2db(this.name), this.name)
 
     fun Field.setAlias(alias: String): Field {
         this.name = alias

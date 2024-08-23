@@ -85,9 +85,7 @@ class KLogMessage(
     /**
      * Convert the current KLogMessage object to an array of KLogMessage objects.
      */
-    fun toArray(): Array<KLogMessage> {
-        return arrayOf(this)
-    }
+    fun toArray() = arrayOf(this)
 
     companion object {
         /**
@@ -98,9 +96,7 @@ class KLogMessage(
          * @return a new instance of KLogMessage
          */
         @Suppress("UNCHECKED_CAST")
-        fun kMsgOf(text: String, vararg codes: ColorPrintCode): KLogMessage {
-            return KLogMessage(text, codes as Array<ColorPrintCode>)
-        }
+        fun kMsgOf(text: String, vararg codes: ColorPrintCode) = KLogMessage(text, codes as Array<ColorPrintCode>)
 
         /**
          * Formats an array of KLogMessage objects into a single string.

@@ -19,13 +19,9 @@ package com.kotlinorm.beans.namingStrategy
 import com.kotlinorm.interfaces.KronosNamingStrategy
 
 object LineHumpNamingStrategy : KronosNamingStrategy {
-    override fun k2db(name: String): String {
-        return humpToLine(name)
-    }
+    override fun k2db(name: String) = humpToLine(name)
 
-    override fun db2k(name: String): String {
-        return lineToHump(name)
-    }
+    override fun db2k(name: String) = lineToHump(name)
 
     /**
      * Converts a line separated string to a hump case string.
@@ -33,12 +29,10 @@ object LineHumpNamingStrategy : KronosNamingStrategy {
      * @param line The line separated string to be converted.
      * @return The hump case string.
      */
-    private fun lineToHump(line: String): String {
-        return line
-            .split("_")
-            .joinToString("") { it.replaceFirstChar(Char::uppercase) }
-            .replaceFirstChar { it.lowercase() }
-    }
+    private fun lineToHump(line: String) = line
+        .split("_")
+        .joinToString("") { it.replaceFirstChar(Char::uppercase) }
+        .replaceFirstChar { it.lowercase() }
 
     /**
      * Converts a hump case string to a line separated string.
@@ -46,12 +40,11 @@ object LineHumpNamingStrategy : KronosNamingStrategy {
      * @param hump The hump case string to be converted.
      * @return The line separated string.
      */
-    private fun humpToLine(hump: String): String {
-        return hump
-            .split("(?<=[a-z])(?=[A-Z])".toRegex())
-            .joinToString("_") { it.lowercase() }
-    }
+    private fun humpToLine(hump: String) = hump
+        .split("(?<=[a-z])(?=[A-Z])".toRegex())
+        .joinToString("_") { it.lowercase() }
 }
+
 
 class NoneNamingStrategy : KronosNamingStrategy {
     override fun k2db(name: String): String = name

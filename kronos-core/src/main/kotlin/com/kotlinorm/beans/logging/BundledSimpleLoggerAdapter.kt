@@ -66,13 +66,9 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
      */
     data class LogTask(val level: KLogLevel, val messages: List<KLogMessage>)
 
-    private fun Array<KLogMessage>.attachCodes(codes: Array<ColorPrintCode>): MutableList<KLogMessage> {
-        return this.onEach { if (it.codes.isEmpty()) it.codes = codes }.toMutableList()
-    }
+    private fun Array<KLogMessage>.attachCodes(codes: Array<ColorPrintCode>) = this.onEach { if (it.codes.isEmpty()) it.codes = codes }.toMutableList()
 
-    override fun isTraceEnabled(): Boolean {
-        return traceEnabled
-    }
+    override fun isTraceEnabled() = traceEnabled
 
     override fun trace(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
@@ -93,9 +89,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         if (!logLock) executeLogTask()
     }
 
-    override fun isDebugEnabled(): Boolean {
-        return debugEnabled
-    }
+    override fun isDebugEnabled() = debugEnabled
 
     override fun debug(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
@@ -116,9 +110,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         if (!logLock) executeLogTask()
     }
 
-    override fun isInfoEnabled(): Boolean {
-        return infoEnabled
-    }
+    override fun isInfoEnabled() = infoEnabled
 
     override fun info(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
@@ -139,9 +131,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         if (!logLock) executeLogTask()
     }
 
-    override fun isWarnEnabled(): Boolean {
-        return warnEnabled
-    }
+    override fun isWarnEnabled() = warnEnabled
 
     override fun warn(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(
@@ -162,9 +152,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
         if (!logLock) executeLogTask()
     }
 
-    override fun isErrorEnabled(): Boolean {
-        return errorEnabled
-    }
+    override fun isErrorEnabled() = errorEnabled
 
     override fun error(messages: Array<KLogMessage>, e: Throwable?) {
         logTaskList.add(

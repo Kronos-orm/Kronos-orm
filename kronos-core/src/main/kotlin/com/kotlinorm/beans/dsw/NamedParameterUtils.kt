@@ -261,10 +261,7 @@ object NamedParameterUtils {
      * Determine whether a parameter name ends at the current position,
      * that is, whether the given character qualifies as a separator.
      */
-    private fun isParameterSeparator(c: Char): Boolean {
-        return (c.code < 128 && separatorIndex[c.code]) || Character.isWhitespace(c)
-    }
-
+    private fun isParameterSeparator(c: Char) = (c.code < 128 && separatorIndex[c.code]) || Character.isWhitespace(c)
 
     private class ParameterHolder(val parameterName: String, val startIndex: Int, val endIndex: Int)
 

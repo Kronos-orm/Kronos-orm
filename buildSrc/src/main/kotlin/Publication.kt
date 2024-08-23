@@ -8,7 +8,7 @@ fun MavenPom.basicInformation() = apply {
     inceptionYear.set("2024")
 }
 
-fun MavenPom.apacheLicense2_0() = licenses {
+fun MavenPom.apacheLicense2() = licenses {
     license {
         name.set("The Apache Software License, Version 2.0")
         url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
@@ -76,7 +76,7 @@ fun Project.kronosPublishing(
         name.set("${project.group}:${project.name}")
         this.description.set(description)
         basicInformation()
-        apacheLicense2_0()
+        apacheLicense2()
         projectDevelopers()
         sourceControlManagement()
     }

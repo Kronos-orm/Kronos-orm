@@ -102,7 +102,7 @@ object ConditionSqlBuilder {
         needBrackets: Boolean = false,
         keyCounters: KeyCounter = KeyCounter(),
         showTable: Boolean = false,
-        datebaseOfTable: Map<String, String> = mapOf()
+        databaseOfTable: Map<String, String> = mapOf()
     ): KotoBuildResultSet {
         if (condition == null) { // 如果条件为 null，则直接返回
             return KotoBuildResultSet(null, paramMap)
@@ -153,21 +153,21 @@ object ConditionSqlBuilder {
                         condition.children.firstOrNull(),
                         paramMap,
                         showTable = showTable,
-                        datebaseOfTable = datebaseOfTable
+                        databaseOfTable = databaseOfTable
                     ).sql
                 )
             }
 
             Equal -> {
                 if (condition.value is Field) listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                     "!=".takeIf { condition.not } ?: "=",
-                    quote(wrapper.orDefault(), condition.value as Field, showTable, datebaseOfTable))
+                    quote(wrapper.orDefault(), condition.value as Field, showTable, databaseOfTable))
                 else {
                     val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                     paramMap[safeKey] = condition.value
                     listOfNotNull(
-                        quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                        quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                         "!=".takeIf { condition.not } ?: "=",
                         ":$safeKey")
                 }
@@ -183,7 +183,7 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                 paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "LIKE",
                     ":${safeKey}"
@@ -194,7 +194,7 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name + "List", keyCounters, paramMap, condition)
                 paramMap[safeKey] = condition.value
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "IN",
                     "(:${safeKey})"
@@ -203,16 +203,16 @@ object ConditionSqlBuilder {
 
             Gt, Ge, Lt, Le -> {
                 if (condition.value is Field) listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                     condition.type.value,
-                    quote(wrapper.orDefault(), condition.value as Field, showTable, datebaseOfTable)
+                    quote(wrapper.orDefault(), condition.value as Field, showTable, databaseOfTable)
                 )
                 else {
                     val suffix = "Min".takeIf { condition.type in listOf(Gt, Ge) } ?: "Max"
                     val safeKey = getSafeKey(condition.field.name + suffix, keyCounters, paramMap, condition)
                     paramMap[safeKey] = condition.value
                     listOf(
-                        quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                        quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                         condition.type.value,
                         ":${safeKey}"
                     )
@@ -226,7 +226,7 @@ object ConditionSqlBuilder {
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "BETWEEN",
                     ":${safeKeyMin}",
@@ -239,7 +239,7 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name + "Pattern", keyCounters, paramMap, condition)
                 paramMap[safeKey] = "${condition.value}"
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, datebaseOfTable),
+                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "REGEXP",
                     ":${safeKey}"
@@ -256,7 +256,7 @@ object ConditionSqlBuilder {
                         needBrackets = child?.type.isLogicalOperator() && child?.type != condition.type,
                         keyCounters,
                         showTable = showTable,
-                        datebaseOfTable = datebaseOfTable
+                        databaseOfTable = databaseOfTable
                     )
                     childSql
                 }

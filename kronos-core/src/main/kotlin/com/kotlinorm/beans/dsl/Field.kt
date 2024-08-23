@@ -46,9 +46,7 @@ class Field(
     val nullable: Boolean = true
 ) {
     // Returns the name of the field as a string
-    override fun toString(): String {
-        return name
-    }
+    override fun toString() = name
 
     /**
      * Check if this object is equal to another object.
@@ -88,14 +86,11 @@ class Field(
         name + other
     )
 
-    fun cascadeMapperBy(table: String = tableName): Boolean {
-        return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
+    fun cascadeMapperBy(table: String = tableName) =
+        reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
             .kronosTableName() == table)
-    }
 
-    fun refUseFor(usage: KOperationType): Boolean {
-        return reference != null && reference.usage.contains(usage)
-    }
+    fun refUseFor(usage: KOperationType) = reference != null && reference.usage.contains(usage)
 
     fun copy(
         columnName: String = this.columnName,
@@ -111,21 +106,19 @@ class Field(
         defaultValue: String? = this.defaultValue,
         identity: Boolean = this.identity,
         nullable: Boolean = this.nullable
-    ): Field {
-        return Field(
-            columnName,
-            name,
-            type,
-            primaryKey,
-            dateFormat,
-            tableName,
-            reference,
-            referenceKClassName,
-            isColumn,
-            length,
-            defaultValue,
-            identity,
-            nullable
-        )
-    }
+    ) = Field(
+        columnName,
+        name,
+        type,
+        primaryKey,
+        dateFormat,
+        tableName,
+        reference,
+        referenceKClassName,
+        isColumn,
+        length,
+        defaultValue,
+        identity,
+        nullable
+    )
 }

@@ -50,9 +50,13 @@ for both **backend** and **mobile applications**, support **multi-database**, an
 ## 🖥 JDK、Kotlin and Build Tools
 
 - **JDK 8+**
-- **Kotlin 1.5.31+**
+- **Kotlin 2.0.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
+> Please make sure your kotlin plugin for ide supports kotlin 2.0.0 or higher.
+>
+> If you built failed in **Intellij IDEA**(or **Android Studio**) and build with **Maven**,
+> please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.
 -------
 
 ## 📦  Installation
@@ -175,7 +179,7 @@ data class Movie(
     val actors: List<MovieActor>? = null, // reference list & many-to-many
     @ColumnDeserialize
     val type: List<String>? = null, // deserialize from json string
-    @Column("move_summary")
+    @Column("movie_summary")
     val summary: String? = null, // summary with column name
     @Version val version: Long? = null, // version for optimistic lock
     @LogicDelete val deleted: Boolean? = null, // logic delete

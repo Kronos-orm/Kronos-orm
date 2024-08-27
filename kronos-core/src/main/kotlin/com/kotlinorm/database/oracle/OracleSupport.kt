@@ -278,7 +278,7 @@ object OracleSupport : DatabasesSupport {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
 
-                it.name != it.columnName -> "${quote(it.columnName.uppercase())} AS ${quote(it)}"
+                it.name != it.columnName -> "${quote(it.columnName.uppercase())} AS ${quote(it.name)}"
                 else -> quote(it)
             }
         }

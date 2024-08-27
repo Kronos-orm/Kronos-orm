@@ -244,7 +244,7 @@ object PostgresqlSupport : DatabasesSupport {
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it)}"
+                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it.name)}"
                 else -> quote(it)
             }
         }

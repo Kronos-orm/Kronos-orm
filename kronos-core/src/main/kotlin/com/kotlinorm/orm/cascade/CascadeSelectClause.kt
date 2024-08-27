@@ -27,6 +27,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
 import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KProperty
 
 /**
  * 用于构建级联选择子句的对象。
@@ -114,7 +115,7 @@ object CascadeSelectClause {
      */
     fun setValues(
         pojo: KPojo,
-        prop: KMutableProperty<*>,
+        prop: KProperty<*>,
         validRef: ValidRef,
         limit: Int,
         wrapper: KronosDataSourceWrapper

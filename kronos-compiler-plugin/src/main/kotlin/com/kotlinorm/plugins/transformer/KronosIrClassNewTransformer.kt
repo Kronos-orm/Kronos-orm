@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 
 /**
  * Kronos Parser Transformer
@@ -35,21 +36,24 @@ class KronosIrClassNewTransformer(
 ) : IrElementTransformerVoidWithContext() {
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
         if (declaration is IrSimpleFunction && declaration.isFakeOverride) {
-            declaration.isFakeOverride = false
-            declaration.dispatchReceiverParameter = irClass.thisReceiver
+            fun replaceFakeBody(functionBodyFactory: () -> IrBlockBody) {
+                declaration.isFakeOverride = false
+                declaration.dispatchReceiverParameter = irClass.thisReceiver
+                declaration.body = functionBodyFactory()
+            }
             with(pluginContext) {
                 with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {
                     when (declaration.name.asString()) {
-                        "toDataMap" -> declaration.body = createToMapFunction(irClass, declaration)
-                        "safeFromMapData" -> declaration.body = createSafeFromMapValueFunction(irClass, declaration)
-                        "fromMapData" -> declaration.body = createFromMapValueFunction(irClass, declaration)
-                        "kronosTableName" -> declaration.body = createKronosTableName(irClass)
-                        "kronosTableIndex" -> declaration.body = createKronosTableIndex(irClass)
-                        "kronosColumns" -> declaration.body = createGetFieldsFunction(irClass)
-                        "kronosCreateTime" -> declaration.body = createKronosCreateTime(irClass)
-                        "kronosUpdateTime" -> declaration.body = createKronosUpdateTime(irClass)
-                        "kronosLogicDelete" -> declaration.body = createKronosLogicDelete(irClass)
-                        "kronosOptimisticLock" -> declaration.body = createKronosOptimisticLock(irClass)
+                        "toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration) }
+                        "safeFromMapData" -> replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }
+                        "fromMapData" -> replaceFakeBody { createFromMapValueFunction(irClass, declaration) }
+                        "kronosTableName" -> replaceFakeBody { createKronosTableName(irClass) }
+                        "kronosTableIndex" -> replaceFakeBody { createKronosTableIndex(irClass) }
+                        "kronosColumns" -> replaceFakeBody { createGetFieldsFunction(irClass) }
+                        "kronosCreateTime" -> replaceFakeBody { createKronosCreateTime(irClass) }
+                        "kronosUpdateTime" -> replaceFakeBody { createKronosUpdateTime(irClass) }
+                        "kronosLogicDelete" -> replaceFakeBody { createKronosLogicDelete(irClass) }
+                        "kronosOptimisticLock" -> replaceFakeBody { createKronosOptimisticLock(irClass) }
                     }
                 }
             }

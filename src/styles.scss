@@ -54,10 +54,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 :root {
-  --ng-doc-primary: #7F52FF!important;
-  --ng-doc-link-color: #7F52FF!important;
-  --ng-doc-code-max-height: 520px!important;
-  --ng-doc-icon-width: 24px!important;
+  --ng-doc-primary: #7F52FF !important;
+  --ng-doc-link-color: #7F52FF !important;
+  --ng-doc-code-max-height: 520px !important;
+  --ng-doc-icon-width: 24px !important;
 }
 
 img {
@@ -74,6 +74,24 @@ pre {
     background-color: var(--ng-doc-code-background);
   }
 }
+
 h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.ngde + h5.ngde, h1.ngde + h6.ngde, h2.ngde + h1.ngde, h2.ngde + h2.ngde, h2.ngde + h3.ngde, h2.ngde + h4.ngde, h2.ngde + h5.ngde, h2.ngde + h6.ngde, h3.ngde + h1.ngde, h3.ngde + h2.ngde, h3.ngde + h3.ngde, h3.ngde + h4.ngde, h3.ngde + h5.ngde, h3.ngde + h6.ngde, h4.ngde + h1.ngde, h4.ngde + h2.ngde, h4.ngde + h3.ngde, h4.ngde + h4.ngde, h4.ngde + h5.ngde, h4.ngde + h6.ngde, h5.ngde + h1.ngde, h5.ngde + h2.ngde, h5.ngde + h3.ngde, h5.ngde + h4.ngde, h5.ngde + h5.ngde, h5.ngde + h6.ngde, h6.ngde + h1.ngde, h6.ngde + h2.ngde, h6.ngde + h3.ngde, h6.ngde + h4.ngde, h6.ngde + h5.ngde, h6.ngde + h6.ngde {
   margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
+}
+
+
+.code-blue {
+  color: rgba(0, 55, 185, 0.8);
+}
+
+.code-green {
+  color: rgba(28, 99, 109, 0.8)
+}
+
+.code-black {
+  color: #000;
+}
+
+.code-red {
+  color: #FF0000;
 }

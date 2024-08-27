@@ -1,1 +1,20 @@
-<router-outlet />
+@if (firstEntry) {
+    <div class="a1"></div>
+    @defer (on timer(2000)) {
+        <div class="a2">
+            <div class="text">
+                <ngx-typed-writer
+                        [strings]="codes"
+                        [shuffle]="true"
+                        [isHTML]="true"
+                        [backSpeed]="20"
+                        [typeSpeed]="30"
+                >
+                </ngx-typed-writer>
+            </div>
+        </div>
+    }
+    <p-button [text]="true" (click)="firstEntry=false">Start</p-button>
+} @else {
+    <router-outlet/>
+}

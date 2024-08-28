@@ -2,6 +2,7 @@ package com.kotlinorm.orm.relationQuery.oneToMany
 
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Reference
+import com.kotlinorm.annotations.SelectIgnore
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
 import org.jetbrains.annotations.NotNull
@@ -15,5 +16,6 @@ data class GroupClass(
     var schoolName: String? = null,
     @Reference(["schoolName"], ["name"], CascadeDeleteAction.CASCADE, mapperBy = School::class)
     var school: School? = null,
+    @SelectIgnore
     var students: List<Student>? = null
 ) : KPojo

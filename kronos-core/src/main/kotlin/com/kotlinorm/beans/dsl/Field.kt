@@ -43,7 +43,8 @@ class Field(
     val length: Int = 0,
     val defaultValue: String? = null,
     val identity: Boolean = false,
-    val nullable: Boolean = true
+    val nullable: Boolean = true,
+    val cascadeSelectIgnore: Boolean = false
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

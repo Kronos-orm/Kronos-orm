@@ -64,14 +64,24 @@ data class ValidRef(
  * @param operationType The [KOperationType] indicating the type of ORM operation (e.g., DELETE) for which the references are being validated.
  * @return A list of [ValidRef] objects representing valid references for the specified operation type.
  */
-fun findValidRefs(columns: List<Field>, operationType: KOperationType, allowed: Set<String>, allowAll: Boolean): List<ValidRef> {
+fun findValidRefs(
+    columns: List<Field>,
+    operationType: KOperationType,
+    allowed: Set<String>,
+    allowAll: Boolean,
+    cascadeSelectNoLimit: Boolean = false
+): List<ValidRef> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
-    return columns.filter { !it.isColumn && (it.name in allowed || allowAll) }.map { col ->
+    return columns.filter { !it.isColumn && (it.name in allowed || allowAll) }.mapNotNull { col ->
+        if (col.cascadeSelectIgnore && operationType == KOperationType.SELECT) return@mapNotNull null
         val ref =
             col.referenceKClassName.kConstructor.callBy(emptyMap()) as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-        if ((col.cascadeMapperBy() && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.reference != null)) {
+        if ((col.cascadeMapperBy() && col.refUseFor(operationType))) {
             listOf(col.reference!!) // 若有级联映射，返回引用
         } else {
+            if (cascadeSelectNoLimit && operationType == KOperationType.SELECT) {
+                listOf<KReference>()
+            }
             ref.kronosColumns()
                 .filter {
                     it.cascadeMapperBy(col.tableName) && it.refUseFor(operationType)

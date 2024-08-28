@@ -41,12 +41,14 @@ object CascadeSelectClause {
         cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         rootTask: KronosAtomicQueryTask,
-        selectFields: LinkedHashSet<Field>
+        selectFields: LinkedHashSet<Field>,
+        cascadeSelectNoLimit: Boolean
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
             pojo,
             pojo.kronosColumns().filter { selectFields.contains(it) },
+            cascadeSelectNoLimit,
             rootTask
         ) else rootTask.toKronosQueryTask()
 
@@ -55,6 +57,7 @@ object CascadeSelectClause {
         cascadeAllowed: Array<out KProperty<*>>,
         pojo: KPojo,
         columns: List<Field>,
+        cascadeSelectNoLimit: Boolean,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {
         val validReferences =
@@ -62,7 +65,8 @@ object CascadeSelectClause {
                 columns,
                 KOperationType.SELECT,
                 cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(),
-                cascadeAllowed.isEmpty()
+                cascadeAllowed.isEmpty(),
+                cascadeSelectNoLimit
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）

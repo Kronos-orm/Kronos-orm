@@ -109,12 +109,10 @@ class RelationQuery {
         dataSource.table.createTable<School>()
         dataSource.table.createTable<GroupClass>()
         dataSource.table.createTable<Student>()
-        School(name = "School").insert().execute()
-        GroupClass(name = "一年级", schoolName = "School").insert().execute()
 
-        val groupClass = GroupClass(
-            name = "一年级"
-        )
+        val groupClass = GroupClass(name = "一年级")
+
+        School(name = "School", groupClass = listOf(groupClass)).insert().cascade(School::groupClass).execute()
 
         val result = groupClass.select().cascade(GroupClass::school).queryOne()
         println(result)

@@ -210,7 +210,7 @@ data class NodeOfKPojo(
                         updateParams.keys.contains(it)
                     }) && (
                     cascadeAllowed.isEmpty() || cascadeAllowed.contains(
-                        ref.refPojo::class.findPropByName(ref.field.name)
+                        kPojo::class.findPropByName(ref.field.name)
                     )
                     )
         }.forEach { ref ->

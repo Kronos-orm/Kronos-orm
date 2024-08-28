@@ -42,6 +42,7 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.reflect.KProperty
 
 class DeleteClause<T : KPojo>(private val pojo: T) {
     private var paramMap = pojo.toDataMap()
@@ -53,7 +54,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var cascadeEnabled = true
-    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
         // 若logicDeleteStrategy.enabled为false则抛出异常
@@ -88,9 +89,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         return this
     }
 
-    fun cascade(enabled: Boolean = true, depth: Int = -1): DeleteClause<T> {
+    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): DeleteClause<T> {
         this.cascadeEnabled = enabled
-        this.cascadeLimit = depth
+        this.cascadeAllowed = props
         return this
     }
 
@@ -158,7 +159,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
 
             return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeLimit, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
+                cascadeEnabled, cascadeAllowed, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
                     getUpdateSql(
                         wrapper.orDefault(),
                         tableName,
@@ -173,7 +174,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
             return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeLimit, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
+                cascadeEnabled, cascadeAllowed, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
                     getDeleteSql(wrapper.orDefault(), tableName, toWhereSql(whereClauseSql)),
                     paramMap,
                     operationType = KOperationType.DELETE
@@ -222,9 +223,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
         fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(
             enabled: Boolean = true,
-            depth: Int = -1
+            vararg props: KProperty<*>
         ): List<DeleteClause<T>> {
-            return map { it.cascade(enabled, depth) }
+            return map { it.cascade(*props, enabled = enabled) }
         }
 
         /**
@@ -273,9 +274,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
         fun <T : KPojo> Array<DeleteClause<T>>.cascade(
             enabled: Boolean = true,
-            depth: Int = -1
+            vararg props: KProperty<*>
         ): List<DeleteClause<T>> {
-            return map { it.cascade(enabled, depth) }
+            return map { it.cascade(*props, enabled = enabled) }
         }
 
 

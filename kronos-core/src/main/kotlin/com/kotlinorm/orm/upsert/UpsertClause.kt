@@ -41,6 +41,7 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.reflect.KProperty
 
 /**
  * Update Clause
@@ -68,7 +69,7 @@ class UpsertClause<T : KPojo>(
     private var toUpdateFields = linkedSetOf<Field>()
     private var onFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
-    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
     private var lock:PessimisticLock? = null
 
     init {
@@ -117,9 +118,9 @@ class UpsertClause<T : KPojo>(
         return this
     }
 
-    fun cascade(enabled: Boolean = true, depth: Int = -1): UpsertClause<T> {
+    fun cascade(vararg cascadeAllowed: KProperty<*>, enabled: Boolean = true): UpsertClause<T> {
         this.cascadeEnabled = enabled
-        this.cascadeLimit = depth
+        this.cascadeAllowed = cascadeAllowed
         return this
     }
 
@@ -171,7 +172,7 @@ class UpsertClause<T : KPojo>(
                 lock = lock ?: PessimisticLock.X.takeIf { !optimisticStrategy.enabled }
 
                 if ((pojo.select()
-                        .cascade(false)
+                        .cascade(enabled = false)
                         .lock(lock)
                         .apply {
                             selectFields = linkedSetOf(Field("COUNT(1)", "COUNT(1)" , type = KColumnType.CUSTOM_CRITERIA_SQL))
@@ -184,7 +185,7 @@ class UpsertClause<T : KPojo>(
                         .queryOneOrNull<Int>() ?: 0)
                     > 0
                 ) {
-                    pojo.update().cascade(cascadeEnabled, cascadeLimit)
+                    pojo.update().cascade(*cascadeAllowed, enabled = cascadeEnabled)
                         .apply {
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
@@ -192,7 +193,7 @@ class UpsertClause<T : KPojo>(
                         }
                         .execute(wrapper)
                 } else {
-                    pojo.insert().cascade(cascadeEnabled, cascadeLimit).execute(wrapper)
+                    pojo.insert().cascade(*cascadeAllowed, enabled = cascadeEnabled).execute(wrapper)
                 }
             }
         }
@@ -207,8 +208,8 @@ class UpsertClause<T : KPojo>(
             return map { it.onConflict() }
         }
 
-        fun <T : KPojo> List<UpsertClause<T>>.cascade(enabled: Boolean = true, depth: Int = -1): List<UpsertClause<T>> {
-            return map { it.cascade(enabled, depth) }
+        fun <T : KPojo> List<UpsertClause<T>>.cascade(vararg props: KProperty<*>, enabled: Boolean = true): List<UpsertClause<T>> {
+            return map { it.cascade(*props, enabled = enabled) }
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.build(): KronosActionTask {

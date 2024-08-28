@@ -45,13 +45,11 @@ import kotlin.reflect.jvm.javaField
  * @property updateReferenceValue Indicates if the reference value should be updated during the cascade operation.
  * @property parent The parent node in the cascade operation tree, or null if this is a root node.
  * @property fieldOfParent The field in the parent node that references this node, or null if this is a root node.
- * @property depth The depth of this node in the cascade operation tree, calculated from the root node.
  */
 data class NodeInfo(
     val updateReferenceValue: Boolean = false,
     val parent: NodeOfKPojo? = null,
-    val fieldOfParent: Field? = null,
-    val depth: Int = parent?.data?.depth?.plus(1) ?: 0
+    val fieldOfParent: Field? = null
 )
 
 /**
@@ -82,8 +80,11 @@ data class NodeOfKPojo(
 ) {
     internal val dataMap by lazy { kPojo.toDataMap() }
     private val validRefs by lazy {
-        findValidRefs(kPojo.kronosColumns(), operationType,
-            cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet()
+        findValidRefs(
+            kPojo.kronosColumns(),
+            operationType,
+            cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet(),
+            cascadeAllowed.isEmpty()
         )
     }
     val children: MutableList<NodeOfKPojo> = mutableListOf()
@@ -209,10 +210,10 @@ data class NodeOfKPojo(
                     ref.reference.targetFields.any {
                         updateParams.keys.contains(it)
                     }) && (
-                    cascadeAllowed.isEmpty() || cascadeAllowed.contains(
-                        kPojo::class.findPropByName(ref.field.name)
-                    )
-                    )
+                        cascadeAllowed.isEmpty() || cascadeAllowed.contains(
+                            kPojo::class.findPropByName(ref.field.name)
+                        )
+                )
         }.forEach { ref ->
             val value = dataMap[ref.field.name]
             if (value != null) {

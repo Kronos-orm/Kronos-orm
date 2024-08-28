@@ -94,7 +94,8 @@ object CascadeDeleteClause {
         val validReferences = findValidRefs(
             columns,
             KOperationType.DELETE,
-            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet()
+            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(),
+            cascadeAllowed.isEmpty()
         )
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->

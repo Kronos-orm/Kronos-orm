@@ -61,7 +61,8 @@ object CascadeSelectClause {
             findValidRefs(
                 columns,
                 KOperationType.SELECT,
-                cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet()
+                cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(),
+                cascadeAllowed.isEmpty()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）

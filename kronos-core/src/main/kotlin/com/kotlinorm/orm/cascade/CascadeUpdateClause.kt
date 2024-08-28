@@ -28,24 +28,25 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
+import kotlin.reflect.KProperty
 
 object CascadeUpdateClause {
 
     fun <T : KPojo> build(
         cascade: Boolean,
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         whereClauseSql: String?,
         rootTask: KronosAtomicActionTask
     ) =
-        if (cascade && limit != 0) generateTask(
-            limit, pojo, paramMap, toUpdateFields, whereClauseSql, rootTask
+        if (cascade) generateTask(
+            cascadeAllowed, pojo, paramMap, toUpdateFields, whereClauseSql, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
@@ -56,15 +57,9 @@ object CascadeUpdateClause {
 
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
-
-                val rask = pojo.select()
-                    .cascade(true, limit)
-                    .where { whereClauseSql.asSql() }
-                    .patch(*paramMap.toList().toTypedArray()).build()
-
                 toUpdateRecords.addAll(
                     pojo.select()
-                        .cascade(true, limit)
+                        .cascade(*cascadeAllowed, enabled = true)
                         .where { whereClauseSql.asSql() }
                         .patch(*paramMap.toList().toTypedArray())
                         .queryList(wrapper)
@@ -74,6 +69,7 @@ object CascadeUpdateClause {
                     record.toTreeNode(
                         NodeInfo(true),
                         operationType = KOperationType.UPDATE,
+                        cascadeAllowed = cascadeAllowed,
                         updateParams = toUpdateFields.associateTo(mutableMapOf()) { it.name to it.name }
                     )
                 }

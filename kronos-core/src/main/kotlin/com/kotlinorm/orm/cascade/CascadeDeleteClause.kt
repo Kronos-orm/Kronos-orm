@@ -32,6 +32,8 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
+import kotlin.reflect.KProperty
+import kotlin.reflect.jvm.javaField
 
 /**
  * Used to build a cascade delete clause.
@@ -63,15 +65,15 @@ object CascadeDeleteClause {
      */
     fun <T : KPojo> build(
         cascade: Boolean,
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ) =
-        if (cascade && limit != 0) generateTask(
-            limit,
+        if (cascade) generateTask(
+            cascadeAllowed,
             pojo,
             whereClauseSql,
             paramMap,
@@ -81,7 +83,7 @@ object CascadeDeleteClause {
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
@@ -89,12 +91,16 @@ object CascadeDeleteClause {
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
-        val validReferences = findValidRefs(columns, KOperationType.DELETE)
+        val validReferences = findValidRefs(
+            columns,
+            KOperationType.DELETE,
+            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet()
+        )
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
-                        .cascade(true, limit)
+                        .cascade(*cascadeAllowed, enabled = true)
                         .queryList(wrapper)
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute
                 val restrictReferences = validReferences.filter { it.reference.onDelete == RESTRICT }
@@ -111,7 +117,12 @@ object CascadeDeleteClause {
                     }
                 }
 
-                val forestOfKPojo = toDeleteRecords.map { it.toTreeNode(operationType = KOperationType.DELETE) }
+                val forestOfKPojo = toDeleteRecords.map {
+                    it.toTreeNode(
+                        operationType = KOperationType.DELETE,
+                        cascadeAllowed = cascadeAllowed
+                    )
+                }
                 if (forestOfKPojo.any { it.children.isNotEmpty() }) {
                     this.atomicTasks.clear() // 清空原有的任务
                     val list = mutableListOf<NodeOfKPojo>()

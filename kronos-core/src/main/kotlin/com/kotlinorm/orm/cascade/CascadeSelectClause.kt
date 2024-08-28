@@ -27,6 +27,8 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
 import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KProperty
+import kotlin.reflect.jvm.javaField
 
 /**
  * 用于构建级联选择子句的对象。
@@ -36,26 +38,30 @@ import kotlin.reflect.KMutableProperty
 object CascadeSelectClause {
     fun <T : KPojo> build(
         cascade: Boolean,
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>
     ) =
-        if (cascade && limit != 0) generateTask(
-            limit,
+        if (cascade) generateTask(
+            cascadeAllowed,
+            pojo,
             pojo.kronosColumns().filter { selectFields.contains(it) },
             rootTask
         ) else rootTask.toKronosQueryTask()
 
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
+        pojo: KPojo,
         columns: List<Field>,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {
         val validReferences =
             findValidRefs(
-                columns, KOperationType.SELECT
+                columns,
+                KOperationType.SELECT,
+                cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
@@ -69,9 +75,10 @@ object CascadeSelectClause {
                                 if (lastStepResult.isNotEmpty()) {
                                     val prop =
                                         lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    lastStepResult.forEach rowMapper@{
-                                        setValues(it, prop, validRef, limit, wrapper)
-                                    }
+                                    if (cascadeAllowed.isEmpty() || prop in cascadeAllowed)
+                                        lastStepResult.forEach rowMapper@{
+                                            setValues(it, prop, validRef, cascadeAllowed, wrapper)
+                                        }
                                 }
                             }
 
@@ -80,7 +87,7 @@ object CascadeSelectClause {
                                 if (lastStepResult != null) {
                                     val prop =
                                         lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    setValues(lastStepResult, prop, validRef, limit, wrapper)
+                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, wrapper)
                                 }
                             }
 
@@ -109,14 +116,14 @@ object CascadeSelectClause {
      * @param pojo The [KPojo] instance on which values are to be set.
      * @param prop The [KMutableProperty] representing the property to be set on the [KPojo] instance.
      * @param validRef A [ValidRef] instance containing information about the reference to be used for cascading.
-     * @param limit The maximum depth of cascading. A limit of 0 indicates no further cascading should occur.
+     * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no further cascading should occur.
      * @param wrapper A [KronosDataSourceWrapper] providing access to the data source for executing queries.
      */
     fun setValues(
         pojo: KPojo,
-        prop: KMutableProperty<*>,
+        prop: KProperty<*>,
         validRef: ValidRef,
-        limit: Int,
+        cascadeAllowed: Array<out KProperty<*>>,
         wrapper: KronosDataSourceWrapper
     ) { // 将KPojo转为Map，该map将用于级联查询
         val dataMap = pojo.toDataMap()
@@ -131,9 +138,9 @@ object CascadeSelectClause {
         ) // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
 
         pojo[prop] = if (prop.isIterable) { // 判断属性是否为集合
-            refPojo.select().cascade(true, limit - 1).queryList(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(*cascadeAllowed, enabled = true).queryList(wrapper) // 查询级联的POJO
         } else {
-            refPojo.select().cascade(true, limit - 1).queryOneOrNull(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(*cascadeAllowed, enabled = true).queryOneOrNull(wrapper) // 查询级联的POJO
         }
     }
 }

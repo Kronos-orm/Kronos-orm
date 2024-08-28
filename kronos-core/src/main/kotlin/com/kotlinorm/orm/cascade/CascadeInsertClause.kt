@@ -23,21 +23,28 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.utils.getTypeSafeValue
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.withNullability
 
 object CascadeInsertClause {
-    fun <T : KPojo> build(cascade: Boolean, limit: Int, pojo: T, rootTask: KronosAtomicActionTask) =
-        if (cascade && limit != 0) generateTask(limit, pojo, rootTask) else rootTask.toKronosActionTask()
+    fun <T : KPojo> build(
+        cascade: Boolean,
+        cascadeAllowed: Array<out KProperty<*>>,
+        pojo: T, rootTask: KronosAtomicActionTask
+    ) =
+        if (cascade) generateTask(cascadeAllowed, pojo, rootTask) else rootTask.toKronosActionTask()
 
     private fun generateTask(
-        limit: Int, pojo: KPojo, prevTask: KronosAtomicActionTask
+        cascadeAllowed: Array<out KProperty<*>>,
+        pojo: KPojo,
+        prevTask: KronosAtomicActionTask
     ) = prevTask.toKronosActionTask().doAfterExecute { wrapper -> //在执行之后执行的操作
         //为何要放在doAfterExecute中执行：因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键）
         val operationResult = this
-        pojo.toTreeNode(NodeInfo(true), limit, KOperationType.INSERT) {
+        pojo.toTreeNode(NodeInfo(true), cascadeAllowed, KOperationType.INSERT) {
             val identity = kPojo.kronosColumns().find { it.identity } ?: return@toTreeNode
             val (_, lastInsertId) = if (kPojo != pojo) {
-                kPojo.insert().cascade(false).execute(wrapper)
+                kPojo.insert().cascade(enabled = false).execute(wrapper)
             } else {
                 operationResult
             }

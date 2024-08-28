@@ -6,6 +6,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.utils.Extensions.safeMapperTo
 import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.DataClassRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
@@ -54,12 +55,14 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
         return namedJdbc.queryForList(task.sql, task.paramMap)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
-        return if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.query(
+        return if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForList(
             task.sql,
-            task.paramMap,
-            DataClassRowMapper(kClass.java)
-        )
+            task.paramMap
+        ).map {
+            it.safeMapperTo(kClass as KClass<KPojo>)
+        }
         else namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
     }
 
@@ -68,19 +71,25 @@ class SpringDataWrapper(private val dataSource: DataSource) : KronosDataSourceWr
             namedJdbc.queryForMap(task.sql, task.paramMap)
         } catch (e: DataAccessException) {
             null
+        } catch (e: Exception) {
+            throw e
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
         return try {
-            if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForObject(
+            if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForMap(
                 task.sql,
-                task.paramMap,
-                DataClassRowMapper(kClass.java)
-            )
+                task.paramMap
+            ).apply {
+                safeMapperTo(kClass as KClass<KPojo>)
+            }
             else namedJdbc.queryForObject(task.sql, task.paramMap, kClass.java)
         } catch (e: DataAccessException) {
             null
+        } catch (e: Exception) {
+            throw e
         }
     }
 

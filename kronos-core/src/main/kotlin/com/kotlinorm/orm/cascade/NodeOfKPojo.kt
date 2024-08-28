@@ -26,6 +26,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.jvm.javaField
 
 /**
  * Holds information about a node in the ORM cascade operation tree.
@@ -66,7 +67,7 @@ data class NodeInfo(
  *
  * @property kPojo The entity (KPojo) this node represents.
  * @property data Additional contextual information about this node, such as its parent, the field linking to the parent, and depth in the tree.
- * @property limitDepth The maximum depth to which the tree should be built. A value of -1 indicates no limit.
+ * @property cascadeAllowed The maximum depth to which the tree should be built. A value of -1 indicates no limit.
  * @property operationType The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.
  * @property updateParams A map of parameters to be updated in the entity, used when patching data from the parent.
  * @property onInit An optional initialization block that can be executed upon node creation, allowing for custom logic.
@@ -74,13 +75,17 @@ data class NodeInfo(
 data class NodeOfKPojo(
     val kPojo: KPojo,
     val data: NodeInfo? = null,
-    val limitDepth: Int = -1, // limit the depth of the tree, -1 means no limit
+    val cascadeAllowed: Array<out KProperty<*>>,
     val operationType: KOperationType,
     val updateParams: MutableMap<String, String> = mutableMapOf(),
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     internal val dataMap by lazy { kPojo.toDataMap() }
-    private val validRefs by lazy { findValidRefs(kPojo.kronosColumns(), operationType) }
+    private val validRefs by lazy {
+        findValidRefs(kPojo.kronosColumns(), operationType,
+            cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet()
+        )
+    }
     val children: MutableList<NodeOfKPojo> = mutableListOf()
 
     init {
@@ -91,13 +96,7 @@ data class NodeOfKPojo(
         // Executes an optional initialization block defined at the node creation. This allows for custom
         // logic to be executed right after the node's basic initialization, providing flexibility in node setup.
         onInit?.invoke(this)
-
-        // Builds child nodes for the current node if the depth limit has not been reached. This is determined
-        // by comparing the current node's depth with the limitDepth property. A limitDepth of -1 indicates
-        // that there is no depth limit, allowing for the full tree structure to be built recursively.
-        if (limitDepth < 0 || (data?.depth ?: 0) < limitDepth) {
-            buildChildren()
-        }
+        buildChildren()
     }
 
     companion object {
@@ -117,7 +116,7 @@ data class NodeOfKPojo(
          * 例如构建树的深度限制、正在执行的操作类型以及任何初始化逻辑。
          *
          * @param data Optional [NodeInfo] providing additional context about the node, such as its parent and depth in the tree.
-         * @param limitDepth The maximum depth to which the tree should be built. A value of -1 indicates no limit.
+         * @param cascadeAllowed The maximum depth to which the tree should be built. A value of -1 indicates no limit.
          * @param operationType The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.
          * @param updateParams A map of parameters to be updated in the entity, used when patching data from the parent.
          * @param onInit An optional initialization block that can be executed upon node creation, allowing for custom logic.
@@ -125,12 +124,12 @@ data class NodeOfKPojo(
          */
         internal fun KPojo.toTreeNode(
             data: NodeInfo? = null,
-            limitDepth: Int = -1,
+            cascadeAllowed: Array<out KProperty<*>>,
             operationType: KOperationType,
             updateParams: MutableMap<String, String> = mutableMapOf(),
             onInit: (NodeOfKPojo.() -> Unit)? = null
         ): NodeOfKPojo {
-            return NodeOfKPojo(this, data, limitDepth, operationType, updateParams, onInit)
+            return NodeOfKPojo(this, data, cascadeAllowed, operationType, updateParams, onInit)
         }
     }
 
@@ -205,11 +204,15 @@ data class NodeOfKPojo(
      */
     private fun buildChildren() {
         validRefs.filter { ref ->
-            operationType == KOperationType.DELETE ||
+            (operationType == KOperationType.DELETE ||
                     (null != data && data.updateReferenceValue) ||
                     ref.reference.targetFields.any {
                         updateParams.keys.contains(it)
-                    }
+                    }) && (
+                    cascadeAllowed.isEmpty() || cascadeAllowed.contains(
+                        kPojo::class.findPropByName(ref.field.name)
+                    )
+                    )
         }.forEach { ref ->
             val value = dataMap[ref.field.name]
             if (value != null) {
@@ -223,7 +226,7 @@ data class NodeOfKPojo(
                                         this,
                                         ref.field
                                     ),
-                                    limitDepth,
+                                    cascadeAllowed,
                                     operationType,
                                     mutableMapOf(),
                                     onInit
@@ -239,7 +242,7 @@ data class NodeOfKPojo(
                                 this,
                                 ref.field
                             ),
-                            limitDepth,
+                            cascadeAllowed,
                             operationType,
                             mutableMapOf(),
                             onInit
@@ -251,7 +254,7 @@ data class NodeOfKPojo(
     }
 }
 
-private val lruCacheOfProp = LRUCache<Pair<KClass<out KPojo>, String>, KMutableProperty<*>>(128)
+private val lruCacheOfProp = LRUCache<Pair<KClass<out KPojo>, String>, KProperty<*>>(128)
 
 /**
  * Finds and returns a mutable property of a [KPojo] class by its name, utilizing a cache for improved performance.
@@ -271,10 +274,9 @@ private val lruCacheOfProp = LRUCache<Pair<KClass<out KPojo>, String>, KMutableP
  * @throws UnsupportedOperationException If the property is not found or is not mutable, indicating that it cannot
  *         be used for cascading operations.
  */
-internal fun KClass<out KPojo>.findPropByName(name: String): KMutableProperty<*> { // 通过反射获取级联字段的属性
+internal fun KClass<out KPojo>.findPropByName(name: String): KProperty<*> { // 通过反射获取级联字段的属性
     return lruCacheOfProp.getOrPut(this to name) {
-        this.memberProperties.find { prop -> prop.name == name && prop is KMutableProperty<*> } as KMutableProperty<*>?
-            ?: throw UnsupportedOperationException("The property[${this::class.qualifiedName}.$this.$name] to cascade select is not mutable.")
+        this.memberProperties.find { prop -> prop.name == name } as KProperty<*>
     }
 }
 
@@ -302,23 +304,23 @@ internal val KProperty<*>.isIterable
  *
  * This function attempts to set the value of a [KMutableProperty] on the [KPojo] instance. It uses Kotlin reflection
  * to invoke the property's setter method with the provided value. If the property does not exist or is not mutable
- * (i.e., does not have a setter), an [UnsupportedOperationException] is thrown, indicating the operation cannot be performed.
+ * (i.e., does not have a setter), Java reflection is used to set the property's value.
  *
  *  使用反射设置 [KPojo] 实例上指定属性的值。
  *
- * 此函数尝试设置 [KPojo] 实例上 [KMutableProperty] 的值。它使用 Kotlin 反射使用提供的值调用属性的 setter 方法。
- * 如果属性不存在或不可变（即没有 setter），则会抛出 [UnsupportedOperationException]，表示无法执行操作。
+ * 此函数尝试设置 [KPojo] 实例上 [KMutableProperty] 的值。它使用 Kotlin 反射使用提供的值调用属性的 setter 方法
+ * 如果属性不存在或不可变（即没有 setter），则使用java反射调用属性getDeclaredField，修改isAccessible为true并调用set方法
  *
- * @param prop The [KMutableProperty] whose value is to be set.
+ * @param prop The [KProperty] whose value is to be set.
  * @param value The new value to assign to the property. Can be `null` if the property allows null values.
- * @throws IllegalArgumentException If the provided value is not compatible with the property's type.
- * @throws UnsupportedOperationException If the property is not mutable or cannot be found.
  */
-internal operator fun KPojo.set(prop: KMutableProperty<*>, value: Any?) { // 通过反射设置属性值
-    try {
-        prop.setter.call(this, value)
-    } catch (e: IllegalArgumentException) {
-        throw UnsupportedOperationException("The property[${this::class.qualifiedName}.$this.${prop.name}] to cascade select is not mutable.")
+internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
+    if (prop is KMutableProperty<*>) { // 若属性为可变属性
+        prop.setter.call(this, value) // 通过setter方法设置属性值
+    } else { // 若属性为不可变属性
+        val field = KPojo::class.java.getDeclaredField(prop.name) // 获取java属性
+        field.isAccessible = true // 设置为可访问
+        field.set(this, value) // 通过set方法设置属性值
     }
 }
 
@@ -326,24 +328,14 @@ internal operator fun KPojo.set(prop: KMutableProperty<*>, value: Any?) { // 通
  * Retrieves the value of a specified property on a [KPojo] instance using reflection.
  *
  * This function attempts to retrieve the value of a [KMutableProperty] from the [KPojo] instance. It uses Kotlin reflection
- * to invoke the property's getter method. If the property does not exist or is not mutable (i.e., does not have a getter),
- * an [UnsupportedOperationException] is thrown, indicating the operation cannot be performed. This is particularly useful
- * for accessing property values dynamically in scenarios where the property names are not known at compile time.
+ * to invoke the property's getter method.
  *
  * 使用反射检索 [KPojo] 实例上指定属性的值。
  *
  * 此函数尝试从 [KPojo] 实例中检索 [KMutableProperty] 的值。它使用 Kotlin 反射调用属性的 getter 方法。
- * 如果属性不存在或不可变（即没有 getter），则会抛出 [UnsupportedOperationException]，表示无法执行该操作。
  *
  * @param prop The [KMutableProperty] whose value is to be retrieved.
- * @throws IllegalArgumentException If the property does not exist or is not accessible.
- * @throws UnsupportedOperationException If the property is not mutable or cannot be found, indicating that the operation
- *         cannot be performed.
  */
-internal operator fun KPojo.get(prop: KMutableProperty<*>) { // 通过反射获取属性值
-    try {
-        prop.getter.call(this)
-    } catch (e: IllegalArgumentException) {
-        throw UnsupportedOperationException("The property[${this::class.qualifiedName}.$this.${prop.name}] to cascade select is not mutable.")
-    }
-}
+internal operator fun KPojo.get(prop: KProperty<*>) = prop.getter.call(this)
+
+internal fun <T: KPojo> Array<out KProperty<*>>.filterReceiver(receiver: KClass<out T>) = filter { it.javaField!!.declaringClass.kotlin == receiver }

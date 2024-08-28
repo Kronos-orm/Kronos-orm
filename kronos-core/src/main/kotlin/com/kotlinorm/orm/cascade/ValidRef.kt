@@ -22,6 +22,7 @@ import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
 import kotlin.reflect.KFunction
+import kotlin.reflect.KProperty
 
 /**
  * Represents a valid reference within the context of ORM operations.
@@ -63,16 +64,18 @@ data class ValidRef(
  * @param operationType The [KOperationType] indicating the type of ORM operation (e.g., DELETE) for which the references are being validated.
  * @return A list of [ValidRef] objects representing valid references for the specified operation type.
  */
-fun findValidRefs(columns: List<Field>, operationType: KOperationType): List<ValidRef> {
+fun findValidRefs(columns: List<Field>, operationType: KOperationType, allowed: Set<String>): List<ValidRef> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
-    return columns.filter { !it.isColumn }.map { col ->
+    return columns.filter { !it.isColumn && it.name in allowed }.map { col ->
         val ref =
             col.referenceKClassName.kConstructor.callBy(emptyMap()) as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-        if (col.cascadeMapperBy() && col.refUseFor(operationType)) {
+        if ((col.cascadeMapperBy() && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.reference != null)) {
             listOf(col.reference!!) // 若有级联映射，返回引用
         } else {
             ref.kronosColumns()
-                .filter { it.cascadeMapperBy(col.tableName) && it.refUseFor(operationType) }
+                .filter {
+                    it.cascadeMapperBy(col.tableName) && it.refUseFor(operationType)
+                }
                 .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
         }.map { reference ->
             ValidRef(col, reference, ref)

@@ -48,6 +48,7 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.reflect.KProperty
 
 class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: KTableField<T, Any?> = null
@@ -69,7 +70,7 @@ class SelectClause<T : KPojo>(
     private var havingEnabled = false
     private var orderEnabled = false
     private var cascadeEnabled = true
-    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
     private var lock: PessimisticLock? = null
     internal var selectAll = true
     private var ps = 0
@@ -173,9 +174,9 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun cascade(enabled: Boolean, depth: Int = -1): SelectClause<T> {
+    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): SelectClause<T> {
         cascadeEnabled = enabled
-        cascadeLimit = depth
+        cascadeAllowed = props
         return this
     }
 
@@ -245,7 +246,7 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun lock(lock:PessimisticLock? = PessimisticLock.X): SelectClause<T> {
+    fun lock(lock: PessimisticLock? = PessimisticLock.X): SelectClause<T> {
         this.lock = lock
         return this
     }
@@ -301,7 +302,7 @@ class SelectClause<T : KPojo>(
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
-            cascadeEnabled, cascadeLimit, pojo, KronosAtomicQueryTask(
+            cascadeEnabled, cascadeAllowed, pojo, KronosAtomicQueryTask(
                 sql, paramMap, operationType = KOperationType.SELECT
             ), if (selectAll) allFields else selectFields
         )
@@ -385,8 +386,11 @@ class SelectClause<T : KPojo>(
             return map { it.by(someFields) }
         }
 
-        fun <T : KPojo> Iterable<SelectClause<T>>.cascade(enabled: Boolean, depth: Int = -1): List<SelectClause<T>> {
-            return map { it.cascade(enabled, depth) }
+        fun <T : KPojo> Iterable<SelectClause<T>>.cascade(
+            enabled: Boolean,
+            vararg props: KProperty<*>
+        ): List<SelectClause<T>> {
+            return map { it.cascade(*props, enabled = enabled) }
         }
 
         /**

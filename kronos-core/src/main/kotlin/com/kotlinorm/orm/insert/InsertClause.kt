@@ -29,6 +29,7 @@ import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.reflect.KProperty
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private var paramMap = pojo.toDataMap()
@@ -40,7 +41,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private val toInsertFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
-    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
 
     private val updateInsertFields = { field: Field, value: Any? ->
         if (field.isColumn && value != null) {
@@ -49,9 +50,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
     }
 
-    fun cascade(enabled: Boolean, depth: Int = -1): InsertClause<T> {
+    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): InsertClause<T> {
         cascadeEnabled = enabled
-        cascadeLimit = depth
+        cascadeAllowed = props
         return this
     }
 
@@ -67,7 +68,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
         return CascadeInsertClause.build(
             cascadeEnabled,
-            cascadeLimit,
+            cascadeAllowed,
             pojo,
             KronosAtomicActionTask(
                 sql,
@@ -86,9 +87,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
     companion object {
         fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
             enabled: Boolean,
-            depth: Int = -1
+            vararg props: KProperty<*>,
         ): Iterable<InsertClause<T>> {
-            return this.onEach { it.cascade(enabled, depth) }
+            return this.onEach { it.cascade(*props, enabled = enabled) }
         }
 
         /**
@@ -116,8 +117,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
             return build().execute(wrapper)
         }
 
-        fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean, depth: Int = -1): Array<out InsertClause<T>> {
-            return this.onEach { it.cascade(enabled, depth) }
+        fun <T : KPojo> Array<InsertClause<T>>.cascade(vararg props: KProperty<*>, enabled: Boolean = true): Array<out InsertClause<T>> {
+            return this.onEach { it.cascade(*props, enabled = enabled) }
         }
 
         /**

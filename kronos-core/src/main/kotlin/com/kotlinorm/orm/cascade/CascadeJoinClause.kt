@@ -59,6 +59,7 @@ object CascadeJoinClause {
         cascadeAllowed: Array<out KProperty<*>>,
         listOfPojo: List<KPojo>,
         rootTask: KronosAtomicQueryTask,
+        operationType: KOperationType,
         selectFields: MutableMap<String, Field>
     ) =
         if (cascade) generateTask(
@@ -66,6 +67,7 @@ object CascadeJoinClause {
             listOfPojo.map {
                 it to it.kronosColumns().filter { col -> selectFields.values.contains(col) }
             },
+            operationType,
             rootTask
         ) else rootTask.toKronosQueryTask()
 
@@ -73,6 +75,7 @@ object CascadeJoinClause {
     private fun generateTask(
         cascadeAllowed: Array<out KProperty<*>>,
         listOfColumns: List<Pair<KPojo, List<Field>>>,
+        operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {
         val listOfValidReferences = listOfColumns.map { columns ->
@@ -97,7 +100,7 @@ object CascadeJoinClause {
                                     val prop =
                                         lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
                                     lastStepResult.forEach rowMapper@{
-                                        setValues(it, prop, validRef, cascadeAllowed, wrapper)
+                                        setValues(it, prop, validRef, cascadeAllowed, operationType, wrapper)
                                     }
                                 }
                             }
@@ -107,7 +110,7 @@ object CascadeJoinClause {
                                 if (lastStepResult != null) {
                                     val prop =
                                         lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, wrapper)
+                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, operationType, wrapper)
                                 }
                             }
 

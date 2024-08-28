@@ -1,11 +1,11 @@
 package com.kotlinorm.orm.relationQuery.oneToMany
 
+import com.kotlinorm.annotations.NotNull
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Reference
 import com.kotlinorm.annotations.SelectIgnore
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
-import org.jetbrains.annotations.NotNull
 
 data class GroupClass(
     @PrimaryKey(identity = true)

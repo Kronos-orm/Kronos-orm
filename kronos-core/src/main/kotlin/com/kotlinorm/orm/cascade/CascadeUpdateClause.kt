@@ -62,7 +62,7 @@ object CascadeUpdateClause {
                         .cascade(*cascadeAllowed, enabled = true)
                         .where { whereClauseSql.asSql() }
                         .patch(*paramMap.toList().toTypedArray())
-                        .apply { cascadeSelectNoLimit = false }
+                        .apply { operationType = KOperationType.UPDATE }
                         .queryList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute

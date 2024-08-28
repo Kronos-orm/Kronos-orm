@@ -84,7 +84,7 @@ data class NodeOfKPojo(
             kPojo.kronosColumns(),
             operationType,
             cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet(),
-            cascadeAllowed.isEmpty()
+            cascadeAllowed.isEmpty(),
         )
     }
     val children: MutableList<NodeOfKPojo> = mutableListOf()

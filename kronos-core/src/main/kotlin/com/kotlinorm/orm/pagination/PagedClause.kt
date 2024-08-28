@@ -36,28 +36,27 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
         return total to records
     }
 
-    inline fun <reified T : KPojo> queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<T>> {
+    inline fun <reified E : KPojo> queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<E>> {
         val tasks = this.build(wrapper)
         val total = tasks.first.queryOne<Int>()
-        val records = tasks.second.queryList<T>()
+        val records = tasks.second.queryList<E>()
         return total to records
     }
 
     @JvmName("queryForList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<T>> {
+    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<K>> {
         val tasks = this.build()
         val total = tasks.first.queryOne<Int>()
         with(tasks.second) {
             beforeQuery?.invoke(this)
             val records =
                 atomicTask.logAndReturn(
-                    (wrapper.orDefault().forObject(atomicTask, selectClause.pojo::class)
-                        ?: throw NullPointerException("No such record")) as T, QueryList
+                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class), QueryList
                 )
 
             afterQuery?.invoke(records, QueryList, wrapper.orDefault())
-            return total to records as List<T>
+            return total to records as List<K>
         }
     }
 
@@ -66,6 +65,8 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
         selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
         val cntTask = selectClause.build(wrapper)
         cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS t"
+        cntTask.beforeQuery = null
+        cntTask.afterQuery = null
         return cntTask to recordsTask
     }
 }

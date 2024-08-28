@@ -79,7 +79,8 @@ object CascadeJoinClause {
             findValidRefs(
                 columns.second,
                 KOperationType.SELECT,
-                cascadeAllowed.filterReceiver(columns.first::class).map { it.name }.toSet()
+                cascadeAllowed.filterReceiver(columns.first::class).map { it.name }.toSet(),
+                cascadeAllowed.isEmpty()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         }
         val validReferences = listOfValidReferences.flatten()

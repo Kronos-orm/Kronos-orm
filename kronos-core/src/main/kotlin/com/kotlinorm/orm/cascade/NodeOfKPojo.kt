@@ -26,6 +26,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.jvm.javaField
 
 /**
  * Holds information about a node in the ORM cascade operation tree.
@@ -66,7 +67,7 @@ data class NodeInfo(
  *
  * @property kPojo The entity (KPojo) this node represents.
  * @property data Additional contextual information about this node, such as its parent, the field linking to the parent, and depth in the tree.
- * @property limitDepth The maximum depth to which the tree should be built. A value of -1 indicates no limit.
+ * @property cascadeAllowed The maximum depth to which the tree should be built. A value of -1 indicates no limit.
  * @property operationType The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.
  * @property updateParams A map of parameters to be updated in the entity, used when patching data from the parent.
  * @property onInit An optional initialization block that can be executed upon node creation, allowing for custom logic.
@@ -74,13 +75,17 @@ data class NodeInfo(
 data class NodeOfKPojo(
     val kPojo: KPojo,
     val data: NodeInfo? = null,
-    val limitDepth: Int = -1, // limit the depth of the tree, -1 means no limit
+    val cascadeAllowed: Array<out KProperty<*>>,
     val operationType: KOperationType,
     val updateParams: MutableMap<String, String> = mutableMapOf(),
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     internal val dataMap by lazy { kPojo.toDataMap() }
-    private val validRefs by lazy { findValidRefs(kPojo.kronosColumns(), operationType) }
+    private val validRefs by lazy {
+        findValidRefs(kPojo.kronosColumns(), operationType,
+            cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet()
+        )
+    }
     val children: MutableList<NodeOfKPojo> = mutableListOf()
 
     init {
@@ -91,13 +96,7 @@ data class NodeOfKPojo(
         // Executes an optional initialization block defined at the node creation. This allows for custom
         // logic to be executed right after the node's basic initialization, providing flexibility in node setup.
         onInit?.invoke(this)
-
-        // Builds child nodes for the current node if the depth limit has not been reached. This is determined
-        // by comparing the current node's depth with the limitDepth property. A limitDepth of -1 indicates
-        // that there is no depth limit, allowing for the full tree structure to be built recursively.
-        if (limitDepth < 0 || (data?.depth ?: 0) < limitDepth) {
-            buildChildren()
-        }
+        buildChildren()
     }
 
     companion object {
@@ -117,7 +116,7 @@ data class NodeOfKPojo(
          * 例如构建树的深度限制、正在执行的操作类型以及任何初始化逻辑。
          *
          * @param data Optional [NodeInfo] providing additional context about the node, such as its parent and depth in the tree.
-         * @param limitDepth The maximum depth to which the tree should be built. A value of -1 indicates no limit.
+         * @param cascadeAllowed The maximum depth to which the tree should be built. A value of -1 indicates no limit.
          * @param operationType The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.
          * @param updateParams A map of parameters to be updated in the entity, used when patching data from the parent.
          * @param onInit An optional initialization block that can be executed upon node creation, allowing for custom logic.
@@ -125,12 +124,12 @@ data class NodeOfKPojo(
          */
         internal fun KPojo.toTreeNode(
             data: NodeInfo? = null,
-            limitDepth: Int = -1,
+            cascadeAllowed: Array<out KProperty<*>>,
             operationType: KOperationType,
             updateParams: MutableMap<String, String> = mutableMapOf(),
             onInit: (NodeOfKPojo.() -> Unit)? = null
         ): NodeOfKPojo {
-            return NodeOfKPojo(this, data, limitDepth, operationType, updateParams, onInit)
+            return NodeOfKPojo(this, data, cascadeAllowed, operationType, updateParams, onInit)
         }
     }
 
@@ -205,11 +204,15 @@ data class NodeOfKPojo(
      */
     private fun buildChildren() {
         validRefs.filter { ref ->
-            operationType == KOperationType.DELETE ||
+            (operationType == KOperationType.DELETE ||
                     (null != data && data.updateReferenceValue) ||
                     ref.reference.targetFields.any {
                         updateParams.keys.contains(it)
-                    }
+                    }) && (
+                    cascadeAllowed.isEmpty() || cascadeAllowed.contains(
+                        kPojo::class.findPropByName(ref.field.name)
+                    )
+                    )
         }.forEach { ref ->
             val value = dataMap[ref.field.name]
             if (value != null) {
@@ -223,7 +226,7 @@ data class NodeOfKPojo(
                                         this,
                                         ref.field
                                     ),
-                                    limitDepth,
+                                    cascadeAllowed,
                                     operationType,
                                     mutableMapOf(),
                                     onInit
@@ -239,7 +242,7 @@ data class NodeOfKPojo(
                                 this,
                                 ref.field
                             ),
-                            limitDepth,
+                            cascadeAllowed,
                             operationType,
                             mutableMapOf(),
                             onInit
@@ -334,3 +337,5 @@ internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
  * @param prop The [KMutableProperty] whose value is to be retrieved.
  */
 internal operator fun KPojo.get(prop: KProperty<*>) = prop.getter.call(this)
+
+internal fun <T: KPojo> Array<out KProperty<*>>.filterReceiver(receiver: KClass<out T>) = filter { it.javaField!!.declaringClass.kotlin == receiver }

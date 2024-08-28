@@ -6,9 +6,9 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:latest.release")
-    implementation("org.jetbrains.kotlinx:kotlinx-io-core:latest.release")
-    implementation(kotlin("reflect"))
+    api("org.jetbrains.kotlinx:kotlinx-datetime:latest.release")
+    api("org.jetbrains.kotlinx:kotlinx-io-core:latest.release")
+    api(kotlin("reflect"))
     testImplementation(kotlin("test"))
 }
 

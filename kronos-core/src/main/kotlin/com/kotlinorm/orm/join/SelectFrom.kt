@@ -43,6 +43,7 @@ import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import java.util.Stack
+import kotlin.reflect.KProperty
 
 /**
  * Select From
@@ -75,10 +76,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var pageEnabled = false
     private var limitCapacity = 0
     private var cascadeEnabled = true
-    private var cascadeLimit = -1 // 级联查询的深度限制, -1表示无限制，0表示不查询级联，1表示只查询一层级联，以此类推
+    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
     private var pi = 0
     private var ps = 0
-    private val datebaseOfTable: MutableMap<String, String> = mutableMapOf()
+    private val databaseOfTable: MutableMap<String, String> = mutableMapOf()
 
     fun on(on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
@@ -277,15 +278,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
-    fun db(vararg datebaseOfTables: Pair<KPojo, String>) {
-        datebaseOfTables.forEach {
-            datebaseOfTable[it.first.kronosTableName()] = it.second
+    fun db(vararg databaseOfTables: Pair<KPojo, String>) {
+        databaseOfTables.forEach {
+            databaseOfTable[it.first.kronosTableName()] = it.second
         }
     }
 
-    fun cascade(enabled: Boolean, depth: Int = -1) {
+    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true) {
         cascadeEnabled = enabled
-        cascadeLimit = depth
+        cascadeAllowed = props
     }
 
     /**
@@ -511,7 +512,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition,
-                "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, datebaseOfTable)} = $value".asSql()
+                "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, databaseOfTable)} = $value".asSql()
             ).toCriteria()
         }
 
@@ -529,7 +530,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeJoinClause.build(
-            cascadeEnabled, cascadeLimit, listOfPojo, KronosAtomicQueryTask(
+            cascadeEnabled, cascadeAllowed, listOfPojo, KronosAtomicQueryTask(
                 sql, paramMapNew, operationType = KOperationType.SELECT
             ), selectFieldsWithNames
         )
@@ -544,7 +545,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             wrapper,
             buildCondition,
             showTable = true,
-            databaseOfTable = datebaseOfTable
+            databaseOfTable = databaseOfTable
         ).toWhereClause()
 
         val joinSql = " " + joinables.joinToString(" ") {
@@ -557,7 +558,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                             wrapper.orDefault(),
                             it.logicDeleteStrategy.field,
                             true,
-                            datebaseOfTable
+                            databaseOfTable
                         )
                     } = $value".asSql()
                 ).toCriteria()
@@ -568,17 +569,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 joinCondition,
                 paramMap,
                 showTable = true,
-                databaseOfTable = datebaseOfTable
+                databaseOfTable = databaseOfTable
             )
                 .toOnClause()
             updateMap(mapOfOn)
 
-            it.joinType.value + " " + quote(wrapper.orDefault(), it.tableName, true, map = datebaseOfTable) + onSql
+            it.joinType.value + " " + quote(wrapper.orDefault(), it.tableName, true, map = databaseOfTable) + onSql
         }
 
         val groupByClauseSql =
             if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
-                quote(wrapper.orDefault(), it, true, datebaseOfTable)
+                quote(wrapper.orDefault(), it, true, databaseOfTable)
             }) else null
         val orderByClauseSql =
             if (orderEnabled && orderByFields.isNotEmpty()) " ORDER BY " + orderByFields.joinToString(", ") {
@@ -586,11 +587,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                     wrapper.orDefault(),
                     it.first,
                     true,
-                    datebaseOfTable
+                    databaseOfTable
                 ) + " " + it.second
             } else null
         val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
-            wrapper, havingCondition, showTable = true, databaseOfTable = datebaseOfTable
+            wrapper, havingCondition, showTable = true, databaseOfTable = databaseOfTable
         ).toHavingClause() else null to mutableMapOf()
         updateMap(mapOfWhere)
         updateMap(mapOfHaving)
@@ -602,7 +603,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             pi,
             ps,
             limitCapacity,
-            datebaseOfTable,
+            databaseOfTable,
             whereClauseSql,
             groupByClauseSql,
             orderByClauseSql,

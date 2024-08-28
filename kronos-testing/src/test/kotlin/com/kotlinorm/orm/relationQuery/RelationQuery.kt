@@ -72,13 +72,16 @@ class RelationQuery {
             )
         )
 
-        school.insert().cascade(true).execute()
+        school.insert().execute()
     }
 
     @Test
     fun testCascadeUpdate() {
         testCascadeInsert()
-        val res = School(name = "School").update().set { it.name = "School2" }.execute()
+        val res = School(name = "School")
+            .update()
+            .set { it.name = "School2" }
+            .execute()
         println(res)
     }
 
@@ -95,6 +98,23 @@ class RelationQuery {
     fun testSelect() {
         testCascadeInsert()
         val result = School(name = "School").select().queryList()
+        println(result)
+    }
+
+    @Test
+    fun testRevertSelect() {
+        dataSource.table.dropTable<School>()
+        dataSource.table.dropTable<GroupClass>()
+        dataSource.table.dropTable<Student>()
+        dataSource.table.createTable<School>()
+        dataSource.table.createTable<GroupClass>()
+        dataSource.table.createTable<Student>()
+
+        val groupClass = GroupClass(name = "一年级")
+
+        School(name = "School", groupClass = listOf(groupClass)).insert().cascade(School::groupClass).execute()
+
+        val result = groupClass.select().cascade(GroupClass::school).queryOne()
         println(result)
     }
 }

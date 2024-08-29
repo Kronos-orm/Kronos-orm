@@ -28,7 +28,6 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
-import kotlin.reflect.jvm.javaField
 
 /**
  * Used to build a cascade select clause.
@@ -61,7 +60,7 @@ object CascadeSelectClause {
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>,
         operationType: KOperationType,
-        cascadeSelectedProps: MutableSet<KProperty<*>>
+        cascadeSelectedProps: Set<Field>
     ) = if (cascade) generateTask(
         cascadeAllowed,
         pojo,
@@ -91,7 +90,7 @@ object CascadeSelectClause {
         columns: List<Field>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask,
-        cascadeSelectedProps: MutableSet<KProperty<*>>
+        cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
         val validReferences = findValidRefs(
             columns,
@@ -111,15 +110,17 @@ object CascadeSelectClause {
                                 if (lastStepResult.isNotEmpty()) {
                                     val prop =
                                         lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    if (!cascadeSelectedProps.contains(prop)) {
+                                    if (!cascadeSelectedProps.contains(validRef.field)) {
                                         if (cascadeAllowed.isEmpty() || prop in cascadeAllowed) lastStepResult.forEach rowMapper@{
-                                            cascadeSelectedProps.add(prop)
                                             setValues(
                                                 it,
                                                 prop,
                                                 validRef,
                                                 cascadeAllowed,
-                                                cascadeSelectedProps,
+                                                mutableSetOf(
+                                                    *cascadeSelectedProps.toTypedArray(),
+                                                    *validReferences.map { ref -> ref.field }.toTypedArray()
+                                                ),
                                                 operationType,
                                                 wrapper
                                             )
@@ -133,17 +134,21 @@ object CascadeSelectClause {
                                 if (lastStepResult != null) {
                                     val prop =
                                         lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    if (!cascadeSelectedProps.contains(prop)) {
-                                        cascadeSelectedProps.add(prop)
-                                        setValues(
-                                            lastStepResult,
-                                            prop,
-                                            validRef,
-                                            cascadeAllowed,
-                                            cascadeSelectedProps,
-                                            operationType,
-                                            wrapper
-                                        )
+                                    if (!cascadeSelectedProps.contains(validRef.field)) {
+                                        if (cascadeAllowed.isEmpty() || prop in cascadeAllowed) {
+                                            setValues(
+                                                lastStepResult,
+                                                prop,
+                                                validRef,
+                                                cascadeAllowed,
+                                                mutableSetOf(
+                                                    *cascadeSelectedProps.toTypedArray(),
+                                                    *validReferences.map { ref -> ref.field }.toTypedArray()
+                                                ),
+                                                operationType,
+                                                wrapper
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -181,7 +186,7 @@ object CascadeSelectClause {
         prop: KProperty<*>,
         validRef: ValidRef,
         cascadeAllowed: Array<out KProperty<*>>,
-        cascadeSelectedProps: MutableSet<KProperty<*>>,
+        cascadeSelectedProps: Set<Field>,
         operationType: KOperationType,
         wrapper: KronosDataSourceWrapper
     ) {

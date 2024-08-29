@@ -61,7 +61,7 @@ object CascadeJoinClause {
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
         selectFields: MutableMap<String, Field>,
-        cascadeSelectedProps: MutableSet<KProperty<*>>
+        cascadeSelectedProps: Set<Field>
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
@@ -91,7 +91,7 @@ object CascadeJoinClause {
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
         cascadeAllowed: Array<out KProperty<*>>,
-        cascadeSelectedProps: MutableSet<KProperty<*>>,
+        cascadeSelectedProps: Set<Field>,
         listOfColumns: List<Pair<KPojo, List<Field>>>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask

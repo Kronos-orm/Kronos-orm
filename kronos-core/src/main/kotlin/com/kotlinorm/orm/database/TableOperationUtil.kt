@@ -72,6 +72,9 @@ fun TableColumnDiff.doLog(tableName: String) {
                 "start sync table $tableName:"
             ).endl(),
             kMsgOf(
+                "Add fields\t"
+            ),
+            kMsgOf(
                 toAdd.joinToString(", ") { it.columnName }.ifEmpty { "None" },
                 ColorPrintCode.GREEN
             ).endl(),

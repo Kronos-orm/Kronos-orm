@@ -60,10 +60,12 @@ object CascadeJoinClause {
         listOfPojo: List<KPojo>,
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
-        selectFields: MutableMap<String, Field>
+        selectFields: MutableMap<String, Field>,
+        cascadeSelectedProps: MutableSet<KProperty<*>>
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
+            cascadeSelectedProps,
             listOfPojo.map {
                 it to it.kronosColumns().filter { col -> selectFields.values.contains(col) }
             },
@@ -89,6 +91,7 @@ object CascadeJoinClause {
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
         cascadeAllowed: Array<out KProperty<*>>,
+        cascadeSelectedProps: MutableSet<KProperty<*>>,
         listOfColumns: List<Pair<KPojo, List<Field>>>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
@@ -115,7 +118,15 @@ object CascadeJoinClause {
                                     val prop =
                                         lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
                                     lastStepResult.forEach rowMapper@{
-                                        setValues(it, prop, validRef, cascadeAllowed, operationType, wrapper)
+                                        setValues(
+                                            it,
+                                            prop,
+                                            validRef,
+                                            cascadeAllowed,
+                                            cascadeSelectedProps,
+                                            operationType,
+                                            wrapper
+                                        )
                                     }
                                 }
                             }
@@ -125,7 +136,15 @@ object CascadeJoinClause {
                                 if (lastStepResult != null) {
                                     val prop =
                                         lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, operationType, wrapper)
+                                    setValues(
+                                        lastStepResult,
+                                        prop,
+                                        validRef,
+                                        cascadeAllowed,
+                                        cascadeSelectedProps,
+                                        operationType,
+                                        wrapper
+                                    )
                                 }
                             }
 

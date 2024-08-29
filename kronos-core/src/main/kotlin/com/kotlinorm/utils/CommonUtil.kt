@@ -25,10 +25,8 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import com.kotlinorm.utils.KotlinClassMapper.kotlinBuiltInClassMap
-import kotlinx.datetime.*
-import kotlinx.datetime.format.FormatStringsInDatetimeFormats
-import kotlinx.datetime.format.byUnicodePattern
-import java.util.TimeZone
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlin.reflect.KClass
 
 
@@ -57,7 +55,6 @@ fun setCommonStrategy(
 
 fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { addAll(this@toLinkedSet) }
 
-@OptIn(FormatStringsInDatetimeFormats::class)
 fun getTypeSafeValue(
     kotlinType: String,
     value: Any,
@@ -68,8 +65,7 @@ fun getTypeSafeValue(
     fun getEpochSecond(): Long {
         return when (value) {
             is Number -> value.toLong()
-            else -> LocalDateTime.parse(value.toString()).toJavaLocalDateTime().atZone(timeZone.toJavaZoneId())
-                .toInstant().epochSecond
+            else -> java.time.LocalDateTime.parse(value.toString()).atZone(timeZone).toInstant().epochSecond
         }
     }
 
@@ -106,12 +102,9 @@ fun getTypeSafeValue(
                         "kotlinx.datetime.LocalDate",
                         "kotlinx.datetime.LocalTime",
                         "kotlinx.datetime.Instant",
-                        "org.intelligentsia.hirondelle.date4j.DateTime"
                     )
                 ).isNotEmpty() -> {
-                    LocalDateTime.parse(value.toString()).format(LocalDateTime.Format {
-                        byUnicodePattern(dateTimeFormat ?: defaultDateFormat)
-                    })
+                    java.time.format.DateTimeFormatter.ofPattern(dateTimeFormat ?: defaultDateFormat).format(java.time.LocalDateTime.parse(value.toString()))
                 }
 
                 else -> value.toString()
@@ -126,37 +119,32 @@ fun getTypeSafeValue(
         "java.time.ZonedDateTime", "java.time.OffsetDateTime"
         -> {
             val localDateTime =
-                java.time.Instant.ofEpochSecond(getEpochSecond()).atZone(timeZone.toJavaZoneId())
+                java.time.Instant.ofEpochSecond(getEpochSecond()).atZone(timeZone).toLocalDateTime()
             when (kotlinType) {
-                "java.time.ZonedDateTime" -> localDateTime
-                "java.time.LocalDateTime" -> localDateTime.toLocalDateTime()
+                "java.time.ZonedDateTime", "java.time.LocalDateTime" -> localDateTime
                 "java.time.LocalDate" -> localDateTime.toLocalDate()
                 "java.time.LocalTime" -> localDateTime.toLocalTime()
-                "java.time.OffsetDateTime" -> localDateTime.toOffsetDateTime()
+                "java.time.OffsetDateTime" -> OffsetDateTime.of(localDateTime, ZoneOffset.of(timeZone.id))
                 else -> value
             }
         }
 
         "kotlinx.datetime.Instant" -> {
-            Instant.parse(value.toString())
+            Class.forName("kotlinx.datetime.Instant").getDeclaredMethod("parse", String::class.java)
+                .invoke(null, value.toString())
         }
 
         "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> {
-            val localDateTime = Instant.parse(
-                value.toString()
-            ).toLocalDateTime(timeZone)
+            val localDateTime = Class.forName("kotlinx.datetime.Instant").getDeclaredMethod("parse", String::class.java)
+                .invoke(null, value.toString())
             when (kotlinType) {
                 "kotlinx.datetime.LocalDateTime" -> localDateTime
-                "kotlinx.datetime.LocalDate" -> localDateTime.date
-                "kotlinx.datetime.LocalTime" -> localDateTime.time
+                "kotlinx.datetime.LocalDate" -> Class.forName("kotlinx.datetime.LocalDateTime").getDeclaredMethod("toLocalDate")
+                    .invoke(localDateTime)
+                "kotlinx.datetime.LocalTime" -> Class.forName("kotlinx.datetime.LocalDateTime").getDeclaredMethod("toLocalTime")
+                    .invoke(localDateTime)
                 else -> value
             }
-        }
-
-        "org.intelligentsia.hirondelle.date4j.DateTime" -> {
-            Class.forName("org.intelligentsia.hirondelle.date4j.DateTime")
-                .getDeclaredMethod("forInstant", Long::class.java, TimeZone::class.java)
-                .invoke(null, getEpochSecond() * 1000, timeZone.toJavaZoneId())
         }
 
         else -> {

@@ -21,8 +21,8 @@ import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
+import java.nio.file.Files
+import kotlin.io.path.Path
 
 /**
  * BundledSimpleLoggerAdapter
@@ -200,8 +200,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                         }
                     } else {
                         val directory = Path(path)
-                        if (!SystemFileSystem.exists(directory)) {
-                            SystemFileSystem.createDirectories(directory)
+                        if (!Files.exists(directory)) {
+                            Files.createDirectories(directory)
                         }
                         val logFileName = logFileNameRule()
                         logTask.messages.forEach { message ->

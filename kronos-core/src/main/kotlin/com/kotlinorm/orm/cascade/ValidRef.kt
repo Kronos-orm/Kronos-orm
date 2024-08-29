@@ -84,7 +84,7 @@ fun findValidRefs(
         }
 
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
-        return@map if ((col.cascadeMapperBy() && col.refUseFor(operationType)) || operationType == KOperationType.SELECT) {
+        return@map if ((col.cascadeMapperBy() && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.reference != null)) {
             listOf(
                 ValidRef(col, col.reference!!, ref, col.tableName)
             ) // 若有级联映射，返回引用

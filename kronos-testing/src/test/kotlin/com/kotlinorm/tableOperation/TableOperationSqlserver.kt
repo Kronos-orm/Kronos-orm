@@ -126,8 +126,8 @@ class TableOperationSqlserver {
     fun testSyncScheme_ssql() {
         println(user.kronosColumns().map { it.columnName })
         // 同步user表结构
-        val schemeSync = dataSource.table.schemeSync(user)
-        if (!schemeSync) {
+        val tableSync = dataSource.table.syncTable(user)
+        if (!tableSync) {
             println("表结构相同无需同步")
         }
 

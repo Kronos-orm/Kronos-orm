@@ -55,7 +55,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         )
     }
 
-    inline fun <reified T : KPojo> schemeSync(instance: T = T::class.createInstance()): Boolean {
+    inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
         // 表名
         val tableName = instance.kronosTableName()
 
@@ -83,7 +83,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         // 获取实际表索引信息
         val tableIndexes = getTableIndexes(dataSource, tableName)
         // 新增、修改、删除字段
-        val diffColumns = differ(dbType, kronosColumns, tableColumns).apply { doLog() }
+        val diffColumns = differ(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }
         val diffIndexes = TableIndexDiff(kronosIndexes, tableIndexes)
 
         dataSource.transact {

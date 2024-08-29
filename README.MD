@@ -222,7 +222,7 @@ dataSource.table.createTable<Movie>()
 dataSource.table.dropTable<Movie>()
 
 //sync table structure
-dataSource.table.schemeSync<Movie>()
+dataSource.table.syncTable<Movie>()
 ```
 
 ------

@@ -18,10 +18,11 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos.timeZone
 import java.time.Clock
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 object DateTimeUtil {
     val currentDateTime = { pattern: String ->
-        DateTimeFormatter.ofPattern(pattern).format(Clock.system(timeZone).instant())
+        DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now(Clock.system(timeZone)))
     }
 }

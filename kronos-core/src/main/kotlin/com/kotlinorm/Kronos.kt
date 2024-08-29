@@ -35,7 +35,15 @@ import java.time.ZoneId
 object Kronos {
     // 默认日志适配器
     var defaultLogger: KLoggerFactory =
-        { BundledSimpleLoggerAdapter(it::class.simpleName!!) }
+        {
+            BundledSimpleLoggerAdapter(
+                if (it is String) {
+                    it
+                } else {
+                    it::class.simpleName!!
+                }
+            )
+        }
 
     // 日志类型
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER

@@ -101,7 +101,7 @@ object CascadeDeleteClause {
             doBeforeExecute { wrapper ->
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
-                        .cascade(*cascadeAllowed, enabled = true)
+                        .cascade(*cascadeAllowed).apply { operationType = KOperationType.DELETE }
                         .queryList(wrapper)
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute
                 val restrictReferences = validReferences.filter { it.reference.onDelete == RESTRICT }

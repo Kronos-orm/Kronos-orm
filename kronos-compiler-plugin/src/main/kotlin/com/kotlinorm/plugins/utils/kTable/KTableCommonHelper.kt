@@ -84,6 +84,7 @@ val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
+val SelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.SelectIgnore")
 val ColumnDeserializeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnDeserialize")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
@@ -142,6 +143,7 @@ fun getColumnName(
     val columnDefaultValue =
         irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
+    val selectIgnoreAnnotation = irProperty.annotations.findByFqName(SelectIgnoreAnnotationsFqName)
     val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
     var referenceTypeKClassName = irPropertyType.getClass()!!.classId!!.asFqNameString()
     if (referenceTypeKClassName.startsWith("kotlin.collections")) {
@@ -198,7 +200,8 @@ fun getColumnName(
         columnTypeLength,
         columnDefaultValue,
         identity,
-        columnNotNull
+        columnNotNull,
+        irBoolean(selectIgnoreAnnotation != null)
     )
 }
 

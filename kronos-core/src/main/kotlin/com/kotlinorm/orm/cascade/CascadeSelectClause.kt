@@ -41,12 +41,14 @@ object CascadeSelectClause {
         cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
         rootTask: KronosAtomicQueryTask,
-        selectFields: LinkedHashSet<Field>
+        selectFields: LinkedHashSet<Field>,
+        operationType: KOperationType
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
             pojo,
             pojo.kronosColumns().filter { selectFields.contains(it) },
+            operationType,
             rootTask
         ) else rootTask.toKronosQueryTask()
 
@@ -55,12 +57,13 @@ object CascadeSelectClause {
         cascadeAllowed: Array<out KProperty<*>>,
         pojo: KPojo,
         columns: List<Field>,
+        operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
     ): KronosQueryTask {
         val validReferences =
             findValidRefs(
                 columns,
-                KOperationType.SELECT,
+                operationType,
                 cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(),
                 cascadeAllowed.isEmpty()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
@@ -78,7 +81,7 @@ object CascadeSelectClause {
                                         lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
                                     if (cascadeAllowed.isEmpty() || prop in cascadeAllowed)
                                         lastStepResult.forEach rowMapper@{
-                                            setValues(it, prop, validRef, cascadeAllowed, wrapper)
+                                            setValues(it, prop, validRef, cascadeAllowed, operationType, wrapper)
                                         }
                                 }
                             }
@@ -88,7 +91,7 @@ object CascadeSelectClause {
                                 if (lastStepResult != null) {
                                     val prop =
                                         lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, wrapper)
+                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, operationType, wrapper)
                                 }
                             }
 
@@ -125,13 +128,17 @@ object CascadeSelectClause {
         prop: KProperty<*>,
         validRef: ValidRef,
         cascadeAllowed: Array<out KProperty<*>>,
+        operationType: KOperationType,
         wrapper: KronosDataSourceWrapper
     ) { // 将KPojo转为Map，该map将用于级联查询
         val dataMap = pojo.toDataMap()
-        val listOfPair = validRef.reference.targetFields.mapIndexed { index, targetColumn ->
-            val targetColumnValue = dataMap[targetColumn] ?: return
-            val originalColumn = validRef.reference.referenceFields[index]
-            originalColumn to targetColumnValue
+        val tableName = pojo.kronosTableName()
+        val listOfPair = validRef.reference.targetFields.mapIndexed { index, targetField ->
+            if(tableName == validRef.tableName) {
+                targetField to (dataMap[validRef.reference.referenceFields[index]] ?: return)
+            } else {
+                validRef.reference.referenceFields[index] to (dataMap[targetField] ?: return)
+            }
         }
         val refPojo = validRef.refPojo.patchTo(
             validRef.refPojo::class,
@@ -139,9 +146,9 @@ object CascadeSelectClause {
         ) // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
 
         pojo[prop] = if (prop.isIterable) { // 判断属性是否为集合
-            refPojo.select().cascade(*cascadeAllowed, enabled = true).queryList(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(*cascadeAllowed).apply { this.operationType = operationType }.queryList(wrapper) // 查询级联的POJO
         } else {
-            refPojo.select().cascade(*cascadeAllowed, enabled = true).queryOneOrNull(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(*cascadeAllowed).apply { this.operationType = operationType }.queryOneOrNull(wrapper) // 查询级联的POJO
         }
     }
 }

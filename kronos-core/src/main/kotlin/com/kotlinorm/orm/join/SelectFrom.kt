@@ -80,6 +80,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var pi = 0
     private var ps = 0
     private val databaseOfTable: MutableMap<String, String> = mutableMapOf()
+    internal var operationType = KOperationType.SELECT
 
     fun on(on: KTableConditionalField<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
@@ -532,7 +533,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return CascadeJoinClause.build(
             cascadeEnabled, cascadeAllowed, listOfPojo, KronosAtomicQueryTask(
                 sql, paramMapNew, operationType = KOperationType.SELECT
-            ), selectFieldsWithNames
+            ), operationType, selectFieldsWithNames
         )
     }
 

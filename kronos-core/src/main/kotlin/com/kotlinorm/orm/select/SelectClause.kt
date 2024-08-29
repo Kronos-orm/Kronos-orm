@@ -76,6 +76,7 @@ class SelectClause<T : KPojo>(
     private var ps = 0
     private var pi = 0
     private var databaseName: String? = null
+    internal var operationType = KOperationType.SELECT
 
     /**
      * 初始化函数：用于在对象初始化时配置选择字段。
@@ -304,7 +305,8 @@ class SelectClause<T : KPojo>(
         return CascadeSelectClause.build(
             cascadeEnabled, cascadeAllowed, pojo, KronosAtomicQueryTask(
                 sql, paramMap, operationType = KOperationType.SELECT
-            ), if (selectAll) allFields else selectFields
+            ), if (selectAll) allFields else selectFields,
+            operationType
         )
     }
 

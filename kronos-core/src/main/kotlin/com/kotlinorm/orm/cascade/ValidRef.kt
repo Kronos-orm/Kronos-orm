@@ -22,7 +22,6 @@ import com.kotlinorm.beans.dsl.KReference
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
 import kotlin.reflect.KFunction
-import kotlin.reflect.KProperty
 
 /**
  * Represents a valid reference within the context of ORM operations.
@@ -41,7 +40,8 @@ import kotlin.reflect.KProperty
 data class ValidRef(
     val field: Field,
     val reference: KReference,
-    val refPojo: KPojo
+    val refPojo: KPojo,
+    val tableName: String
 )
 
 /**
@@ -64,21 +64,35 @@ data class ValidRef(
  * @param operationType The [KOperationType] indicating the type of ORM operation (e.g., DELETE) for which the references are being validated.
  * @return A list of [ValidRef] objects representing valid references for the specified operation type.
  */
-fun findValidRefs(columns: List<Field>, operationType: KOperationType, allowed: Set<String>, allowAll: Boolean): List<ValidRef> {
+fun findValidRefs(
+    columns: List<Field>,
+    operationType: KOperationType,
+    allowed: Set<String>,
+    allowAll: Boolean
+): List<ValidRef> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
     return columns.filter { !it.isColumn && (it.name in allowed || allowAll) }.map { col ->
         val ref =
             col.referenceKClassName.kConstructor.callBy(emptyMap()) as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-        if ((col.cascadeMapperBy() && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.reference != null)) {
-            listOf(col.reference!!) // 若有级联映射，返回引用
+
+        //如果是Select并且该列有cascadeSelectIgnore，直接返回空
+        if (col.cascadeSelectIgnore && operationType == KOperationType.SELECT) {
+            return@map listOf<ValidRef>()
+        }
+
+        //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用
+        return@map if ((col.cascadeMapperBy() && col.refUseFor(operationType)) || operationType == KOperationType.SELECT) {
+            listOf(
+                ValidRef(col, col.reference!!, ref, col.tableName)
+            ) // 若有级联映射，返回引用
         } else {
-            ref.kronosColumns()
-                .filter {
-                    it.cascadeMapperBy(col.tableName) && it.refUseFor(operationType)
-                }
-                .map { it.reference!! } // 若没有级联映射，返回引用的所有关于本表级联映射
-        }.map { reference ->
-            ValidRef(col, reference, ref)
+            val tableName = ref.kronosTableName()
+            ref.kronosColumns().filter {
+                it.cascadeMapperBy(col.tableName) && it.refUseFor(operationType)
+            }.map {
+                ValidRef(col, it.reference!!, ref, tableName)
+
+            } // 若没有级联映射，返回引用的所有关于本表级联映射
         }
     }.flatten()
 }

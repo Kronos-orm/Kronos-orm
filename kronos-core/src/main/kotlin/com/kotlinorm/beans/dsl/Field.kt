@@ -29,6 +29,19 @@ import kotlin.reflect.full.createInstance
  *
  * @property columnName the name of the column in the database table
  * @property name the name of the field in Kotlin
+ * @property type [KColumnType] of the field, default is UNDEFINED
+ * @property primaryKey whether the field is a primary key
+ * @property dateFormat the format of the date field
+ * @property tableName the name of the table
+ * @property reference the reference of the field
+ * @property referenceKClassName the name of the reference class
+ * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
+ * @property length the length of the field
+ * @property defaultValue the default value of the field
+ * @property identity whether the field is an identity field
+ * @property nullable whether the field is nullable
+ * @property cascadeSelectIgnore whether the field should be ignored in cascade select
+ *
  */
 class Field(
     var columnName: String,

@@ -31,11 +31,28 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaField
 
 /**
- * 用于构建级联选择子句的对象。
- * 该对象提供了一种方式来生成针对KPojo对象的级联查询任务。
+ * Used to build a cascade select clause.
+ *
+ * This object is used to construct a cascade select clause for a database operation.
+ *
+ * 构建级联查询子句
+ *
+ * 该对象用于为数据库操作构建级联查询子句
  */
-
 object CascadeSelectClause {
+    /**
+     * Build a cascade select clause.
+     *
+     * 构建级联查询子句
+     *
+     * @param cascade Whether the cascade is enabled.
+     * @param cascadeAllowed The properties that are allowed to cascade.
+     * @param pojo The POJO to select.
+     * @param rootTask The root task.
+     * @param selectFields The fields to select.
+     * @param operationType The operation type， the cascade operation type, may be Query, Delete, Update(Delete and Update operations need to cascade query)
+     * @return A KronosQueryTask object representing the cascade select operation.
+     */
     fun <T : KPojo> build(
         cascade: Boolean,
         cascadeAllowed: Array<out KProperty<*>>,
@@ -52,6 +69,18 @@ object CascadeSelectClause {
             rootTask
         ) else rootTask.toKronosQueryTask()
 
+    /**
+     * Generate a task for the cascade select operation.
+     *
+     * 为级联查询操作生成任务
+     *
+     * @param cascadeAllowed The properties that are allowed to cascade.
+     * @param pojo The POJO to select.
+     * @param columns The columns to select.
+     * @param operationType The operation type.
+     * @param prevTask The previous task.
+     * @return A KronosQueryTask object representing the cascade select operation.
+     */
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
         cascadeAllowed: Array<out KProperty<*>>,
@@ -64,8 +93,8 @@ object CascadeSelectClause {
             findValidRefs(
                 columns,
                 operationType,
-                cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(),
-                cascadeAllowed.isEmpty()
+                cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性
+                cascadeAllowed.isEmpty() // 是否允许所有属性级联
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
@@ -130,25 +159,33 @@ object CascadeSelectClause {
         cascadeAllowed: Array<out KProperty<*>>,
         operationType: KOperationType,
         wrapper: KronosDataSourceWrapper
-    ) { // 将KPojo转为Map，该map将用于级联查询
+    ) {
+        // 将KPojo转为Map，该map将用于级联查询
         val dataMap = pojo.toDataMap()
+        // 获取KPojo对应的表名
         val tableName = pojo.kronosTableName()
+
+        // 获取Pair列表，用于将Map内的值填充到引用的类的POJO中
+        // Pair的构建需要判断KPojo对象是ValidRef所在的表还是引用的表，然后根据不同的情况填充Pair
         val listOfPair = validRef.reference.targetFields.mapIndexed { index, targetField ->
-            if(tableName == validRef.tableName) {
+            if (tableName == validRef.tableName) {
                 targetField to (dataMap[validRef.reference.referenceFields[index]] ?: return)
             } else {
                 validRef.reference.referenceFields[index] to (dataMap[targetField] ?: return)
             }
         }
+        // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
         val refPojo = validRef.refPojo.patchTo(
             validRef.refPojo::class,
             *listOfPair.toTypedArray()
-        ) // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
+        )
 
         pojo[prop] = if (prop.isIterable) { // 判断属性是否为集合
-            refPojo.select().cascade(*cascadeAllowed).apply { this.operationType = operationType }.queryList(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(*cascadeAllowed).apply { this.operationType = operationType }
+                .queryList(wrapper) // 查询级联的POJO
         } else {
-            refPojo.select().cascade(*cascadeAllowed).apply { this.operationType = operationType }.queryOneOrNull(wrapper) // 查询级联的POJO
+            refPojo.select().cascade(*cascadeAllowed).apply { this.operationType = operationType }
+                .queryOneOrNull(wrapper) // 查询级联的POJO
         }
     }
 }

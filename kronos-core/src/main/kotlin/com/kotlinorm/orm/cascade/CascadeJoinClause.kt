@@ -71,6 +71,21 @@ object CascadeJoinClause {
             rootTask
         ) else rootTask.toKronosQueryTask()
 
+    /**
+     * Generates a task for performing cascading operations based on the provided parameters.
+     *
+     * This function constructs a task that performs cascading operations on a list of [KPojo] instances.
+     *
+     * 根据提供的参数生成执行级联操作的任务。
+     *
+     * 此函数构造一个任务，对 [KPojo] 实例列表执行级联操作。
+     *
+     * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no cascading.
+     * @param listOfColumns A list of [KPojo] instances and their associated columns to be considered for cascading operations.
+     * @param operationType The type of operation to be performed on the [KPojo] instances.
+     * @param prevTask The previous task in the chain of operations.
+     * @return A [KronosQueryTask] that represents the task to be executed, potentially including cascading operations.
+     */
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
         cascadeAllowed: Array<out KProperty<*>>,

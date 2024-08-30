@@ -28,6 +28,7 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
+import kotlin.reflect.jvm.javaField
 
 /**
  * Used to build a cascade select clause.
@@ -92,7 +93,7 @@ object CascadeSelectClause {
         prevTask: KronosAtomicQueryTask,
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
-        val validReferences = findValidRefs(
+        val validCascades = findValidRefs(
             columns,
             operationType,
             cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性
@@ -101,9 +102,9 @@ object CascadeSelectClause {
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
-            if (validReferences.isNotEmpty()) {
+            if (validCascades.isNotEmpty()) {
                 doAfterQuery { queryType, wrapper ->
-                    validReferences.forEach { validRef ->
+                    validCascades.forEach { validRef ->
                         when (queryType) {
                             QueryList -> { // 若是查询KPojo列表
                                 val lastStepResult = this as List<KPojo> // this为主表查询的结果
@@ -119,7 +120,7 @@ object CascadeSelectClause {
                                                 cascadeAllowed,
                                                 mutableSetOf(
                                                     *cascadeSelectedProps.toTypedArray(),
-                                                    *validReferences.map { ref -> ref.field }.toTypedArray()
+                                                    *validCascades.map { cascade -> cascade.field }.toTypedArray()
                                                 ),
                                                 operationType,
                                                 wrapper
@@ -143,7 +144,7 @@ object CascadeSelectClause {
                                                 cascadeAllowed,
                                                 mutableSetOf(
                                                     *cascadeSelectedProps.toTypedArray(),
-                                                    *validReferences.map { ref -> ref.field }.toTypedArray()
+                                                    *validCascades.map { cascade -> cascade.field }.toTypedArray()
                                                 ),
                                                 operationType,
                                                 wrapper
@@ -166,7 +167,7 @@ object CascadeSelectClause {
      *
      * This function is a key component of the ORM's cascading feature, allowing for the dynamic setting of property values
      * on [KPojo] instances based on the results of cascading operations. It first converts the [KPojo] instance into a map
-     * to facilitate the retrieval of values for specified target fields. These values are then used to patch a reference [KPojo]
+     * to facilitate the retrieval of values for specified target fields. These values are then used to patch a cascade [KPojo]
      * instance, which is subsequently used in a cascading select operation. The result of this select operation is then
      * assigned to the specified property of the original [KPojo] instance. This process enables the ORM to automatically
      * populate properties of an object based on the relationships defined between entities.
@@ -177,14 +178,14 @@ object CascadeSelectClause {
      *
      * @param pojo The [KPojo] instance on which values are to be set.
      * @param prop The [KMutableProperty] representing the property to be set on the [KPojo] instance.
-     * @param validRef A [ValidRef] instance containing information about the reference to be used for cascading.
+     * @param validRef A [ValidCascade] instance containing information to be used for cascading.
      * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no further cascading should occur.
      * @param wrapper A [KronosDataSourceWrapper] providing access to the data source for executing queries.
      */
     fun setValues(
         pojo: KPojo,
         prop: KProperty<*>,
-        validRef: ValidRef,
+        validRef: ValidCascade,
         cascadeAllowed: Array<out KProperty<*>>,
         cascadeSelectedProps: Set<Field>,
         operationType: KOperationType,
@@ -197,13 +198,14 @@ object CascadeSelectClause {
 
         // 获取Pair列表，用于将Map内的值填充到引用的类的POJO中
         // Pair的构建需要判断KPojo对象是ValidRef所在的表还是引用的表，然后根据不同的情况填充Pair
-        val listOfPair = validRef.reference.targetFields.mapIndexed { index, targetField ->
+        val listOfPair = validRef.kCascade.targetProperties.mapIndexed { index, targetProperty ->
             if (tableName == validRef.tableName) {
-                targetField to (dataMap[validRef.reference.referenceFields[index]] ?: return)
+                targetProperty to (dataMap[validRef.kCascade.properties[index]] ?: return)
             } else {
-                validRef.reference.referenceFields[index] to (dataMap[targetField] ?: return)
+                validRef.kCascade.properties[index] to (dataMap[targetProperty] ?: return)
             }
         }
+
         // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
         val refPojo = validRef.refPojo.patchTo(
             validRef.refPojo::class, *listOfPair.toTypedArray()

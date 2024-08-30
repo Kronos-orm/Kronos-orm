@@ -32,7 +32,7 @@ import kotlin.reflect.jvm.javaField
  * Holds information about a node in the ORM cascade operation tree.
  *
  * This data class is used to store contextual information about a node within the cascade operation tree,
- * including whether to update reference values, the parent node, the field in the parent node that references this node,
+ * including whether to update cascade values, the parent node, the field in the parent node that references this node,
  * and the depth of this node in the tree. The depth is calculated based on the parent's depth, allowing for easy traversal
  * and management of the cascade operation hierarchy.
  *
@@ -42,7 +42,7 @@ import kotlin.reflect.jvm.javaField
  * 包括是否更新引用值、父节点、父节点中引用此节点的字段，
  * 以及此节点在树中的深度。深度是根据父节点的深度计算的，以便于遍历和管理级联操作层次结构。
  *
- * @property updateReferenceValue Indicates if the reference value should be updated during the cascade operation.
+ * @property updateReferenceValue Indicates if the cascade value should be updated during the cascade operation.
  * @property parent The parent node in the cascade operation tree, or null if this is a root node.
  * @property fieldOfParent The field in the parent node that references this node, or null if this is a root node.
  */
@@ -141,9 +141,9 @@ data class NodeOfKPojo(
      * specifically for the fields that are designated as valid references for cascade operations. It first checks
      * if the current node has a parent and if the updateReferenceValue flag is set to true, indicating that the
      * node's properties should be updated based on the parent's values. If these conditions are met, it proceeds
-     * to find the corresponding valid reference in the parent node that matches the fieldOfParent property of the
-     * current node. For each target field in the valid reference, it maps the target field's value from the parent's
-     * data map to the corresponding reference field in the current node. If the current node's property value differs
+     * to find the corresponding valid cascade in the parent node that matches the fieldOfParent property of the
+     * current node. For each target field in the valid cascade, it maps the target field's value from the parent's
+     * data map to the corresponding cascade field in the current node. If the current node's property value differs
      * from the parent's, it updates the current node's property with the parent's value and also updates the
      * updateParams map with the new value, ensuring that the cascade operation carries the updated values down the tree.
      *
@@ -158,17 +158,17 @@ data class NodeOfKPojo(
     private fun patchFromParent() {
         if (data == null || !data.updateReferenceValue || data.parent == null) return
         val validRef = data.parent.validRefs.find { it.field == data.fieldOfParent } ?: return
-        val listOfPair = validRef.reference.targetFields.mapNotNull {
-            val targetColumnValue = data.parent.dataMap[it] ?: return@mapNotNull null
-            val originalColumn = validRef.reference.referenceFields[validRef.reference.targetFields.indexOf(it)]
+        val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
+            val targetColumnValue = data.parent.dataMap[it] ?: return@mapIndexedNotNull null
+            val originalColumn = validRef.kCascade.properties[index]
             kPojo::class.findPropByName(originalColumn) to targetColumnValue
         }
         listOfPair.forEach { (prop, value) ->
             if (kPojo[prop] != value) {
                 kPojo[prop] = value
-                validRef.reference.targetFields.forEachIndexed { index, field ->
+                validRef.kCascade.targetProperties.forEachIndexed { index, field ->
                     if (data.parent.updateParams[field] != null) {
-                        updateParams[validRef.reference.referenceFields[index]] = data.parent.updateParams[field]!!
+                        updateParams[validRef.kCascade.properties[index]] = data.parent.updateParams[field]!!
                     }
                 }
             }
@@ -180,10 +180,10 @@ data class NodeOfKPojo(
      *
      * This function iterates over the list of valid references (validRefs) to determine which references should
      * result in the creation of child nodes. The decision is based on the current operation type (e.g., DELETE),
-     * whether the current node's data indicates that reference values should be updated, and if the reference's target fields
+     * whether the current node's data indicates that cascade values should be updated, and if the cascade's target fields
      * are included in the update parameters of the current node.
      *
-     * For each valid reference, the function checks if the associated value in the current node's data map is non-null.
+     * For each valid cascade, the function checks if the associated value in the current node's data map is non-null.
      * If the value is a collection, it iterates over the collection, and for each item that is an instance of KPojo,
      * it creates a new child node with the appropriate context and adds it to the children list of the current node.
      * If the value is a single instance of KPojo, it directly creates a new child node and adds it to the children list.
@@ -207,13 +207,13 @@ data class NodeOfKPojo(
         validRefs.filter { ref ->
             (operationType == KOperationType.DELETE ||
                     (null != data && data.updateReferenceValue) ||
-                    ref.reference.targetFields.any {
+                    ref.kCascade.targetProperties.any {
                         updateParams.keys.contains(it)
                     }) && (
-                        cascadeAllowed.isEmpty() || cascadeAllowed.contains(
-                            kPojo::class.findPropByName(ref.field.name)
-                        )
-                )
+                    cascadeAllowed.isEmpty() || cascadeAllowed.contains(
+                        kPojo::class.findPropByName(ref.field.name)
+                    )
+            )
         }.forEach { ref ->
             val value = dataMap[ref.field.name]
             if (value != null) {
@@ -339,4 +339,5 @@ internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
  */
 internal operator fun KPojo.get(prop: KProperty<*>) = prop.getter.call(this)
 
-internal fun <T: KPojo> Array<out KProperty<*>>.filterReceiver(receiver: KClass<out T>) = filter { it.javaField!!.declaringClass.kotlin == receiver }
+internal fun <T : KPojo> Array<out KProperty<*>>.filterReceiver(receiver: KClass<out T>) =
+    filter { it.javaField!!.declaringClass.kotlin == receiver }

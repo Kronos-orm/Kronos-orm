@@ -149,6 +149,9 @@ fun getColumnName(
     if (cascadeTypeKClassName.startsWith("kotlin.collections")) {
         cascadeTypeKClassName = irPropertyType.subType()!!.getClass()!!.classId!!.asFqNameString()
     }
+    if(irProperty.isDelegated){
+        cascadeTypeKClassName = ""
+    }
     val kCascade = if (cascadeAnnotation != null) {
         applyIrCall(
             kReferenceSymbol.constructors.first(),

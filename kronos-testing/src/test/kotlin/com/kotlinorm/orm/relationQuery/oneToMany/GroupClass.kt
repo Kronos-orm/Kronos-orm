@@ -15,5 +15,6 @@ data class GroupClass(
     var schoolName: String? = null,
     @Cascade(["schoolName"], ["name"], CascadeDeleteAction.CASCADE)
     var school: School? = null,
+
     var students: List<Student>? = null
 ) : KPojo

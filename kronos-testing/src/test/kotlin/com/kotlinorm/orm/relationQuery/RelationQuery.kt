@@ -7,6 +7,9 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.relationQuery.manyToMany.Permission
+import com.kotlinorm.orm.relationQuery.manyToMany.Role
+import com.kotlinorm.orm.relationQuery.manyToMany.RolePermissionRelation
 import com.kotlinorm.orm.relationQuery.oneToMany.GroupClass
 import com.kotlinorm.orm.relationQuery.oneToMany.School
 import com.kotlinorm.orm.relationQuery.oneToMany.Student
@@ -116,10 +119,37 @@ class RelationQuery {
 
         school.insert().execute()
 
-        val result = groupClass.select().queryOne()
+        val groupClassQ = groupClass.select().queryOne()
+        val schoolQ = school.select().queryOne()
 
         school.delete().execute()
 
-        print(result)
+        print(groupClassQ)
+    }
+
+    @Test
+    fun testManyToMany() {
+        dataSource.table.dropTable<Role>()
+        dataSource.table.dropTable<RolePermissionRelation>()
+        dataSource.table.dropTable<Permission>()
+        dataSource.table.createTable<Role>()
+        dataSource.table.createTable<RolePermissionRelation>()
+        dataSource.table.createTable<Permission>()
+        val role = Role(
+            name = "admin"
+        ).apply {
+            permissions = listOf(
+                Permission(name = "test"),
+                Permission(name = "test2"),
+                Permission(name = "test3")
+            )
+        }
+        val relations = role.rolePermissions
+
+        role.insert().execute()
+
+        val permissions = Role(name = "admin").select().queryOne().permissions
+
+        println(permissions)
     }
 }

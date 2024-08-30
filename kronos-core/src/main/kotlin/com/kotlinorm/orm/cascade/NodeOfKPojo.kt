@@ -20,9 +20,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
-import kotlin.reflect.KClass
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
+import kotlin.reflect.*
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.starProjectedType
@@ -78,8 +76,9 @@ data class NodeOfKPojo(
     val updateParams: MutableMap<String, String> = mutableMapOf(),
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
+    private var raise = false // 若该节点标记为提升，则不接受父节点的patch，且他的兄弟节点应接受该节点的patch，相当于该节点是它兄弟节点的第二个父节点
     internal val dataMap by lazy { kPojo.toDataMap() }
-    private val validRefs by lazy {
+    private val validCascades by lazy {
         findValidRefs(
             kPojo.kronosColumns(),
             operationType,
@@ -93,6 +92,7 @@ data class NodeOfKPojo(
         // Patches data from the parent node to this node. This includes updating fields and parameters
         // based on the parent's data, which is crucial for maintaining consistency in cascading operations.
         patchFromParent()
+        patchFromPrevSibling()
 
         // Executes an optional initialization block defined at the node creation. This allows for custom
         // logic to be executed right after the node's basic initialization, providing flexibility in node setup.
@@ -156,12 +156,16 @@ data class NodeOfKPojo(
      * 如果当前节点的属性值与父节点的属性值不同，它将使用父节点的值更新当前节点的属性，并使用新值更新updateParams 映射，确保级联操作将更新的值传递到树的下方。
      */
     private fun patchFromParent() {
-        if (data == null || !data.updateReferenceValue || data.parent == null) return
-        val validRef = data.parent.validRefs.find { it.field == data.fieldOfParent } ?: return
+        if (data == null || !data.updateReferenceValue || data.parent == null || raise) return
+        val validRef = data.parent.validCascades.find { it.field == data.fieldOfParent } ?: return
+        val tableName = kPojo.kronosTableName()
         val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
-            val targetColumnValue = data.parent.dataMap[it] ?: return@mapIndexedNotNull null
-            val originalColumn = validRef.kCascade.properties[index]
-            kPojo::class.findPropByName(originalColumn) to targetColumnValue
+            if (tableName == validRef.tableName) {
+                kPojo::class.findPropByName(validRef.kCascade.properties[index]) to (data.parent.dataMap[it]
+                    ?: return@mapIndexedNotNull null)
+            } else {
+                kPojo::class.findPropByName(it) to (data.parent.dataMap[it] ?: return@mapIndexedNotNull null)
+            }
         }
         listOfPair.forEach { (prop, value) ->
             if (kPojo[prop] != value) {
@@ -175,10 +179,35 @@ data class NodeOfKPojo(
         }
     }
 
+    private fun patchFromPrevSibling() {
+        val prevSibling = data?.parent?.children?.find { it.raise }
+        if (data == null || !data.updateReferenceValue || prevSibling == null || raise) return
+        val validRef = prevSibling.validCascades.find { it.field != data.fieldOfParent } ?: return
+        val tableName = kPojo.kronosTableName()
+        val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
+            if (tableName == validRef.tableName) {
+                kPojo::class.findPropByName(validRef.kCascade.properties[index]) to (prevSibling.dataMap[it]
+                    ?: return@mapIndexedNotNull null)
+            } else {
+                kPojo::class.findPropByName(it) to (prevSibling.dataMap[it] ?: return@mapIndexedNotNull null)
+            }
+        }
+        listOfPair.forEach { (prop, value) ->
+            if (kPojo[prop] != value) {
+                kPojo[prop] = value
+                validRef.kCascade.targetProperties.forEachIndexed { index, field ->
+                    if (prevSibling.updateParams[field] != null) {
+                        updateParams[validRef.kCascade.properties[index]] = prevSibling.updateParams[field]!!
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Builds child nodes for the current node based on valid references and operation type.
      *
-     * This function iterates over the list of valid references (validRefs) to determine which references should
+     * This function iterates over the list of valid references (validCascades) to determine which references should
      * result in the creation of child nodes. The decision is based on the current operation type (e.g., DELETE),
      * whether the current node's data indicates that cascade values should be updated, and if the cascade's target fields
      * are included in the update parameters of the current node.
@@ -193,7 +222,7 @@ data class NodeOfKPojo(
      *
      * 根据有效引用和操作类型为当前节点构建子节点。
      *
-     * 此函数遍历有效引用 (validRefs) 列表，以确定哪些引用应导致创建子节点。该决定基于当前操作类型（例如 DELETE）、
+     * 此函数遍历有效引用 (validCascades) 列表，以确定哪些引用应导致创建子节点。该决定基于当前操作类型（例如 DELETE）、
      * 当前节点的数据是否指示应更新引用值，以及引用的目标字段是否包含在当前节点的更新参数中。
      *
      * 对于每个有效引用，该函数检查当前节点数据映射中的关联值是否为非空。
@@ -204,7 +233,7 @@ data class NodeOfKPojo(
      * 此过程确保根据实体类中定义的关系动态构建 ORM 级联操作树，从而允许正确执行级联删除或更新等操作。
      */
     private fun buildChildren() {
-        validRefs.filter { ref ->
+        val cascades = validCascades.filter { ref ->
             (operationType == KOperationType.DELETE ||
                     (null != data && data.updateReferenceValue) ||
                     ref.kCascade.targetProperties.any {
@@ -213,14 +242,24 @@ data class NodeOfKPojo(
                     cascadeAllowed.isEmpty() || cascadeAllowed.contains(
                         kPojo::class.findPropByName(ref.field.name)
                     )
-            )
-        }.forEach { ref ->
+                    )
+        }
+
+        fun addToChildren(node: NodeOfKPojo, index: Int, validCascade: ValidCascade) {
+            if (index != cascades.indexOfFirst { validCascade.tableName == it.tableName } && data?.parent != null) {
+                data.parent.children.add(node.apply { raise = true })
+            } else {
+                children.add(node)
+            }
+        }
+
+        cascades.forEachIndexed { index, ref ->
             val value = dataMap[ref.field.name]
             if (value != null) {
                 if (value is Collection<*>) {
                     value.forEach { child ->
                         if (child is KPojo) {
-                            children.add(
+                            addToChildren(
                                 child.toTreeNode(
                                     NodeInfo(
                                         data?.updateReferenceValue == true,
@@ -231,12 +270,14 @@ data class NodeOfKPojo(
                                     operationType,
                                     mutableMapOf(),
                                     onInit
-                                )
+                                ),
+                                index,
+                                ref
                             )
                         }
                     }
                 } else if (value is KPojo) {
-                    children.add(
+                    addToChildren(
                         value.toTreeNode(
                             NodeInfo(
                                 data?.updateReferenceValue == true,
@@ -247,7 +288,9 @@ data class NodeOfKPojo(
                             operationType,
                             mutableMapOf(),
                             onInit
-                        )
+                        ),
+                        index,
+                        ref
                     )
                 }
             }
@@ -316,7 +359,9 @@ internal val KProperty<*>.isIterable
  * @param value The new value to assign to the property. Can be `null` if the property allows null values.
  */
 internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
-    if (prop is KMutableProperty<*>) { // 若属性为可变属性
+    if (prop is KMutableProperty0<*>) { // 若属性为可变属性
+        prop.setter.call(value) // 通过setter方法设置属性值
+    } else if (prop is KMutableProperty1<*, *>) { // 若属性为可变属性
         prop.setter.call(this, value) // 通过setter方法设置属性值
     } else { // 若属性为不可变属性
         val field = KPojo::class.java.getDeclaredField(prop.name) // 获取java属性

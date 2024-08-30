@@ -32,7 +32,7 @@ import kotlin.reflect.full.withNullability
  * 构建级联插入子句。
  *
  * This object is used to construct a cascade insert clause for a database operation.
- * It contains a nested Counter class for counting operations, a nested ValidRef data class for storing references and referenced POJOs,
+ * It contains a nested Counter class for counting operations, a nested ValidCascade data class for storing cascades and cascaded POJOs,
  * and several functions for building the cascade insert clause and generating SQL statements.
  *
  * The main function is build, which takes a POJO, a cascade flag, a list of allowed properties, and a root task,

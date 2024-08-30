@@ -33,8 +33,8 @@ import kotlin.reflect.full.createInstance
  * @property primaryKey whether the field is a primary key
  * @property dateFormat the format of the date field
  * @property tableName the name of the table
- * @property reference the reference of the field
- * @property referenceKClassName the name of the reference class
+ * @property cascade the cascade of the field
+ * @property cascadeKClassName the name of the cascade class
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field
@@ -50,14 +50,14 @@ class Field(
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,
     val tableName: String = "",
-    val reference: KReference? = null,
-    val referenceKClassName: String? = null,
+    val cascade: KCascade? = null,
+    val cascadeKClassName: String? = null,
+    val cascadeSelectIgnore: Boolean = false,
     val isColumn: Boolean = true,
     val length: Int = 0,
     val defaultValue: String? = null,
     val identity: Boolean = false,
-    val nullable: Boolean = true,
-    val cascadeSelectIgnore: Boolean = false
+    val nullable: Boolean = true
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {
@@ -102,13 +102,8 @@ class Field(
         name + other
     )
 
-    fun cascadeMapperBy(table: String = tableName): Boolean {
-        return reference != null && (reference.mapperBy == KPojo::class || reference.mapperBy.createInstance()
-            .kronosTableName() == table)
-    }
-
     fun refUseFor(usage: KOperationType): Boolean {
-        return reference != null && reference.usage.contains(usage)
+        return cascade != null && cascade.usage.contains(usage)
     }
 
     fun copy(
@@ -118,8 +113,9 @@ class Field(
         primaryKey: Boolean = this.primaryKey,
         dateFormat: String? = this.dateFormat,
         tableName: String = this.tableName,
-        reference: KReference? = this.reference,
-        referenceKClassName: String? = this.referenceKClassName,
+        cascade: KCascade? = this.cascade,
+        cascadeKClassName: String? = this.cascadeKClassName,
+        cascadeSelectIgnore: Boolean = false,
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
         defaultValue: String? = this.defaultValue,
@@ -133,8 +129,9 @@ class Field(
             primaryKey,
             dateFormat,
             tableName,
-            reference,
-            referenceKClassName,
+            cascade,
+            cascadeKClassName,
+            cascadeSelectIgnore,
             isColumn,
             length,
             defaultValue,

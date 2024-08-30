@@ -3,7 +3,7 @@ package com.kotlinorm.orm.relationQuery.oneToMany
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.PrimaryKey
-import com.kotlinorm.annotations.Reference
+import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
 
@@ -14,12 +14,11 @@ data class Student(
     var studentNo: String? = null,
     var schoolName: String? = null,
     var groupClassName: String? = null,
-    @Reference(
+    @Cascade(
         ["groupClassName", "schoolName"],
         ["name", "schoolName"],
         CascadeDeleteAction.SET_DEFAULT,
-        defaultValue = ["9"],
-        mapperBy = GroupClass::class
+        defaultValue = ["9"]
     )
     var groupClass: GroupClass? = null,
     @CreateTime

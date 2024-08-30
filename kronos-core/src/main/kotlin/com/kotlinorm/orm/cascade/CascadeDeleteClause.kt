@@ -33,7 +33,6 @@ import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import kotlin.reflect.KProperty
-import kotlin.reflect.jvm.javaField
 
 /**
  * Used to build a cascade delete clause.
@@ -41,14 +40,14 @@ import kotlin.reflect.jvm.javaField
  * 构建级联删除子句。
  *
  * This object is used to construct a cascade delete clause for a database operation.
- * It contains a nested Counter class for counting operations, a nested ValidRef data class for storing references and referenced POJOs,
+ * It contains a nested Counter class for counting operations, a nested ValidCascade data class for storing cascades and cascaded POJOs,
  * and several functions for building the cascade delete clause and generating SQL statements.
  *
  * The main function is build, which takes a POJO, a SQL where clause, a logic flag, a parameter map, and a delete task,
  * and returns an array of KronosAtomicActionTask objects representing the cascade delete operations.
  *
- * The other functions are helper functions used by build. They include findValidRefs, which finds valid references in a list of fields,
- * generateReferenceDeleteSql, which generates a delete SQL statement for a referenced POJO, and getDefaultUpdates, which generates a default update SQL clause.
+ * The other functions are helper functions used by build. They include findValidRefs, which finds valid cascades in a list of fields,
+ * generateCascadeDeleteSql, which generates a delete SQL statement for a cascaded POJO, and getDefaultUpdates, which generates a default update SQL clause.
  *
  */
 object CascadeDeleteClause {
@@ -104,7 +103,7 @@ object CascadeDeleteClause {
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
-        val validReferences = findValidRefs( // 获取有效的引用
+        val validCascades = findValidRefs( // 获取有效的引用
             columns,
             KOperationType.DELETE,
             cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性
@@ -120,15 +119,15 @@ object CascadeDeleteClause {
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
                 // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
-                val restrictReferences =
-                    validReferences.filter { it.reference.onDelete == RESTRICT }
+                val restrictCascades =
+                    validCascades.filter { it.kCascade.onDelete == RESTRICT }
                 toDeleteRecords.forEach { record ->
-                    restrictReferences.forEach { reference ->
-                        val valueOfPojo = record.toDataMap()[reference.field.name]
+                    restrictCascades.forEach { cascade ->
+                        val valueOfPojo = record.toDataMap()[cascade.field.name]
                         if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
                             throw UnsupportedOperationException(
-                                "The record cannot be deleted because it is restricted by a reference." +
-                                        "${record.kronosTableName()}.${reference.reference.referenceFields} is restricted by ${reference.reference.targetFields}, " +
+                                "The record cannot be deleted because it is restricted by a cascade." +
+                                        "${record.kronosTableName()}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, " +
                                         "and the value is ${valueOfPojo}."
                             )
                         }

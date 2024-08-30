@@ -16,12 +16,20 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.enums.CascadeDeleteAction
+import com.kotlinorm.enums.CascadeDeleteAction.NO_ACTION
+import com.kotlinorm.enums.KOperationType
 
-abstract class KSelectable<T : KPojo>(
-    internal open val pojo: T
-) {
-    open var selectFields: LinkedHashSet<Field> = linkedSetOf()
-    abstract fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask
-}
+class KCascade(
+    val properties: Array<String> = arrayOf(),
+    val targetProperties: Array<String> = arrayOf(),
+    val onDelete: CascadeDeleteAction = NO_ACTION,
+    val defaultValue: Array<String> = arrayOf(),
+    val usage: Array<KOperationType> = arrayOf(
+        KOperationType.INSERT,
+        KOperationType.UPDATE,
+        KOperationType.DELETE,
+        KOperationType.SELECT,
+        KOperationType.UPSERT
+    )
+)

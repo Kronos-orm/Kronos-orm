@@ -1,6 +1,6 @@
 package com.kotlinorm.orm.relationQuery.oneToMany
 
-import com.kotlinorm.annotations.Reference
+import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
 
@@ -13,6 +13,6 @@ import com.kotlinorm.enums.CascadeDeleteAction
 data class Student2Role(
     val id: Int? = null,
     val studentId: Int? = null,
-    @Reference(["studentId"], ["id"], CascadeDeleteAction.SET_NULL, mapperBy = Student2Role::class)
+    @Cascade(["studentId"], ["id"], CascadeDeleteAction.SET_NULL)
     val student: Student? = null,
 ) : KPojo

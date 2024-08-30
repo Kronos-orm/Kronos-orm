@@ -75,7 +75,7 @@ internal val tableK2dbSymbol
 
 context(IrPluginContext)
 internal val kReferenceSymbol
-    get() = referenceClass("com.kotlinorm.beans.dsl.KReference")!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.KCascade")!!
 
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val TableIndexAnnotationsFqName = FqName("com.kotlinorm.annotations.TableIndex")
@@ -83,7 +83,7 @@ val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
-val ReferenceAnnotationsFqName = FqName("com.kotlinorm.annotations.Reference")
+val CascadeAnnotationsFqName = FqName("com.kotlinorm.annotations.Cascade")
 val SelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.SelectIgnore")
 val ColumnDeserializeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnDeserialize")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
@@ -144,15 +144,15 @@ fun getColumnName(
         irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
     val selectIgnoreAnnotation = irProperty.annotations.findByFqName(SelectIgnoreAnnotationsFqName)
-    val referenceAnnotation = irProperty.annotations.findByFqName(ReferenceAnnotationsFqName)
-    var referenceTypeKClassName = irPropertyType.getClass()!!.classId!!.asFqNameString()
-    if (referenceTypeKClassName.startsWith("kotlin.collections")) {
-        referenceTypeKClassName = irPropertyType.subType()!!.getClass()!!.classId!!.asFqNameString()
+    val cascadeAnnotation = irProperty.annotations.findByFqName(CascadeAnnotationsFqName)
+    var cascadeTypeKClassName = irPropertyType.getClass()!!.classId!!.asFqNameString()
+    if (cascadeTypeKClassName.startsWith("kotlin.collections")) {
+        cascadeTypeKClassName = irPropertyType.subType()!!.getClass()!!.classId!!.asFqNameString()
     }
-    val reference = if (referenceAnnotation != null) {
+    val kCascade = if (cascadeAnnotation != null) {
         applyIrCall(
             kReferenceSymbol.constructors.first(),
-            *referenceAnnotation.valueArguments.toTypedArray()
+            *cascadeAnnotation.valueArguments.toTypedArray()
         )
     } else {
         irNull()
@@ -168,10 +168,10 @@ fun getColumnName(
          * 1. the type is a KPojo
          * 2. has a KPojo in its super types
          * 3. is a Collection of KPojo
-         * 4. has Annotation `@Reference`
+         * 4. has Annotation `@Cascade`
          */
         irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
-                (!irProperty.hasAnnotation(ReferenceAnnotationsFqName) &&
+                (!irProperty.hasAnnotation(CascadeAnnotationsFqName) &&
                         !irPropertyType.isKronosColumn() &&
                         irPropertyType.subType()?.isKronosColumn() != true)
     )
@@ -194,14 +194,14 @@ fun getColumnName(
 
             else -> irString((tableName as IrConst<*>).value.toString())
         },
-        reference,
-        irString(referenceTypeKClassName),
+        kCascade,
+        irString(cascadeTypeKClassName),
+        irBoolean(selectIgnoreAnnotation != null),
         isColumn,
         columnTypeLength,
         columnDefaultValue,
         identity,
-        columnNotNull,
-        irBoolean(selectIgnoreAnnotation != null)
+        columnNotNull
     )
 }
 

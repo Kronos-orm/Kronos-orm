@@ -60,10 +60,12 @@ object CascadeJoinClause {
         listOfPojo: List<KPojo>,
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
-        selectFields: MutableMap<String, Field>
+        selectFields: MutableMap<String, Field>,
+        cascadeSelectedProps: Set<Field>
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
+            cascadeSelectedProps,
             listOfPojo.map {
                 it to it.kronosColumns().filter { col -> selectFields.values.contains(col) }
             },
@@ -71,9 +73,25 @@ object CascadeJoinClause {
             rootTask
         ) else rootTask.toKronosQueryTask()
 
+    /**
+     * Generates a task for performing cascading operations based on the provided parameters.
+     *
+     * This function constructs a task that performs cascading operations on a list of [KPojo] instances.
+     *
+     * 根据提供的参数生成执行级联操作的任务。
+     *
+     * 此函数构造一个任务，对 [KPojo] 实例列表执行级联操作。
+     *
+     * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no cascading.
+     * @param listOfColumns A list of [KPojo] instances and their associated columns to be considered for cascading operations.
+     * @param operationType The type of operation to be performed on the [KPojo] instances.
+     * @param prevTask The previous task in the chain of operations.
+     * @return A [KronosQueryTask] that represents the task to be executed, potentially including cascading operations.
+     */
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
         cascadeAllowed: Array<out KProperty<*>>,
+        cascadeSelectedProps: Set<Field>,
         listOfColumns: List<Pair<KPojo, List<Field>>>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask
@@ -100,7 +118,15 @@ object CascadeJoinClause {
                                     val prop =
                                         lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
                                     lastStepResult.forEach rowMapper@{
-                                        setValues(it, prop, validRef, cascadeAllowed, operationType, wrapper)
+                                        setValues(
+                                            it,
+                                            prop,
+                                            validRef,
+                                            cascadeAllowed,
+                                            cascadeSelectedProps,
+                                            operationType,
+                                            wrapper
+                                        )
                                     }
                                 }
                             }
@@ -110,7 +136,15 @@ object CascadeJoinClause {
                                 if (lastStepResult != null) {
                                     val prop =
                                         lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
-                                    setValues(lastStepResult, prop, validRef, cascadeAllowed, operationType, wrapper)
+                                    setValues(
+                                        lastStepResult,
+                                        prop,
+                                        validRef,
+                                        cascadeAllowed,
+                                        cascadeSelectedProps,
+                                        operationType,
+                                        wrapper
+                                    )
                                 }
                             }
 

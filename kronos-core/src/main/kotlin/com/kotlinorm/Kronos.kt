@@ -30,12 +30,20 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeResolver
 import com.kotlinorm.types.KLoggerFactory
-import kotlinx.datetime.TimeZone.Companion.currentSystemDefault
+import java.time.ZoneId
 
 object Kronos {
     // 默认日志适配器
     var defaultLogger: KLoggerFactory =
-        { BundledSimpleLoggerAdapter(it::class.simpleName!!) }
+        {
+            BundledSimpleLoggerAdapter(
+                if (it is String) {
+                    it
+                } else {
+                    it::class.simpleName!!
+                }
+            )
+        }
 
     // 日志类型
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
@@ -53,7 +61,7 @@ object Kronos {
     var strictSetValue = false
 
     // 当前时区
-    var timeZone = currentSystemDefault()
+    var timeZone: ZoneId = ZoneId.systemDefault()
 
     // 序列化
     var serializeResolver: KronosSerializeResolver = NoneSerializeResolver

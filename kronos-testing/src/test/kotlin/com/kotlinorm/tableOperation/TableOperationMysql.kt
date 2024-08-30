@@ -124,8 +124,8 @@ class TableOperationMysql {
     @Test
     fun testSyncScheme_mysql() {
         // 同步user表结构
-        val schemeSync = dataSource.table.schemeSync(user)
-        if (!schemeSync) {
+        val tableSync = dataSource.table.syncTable(user)
+        if (!tableSync) {
             println("表结构相同无需同步")
         }
 

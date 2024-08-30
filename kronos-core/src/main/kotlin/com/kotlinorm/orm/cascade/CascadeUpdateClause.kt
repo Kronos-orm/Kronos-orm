@@ -59,7 +59,7 @@ object CascadeUpdateClause {
             doBeforeExecute { wrapper ->
                 toUpdateRecords.addAll(
                     pojo.select()
-                        .cascade(*cascadeAllowed, enabled = true)
+                        .cascade(*cascadeAllowed)
                         .where { whereClauseSql.asSql() }
                         .patch(*paramMap.toList().toTypedArray())
                         .apply { operationType = KOperationType.UPDATE }

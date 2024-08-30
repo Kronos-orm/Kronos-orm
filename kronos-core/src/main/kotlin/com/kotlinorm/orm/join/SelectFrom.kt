@@ -77,6 +77,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var limitCapacity = 0
     private var cascadeEnabled = true
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+    internal var cascadeSelectedProps: Set<Field>? = null
     private var pi = 0
     private var ps = 0
     private val databaseOfTable: MutableMap<String, String> = mutableMapOf()
@@ -533,7 +534,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return CascadeJoinClause.build(
             cascadeEnabled, cascadeAllowed, listOfPojo, KronosAtomicQueryTask(
                 sql, paramMapNew, operationType = KOperationType.SELECT
-            ), operationType, selectFieldsWithNames
+            ), operationType, selectFieldsWithNames, cascadeSelectedProps ?: mutableSetOf()
         )
     }
 

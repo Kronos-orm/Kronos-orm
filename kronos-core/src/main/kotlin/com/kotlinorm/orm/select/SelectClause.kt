@@ -70,13 +70,18 @@ class SelectClause<T : KPojo>(
     private var havingEnabled = false
     private var orderEnabled = false
     private var cascadeEnabled = true
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+
+    /**
+     * 级联查询允许的字段，若为空则表示所有字段均可级联查询，优先级高于[com.kotlinorm.annotations.SelectIgnore]注解
+     * */
+    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf()
+    internal var cascadeSelectedProps: Set<Field>? = null
     private var lock: PessimisticLock? = null
     internal var selectAll = true
     private var ps = 0
     private var pi = 0
     private var databaseName: String? = null
-    internal var operationType = KOperationType.SELECT
+    internal var operationType = KOperationType.SELECT // 级联操作类型，默认为SELECT
 
     /**
      * 初始化函数：用于在对象初始化时配置选择字段。
@@ -306,7 +311,7 @@ class SelectClause<T : KPojo>(
             cascadeEnabled, cascadeAllowed, pojo, KronosAtomicQueryTask(
                 sql, paramMap, operationType = KOperationType.SELECT
             ), if (selectAll) allFields else selectFields,
-            operationType
+            operationType, cascadeSelectedProps ?: mutableSetOf()
         )
     }
 

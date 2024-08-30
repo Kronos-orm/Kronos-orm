@@ -17,11 +17,14 @@
 package com.kotlinorm.annotations
 
 /**
- * Column
+ * SelectIgnore
  *
- * Annotation to specify the name of a column in a database table.
+ * Annotation to specify the property in KPojo to be ignored in cascade query.
+ * The priority is lower than the .cascade(vararg [kotlin.reflect.KProperty]<*>) method.
  *
- * @property name The name of the column in the database table.
+ * 注解用于指定KPojo中的某个属性在级联查询时是否被忽略。
+ * 优先级低于.cascade(vararg [kotlin.reflect.KProperty]<*>)方法。
+ *
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)

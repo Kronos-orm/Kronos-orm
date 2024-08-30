@@ -19,9 +19,8 @@ package com.kotlinorm.beans.logging
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter.Companion.format
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
-import kotlinx.io.Buffer
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
+import kotlin.io.path.writeText
+import java.nio.file.Path
 
 /**
  * Log line
@@ -70,16 +69,7 @@ class KLogMessage(
      * @param path
      */
     fun write(path: Path) {
-        with(SystemFileSystem.sink(path, true)) {
-            (text + ("\r\n".takeIf { endLine } ?: "")).toByteArray().let { byteArray ->
-                write(
-                    Buffer().apply {
-                        write(byteArray)
-                    },
-                    byteArray.size.toLong()
-                )
-            }
-        }
+        path.writeText(text + ("\r\n".takeIf { endLine } ?: ""))
     }
 
     /**
@@ -107,15 +97,8 @@ class KLogMessage(
          *
          * @return The formatted string containing the text of each KLogMessage object, with an optional newline character after each message.
          */
-        fun Array<KLogMessage>.formatted(): String {
-            val sb = StringBuilder()
-            this.forEach {
-                sb.append(it.text)
-                if (it.endLine) {
-                    sb.append("\r\n")
-                }
-            }
-            return sb.toString()
+        fun Array<KLogMessage>.formatted() = this.joinToString {
+            it.text + (if (it.endLine) "\r\n" else "")
         }
     }
 }

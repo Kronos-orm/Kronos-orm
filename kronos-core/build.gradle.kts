@@ -6,8 +6,6 @@ plugins {
 }
 
 dependencies {
-    api("org.jetbrains.kotlinx:kotlinx-datetime:latest.release")
-    api("org.jetbrains.kotlinx:kotlinx-io-core:latest.release")
     api(kotlin("reflect"))
     testImplementation(kotlin("test"))
 }

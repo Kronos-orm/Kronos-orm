@@ -17,21 +17,12 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos.timeZone
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.format
-import kotlinx.datetime.format.FormatStringsInDatetimeFormats
-import kotlinx.datetime.format.byUnicodePattern
-import kotlinx.datetime.toLocalDateTime
+import java.time.Clock
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 object DateTimeUtil {
-    @OptIn(FormatStringsInDatetimeFormats::class)
-    val currentDateTime =
-        { format: String ->
-            Clock.System.now().toLocalDateTime(timeZone).format(
-                LocalDateTime.Format {
-                    byUnicodePattern(format)
-                }
-            )
-        }
+    val currentDateTime = { pattern: String ->
+        DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now(Clock.system(timeZone)))
+    }
 }

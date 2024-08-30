@@ -65,9 +65,12 @@ fun differ(
     return TableColumnDiff(toAdd, toModified, toDelete)
 }
 
-fun TableColumnDiff.doLog() {
-    defaultLogger(this::class).info(
+fun TableColumnDiff.doLog(tableName: String) {
+    defaultLogger("tableSync").info(
         arrayOf(
+            kMsgOf(
+                "start sync table $tableName:"
+            ).endl(),
             kMsgOf(
                 "Add fields\t"
             ),

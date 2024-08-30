@@ -57,6 +57,7 @@ object CascadeDeleteClause {
      * 构建级联删除子句。
      *
      * @param cascade Whether the cascade is enabled.
+     * @param cascadeAllowed The properties that are allowed to cascade.
      * @param pojo The pojo to be deleted.
      * @param whereClauseSql The condition to be met.
      * @param logic The logic to be used.
@@ -82,6 +83,18 @@ object CascadeDeleteClause {
             rootTask
         ) else rootTask.toKronosActionTask()
 
+    /**
+     * Generate a task for a cascade delete operation.
+     *
+     * @param cascadeAllowed The properties that are allowed to cascade.
+     * @param pojo The pojo to be deleted.
+     * @param whereClauseSql The condition to be met.
+     * @param paramMap The parameter map.
+     * @param columns The columns of the pojo.
+     * @param logic The logic to be used.
+     * @param rootTask The delete task.
+     *
+     * **/
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Array<out KProperty<*>>,
         pojo: T,
@@ -91,20 +104,24 @@ object CascadeDeleteClause {
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
-        val validReferences = findValidRefs(
+        val validReferences = findValidRefs( // 获取有效的引用
             columns,
             KOperationType.DELETE,
-            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(),
-            cascadeAllowed.isEmpty()
+            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性
+            cascadeAllowed.isEmpty() // 是否允许所有属性级联
         )
+
         return rootTask.toKronosActionTask().apply {
-            doBeforeExecute { wrapper ->
+            doBeforeExecute { wrapper -> // 在执行前检查是否有引用
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
                         .cascade(*cascadeAllowed).apply { operationType = KOperationType.DELETE }
-                        .queryList(wrapper)
-                if (toDeleteRecords.isEmpty()) return@doBeforeExecute
-                val restrictReferences = validReferences.filter { it.reference.onDelete == RESTRICT }
+                        .queryList(wrapper) //先查询出要删除的记录
+                if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
+
+                // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
+                val restrictReferences =
+                    validReferences.filter { it.reference.onDelete == RESTRICT }
                 toDeleteRecords.forEach { record ->
                     restrictReferences.forEach { reference ->
                         val valueOfPojo = record.toDataMap()[reference.field.name]
@@ -118,6 +135,7 @@ object CascadeDeleteClause {
                     }
                 }
 
+                // 生成树结构，后序遍历所有的子节点，将所有的子节点压入list，最后由子到父执行删除操作
                 val forestOfKPojo = toDeleteRecords.map {
                     it.toTreeNode(
                         operationType = KOperationType.DELETE,
@@ -144,7 +162,7 @@ object CascadeDeleteClause {
                         }
                     }
                     atomicTasks.addAll(
-                        list.map { it.kPojo }.delete().logic(logic).cascade(false).build().atomicTasks
+                        list.map { it.kPojo }.delete().logic(logic).cascade(false).build().atomicTasks // 生成删除任务
                     )
                 }
             }

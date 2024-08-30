@@ -16,6 +16,5 @@ data class GroupClass(
     var schoolName: String? = null,
     @Reference(["schoolName"], ["name"], CascadeDeleteAction.CASCADE, mapperBy = School::class)
     var school: School? = null,
-    @SelectIgnore
     var students: List<Student>? = null
 ) : KPojo

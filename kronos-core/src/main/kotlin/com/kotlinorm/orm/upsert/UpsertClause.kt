@@ -36,10 +36,8 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.types.KTableField
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KProperty
 

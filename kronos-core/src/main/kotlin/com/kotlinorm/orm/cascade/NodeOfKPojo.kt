@@ -46,8 +46,8 @@ import kotlin.reflect.jvm.javaField
  */
 data class NodeInfo(
     val updateReferenceValue: Boolean = false,
-    val parent: NodeOfKPojo? = null,
-    val fieldOfParent: Field? = null
+    var parent: NodeOfKPojo? = null,
+    var fieldOfParent: Field? = null
 )
 
 /**
@@ -74,25 +74,26 @@ data class NodeOfKPojo(
     val cascadeAllowed: Array<out KProperty<*>>,
     val operationType: KOperationType,
     val updateParams: MutableMap<String, String> = mutableMapOf(),
+    val children: MutableList<NodeOfKPojo> = mutableListOf(),
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
-    private var raise = false // 若该节点标记为提升，则不接受父节点的patch，且他的兄弟节点应接受该节点的patch，相当于该节点是它兄弟节点的第二个父节点
+    var insertIgnore = false // 该字段用于判断是否忽略插入
     internal val dataMap by lazy { kPojo.toDataMap() }
     private val validCascades by lazy {
         findValidRefs(
+            kPojo::class,
             kPojo.kronosColumns(),
             operationType,
             cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet(),
             cascadeAllowed.isEmpty(),
         )
     }
-    val children: MutableList<NodeOfKPojo> = mutableListOf()
+    val tableName by lazy { kPojo.kronosTableName() }
 
     init {
         // Patches data from the parent node to this node. This includes updating fields and parameters
         // based on the parent's data, which is crucial for maintaining consistency in cascading operations.
         patchFromParent()
-        patchFromPrevSibling()
 
         // Executes an optional initialization block defined at the node creation. This allows for custom
         // logic to be executed right after the node's basic initialization, providing flexibility in node setup.
@@ -128,9 +129,10 @@ data class NodeOfKPojo(
             cascadeAllowed: Array<out KProperty<*>>,
             operationType: KOperationType,
             updateParams: MutableMap<String, String> = mutableMapOf(),
+            children: MutableList<NodeOfKPojo> = mutableListOf(),
             onInit: (NodeOfKPojo.() -> Unit)? = null
         ): NodeOfKPojo {
-            return NodeOfKPojo(this, data, cascadeAllowed, operationType, updateParams, onInit)
+            return NodeOfKPojo(this, data, cascadeAllowed, operationType, updateParams, children, onInit)
         }
     }
 
@@ -156,51 +158,31 @@ data class NodeOfKPojo(
      * 如果当前节点的属性值与父节点的属性值不同，它将使用父节点的值更新当前节点的属性，并使用新值更新updateParams 映射，确保级联操作将更新的值传递到树的下方。
      */
     private fun patchFromParent() {
-        if (data == null || !data.updateReferenceValue || data.parent == null || raise) return
-        val validRef = data.parent.validCascades.find { it.field == data.fieldOfParent } ?: return
-        val tableName = kPojo.kronosTableName()
+        if (data == null || !data.updateReferenceValue || data.parent == null || data.parent!!.insertIgnore) return
+        val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
         val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
             if (tableName == validRef.tableName) {
-                kPojo::class.findPropByName(validRef.kCascade.properties[index]) to (data.parent.dataMap[it]
+                kPojo::class.findPropByName(validRef.kCascade.properties[index]) to (data.parent!!.dataMap[it]
                     ?: return@mapIndexedNotNull null)
             } else {
-                kPojo::class.findPropByName(it) to (data.parent.dataMap[it] ?: return@mapIndexedNotNull null)
+                kPojo::class.findPropByName(it) to (data.parent!!.dataMap[it] ?: return@mapIndexedNotNull null)
             }
         }
         listOfPair.forEach { (prop, value) ->
             if (kPojo[prop] != value) {
                 kPojo[prop] = value
                 validRef.kCascade.targetProperties.forEachIndexed { index, field ->
-                    if (data.parent.updateParams[field] != null) {
-                        updateParams[validRef.kCascade.properties[index]] = data.parent.updateParams[field]!!
+                    if (data.parent!!.updateParams[field] != null) {
+                        updateParams[validRef.kCascade.properties[index]] = data.parent!!.updateParams[field]!!
                     }
                 }
             }
         }
-    }
-
-    private fun patchFromPrevSibling() {
-        val prevSibling = data?.parent?.children?.find { it.raise }
-        if (data == null || !data.updateReferenceValue || prevSibling == null || raise) return
-        val validRef = prevSibling.validCascades.find { it.field != data.fieldOfParent } ?: return
-        val tableName = kPojo.kronosTableName()
-        val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
-            if (tableName == validRef.tableName) {
-                kPojo::class.findPropByName(validRef.kCascade.properties[index]) to (prevSibling.dataMap[it]
-                    ?: return@mapIndexedNotNull null)
-            } else {
-                kPojo::class.findPropByName(it) to (prevSibling.dataMap[it] ?: return@mapIndexedNotNull null)
-            }
-        }
-        listOfPair.forEach { (prop, value) ->
-            if (kPojo[prop] != value) {
-                kPojo[prop] = value
-                validRef.kCascade.targetProperties.forEachIndexed { index, field ->
-                    if (prevSibling.updateParams[field] != null) {
-                        updateParams[validRef.kCascade.properties[index]] = prevSibling.updateParams[field]!!
-                    }
-                }
-            }
+        if (validCascades.groupBy { it.field.tableName }
+                .values
+                .any { it.size > 1 }
+        ) {
+            this.insertIgnore = true
         }
     }
 
@@ -233,6 +215,14 @@ data class NodeOfKPojo(
      * 此过程确保根据实体类中定义的关系动态构建 ORM 级联操作树，从而允许正确执行级联删除或更新等操作。
      */
     private fun buildChildren() {
+        children.forEach {
+            it.data?.parent = this
+            it.data?.fieldOfParent = validCascades.find { cascade -> cascade.field.tableName == tableName }?.field
+            it.patchFromParent()
+            it.insertIgnore = false
+            it.children.clear()
+            it.onInit?.invoke(it)
+        }
         val cascades = validCascades.filter { ref ->
             (operationType == KOperationType.DELETE ||
                     (null != data && data.updateReferenceValue) ||
@@ -241,57 +231,47 @@ data class NodeOfKPojo(
                     }) && (
                     cascadeAllowed.isEmpty() || cascadeAllowed.contains(
                         kPojo::class.findPropByName(ref.field.name)
-                    )
-                    )
+                    ))
         }
 
-        fun addToChildren(node: NodeOfKPojo, index: Int, validCascade: ValidCascade) {
-            if (index != cascades.indexOfFirst { validCascade.tableName == it.tableName } && data?.parent != null) {
-                data.parent.children.add(node.apply { raise = true })
-            } else {
-                children.add(node)
-            }
-        }
+        cascades.forEach { cascade ->
+            val value = dataMap[cascade.field.name]
 
-        cascades.forEachIndexed { index, ref ->
-            val value = dataMap[ref.field.name]
             if (value != null) {
                 if (value is Collection<*>) {
                     value.forEach { child ->
                         if (child is KPojo) {
-                            addToChildren(
+                            val node =
                                 child.toTreeNode(
                                     NodeInfo(
                                         data?.updateReferenceValue == true,
                                         this,
-                                        ref.field
+                                        cascade.field
                                     ),
                                     cascadeAllowed,
                                     operationType,
                                     mutableMapOf(),
+                                    if (insertIgnore) mutableListOf(this) else mutableListOf(),
                                     onInit
-                                ),
-                                index,
-                                ref
-                            )
+                                )
+                            children.add(node)
                         }
                     }
                 } else if (value is KPojo) {
-                    addToChildren(
+                    val node =
                         value.toTreeNode(
                             NodeInfo(
                                 data?.updateReferenceValue == true,
                                 this,
-                                ref.field
+                                cascade.field
                             ),
                             cascadeAllowed,
                             operationType,
                             mutableMapOf(),
+                            if (insertIgnore) mutableListOf(this) else mutableListOf(),
                             onInit
-                        ),
-                        index,
-                        ref
-                    )
+                        )
+                    children.add(node)
                 }
             }
         }
@@ -382,7 +362,11 @@ internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
  *
  * @param prop The [KMutableProperty] whose value is to be retrieved.
  */
-internal operator fun KPojo.get(prop: KProperty<*>) = prop.getter.call(this)
+internal operator fun KPojo.get(prop: KProperty<*>) = if (prop is KProperty0<*>) {
+    prop.getter.call()
+} else {
+    prop.getter.call(this)
+}
 
 internal fun <T : KPojo> Array<out KProperty<*>>.filterReceiver(receiver: KClass<out T>) =
     filter { it.javaField!!.declaringClass.kotlin == receiver }

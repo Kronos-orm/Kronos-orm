@@ -65,6 +65,7 @@ class KCascade(
 
             @Suppress("UNCHECKED_CAST")
             override fun getValue(thisRef: Any, property: KProperty<*>): List<T> {
+                initKProperty()
                 return ((thisRef as KPojo)[relationOfThis] as List<R>? ?: emptyList()).map {
                     (it as KPojo)[targetOfRelation!!] as T
                 }

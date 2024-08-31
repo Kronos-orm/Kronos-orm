@@ -20,10 +20,6 @@ import com.kotlinorm.utils.getCreateTimeStrategy
 import com.kotlinorm.utils.getLogicDeleteStrategy
 import com.kotlinorm.utils.getOptimisticLockStrategy
 import com.kotlinorm.utils.getUpdateTimeStrategy
-import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
 
 /**
  * Kronos Pojo Class

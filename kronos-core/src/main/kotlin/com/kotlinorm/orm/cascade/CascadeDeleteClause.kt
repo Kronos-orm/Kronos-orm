@@ -104,6 +104,7 @@ object CascadeDeleteClause {
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val validCascades = findValidRefs( // 获取有效的引用
+            pojo::class,
             columns,
             KOperationType.DELETE,
             cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性

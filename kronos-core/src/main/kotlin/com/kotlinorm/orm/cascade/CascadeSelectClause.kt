@@ -28,7 +28,6 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
-import kotlin.reflect.jvm.javaField
 
 /**
  * Used to build a cascade select clause.
@@ -94,6 +93,7 @@ object CascadeSelectClause {
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
         val validCascades = findValidRefs(
+            pojo::class,
             columns,
             operationType,
             cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性

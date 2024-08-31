@@ -135,6 +135,7 @@ class RelationQuery {
         dataSource.table.createTable<Role>()
         dataSource.table.createTable<RolePermissionRelation>()
         dataSource.table.createTable<Permission>()
+
         val role = Role(
             name = "admin"
         ).apply {
@@ -144,10 +145,8 @@ class RelationQuery {
                 Permission(name = "test3")
             )
         }
-        val relations = role.rolePermissions
 
         role.insert().execute()
-
         val permissions = Role(name = "admin").select().queryOne().permissions
 
         println(permissions)

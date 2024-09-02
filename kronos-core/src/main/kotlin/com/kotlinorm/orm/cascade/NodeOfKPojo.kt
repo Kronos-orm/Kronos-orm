@@ -342,7 +342,7 @@ internal val KProperty<*>.isIterable
  * @param prop The [KProperty] whose value is to be set.
  * @param value The new value to assign to the property. Can be `null` if the property allows null values.
  */
-operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
+internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
     when (prop) {
         is KMutableProperty0<*> -> { // 若属性为可变属性
             prop.setter.call(value) // 通过setter方法设置属性值

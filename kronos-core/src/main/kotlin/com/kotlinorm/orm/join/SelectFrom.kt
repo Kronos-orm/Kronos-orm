@@ -413,6 +413,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
+    fun patch(vararg pairs: Pair<String, Any?>) {
+        paramMap.putAll(pairs)
+    }
+
     /**
      * Queries the data source using the provided data source wrapper and returns a list of maps representing the results.
      *

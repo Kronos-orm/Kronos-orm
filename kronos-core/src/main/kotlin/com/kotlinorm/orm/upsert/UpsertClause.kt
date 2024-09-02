@@ -128,6 +128,11 @@ class UpsertClause<T : KPojo>(
         return this
     }
 
+    fun patch(vararg pairs: Pair<String, Any?>): UpsertClause<T> {
+        paramMap.putAll(pairs)
+        return this
+    }
+
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         return build(wrapper).execute(wrapper)
     }

@@ -115,6 +115,10 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         return this
     }
 
+    fun patch(vararg pairs: Pair<String, Any?>): DeleteClause<T> {
+        paramMap.putAll(pairs)
+        return this
+    }
 
     /**
      * 构建并返回一个KronosAtomicTask对象，用于执行数据库的原子操作。

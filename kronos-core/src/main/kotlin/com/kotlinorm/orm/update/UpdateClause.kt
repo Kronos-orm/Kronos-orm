@@ -158,6 +158,11 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
+    fun patch(vararg pairs: Pair<String, Any?>): UpdateClause<T> {
+        paramMap.putAll(pairs)
+        return this
+    }
+
     /**
      * Builds a KronosAtomicTask based on the current state of the UpdateClause.
      *

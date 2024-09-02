@@ -342,15 +342,21 @@ internal val KProperty<*>.isIterable
  * @param prop The [KProperty] whose value is to be set.
  * @param value The new value to assign to the property. Can be `null` if the property allows null values.
  */
-internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
-    if (prop is KMutableProperty0<*>) { // 若属性为可变属性
-        prop.setter.call(value) // 通过setter方法设置属性值
-    } else if (prop is KMutableProperty1<*, *>) { // 若属性为可变属性
-        prop.setter.call(this, value) // 通过setter方法设置属性值
-    } else { // 若属性为不可变属性
-        val field = KPojo::class.java.getDeclaredField(prop.name) // 获取java属性
-        field.isAccessible = true // 设置为可访问
-        field.set(this, value) // 通过set方法设置属性值
+operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
+    when (prop) {
+        is KMutableProperty0<*> -> { // 若属性为可变属性
+            prop.setter.call(value) // 通过setter方法设置属性值
+        }
+
+        is KMutableProperty1<*, *> -> { // 若属性为可变属性
+            prop.setter.call(this, value) // 通过setter方法设置属性值
+        }
+
+        else -> { // 若属性为不可变属性
+            val field = prop.javaField // 获取java属性
+            field?.isAccessible = true // 设置为可访问
+            field?.set(this, value) // 通过set方法设置属性值
+        }
     }
 }
 

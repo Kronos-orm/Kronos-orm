@@ -44,7 +44,7 @@ class KTableAddParamTransformer(
      * @return the transformed block expression
      */
     override fun visitBlock(expression: IrBlock): IrExpression {
-        if(expression.origin == IrStatementOrigin.EQ) {
+        if(expression.origin == null) {
             with(pluginContext) {
                 with(irFunction) {
                     return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {

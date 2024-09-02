@@ -13,41 +13,35 @@ import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
 val createPairSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createPair")
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "createPair").first()
 
 context(IrPluginContext)
 val createMutableMapSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createMutableMap")
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "createMutableMap").first()
 
 context(IrPluginContext)
 val createFieldListSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createFieldList")
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "createFieldList").first()
 
 context(IrPluginContext)
 val createStringListSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createStringList")
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "createStringList").first()
 
 context(IrPluginContext)
 val createTableIndexListSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createTableIndexList")
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "createTableIndexList").first()
 
 context(IrPluginContext)
 private val getSafeValueSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue")
-        .first()
+    get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue").first()
 
 context(IrPluginContext)
 private val fieldSymbol
@@ -76,19 +70,15 @@ fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBo
     return irBlockBody {
         val pairs = declaration.properties.map {
             applyIrCall(
-                createPairSymbol,
-                irString(it.name.asString()),
-                irGetField(
-                    irGet(irFunction.dispatchReceiverParameter!!),
-                    it.backingField!!
+                createPairSymbol, irString(it.name.asString()), irGetField(
+                    irGet(irFunction.dispatchReceiverParameter!!), it.backingField!!
                 )
             )
         }.toList()
         +irReturn(
             applyIrCall(
                 createMutableMapSymbol, irVararg(
-                    createPairSymbol.owner.returnType,
-                    pairs
+                    createPairSymbol.owner.returnType, pairs
                 )
             )
         )
@@ -108,14 +98,11 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
     return irBlockBody {
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
         +declaration.properties.toList().mapNotNull { property ->
-            dispatcher.setValue(
-                property, applyIrCall(
-                    mapGetterSymbol!!,
-                    irString(property.name.asString())
-                ) {
-                    dispatchBy(irGet(map))
-                }
-            )
+            dispatcher.setValue(property, applyIrCall(
+                mapGetterSymbol!!, irString(property.name.asString())
+            ) {
+                dispatchBy(irGet(map))
+            })
         }
 
         +irReturn(
@@ -138,19 +125,18 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
 
         +declaration.properties.toList().mapNotNull { property ->
-            dispatcher.setValue(
-                property, applyIrCall(
-                    mapGetterSymbol!!,
-                    irString(property.name.asString())
-                ) {
-                    dispatchBy(irGet(map))
-                }
-            )?.let {
+            dispatcher.setValue(property, applyIrCall(getSafeValueSymbol,
+                irGet(irFunction.dispatchReceiverParameter!!),
+                irString(property.backingField!!.type.classFqName!!.asString()),
+                applyIrCall(createStringListSymbol,
+                    irVararg(irBuiltIns.stringType, property.backingField!!.type.getClass()!!.superTypes.map { type ->
+                        irString(type.getClass()!!.kotlinFqName.asString())
+                    })),
+                irGet(map),
+                irString(property.name.asString()),
+                irBoolean(property.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))))?.let {
                 irTry(
-                    irUnit().type,
-                    it,
-                    listOf(),
-                    null
+                    irUnit().type, it, listOf(), null
                 )
             }
         }
@@ -184,16 +170,13 @@ fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
         val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
         val listOfIndexObj = indexesAnnotations.map {
             applyIrCall(
-                KTableIndexSymbol.constructors.first(),
-                *it.valueArguments.toTypedArray()
+                KTableIndexSymbol.constructors.first(), *it.valueArguments.toTypedArray()
             )
         }
         +irReturn(
             applyIrCall(
-                createTableIndexListSymbol,
-                irVararg(
-                    KTableIndexSymbol.defaultType,
-                    listOfIndexObj
+                createTableIndexListSymbol, irVararg(
+                    KTableIndexSymbol.defaultType, listOfIndexObj
                 )
             )
         )
@@ -213,8 +196,7 @@ fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
         +irReturn(
             applyIrCall(
                 createFieldListSymbol, irVararg(
-                    fieldSymbol.owner.defaultType,
-                    declaration.properties.map {
+                    fieldSymbol.owner.defaultType, declaration.properties.map {
                         getColumnName(it)
                     }.toList()
                 )
@@ -284,19 +266,16 @@ fun createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
 
 context(IrBuilderWithScope, IrPluginContext)
 fun IrExpression.setValue(property: IrProperty, value: IrExpression): IrExpression? {
-    if(property.isDelegated) return null
+    if (property.isDelegated) return null
     return if (property.setter != null) {
         applyIrCall(
-            property.setter!!.symbol,
-            value
+            property.setter!!.symbol, value
         ) {
             dispatchReceiver = this@setValue
         }
     } else {
         irSetField(
-            this@setValue,
-            property.backingField!!,
-            value
+            this@setValue, property.backingField!!, value
         )
     }
 }
@@ -311,8 +290,7 @@ fun IrExpression.getValue(property: IrProperty): IrExpression {
         }
     } else {
         irGetField(
-            this@getValue,
-            property.backingField!!
+            this@getValue, property.backingField!!
         )
     }
 }

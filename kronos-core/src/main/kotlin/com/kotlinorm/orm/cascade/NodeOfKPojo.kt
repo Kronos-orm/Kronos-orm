@@ -162,7 +162,7 @@ data class NodeOfKPojo(
      * 如果当前节点的属性值与父节点的属性值不同，它将使用父节点的值更新当前节点的属性，并使用新值更新updateParams 映射，确保级联操作将更新的值传递到树的下方。
      */
     private fun patchFromParent() {
-        if (data == null || !data.updateReferenceValue || data.parent?.insertIgnore == true) return
+        if (data == null || !data.updateReferenceValue || data.parent?.insertIgnore != false) return
         val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
         val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
             if (tableName == validRef.tableName) {

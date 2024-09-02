@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 
 /**
  * KTable Add Param Transformer
@@ -43,15 +44,19 @@ class KTableAddParamTransformer(
      * @return the transformed block expression
      */
     override fun visitBlock(expression: IrBlock): IrExpression {
-        with(pluginContext) {
-            with(irFunction) {
-                return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-                    +expression.statements
-                    +putFieldParamMap()
+        if(expression.origin == IrStatementOrigin.EQ) {
+            with(pluginContext) {
+                with(irFunction) {
+                    return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                        +expression.statements
+                        +putFieldParamMap()
 
-                    super.visitBlock(expression)
+                        super.visitBlock(expression)
+                    }
                 }
             }
+        } else {
+            return super.visitBlock(expression)
         }
     }
 }

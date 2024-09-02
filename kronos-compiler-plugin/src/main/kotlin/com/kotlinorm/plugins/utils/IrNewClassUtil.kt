@@ -68,11 +68,11 @@ context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     return irBlockBody {
+        val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
         val pairs = declaration.properties.map {
             applyIrCall(
-                createPairSymbol, irString(it.name.asString()), irGetField(
-                    irGet(irFunction.dispatchReceiverParameter!!), it.backingField!!
-                )
+                createPairSymbol, irString(it.name.asString()),
+                dispatcher.getValue(it)
             )
         }.toList()
         +irReturn(

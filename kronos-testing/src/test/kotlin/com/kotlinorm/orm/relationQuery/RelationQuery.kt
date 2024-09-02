@@ -7,7 +7,6 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.relationQuery.manyToMany.AuthUser
 import com.kotlinorm.orm.relationQuery.manyToMany.Permission
 import com.kotlinorm.orm.relationQuery.manyToMany.Role
 import com.kotlinorm.orm.relationQuery.manyToMany.RolePermissionRelation
@@ -154,35 +153,30 @@ class RelationQuery {
     }
 
     @Test
-    fun testAuthUser() {
-        dataSource.table.dropTable<AuthUser>()
+    fun testToMapUseDelegate() {
         dataSource.table.dropTable<Role>()
         dataSource.table.dropTable<RolePermissionRelation>()
         dataSource.table.dropTable<Permission>()
-        dataSource.table.createTable<AuthUser>()
         dataSource.table.createTable<Role>()
         dataSource.table.createTable<RolePermissionRelation>()
         dataSource.table.createTable<Permission>()
 
         val role = Role(
-            name = "admin"
-        ).apply {
-            permissions = listOf(
-                Permission(name = "test"),
-                Permission(name = "test2"),
-                Permission(name = "test3")
-            )
-        }
-
-        val (lastInsertId) = role.insert().execute()
-
-        val user = AuthUser(
             name = "admin",
-            roleId = lastInsertId
+            rolePermissions = listOf(
+                RolePermissionRelation(
+                    permission = Permission(name = "test")
+                ),
+                RolePermissionRelation(
+                    permission = Permission(name = "test2")
+                ),
+                RolePermissionRelation(
+                    permission = Permission(name = "test3")
+                )
+            )
         )
-        user.insert().execute()
-        val authU = AuthUser(name = "admin").select().queryOne()
 
-        println(authU)
+        val a = role.toDataMap()
+        println(a)
     }
 }

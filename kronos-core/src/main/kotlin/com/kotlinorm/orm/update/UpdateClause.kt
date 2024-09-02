@@ -159,7 +159,7 @@ class UpdateClause<T : KPojo>(
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): UpdateClause<T> {
-        paramMap.putAll(pairs)
+        paramMapNew.putAll(pairs.map { Field(it.first) to it.second })
         return this
     }
 
@@ -285,7 +285,10 @@ class UpdateClause<T : KPojo>(
             return map { it.set(rowData) }
         }
 
-        fun <T : KPojo> List<UpdateClause<T>>.cascade(vararg props: KProperty<*>, enabled: Boolean = true): List<UpdateClause<T>> {
+        fun <T : KPojo> List<UpdateClause<T>>.cascade(
+            vararg props: KProperty<*>,
+            enabled: Boolean = true
+        ): List<UpdateClause<T>> {
             return map { it.cascade(*props, enabled = enabled) }
         }
 

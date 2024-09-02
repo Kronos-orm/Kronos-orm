@@ -55,6 +55,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var cascadeEnabled = true
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+    private var paramMapNew = mutableMapOf<String, Any?>()
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
         // 若logicDeleteStrategy.enabled为false则抛出异常
@@ -116,7 +117,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): DeleteClause<T> {
-        paramMap.putAll(pairs)
+        paramMapNew.putAll(pairs)
         return this
     }
 
@@ -145,6 +146,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
         // 构建条件SQL语句及参数映射
         val (whereClauseSql, paramMap) = buildConditionSqlWithParams(wrapper, condition)
+        paramMap.putAll(paramMapNew)
 
         // 处理逻辑删除时的更新字段逻辑
         if (logic) {

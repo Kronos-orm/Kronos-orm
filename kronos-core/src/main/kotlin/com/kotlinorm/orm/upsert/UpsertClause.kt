@@ -68,7 +68,8 @@ class UpsertClause<T : KPojo>(
     private var onFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
-    private var lock:PessimisticLock? = null
+    private var lock: PessimisticLock? = null
+    private var paramMapNew = mutableMapOf<String, Any?>()
 
     init {
         if (setUpsertFields != null) {
@@ -129,7 +130,7 @@ class UpsertClause<T : KPojo>(
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): UpsertClause<T> {
-        paramMap.putAll(pairs)
+        paramMapNew.putAll(pairs)
         return this
     }
 
@@ -152,9 +153,9 @@ class UpsertClause<T : KPojo>(
             toUpdateFields = allFields.toLinkedSet()
         }
 
-        paramMap = paramMap.filter { it ->
+        paramMap = (paramMap.filter { it ->
             it.key in (toUpdateFields + toInsertFields + onFields).map { it.name }
-        }.toMutableMap()
+        } + paramMapNew).toMutableMap()
 
         if (onConflict) {
             return KronosAtomicActionTask(
@@ -178,7 +179,8 @@ class UpsertClause<T : KPojo>(
                         .cascade(enabled = false)
                         .lock(lock)
                         .apply {
-                            selectFields = linkedSetOf(Field("COUNT(1)", "COUNT(1)" , type = KColumnType.CUSTOM_CRITERIA_SQL))
+                            selectFields =
+                                linkedSetOf(Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL))
                             selectAll = false
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map {
@@ -211,7 +213,10 @@ class UpsertClause<T : KPojo>(
             return map { it.onConflict() }
         }
 
-        fun <T : KPojo> List<UpsertClause<T>>.cascade(vararg props: KProperty<*>, enabled: Boolean = true): List<UpsertClause<T>> {
+        fun <T : KPojo> List<UpsertClause<T>>.cascade(
+            vararg props: KProperty<*>,
+            enabled: Boolean = true
+        ): List<UpsertClause<T>> {
             return map { it.cascade(*props, enabled = enabled) }
         }
 

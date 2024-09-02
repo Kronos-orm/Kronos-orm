@@ -39,11 +39,13 @@ object NamedParameterUtils {
      */
     private const val PARAMETER_SEPARATORS = "\"':&,;()|=+-*%/\\<>^"
 
+    private const val SEPARATOR_INDEX_SIZE = 128
+
     /**
      * An index with separator flags per character code.
      * Technically only needed between 34 and 124 at this point.
      */
-    private val separatorIndex = BooleanArray(128)
+    private val separatorIndex = BooleanArray(SEPARATOR_INDEX_SIZE)
 
     init {
         for (i in PARAMETER_SEPARATORS.indices) {

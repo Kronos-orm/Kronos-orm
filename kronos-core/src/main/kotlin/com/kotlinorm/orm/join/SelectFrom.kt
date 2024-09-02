@@ -31,6 +31,7 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.KTableConditionalField

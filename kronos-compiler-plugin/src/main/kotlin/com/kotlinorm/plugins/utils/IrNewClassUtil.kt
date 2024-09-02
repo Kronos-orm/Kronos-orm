@@ -9,13 +9,15 @@ import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
+import org.jetbrains.kotlin.ir.util.properties
 
 context(IrPluginContext)
 val createPairSymbol
@@ -104,13 +106,12 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.valueParameters.first()
     return irBlockBody {
-        declaration.properties.forEach {
-            +irSetField(
-                irGet(irFunction.dispatchReceiverParameter!!),
-                it.backingField!!,
-                applyIrCall(
+        val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+        +declaration.properties.toList().mapNotNull { property ->
+            dispatcher.setValue(
+                property, applyIrCall(
                     mapGetterSymbol!!,
-                    irString(it.name.asString())
+                    irString(property.name.asString())
                 ) {
                     dispatchBy(irGet(map))
                 }
@@ -134,33 +135,24 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.valueParameters.first()
     return irBlockBody {
-        declaration.properties.forEach {
-            +irTry(
-                irUnit().type,
-                irSetField(
-                    irGet(irFunction.dispatchReceiverParameter!!),
-                    it.backingField!!,
-                    applyIrCall(
-                        getSafeValueSymbol,
-                        irGet(irFunction.dispatchReceiverParameter!!),
-                        irString(it.backingField!!.type.classFqName!!.asString()),
-                        applyIrCall(
-                            createStringListSymbol,
-                            irVararg(
-                                irBuiltIns.stringType,
-                                it.backingField!!.type.getClass()!!.superTypes.map { type ->
-                                    irString(type.getClass()!!.kotlinFqName.asString())
-                                }
-                            )
-                        ),
-                        irGet(map),
-                        irString(it.name.asString()),
-                        irBoolean(it.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))
-                    )
-                ),
-                listOf(),
-                null
-            )
+        val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+
+        +declaration.properties.toList().mapNotNull { property ->
+            dispatcher.setValue(
+                property, applyIrCall(
+                    mapGetterSymbol!!,
+                    irString(property.name.asString())
+                ) {
+                    dispatchBy(irGet(map))
+                }
+            )?.let {
+                irTry(
+                    irUnit().type,
+                    it,
+                    listOf(),
+                    null
+                )
+            }
         }
 
         +irReturn(
@@ -286,6 +278,41 @@ fun createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
             getValidStrategy(declaration, globalOptimisticLockSymbol, OptimisticLockFqName)
+        )
+    }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrExpression.setValue(property: IrProperty, value: IrExpression): IrExpression? {
+    if(property.isDelegated) return null
+    return if (property.setter != null) {
+        applyIrCall(
+            property.setter!!.symbol,
+            value
+        ) {
+            dispatchReceiver = this@setValue
+        }
+    } else {
+        irSetField(
+            this@setValue,
+            property.backingField!!,
+            value
+        )
+    }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrExpression.getValue(property: IrProperty): IrExpression {
+    return if (property.getter != null) {
+        applyIrCall(
+            property.getter!!.symbol
+        ) {
+            dispatchReceiver = this@getValue
+        }
+    } else {
+        irGetField(
+            this@getValue,
+            property.backingField!!
         )
     }
 }

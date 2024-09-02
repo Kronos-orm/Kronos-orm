@@ -16,10 +16,8 @@
 
 package com.kotlinorm.annotations
 
-import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
 import com.kotlinorm.enums.KOperationType
-import kotlin.reflect.KClass
 
 /**
  * Annotation to specify the cascade between two database tables.

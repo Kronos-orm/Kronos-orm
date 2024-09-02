@@ -17,12 +17,12 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KCascade
+import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.valueParameters
+import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
 
 /**
  * Represents a valid cascade within the context of ORM operations.
@@ -71,13 +71,10 @@ data class ValidCascade(
  * @return A list of [ValidCascade] objects representing valid cascades for the specified operation type.
  */
 fun findValidRefs(
-    columns: List<Field>, operationType: KOperationType, allowed: Set<String>, allowAll: Boolean
+    kClass: KClass<*>, columns: List<Field>, operationType: KOperationType, allowed: Set<String>, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
-    return columns.filter { !it.isColumn && (it.name in allowed || allowAll) }.map { col ->
-        val ref =
-            col.cascadeKClassName.kConstructor.callBy(emptyMap()) as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-
+    return columns.filter { !it.isColumn && (it.name in allowed || allowAll) && !it.cascadeKClassName.isNullOrEmpty() }.map { col ->
         //如果是Select并且该列有cascadeSelectIgnore，且没有明确指定允许当前列，直接返回空
         if (col.cascadeSelectIgnore && allowAll && operationType == KOperationType.SELECT) {
             return@map listOf<ValidCascade>()
@@ -85,13 +82,17 @@ fun findValidRefs(
 
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
         return@map if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
+            val ref =
+                col.cascadeKClassName.kClass.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             listOf(
                 ValidCascade(col, col.cascade, ref, col.tableName)
             ) // 若有级联映射，返回引用
         } else {
+            val ref =
+                col.cascadeKClassName.kClass.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             val tableName = ref.kronosTableName() // 获取引用所在的表名
             ref.kronosColumns().filter {
-                it.cascade != null && it.tableName == tableName && it.refUseFor(operationType)
+                it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.cascadeKClassName == kClass.qualifiedName
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName)
             } // 若没有级联映射，返回引用的所有关于本表级联映射
@@ -99,7 +100,7 @@ fun findValidRefs(
     }.flatten()
 }
 
-private val lruCacheOfConstructor = LRUCache<String, KFunction<*>>(128) // 用于存储实例化的对象
+private val lruCacheOfKClass = LRUCache<String, KClass<*>>() // 用于存储实例化的对象
 
 /**
  * Instantiates an object from a class name string, utilizing a cache to improve performance.
@@ -122,12 +123,11 @@ private val lruCacheOfConstructor = LRUCache<String, KFunction<*>>(128) // 用�
  * @return The instantiated object of the specified class.
  * @throws UnsupportedOperationException if the class name is null or the class cannot be found.
  */
-private val String?.kConstructor
-    get(): KFunction<*> {
+private val String?.kClass
+    get(): KClass<*> {
         this
             ?: throw UnsupportedOperationException("The cascade class only support KPojo/Collections<KPojo>, please check the cascade class!")
-        return lruCacheOfConstructor.getOrPut(this) {
-            Class.forName(this).kotlin.constructors.find { it.valueParameters.all { arg -> arg.isOptional } }
-                ?: throw UnsupportedOperationException("The cascade class $this do not have a no-arg constructor, please add a no-arg constructor!")
+        return lruCacheOfKClass.getOrPut(this) {
+            Class.forName(this).kotlin
         }
     }

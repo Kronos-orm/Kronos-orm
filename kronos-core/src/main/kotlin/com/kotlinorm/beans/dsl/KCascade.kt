@@ -19,6 +19,15 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.CascadeDeleteAction
 import com.kotlinorm.enums.CascadeDeleteAction.NO_ACTION
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.orm.cascade.get
+import com.kotlinorm.orm.cascade.set
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty0
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 
 class KCascade(
     val properties: Array<String> = arrayOf(),
@@ -32,4 +41,44 @@ class KCascade(
         KOperationType.SELECT,
         KOperationType.UPSERT
     )
-)
+) {
+    companion object {
+        inline fun <reified T : KPojo, reified R> manyToMany(relationOfThis: KProperty0<List<R>?>): ManyToMany<T, R> {
+            return ManyToMany(relationOfThis, R::class, T::class)
+        }
+
+        // 自定义委托类
+        class ManyToMany<T, R>(
+            private var relationOfThis: KProperty0<List<R>?>,
+            private val relationClass: KClass<*>,
+            private val targetClass: KClass<*>
+        ) : ReadWriteProperty<Any, List<T>> {
+
+            private var targetOfRelation: KProperty<*>? = null
+
+            private fun initKProperty() {
+                if (targetOfRelation == null) {
+                    targetOfRelation =
+                        relationClass.memberProperties.find { it.returnType.classifier?.starProjectedType == targetClass.starProjectedType }!!
+                }
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            override fun getValue(thisRef: Any, property: KProperty<*>): List<T> {
+                initKProperty()
+                return ((thisRef as KPojo)[relationOfThis] as List<R>? ?: emptyList()).map {
+                    (it as KPojo)[targetOfRelation!!] as T
+                }
+            }
+
+            override fun setValue(thisRef: Any, property: KProperty<*>, value: List<T>) {
+                initKProperty()
+                (thisRef as KPojo)[relationOfThis] = value.map {
+                    relationClass.createInstance().apply {
+                        (this@apply as KPojo)[targetOfRelation!!] = it
+                    }
+                }
+            }
+        }
+    }
+}

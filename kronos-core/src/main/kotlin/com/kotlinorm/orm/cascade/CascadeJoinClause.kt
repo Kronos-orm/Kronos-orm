@@ -25,7 +25,6 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.*
 import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
 import kotlin.reflect.KProperty
-import kotlin.reflect.jvm.javaField
 
 /**
  * Defines the logic for building and executing cascade join clauses in the context of ORM operations.
@@ -98,6 +97,7 @@ object CascadeJoinClause {
     ): KronosQueryTask {
         val listOfValidReferences = listOfColumns.map { columns ->
             findValidRefs(
+                columns.first::class,
                 columns.second,
                 KOperationType.SELECT,
                 cascadeAllowed.filterReceiver(columns.first::class).map { it.name }.toSet(),

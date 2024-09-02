@@ -1,6 +1,6 @@
 package com.kotlinorm.utils
 
-class LRUCache<T, R>(private val capacity: Int) {
+class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY) {
 
     private val map = hashMapOf<T, Node<T, R>>()
     private val head: Node<T, R> = Node()
@@ -57,5 +57,9 @@ class LRUCache<T, R>(private val capacity: Int) {
     data class Node<T, R>(val key: T? = null, val value: R? = null) {
         var next: Node<T, R>? = null
         var prev: Node<T, R>? = null
+    }
+
+    companion object{
+        const val DEFAULT_LRU_CACHE_CAPACITY = 128
     }
 }

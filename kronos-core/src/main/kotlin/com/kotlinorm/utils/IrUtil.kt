@@ -54,12 +54,17 @@ fun getOptimisticLockStrategy(): KronosCommonStrategy {
     return Kronos.optimisticLockStrategy
 }
 
+@Suppress("UNUSED")
 fun createPair(first: String, second: Any?) = first to second
 
+@Suppress("UNUSED")
 fun createMutableMap(vararg pairs: Pair<String, Any?>) = mutableMapOf(*pairs)
 
+@Suppress("UNUSED")
 fun createFieldList(vararg elements: Field) = mutableListOf(*elements)
 
+@Suppress("UNUSED")
 fun createStringList(vararg elements: String) = mutableListOf(*elements)
 
+@Suppress("UNUSED")
 fun createTableIndexList(vararg elements: KTableIndex) = mutableListOf(*elements)

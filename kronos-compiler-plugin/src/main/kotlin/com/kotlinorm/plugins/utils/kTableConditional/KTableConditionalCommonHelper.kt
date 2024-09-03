@@ -68,10 +68,12 @@ private val criteriaClassSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Criteria")!!
 
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 private val addCriteriaChild
     get() = criteriaClassSymbol.getSimpleFunction("addChild")!!
 
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val stringPlusSymbol
     get() = referenceClass("kotlin.String")!!.getSimpleFunction("plus")!!
 
@@ -82,6 +84,7 @@ internal val stringPlusSymbol
  * @return a string representing the function name
  */
 context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrExpression.funcName(setNot: Boolean = false): String {
     return when (this) {
         is IrCall -> when (origin) {
@@ -145,6 +148,7 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
  * @return The created Criteria object.
  */
 context(IrBlockBuilder, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createCriteria(
     parameterName: IrExpression? = null,
     type: String,

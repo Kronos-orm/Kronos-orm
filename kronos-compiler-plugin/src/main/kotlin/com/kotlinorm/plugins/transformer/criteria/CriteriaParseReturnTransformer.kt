@@ -31,6 +31,30 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  * Transforms the return statement of a criteria function into a setCriteria call
  * @author: Jieyao Lu
  * @create: 2024/4/23 15:10
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     fun <T: KPojo> T.foo() {
+ *          val action: (KTableConditional<T>.(T) -> Unit) = { it: T ->
+ *              it.name == "Hello World"
+ *          }
+ *          KTableConditional<T>().action(this)
+ *     }
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *     fun <T: KPojo> T.foo() {
+ *  *       val action: (KTableConditional<T>.(T) -> Unit) = { it: T ->
+ *              var tmp0 = Criteria(Field(""), ROOT, false, null, mutableListOf(), null, null)
+ *              var tmp1 = Criteria(Field("name"), eq, false, "Hello World", t, smart, mutableListOf())
+ *              tmp0.children.add(tmp1)
+ *              setCriteria(tmp0)
+ *              it.name == "Hello World"
+ *          }
+ *          KTableConditional<T>().action(this)
+ *    }
  **/
 class CriteriaParseReturnTransformer(
     private val pluginContext: IrPluginContext,

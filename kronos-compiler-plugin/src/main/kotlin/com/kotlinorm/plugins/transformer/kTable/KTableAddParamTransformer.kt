@@ -31,6 +31,30 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
  *
  * Transform IR blocks in Kotlin code. It enriches the block by appending a field parameter mapping at the end.
  * @author: OUSC
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     fun <T: KPojo> T.foo() {
+ *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *              it.username = "Hello World"
+ *              it.password = "123456"
+ *          }
+ *          KTable<T>().action(this)
+ *     }
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *     fun <T: KPojo> foo() {
+ *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *              setValue(Field("username"), "Hello World")
+ *              setValue(Field("password"), "123456")
+ *              it.username = "Hello World"
+ *              it.password = "123456"
+ *          }
+ *          KTable<T>().action(this)
+ *    }
  */
 class KTableAddParamTransformer(
     private val pluginContext: IrPluginContext,

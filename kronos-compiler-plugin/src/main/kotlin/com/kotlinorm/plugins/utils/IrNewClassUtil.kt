@@ -93,6 +93,7 @@ fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBo
  * @return an `IrBlockBody` that sets the properties of the IrClass instance using values from the map
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.valueParameters.first()
     return irBlockBody {
@@ -119,6 +120,7 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
  * @return an `IrBlockBody` containing the generated code.
  */
 context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.valueParameters.first()
     return irBlockBody {
@@ -141,9 +143,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
             }
         }
 
-        +irReturn(
-            irGet(irFunction.dispatchReceiverParameter!!)
-        )
+        +irReturn(dispatcher)
     }
 }
 

@@ -30,6 +30,79 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
  * Kronos Parser Transformer
  *
  * @author OUSC, Jieyao Lu
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     class Foo : KPojo {
+ *         var username: String {get set}
+ *         var password: String {get set}
+ *
+ *         fake override fun toDataMap(): MutableMap<String, Any?>
+ *         fake override fun safeFromMapData(data: Map<String, Any?>): Foo
+ *         fake override fun fromMapData(data: Map<String, Any?>): Foo
+ *         fake override fun kronosTableName(): String
+ *         fake override fun kronosTableIndex(): List<KTableIndex>
+ *         fake override fun kronosColumns(): List<Field>
+ *         fake override fun kronosCreateTime(): KronosCommonStrategy
+ *         fake override fun kronosUpdateTime(): KronosCommonStrategy
+ *         fake override fun kronosLogicDelete(): KronosCommonStrategy
+ *         fake override fun kronosOptimisticLock(): KronosCommonStrategy
+ *     }
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *     class Foo : KPojo {
+ *         var username: String {get set}
+ *         var password: String {get set}
+ *
+ *         override fun toDataMap(): MutableMap<String, Any?> {
+ *             return mutableMapOf(
+ *                 "username" to username,
+ *                 "password" to password
+ *             )
+ *         }
+ *
+ *         override fun safeFromMapData(data: Map<String, Any?>): Foo {
+ *              try this.username = getSafeValue(data, "username")
+ *              try this.password = getSafeValue(data, "password")
+ *              return this
+ *         }
+ *
+ *         override fun fromMapData(data: Map<String, Any?>): Foo {
+ *              this.username = data["username"]
+ *              this.password = data["password"]
+ *              return this
+ *         }
+ *
+ *         override fun kronosTableName(): String {
+*               return "foo"
+ *         }
+ *
+ *         override fun kronosTableIndex(): List<KTableIndex> {
+ *              return listOf()
+ *         }
+ *
+ *         override fun kronosColumns(): List<Field> {
+ *              return listOf(Field("username"), Field("password"))
+ *         }
+ *
+ *         override fun kronosCreateTime(): KronosCommonStrategy {
+ *              return KronosCommonStrategy("create_time")
+ *         }
+ *
+ *         override fun kronosUpdateTime(): KronosCommonStrategy {
+ *              return KronosCommonStrategy("update_time")
+ *         }
+ *
+ *         override fun kronosLogicDelete(): KronosCommonStrategy {
+ *              return KronosCommonStrategy("deleted")
+ *         }
+ *
+ *         override fun kronosOptimisticLock(): KronosCommonStrategy {
+ *              return KronosCommonStrategy("version")
+ *         }
  */
 class KronosIrClassNewTransformer(
     private val pluginContext: IrPluginContext, private val irClass: IrClass

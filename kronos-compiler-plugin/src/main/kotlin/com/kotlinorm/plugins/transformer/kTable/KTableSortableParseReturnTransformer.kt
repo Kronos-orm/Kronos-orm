@@ -14,6 +14,29 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  *@author: Jieyao Lu
  *@description:
  *@create: 2024/5/14 15:29
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     fun <T: KPojo> T.foo() {
+ *          val action: (KTableSortable<T>.(T) -> Unit) = { it: T ->
+ *              it.username.desc() + it.password.asc() + it.age
+ *          }
+ *          KTableSortable<T>().action(this)
+ *     }
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *     fun <T: KPojo> foo() {
+ *          val action: (KTableSortable<T>.(T) -> Unit) = { it: T ->
+ *              addSortField(Field("username").desc())
+ *              addSortField(Field("password").asc())
+ *              addSortField(Field("age"))
+ *              it.username.desc() + it.password.asc() + it.age
+ *          }
+ *          KTableSortable<T>().action(this)
+ *    }
  **/
 class KTableSortableParseReturnTransformer(
     private val pluginContext: IrPluginContext,

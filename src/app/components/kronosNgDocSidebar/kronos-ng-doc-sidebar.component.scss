@@ -1,31 +1,39 @@
 :host ::ng-deep {
-  .p-panelmenu {
+  .p-menu {
+    background: #FFF;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: block;
 
-    .p-panelmenu-panel {
+    .p-menu-panel {
       box-shadow: none !important;
     }
 
-    .p-panelmenu-header {
-      .p-panelmenu-header-content {
+    .p-submenu-header {
+      span {
         color: #000 !important;
+        font-weight: 600;
+        font-size: 18px;
+        padding: 0 1.0rem !important;
         background-color: #FFF !important;
       }
 
       &:hover {
-        .p-panelmenu-header-content {
+        .p-menu-header-content {
           background-color: #F0F0F0 !important;
         }
       }
 
       &:active {
-        .p-panelmenu-header-content {
+        .p-menu-header-content {
           background-color: #E2E2E2 !important;
         }
       }
 
-      .p-panelmenu-header-action {
+      .p-menu-header-action {
         color: #000 !important;
-        padding: 0.8rem 1rem !important;
+        padding: 0.6rem 1.0rem !important;
       }
 
       .p-menuitem-text {
@@ -34,13 +42,13 @@
       }
 
       &.p-highlight {
-        .p-menuitem-text, .p-panelmenu-header-action {
+        .p-menuitem-text, .p-menu-header-action {
           color: #7F52FF !important;
         }
       }
     }
 
-    .p-panelmenu-content {
+    .p-menuitem {
       background-color: #FFF !important;
 
       .p-menuitem-icon {
@@ -50,12 +58,12 @@
       }
     }
 
-    .p-panelmenu-content .p-menuitem > .p-menuitem-content .p-menuitem-link .p-menuitem-text {
+    .p-menuitem > .p-menuitem-content .p-menuitem-link .p-menuitem-text {
       color: #000 !important;
     }
 
-    .p-panelmenu-content .p-menuitem > .p-menuitem-content .p-menuitem-link {
-      padding: 0.8rem 1rem !important;
+    .p-menuitem > .p-menuitem-content .p-menuitem-link {
+      padding: 0.6rem 1.0rem !important;
       border-radius: 0.5rem !important;
 
       &:hover {
@@ -63,7 +71,7 @@
       }
     }
 
-    .p-panelmenu-content .p-menuitem > .p-menuitem-content .p-menuitem-link-active {
+    .p-menuitem > .p-menuitem-content .p-menuitem-link-active {
 
       .p-menuitem-icon {
         visibility: visible;
@@ -78,7 +86,7 @@
     }
   }
 
-  .p-toggleable-content.p-panelmenu-expanded {
+  .p-toggleable-content.p-menu-expanded {
     height: auto !important;
   }
 }

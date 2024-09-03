@@ -123,164 +123,6 @@ CREATE UNIQUE INDEX idx_multi ON "tb_user" ("id", "name");
 >
 > 我们通过编译器插件读取注解信息并将信息保存在实体类定义中，使全部的表结构解析都发生在**编译期**而不是运行期，这样虽然失去了部分灵活性，但是可以避免运行时的性能损耗。
 
-## 全局配置项
-
-### 全局表名策略
-
-| 参数名                   | 类型                     | 默认值                  |
-|-----------------------|------------------------|----------------------|
-| `tableNamingStrategy` | `KronosNamingStrategy` | `NoneNamingStrategy` |
-
-通过创建`KronosNamingStrategy`的实现类来自定义表名策略（详见：[命名策略](/documentation/zh-CN/class-definition/naming-strategy)），然后在配置文件中指定该实现类。
-
-我们默认提供了`LineHumpNamingStrategy`表名策略：
-
-该策略将kotlin类名转换为下划线分隔的小写字符串，如：`ADataClass` -> `a_data_class`，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
-
-```kotlin
-Kronos.tableNamingStrategy = LineHumpNamingStrategy
-```
-
-### 全局列名策略
-
-| 参数名                   | 类型                     | 默认值                  |
-|-----------------------|------------------------|----------------------|
-| `fieldNamingStrategy` | `KronosNamingStrategy` | `NoneNamingStrategy` |
-
-通过创建`KronosNamingStrategy`的实现类来自定义表名策略（详见：[命名策略](/documentation/class-definition/naming-strategy)），然后在配置文件中指定该实现类。
-
-我们默认提供了`LineHumpNamingStrategy`表名策略：
-
-该策略将kotlin类名转换为下划线分隔的小写字符串，如：`ADataClass` -> `a_data_class`，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
-
-```kotlin
-Kronos.fieldNamingStrategy = LineHumpNamingStrategy
-```
-
-### 创建时间策略
-
-| 参数名                  | 类型                     | 默认值                                                        |
-|----------------------|------------------------|------------------------------------------------------------|
-| `createTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "create_time", "createTime")` |
-
-通过创建`KronosCommonStrategy`的实现类来自定义创建时间策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
-
-创建时间策略的全局默认关闭，需要手动开启。
-
-```kotlin
-Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "createTime"))
-```
-
-全局设置创建时间策略后，仍可在`KPojo`类中通过`@CreateTime`注解覆盖全局设置。
-
-### 更新时间策略
-
-| 参数名                  | 类型                     | 默认值                                                        |
-|----------------------|------------------------|------------------------------------------------------------|
-| `updateTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "update_time", "updateTime")` |
-
-通过创建`KronosCommonStrategy`的实现类来自定义更新时间策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
-
-更新时间策略的全局默认关闭，需要手动开启。
-
-```kotlin
-Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("update_time", "updateTime"))
-```
-
-全局设置逻更新时间策略后，仍可在`KPojo`类中通过`@UpdateTime`注解覆盖全局设置。
-
-### 逻辑删除策略
-
-| 参数名                   | 类型                     | 默认值                                      |
-|-----------------------|------------------------|------------------------------------------|
-| `logicDeleteStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "deleted")` |
-
-通过创建`KronosCommonStrategy`的实现类来自定义逻辑删除策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
-
-逻辑删除策略的全局默认关闭，需要手动开启。
-
-```kotlin
-Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
-```
-
-全局设置逻辑删除策略后，仍可在`KPojo`类中通过`@LogicDelete`注解覆盖全局设置。
-
-### 乐观锁策略
-
-| 参数名                   | 类型                     | 默认值                                      |
-|-----------------------    |------------------------|------------------------------------------|
-| `optimisticLockStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "version")` |
-
-通过创建`KronosCommonStrategy`的实现类来自定义乐观锁策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
-
-也可通过<a href="/documentation/class-definition/table-class-definition#列乐观锁">[列乐观锁]</a>对每一个实体对象单独配置
-
-乐观锁策略的全局默认关闭，需要手动开启。
-
-```kotlin
-Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
-```
-
-全局设置乐观锁策略后，仍可在`KPojo`类中通过`@Version`注解覆盖全局设置。
-
-### 默认日期/时间格式
-
-| 参数名                 | 类型       | 默认值                   |
-|---------------------|----------|-----------------------|
-| `defaultDateFormat` | `String` | `yyyy-MM-dd HH:mm:ss` |
-
-Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
-
-```kotlin
-Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
-```
-
-### 默认时区
-
-| 参数名               | 类型                          | 默认值                      |
-|-------------------|-----------------------------|--------------------------|
-| `defaultTimeZone` | `kotlinx.datetime.TimeZone` | `currentSystemDefault()` |
-
-Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
-
-```kotlin
-Kronos.defaultTimeZone = TimeZone.UTC
-Kronos.defaultTimeZone = TimeZone.of("Asia/Shanghai")
-Kronos.defaultTimeZone = TimeZone.currentSystemDefault()
-Kronos.defaultTimeZone = TimeZone.of("GMT+8")
-```
-
-### 序列化解析器
-
-| 参数名                 | 类型                        | 默认值                     |
-|---------------------|---------------------------|-------------------------|
-| `serializeResolver` | `KronosSerializeResolver` | `NoneSerializeResolver` |
-
-通过创建`KronosSerializeResolver`的实现类来自定义序列化解析器（详见：[序列化解析器](/documentation/class-definition/serialize-resolver)），然后在配置文件中指定该实现类。
-
-如可以通过引入`GSON`库来实现序列化解析器：
-
-```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
-object GsonResolver : KronosSerializeResolver {
-    override fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T {
-        return Gson().fromJson<T>(serializedStr, kClass.java)
-    }
-
-    override fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any {
-        return Gson().fromJson(serializedStr, kClass.java)
-    }
-
-    override fun serialize(obj: Any): String {
-        return Gson().toJson(obj)
-    }
-}
-```
-
-```kotlin group="GsonResolver" name="KronosConfig.kt" icon="kotlin"
-Kronos.serializeResolver = GsonResolver
-```
-
-这里我们使用`GSON`库来实现序列化解析器，你可以使用任何库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
 
 ## 注解配置项
 
@@ -428,23 +270,25 @@ data class User(
 ) : KPojo
 ```
 
-### 列关联设置
+### 级联关系声明
 
-`@Reference(reference: String[], target: String[], onDelete: CascadeDeleteAction, defaultValue: String, mapperBy: String)`
+`@Cascade(properties: String[], targetProps: String[],`
+`onDelete: CascadeDeleteAction, defaultValue: String)`
 
-此注解用于声明列关联，包括关联查询、关联插入、关联更新、关联删除等。支持一对一、一对多、多对一、多对多关联。
+此注解用于声明列的级联设置，用于**级联查询**、**级联插入**、**级联更新**、**级联删除**等。支持**一对一**、**一对多**、**多对多**关联。
 
-kronos将关联列视为自定义属性，不会将其识别为数据库字段。
+类型为`KPojo`或`Collection<KPojo>`，kronos将不会将该列识别为数据库表列。
 
 kronos的关联功能**无需定义外键**，只需在实体类中定义关联关系即可实现关联查询、关联插入、关联更新、关联删除等操作。
 
 **参数**：
 
-- referenceFields `Array<String>`：关联属性名
-- targetFields `Array<String>`：关联目标表属性名
-- onDelete `CascadeDeleteAction`：关联删除策略（可选，默认为无操作）
+- properties `Array<String>`：本表的`KPojo`属性名，如以下示例中`companyId`用于关联`Company`实体。
+- targetFields `Array<String>`：关联目标表`KPojo`属性名，如以下示例中`companyId`关联到`Company`的`id`属性。
+- onDelete `CascadeDeleteAction`
+  ：关联删除策略（可选，详见：([级联删除操作选项](/documentation/zh-CN/class-definition/cascade-delete-action))
+  ，包括`CASCADE`、`RISTRICT`、`SET_DEFAULT`、`SET_NULL`、`NO_ACTION`等，默认为`NO_ACTION`无操作）
 - defaultValue `Array<String>`：指定级联删除方式为"SET DEFAULT"时设置的默认值（可选）
-- mapperBy `Array<String>`：用于指定本关联关系的维护端（为空时表示维护端为本实体，若两端都有该注解时不能为空）
 - usage `Array<KOperationType>`: 用于声明本实体需要用到的关联操作（可选，默认为`[Insert, Update, Delete, Upsert, Select]`）
 
 ```kotlin
@@ -452,7 +296,7 @@ kronos的关联功能**无需定义外键**，只需在实体类中定义关联�
 data class Employee(
     val id: Int? = null,
     val companyId: Int? = null,
-    @Reference(["companyId"], ["id"], SET_DEFAULT, ["0"])
+    @Cascade(["companyId"], ["id"], SET_DEFAULT, ["0"])
     val company: Company? = null
 ): KPojo
 

@@ -2,6 +2,7 @@
 
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+
 ## 添加依赖：
 
 仅需引入`kronos-core`模块和`kronos-compiler-plugin`插件即可在您的项目中使用Kronos。

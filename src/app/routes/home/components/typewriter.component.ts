@@ -13,7 +13,7 @@ import {NgxTypedWriterModule} from "ngx-typed-writer";
   template: `
 
     <div class="typer_img"></div>
-    @defer (on timer(2000)) {
+    @defer (on timer(4000)) {
       <div class="typer_text">
         <div class="text">
           <ngx-typed-writer
@@ -48,13 +48,13 @@ import {NgxTypedWriterModule} from "ngx-typed-writer";
 
     .typer_img {
       background-image: url("/assets/images/animation/a1.png");
-      width: 100%;
-      height: 100%;
+      width: 40vw;
+      height: 16vw;
       transform: scale(0.5);
       transform-origin: 0 0;
       background-repeat: no-repeat;
       background-size: 100% auto;
-      animation: focus 2s forwards;
+      animation: focus 4s forwards;
       position: absolute;
       left: 0;
       top: 0;
@@ -73,41 +73,30 @@ import {NgxTypedWriterModule} from "ngx-typed-writer";
       }
       100% {
         background-size: 200% auto;
-        background-position-x: -240px;
-        background-position-y: -600px;
+        background-position: 35% 110%;
         opacity: 1;
       }
     }
 
     .typer_text {
       position: absolute;
-      left:0;
+      left: 0;
       top: 0;
       margin: auto;
       width: 100%;
       height: 100%;
-      line-height: 40px;
+      line-height: 2.5vw;
 
       .text {
-        left: 85px;
+        left: 6.4vw;
         position: absolute;
-        top: 12px;
-        font-size: 32px;
+        top: 0.4vw;
+        font-size: 2vw;
         font-weight: 500;
         word-break: keep-all;
         white-space: nowrap;
         font-family: 'JetBrains Mono', monospace;
       }
-    }
-
-    .entry_button {
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      margin-bottom: 20px;
-      width: 67px;
-      height: 42px;
-      text-align: center;
     }
   `],
 })
@@ -116,7 +105,7 @@ export class TypewriterComponent {
   codes = [
     `.<span class="code-green">insert()</span><br/>.<span class="code-green">execute()</span>`,
     `.<span class="code-green">delete()</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }</span><br/>.<span class="code-green">execute()</span>`,
-    `.<span class="code-green">select()</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }</span><br/>.<span class="code-green">queryList()</span>`,
-    `.<span class="code-green">update()</span><br/>.<span class="code-green">set{ </span><span class="code-red">it.name </span>== "name"<span class="code-green"> }</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }<br/>.<span class="code-green">execute()</span>`,
+    `.<span class="code-green">select()</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }</span><br/>.<span class="code-green">queryOne()</span>`,
+    `.<span class="code-green">update()</span><br/>.<span class="code-green">set{ </span><span class="code-red">it.name </span>= "name"<span class="code-green"> }</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }<br/>.<span class="code-green">execute()</span>`,
   ];
 }

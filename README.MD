@@ -12,8 +12,15 @@
 
 <div align="center">
 
-A **modern** & **lightweight** kotlin ORM that provides developers with a concise and efficient way to interact with
-databases
+Kronos is a modern ORM framework designed for Kotlin based on the Code First mode and KCP compiler plug-in.
+
+*Kronos* is developed for Kotlin. Through the expression tree analysis support implemented by KCP and the generics and high-order functions of Kotlin, it provides a super expressive, concise and semantic writing method, making it easier to operate the database.
+
+Based on the concept of Code First, we provide automatic creation and synchronization of database table structures, as well as simple support for operations such as table structures and indexes.
+
+At the same time, through the compiler plug-in, we have implemented a non-reflective Pojo and Map conversion solution.
+
+*Kronos*'s cascading operations and cross-table and cross-database queries greatly improve development efficiency, and greatly improve high concurrency performance based on the Kotlin coroutine mechanism.
 
 for both **backend** and **mobile applications**, support **multi-database**, and **high performance**.
 

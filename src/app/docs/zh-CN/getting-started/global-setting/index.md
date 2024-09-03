@@ -84,7 +84,7 @@ Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "cre
 > **Note**
 > 全局设置创建时间策略后，仍可在`KPojo`类中通过`@CreateTime`注解覆盖全局设置。
 
-### 更新时间策略
+## 更新时间策略
 
 用于设置所有表的更新时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
@@ -104,7 +104,7 @@ Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("update_time", "upd
 > **Note**
 > 全局设置逻更新时间策略后，仍可在`KPojo`类中通过`@UpdateTime`注解覆盖全局设置。
 
-### 逻辑删除策略
+## 逻辑删除策略
 
 用于设置所有表的逻辑删除字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
@@ -124,7 +124,7 @@ Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
 > **Note**
 > 全局设置逻辑删除策略后，仍可在`KPojo`类中通过`@LogicDelete`注解覆盖全局设置。
 
-### 乐观锁（版本）策略
+## 乐观锁（版本）策略
 
 用于设置所有表的乐观锁版本字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
@@ -146,7 +146,7 @@ Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
 > **Note**
 > 全局设置乐观锁策略后，仍可在`KPojo`类中通过`@Version`注解覆盖全局设置。
 
-### 默认日期/时间格式
+## 默认日期/时间格式
 
 用于指定日期格式化的默认格式，遵循`ISO 8601`规范，默认为`yyyy-MM-dd HH:mm:ss`。
 
@@ -163,7 +163,7 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 > **Note**
 > 全局设置默认日期格式后，仍可在`KPojo`类中通过`@DateTimeFormat`注解覆盖全局设置。
 
-### 默认时区
+## 默认时区
 
 用于指定默认时区，在创建时间、更新时间及格式化日期/时间时使用。
 
@@ -180,7 +180,7 @@ Kronos.timeZone = ZoneId.systemDefault()
 Kronos.timeZone = ZoneId.of("GMT+8")
 ```
 
-### 序列化解析器
+## 序列化解析器
 
 将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
 

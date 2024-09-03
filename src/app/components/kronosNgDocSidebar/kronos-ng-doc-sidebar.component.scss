@@ -1,6 +1,6 @@
 :host ::ng-deep {
   .p-menu {
-    background: #FFF;
+    background-color: var(--ng-doc-sidebar-background);
     height: calc(100vh - 60px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -12,27 +12,25 @@
 
     .p-submenu-header {
       span {
-        color: #000 !important;
+        color: var(--ng-doc-text);
         font-weight: 600;
         font-size: 18px;
-        padding: 0 1.0rem !important;
-        background-color: #FFF !important;
       }
 
       &:hover {
         .p-menu-header-content {
-          background-color: #F0F0F0 !important;
+          color: var(--ng-doc-link-color);
         }
       }
 
       &:active {
         .p-menu-header-content {
-          background-color: #E2E2E2 !important;
+          background-color: var(--ng-doc-text);
         }
       }
 
       .p-menu-header-action {
-        color: #000 !important;
+        color: var(--ng-doc-text);
         padding: 0.6rem 1.0rem !important;
       }
 
@@ -43,44 +41,47 @@
 
       &.p-highlight {
         .p-menuitem-text, .p-menu-header-action {
-          color: #7F52FF !important;
+          color: var(--ng-doc-link-color);
         }
       }
     }
 
     .p-menuitem {
-      background-color: #FFF !important;
+      background-color: var(--ng-doc-sidebar-background);
 
       .p-menuitem-icon {
         font-size: 5px;
         margin-right: 1rem;
-        visibility: hidden;
+        color: var(--ng-doc-text);
       }
     }
 
     .p-menuitem > .p-menuitem-content .p-menuitem-link .p-menuitem-text {
-      color: #000 !important;
+      color: var(--ng-doc-text);
+      font-size: 14px;
     }
 
     .p-menuitem > .p-menuitem-content .p-menuitem-link {
-      padding: 0.6rem 1.0rem !important;
+      padding: 0.5rem 1.0rem !important;
       border-radius: 0.5rem !important;
 
       &:hover {
-        background-color: #F0F0F0 !important;
+        background-color: var(--ng-doc-base-2);
+        color: var(--ng-doc-text)!important;
       }
     }
 
     .p-menuitem > .p-menuitem-content .p-menuitem-link-active {
+      background-color: var(--ng-doc-base-4);
 
       .p-menuitem-icon {
         visibility: visible;
-        color: #7F52FF !important;
+        color: var(--ng-doc-link-color);
         animation: scale .5s ease-out;
       }
 
       .p-menuitem-text {
-        color: #7F52FF !important;
+        color: var(--ng-doc-link-color);
         font-weight: 400;
       }
     }

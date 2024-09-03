@@ -4,13 +4,19 @@ import {KronosNgDocSidebarComponent} from "../../components/kronosNgDocSidebar/k
 import {AppService} from "../../app.service";
 import {TranslocoService} from "@jsverse/transloco";
 import {Router} from "@angular/router";
+import {NgDocThemeToggleComponent} from "@ng-doc/app";
+import {NgDocButtonIconComponent, NgDocIconComponent, NgDocTooltipDirective} from "@ng-doc/ui-kit";
 
 @Component({
   selector: 'app-documentation',
   standalone: true,
   imports: [
     SharedModule,
-    KronosNgDocSidebarComponent
+    KronosNgDocSidebarComponent,
+    NgDocThemeToggleComponent,
+    NgDocIconComponent,
+    NgDocButtonIconComponent,
+    NgDocTooltipDirective
   ],
   templateUrl: './documentation.component.html',
   styleUrl: './documentation.component.scss'
@@ -24,5 +30,9 @@ export class DocumentationComponent {
     this.translocoService.setActiveLang(lang);
     const newUrl = `/documentation/${lang}/${this.router.url.split("/").slice(3).join("/")}`;
     this.router.navigate([newUrl]);
+  }
+
+  get githubUrl() {
+    return `https://github.com/Kronos-orm/Kronos-orm/tree/docs/src/app/docs/${this.appService.language}/${this.router.url.split("/").slice(3).join("/")}/index.md`
   }
 }

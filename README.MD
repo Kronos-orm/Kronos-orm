@@ -12,7 +12,7 @@
 
 <div align="center">
 
-Kronos is a modern **ORM** framework designed for Kotlin based on the **Code First mode** and **KCP compiler plug-in**.
+Kronos is a modern **ORM** framework designed for Kotlin based on the **Code First mode** and **KCP(compiler plug-in)**.
 
 **Kronos** is developed for Kotlin. Through the expression tree analysis support implemented by KCP and the generics and high-order functions of Kotlin, it provides a super **expressive, concise and semantic writing method, making it easier to operate the database**.
 
@@ -40,7 +40,7 @@ for both **backend** and **mobile applications**, support **multi-database**, an
   `.gt`, `.lt`, etc.
 - [x] Strong type checking
 - [x] Supports **logical deletion**, **locks**, **transactions**, **cascading operations**, **cross-database queries**,
-  **database table structure synchronization**, and **one-click switching of database types**, and more
+  **database table/index create and structure synchronization**, and **one-click switching of database types**, and more
 - [x] Easily integrate with any third-party framework
 - [x] Naming parameter based sql operation
 - [x] Easy to transform `KPojo` to Map or from Map

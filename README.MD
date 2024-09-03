@@ -34,8 +34,8 @@ for both **backend** and **mobile applications**, support **multi-database**, an
 
 ❓ **Why Kronos?**
 
-- [x] K2 Compiler Plugin Powered **High Performance**
-- [x] Mainstream database support and easy to extend
+- [x] **Kotlin Compiler Plugin** and **Coroutines** Powered **High Performance**
+- [x] Mainstream database support and **easy to extend**
 - [x] **Concise** and **expressive** writing, supports **kotlin syntax** `==`, `>`, `<`, `in`, etc. instead of `.eq`,
   `.gt`, `.lt`, etc.
 - [x] Strong type checking

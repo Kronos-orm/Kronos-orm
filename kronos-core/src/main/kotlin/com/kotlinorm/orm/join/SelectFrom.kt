@@ -92,6 +92,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         val repeatlist = mutableListOf<Triple<Criteria, String, String>>()
 
         t1.conditionalRun {
+            propParamMap = paramMap
             on(t1)
             criteria
 
@@ -188,6 +189,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.conditionalRun {
+            propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -204,6 +206,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.conditionalRun {
+            propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -220,6 +223,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.conditionalRun {
+            propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -236,6 +240,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.conditionalRun {
+            propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -252,6 +257,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.conditionalRun {
+            propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another.kronosLogicDelete()))
         }

@@ -110,7 +110,7 @@ extra["export"] = {
                         |    ${range.drop(1).joinToString(", ") { "var t$it: T$it" }}
                         |) : SelectFrom<T1>(t1) {
                         |    override var tableName = t1.kronosTableName()
-                        |    override var paramMap = t1.toDataMap()
+                        |    override var paramMap = (${range.joinToString(" + ") { "t$it.toDataMap()" }}).toMutableMap()
                         |    override var logicDeleteStrategy = t1.kronosLogicDelete()
                         |    override var allFields = t1.kronosColumns().toLinkedSet()
                         |    override var listOfPojo: MutableList<KPojo> = mutableListOf(${range.joinToString(", ") { "t$it" }})

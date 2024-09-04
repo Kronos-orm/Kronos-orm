@@ -164,20 +164,7 @@ fun getColumnName(
     val primaryKeyAnnotation =
         irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName)
     val identity = primaryKeyAnnotation?.getValueArgument(0) ?: irBoolean(false)
-    val isColumn = irBoolean(
-        /**
-         * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
-         * for properties that are not columns, we need to check if :
-         * 1. the type is a KPojo
-         * 2. has a KPojo in its super types
-         * 3. is a Collection of KPojo
-         * 4. has Annotation `@Cascade`
-         */
-        irProperty.hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
-                (!irProperty.hasAnnotation(CascadeAnnotationsFqName) &&
-                        !irPropertyType.isKronosColumn() &&
-                        irPropertyType.subType()?.isKronosColumn() != true)
-    )
+    val isColumn = irBoolean(irProperty.isColumn(irPropertyType))
 
     val columnNotNull =
         irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
@@ -359,4 +346,19 @@ fun getTableName(irClass: IrClass): IrExpression {
             irClass.name.asString()
         )
     )
+}
+
+/**
+ * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
+ * for properties that are not columns, we need to check if :
+ * 1. the type is a KPojo
+ * 2. has a KPojo in its super types
+ * 3. is a Collection of KPojo
+ * 4. has Annotation `@Cascade`
+ */
+context(IrBuilderWithScope, IrPluginContext)
+fun IrProperty.isColumn(irPropertyType: IrType = this.backingField?.type ?: irBuiltIns.anyNType): Boolean {
+    return hasAnnotation(ColumnDeserializeAnnotationsFqName) ||
+            (!hasAnnotation(CascadeAnnotationsFqName) &&
+                    !irPropertyType.isKronosColumn() && irPropertyType.subType()?.isKronosColumn() != true)
 }

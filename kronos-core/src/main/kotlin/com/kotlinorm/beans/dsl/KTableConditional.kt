@@ -226,6 +226,9 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
     @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.eq get() = true
 
+    @Suppress("UnusedReceiverParameter")
+    val KPojo.eq get() = true
+
     /**
      * Checks if the given value is null.
      *

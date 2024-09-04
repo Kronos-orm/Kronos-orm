@@ -19,22 +19,23 @@ package com.kotlinorm.plugins.utils.kTableConditional
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
+import com.kotlinorm.plugins.helpers.extensionBy
 import com.kotlinorm.plugins.utils.kTable.*
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
-import org.jetbrains.kotlin.ir.builders.irConcat
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.properties
 
 /**
  * Generates IR for setting simple criteria.
@@ -69,6 +70,7 @@ fun setCriteriaIr() = applyIrCall(
  * @return The built criteria IR variable, or null if the element is a constant.
  */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: IrExpression? = null): IrVariable? {
     var paramName: IrExpression? = null
     var type = "ROOT"
@@ -166,14 +168,44 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                 }
 
                 "eq", "neq" -> {
-                    paramName = getColumnOrValue(element.extensionReceiver!!)
-                    value = applyIrCall(
-                        propParamSymbol!!,
-                        irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
-                    ) {
-                        dispatchBy(irGet(extensionReceiverParameter!!))
+                    val extensionReceiver = element.extensionReceiver
+                    if (extensionReceiver != null && extensionReceiver.isKronosColumn()) {
+                        val dispatchReceiver = element.asIrCall().dispatchReceiver!!
+                        paramName = getColumnOrValue(extensionReceiver)
+                        value = applyIrCall(
+                            propParamSymbol!!,
+                            irString(extensionReceiver.asIrCall().correspondingName!!.asString())
+                        ) {
+                            dispatchBy(irGet(extensionReceiverParameter!!))
+                        }
+                        tableName = getTableName(dispatchReceiver)
+                    } else if (extensionReceiver != null) {
+                        val irClass = element.extensionReceiver?.type?.getClass()
+                        if (irClass != null && irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }) {
+                            type = "AND"
+                            irClass.properties.forEach { prop ->
+                                if (prop.isColumn()) {
+                                    children.add(
+                                        buildCriteria(
+                                            applyIrCall(
+                                                ComparableEq.getter!!.symbol,
+                                            ) {
+                                                dispatchBy(extensionReceiver)
+                                                extensionBy(
+                                                    irGet(
+                                                        prop.backingField!!.type,
+                                                        element.extensionReceiver,
+                                                        prop.getter!!.symbol
+                                                    )
+                                                )
+                                            },
+                                            setNot
+                                        )
+                                    )
+                                }
+                            }
+                        }
                     }
-                    tableName = getTableName(element.dispatchReceiver!!)
                 }
 
                 "between", "like", "notBetween", "notLike", "regexp" -> {

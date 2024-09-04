@@ -19,7 +19,6 @@ package com.kotlinorm.plugins.utils.kTableConditional
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.referenceClass
-import com.kotlinorm.plugins.helpers.referenceFunctions
 import com.kotlinorm.plugins.utils.kTable.correspondingName
 import com.kotlinorm.plugins.utils.kTable.getColumnOrValue
 import com.kotlinorm.plugins.utils.kTable.isKronosColumn
@@ -33,10 +32,12 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
+import org.jetbrains.kotlin.ir.util.properties
 
 const val KTABLE_CONDITIONAL_CLASS = "com.kotlinorm.beans.dsl.KTableConditional"
 
@@ -76,6 +77,13 @@ context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val stringPlusSymbol
     get() = referenceClass("kotlin.String")!!.getSimpleFunction("plus")!!
+
+context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val ComparableEq
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTableConditional")!!.owner.properties.first {
+            it.name.toString() == "eq" && it.getter?.extensionReceiverParameter?.type?.classFqName?.asString() == "kotlin.Comparable"
+        }
 
 /**
  * Returns a string representing the function name based on the IrExpression type and origin, with optional logic for setNot parameter.

@@ -7,7 +7,7 @@ import {
     NG_DOC_DEFAULT_PAGE_PROCESSORS
 } from "@ng-doc/app";
 import {provideNgDocContext} from "@ng-doc/generated";
-// import {provideMermaid} from '@ng-doc/app';
+import {provideMermaid} from '@ng-doc/app';
 import {provideHttpClient, withInterceptorsFromDi, withFetch} from "@angular/common/http";
 import {ApplicationConfig, isDevMode} from '@angular/core';
 import {provideRouter, withHashLocation, withInMemoryScrolling} from '@angular/router';
@@ -27,7 +27,7 @@ export const appConfig: ApplicationConfig = {
         }), withHashLocation()),
         provideHttpClient(withInterceptorsFromDi(), withFetch()),
         provideNgDocContext(),
-        // provideMermaid(),
+        provideMermaid(),
         provideNgDocApp(),
         provideSearchEngine(DocSearchEngine),
         providePageSkeleton(NG_DOC_DEFAULT_PAGE_SKELETON),

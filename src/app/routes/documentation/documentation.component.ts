@@ -31,8 +31,4 @@ export class DocumentationComponent {
     const newUrl = `/documentation/${lang}/${this.router.url.split("/").slice(3).join("/")}`;
     this.router.navigate([newUrl]);
   }
-
-  get githubUrl() {
-    return `https://github.com/Kronos-orm/Kronos-orm/tree/docs/src/app/docs/${this.appService.language}/${this.router.url.split("/").slice(3).join("/")}/index.md`
-  }
 }

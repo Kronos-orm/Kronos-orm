@@ -52,7 +52,7 @@ object Kronos {
     var logPath = listOf("console")
 
     // 无值策略
-    internal var noValueStrategy = NoValueStrategy.Smart
+    var noValueStrategy = NoValueStrategy.Smart
 
     // 数据源
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }

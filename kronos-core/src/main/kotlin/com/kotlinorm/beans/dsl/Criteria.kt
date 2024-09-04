@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.ConditionType.Companion.And
 import com.kotlinorm.enums.ConditionType.Companion.IsNull
@@ -43,9 +44,15 @@ class Criteria(
     var not: Boolean = false, // whether the condition is not
     var value: Any? = null, // value
     val tableName: String? = "", // table name
-    var noValueStrategy: NoValueStrategy = smart, // when the value is null, whether to generate sql,
+    var noValueStrategy: NoValueStrategy = Kronos.noValueStrategy, // when the value is null, whether to generate sql,
     var children: MutableList<Criteria?> = mutableListOf()
 ) {
+
+    init {
+        if (type != ConditionType.EQUAL && noValueStrategy == NoValueStrategy.Ignore) {
+            noValueStrategy = NoValueStrategy.Smart
+        }
+    }
 
     internal val valueAcceptable: Boolean
         get() = type != IsNull && type != And && type != Or && type != Root

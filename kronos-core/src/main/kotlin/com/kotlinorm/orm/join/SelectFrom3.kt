@@ -28,7 +28,7 @@ class SelectFrom3<T1: KPojo, T2: KPojo, T3: KPojo>(
     override var tableName = t1.kronosTableName()
     override var paramMap = (t1.toDataMap() + t2.toDataMap() + t3.toDataMap()).toMutableMap()
     override var logicDeleteStrategy = t1.kronosLogicDelete()
-    override var allFields = t1.kronosColumns().toLinkedSet()
+    override var allFields = t1.kronosColumns().filter { it.isColumn }.toLinkedSet()
     override var listOfPojo: MutableList<KPojo> = mutableListOf(t1, t2, t3)
     
     fun withTotal(): PagedClause<T1, SelectFrom3<T1, T2, T3>> {

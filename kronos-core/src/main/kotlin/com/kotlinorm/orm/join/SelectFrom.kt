@@ -506,7 +506,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         var buildCondition = condition
 
         // 初始化所有字段集合
-        allFields = pojo.kronosColumns().toLinkedSet()
+        allFields = pojo.kronosColumns().filter { it.isColumn }.toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields
@@ -516,8 +516,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (buildCondition == null) {
             buildCondition = paramMap.keys.filter {
                 paramMap[it] != null
-            }.map { propName ->
-                allFields.first { it.name == propName }.eq(paramMap[propName])
+            }.mapNotNull { propName ->
+                allFields.firstOrNull { it.name == propName }?.eq(paramMap[propName])
             }.toCriteria()
         }
 

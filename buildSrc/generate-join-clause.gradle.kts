@@ -112,7 +112,7 @@ extra["export"] = {
                         |    override var tableName = t1.kronosTableName()
                         |    override var paramMap = (${range.joinToString(" + ") { "t$it.toDataMap()" }}).toMutableMap()
                         |    override var logicDeleteStrategy = t1.kronosLogicDelete()
-                        |    override var allFields = t1.kronosColumns().toLinkedSet()
+                        |    override var allFields = t1.kronosColumns().filter { it.isColumn }.toLinkedSet()
                         |    override var listOfPojo: MutableList<KPojo> = mutableListOf(${range.joinToString(", ") { "t$it" }})
                         |    
                         |    fun withTotal(): PagedClause<T1, SelectFrom$n<$nthOfType>> {
@@ -167,6 +167,7 @@ extra["export"] = {
                     |    val pageIndex: Int,
                     |    val pageSize: Int,
                     |    val limit: Int? = null,
+                    |    val databaseOfTable: Map<String, String> = mapOf(),
                     |    val whereClauseSql: String? = null,
                     |    val groupByClauseSql: String? = null,
                     |    val orderByClauseSql: String? = null,

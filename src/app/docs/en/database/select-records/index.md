@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## Query all records
 
 In Kronos, we can use the `KPojo.select()` method to query records in the database.

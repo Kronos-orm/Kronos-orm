@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## Configuring Cascade Relationships
 
 By configuring the column associations of `KPojo` with the <a href="/documentation/en/class-definition/table-class-definition#column-association-setting">[column association settings]</a> directive and specifying the relationship information in `@Reference` with the `usage` property containing `Update` (or not specifying it, using the default), you can enable the cascading update feature for this class (or being) by specifying the associated fields.

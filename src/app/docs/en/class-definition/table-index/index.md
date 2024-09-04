@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## MySQL
 
 ### Index Methods

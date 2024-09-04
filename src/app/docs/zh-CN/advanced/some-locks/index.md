@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 悲观锁
 
 Kronos为**查询**`(select)`与**更新插入**`(upsert)`功能提供了**悲观锁**(`lock`)的功能，其锁等级为**行锁**

@@ -21,7 +21,7 @@ const docSortFn = (a: NgDocNavigation, b: NgDocNavigation) => (a.order ?? 0) - (
     StyleClassModule
   ],
   template: `
-    <p-menu [model]="items" styleClass="w-full md:w-20rem bg-black"/>
+    <p-menu [model]="items" styleClass="w-full md:w-20rem bg-black p-2"/>
   `,
   styleUrl: './kronos-ng-doc-sidebar.component.scss',
   standalone: true,

@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Declaring a data class as a table class in Kronos is very simple. You just need to make the class inherit from `KPojo`. Here is a simple example:
 
 ```kotlin

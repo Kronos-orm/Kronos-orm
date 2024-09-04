@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 **Kronos ORM (Kotlin Reactive Object-Relational-Mapping) is a modern Kotlin ORM framework based on KCP and designed for K2.**

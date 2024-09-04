@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 配置级联关系
 
 通过配置`KPojo`的<a href="/documentation/zh-CN/class-definition/table-class-definition#列关联设置">[列关联设置]</a>，指定关联字段关联信息（`@Reference`）中`usage`属性包含`Update`（或不指定，使用默认），即可开启该类（被）级联更新的功能。

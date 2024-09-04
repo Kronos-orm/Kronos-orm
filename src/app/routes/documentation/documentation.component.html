@@ -1,18 +1,17 @@
 <ng-doc-root [noWidthLimit]="true">
     <ng-doc-navbar>
         <div ngDocNavbarLeft>
-            <p-button severity="contrast" [size]="'small'" [routerLink]="['/']">
-                <img class="logo mr-1" src="/assets/images/logo_circle.png" width="20"/>
+            <a class="logo" [routerLink]="['/']">
+                <img class="mr-1" src="/assets/images/logo_circle.png" width="20"/>
                 <span>Kronos ORM</span>
-            </p-button>
+            </a>
         </div>
-        <div ngDocNavbarLeft>
+        <div ngDocNavbarRight>
             <div class="ng-doc-header-controls">
-                <a
-                        ng-doc-button-icon
-                        ngDocTooltip="change language"
-                        size="large"
-                        (click)="op.toggle($event)">
+                <a ng-doc-button-icon
+                   ngDocTooltip="change language"
+                   size="large"
+                   (click)="op.toggle($event)">
                     <ng-doc-icon [size]="24" customIcon="language"></ng-doc-icon>
                 </a>
                 <ng-doc-theme-toggle></ng-doc-theme-toggle>

@@ -1,10 +1,10 @@
 import {NgDocPage} from '@ng-doc/core';
-import ClassDefinitionCategory from "../ng-doc.category";
+import ConceptCategory from "../ng-doc.category";
 
 const CommonStrategyPage: NgDocPage = {
 	title: `通用策略`,
 	mdFile: './index.md',
-  category: ClassDefinitionCategory,
+  category: ConceptCategory,
   order: 2
 };
 

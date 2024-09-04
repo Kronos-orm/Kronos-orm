@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Compared to kotoframework, Kronos is a Code-First ORM framework that adds operations on database table structures.
 
 Related functions can be called through **Kronos.dataSource**(`() -> KronosDataSourceWrapper`) or a specific data source object (`KronosDataSourceWrapper`).

@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 查询所有记录
 
 在Kronos中，我们可以使用`KPojo.select()`方法用于查询数据库中的记录。

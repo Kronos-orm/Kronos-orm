@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## Pessimistic lock
 
 Kronos provides a pessimistic lock (`lock`) function for **query**`(select)` and **update insert**`(upsert)` functions, and its lock level is **row lock**

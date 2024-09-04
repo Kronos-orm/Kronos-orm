@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 规定级联删除时的操作，详见[级联删除](/documentation/zh-CN/database/reference-delete)。
 
 1. `CASCADE` 级联删除

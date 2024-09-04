@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 插入单条记录
 
 在Kronos中，我们可以使用`KPojo.insert().execute()`方法向数据库中插入一条记录。

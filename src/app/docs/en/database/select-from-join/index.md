@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 查询多表关联数据
 
 在Kronos中，我们可以使用`KPojo.join(KPojo1, KPojo2, ...)`方法来查询多表关联数据。

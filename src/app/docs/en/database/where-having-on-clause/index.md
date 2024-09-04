@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 1.Criteria 条件对象
 
 Kronos使用Criteria对象构建条件表达式，并且支持复杂的条件组合，如`and`、`or`、`not`等，用于`where`、`having`、`on`等条件中。

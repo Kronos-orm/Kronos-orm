@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Kronos提供了一个基础的SQL查询构建器，它允许您使用命名参数来构建SQL查询。这个构建器是一个简单的构建器，它允许您构建一个SQL查询，然后使用命名参数来填充查询中的参数。
 
 ## 使用<span style="color: #DD6666">query</span>查询Map列表

@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 `KronosNamingStrategy`是一个接口，用于定义表名和列名的转换策略。
 
 ## 成员函数：

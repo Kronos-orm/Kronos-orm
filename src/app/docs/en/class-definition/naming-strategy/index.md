@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 `KronosNamingStrategy` is an interface used to define the conversion strategy for table and column names.
 
 ## Member functions:

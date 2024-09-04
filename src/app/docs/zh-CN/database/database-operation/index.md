@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 相比于kotoframework, Kronos是一个Code-First的ORM框架，它增加了对于数据库表结构的操作。
 
 相关功能可可以通过**Kronos.dataSource**(`() -> KronosDataSourceWrapper`)或某个具体的数据源对象(`KronosDataSourceWrapper`)来调用。

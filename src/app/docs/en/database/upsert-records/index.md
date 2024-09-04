@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 在Kronos中，我们可以使用`KPojo.upsert().execute()`方法用于向数据库中插入或更新记录。
 
 由于各个数据库的实现不同，因此在Kronos中，我们对`upsert`操作进行了统一的封装，以实现跨数据库的兼容性。

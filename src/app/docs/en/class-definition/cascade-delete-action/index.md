@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Specify the operation when cascading deletion, see [Cascading Delete](/documentation/en/database/reference-delete) for details.
 
 1. `CASCADE` Cascading Delete

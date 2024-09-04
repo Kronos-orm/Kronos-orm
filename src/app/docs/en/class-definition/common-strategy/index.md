@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 `KronosCommonStrategy` is a common configuration strategy interface for update time/create time/logical deletion configuration strategies.
 
 ## Parameters:

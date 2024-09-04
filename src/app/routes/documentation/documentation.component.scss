@@ -17,3 +17,29 @@
     }
   }
 }
+
+:host ::ng-deep {
+  ng-doc-mermaid-viewer {
+    background: aliceblue !important;
+  }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+  text-decoration: none;
+  width: 200px;
+
+  img {
+    width: 40px;
+    height: 40px;
+    margin-right: 0.5rem;
+  }
+
+  span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ng-doc-text);
+  }
+}

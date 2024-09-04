@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Kronos accesses the database through `KronosDataSourceWrapper`.
 
 `KronosDataSourceWrapper` is an interface that encapsulates database operations. It does not care about the specific database connection details and is independent of the platform. It only cares about the logic of database operations:

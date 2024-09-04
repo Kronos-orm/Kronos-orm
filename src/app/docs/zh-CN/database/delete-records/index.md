@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 根据KPojo对象值生成条件语句并删除记录
 
 在Kronos中，我们可以使用`KPojo.delete().execute()`方法用于删除数据库中的记录

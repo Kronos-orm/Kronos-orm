@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Kronos通过自定义创建继承`KronosDataSourceWrapper`接口的包装类，可以轻松与第三方框架结合使用。
 
 ## Spring示例

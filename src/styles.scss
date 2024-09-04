@@ -4,6 +4,7 @@
 @import "primeflex/primeflex.scss";
 @import "primeflex/themes/primeone-dark.scss";
 @import "primeicons/primeicons.css";
+@import '@ng-doc/app/styles/themes/dark.css';
 
 
 html, body {
@@ -58,6 +59,7 @@ h1, h2, h3, h4, h5, h6 {
   --ng-doc-link-color: #7F52FF !important;
   --ng-doc-code-max-height: 520px !important;
   --ng-doc-icon-width: 24px !important;
+  --ng-doc-app-horizontal-padding: 5rem !important;
 }
 
 img {
@@ -77,6 +79,17 @@ pre {
 
 h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.ngde + h5.ngde, h1.ngde + h6.ngde, h2.ngde + h1.ngde, h2.ngde + h2.ngde, h2.ngde + h3.ngde, h2.ngde + h4.ngde, h2.ngde + h5.ngde, h2.ngde + h6.ngde, h3.ngde + h1.ngde, h3.ngde + h2.ngde, h3.ngde + h3.ngde, h3.ngde + h4.ngde, h3.ngde + h5.ngde, h3.ngde + h6.ngde, h4.ngde + h1.ngde, h4.ngde + h2.ngde, h4.ngde + h3.ngde, h4.ngde + h4.ngde, h4.ngde + h5.ngde, h4.ngde + h6.ngde, h5.ngde + h1.ngde, h5.ngde + h2.ngde, h5.ngde + h3.ngde, h5.ngde + h4.ngde, h5.ngde + h5.ngde, h5.ngde + h6.ngde, h6.ngde + h1.ngde, h6.ngde + h2.ngde, h6.ngde + h3.ngde, h6.ngde + h4.ngde, h6.ngde + h5.ngde, h6.ngde + h6.ngde {
   margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
+}
+
+::-webkit-scrollbar {
+  background: var(--ng-doc-base-2);
+  width: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ng-doc-base-10);
+  width: 12px;
+  border-radius: 6px;
 }
 
 

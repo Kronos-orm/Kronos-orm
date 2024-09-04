@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 List of corresponding relationships between various database types and commonly used types:：
 
 ## **BIT**

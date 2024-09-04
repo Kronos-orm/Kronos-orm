@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 ## Add dependencies:

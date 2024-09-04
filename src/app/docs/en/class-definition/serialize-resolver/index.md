@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 `KronosSerializeResolver` is a serialization resolver interface defined by Kronos, used for serialization and deserialization conversion between strings and Kotlin entity classes.
 
 ## Member functions:

@@ -1,10 +1,10 @@
 import {NgDocPage} from '@ng-doc/core';
-import ClassDefinitionCategory from "../ng-doc.category";
+import ConceptCategory from "../ng-doc.category";
 
 const CascadeDeleteActionPage: NgDocPage = {
 	title: `级联删除操作选项`,
 	mdFile: './index.md',
-  category: ClassDefinitionCategory
+  category: ConceptCategory
 };
 
 export default CascadeDeleteActionPage;

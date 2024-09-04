@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## 使用<span style="color: #DD6666">set</span>设置更新的字段和值
 
 在Kronos中，我们可以使用`KPojo.update().set`方法设置需要更新的字段和值，然后使用`execute`方法执行更新操作。

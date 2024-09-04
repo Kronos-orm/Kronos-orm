@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 Kronos can be easily used with third-party frameworks by customizing the wrapper class that inherits
 the `KronosDataSourceWrapper` interface.
 

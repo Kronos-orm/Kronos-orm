@@ -1,6 +1,6 @@
-# {{ NgDocPage.title }}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-----
+本文将指导您如何全局配置Kronos。
 
 ## 默认数据源设置
 
@@ -68,9 +68,9 @@ Kronos.fieldNamingStrategy = LineHumpNamingStrategy
 
 用于设置所有表的创建时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-| 参数名                  | 类型                     | 默认值                                                        |
-|----------------------|------------------------|------------------------------------------------------------|
-| `createTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "create_time", "createTime")` |
+| 参数名                  | 类型                     | 默认值                                         |
+|----------------------|------------------------|---------------------------------------------|
+| `createTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "createTime")` |
 
 通过创建`KronosCommonStrategy`
 的实现类来自定义创建时间策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
@@ -78,7 +78,7 @@ Kronos.fieldNamingStrategy = LineHumpNamingStrategy
 创建时间策略的全局**默认关闭**，需要手动开启。
 
 ```kotlin
-Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "createTime"))
+Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
 ```
 
 > **Note**
@@ -88,9 +88,9 @@ Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "cre
 
 用于设置所有表的更新时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-| 参数名                  | 类型                     | 默认值                                                        |
-|----------------------|------------------------|------------------------------------------------------------|
-| `updateTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "update_time", "updateTime")` |
+| 参数名                  | 类型                     | 默认值                                         |
+|----------------------|------------------------|---------------------------------------------|
+| `updateTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "updateTime")` |
 
 通过创建`KronosCommonStrategy`
 的实现类来自定义更新时间策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
@@ -98,7 +98,7 @@ Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "cre
 更新时间策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("update_time", "updateTime"))
+Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
 ```
 
 > **Note**

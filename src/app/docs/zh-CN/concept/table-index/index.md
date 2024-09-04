@@ -1,5 +1,3 @@
-# {{ NgDocPage.title }}
-
 ## MySQL
 
 ### 索引方法

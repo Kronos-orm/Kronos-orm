@@ -31,6 +31,28 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  *
  * A Kotlin compiler plugin transformer that manipulates IR elements related to table fields.
  * @author: OUSC
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     fun <T: KPojo> T.foo() {
+ *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *              it.username + it.password
+ *          }
+ *          KTable<T>().action(this)
+ *     }
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *     fun <T: KPojo> foo() {
+ *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *              addField(Field("username"))
+ *              addField(Field("password"))
+ *              it.username + it.password
+ *          }
+ *          KTable<T>().action(this)
+ *    }
  */
 class KTableAddFieldTransformer(
     private val pluginContext: IrPluginContext,

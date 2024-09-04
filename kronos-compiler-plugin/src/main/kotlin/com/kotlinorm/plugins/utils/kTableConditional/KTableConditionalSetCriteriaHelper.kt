@@ -91,7 +91,6 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: 
                 children.add(buildCriteria(it.condition, setNot))
                 children.add(buildCriteria(it.result, setNot))
             }
-            irConcat()
         }
 
         is IrCall -> {

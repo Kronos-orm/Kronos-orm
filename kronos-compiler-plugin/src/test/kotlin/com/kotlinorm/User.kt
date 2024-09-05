@@ -39,7 +39,6 @@ data class SqlliteUser(
 @TableIndex(name = "idx_user_id", columns = ["id"], type = "UNIQUE", method = "BTREE")
 data class User(
     var id: Int? = null,
-    @UseSerializeResolver
     var username: String? = null,
     var gender: Int? = null,
     @CreateTime

@@ -1,6 +1,7 @@
 package com.kotlinorm.plugins.utils
 
 import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.kTable.ColumnSerializableAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
@@ -17,7 +18,6 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
 val createPairSymbol
@@ -136,7 +136,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                     })),
                 irGet(map),
                 irString(property.name.asString()),
-                irBoolean(property.hasAnnotation(FqName("com.kotlinorm.annotations.UseSerializeResolver")))))?.let {
+                irBoolean(property.hasAnnotation(ColumnSerializableAnnotationsFqName))))?.let {
                 irTry(
                     irUnit().type, it, listOf(), null
                 )

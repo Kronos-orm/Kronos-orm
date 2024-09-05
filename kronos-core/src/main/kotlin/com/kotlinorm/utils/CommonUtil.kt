@@ -189,7 +189,7 @@ fun getSafeValue(
     superTypes: List<String>,
     map: Map<String, Any?>,
     key: String,
-    useSerializeResolver: Boolean
+    serializable: Boolean
 ): Any? {
     if (strictSetValue) {
         return map[key]
@@ -203,8 +203,8 @@ fun getSafeValue(
         else -> {
             val kClassOfVal = map[safeKey]!!::class
             if (kotlinType != kClassOfVal.qualifiedName) {
-                if (useSerializeResolver) {
-                    return serializeResolver.deserializeObj(
+                if (serializable) {
+                    return serializeResolver.deserialize(
                         map[safeKey].toString(), kotlinBuiltInClassMap[kotlinType] ?: Class.forName(kotlinType).kotlin
                     )
                 }

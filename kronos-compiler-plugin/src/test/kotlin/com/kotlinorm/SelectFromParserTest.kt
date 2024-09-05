@@ -36,14 +36,14 @@ class JoinParserTest {
             import com.kotlinorm.annotations.CreateTime
             import com.kotlinorm.orm.select.select
             import java.util.Date
-            import com.kotlinorm.annotations.UseSerializeResolver
+            import com.kotlinorm.annotations.Serializable
             import com.kotlinorm.utils.Extensions.safeMapperTo
             import com.kotlinorm.orm.join.join
                     
             @Table(name = "tb_user")
             data class User(
                 var id: Int? = null,
-                @UseSerializeResolver
+                @Serializable
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime

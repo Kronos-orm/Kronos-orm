@@ -20,7 +20,6 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.fieldDb2k
-import kotlin.reflect.full.createInstance
 
 /**
  * Field
@@ -57,7 +56,8 @@ class Field(
     val length: Int = 0,
     val defaultValue: String? = null,
     val identity: Boolean = false,
-    val nullable: Boolean = true
+    val nullable: Boolean = true,
+    val serializable: Boolean = false
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

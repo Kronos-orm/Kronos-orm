@@ -32,9 +32,7 @@ interface KronosSerializeResolver {
      * @param kClass the class of the object to deserialize into
      * @return the deserialized object of type T
      */
-    fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T
-
-    fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any
+    fun deserialize(serializedStr: String, kClass: KClass<*>): Any
 
     /**
      * Serializes an object of type T into a string.

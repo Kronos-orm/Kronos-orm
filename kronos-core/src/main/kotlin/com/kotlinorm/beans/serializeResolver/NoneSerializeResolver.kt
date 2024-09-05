@@ -27,11 +27,7 @@ import kotlin.reflect.KClass
  * @author OUSC
  */
 object NoneSerializeResolver : KronosSerializeResolver {
-    override fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T {
-        throw UnsupportedOperationException()
-    }
-
-    override fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any {
+    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
         throw UnsupportedOperationException()
     }
 

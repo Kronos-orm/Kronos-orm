@@ -6,11 +6,7 @@ import kotlin.reflect.KClass
 
 
 object GsonResolver : KronosSerializeResolver {
-    override fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T {
-        return Gson().fromJson<T>(serializedStr, kClass.java)
-    }
-
-    override fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any {
+    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
         return Gson().fromJson(serializedStr, kClass.java)
     }
 

@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
@@ -65,6 +66,17 @@ class InsertClause<T : KPojo>(val pojo: T) {
         setCommonStrategy(optimisticStrategy, false, callBack = updateInsertFields)
 
         val sql = getInsertSql(wrapper.orDefault(), tableName, toInsertFields.toList())
+        val paramMapNew = mutableMapOf<String, Any?>()
+        paramMap.forEach { (key, value) ->
+            val field = toInsertFields.find { it.name == key }
+            if (field != null && value != null) {
+                if(field.serializable){
+                    paramMapNew[key] = serializeResolver.serialize(value)
+                } else {
+                    paramMapNew[key] = value
+                }
+            }
+        }
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -72,7 +84,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             pojo,
             KronosAtomicActionTask(
                 sql,
-                paramMap.filter { it.key in toInsertFields.map { item -> item.name } }.toMutableMap(),
+                paramMapNew,
                 operationType = KOperationType.INSERT,
                 useIdentity = (allFields - toInsertFields).any { it.identity }
             )

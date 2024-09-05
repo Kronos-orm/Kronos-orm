@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.update
 
+import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
@@ -244,9 +245,15 @@ class UpdateClause<T : KPojo>(
         val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), versionField, whereClauseSql)
 
         // 合并参数映射，准备执行SQL所需的参数
-        paramMap.putAll(paramMapNew.map { it.key.name to it.value }.toMap())
-        // 返回构建好的KronosAtomicTask实例
+        paramMapNew.forEach { (key, value) ->
+            if(key.serializable && value != null){
+                paramMap[key.name] = serializeResolver.serialize(value)
+            } else {
+                paramMap[key.name] = value
+            }
+        }
 
+        // 返回构建好的KronosAtomicTask实例
         val rootTask = KronosAtomicActionTask(
             sql,
             paramMap,

@@ -38,7 +38,7 @@ class SelectParserTest {
             import com.kotlinorm.annotations.Default
             import com.kotlinorm.orm.select.select
             import java.util.Date
-            import com.kotlinorm.annotations.UseSerializeResolver
+            import com.kotlinorm.annotations.Serializable
             import com.kotlinorm.utils.Extensions.safeMapperTo
             import com.kotlinorm.annotations.*
             import com.kotlinorm.enums.KColumnType.CHAR
@@ -76,7 +76,7 @@ class SelectParserTest {
             @TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
             data class User(
                 var id: Int? = null,
-                @UseSerializeResolver
+                @Serializable
                 var username: String? = null,
                 var gender: Int? = null,
                 @CreateTime

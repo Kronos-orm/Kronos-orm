@@ -1,179 +1,74 @@
-## MySQL
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-### 索引方法
+## 索引类型
 
-#### BTREE
+### MySQL
 
-- `Mysql.KIndexMethod.BTREE`
+- **NORMAL** `Mysql.KIndexType.NORMAL` 普通索引，无需指定，MySQL默认使用该索引。
 
-二叉树索引，最常见的索引类型，无需指定，MySQL默认使用该索引。
+- **UNIQUE** `Mysql.KIndexType.UNIQUE` 唯一索引，用于保证数据唯一性。
 
-#### HASH
+- **FULLTEXT** `Mysql.KIndexType.FULLTEXT` 全文索引，只有MyISAM引擎支持，用于全文搜索。
 
-- `Mysql.KIndexMethod.HASH`
+- **SPATIAL** `Mysql.KIndexType.SPATIAL` 空间索引，用于空间数据类型，支持范围查询。
 
-哈希索引，只有Memory引擎支持，不支持范围查询。
+### PostgreSQL
 
-### 索引类型
+- **UNIQUE** `PostgreSQL.KIndexType.UNIQUE` 唯一索引，用于保证数据唯一性。
 
-#### NORMAL
+### Oracle
 
-- `Mysql.KIndexType.NORMAL`
+- **NORMAL** `Oracle.KIndexType.NORMAL` 普通索引，无需指定，Oracle默认使用该索引。
 
-普通索引，无需指定，MySQL默认使用该索引。
+- **BITMAP** `Oracle.KIndexType.BITMAP` 位图索引，用于高并发查询，适用于低基数列。
 
-#### UNIQUE
+- **UNIQUE** `Oracle.KIndexType.UNIQUE` 唯一索引，用于保证数据唯一性。
 
-- `Mysql.KIndexType.UNIQUE`
+### SQL Server
 
-唯一索引，用于保证数据唯一性。
+- **CLUSTERED** `SqlServer.KIndexType.CLUSTERED` 聚集索引，表中数据的物理顺序与索引的逻辑顺序一致。
 
-#### FULLTEXT
+- **NONCLUSTERED** `SqlServer.KIndexType.NONCLUSTERED` 非聚集索引，表中数据的物理顺序与索引的逻辑顺序不一致。
 
-- `Mysql.KIndexType.FULLTEXT`
+- **XML** `SqlServer.KIndexType.XML` XML索引，用于XML数据类型。
 
-全文索引，只有MyISAM引擎支持，用于全文搜索。
+- **SPATIAL** `SqlServer.KIndexType.SPATIAL` 空间索引，用于空间数据类型。
 
-#### SPATIAL
+### SQLite
 
-- `Mysql.KIndexType.SPATIAL`
+- **NOCASE** `SQLite.KIndexType.NOCASE` 忽略大小写。
 
-空间索引，用于空间数据类型，支持范围查询。
+- **RTRIM** `SQLite.KIndexType.RTRIM` 忽略尾部空格。
 
-## PostgreSQL
+- **BINARY** `SQLite.KIndexType.BINARY` 二进制比较。
 
-### 索引方法
+## 索引方法
 
-#### BTREE
+### MySQL
 
-- `PostgreSQL.KIndexMethod.BTREE`
+- **BTREE** `Mysql.KIndexMethod.BTREE` 二叉树索引，最常见的索引类型，无需指定，MySQL默认使用该索引。
 
-二叉树索引，无需指定，PostgreSQL默认使用该索引。
+- **HASH**  `Mysql.KIndexMethod.HASH` 哈希索引，只有Memory引擎支持，不支持范围查询。
 
-#### HASH
+### PostgreSQL
 
-- `PostgreSQL.KIndexMethod.HASH`
+- **BTREE** `PostgreSQL.KIndexMethod.BTREE` 二叉树索引，无需指定，PostgreSQL默认使用该索引。
 
-哈希索引，用于等值查询，不支持范围查询。
+- **HASH** `PostgreSQL.KIndexMethod.HASH` 哈希索引，用于等值查询，不支持范围查询。
 
-#### GIST
+- **GIST** `PostgreSQL.KIndexMethod.GIST` 通用索引，支持范围查询，支持空间索引。
 
-- `PostgreSQL.KIndexMethod.GIST`
+- **SPGIST** `PostgreSQL.KIndexMethod.SPGIST` 空间索引，支持范围查询。
 
-通用索引，支持范围查询，支持空间索引。
+- **GIN** `PostgreSQL.KIndexMethod.GIN` 通用倒排索引，用于全文搜索。
 
-#### SPGIST
+- **BRIN** `PostgreSQL.KIndexMethod.BRIN` 区间索引，用于大表。
 
-- `PostgreSQL.KIndexMethod.SPGIST`
+### SQL Server
 
-空间索引，支持范围查询。
+- **UNIQUE** `SqlServer.KIndexMethod.UNIQUE` 唯一索引，用于保证数据唯一性。
 
-#### GIN
+### SQLite
 
-- `PostgreSQL.KIndexMethod.GIN`
-
-通用倒排索引，用于全文搜索。
-
-#### BRIN
-
-- `PostgreSQL.KIndexMethod.BRIN`
-
-区间索引，用于大表。
-
-### 索引类型
-
-#### UNIQUE
-
-- `PostgreSQL.KIndexType.UNIQUE`
-
-唯一索引，用于保证数据唯一性。
-
-## Oracle
-
-### 索引类型
-
-#### NORMAL
-
-- `Oracle.KIndexType.NORMAL`
-
-普通索引，无需指定，Oracle默认使用该索引。
-
-#### BITMAP
-
-- `Oracle.KIndexType.BITMAP`
-
-位图索引，用于高并发查询，适用于低基数列。
-
-#### UNIQUE
-
-- `Oracle.KIndexType.UNIQUE`
-
-唯一索引，用于保证数据唯一性。
-
-## SQL Server
-
-### 索引方法
-
-#### UNIQUE
-
-- `SqlServer.KIndexMethod.UNIQUE`
-
-唯一索引，用于保证数据唯一性。
-
-### 索引类型
-
-#### CLUSTERED
-
-- `SqlServer.KIndexType.CLUSTERED`
-
-聚集索引，表中数据的物理顺序与索引的逻辑顺序一致。
-
-#### NONCLUSTERED
-
-- `SqlServer.KIndexType.NONCLUSTERED`
-
-非聚集索引，表中数据的物理顺序与索引的逻辑顺序不一致。
-
-#### XML
-
-- `SqlServer.KIndexType.XML`
-
-XML索引，用于XML数据类型。
-
-#### SPATIAL
-
-- `SqlServer.KIndexType.SPATIAL`
-
-空间索引，用于空间数据类型。
-
-## SQLite
-
-### 索引方法
-
-#### UNIQUE
-
-- `SQLite.KIndexMethod.UNIQUE`
-
-唯一索引，用于保证数据唯一性。
-
-### 索引类型
-
-#### NOCASE
-
-- `SQLite.KIndexType.NOCASE`
-
-忽略大小写。
-
-#### RTRIM
-
-- `SQLite.KIndexType.RTRIM`
-
-忽略尾部空格。
-
-#### BINARY
-
-- `SQLite.KIndexType.BINARY`
-
-二进制比较。
-
+- **UNIQUE** `SQLite.KIndexMethod.UNIQUE` 唯一索引，用于保证数据唯一性。
 

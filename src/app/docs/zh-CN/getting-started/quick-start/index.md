@@ -21,7 +21,7 @@
 仅需引入`kronos-core`模块和`kronos-compiler-plugin`插件即可在您的项目中使用Kronos。
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
-    dependencies {
+dependencies {
     implementation("com.kotlinorm.kronos-core:2.0.0") // 供了基础的ORM功能
 }
 
@@ -31,7 +31,7 @@ plugins {
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
-    dependencies {
+dependencies {
     implementation 'com.kotlinorm:kronos-core:2.0.0' // 供了基础的ORM功能
 }
 
@@ -86,13 +86,13 @@ plugins {
 引入依赖：
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
-    dependencies {
+dependencies {
     implementation("com.kotlinorm.kronos-jvm-jdbc-wrappere:2.0.0") // 供了基础的ORM功能
 }
 ```
 
 ```groovy group="importDriver" name="gradle(groovy)" icon="gradle"
-    dependencies {
+dependencies {
     implementation 'com.kotlinorm:kronos-jvm-jdbc-wrapper:2.0.0' // 供了基础的ORM功能
 }
 ```
@@ -152,7 +152,7 @@ dependencies {
 
 ### 配置数据库连接
 
-```kotlin group="KronosConfig" name="KronosConfig.kt"
+```kotlin group="DataSourceConfig" name="Main.kt"
 import com.kotlinorm.Kronos
 
 fun main() {
@@ -167,11 +167,11 @@ fun main() {
 }
 ```
 
-## ⚙️ 全局配置
+## ⚙️ 全局设置
 
-Kronos支持表名策略、字段名策略、创建时间、更新时间、逻辑删除等全局配置，以下仅列出部分详细可参考[全局配置](/documentation/zh-CN/getting-started/global-config)。
+Kronos支持表名策略、字段名策略、创建时间、更新时间、逻辑删除等全局设置，以下仅列出部分详细可参考[全局设置](/documentation/zh-CN/getting-started/global-config)。
 
-```kotlin group="KronosConfig" name="KronosConfig.kt"
+```kotlin group="KronosConfig" name="Main.kt"
 import com.kotlinorm.Kronos
 import java.time.ZoneId
 
@@ -245,18 +245,20 @@ data class Movie(
 
 恭喜你，您已经完成了Kronos的基本配置，现在可以开始使用Kronos了。
 
-```kotlin group="Kronos" name="Kronos.kt"
-val director: Director = Director(
-    id = 1,
-    name = "Kronos",
-    age = 18
-)
+```kotlin group="Kronos" name="Main.kt"
+fun main() {
+    val director = Director(
+        id = 1,
+        name = "Kronos",
+        age = 18
+    )
 
-director.insert(director)
+    director.insert(director)
 
-director.update().set { it.name = "Kronos ORM" }.where { it.id == 1 }.execute()
+    director.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
 
-val directors: List<Director> = director.select().where { it.id == 1 }.queryList()
+    val directors: List<Director> = director.select().where { it.id == 1 }.queryList()
 
-val movies: List<Movie> = Movie().select().where { it.director!!.id == director.id.value }.queryList()
+    val movies: List<Movie> = Movie().select().where { it.director!!.id == director.id.value }.queryList()
+}
 ```

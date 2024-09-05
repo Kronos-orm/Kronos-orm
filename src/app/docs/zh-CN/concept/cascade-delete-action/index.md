@@ -1,4 +1,8 @@
-规定级联删除时的操作，详见[级联删除](/documentation/zh-CN/database/reference-delete)。
+---
+keyword: 'CascadeDeleteAction'
+---
+
+规定级联删除时的操作，详见[级联删除](/documentation/zh-CN/database/cascade-delete)。
 
 1. `CASCADE` 级联删除
 2. `RESTRICT` 限制删除，如果有关联数据，不允许删除

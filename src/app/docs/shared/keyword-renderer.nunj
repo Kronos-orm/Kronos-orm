@@ -1,0 +1,13 @@
+{% macro new(url, page) %}<code class="ngde ng-doc-code-with-link"><a class="ngde" href="/documentation/{{
+        url[0]
+}}/{{
+        url[1]
+}}#{%if page.length == 1 %}{{
+        page[0]
+}}{% else %}{{
+        page[1]
+}}{% endif %}">{%if page.length == 1 %}{{
+        page[0]
+}}{% else %}{{
+    page[0] + "-" + page[1]
+}}{% endif %}</a></code>{% endmacro %}

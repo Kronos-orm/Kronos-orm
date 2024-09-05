@@ -1,6 +1,6 @@
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何全局配置Kronos。
+本文将指导您如何全局设置Kronos。
 
 ## 默认数据源设置
 
@@ -15,6 +15,8 @@ Kronos.dataSource = { yourDataSourceWrapper }
 > **Warning**
 > 默认数据源的默认值为`NoneDataSourceWrapper`，在使用前请务必修改您的配置文件。
 >
+
+> **Warning**
 > Kronos支持多数据源与动态数据源
 >
 > **多数据源**：在具体操作时，如KPojo.update.execute(wrapper)，可以在`execute`函数中传入其他`KronosDataSourceWrapper`
@@ -146,7 +148,7 @@ Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
 > **Note**
 > 全局设置乐观锁策略后，仍可在`KPojo`类中通过`@Version`注解覆盖全局设置。
 
-## 默认日期/时间格式
+## 默认日期时间格式
 
 用于指定日期格式化的默认格式，遵循`ISO 8601`规范，默认为`yyyy-MM-dd HH:mm:ss`。
 
@@ -180,7 +182,7 @@ Kronos.timeZone = ZoneId.systemDefault()
 Kronos.timeZone = ZoneId.of("GMT+8")
 ```
 
-## 序列化解析器
+## 序列化反序列化处理器
 
 将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
 

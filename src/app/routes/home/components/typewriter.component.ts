@@ -12,7 +12,7 @@ import {NgxTypedWriterModule} from "ngx-typed-writer";
   ],
   template: `
 
-    <div class="typer_img"></div>
+    <div class="typer_img" [class]="focused ?  ['focused'] : ['focus_in_4s']"></div>
     @defer (on timer(4000)) {
       <div class="typer_text">
         <div class="text">
@@ -38,7 +38,8 @@ import {NgxTypedWriterModule} from "ngx-typed-writer";
       display: block;
       position: relative;
       width: 100%;
-      height: 200px;
+      height: 250px;
+      margin-bottom: -50px;
     }
 
     @font-face {
@@ -74,8 +75,16 @@ import {NgxTypedWriterModule} from "ngx-typed-writer";
       100% {
         background-size: 200% auto;
         background-position: 35% 110%;
-        opacity: 1;
       }
+    }
+
+    .focus_in_4s {
+      animation: focus 4s forwards;
+    }
+
+    .focused {
+      background-size: 200% auto!important;
+      background-position: 35% 110%!important;
     }
 
     .typer_text {
@@ -108,4 +117,12 @@ export class TypewriterComponent {
     `.<span class="code-green">select()</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }</span><br/>.<span class="code-green">queryOne()</span>`,
     `.<span class="code-green">update()</span><br/>.<span class="code-green">set{ </span><span class="code-red">it.name </span>= "name"<span class="code-green"> }</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }<br/>.<span class="code-green">execute()</span>`,
   ];
+
+  focused = false;
+
+  ngOnInit() {
+    setTimeout(() => {
+        this.focused = true;
+    }, 4000);
+  }
 }

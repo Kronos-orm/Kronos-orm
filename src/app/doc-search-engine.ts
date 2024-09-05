@@ -23,7 +23,7 @@ export class DocSearchEngine extends NgDocSearchEngine {
       indexes
         // Filter indexes by query
         .filter((index: NgDocPageIndex) =>
-          index.content?.toLowerCase().includes(query.toLowerCase()) && index.route.split("/")[1] === window.location.pathname.split("/")[2]
+          index.content?.toLowerCase().includes(query.toLowerCase()) && index.route.split("/")[0] === window.location.hash.split("/")[2]
         )
         // Get first 10 results, you can remove this line to get all results
         // it's recommended to limit the number of results to avoid performance issues

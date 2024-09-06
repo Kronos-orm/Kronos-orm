@@ -2,15 +2,14 @@ package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
-import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.tableOperation.beans.ProductLog
 import org.apache.commons.dbcp2.BasicDataSource
@@ -29,7 +28,7 @@ class Join {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { TestWrapper }
             serializeResolver = GsonResolver
         }
     }
@@ -233,4 +232,32 @@ class Join {
         )
     }
 
+    @Test
+    fun testSelectCount() {
+        val (sql, paramMap) =
+            MysqlUser(1).join(
+                UserRelation(1, "123", 1, 1),
+            ) { user, relation ->
+                leftJoin(relation) { user.id == relation.id2 }
+                select {
+                    "count(1)"
+                }
+                where { user.id == 1 }
+            }.build()
+
+        assertEquals(
+            "SELECT count(1) " +
+                    "FROM `tb_user` " +
+                    "LEFT JOIN `user_relation` " +
+                    "ON `tb_user`.`id` = `user_relation`.`id2` WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
+            sql
+        )
+
+        assertEquals(mapOf(
+            "id" to 1,
+            "username" to "123",
+            "gender" to 1,
+            "id2" to 1
+        ), paramMap)
+    }
 }

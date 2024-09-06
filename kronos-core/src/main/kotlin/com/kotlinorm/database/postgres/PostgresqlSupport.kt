@@ -280,7 +280,7 @@ object PostgresqlSupport : DatabasesSupport {
 
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
-                it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
                 else -> "${quote(it.second, true)} AS ${MssqlSupport.quote(it.first)}"
             }
         }

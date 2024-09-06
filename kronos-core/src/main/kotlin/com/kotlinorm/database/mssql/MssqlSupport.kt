@@ -327,7 +327,7 @@ object MssqlSupport : DatabasesSupport {
         val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
-                it.second.type == CUSTOM_CRITERIA_SQL -> it.toString()
+                it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
                 else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }

@@ -97,13 +97,13 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             }
             col
         }
-
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = instance.kronosTableIndex()
         // 获取实际表字段信息
         val tableColumns = getTableColumns(dataSource, tableName)
         // 获取实际表索引信息
         val tableIndexes = getTableIndexes(dataSource, tableName)
+
         // 新增、修改、删除字段
         val diffColumns = differ(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }
         val diffIndexes = TableIndexDiff(kronosIndexes, tableIndexes)

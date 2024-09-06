@@ -9,10 +9,9 @@ import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.relationQuery.oneToMany.School
-import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
@@ -31,7 +30,7 @@ class Select {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { TestWrapper }
             serializeResolver = GsonResolver
         }
     }
@@ -221,6 +220,19 @@ class Select {
 
         assertEquals(
             "SELECT `id`, `username` AS `username` FROM `test`.`tb_user` WHERE `gender` = :gender AND `deleted` = 0",
+            sql
+        )
+    }
+
+    @Test
+    fun testSelectCount() {
+
+        val (sql, paramMap) = user.select { "count(1)" }
+            .where { it.gender == 0 }.db("test")
+            .build()
+
+        assertEquals(
+            "SELECT count(1) FROM `test`.`tb_user` WHERE `gender` = :gender AND `deleted` = 0",
             sql
         )
     }

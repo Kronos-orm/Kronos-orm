@@ -186,7 +186,7 @@ data class Movie(
     @UpdateTime val updateTime: String? = null, // update time and date format
     @CreateTime val createTime: LocalDateTime? = null // create time
 ) : KPojo { // KPojo is a marker interface
-    var actors: List<Actor>? = manyToMany(::relations) // many-to-many
+    var actors: List<Actor>? by manyToMany(::relations) // many-to-many
 }
 ```
 

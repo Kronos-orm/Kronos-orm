@@ -224,6 +224,7 @@ object MysqlSupport : DatabasesSupport {
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
+                it.second.name != it.second.columnName -> "${quote(it.second, true)} AS ${quote(it.second, true)}"
                 else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }

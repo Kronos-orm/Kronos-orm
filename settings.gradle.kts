@@ -38,7 +38,7 @@ rootProject.children.forEach { project ->
 include("kronos-core")
 include("kronos-logging")
 include("kronos-compiler-plugin")
-include("kronos-jvm-driver-wrapper")
+include("kronos-jdbc-wrapper")
 include("kronos-testing")
 include("kronos-gradle-plugin")
 include("kronos-maven-plugin")

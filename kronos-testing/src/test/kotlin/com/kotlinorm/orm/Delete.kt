@@ -5,6 +5,7 @@ import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
 import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,6 +15,7 @@ class Delete {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
+            dataSource = { TestWrapper }
         }
     }
 

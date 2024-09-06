@@ -43,16 +43,38 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         instance.kronosTableIndex()
     ).forEach { dataSource.execute(it) }
 
+    fun createTables(vararg instance: KPojo) {
+        instance.forEach {
+            getTableCreateSqlList(
+                dataSource.dbType,
+                it.kronosTableName(),
+                it.kronosColumns().filter { it.isColumn },
+                it.kronosTableIndex()
+            ).forEach { sql -> dataSource.execute(sql) }
+        }
+    }
+
     inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) {
         dataSource.execute(
             getTableDropSql(dataSource.dbType, instance.kronosTableName())
         )
     }
 
-    fun dropTable(tableName: String) {
-        dataSource.execute(
-            getTableDropSql(dataSource.dbType, tableName)
-        )
+    @JvmName("dropTablesByInstance")
+    fun dropTable(vararg instance: KPojo) {
+        instance.forEach {
+            dataSource.execute(
+                getTableDropSql(dataSource.dbType, it.kronosTableName())
+            )
+        }
+    }
+
+    fun dropTable(vararg tableName: String) {
+        tableName.forEach {
+            dataSource.execute(
+                getTableDropSql(dataSource.dbType, it)
+            )
+        }
     }
 
     inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
@@ -92,5 +114,14 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             }
         }
         return true
+    }
+
+    @JvmName("syncTableByInstance")
+    fun syncTables(vararg instance: KPojo): Boolean {
+        var result = true
+        instance.forEach {
+            result = result && syncTable(it)
+        }
+        return result
     }
 }

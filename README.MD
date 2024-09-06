@@ -173,13 +173,11 @@ data class Movie(
     val id: Long? = null, // primary key and auto increment
     val name: String? = null, // movie name
     val directorId: Long? = null, // director id
-    @Reference(["directorId"], ["id"])
-    val director: Director? = null, // reference table & one-to-many
-    val movieActorId: Long? = null, //  intermediate table for many-to-many
-    @Reference(["movieActorId"], ["id"])
-    val actors: List<MovieActor>? = null, // reference list & many-to-many
+    @Cascade(["directorId"], ["id"])
+    val director: Director? = null, // cascade table & one-to-many
+    val relations: List<MovieActorRelation>? = null, // reference list & many-to-many
     @ColumnDeserialize
-    val type: List<String>? = null, // deserialize from json string
+    val type: List<String>? = null, // deserialize from string
     @Column("movie_summary")
     val summary: String? = null, // summary with column name
     @Version val version: Long? = null, // version for optimistic lock
@@ -187,7 +185,9 @@ data class Movie(
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     @UpdateTime val updateTime: String? = null, // update time and date format
     @CreateTime val createTime: LocalDateTime? = null // create time
-) : KPojo // KPojo is a marker interface
+) : KPojo { // KPojo is a marker interface
+    var actors: List<Actor>? = manyToMany(::relations) // many-to-many
+}
 ```
 
 ### 🎨 Table Model Definition(Dsl Style)
@@ -221,6 +221,8 @@ dataSource.table.createTable<Movie>()
 
 // drop table
 dataSource.table.dropTable<Movie>()
+// or
+dataSource.table.dropTable("tb_movie")
 
 //sync table structure
 dataSource.table.syncTable<Movie>()
@@ -252,15 +254,12 @@ val (total, list) = User()
 
 // multi-table query
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    on {
-        user.id == relation.userId && user.id == role.userId && relation.roleId == role.id
-    }
+    on { user.id == relation.userId && user.id == role.userId }
     select {
-        user.id + user.username + relation.relation + role.role
+        user.id + user.username + relation.id.`as`("relationId") + 
+                role.role + "count(1) as count"
     }
-    where {
-        user.id < 10
-    }
+    where { user.id < 10 }
 }.query()
 ```
 

@@ -1,16 +1,13 @@
-{% import "../../../shared/zh-CN.nunj" as language %}
-{% import "../../../shared/keyword-renderer.nunj" as keyword %}
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 表名
+## {{ $.annotation("Table") }} 表名设置
 
-`@Table`
-用于指定数据类的表名，该注解的生效优先级高于{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "全局表名策略"]) }}的优先级。
+用于指定数据类的表名，该注解的生效优先级高于{{ $.keyword("
+getting-started/global-config", ["全局设置", "全局表名策略"]) }}的优先级。
 
 **参数**：
-
-- <span style="color: red">*</span> name `string`：表名
+{{$.params([['name', 'String', '表名', true]])}}
 
 ```kotlin
 @Table("tb_user")
@@ -21,21 +18,21 @@ data class User(
 ) : KPojo
 ```
 
-## 表索引
-
-`@TableIndex`
+## {{ $.annotation("TableIndex") }}表索引
 
 用于指定数据表的索引。
 
 > **Note**
 > 在使用`dataSource.table.create<Table>()`或`dataSource.table.sync<Table>()`时生效。
-**参数**：
 
-- <span style="color: red">*</span> name `string`：索引名
-- <span style="color: red">*</span> columns `Array<String>`：索引列名
-- type `String`：{{ keyword.new([language.default,"concept/table-index"], ["索引类型"]) }}
-- method `String`：{{ keyword.new([language.default,"concept/table-index"], ["索引方法"]) }}
-- concurrently: `boolean` 是否并发创建索引，**仅适用于 PostgreSQL**
+**参数**：
+{{$.params([
+  ['name', 'String', '索引名', true],
+  ['columns', 'Array<String>', '索引列名', true],
+  ['type', 'String', $.keyword("concept/table-index", ["索引类型"])],
+  ['method', 'String', $.keyword("concept/table-index", ["索引方法"])],
+  ['concurrently', 'Boolean', '是否并发创建索引，**仅适用于 PostgreSQL**']
+])}}
 
 ```kotlin
 import java.time.LocalDateTime
@@ -48,16 +45,14 @@ data class User(
 ) : KPojo
 ```
 
-## 表创建时间
+## {{ $.annotation("CreateTime") }}表创建时间
 
-`@CreateTime`
-
-用于指定数据表是否开启创建时间策略，该注解的生效优先级高于{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "创建时间策略"]) }}的优先级。
+用于指定数据表是否开启创建时间策略，该注解的生效优先级高于{{ $.keyword(
+"getting-started/global-config", ["全局设置", "创建时间策略"]) }}的优先级。
 
 **参数**：
 
-- enabled `Boolean`：是否开启，默认为`true`
+{{$.params([['enabled', 'Boolean', '是否开启']])}}
 
 ```kotlin
 @CreateTime(enabled = false)
@@ -67,16 +62,14 @@ data class User(
 ) : KPojo
 ```
 
-## 表更新时间
-
-`@UpdateTime`
+## {{ $.annotation("UpdateTime") }}表更新时间
 
 用于指定数据表是否开启更新时间策略，该注解的生效优先级高于{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "更新时间策略"]) }}的优先级。
+$.keyword("getting-started/global-config", ["全局设置", "更新时间策略"]) }}的优先级。
 
 **参数**：
 
-- enabled `Boolean`：是否开启，默认为`true`
+{{$.params([['enabled', 'Boolean', '是否开启']])}}
 
 ```kotlin
 @UpdateTime(enabled = false)
@@ -86,16 +79,14 @@ data class User(
 ) : KPojo
 ```
 
-## 表逻辑删除
-
-`@LogicDelete`
+## {{ $.annotation("LogicDelete") }}表逻辑删除
 
 用于指定数据表是否开启逻辑删除策略，该注解的生效优先级高于{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "逻辑删除策略"]) }}的优先级。
+$.keyword("getting-started/global-config", ["全局设置", "逻辑删除策略"]) }}的优先级。
 
 **参数**：
 
-- enabled `Boolean`：是否开启，默认为`true`
+{{$.params([['enabled', 'Boolean', '是否开启']])}}
 
 > 在全局开启逻辑删除的情况下取消某张表的逻辑删除功能
 
@@ -107,16 +98,14 @@ data class User(
 ) : KPojo
 ```
 
-## 列名设置
-
-`@Column`
+## {{ $.annotation("Column") }}列名
 
 用于指定数据表的列名，该注解的生效优先级高于{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "逻辑删除策略"]) }}的优先级。
+$.keyword("getting-started/global-config", ["全局设置", "逻辑删除策略"]) }}的优先级。
 
 **参数**：
 
-- name `String`：列名
+{{$.params([['name', 'String', '列名', true]])}}
 
 ```kotlin
 data class User(
@@ -125,16 +114,14 @@ data class User(
 ) : KPojo
 ```
 
-## 列日期格式化
-
-`@DateTimeFormat(pattern: String)`
+## {{ $.annotation("DateTimeFormat") }}日期时间格式
 
 用于指定数据表的日期/时间格式，该注解的生效优先级高于{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "默认日期时间格式"]) }}的优先级。
+$.keyword("getting-started/global-config", ["全局设置", "默认日期时间格式"]) }}的优先级。
 
 **参数**：
 
-- pattern `String`：日期/时间格式
+{{$.params([['pattern', 'String', '日期/时间格式']])}}
 
 ```kotlin
 data class User(
@@ -148,7 +135,7 @@ data class User(
 `@UseSerializeResolver`
 
 用于声明该列是否需要进行序列化/反序列化，使用该注解的字段Kronos将调用序列化解析器（见{{
-keyword.new([language.default, "getting-started/global-config"], ["全局设置", "序列化反序列化处理器"])
+$.keyword("getting-started/global-config", ["全局设置", "序列化反序列化处理器"])
 }}）将该列的值在数据库存入和读取时进行序列化和反序列化操作。
 
 ```kotlin
@@ -174,7 +161,7 @@ data class User(
 
 - properties `Array<String>`：本表的关联字段属性名，如以下示例中`companyId`用于关联`Company`实体。
 - targetProperties `Array<String>`：关联目标表关联字段属性名，如以下示例中`companyId`关联到`Company`的`id`属性。
-- onDelete `CascadeDeleteAction`：{{ keyword.new([language.default, "concept/cascade-delete-action"], ["关联删除策略"])
+- onDelete `CascadeDeleteAction`：{{ $.keyword("concept/cascade-delete-action", ["关联删除策略"])
   }}，默认为`NO_ACTION`（无操作）。
 - defaultValue `Array<String>`：指定级联删除方式为"SET DEFAULT"时设置的默认值（可选）。
 - usage `Array<KOperationType>`: 用于声明本实体需要用到的关联操作（可选，默认为

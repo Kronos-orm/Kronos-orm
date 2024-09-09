@@ -1,5 +1,5 @@
 ---
-keyword: 'CascadeDeleteAction'
+$: 'CascadeDeleteAction'
 ---
 
 规定级联删除时的操作，详见[级联删除](/documentation/zh-CN/database/cascade-delete)。

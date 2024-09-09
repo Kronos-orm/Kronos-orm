@@ -1,3 +1,4 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 本文将指导您如何快速开始使用Kronos，你可以在[这里](https://github.com/Kronos-orm?tab=repositories)找到一些示例项目。
@@ -78,45 +79,45 @@ plugins {
 </project>
 ```
 
-### 数据库操作驱动包装器(kronos-jvm-jdbc-wrapper)
+### jdbc数据源包装器(kronos-jdbc-wrapper)
 
 > **Note**
-> kronos-jvm-jdbc-wrapper是可选模块，本文以它为实例进行创建数据库连接，它提供了jvm平台基于JDBC的驱动包装器，当然，您可以使用其他官方驱动包装器或自己编写包装类，并搭配第三方框架（如SpringData、Mybatis、Hibernate、Jdbi等）使用
+> kronos-jdbc-wrapper是可选模块，本文以它为实例进行创建数据库连接，它提供了jvm平台基于JDBC的数据源包装器，当然，您可以使用其他包装器插件或自己编写包装类，并搭配第三方框架（如SpringData、Mybatis、Hibernate、Jdbi等）使用
 
 引入依赖：
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jvm-jdbc-wrappere:2.0.0") // 供了基础的ORM功能
+    implementation("com.kotlinorm.kronos-jdbc-wrappere:2.0.0") // 供了基础的ORM功能
 }
 ```
 
 ```groovy group="importDriver" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jvm-jdbc-wrapper:2.0.0' // 供了基础的ORM功能
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:2.0.0' // 供了基础的ORM功能
 }
 ```
 
 ```xml group="importDriver" name="maven" icon="maven"
 <!--将插件添加到您的pom.xml文件中：-->
 <project>
-    <!--kronos-jvm-jdbc-wrapper提供了数据库操作驱动包装器-->
+    <!--kronos-jdbc-wrapper提供了jdbc数据源包装器-->
     <dependencies>
         <dependency>
             <groupId>com.kotlinorm</groupId>
-            <artifactId>kronos-jvm-jdbc-wrapper</artifactId>
+            <artifactId>kronos-jdbc-wrapper</artifactId>
             <version>2.0.0</version>
         </dependency>
     </dependencies>
 </project>
 ```
 
-详细使用方法和自定义包装器请参考[本文](/documentation/zh-CN/plugin/datasource-wrapper-and-third-part-framework)。
+详细使用方法和自定义包装器请参考{{ $.keyword("plugin/datasource-wrapper-and-third-part-framework", ["数据源及三方框架扩展"]) }}。
 
 ## 🔗 配置数据库
 
 Kronos支持多种数据库，本文以`Mysql数据库`搭配`commons-dbcp2`
-连接池为例，更多信息请参考[连接到数据库](/documentation/zh-CN/database/connect-to-db)。
+连接池为例，更多信息请参考{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
 
 ### 引入相关依赖
 
@@ -169,7 +170,7 @@ fun main() {
 
 ## ⚙️ 全局设置
 
-Kronos支持表名策略、字段名策略、创建时间、更新时间、逻辑删除等全局设置，以下仅列出部分详细可参考[全局设置](/documentation/zh-CN/getting-started/global-config)。
+Kronos支持表名策略、字段名策略、创建时间、更新时间、逻辑删除等全局设置，以下仅列出部分，详细请参考{{ $.keyword("getting-started/global-config", ["全局设置"]) }}。
 
 ```kotlin group="KronosConfig" name="Main.kt"
 import com.kotlinorm.Kronos

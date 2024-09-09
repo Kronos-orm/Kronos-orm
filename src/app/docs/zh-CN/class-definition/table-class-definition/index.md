@@ -30,9 +30,11 @@ data class User(
 data class User(
     val id: Int? = null,
     val name: String? = null,
-    val relations: List<UserRoleRelation>? = emptyList() // 多对多关系的中间表
+    // 多对多关系的中间表
+    val relations: List<UserRoleRelation>? = emptyList()
 ) : KPojo {
-    var roles: List<Role> by manyToMany(::UserRoleRelation) // 多对多关系的目标表
+    // 多对多关系的目标表
+    var roles: List<Role>? by manyToMany(::UserRoleRelation)
 }
 ```
 

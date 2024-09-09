@@ -1,3 +1,4 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 本文将指导您如何全局设置Kronos。
@@ -6,7 +7,7 @@
 
 在数据库操作时，若不指定数据源，kronos会自动使用该默认数据源。
 
-数据源类型为`KronosDataSourceWrapper`，创建方法可参考：[连接到数据库](/documentation/zh-CN/database/connect-to-db)
+数据源类型为`KronosDataSourceWrapper`，创建方法可参考：{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
 
 ```kotlin
 Kronos.dataSource = { yourDataSourceWrapper }
@@ -33,7 +34,7 @@ Kronos.dataSource = { yourDataSourceWrapper }
 | `tableNamingStrategy` | `KronosNamingStrategy` | `NoneNamingStrategy` |
 
 通过创建`KronosNamingStrategy`
-的实现类来自定义表名策略（详见：[命名策略](/documentation/zh-CN/class-definition/naming-strategy)），然后在配置文件中指定该实现类。
+的实现类来自定义表名策略（详见：{{ $.keyword("concept/naming-strategy", ["概念","命名策略"]) }}），然后在配置文件中指定该实现类。
 
 我们默认提供了`LineHumpNamingStrategy`和`NoneNamingStrategy`两种表名策略：
 
@@ -75,7 +76,7 @@ Kronos.fieldNamingStrategy = LineHumpNamingStrategy
 | `createTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "createTime")` |
 
 通过创建`KronosCommonStrategy`
-的实现类来自定义创建时间策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
+的实现类来自定义创建时间策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
 
 创建时间策略的全局**默认关闭**，需要手动开启。
 
@@ -95,7 +96,7 @@ Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
 | `updateTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "updateTime")` |
 
 通过创建`KronosCommonStrategy`
-的实现类来自定义更新时间策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
+的实现类来自定义更新时间策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
 
 更新时间策略的全局默认关闭，需要手动开启。
 
@@ -115,7 +116,7 @@ Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
 | `logicDeleteStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "deleted")` |
 
 通过创建`KronosCommonStrategy`
-的实现类来自定义逻辑删除策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
+的实现类来自定义逻辑删除策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
 
 逻辑删除策略的全局默认关闭，需要手动开启。
 
@@ -135,7 +136,7 @@ Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
 | `optimisticLockStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "version")` |
 
 通过创建`KronosCommonStrategy`
-的实现类来自定义乐观锁策略（详见：[通用策略](/documentation/class-definition/common-strategy)），然后在配置文件中指定该实现类。
+的实现类来自定义乐观锁策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
 
 也可通过<a href="/documentation/class-definition/table-class-definition#列乐观锁">[列乐观锁]</a>对每一个实体对象单独配置
 
@@ -191,7 +192,7 @@ Kronos.timeZone = ZoneId.of("GMT+8")
 | `serializeResolver` | `KronosSerializeResolver` | `NoneSerializeResolver` |
 
 通过创建`KronosSerializeResolver`
-的实现类来自定义序列化解析器（详见：[序列化解析器](/documentation/zh-cn/class-definition/serialize-resolver)），然后在配置文件中指定该实现类。
+的实现类来自定义序列化解析器（详见：{{ $.keyword("concept/serialize-resolver", ["概念","序列化反序列化处理器"]) }}），然后在配置文件中指定该实现类。
 
 如可以通过引入`GSON`库来实现序列化解析器：
 

@@ -4,7 +4,7 @@ Kronos通过自定义创建继承`KronosDataSourceWrapper`接口的包装类，�
 
 以下是一个使用Springboot + Kronos + JDK 17 + Maven + Kotlin 2.0.0 的示例，演示了如何将Kronos与Spring框架结合使用。
 
-其中包含如何创建一个基于`spring-data-jdbc`的包装类，从而无需引入`kronos-jvm-driver-wrapper`等额外依赖，仅通过`kronos-core`
+其中包含如何创建一个基于`spring-data-jdbc`的包装类，从而无需引入`kronos-jdbc-wrapper`等额外依赖，仅通过`kronos-core`
 即可实现数据库操作的功能。
 
 > [https://github.com/Kronos-orm/kronos-spring-demo](https://github.com/Kronos-orm/kronos-spring-demo)
@@ -149,4 +149,4 @@ companion object {
 
 对于其他仅支持顺序参数的框架，可以通过`KAtomicQueryTask.parsed()`或`KAtomicActionyTask.parsed()`或`KronosAtomicBatchTask.parsedArr()`获取解析后的SQL语句，这个属性中包含了参数名和参数值数组。
 
-后续大致流程与SpringDataWrapper相同，可参考[KronosBasicWrapper.kt](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-jvm-driver-wrapper/src/main/kotlin/com/kotlinorm/KronosBasicWrapper.kt)。
+后续大致流程与SpringDataWrapper相同，可参考[KronosBasicWrapper.kt](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-jdbc-wrapper/src/main/kotlin/com/kotlinorm/KronosBasicWrapper.kt)。

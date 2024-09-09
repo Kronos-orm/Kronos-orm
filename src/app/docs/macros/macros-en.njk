@@ -1,0 +1,9 @@
+{% import "../../../macros/common.njk" as common %}
+
+{% macro keyword(url, page) %}{{ common.keyword(url, page, 'en') }}{% endmacro %}
+
+{% macro annotation(name) %}{{ common.annotation(name) }}{% endmacro %}
+
+{% macro required() %}{{ common.required() }}{% endmacro %}
+
+{% macro params(paramList) %}{{ common.params(paramList) }}{% endmacro %}

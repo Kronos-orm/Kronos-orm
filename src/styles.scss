@@ -83,13 +83,14 @@ h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.n
 
 ::-webkit-scrollbar {
   background: var(--ng-doc-base-2);
-  width: 12px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--ng-doc-base-10);
-  width: 12px;
-  border-radius: 6px;
+  width: 10px;
+  border-radius: 5px;
 }
 
 

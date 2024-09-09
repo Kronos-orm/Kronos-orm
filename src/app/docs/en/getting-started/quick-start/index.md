@@ -62,15 +62,15 @@ You can use Kronos in your project by simply importing the `kronos-core` module 
 </project>
 ```
 
-At the same time, we provide a variety of optional dependencies such as logging (`kronos-logging`), database operation driver wrapper (`kronos-jvm-driver-wrapper`).
+At the same time, we provide a variety of optional dependencies such as logging (`kronos-logging`), database operation driver wrapper (`kronos-jdbc-wrapper`).
 
-`kronos-jvm-driver-wrapper` is an optional module that provides a driver wrapper based on JDBC for the jvm platform. Of course, you can use other official driver wrappers or write your own wrapper class to easily use with third-party frameworks (such as SpringData, Mybatis, Hibernate, Jdbi, etc.) (refer to [this article](/documentation/en/plugin/datasource-wrapper-and-third-part-framework)).
+`kronos-jdbc-wrapper` is an optional module that provides a driver wrapper based on JDBC for the jvm platform. Of course, you can use other official driver wrappers or write your own wrapper class to easily use with third-party frameworks (such as SpringData, Mybatis, Hibernate, Jdbi, etc.) (refer to [this article](/documentation/en/plugin/datasource-wrapper-and-third-part-framework)).
 
 You can find some examples of how to start a project [here](https://github.com/Kronos-orm?tab=repositories).
 
 ## Configuring the Database:
 
-Here, we will only discuss the usage of the `kronos-jvm-driver-wrapper` module with MySQL. The usage for other modules is similar. For specifics, please refer to [Connecting to the Database](/documentation/en/database/connect-to-db).
+Here, we will only discuss the usage of the `kronos-jdbc-wrapper` module with MySQL. The usage for other modules is similar. For specifics, please refer to [Connecting to the Database](/documentation/en/database/connect-to-db).
 
 Dependencies such as `commons-dbcp2` and `mysql-connector-java` need to be included.
 

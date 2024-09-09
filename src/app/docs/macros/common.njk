@@ -1,0 +1,12 @@
+{% macro keyword(url, page, language) %}<code class="ngde ng-doc-code-with-link"><a class="ngde" href="/documentation/{{
+    language }}/{{ url }}#{% if page.length == 1 %}{{ page[0] }}{% else %}{{ page[1] }}{% endif %}">📚{% if page.length == 1 %}{{ page[0] }}{% else %}{{ page[0] + "-" + page[1] }}{% endif %}</a></code>{% endmacro %}
+
+{% macro highlightCode(name) %}<code class="ngde" style="color: #DD2222;font-size: inherit;line-height: 1;font-weight: 600;vertical-align: baseline;">{{ name }}</code>{% endmacro %}
+
+{% macro annotation(name) %}{{ highlightCode('@'+name) }}{% endmacro %}
+
+{% macro required() %}<span style="color: red;line-height: 1;font-size: 14px;font-family: SimSun, sans-serif;margin-right: 4px;display: inline-block;vertical-align: middle;">*</span>{% endmacro %}
+
+{% macro params(paramList) %}{% for param in paramList %}
+- {% if param[3] == true %}{{ required() }}{% endif %}{{ highlightCode(param[0]) }} `{{ param[1] }}`： {{ param[2] }}
+{% endfor %}{% endmacro %}

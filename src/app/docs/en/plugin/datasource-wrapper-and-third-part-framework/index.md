@@ -7,7 +7,7 @@ The following is an example using Springboot + Kronos + JDK 17 + Maven + Kotlin 
 with the Spring framework.
 
 It includes how to create a wrapper class based on `spring-data-jdbc`, so that there is no need to introduce additional
-dependencies such as `kronos-jvm-driver-wrapper`, and the database operation function can be realized only
+dependencies such as `kronos-jdbc-wrapper`, and the database operation function can be realized only
 through `kronos-core`.
 
 > [https://github.com/Kronos-orm/kronos-spring-demo](https://github.com/Kronos-orm/kronos-spring-demo)
@@ -152,4 +152,4 @@ For frameworks that support named parameters, the syntax is almost the same as S
 
 For other frameworks that only support sequential parameters, you can get the parsed SQL statement through `KAtomicQueryTask.parsed()` or `KAtomicActionyTask.parsed()` or `KronosAtomicBatchTask.parsedArr()`, which contains the parameter name and parameter value array.
 
-The subsequent process is the same as SpringDataWrapper, please refer to [KronosBasicWrapper.kt](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-jvm-driver-wrapper/src/main/kotlin/com/kotlinorm/KronosBasicWrapper.kt).
+The subsequent process is the same as SpringDataWrapper, please refer to [KronosBasicWrapper.kt](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-jdbc-wrapper/src/main/kotlin/com/kotlinorm/KronosBasicWrapper.kt).

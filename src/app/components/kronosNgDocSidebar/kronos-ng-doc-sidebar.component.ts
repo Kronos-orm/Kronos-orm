@@ -1,6 +1,4 @@
-import {
-  Component, Inject,
-} from '@angular/core';
+import {Component, Inject,} from '@angular/core';
 import {SharedModule} from "../../shared.module";
 import {NG_DOC_CONTEXT} from "@ng-doc/app/tokens";
 import {NgDocContext, NgDocNavigation} from "@ng-doc/app";
@@ -82,5 +80,14 @@ export class KronosNgDocSidebarComponent {
     }
 
     this.items.forEach(expand);
+    setTimeout(() => {
+      const offsetTop = (document.querySelector(".p-menuitem-link-active") as HTMLElement)?.offsetTop;
+      if (offsetTop > window.innerHeight) {
+        document.querySelector(".p-menu")?.scrollTo({
+          behavior: 'smooth',
+          top: offsetTop
+        })
+      }
+    }, 50);
   }
 }

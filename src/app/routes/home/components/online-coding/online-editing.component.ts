@@ -79,7 +79,7 @@ interface Column {
                     </span>
             </ng-template>
             @if (i == index) {
-              <div class="flex w-full" style="height: 288px;overflow: scroll">
+              <div class="flex w-full" style="height: 288px;overflow: auto">
                 <div class="run-column flex-shrink-0" style="margin-top: 4px">
                   @for (index of [].constructor(command.rowNum); let j = $index; track j) {
                     <div class="w-2rem text-center" style="height: 1.4rem; line-height: 1.6rem">

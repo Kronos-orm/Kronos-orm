@@ -65,6 +65,7 @@ interface DatabasesSupport {
         dbType: DBType
     ): String
 
+    fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean): String
     fun getTableDropSql(
         dbType: DBType,
         tableName: String

@@ -71,6 +71,12 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableExistenceSql(dbType: DBType) =
         "SELECT COUNT(1)  as CNT FROM sqlite_master where type='table' and name= :tableName"
 
+    override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
+        """ DELETE FROM '$tableName';
+            VACUUM;
+            ${if (restartIdentity) "DELETE FROM sqlite_sequence WHERE name='$tableName';" else ""}
+        """.trimIndent()
+
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun extractNumberInParentheses(input: String): Int {
             val regex = Regex("""\((\d+)\)""") // 匹配括号内的数字部分
@@ -177,8 +183,10 @@ object SqliteSupport : DatabasesSupport {
         whereClauseSql: String?
     ) =
         "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
-        if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else { "" } +
-        whereClauseSql.orEmpty()
+                if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else {
+                    ""
+                } +
+                whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
         val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
@@ -196,7 +204,7 @@ object SqliteSupport : DatabasesSupport {
         if (null != lock) throw UnsupportedDatabaseTypeException("Sqlite doesn't support the lock() method because Sqlite only has database locks")
 
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
-            databaseName?.let { quote(it) + "."} ?: ""
+            databaseName?.let { quote(it) + "." } ?: ""
         }${
             quote(tableName)
         }${

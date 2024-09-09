@@ -23,6 +23,7 @@ import com.kotlinorm.database.SqlManager.getTableCreateSqlList
 import com.kotlinorm.database.SqlManager.getTableDropSql
 import com.kotlinorm.database.SqlManager.getTableIndexes
 import com.kotlinorm.database.SqlManager.getTableSyncSqlList
+import com.kotlinorm.database.SqlManager.getTableTruncateSql
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -31,11 +32,28 @@ import kotlin.reflect.full.createInstance
 class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     val dataSource by lazy { wrapper.orDefault() }
 
+
+    /**
+     * Query table existence
+     *
+     * @param instance Table instance
+     */
     inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()) =
         queryTableExistence(instance.kronosTableName(), dataSource)
 
+    /**
+     * Query table existence
+     *
+     * @param tableName Table name
+     */
     fun exists(tableName: String) = queryTableExistence(tableName, dataSource)
 
+
+    /**
+     * Create table
+     *
+     * @param instance Table instance
+     */
     inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
         dataSource.dbType,
         instance.kronosTableName(),
@@ -43,20 +61,66 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         instance.kronosTableIndex()
     ).forEach { dataSource.execute(it) }
 
+
+    /**
+     * Drop table
+     *
+     * @param instance Table instance
+     */
     inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) {
         dataSource.execute(
             getTableDropSql(dataSource.dbType, instance.kronosTableName())
         )
     }
 
-    fun dropTable(vararg instance: KPojo) {
-        instance.forEach {
+    /**
+     * Drop table
+     *
+     * @param tableName Table name
+     */
+    fun dropTable(vararg tableName: String) {
+        tableName.forEach {
             dataSource.execute(
-                getTableDropSql(dataSource.dbType, it.kronosTableName())
+                getTableDropSql(dataSource.dbType, it)
             )
         }
     }
 
+    /**
+     * Truncate table
+     *
+     * @param instance Table instance
+     * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
+     */
+    inline fun <reified T : KPojo> truncateTable(
+        instance: T = T::class.createInstance(),
+        restartIdentity: Boolean = true
+    ) {
+        dataSource.execute(
+            getTableTruncateSql(dataSource.dbType, instance.kronosTableName(), restartIdentity)
+        )
+    }
+
+    /**
+     * Truncate table
+     *
+     * @param tableName Table name
+     * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
+     */
+    fun truncateTable(vararg tableName: String, restartIdentity: Boolean = true) {
+        tableName.forEach {
+            dataSource.execute(
+                getTableTruncateSql(dataSource.dbType, it, restartIdentity)
+            )
+        }
+    }
+
+    /**
+     * Synchronize table structure
+     *
+     * @param instance Table instance
+     * @return Whether the table is created
+     */
     inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
         // 表名
         val tableName = instance.kronosTableName()

@@ -21,6 +21,7 @@ object SqlManagerCustom {
         mutableListOf()
     private var listOfTableDropSqlCustom: MutableList<(dbType: DBType, tableName: String) -> String?> = mutableListOf()
     private var listOfTableExistenceSqlCustom: MutableList<(dbType: DBType) -> String?> = mutableListOf()
+    private var listOfTableTruncateSqlCustom: MutableList<(dbType: DBType, tableName: String, restartIdentity: Boolean) -> String?> = mutableListOf()
     private var listOfTableColumnsCustom: MutableList<(dataSource: KronosDataSourceWrapper, tableName: String) -> List<Field>?> =
         mutableListOf()
     private var listOfTableIndexesCustom: MutableList<(dataSource: KronosDataSourceWrapper, tableName: String) -> List<KTableIndex>?> =
@@ -130,6 +131,16 @@ object SqlManagerCustom {
     fun tryGetTableExistenceSqlCustom(dbType: DBType): String? {
         for (customFunction in listOfTableExistenceSqlCustom) {
             val result = customFunction(dbType)
+            if (result != null) {
+                return result
+            }
+        }
+        return null
+    }
+
+    fun tryGetTableTruncateSqlCustom(dbType: DBType, tableName: String, restartIdentity: Boolean): String? {
+        for (customFunction in listOfTableTruncateSqlCustom) {
+            val result = customFunction(dbType, tableName, restartIdentity)
             if (result != null) {
                 return result
             }

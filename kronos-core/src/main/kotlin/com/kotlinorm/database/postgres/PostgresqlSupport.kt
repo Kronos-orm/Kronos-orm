@@ -78,6 +78,9 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableExistenceSql(dbType: DBType): String =
         "select count(1) from pg_class where relname = :tableName"
 
+    override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
+        "TRUNCATE ${quote(tableName)} ${if (restartIdentity) "RESTART IDENTITY" else ""}"
+
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
         "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
             quote(tableName)

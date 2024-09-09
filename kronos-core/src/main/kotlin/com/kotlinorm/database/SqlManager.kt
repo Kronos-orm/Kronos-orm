@@ -13,6 +13,7 @@ import com.kotlinorm.database.SqlManagerCustom.tryGetTableDropSqlCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetTableExistenceSqlCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetTableIndexesCustom
 import com.kotlinorm.database.SqlManagerCustom.tryGetTableSyncSqlListCustom
+import com.kotlinorm.database.SqlManagerCustom.tryGetTableTruncateSqlCustom
 import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.database.mysql.MysqlSupport
 import com.kotlinorm.database.oracle.OracleSupport
@@ -119,6 +120,20 @@ object SqlManager {
         SQLite -> SqliteSupport.getTableExistenceSql(dbType)
         Mssql -> MssqlSupport.getTableExistenceSql(dbType)
         else -> tryGetTableExistenceSqlCustom(dbType)
+            ?: throw RuntimeException("Unsupported database type: $dbType")
+    }
+
+    fun getTableTruncateSql(
+        dbType: DBType,
+        tableName: String,
+        restartIdentity: Boolean
+    ) = when (dbType) {
+        Mysql -> MysqlSupport.getTableTruncateSql(dbType, tableName, restartIdentity)
+        Postgres -> PostgresqlSupport.getTableTruncateSql(dbType, tableName, restartIdentity)
+        Oracle -> OracleSupport.getTableTruncateSql(dbType, tableName, restartIdentity)
+        SQLite -> SqliteSupport.getTableTruncateSql(dbType, tableName, restartIdentity)
+        Mssql -> MssqlSupport.getTableTruncateSql(dbType, tableName, restartIdentity)
+        else -> tryGetTableTruncateSqlCustom(dbType, tableName, restartIdentity)
             ?: throw RuntimeException("Unsupported database type: $dbType")
     }
 

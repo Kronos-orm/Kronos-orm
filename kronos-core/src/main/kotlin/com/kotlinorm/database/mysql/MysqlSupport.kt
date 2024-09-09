@@ -66,6 +66,9 @@ object MysqlSupport : DatabasesSupport {
     override fun getTableExistenceSql(dbType: DBType) =
         "SELECT COUNT(1) FROM information_schema.tables WHERE table_name = :tableName AND table_schema = :dbName"
 
+    override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
+        "TRUNCATE TABLE ${quote(tableName)}"
+
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         return dataSource.forList(
             KronosAtomicQueryTask(

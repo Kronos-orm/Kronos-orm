@@ -113,6 +113,9 @@ object OracleSupport : DatabasesSupport {
     override fun getTableExistenceSql(dbType: DBType) =
         "select count(1) from all_objects where object_type in ('TABLE','VIEW') and object_name = :tableName and owner = :dbName"
 
+    override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
+        "TRUNCATE TABLE ${quote(tableName)}"
+
     override fun getTableDropSql(dbType: DBType, tableName: String) = """
             BEGIN
                EXECUTE IMMEDIATE 'DROP TABLE ${quote(tableName)}';

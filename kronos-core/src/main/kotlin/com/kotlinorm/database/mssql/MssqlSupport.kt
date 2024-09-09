@@ -111,6 +111,9 @@ object MssqlSupport : DatabasesSupport {
 
     override fun getTableExistenceSql(dbType: DBType) = "select count(1) from sys.objects where name = :tableName"
 
+    override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
+        "TRUNCATE TABLE ${quote(tableName)}"
+
     override fun getTableDropSql(dbType: DBType, tableName: String) =
         "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'$tableName') AND type in (N'U')) BEGIN DROP TABLE $tableName END"
 

@@ -1,12 +1,24 @@
+{# Nunjucks: https://mozilla.github.io/nunjucks/ #}
+
+{% macro extract(str) %}{{ str | lower | replace("@", "") | replace("（", "") | replace("）", "")  }}{% endmacro %}
+
 {% macro keyword(url, page, language) %}<code class="ngde ng-doc-code-with-link"><a class="ngde" href="/documentation/{{
-    language }}/{{ url }}#{% if page.length == 1 %}{{ page[0] }}{% else %}{{ page[1] }}{% endif %}">📚{% if page.length == 1 %}{{ page[0] }}{% else %}{{ page[0] + "-" + page[1] }}{% endif %}</a></code>{% endmacro %}
+    language }}/{{ url }}#{% if page.length == 1 %}{{ extract(page[0]) }}{% else %}{{ extract(page[1]) }}{% endif %}">📚{% if page.length == 1 %}{{ page[0] }}{% else %}{{ page[0] + " - " + page[1] }}{% endif %}</a></code>{% endmacro %}
 
-{% macro highlightCode(name) %}<code class="ngde" style="color: #DD2222;font-size: inherit;line-height: 1;font-weight: 600;vertical-align: baseline;">{{ name }}</code>{% endmacro %}
+{% macro title(name) %}<code class="ngde" style="color: #DD2222;font-size: inherit;line-height: 1;font-weight: 600;vertical-align: baseline;">{{ name }}</code>{% endmacro %}
 
-{% macro annotation(name) %}{{ highlightCode('@'+name) }}{% endmacro %}
+{% macro annotation(name) %}{{ title('@'+name) }}{% endmacro %}
 
 {% macro required() %}<span style="color: red;line-height: 1;font-size: 14px;font-family: SimSun, sans-serif;margin-right: 4px;display: inline-block;vertical-align: middle;">*</span>{% endmacro %}
 
-{% macro params(paramList) %}{% for param in paramList %}
-- {% if param[3] == true %}{{ required() }}{% endif %}{{ highlightCode(param[0]) }} `{{ param[1] }}`： {{ param[2] }}
-{% endfor %}{% endmacro %}
+{% macro params(headers, paramList) %}<table class="ngde" style="min-width: 692px"><thead class="ngde"><tr class="ngde">{%
+    for title in headers
+%}<th class="ngde">{{ title }}</th>{% endfor %}</tr></thead>{%
+    for param in paramList
+%}<tbody><tr class="ngde">
+        <td class="ngde" style="white-space: nowrap">{% if param[3] == null %}{{ required() }}{% endif %}{{ title(param[0]) }}</td>
+        <td class="ngde" style="min-width: 150px">{{ param[1] }}</td>
+        <td class="ngde"><code class="ngde" style="color: #c41d7f">{{ param[2] }}</code></td>
+        <td class="ngde" style="white-space: nowrap"><code class="ngde">{% if param[3] != null %}{{ param[3] }}{% else %}-{% endif %}</code></td>
+    </tr></tbody>{% endfor %}
+</table>{% endmacro %}

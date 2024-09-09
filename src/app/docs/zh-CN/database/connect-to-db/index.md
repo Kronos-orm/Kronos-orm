@@ -1,25 +1,16 @@
-Kronos访问数据库通过`KronosDataSourceWrapper`实现。
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-`KronosDataSourceWrapper`是一个接口，是对数据库操作的封装，它不关心具体的数据库连接细节，与平台无关，只关心数据库操作的逻辑：
+本章将详细介绍如何创建数据库连接。
 
-- `dbType`：数据库类型
-- `url`：数据库连接地址
-- `username`：数据库用户名
-- `query`：执行查询
-  - `List<Map<String, Any>>`：返回查询结果
-  - `List<T>`：返回查询结果的第一列
-  - `Map<String, Any>`：返回查询结果的第一行
-  - `T`：返回查询结果的第一行的第一列
-- `execute`：执行更新
-- `batch`：批量执行更新
-- `transaction`：事务
+Kronos访问数据库通过{{ $.keyword("concept/kronos-data-source-wrapper", ["概念", "数据源包装器"]) }}实现，`KronosDataSourceWrapper`是一个接口，是对数据库操作的封装，它不关心具体的数据库连接细节，与平台无关，只关心数据库操作的逻辑。
 
 > **Note**
-> **KronosDataSourceWrapper**以扩展的形式在core中引入，这使得**支持多平台**、**新数据库扩展**和**第三方框架集成**成为可能。
+> 同一个项目中可以通过定义多个`KronosDataSourceWrapper`实例，实现多数据源、多数据库、动态数据源等功能。
 
 ## 使用示例
 
-官方提供了jvm平台的基于JDBC的数据库连接插件，可以通过以下方式引入：
+官方提供了基于JDBC的数据库连接插件，可以通过以下方式引入：
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -47,7 +38,7 @@ dependencies {
 
 除此之外，可以通过如`kronos-spring-data-wrapper`、`kronos-jdbi-wrapper`、`kronos-mybatis-wrapper`等插件实现数据库连接，与Spring Data、JDBI、MyBatis等框架集成。
 
-以下是对于`kronos-jdbc-wrapper`的使用示例
+以下是使用`kronos-jdbc-wrapper`、`Apache Commons DBCP2`创建数据库连接的示例：
 
 > **Note**
 > **BasicDataSource**是Apache Commons DBCP的一个简单的数据源实现，您可以更换为其他数据源实现。
@@ -92,7 +83,7 @@ dependencies {
 </project>
 ```
 
-```kotlin group="Mysql" name="MysqlKronosConfig.kt"
+```kotlin group="Mysql" name="MysqlKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 Kronos.apply {
   dataSource = {
@@ -150,7 +141,7 @@ dependencies {
 </project>
 ```
 
-```kotlin group="PostgreSQL" name="PostgreSQLKronosConfig.kt"
+```kotlin group="PostgreSQL" name="PostgreSQLKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 Kronos.apply {
   dataSource = {
@@ -204,7 +195,7 @@ dependencies {
 </project>
 ```
 
-```kotlin group="Oracle" name="OracleKronosConfig.kt"
+```kotlin group="Oracle" name="OracleKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 Kronos.apply {
   dataSource = {
@@ -259,7 +250,7 @@ dependencies {
 </project>
 ```
 
-```kotlin group="SQL Server" name="SQLServerKronosConfig.kt"
+```kotlin group="SQL Server" name="SQLServerKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 Kronos.apply {
   dataSource = {
@@ -314,7 +305,7 @@ dependencies {
 </project>
 ```
 
-```kotlin group="SQLite" name="SQLiteKronosConfig.kt"
+```kotlin group="SQLite" name="SQLiteKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 Kronos.apply {
   dataSource = {

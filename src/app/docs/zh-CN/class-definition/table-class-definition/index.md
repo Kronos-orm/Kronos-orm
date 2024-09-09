@@ -1,3 +1,4 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 本文将指导您如何定义一个Kronos数据表类。
@@ -22,7 +23,7 @@ data class User(
 
 注意，`var`关键词声明的的属性才能在**update**或**upsert**的`set`中修改。
 
-### 级联功能中多对多关系
+### 使用委托实现级联多对多跨中间表关系
 
 级联功能中多对多关系中的目标属性通过**委托**方式来定义，需要放在class内声明，形如：
 
@@ -35,6 +36,21 @@ data class User(
 ) : KPojo {
     // 多对多关系的目标表
     var roles: List<Role>? by manyToMany(::UserRoleRelation)
+}
+```
+
+### 使用委托代理序列化反序列化属性
+
+Kronos的序列化反序列化功能支持自动处理和委托处理两种方式，委托处理方式需要在class内声明，形如：
+
+```kotlin
+data class User(
+    val id: Int? = null,
+    // 需要序列化反序列化的属性
+    val listStr: String? = null
+) : KPojo {
+    // 代理序列化反序列化属性
+    var list: List<String>? by serializable(::listStr)
 }
 ```
 
@@ -171,4 +187,4 @@ CREATE UNIQUE INDEX idx_username ON "tb_user" ("name");
 CREATE UNIQUE INDEX idx_multi ON "tb_user" ("id", "name");
 ```
 
-点击[这里](/documentation/zh-CN/class-definition/annotation-setting)查看更多注解设置。
+点击{{ $.keyword("class-definition/annotation-config", ["注解配置"]) }}查看更多注解设置。

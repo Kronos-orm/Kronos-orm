@@ -29,16 +29,14 @@ Kronos.dataSource = { yourDataSourceWrapper }
 
 表名策略指在默认情况下（无注解配置），kronos自动根据**Kotlin类名**生成数据库的**表名**，如：`User` -> `user`。
 
-| 参数名                   | 类型                     | 默认值                  |
-|-----------------------|------------------------|----------------------|
-| `tableNamingStrategy` | `KronosNamingStrategy` | `NoneNamingStrategy` |
+**参数**：
+{{$.params([['tableNamingStrategy', '全局表名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
 
-通过创建`KronosNamingStrategy`
-的实现类来自定义表名策略（详见：{{ $.keyword("concept/naming-strategy", ["概念","命名策略"]) }}），然后在配置文件中指定该实现类。
+创建来自定义表名策略`KronosNamingStrategy`详见：{{ $.keyword("concept/naming-strategy", ["概念","命名策略"]) }}。
 
-我们默认提供了`LineHumpNamingStrategy`和`NoneNamingStrategy`两种表名策略：
+我们**默认**提供了`LineHumpNamingStrategy`和`NoneNamingStrategy`**两种表名策略**：
 
-1. **下划线/驼峰命名策略（`LineHumpNamingStrategy`）**
+ **1. {{ $.title("LineHumpNamingStrategy") }}下划线/驼峰命名策略**
 
 该策略将kotlin类名转换为下划线分隔的小写字符串，如：`ADataClass` -> `a_data_class`
 ，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
@@ -47,7 +45,7 @@ Kronos.dataSource = { yourDataSourceWrapper }
 Kronos.tableNamingStrategy = LineHumpNamingStrategy
 ```
 
-2. **无命名策略（`NoneNamingStrategy`）**
+ **2. {{ $.title("NoneNamingStrategy") }}无命名策略**
 
 该策略将kotlin类名保持原样，如：`ADataClass` -> `ADataClass`，将数据库表/列名保持原样，如：`user_name` -> `user_name`。
 
@@ -57,9 +55,8 @@ Kronos.tableNamingStrategy = LineHumpNamingStrategy
 
 同全局表名策略类似，列名策略指在默认情况下，kronos自动根据Kotlin类的**属性名**生成**列名**，如：`classId` -> `class_id`。
 
-| 参数名                   | 类型                     | 默认值                  |
-|-----------------------|------------------------|----------------------|
-| `fieldNamingStrategy` | `KronosNamingStrategy` | `NoneNamingStrategy` |
+**参数**：
+{{$.params([['fieldNamingStrategy', '全局列名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
 
 列名策略类与表名策略通用，设置方式为：
 
@@ -69,14 +66,17 @@ Kronos.fieldNamingStrategy = LineHumpNamingStrategy
 
 ## 创建时间策略
 
-用于设置所有表的创建时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
+用于设置所有表的创建时间字段。
 
-| 参数名                  | 类型                     | 默认值                                         |
-|----------------------|------------------------|---------------------------------------------|
-| `createTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "createTime")` |
+**参数**：
+{{$.params([
+    ['createTimeStrategy',
+    '创建时间策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+    'KronosCommonStrategy',
+    'KronosCommonStrategy(false, Field("createTime"))']
+])}}
 
-通过创建`KronosCommonStrategy`
-的实现类来自定义创建时间策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
+通过创建`KronosCommonStrategy`自定义创建时间策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
 创建时间策略的全局**默认关闭**，需要手动开启。
 
@@ -85,18 +85,21 @@ Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
 ```
 
 > **Note**
-> 全局设置创建时间策略后，仍可在`KPojo`类中通过`@CreateTime`注解覆盖全局设置。
+> 全局设置创建时间策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@CreateTime创建时间列"]) }}覆盖全局设置。
 
 ## 更新时间策略
 
 用于设置所有表的更新时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-| 参数名                  | 类型                     | 默认值                                         |
-|----------------------|------------------------|---------------------------------------------|
-| `updateTimeStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "updateTime")` |
+**参数**：
+{{$.params([
+['updateTimeStrategy',
+'更新时间策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+'KronosCommonStrategy',
+'KronosCommonStrategy(false, Field("updateTime"))']
+])}}
 
-通过创建`KronosCommonStrategy`
-的实现类来自定义更新时间策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
+通过创建`KronosCommonStrategy`自定义更新时间策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
 更新时间策略的全局默认关闭，需要手动开启。
 
@@ -105,18 +108,16 @@ Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
 ```
 
 > **Note**
-> 全局设置逻更新时间策略后，仍可在`KPojo`类中通过`@UpdateTime`注解覆盖全局设置。
+> 全局设置逻更新时间策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@UpdateTime更新时间列"]) }}覆盖全局设置。
 
 ## 逻辑删除策略
 
 用于设置所有表的逻辑删除字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-| 参数名                   | 类型                     | 默认值                                      |
-|-----------------------|------------------------|------------------------------------------|
-| `logicDeleteStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "deleted")` |
+**参数**：
+{{$.params([['logicDeleteStrategy', '逻辑删除策略', 'KronosCommonStrategy', 'KronosCommonStrategy(false, "deleted")']])}}
 
-通过创建`KronosCommonStrategy`
-的实现类来自定义逻辑删除策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
+通过创建`KronosCommonStrategy`自定义逻辑删除策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
 逻辑删除策略的全局默认关闭，需要手动开启。
 
@@ -125,20 +126,21 @@ Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
 ```
 
 > **Note**
-> 全局设置逻辑删除策略后，仍可在`KPojo`类中通过`@LogicDelete`注解覆盖全局设置。
+> 全局设置逻辑删除策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@LogicDelete逻辑删除列"]) }}覆盖全局设置。
 
 ## 乐观锁（版本）策略
 
 用于设置所有表的乐观锁版本字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-| 参数名                      | 类型                     | 默认值                                      |
-|--------------------------|------------------------|------------------------------------------|
-| `optimisticLockStrategy` | `KronosCommonStrategy` | `KronosCommonStrategy(false, "version")` |
+**参数**：
+{{$.params([
+['optimisticLockStrategy',
+'乐观锁（版本）策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+'KronosCommonStrategy',
+'KronosCommonStrategy(false, Field("version"))']
+])}}
 
-通过创建`KronosCommonStrategy`
-的实现类来自定义乐观锁策略（详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}），然后在配置文件中指定该实现类。
-
-也可通过<a href="/documentation/class-definition/table-class-definition#列乐观锁">[列乐观锁]</a>对每一个实体对象单独配置
+通过创建`KronosCommonStrategy`自定义乐观锁（版本）策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
 乐观锁策略的全局默认关闭，需要手动开启。
 
@@ -147,15 +149,14 @@ Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
 ```
 
 > **Note**
-> 全局设置乐观锁策略后，仍可在`KPojo`类中通过`@Version`注解覆盖全局设置。
+> 全局设置乐观锁策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@Version乐观锁（版本）列"]) }}覆盖全局设置。
 
 ## 默认日期时间格式
 
 用于指定日期格式化的默认格式，遵循`ISO 8601`规范，默认为`yyyy-MM-dd HH:mm:ss`。
 
-| 参数名                 | 类型       | 默认值                   |
-|---------------------|----------|-----------------------|
-| `defaultDateFormat` | `String` | `yyyy-MM-dd HH:mm:ss` |
+**参数**：
+{{$.params([['defaultDateFormat', '默认日期时间格式', 'String', '"yyyy-MM-dd HH:mm:ss"']])}}
 
 Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
 
@@ -164,15 +165,14 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
 > **Note**
-> 全局设置默认日期格式后，仍可在`KPojo`类中通过`@DateTimeFormat`注解覆盖全局设置。
+> 全局设置默认日期格式后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@DateTimeFormat日期时间格式"]) }}覆盖全局设置。
 
 ## 默认时区
 
-用于指定默认时区，在创建时间、更新时间及格式化日期/时间时使用。
+用于指定默认时区，遵循`ISO 8601`规范，在创建时间、更新时间及格式化日期/时间时使用。
 
-| 参数名        | 类型                 | 默认值                      |
-|------------|--------------------|--------------------------|
-| `timeZone` | `java.time.ZoneId` | `ZoneId.systemDefault()` |
+**参数**：
+{{$.params([['timeZone', '默认时区', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
 
 Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
 
@@ -187,12 +187,10 @@ Kronos.timeZone = ZoneId.of("GMT+8")
 
 将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
 
-| 参数名                 | 类型                        | 默认值                     |
-|---------------------|---------------------------|-------------------------|
-| `serializeResolver` | `KronosSerializeResolver` | `NoneSerializeResolver` |
+**参数**：
+{{$.params([['serializeResolver', '序列化反序列化处理器', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
 
-通过创建`KronosSerializeResolver`
-的实现类来自定义序列化解析器（详见：{{ $.keyword("concept/serialize-resolver", ["概念","序列化反序列化处理器"]) }}），然后在配置文件中指定该实现类。
+通过创建`KronosSerializeResolver`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-resolver", ["概念","序列化反序列化处理器"])}}。
 
 如可以通过引入`GSON`库来实现序列化解析器：
 
@@ -216,5 +214,6 @@ object GsonResolver : KronosSerializeResolver {
 Kronos.serializeResolver = GsonResolver
 ```
 
-这里我们使用`GSON`库来实现序列化解析器，你可以使用任何库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
+这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
 
+序列化反序列化的功能使用请参考：{{ $.keyword("advanced/serializable", ["进阶用法","序列化反序列化"]) }}。

@@ -1,9 +1,13 @@
+{# Nunjucks: https://mozilla.github.io/nunjucks/ #}
+
 {% import "../../../macros/common.njk" as common %}
 
 {% macro keyword(url, page) %}{{ common.keyword(url, page, 'en') }}{% endmacro %}
+
+{% macro title(name) %}{{ common.title(name) }}{% endmacro %}
 
 {% macro annotation(name) %}{{ common.annotation(name) }}{% endmacro %}
 
 {% macro required() %}{{ common.required() }}{% endmacro %}
 
-{% macro params(paramList) %}{{ common.params(paramList) }}{% endmacro %}
+{% macro params(paramList) %}{{ common.params(["param", "description", "type", "default"], paramList) }}{% endmacro %}

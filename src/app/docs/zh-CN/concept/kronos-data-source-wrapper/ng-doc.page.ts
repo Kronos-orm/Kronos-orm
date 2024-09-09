@@ -1,14 +1,14 @@
 import {NgDocPage} from '@ng-doc/core';
-import DatabaseCategory from "../ng-doc.category";
+import ConceptCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const DatabaseOperationPage: NgDocPage = {
-    title: `数据库操作`,
+const KronosDataSourceWrapper: NgDocPage = {
+    title: `数据源包装器`,
     mdFile: './index.md',
-    category: DatabaseCategory,
-    order: 1,
+    category: ConceptCategory,
+    order: 5,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default DatabaseOperationPage;
+export default KronosDataSourceWrapper;

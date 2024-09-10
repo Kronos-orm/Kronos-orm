@@ -1,3 +1,8 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
+本章将介绍如何向数据库中插入记录。
+
 ## 插入单条记录
 
 在Kronos中，我们可以使用`KPojo.insert().execute()`方法向数据库中插入一条记录。
@@ -14,7 +19,7 @@ user.insert().execute()
 
 ## 自增主键和影响行数
 
-在Kronos中，我们可以使用`KPojo.insert().execute()`方法向数据库中插入一条记录，当主键为自增时，Kronos会自动获取自增主键的值。
+当主键为自增时，Kronos会自动获取自增主键的值。
 
 ```kotlin name="demo" icon="kotlin" {6}
 val user: User = User(

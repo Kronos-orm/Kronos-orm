@@ -6,7 +6,7 @@ const ConnectToDbPage: NgDocPage = {
     title: `连接到数据库`,
     mdFile: './index.md',
     category: DatabaseCategory,
-    order: 0,
+    order: 1,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

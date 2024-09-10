@@ -1,11 +1,14 @@
 import {NgDocPage} from '@ng-doc/core';
 import DatabaseCategory from "../ng-doc.category";
+import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 const UpdateRecordsPage: NgDocPage = {
-	title: `更新记录`,
-	mdFile: './index.md',
-  category: DatabaseCategory,
-  order: 3
+    title: `更新记录`,
+    mdFile: './index.md',
+    category: DatabaseCategory,
+    order: 6,
+    imports: [AnimateLogoComponent],
+    demos: {AnimateLogoComponent}
 };
 
 export default UpdateRecordsPage;

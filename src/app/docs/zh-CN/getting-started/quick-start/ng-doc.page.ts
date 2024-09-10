@@ -3,12 +3,12 @@ import GettingStartedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 const QuickStartPage: NgDocPage = {
-	title: `快速上手`,
-	mdFile: './index.md',
-  category: GettingStartedCategory,
-  order: 2,
-  imports: [AnimateLogoComponent],
-  demos: {AnimateLogoComponent}
+    title: `快速上手`,
+    mdFile: './index.md',
+    category: GettingStartedCategory,
+    order: 2,
+    imports: [AnimateLogoComponent],
+    demos: {AnimateLogoComponent},
 };
 
 export default QuickStartPage;

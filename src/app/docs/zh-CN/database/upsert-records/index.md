@@ -1,8 +1,13 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
+本章将介绍如何向数据库中插入或更新记录。
+
 在Kronos中，我们可以使用`KPojo.upsert().execute()`方法用于向数据库中插入或更新记录。
 
 由于各个数据库的实现不同，因此在Kronos中，我们对`upsert`操作进行了统一的封装，以实现跨数据库的兼容性。
 
-## 使用<span style="color: #DD6666">on</span>设置唯一性约束字段
+## {{ $.title("on") }} 设置唯一性约束字段
 
 `on`方法用于唯一性设置约束字段，可以是单个字段，也可以是多个字段。当记录存在时，Kronos会根据`on`方法设置的字段生成更新条件语句，否则生成插入语句。
 
@@ -59,7 +64,7 @@ UPDATE "user" SET "id" = :id, "name" = :name, "age" = :age WHERE "id" = :id and 
 INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
-## 使用<span style="color: #DD6666">upsert</span>设置更新字段
+## {{ $.title("upsert") }} 设置更新字段
 
 用于指定当记录存在时需要更新的字段。
 
@@ -116,7 +121,7 @@ UPDATE "user" SET "name" = :name WHERE "id" = :id;
 INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
-## 使用<span style="color: #DD6666">upsertExcept</span>设置不更新的字段
+## {{ $.title("upsertExcept") }} 设置不更新字段
 
 用于指定当记录存在时不需要更新的字段。
 
@@ -173,7 +178,7 @@ UPDATE "user" SET "name" = :name, "age" = :age WHERE "id" = :id;
 INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
-## 使用<span style="color: #DD6666">onConflict</span>设置处理策略为冲突时更新
+## {{ $.title("onConflict") }} 设置处理策略为冲突时更新
 
 当使用`upsert`方法时，我们可以使用`onConflict`方法设置处理策略为冲突时更新，即当记录存在时，更新记录。
 
@@ -225,7 +230,7 @@ EXCEPTION
 END;
 ```
 
-## 使用<span style="color: #DD6666">lock</span>设置查询时行锁
+## {{ $.title("lock") }} 设置查询时行锁
 
 `limit`方法用于设置查询时行锁，此时Kronos会根据`lock`方法设置的锁类型进行锁的添加。
 

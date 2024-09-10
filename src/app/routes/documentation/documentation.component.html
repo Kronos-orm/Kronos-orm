@@ -1,4 +1,4 @@
-<ng-doc-root [noWidthLimit]="true">
+<ng-doc-root [noWidthLimit]="true" [footerContent]="footer">
     <ng-doc-navbar>
         <div ngDocNavbarLeft>
             <a class="logo" [routerLink]="['/']">
@@ -41,6 +41,11 @@
     </ng-doc-navbar>
     <kronos-ng-doc-sidebar ngDocCustomSidebar/>
     <router-outlet/>
+    <ng-template #footer>
+        <div class="ng-doc-footer">
+            Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a> | 2022 - 2024 Kronos
+        </div>
+    </ng-template>
 </ng-doc-root>
 <p-overlayPanel #op styleClass="m-0 p-0">
     <ul class="list-none m-0 p-0 w-12rem">

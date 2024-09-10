@@ -254,7 +254,7 @@ fun main() {
         age = 18
     )
 
-    director.insert(director)
+    director.insert().execute()
 
     director.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
 

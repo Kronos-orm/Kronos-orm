@@ -6,7 +6,7 @@ const TableClassDefinition: NgDocPage = {
     title: `数据表类定义`,
     mdFile: './index.md',
     category: ClassDefinitionCategory,
-    order: 0,
+    order: 1,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

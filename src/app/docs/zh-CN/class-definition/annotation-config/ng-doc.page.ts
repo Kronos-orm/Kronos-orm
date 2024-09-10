@@ -6,6 +6,7 @@ const AnnotationConfigPage: NgDocPage = {
 	title: `注解配置`,
 	mdFile: './index.md',
 	category: ClassDefinitionCategory,
+	order: 2,
 	imports: [AnimateLogoComponent],
 	demos: {AnimateLogoComponent}
 };

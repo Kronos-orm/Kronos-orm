@@ -1,11 +1,14 @@
-## 使用<span style="color: #DD6666">set</span>设置更新的字段和值
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
+## {{ $.title("set") }} 设置更新的字段和值
 
 在Kronos中，我们可以使用`KPojo.update().set`方法设置需要更新的字段和值，然后使用`execute`方法执行更新操作。
 
 当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成更新条件语句。
 
 > **Warning**
-> `null`值不会被包含在更新条件中，即`null`值不会被用于生成更新条件语句，若需要更新`null`值，请使用`where`方法设置更新条件。
+> 当KPojo对象的字段值为`null`时，该字段不会生成更新条件，若需要更新字段值为`null`的记录，请使用`where`方法指定。
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
@@ -40,7 +43,7 @@ UPDATE [user] SET [name] = :nameNew WHERE [id] = :id and [name] = :name and [age
 UPDATE "user" SET "name" = :nameNew WHERE "id" = :id and "name" = :name and "age" = :age
 ```
 
-## 使用<span style="color: #DD6666">by</span>设置更新条件
+## {{ $.title("by") }} 设置更新条件
 
 在Kronos中，我们可以使用`by`方法设置更新条件，此时Kronos会根据`by`方法设置的字段生成更新条件语句。
 
@@ -78,7 +81,7 @@ UPDATE [user] SET [name] = :nameNew WHERE [id] = :id
 UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
 ```
 
-## 使用<span style="color: #DD6666">where</span>设置更新条件
+## {{ $.title("where") }} 设置更新条件
 
 在Kronos中，我们可以使用`where`方法设置更新条件，此时Kronos会根据`where`方法设置的字段生成更新条件语句。
 
@@ -116,7 +119,46 @@ UPDATE [user] SET [name] = :nameNew WHERE [id] = :id
 UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
 ```
 
-## 使用<span style="color: #DD6666">update</span>设置需要更新的字段
+## {{ $.title("patch") }}为自定义删除条件添加参数
+
+在Kronos中，我们可以使用`patch`方法为自定义删除条件添加参数。
+
+```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {7-12}
+val user: User = User(
+        id = 1,
+        name = "Kronos",
+        age = 18
+    )
+
+user
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .where { "id = :id" }
+    .patch("id" to 1)
+    .execute()
+```
+
+```sql group="Case 3-1" name="Mysql" icon="mysql"
+UPDATE `user` SET `name` = :nameNew WHERE id = :id
+```
+
+```sql group="Case 3-1" name="PostgreSQL" icon="postgres"
+UPDATE "user" SET "name" = :nameNew WHERE id = :id
+```
+
+```sql group="Case 3-1" name="SQLite" icon="sqlite"
+UPDATE `user` SET `name` = :nameNew WHERE id = :id
+```
+
+```sql group="Case 3-1" name="SQLServer" icon="sqlserver"
+UPDATE [user] SET [name] = :nameNew WHERE id = :id
+```
+
+```sql group="Case 3-1" name="Oracle" icon="oracle"
+UPDATE "user" SET "name" = :nameNew WHERE id = :id
+```
+
+## {{ $.title("update") }} 设置需要更新的字段
 
 在Kronos中，我们在`update`方法中设置需要更新的字段，未在`update`方法中设置的字段将不会被更新。
 
@@ -153,7 +195,7 @@ UPDATE [user] SET [name] = :nameNew, [age] = :ageNew WHERE [id] = :id
 UPDATE "user" SET "name" = :nameNew, "age" = :ageNew WHERE "id" = :id
 ```
 
-## 使用<span style="color: #DD6666">updateExcept</span>设置需要排除的字段
+## {{ $.title("updateExcept") }} 设置排除的字段
 
 在Kronos中，我们可以使用`updateExcept`方法设置需要排除的字段，未在`updateExcept`方法中设置的字段将会被更新。
 

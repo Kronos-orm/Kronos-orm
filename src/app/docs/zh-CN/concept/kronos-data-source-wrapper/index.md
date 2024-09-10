@@ -14,10 +14,10 @@
 **成员函数**
 
 {{$.params([
-    ['forList', '执行查询', '(KAtomicQueryTask) -> List&lt;Map&lt;String, Any&gt;&gt;'],
-    ['forList', '执行查询', '(KAtomicQueryTask, KClass&lt;*&gt;): List&lt;Any&gt;'],
-    ['forMap', '执行查询', '(KAtomicQueryTask) -> Map&lt;String, Any&gt;?'],
-    ['forObject', '执行查询', '(KAtomicQueryTask, KClass&lt;*&gt;): Any?'],
+    ['forList', '执行查询', '(KAtomicQueryTask) -> List<Map<String, Any>>'],
+    ['forList', '执行查询', '(KAtomicQueryTask, KClass<*>): List<Any>'],
+    ['forMap', '执行查询', '(KAtomicQueryTask) -> Map<String, Any>?'],
+    ['forObject', '执行查询', '(KAtomicQueryTask, KClass<*>): Any?'],
     ['update', '执行更新', '(KAtomicActionTask) -> Int'],
     ['batchUpdate', '批量执行更新', '(KAtomicBatchTask) -> Int'],
     ['transact', '事务', '((DataSource) -> Any?) -> Any?']

@@ -43,3 +43,16 @@
     color: var(--ng-doc-text);
   }
 }
+
+.ng-doc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--ng-doc-base-gutter) * 3);
+  color: var(--ng-doc-text-muted);
+  font-size: 12px;
+
+  a {
+    padding: 0 6px;
+  }
+}

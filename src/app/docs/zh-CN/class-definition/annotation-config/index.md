@@ -23,7 +23,7 @@ data class User(
 用于指定数据表的索引。
 
 > **Note**
-> 在使用`dataSource.table.create<Table>()`或`dataSource.table.sync<Table>()`时生效。
+> 在使用`dataSource.table.createTable<KPojo>()`或`dataSource.table.syncTable<KPojo>()`时生效。
 
 **参数**：
 {{$.params([
@@ -175,8 +175,8 @@ data class User(
   ['properties', '本表的关联字段属性名', 'Array<String>'],
   ['targetProperties', '关联目标表关联字段属性名', 'Array<String>'],
   ['onDelete', $.keyword("concept/cascade-delete-action", ["关联删除策略"]), 'CascadeDeleteAction', 'NO_ACTION'],
-  ['defaultValue', '指定级联删除方式为"SET DEFAULT"时设置的默认值（可选）', 'Array<String>'],
-  ['usage', '用于声明本实体需要用到的关联操作（可选，默认为[Insert, Update, Delete, Upsert, Select]）', 'Array<KOperationType>']
+  ['defaultValue', '指定级联删除方式为"SET DEFAULT"时设置的默认值（可选）', 'Array<String>', '[]'],
+  ['usage', '用于声明本实体需要用到的关联操作', 'Array<KOperationType>', '[Insert, Update, Delete, Upsert, Select]']
 ])}}
 
 ```kotlin

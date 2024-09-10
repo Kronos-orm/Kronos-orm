@@ -4,12 +4,13 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 import {FeatureCardsComponent} from "../../../../components/feature-cards.component";
 
 const WelcomePage: NgDocPage = {
-	title: `简介`,
-	mdFile: './index.md',
-  category: GettingStartedCategory,
-  order: 1,
-  imports: [AnimateLogoComponent, FeatureCardsComponent],
-  demos: {AnimateLogoComponent, FeatureCardsComponent}
+    title: `简介`,
+    mdFile: './index.md',
+    route: "introduce",
+    category: GettingStartedCategory,
+    order: 1,
+    imports: [AnimateLogoComponent, FeatureCardsComponent],
+    demos: {AnimateLogoComponent, FeatureCardsComponent}
 };
 
 export default WelcomePage;

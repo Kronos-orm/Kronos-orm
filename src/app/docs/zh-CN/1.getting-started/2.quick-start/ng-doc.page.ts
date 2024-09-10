@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const QuickStartPage: NgDocPage = {
     title: `快速上手`,
     mdFile: './index.md',
+    route: "quick-start",
     category: GettingStartedCategory,
     order: 2,
     imports: [AnimateLogoComponent],

@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const GlobalConfigPage: NgDocPage = {
 	title: `全局设置`,
 	mdFile: './index.md',
+	route: "global-config",
 	category: GettingStartedCategory,
 	order: 3,
 	imports: [AnimateLogoComponent],

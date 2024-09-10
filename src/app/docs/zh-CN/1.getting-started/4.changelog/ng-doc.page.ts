@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const ChangeLogPage: NgDocPage = {
     title: `更新日志`,
     mdFile: './index.md',
+    route: "changelog",
     category: GettingStartedCategory,
     order: 4,
     imports: [AnimateLogoComponent],

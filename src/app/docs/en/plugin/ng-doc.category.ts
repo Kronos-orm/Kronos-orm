@@ -2,7 +2,7 @@ import {NgDocCategory} from '@ng-doc/core';
 
 const PluginCategory: NgDocCategory = {
 	title: 'Plugins',
-  order: 10,
+  order: 106,
   route: "en/plugin"
 };
 

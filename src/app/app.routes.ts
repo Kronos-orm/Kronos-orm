@@ -1,13 +1,6 @@
 import {Routes} from '@angular/router';
 import {NG_DOC_ROUTING} from "@ng-doc/generated";
 
-const redirectToDoc = () => {
-  return [
-    ...NG_DOC_ROUTING
-  ].map(r => {
-    return { path: r.path, redirectTo: 'documentation/' + r.path }
-  });
-}
 export const routes: Routes = [
   {
     path: '',
@@ -32,7 +25,6 @@ export const routes: Routes = [
           ...NG_DOC_ROUTING
         ]
       },
-      ...redirectToDoc()
     ],
   },
   {path: '**', redirectTo: '404'},

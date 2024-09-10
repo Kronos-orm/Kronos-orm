@@ -42,13 +42,13 @@ export class KronosNgDocSidebarComponent {
         items: item.children?.sort(docSortFn).map(child => {
           return {
             label: child.title,
-            routerLink: [`/documentation${child.route}`],
+            routerLink: [child.route],
             routerLinkActiveOptions: {exact: true},
             icon: "pi pi-circle-on",
           }
         }),
         routerLinkActiveOptions: {exact: true},
-        visible: item.route.startsWith(`/${this._app.language}/`),
+        visible: item.route.startsWith(`/documentation/${this._app.language}/`),
       }
     });
 

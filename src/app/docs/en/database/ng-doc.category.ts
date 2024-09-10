@@ -2,7 +2,7 @@ import {NgDocCategory} from '@ng-doc/core';
 
 const DatabaseCategory: NgDocCategory = {
 	title: 'Database Operations',
-  order: 2,
+  order: 103,
   route: "en/database"
 };
 

@@ -6,6 +6,7 @@ const config: NgDocConfiguration = {
         mainBranch: 'docs',
         releaseBranch: 'docs',
     },
+    routePrefix: 'documentation',
 };
 
 export default config;

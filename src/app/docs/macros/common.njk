@@ -34,7 +34,15 @@
     <code class="ngde" style="color: #c41d7f">
         {{- name | escape -}}
         {%- if type != null -%}
-            <span style="color: dodgerblue">{{- ("<" + type + ">") | escape -}}</span>
+            {%- block lt -%}
+                <span style="color: #000">{{- "<" | escape -}}</span>
+            {%- endblock -%}
+            {%- block general -%}
+                <span style="color: darkcyan">{{- type | escape -}}</span>
+            {%- endblock -%}
+            {%- block gt -%}
+                <span style="color: #000">{{- ">" | escape -}}</span>
+            {%- endblock -%}
         {%- endif -%}
     </code>
 {%- endmacro %}
@@ -62,14 +70,14 @@
         {%- endblock -%}
         {%- block tbody -%}
             <tbody>
-                {%- for param in paramList -%}
-                    <tr class="ngde">
-                        <td class="ngde" style="white-space: nowrap">{% if param[3] == null %}{{ required() }}{% endif %}{{ title(param[0]) }}</td>
-                        <td class="ngde" style="min-width: 150px">{{ param[1] }}</td>
-                        <td class="ngde">{{ parseString(param[2]) | escape }}</td>
-                        <td class="ngde" style="white-space: nowrap"><code class="ngde">{% if param[3] != null %}{{ param[3] }}{% else %}-{% endif %}</code></td>
-                    </tr>
-                {%- endfor -%}
+            {%- for param in paramList -%}
+                <tr class="ngde">
+                    <td class="ngde" style="white-space: nowrap">{% if param[3] == null %}{{ required() }}{% endif %}{{ title(param[0]) }}</td>
+                    <td class="ngde" style="min-width: 150px">{{ param[1] }}</td>
+                    <td class="ngde">{{ parseString(param[2]) | escape }}</td>
+                    <td class="ngde" style="white-space: nowrap"><code class="ngde">{% if param[3] != null %}{{ param[3] }}{% else %}-{% endif %}</code></td>
+                </tr>
+            {%- endfor -%}
             </tbody>
         {%- endblock -%}
     </table>

@@ -1,8 +1,11 @@
-## 1.Criteria 条件对象
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos使用Criteria对象构建条件表达式，并且支持复杂的条件组合，如`and`、`or`、`not`等，用于`where`、`having`、`on`等条件中。
+## Criteria 条件对象
 
-你可以使用where条件对象组成复杂的查询条件在`select`、`delete`、`update`、`join`中使用，形如
+Kronos使用Criteria对象构建条件表达式，并且支持复杂的条件组合，如`&&`、`||`、`!`等，用于`where`、`having`、`on`等条件中。
+
+你可以使用where条件对象组成复杂的查询条件在`select`、`delete`、`update`、`join`功能中需要条件的方法中。
 
 ```kotlin
 val list = user
@@ -11,34 +14,59 @@ val list = user
     .queryList<String>()
 ```
 
-基于KCP，Kronos允许你使用真实的kotlin操作符来构建`Criteria`查询条件，如`==`、`!=`、`>`、`<`、`>=`、`<=`、`in`、`||` 、`&&`等，而不是其他框架中`eq`、`ne`、`gt`、`lt`、`ge`、`le`等自定义操作符，而从表达式到Criteria对象的转换是在编译期完成的。
+基于KCP，Kronos允许你使用真实的kotlin操作符来构建`Criteria`查询条件，如`==`、`!=`、`>`、`<`、`>=`、`<=`、`in`、`||` 、`&&`等，提供了超级富有表现力、简洁而又语义化的写法。
 
 kronos表达式支持**动态构建条件**和根据对象的属性**自动生成条件**，并且支持传入**sql字符串**作为条件。
 
 使用kronos就像在写原生的kotlin代码一样，这将大大**提高开发效率**和**降低学习成本及心智负担**。
 
-## 2.支持的函数和操作符
+## 如何构建表达式
 
 Kronos支持的函数和操作符如下：
 
-### 2.1.操作符
+### 条件操作符
 
-- `==`：等于
-- `!=`：不等于
-- `>`：大于
-- `<`：小于
-- `>=`：大于等于
-- `<=`：小于等于
-- `in`：在范围内，也可以使用`contains`代替，如`a in b`可以写成`b.contains(a)`
-- `||`：或
-- `&&`：与
-- `!`：非，可以与其他函数和操作符一起使用，如`!(a == 1 || a == 2) && a !in listOf(3, 4)`
+- {{ $.title("==") }}：等于
+- {{ $.title("!=") }}：不等于
+- {{ $.title(">") }}：大于
+- {{ $.title("<") }}：小于
+- {{ $.title("=") }}：大于等于
+- {{ $.title("=") }}：小于等于
+- {{ $.title("in") }}：在范围内，也可以使用`contains`代替，如`a in b`可以写成`b.contains(a)`
+- {{ $.title("||") }}：或
+- {{ $.title("&&") }}：与
+- {{ $.title("!") }}：非，可以与其他函数和操作符一起使用，如`!(a == 1 || a == 2) && a !in listOf(3, 4)`
+- {{ $.title("()") }}：括号，用于改变优先级
 
-### 2.2.函数
+### 特殊表达
+
+#### {{ $.title("KPojo.xxx.value") }} 获取字段值
+
+在where表达式中，`user.name`表示字段`name`，`it.name.value`表示kotlin中`User`对象的`name`属性值
+
+```kotlin {3,5}
+val user = User(username = "Kronos")
+
+User().select().where { it.username == user.username.value }.query()
+//等同于
+User().select().where { it.username == "Kronos" }.query()
+```
+
+#### {{ $.title("KPojo.eq") }} 通过KPojo自动生成判等条件
+
+`user.eq`表示通过`User`为对象内所有非空字段自动生成判等条件，如`it.eq`等同于`it.id == id && it.name == name && it.age == age`，他可以与`&&`、`||`、`!`等操作符组合使用。
+
+```kotlin {3}
+val user = User(id = 1, name = "Kronos", age = 18)
+
+User().select().where { it.eq || it.name like "Kronos%" }.query()
+```
+
+### 条件函数
 
 #### between
 
-在范围内，接收ClosedRange类型的参数
+在范围内，接收{{$.code("ClosedRange<*>")}}类型的参数
 
 ```kotlin
 where { it.age.between(1..10) }

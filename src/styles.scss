@@ -85,3 +85,18 @@ h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.n
 .code-red {
   color: #FF0000;
 }
+
+.ngde {
+  &.title {
+    color: var(--ng-doc-primary);
+    font-size: inherit;
+    line-height: 1;
+    font-weight: 600;
+    vertical-align: baseline;
+  }
+
+  &.generic:hover, &.type:hover {
+    text-decoration: underline;
+    cursor: default;
+  }
+}

@@ -8,7 +8,7 @@
     {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 -%}
         {%- set prefix = input.split('<')[0] -%}
         {%- set content = input.split('<')[1].split('>')[0] -%}
-        {{- code(prefix, content) -}}
+        {{- code(prefix, content.split(",")) -}}
     {%- else -%}
         {{- code(input) -}}
     {%- endif -%}
@@ -26,25 +26,28 @@
     </code>
 {%- endmacro %}
 
-{% macro title(name) -%}
-    <code class="ngde" style="color:var(--ng-doc-primary);font-size: inherit;line-height: 1;font-weight: 600;vertical-align: baseline;">{{ name | escape }}</code>
+{%- macro title(name) -%}
+    <code class="ngde title">{{ name | escape }}</code>
 {%- endmacro %}
 
-{% macro code(name, type) -%}
-    <code class="ngde" style="color: #c41d7f">
-        {{- name | escape -}}
-        {%- if type != null -%}
-            {%- block lt -%}
-                <span style="color: #000">{{- "<" | escape -}}</span>
-            {%- endblock -%}
-            {%- block general -%}
-                <span style="color: darkcyan">{{- type | escape -}}</span>
-            {%- endblock -%}
-            {%- block gt -%}
-                <span style="color: #000">{{- ">" | escape -}}</span>
-            {%- endblock -%}
+{%- macro code(name, types) -%}
+<code class="ngde">
+    <span class="type" style="color: #c41d7f">{{- name | escape -}}</span>
+    {%- if types != null -%}
+    {%- block lt -%}
+        <span style="color: #666">{{- "<" | escape -}}</span>
+    {%- endblock -%}
+    {%- for type in types -%}
+            <span class="generic" style="color: darkcyan">{{- type.trim() | escape -}}</span>
+        {%- if loop.last == false -%}
+            <span class="generic" style="color: #666">{{- ", " | escape -}}</span>
         {%- endif -%}
-    </code>
+    {%- endfor -%}
+    {%- block gt -%}
+        <span style="color: #666">{{- ">" | escape -}}</span>
+    {%- endblock -%}
+    {%- endif -%}
+</code>
 {%- endmacro %}
 
 {% macro annotation(name) -%}
@@ -72,10 +75,17 @@
             <tbody>
             {%- for param in paramList -%}
                 <tr class="ngde">
-                    <td class="ngde" style="white-space: nowrap">{% if param[3] == null %}{{ required() }}{% endif %}{{ title(param[0]) }}</td>
+                    <td class="ngde"
+                        style="white-space: nowrap">{% if param[3] == null %}{{ required() }}{% endif %}{{ title(param[0]) }}</td>
                     <td class="ngde" style="min-width: 150px">{{ param[1] }}</td>
                     <td class="ngde">{{ parseString(param[2]) | escape }}</td>
-                    <td class="ngde" style="white-space: nowrap"><code class="ngde">{% if param[3] != null %}{{ param[3] }}{% else %}-{% endif %}</code></td>
+                    <td class="ngde" style="white-space: nowrap">
+                        {%- block span -%}
+                            <code class="ngde">
+                                {%- if param[3] != null %}{{ param[3] }}{% else %}-{% endif -%}
+                            </code>
+                        {%- endblock -%}
+                    </td>
                 </tr>
             {%- endfor -%}
             </tbody>

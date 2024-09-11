@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const AnnotationConfigPage: NgDocPage = {
 	title: `注解配置`,
 	mdFile: './index.md',
+	route: 'annotation-config',
 	category: ClassDefinitionCategory,
 	order: 2,
 	imports: [AnimateLogoComponent],

@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const NamedArgumentsBaseSqlPage: NgDocPage = {
     title: `Sql语句执行（命名参数）`,
     mdFile: './index.md',
+    route: "named-arguments-base-sql",
     category: DatabaseCategory,
     order: 3,
     imports: [AnimateLogoComponent],

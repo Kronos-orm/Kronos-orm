@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const SelectRecordsPage: NgDocPage = {
   title: `查询记录`,
   mdFile: './index.md',
+    route: "select-records",
   category: DatabaseCategory,
   order: 8,
   imports: [AnimateLogoComponent],

@@ -2,13 +2,14 @@ import {NgDocPage} from '@ng-doc/core';
 import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const UpdateRecordsPage: NgDocPage = {
-    title: `更新记录`,
+const SelectJoinTablesPage: NgDocPage = {
+    title: `连表查询`,
     mdFile: './index.md',
+    route: "select-join-tables",
     category: DatabaseCategory,
-    order: 6,
+    order: 9,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default UpdateRecordsPage;
+export default SelectJoinTablesPage;

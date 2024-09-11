@@ -2,13 +2,14 @@ import {NgDocPage} from '@ng-doc/core';
 import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const WhereHavingOnClausePage: NgDocPage = {
-    title: `Criteria 条件`,
+const UpsertRecordsPage: NgDocPage = {
+    title: `更新插入`,
     mdFile: './index.md',
+    route: "upsert-records",
     category: DatabaseCategory,
-    order: 10,
+    order: 7,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default WhereHavingOnClausePage;
+export default UpsertRecordsPage;

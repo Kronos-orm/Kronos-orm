@@ -5,6 +5,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const TableClassDefinition: NgDocPage = {
     title: `数据表类定义`,
     mdFile: './index.md',
+    route: 'table-class-definition',
     category: ClassDefinitionCategory,
     order: 1,
     imports: [AnimateLogoComponent],

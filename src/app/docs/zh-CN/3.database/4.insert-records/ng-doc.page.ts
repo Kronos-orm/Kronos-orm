@@ -2,13 +2,14 @@ import {NgDocPage} from '@ng-doc/core';
 import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const UpsertRecordsPage: NgDocPage = {
-    title: `更新插入`,
+const InsertRecordsPage: NgDocPage = {
+    title: `插入记录`,
     mdFile: './index.md',
+    route: "insert-records",
     category: DatabaseCategory,
-    order: 7,
+    order: 4,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default UpsertRecordsPage;
+export default InsertRecordsPage;

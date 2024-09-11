@@ -156,7 +156,7 @@ Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
 用于指定日期格式化的默认格式，遵循`ISO 8601`规范，默认为`yyyy-MM-dd HH:mm:ss`。
 
 **参数**：
-{{$.params([['defaultDateFormat', '默认日期时间格式', 'String', '"yyyy-MM-dd HH:mm:ss"']])}}
+{{$.params([['defaultDateFormat', '默认日期时间格式', 'String', 'yyyy-MM-dd HH:mm:ss']])}}
 
 Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
 
@@ -165,7 +165,7 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 ```
 
 > **Note**
-> 全局设置默认日期格式后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@DateTimeFormat日期时间格式"]) }}覆盖全局设置。
+> 全局设置默认日期格式后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置", "@DateTimeFormat日期时间格式"]) }}覆盖全局设置。
 
 ## 默认时区
 

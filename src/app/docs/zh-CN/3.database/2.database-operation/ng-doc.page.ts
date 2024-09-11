@@ -2,13 +2,14 @@ import {NgDocPage} from '@ng-doc/core';
 import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const ConnectToDbPage: NgDocPage = {
-    title: `连接到数据库`,
+const DatabaseOperationPage: NgDocPage = {
+    title: `数据库操作`,
     mdFile: './index.md',
+    route: "database-operation",
     category: DatabaseCategory,
-    order: 1,
+    order: 2,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default ConnectToDbPage;
+export default DatabaseOperationPage;

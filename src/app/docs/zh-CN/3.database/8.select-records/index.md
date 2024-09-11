@@ -691,7 +691,7 @@ WHERE ROWNUM <= 1
 val listOfUser: List<Map<String, Any>> = User().select().query()
 ```
 
-## 使用<span style="color: #DD6666">queryList</span>查询指定类型列表
+## {{ $.title("queryList") }}查询指定类型列表
 
 `queryList`方法用于执行查询并返回指定类型列表，可以接收泛型参数。
 
@@ -702,23 +702,33 @@ val listOfUser: List<Map<String, Any>> = User().select().query()
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryList使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryList使用kronos-compiler-plugin实现Map转换为KPojo，详见：KPojo与Map互相转换
 
-```kotlin group="Case 11" name="demo" icon="kotlin" {1,3}
+```kotlin group="Case 11" name="demo" icon="kotlin" {1,3,5}
 val listOfUser: List<User> = User().select().queryList()
 
 val listOfAnotherUser: List<AnotherUser> = User().select().queryList<AnotherUser>()
+
+val listOfInt: List<Int> = User().select{ it.id }.queryList<Int>()
 ```
 
-## 使用<span style="color: #DD6666">queryMap</span>查询Map
+## {{ $.title("queryMap") }}查询单条记录Map
 
-`queryMap`方法用于执行查询并返回Map，当查询结果为空时，返回`null`。
+`queryMap`方法用于查询单条记录并返回Map，当查询结果为空时，抛出异常。
 
 ```kotlin group="Case 12" name="demo" icon="kotlin" {1}
 val user: Map<String, Any> = User().select().queryMap()
 ```
 
-## 使用<span style="color: #DD6666">queryOne</span>查询单条记录
+## {{ $.title("queryMapOrNull") }}查询单条记录Map（可空）
+
+`queryMapOrNull`方法用于查询单条记录并返回Map，当查询结果为空时，返回`null`。
+
+```kotlin group="Case 15" name="demo" icon="kotlin" {1}
+val user: Map<String, Any>? = User().select().queryMapOrNull()
+```
+
+## {{ $.title("queryOne") }}查询单条记录
 
 `queryOne`方法用于执行查询并返回单条记录，当查询结果为空时，抛出异常，可以接收泛型参数。
 
@@ -735,7 +745,7 @@ val user: Map<String, Any> = User().select().queryMap()
 val user: User = User().select().queryOne()
 ```
 
-## 使用<span style="color: #DD6666">queryOneOrNull</span>查询单条记录（可空）
+## {{ $.title("queryOneOrNull") }}查询单条记录（可空）
 
 和`queryOne`方法类似，`queryOneOrNull`方法用于执行查询并返回单条记录，当查询结果为空时，返回`null`，可以接收泛型参数。
 
@@ -751,6 +761,10 @@ val user: User = User().select().queryOne()
 ```kotlin group="Case 14" name="demo" icon="kotlin" {1}
 val user: User? = User().select().queryOneOrNull()
 ```
+
+## 级联查询
+
+请参考{{$.keyword("advanced/cascade-query", ["进阶用法","级联查询"])}}。
 
 ## 使用指定的数据源
 

@@ -4,6 +4,16 @@
     {{ str | lower | replace("@", "") | replace("（", "") | replace("）", "") }}
 {%- endmacro %}
 
+{% macro parseString(input) -%}
+    {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 -%}
+        {%- set prefix = input.split('<')[0] -%}
+        {%- set content = input.split('<')[1].split('>')[0] -%}
+        {{- code(prefix, content) -}}
+    {%- else -%}
+        {{- code(input) -}}
+    {%- endif -%}
+{%- endmacro %}
+
 {% macro keyword(url, page, language) -%}
     {%- set label = page[0] if page.length == 1 else page[0] + " - " + page[1] -%}
     {%- set anchor = extract(label) if page.length == 1 else extract(page[1]) -%}
@@ -17,7 +27,16 @@
 {%- endmacro %}
 
 {% macro title(name) -%}
-    <code class="ngde" style="color: #DD2222;font-size: inherit;line-height: 1;font-weight: 600;vertical-align: baseline;">{{ name | escape }}</code>
+    <code class="ngde" style="color:var(--ng-doc-primary);font-size: inherit;line-height: 1;font-weight: 600;vertical-align: baseline;">{{ name | escape }}</code>
+{%- endmacro %}
+
+{% macro code(name, type) -%}
+    <code class="ngde" style="color: #c41d7f">
+        {{- name | escape -}}
+        {%- if type != null -%}
+            <span style="color: dodgerblue">{{- ("<" + type + ">") | escape -}}</span>
+        {%- endif -%}
+    </code>
 {%- endmacro %}
 
 {% macro annotation(name) -%}
@@ -47,7 +66,7 @@
                     <tr class="ngde">
                         <td class="ngde" style="white-space: nowrap">{% if param[3] == null %}{{ required() }}{% endif %}{{ title(param[0]) }}</td>
                         <td class="ngde" style="min-width: 150px">{{ param[1] }}</td>
-                        <td class="ngde"><code class="ngde" style="color: #c41d7f">{{ param[2] | escape }}</code></td>
+                        <td class="ngde">{{ parseString(param[2]) | escape }}</td>
                         <td class="ngde" style="white-space: nowrap"><code class="ngde">{% if param[3] != null %}{{ param[3] }}{% else %}-{% endif %}</code></td>
                     </tr>
                 {%- endfor -%}

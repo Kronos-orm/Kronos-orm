@@ -508,7 +508,7 @@ WHERE ROWNUM <= 10
 
 `lock`方法用于设置查询时**行锁**，此时Kronos会根据`lock`方法设置的锁类型进行锁的添加。
 
-默认情况下，Kronos会使用**悲观锁**中的**排他锁**（`PessimisticLock.X`）， 可以通过传入参数(`PessimisticLock.S`)设置**共享锁**。
+默认情况下，Kronos会使用**悲观锁**中的**排他锁**（`PessimisticLock.X`）， 可以通过传入参数(`PessimisticLock.S`)改用**悲观锁**中的**共享锁**。
 
 如需使用**乐观锁**，请参考{{$.keyword("advanced/some-locks", ["进阶用法","加锁机制"])}}。
 

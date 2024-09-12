@@ -50,7 +50,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var updateTimeStrategy = pojo.kronosUpdateTime()
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var optimisticStrategy = pojo.kronosOptimisticLock()
-    private var logic = false
+    private var logic = logicDeleteStrategy.enabled
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var cascadeEnabled = true

@@ -5,7 +5,7 @@ const ReferenceDeletePage: NgDocPage = {
 	title: `级联删除`,
 	mdFile: './index.md',
   category: AdvancedCategory,
-  order: 2
+  order: 21
 };
 
 export default ReferenceDeletePage;

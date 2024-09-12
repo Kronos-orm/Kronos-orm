@@ -15,9 +15,9 @@
 
 {{$.params([
     ['forList', '执行查询', '(KAtomicQueryTask) -> List<Map<String, Any>>'],
-    ['forList', '执行查询', '(KAtomicQueryTask, KClass<*>): List<Any>'],
+    ['forList', '执行查询', '(KAtomicQueryTask, KClass<*>) -> List<Any>'],
     ['forMap', '执行查询', '(KAtomicQueryTask) -> Map<String, Any>?'],
-    ['forObject', '执行查询', '(KAtomicQueryTask, KClass<*>): Any?'],
+    ['forObject', '执行查询', '(KAtomicQueryTask, KClass<*>) -> Any?'],
     ['update', '执行更新', '(KAtomicActionTask) -> Int'],
     ['batchUpdate', '批量执行更新', '(KAtomicBatchTask) -> Int'],
     ['transact', '事务', '((DataSource) -> Any?) -> Any?']

@@ -5,7 +5,7 @@
 {%- endmacro %}
 
 {% macro parseString(input) -%}
-    {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 -%}
+    {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 and input.indexOf('>') == input.length - 1 -%}
         {%- set prefix = input.split('<')[0] -%}
         {%- set content = input.split('<')[1].split('>')[0] -%}
         {{- code(prefix, content.split(",")) -}}

@@ -1,6 +1,8 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+本章将介绍如何查询多表关联数据。
+
 ## 查询多表关联数据
 
 在Kronos中，我们可以使用`KPojo.join(KPojo1, KPojo2, ...)`方法来查询多表关联数据。
@@ -51,7 +53,7 @@ val users: List<User> =
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">select</span>指定查询字段
+## {{ $.title("select") }}指定查询字段
 
 在Kronos中，我们可以使用`select`方法指定查询字段，多个字段之间使用`+`连接。
 
@@ -71,7 +73,7 @@ val users: List<User> =
     }.queryList()
 ```
 
-## 使用<span style="color: #DD6666">by</span>指定查询字段
+## {{ $.title("by") }}指定查询条件
 
 在Kronos中，我们可以使用`by`方法指定查询字段，多个字段之间使用`+`连接。
 
@@ -96,7 +98,21 @@ val users: List<User> =
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">groupBy</span>指定分组字段
+## {{ $.title("patch") }}为自定义查询条件添加参数
+
+在Kronos中，我们可以使用`patch`方法为自定义查询条件添加参数。
+
+```kotlin name="demo" icon="kotlin" {2-7}
+val users: List<User> =
+    User().join(UserInfo()){ user, userInfo ->
+        on { user.id == userInfo.userId }
+        select { user.id + user.name + userInfo.age }
+        where { "user.id = :id" }
+        patch("id" to 1)
+    }.query()
+```
+
+## {{ $.title("groupBy") }}、{{ $.title("having") }}设置分组和聚合条件
 
 在Kronos中，我们可以使用`groupBy`方法指定分组字段。
 
@@ -105,11 +121,12 @@ val users: List<User> =
     User().join(UserInfo()){ user, userInfo ->
         on { user.id == userInfo.userId }
         groupBy { user.id + userInfo.age }
+        having { userInfo.age > 18 }
         select { user.id + user.name + userInfo.age }
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">orderBy</span>指定排序字段
+## {{ $.title("orderBy") }}设置排序条件
 
 在Kronos中，我们可以使用`orderBy`方法指定排序字段。
 
@@ -122,21 +139,7 @@ val users: List<User> =
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">having</span>指定分组条件
-
-在Kronos中，我们可以使用`having`方法指定分组条件。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
-        on { user.id == userInfo.userId }
-        groupBy { user.id + userInfo.age }
-        having { userInfo.age > 18 }
-        select { user.id + user.name + userInfo.age }
-    }.query()
-```
-
-## 使用<span style="color: #DD6666">limit</span>指定查询数量
+## {{ $.title("limit") }}指定查询数量
 
 在Kronos中，我们可以使用`limit`方法指定查询数量。
 
@@ -149,7 +152,7 @@ val users: List<User> =
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">distinct</span>指定查询去重
+## {{ $.title("distinct") }}指定查询去重
 
 在Kronos中，我们可以使用`distinct`方法指定查询去重。
 
@@ -162,14 +165,16 @@ val users: List<User> =
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">page</span>指定分页查询
+## {{ $.title("page") }}、{{ $.title("withTotal") }}指定分页查询
 
 `page`方法用于设置分页查询，请注意，`page`方法的参数从1开始。
 
 在不同的数据库中，分页查询的语法有所不同，Kronos会根据不同的数据库生成相应的分页查询语句。
 
+`withTotal`方法用于查询带有总记录数的分页查询。
+
 > **Warning**
-> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请使用<a href="/documentation/zh-CN/database/select-records#使用withtotal查询带有总记录数的分页查询">withTotal方法</a>。
+> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请务必使用withTotal方法</a>。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val (total, list) = 
@@ -180,9 +185,9 @@ val (total, list) =
     }.withTotal().query()
 ```
 
-## 使用<span style="color: #DD6666">query</span>执行查询
+## {{ $.title("query") }}查询Map列表
 
-在Kronos中，我们可以使用`query`方法执行查询，返回`List<Map<String, Any>>`类型的结果。
+`query`方法用于执行查询并返回Map列表。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> = 
@@ -192,9 +197,18 @@ val users: List<User> =
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">queryList</span>执行查询
+## {{ $.title("queryList") }}查询指定类型列表
 
-在Kronos中，我们可以使用`queryList`方法执行查询，返回`List<T>`类型的结果。
+`queryList`方法用于执行查询并返回指定类型列表，可以接收泛型参数。
+
+当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryList<Int>()`。
+
+查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryList<User>()`。
+
+当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
+
+> **Note**
+> queryList使用kronos-compiler-plugin实现Map转换为KPojo，详见：KPojo与Map互相转换
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> = 
@@ -204,9 +218,9 @@ val users: List<User> =
     }.queryList()
 ```
 
-## 使用<span style="color: #DD6666">queryOne</span>执行查询
+## {{ $.title("queryMap") }}查询单条记录Map
 
-`queryOne`方法用于执行查询并返回单条记录，当查询结果为空时，抛出异常，可以接收泛型参数。
+`queryMap`方法用于查询单条记录并返回Map，当查询结果为空时，抛出异常。
 
 当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOne<Int>()`。
 
@@ -215,14 +229,47 @@ val users: List<User> =
 当未设置泛型参数时，Kronos会根据查询结果自动转换为主表的类型。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val user: User = 
+val user: Map<String, Any> =
+    User().join(UserInfo()){ user, userInfo ->
+        on { user.id == userInfo.userId }
+        select { user.id + user.name + userInfo
+    }.queryMap()
+```
+
+## {{ $.title("queryMapOrNull") }}查询单条记录Map（可空）
+
+`queryMapOrNull`方法用于查询单条记录并返回Map，当查询结果为空时，返回`null`。
+
+```kotlin group="Case 15" name="demo" icon="kotlin" {2-5}
+val user: Map<String, Any>? =
+    User().join(UserInfo()){ user, userInfo ->
+        on { user.id == userInfo.userId }
+        select { user.id + user.name + userInfo
+        }.queryMapOrNull()
+```
+
+## {{ $.title("queryOne") }}查询单条记录
+
+`queryOne`方法用于执行查询并返回单条记录，当查询结果为空时，抛出异常，可以接收泛型参数。
+
+当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOne<Int>()`。
+
+查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOne<User>()`。
+
+当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
+
+> **Note**
+> queryOne使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+
+```kotlin name="demo" icon="kotlin" {2-5}
+val user: User =
     User().join(UserInfo()){ user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo
     }.queryOne()
 ```
 
-## 使用<span style="color: #DD6666">queryOneOrNull</span>执行查询
+## {{ $.title("queryOneOrNull") }}查询单条记录（可空）
 
 和`queryOne`方法类似，`queryOneOrNull`方法用于执行查询并返回单条记录，当查询结果为空时，返回`null`，可以接收泛型参数。
 
@@ -232,39 +279,15 @@ val user: User =
 
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
+> **Note**
+> queryOneOrNull使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+
 ```kotlin name="demo" icon="kotlin" {2-5}
-val user: User? = 
+val user: User? =
     User().join(UserInfo()){ user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo
+        select { user.id + user.name + userInfo.age }
     }.queryOneOrNull()
-```
-
-## 使用<span style="color: #DD6666">queryMap</span>执行查询
-
-在Kronos中，我们可以使用`queryMap`方法执行查询，返回`Map<String, Any>`类型的结果。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val user: Map<String, Any> = 
-    User().join(UserInfo()){ user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
-    }.queryMap()
-```
-
-## 使用<span style="color: #DD6666">withTotal</span>查询带有总记录数的分页查询
-
-`withTotal`方法用于查询带有总记录数的分页查询，此时Kronos会在查询结果中包含总记录数。
-
-withTotal方法返回一个`PageClause`对象，您可以通过`query`、`queryList`等方法获取查询结果。
-
-```kotlin name="demo" icon="kotlin" {2-5}
-val (total, list) = 
-    User().join(UserInfo()){ user, userInfo ->
-        on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
-        page(1, 10)
-    }.withTotal().query()
 ```
 
 ## 使用指定的数据源

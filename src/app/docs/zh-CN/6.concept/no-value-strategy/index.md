@@ -9,17 +9,17 @@
 3.如何使用无值策略
 
 ```kotlin
-where { (it.age == null).ifNoValue(Ignore) }
+where { (it.age == null).ifNoValue(ignore) }
 ```
 
 4.无值策略的类型
 
 目前支持的无值策略有：
-- `Ignore`：忽略该条件语句
-- `False`：条件语句为false
-- `True`：条件语句为true
-- `JudgeNull`：转换为`is null`或`is not null`
-- `Smart`：根据当前语境自动判断
+- `Ignore`(ignore)：忽略该条件语句
+- `False`(alwaysFalse)：条件语句为false
+- `True`(alwaysTrue)：条件语句为true
+- `JudgeNull`(judgeNull)：转换为`is null`或`is not null`
+- `Smart`(smart)：根据当前语境自动判断
 
 5.默认无值策略smart的判断逻辑
 

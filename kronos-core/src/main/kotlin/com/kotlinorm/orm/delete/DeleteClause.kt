@@ -152,7 +152,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         if (logic) {
             val toUpdateFields = mutableListOf<Field>()
             val updateFields = { field: Field, value: Any? ->
-                toUpdateFields += (field + "New")
+                toUpdateFields += field
                 paramMap[field.name + "New"] = value
             }
             // 设置更新时间和逻辑删除字段的策略

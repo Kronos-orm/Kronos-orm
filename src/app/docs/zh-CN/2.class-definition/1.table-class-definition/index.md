@@ -25,19 +25,7 @@ data class User(
 
 ### 使用委托实现级联多对多跨中间表关系
 
-级联功能中多对多关系中的目标属性通过**委托**方式来定义，需要放在class内声明，形如：
-
-```kotlin
-data class User(
-    val id: Int? = null,
-    val name: String? = null,
-    // 多对多关系的中间表
-    val relations: List<UserRoleRelation>? = emptyList()
-) : KPojo {
-    // 多对多关系的目标表
-    var roles: List<Role>? by manyToMany(::UserRoleRelation)
-}
-```
+请参考 {{ $.keyword("advanced/cascade-definition", ["进阶用法", "使用委托实现级联多对多跨中间表关系"]) }}。
 
 ### 使用委托代理序列化反序列化属性
 

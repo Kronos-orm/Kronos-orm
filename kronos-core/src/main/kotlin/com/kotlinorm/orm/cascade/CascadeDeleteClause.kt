@@ -113,11 +113,12 @@ object CascadeDeleteClause {
 
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper -> // 在执行前检查是否有引用
+                if(validCascades.isEmpty())  return@doBeforeExecute // 如果没有级联，直接返回
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
                         .cascade(*cascadeAllowed).apply { operationType = KOperationType.DELETE }
                         .queryList(wrapper) //先查询出要删除的记录
-                if (toDeleteRecords.isEmpty() || validCascades.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
+                if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
                 // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
                 val restrictCascades =

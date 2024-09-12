@@ -82,7 +82,7 @@ data class NodeOfKPojo(
     val onInit: (NodeOfKPojo.() -> Unit)? = null
 ) {
     var insertIgnore = false // 该字段用于判断是否忽略插入
-    internal val dataMap by lazy { kPojo.toDataMap() }
+    internal val dataMap = kPojo.toDataMap()
     private val validCascades by lazy {
         findValidRefs(
             kPojo::class,
@@ -175,6 +175,7 @@ data class NodeOfKPojo(
         listOfPair.forEach { (prop, value) ->
             if (kPojo[prop] != value) {
                 kPojo[prop] = value
+                dataMap[prop.name] = value
                 validRef.kCascade.targetProperties.forEachIndexed { index, field ->
                     if (data.parent!!.updateParams[field] != null) {
                         updateParams[validRef.kCascade.properties[index]] = data.parent!!.updateParams[field]!!
@@ -182,7 +183,7 @@ data class NodeOfKPojo(
                 }
             }
         }
-        if (validCascades.groupBy { it.field.tableName }
+        if (validCascades.filter { it.mapperByThis }.groupBy { it.field.tableName }
                 .values
                 .any { it.size > 1 }
         ) {

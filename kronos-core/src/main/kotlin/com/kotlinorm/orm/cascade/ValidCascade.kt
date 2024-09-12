@@ -21,6 +21,7 @@ import com.kotlinorm.beans.dsl.KCascade
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
+import com.sun.org.apache.xpath.internal.operations.Bool
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -41,7 +42,7 @@ import kotlin.reflect.full.createInstance
  * @property tableName The [tableName] that this cascade be announced.
  */
 data class ValidCascade(
-    val field: Field, val kCascade: KCascade, val refPojo: KPojo, val tableName: String
+    val field: Field, val kCascade: KCascade, val refPojo: KPojo, val tableName: String, val mapperByThis: Boolean = true
 )
 
 /**
@@ -82,6 +83,7 @@ fun findValidRefs(
 
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
         return@map if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
+            if(operationType == KOperationType.DELETE) return@map listOf<ValidCascade>() // 插入操作不允许子级向上级级联
             val ref =
                 col.cascadeKClassName.kClass.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             listOf(
@@ -94,7 +96,7 @@ fun findValidRefs(
             ref.kronosColumns().filter {
                 it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.cascadeKClassName == kClass.qualifiedName
             }.map {
-                ValidCascade(col, it.cascade!!, ref, tableName)
+                ValidCascade(col, it.cascade!!, ref, tableName, false)
             } // 若没有级联映射，返回引用的所有关于本表级联映射
         }
     }.flatten()

@@ -49,7 +49,8 @@ class RelationQuery {
             id = 1, name = "School", groupClass = listOf(
                 GroupClass(
                     id = 11, name = "一年级", students = listOf(
-                        Student(name = "张三", studentNo = "2021001"), Student(
+                        Student(name = "张三", studentNo = "2021001"),
+                        Student(
                             name = "李四", studentNo = "2021002"
                         )
                     )
@@ -94,6 +95,16 @@ class RelationQuery {
         val result = School(name = "School").select().queryList()
         println(result)
         val res = School(name = "School").delete().execute()
+        println(res)
+    }
+
+    @Test
+    fun testReverseCascadeDelete() {
+        testCascadeInsert()
+        val result = School(name = "School").select().queryList()
+        println(result)
+        val student = School(name = "School").select().queryOne()
+        val res = student.delete().execute()
         println(res)
     }
 

@@ -45,7 +45,7 @@ fun setCommonStrategy(
 ) {
     if (strategy.enabled) {
         if (timeStrategy) {
-            val format = (strategy.config ?: defaultDateFormat).toString()
+            val format = (strategy.field.dateFormat ?: defaultDateFormat).toString()
             callBack(strategy.field, currentDateTime(format))
         } else {
             callBack(strategy.field, defaultValue)

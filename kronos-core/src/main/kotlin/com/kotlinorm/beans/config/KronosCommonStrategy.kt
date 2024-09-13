@@ -25,10 +25,8 @@ import com.kotlinorm.beans.dsl.Field
  *
  * @property enabled whether the strategy is enabled
  * @property field the field for the strategy
- * @property config the config for the strategy
  */
 class KronosCommonStrategy(
     var enabled: Boolean = false,
     var field: Field,
-    var config: Any? = null
 )

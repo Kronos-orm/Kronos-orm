@@ -100,16 +100,14 @@ internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, 
     val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
     if (tableSetting == null || (tableSetting is IrConst<*> && tableSetting.value == true)) {
         var annotation: IrConstructorCall?
-        var config: IrConst<*>? = null
         var enabled: IrConst<*>?
         val column = irClass.properties.find {
             annotation = it.annotations.findByFqName(fqName)
             enabled = annotation?.getValueArgument(Name.identifier("enabled")) as IrConst<*>?
-            config = annotation?.getValueArgument(0) as IrConst<*>?
             annotation != null && enabled?.value != false
         }
         if (column != null) {
-            strategy = applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(column), config)
+            strategy = applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(column))
         }
     }
     return strategy

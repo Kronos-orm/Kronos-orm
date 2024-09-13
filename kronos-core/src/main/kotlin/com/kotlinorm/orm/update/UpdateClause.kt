@@ -246,7 +246,8 @@ class UpdateClause<T : KPojo>(
 
         // 合并参数映射，准备执行SQL所需的参数
         paramMapNew.forEach { (key, value) ->
-            if(key.serializable && value != null){
+            val field = allFields.find { it.columnName == key.columnName }
+            if (field != null && field.serializable && value != null) {
                 paramMap[key.name] = serializeResolver.serialize(value)
             } else {
                 paramMap[key.name] = value

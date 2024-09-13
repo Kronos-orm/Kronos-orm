@@ -77,7 +77,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
  *         }
  *
  *         override fun kronosTableName(): String {
-*               return "foo"
+ *               return "foo"
  *         }
  *
  *         override fun kronosTableIndex(): List<KTableIndex> {

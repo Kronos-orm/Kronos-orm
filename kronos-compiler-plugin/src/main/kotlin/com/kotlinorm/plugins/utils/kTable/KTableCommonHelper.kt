@@ -17,6 +17,7 @@
 package com.kotlinorm.plugins.utils.kTable
 
 import com.kotlinorm.plugins.helpers.*
+import com.kotlinorm.plugins.utils.LRUCache
 import com.kotlinorm.plugins.utils.getKColumnType
 import com.kotlinorm.plugins.utils.kTableConditional.funcName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -32,6 +33,8 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.FqName
+import java.io.File
+import kotlin.text.Charsets.UTF_8
 
 
 const val KTABLE_CLASS = "com.kotlinorm.beans.dsl.KTable"
@@ -149,7 +152,7 @@ fun getColumnName(
     if (cascadeTypeKClassName.startsWith("kotlin.collections")) {
         cascadeTypeKClassName = irPropertyType.subType()!!.getClass()!!.classId!!.asFqNameString()
     }
-    if(irProperty.isDelegated){
+    if (irProperty.isDelegated) {
         cascadeTypeKClassName = ""
     }
     val kCascade = if (cascadeAnnotation != null) {
@@ -192,7 +195,8 @@ fun getColumnName(
         columnDefaultValue,
         identity,
         columnNotNull,
-        irBoolean(irProperty.hasAnnotation(ColumnSerializableAnnotationsFqName))
+        irBoolean(irProperty.hasAnnotation(ColumnSerializableAnnotationsFqName)),
+        irProperty.getKDocString()
     )
 }
 
@@ -362,4 +366,89 @@ fun IrProperty.isColumn(irPropertyType: IrType = this.backingField?.type ?: irBu
     return hasAnnotation(ColumnSerializableAnnotationsFqName) ||
             (!hasAnnotation(CascadeAnnotationsFqName) &&
                     !irPropertyType.isKronosColumn() && irPropertyType.subType()?.isKronosColumn() != true)
+}
+
+private val sourceFileCache: LRUCache<String, List<String>> = LRUCache(128)
+context(IrBuilderWithScope, IrPluginContext)
+fun IrProperty.getKDocString(): IrExpression {
+    val sourceOffsets = sourceElement()
+    if (sourceOffsets != null) {
+        val startOffset = sourceOffsets.startOffset
+        val endOffset = sourceOffsets.endOffset
+        val fileEntry = file.fileEntry
+        val sourceRange = fileEntry.getSourceRangeInfo(startOffset, endOffset)
+        val source = sourceFileCache.getOrPut(fileEntry.name) {
+            File(sourceRange.filePath).readLines(UTF_8)
+        }
+        val comment =
+            extractPropertyComment(source, sourceRange.startLineNumber..sourceRange.endLineNumber)
+        if (comment != null) {
+            return irString(comment)
+        }
+    }
+    return irNull()
+}
+
+fun extractPropertyComment(lines: List<String>, range: IntRange): String? {
+    val startIndex = range.first
+    val endIndex = range.last
+
+    // 用于存储找到的注释
+    var comment: String? = null
+
+    // 遍历范围内的每一行
+    for (i in startIndex..endIndex) {
+        val line = lines.getOrNull(i)?.trim() ?: continue
+
+        // 查找同一行的注释
+        val singleLineComment = line.substringAfter("//", "").substringBefore("//").trim()
+        val multiLineCommentStart = line.indexOf("/*")
+        val multiLineCommentEnd = line.indexOf("*/")
+
+        if (singleLineComment.isNotEmpty()) {
+            comment = singleLineComment
+            break
+        } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
+            comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
+            break
+        }
+    }
+
+    // 如果没有找到注释，向上查找
+    if (comment == null) {
+        for (i in (startIndex - 1) downTo 0) {
+            val line = lines.getOrNull(i)?.trim() ?: continue
+            val singleLineComment = line.substringAfter("//", "").substringBefore("//").trim()
+            val multiLineCommentStart = line.indexOf("/*")
+            val multiLineCommentEnd = line.indexOf("*/")
+
+            if (singleLineComment.isNotEmpty()) {
+                comment = singleLineComment
+                break
+            } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
+                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
+                break
+            }
+        }
+    }
+
+    // 如果仍然没有找到注释，向下查找
+    if (comment == null) {
+        for (i in (endIndex + 1) until lines.size) {
+            val line = lines.getOrNull(i)?.trim() ?: continue
+            val singleLineComment = line.substringAfter("//", "").substringBefore("//").trim()
+            val multiLineCommentStart = line.indexOf("/*")
+            val multiLineCommentEnd = line.indexOf("*/")
+
+            if (singleLineComment.isNotEmpty()) {
+                comment = singleLineComment
+                break
+            } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
+                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
+                break
+            }
+        }
+    }
+
+    return comment
 }

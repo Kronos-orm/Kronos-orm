@@ -38,9 +38,11 @@ class DeleteParserTest {
                     
             @Table(name = "tb_user")
             data class User(
-                var id: Int? = null,
+                var id: Int? = null, // id，主键
+                // 用户名
                 var username: String? = null,
-                var gender: Int? = null,
+                var gender: Int? = null, /*性别*/
+                /*创建时间*/
                 @CreateTime
                 var createTime: String? = null
             ) : KPojo

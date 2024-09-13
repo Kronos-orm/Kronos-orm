@@ -57,7 +57,8 @@ class Field(
     val defaultValue: String? = null,
     val identity: Boolean = false,
     val nullable: Boolean = true,
-    val serializable: Boolean = false
+    val serializable: Boolean = false,
+    val kDoc: String? = null
 ) {
     // Returns the name of the field as a string
     override fun toString(): String {

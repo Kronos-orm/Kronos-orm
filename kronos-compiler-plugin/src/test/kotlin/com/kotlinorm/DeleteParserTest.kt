@@ -42,7 +42,7 @@ class DeleteParserTest {
                 // 用户名
                 var username: String? = null,
                 var gender: Int? = null, /*性别*/
-                /*创建时间*/
+                /* 创建时间 */
                 @CreateTime
                 var createTime: String? = null
             ) : KPojo

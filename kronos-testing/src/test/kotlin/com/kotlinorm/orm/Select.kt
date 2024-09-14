@@ -238,7 +238,7 @@ class Select {
     }
 
     @Test
-    fun testSelectCount1() {
+    fun testIfNoValue() {
         val (sql, paramMap) = user.select { "count(1)" }.where { it.gender.gt.ifNoValue(Ignore) }
             .build()
 

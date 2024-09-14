@@ -145,11 +145,19 @@ object MysqlSupport : DatabasesSupport {
                 )
             }"
         } + columns.toModified.map {
-            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${
-                columnCreateDefSql(
-                    DBType.Mysql, it
-                )
-            } ${if (it.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${quote(it)})" else ""}"
+            if(it.primaryKey) {
+                "ALTER TABLE ${quote(tableName)} DROP PRIMARY KEY, MODIFY COLUMN ${
+                    columnCreateDefSql(
+                        DBType.Mysql, it
+                    )
+                }, ADD PRIMARY KEY (${quote(it)})"
+            } else {
+                "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${
+                    columnCreateDefSql(
+                        DBType.Mysql, it
+                    )
+                }"
+            }
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {

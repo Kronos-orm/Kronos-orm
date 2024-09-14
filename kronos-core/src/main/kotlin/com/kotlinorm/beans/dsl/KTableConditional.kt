@@ -311,7 +311,7 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      * @return `true`
      */
     @Suppress("UnusedReceiverParameter")
-    val Comparable<*>?.isNull get() = true
+    val Any?.isNull get() = true
 
     /**
      * Checks if the given value is null.
@@ -323,7 +323,7 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      * @return `true`
      */
     @Suppress("UnusedReceiverParameter")
-    val Comparable<*>?.notNull get() = true
+    val Any?.notNull get() = true
 
     /**
      * Checks if the given value is null.

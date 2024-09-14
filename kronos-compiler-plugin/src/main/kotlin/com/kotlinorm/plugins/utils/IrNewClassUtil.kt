@@ -1,7 +1,7 @@
 package com.kotlinorm.plugins.utils
 
 import com.kotlinorm.plugins.helpers.*
-import com.kotlinorm.plugins.utils.kTable.ColumnSerializableAnnotationsFqName
+import com.kotlinorm.plugins.utils.kTable.SerializableAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
 import com.kotlinorm.plugins.utils.kTable.getColumnName
 import com.kotlinorm.plugins.utils.kTable.getTableName
@@ -136,7 +136,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                     })),
                 irGet(map),
                 irString(property.name.asString()),
-                irBoolean(property.hasAnnotation(ColumnSerializableAnnotationsFqName))))?.let {
+                irBoolean(property.hasAnnotation(SerializableAnnotationsFqName))))?.let {
                 irTry(
                     irUnit().type, it, listOf(), null
                 )

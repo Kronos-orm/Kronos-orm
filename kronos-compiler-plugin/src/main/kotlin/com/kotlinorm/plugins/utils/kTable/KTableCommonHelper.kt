@@ -88,7 +88,7 @@ val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val CascadeAnnotationsFqName = FqName("com.kotlinorm.annotations.Cascade")
 val SelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.SelectIgnore")
-val ColumnSerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
+val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
 
@@ -195,7 +195,7 @@ fun getColumnName(
         columnDefaultValue,
         identity,
         columnNotNull,
-        irBoolean(irProperty.hasAnnotation(ColumnSerializableAnnotationsFqName)),
+        irBoolean(irProperty.hasAnnotation(SerializableAnnotationsFqName)),
         irProperty.getKDocString()
     )
 }
@@ -363,7 +363,7 @@ fun getTableName(irClass: IrClass): IrExpression {
  */
 context(IrBuilderWithScope, IrPluginContext)
 fun IrProperty.isColumn(irPropertyType: IrType = this.backingField?.type ?: irBuiltIns.anyNType): Boolean {
-    return hasAnnotation(ColumnSerializableAnnotationsFqName) ||
+    return hasAnnotation(SerializableAnnotationsFqName) ||
             (!hasAnnotation(CascadeAnnotationsFqName) &&
                     !irPropertyType.isKronosColumn() && irPropertyType.subType()?.isKronosColumn() != true)
 }

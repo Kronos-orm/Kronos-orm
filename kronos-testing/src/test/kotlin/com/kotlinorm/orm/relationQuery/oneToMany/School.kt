@@ -10,8 +10,10 @@ import com.kotlinorm.beans.dsl.KPojo
  *@create: 2024/6/20 15:38
  **/
 data class School(
+    // id，学校id
     @PrimaryKey(identity = true)
     var id: Int? = null,
+    /* 学校名 */
     var name: String? = null,
     var groupClass: List<GroupClass>? = null
 ) : KPojo

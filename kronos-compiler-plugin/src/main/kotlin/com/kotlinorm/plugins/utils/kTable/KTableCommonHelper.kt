@@ -428,27 +428,16 @@ fun extractPropertyComment(lines: List<String>, range: IntRange): String? {
             } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
                 comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
                 break
-            }
-        }
-    }
-
-    // 如果仍然没有找到注释，向下查找
-    if (comment == null) {
-        for (i in (endIndex + 1) until lines.size) {
-            val line = lines.getOrNull(i)?.trim() ?: continue
-            val singleLineComment = line.substringAfter("//", "").substringBefore("//").trim()
-            val multiLineCommentStart = line.indexOf("/*")
-            val multiLineCommentEnd = line.indexOf("*/")
-
-            if (singleLineComment.isNotEmpty()) {
-                comment = singleLineComment
-                break
-            } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
-                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
+            } else if(line.isDeclaredLine()) {
                 break
             }
         }
     }
-
     return comment
+}
+
+fun String.isDeclaredLine(): Boolean {
+    return startsWith("var") || startsWith("val") || startsWith("private") || startsWith("protected") || startsWith("public") || startsWith(
+        "internal"
+    ) || startsWith("override") || startsWith("lateinit") || startsWith("open")
 }

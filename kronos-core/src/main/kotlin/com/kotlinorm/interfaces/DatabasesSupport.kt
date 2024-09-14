@@ -42,6 +42,8 @@ interface DatabasesSupport {
             if (column.identity) " AUTO_INCREMENT" else ""
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+        }${
+            if (column.kDoc != null) " COMMENT '${column.kDoc}'" else ""
         }"
 
     fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =

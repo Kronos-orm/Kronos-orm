@@ -79,6 +79,7 @@ object MysqlSupport : DatabasesSupport {
                     c.CHARACTER_MAXIMUM_LENGTH LENGTH, 
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
+                    c.COLUMN_COMMENT,
                     (CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NO' END) AS IDENTITY,
                     (CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NO' END) AS PRIMARY_KEY
                 FROM 
@@ -99,7 +100,8 @@ object MysqlSupport : DatabasesSupport {
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = it["PRIMARY_KEY"] == "YES",
                 identity = it["IDENTITY"] == "YES",
-                defaultValue = it["COLUMN_DEFAULT"] as String?
+                defaultValue = it["COLUMN_DEFAULT"] as String?,
+                kDoc = it["COLUMN_COMMENT"] as String?
             )
         }
     }

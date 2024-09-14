@@ -11,9 +11,8 @@ data class GroupClass(
     var id: Int? = null,
     val name: String? = null,
     val groupNo: String? = null,
-    @NotNull
     var schoolName: String? = null,
-    @Cascade(["schoolName"], ["name"], CascadeDeleteAction.CASCADE)
+    @Cascade(["schoolName"], ["name"], CascadeDeleteAction.SET_NULL)
     var school: School? = null,
 
     var students: List<Student>? = null

@@ -41,4 +41,8 @@ annotation class Cascade(
     val onDelete: CascadeDeleteAction = CascadeDeleteAction.NO_ACTION,
     val defaultValue: Array<String> = [],
     val usage: Array<KOperationType> = [KOperationType.INSERT, KOperationType.UPDATE, KOperationType.DELETE, KOperationType.SELECT, KOperationType.UPSERT]
-)
+){
+    companion object{
+        const val RESERVED = "RESERVED"
+    }
+}

@@ -16,19 +16,18 @@
 
 package com.kotlinorm.orm.cascade
 
+import com.kotlinorm.annotations.Cascade.Companion.RESERVED
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
-import com.kotlinorm.enums.CascadeDeleteAction.RESTRICT
+import com.kotlinorm.enums.CascadeDeleteAction.*
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
-import com.kotlinorm.orm.delete.DeleteClause.Companion.build
-import com.kotlinorm.orm.delete.DeleteClause.Companion.cascade
-import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
@@ -113,7 +112,7 @@ object CascadeDeleteClause {
 
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper -> // 在执行前检查是否有引用
-                if(validCascades.isEmpty())  return@doBeforeExecute // 如果没有级联，直接返回
+                if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
                         .cascade(*cascadeAllowed).apply { operationType = KOperationType.DELETE }
@@ -162,9 +161,36 @@ object CascadeDeleteClause {
                             list.add(all.pop()) // 将所有节点压入list
                         }
                     }
-                    atomicTasks.addAll(
-                        list.map { it.kPojo }.delete().logic(logic).cascade(false).build().atomicTasks // 生成删除任务
-                    )
+                    atomicTasks.addAll(list.mapNotNull {
+                        when (it.data?.kCascade?.onDelete) {
+                            NO_ACTION, RESTRICT -> null
+                            CASCADE, null -> it.kPojo.delete().logic(logic).cascade(enabled = false).build().atomicTasks
+                            SET_NULL -> it.kPojo.update().apply {
+                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
+                                listOfValidCascade?.forEach { validCascade->
+                                    validCascade.kCascade.properties.forEach{ property ->
+                                        val field =  allFields.first { f -> f.name == property }
+                                        toUpdateFields += field
+                                        paramMapNew[field + "New"] = null
+                                    }
+                                }
+                            }.build().atomicTasks
+
+                            SET_DEFAULT -> it.kPojo.update().apply {
+                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
+                                listOfValidCascade?.forEach { validCascade->
+                                    validCascade.kCascade.properties.forEachIndexed{ index, property ->
+                                        val field =  allFields.first { f -> f.name == property }
+                                        val defaultValue = validCascade.kCascade.defaultValue.getOrNull(index)
+                                        if(defaultValue != null && defaultValue != RESERVED) {
+                                            toUpdateFields += field
+                                            paramMapNew[field + "New"] = defaultValue
+                                        }
+                                    }
+                                }
+                            }.build().atomicTasks
+                        }
+                    }.flatten()) // 生成删除任务
                 }
             }
         }

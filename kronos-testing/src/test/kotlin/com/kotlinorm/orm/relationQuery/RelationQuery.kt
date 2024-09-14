@@ -190,4 +190,10 @@ class RelationQuery {
         val a = role.toDataMap()
         println(a)
     }
+
+    @Test
+    fun testCascadeSetNull() {
+        testCascadeInsert()
+        School(1).delete().execute()
+    }
 }

@@ -17,6 +17,7 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KCascade
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
@@ -51,7 +52,8 @@ import kotlin.reflect.jvm.javaField
 data class NodeInfo(
     val updateReferenceValue: Boolean = false,
     var parent: NodeOfKPojo? = null,
-    var fieldOfParent: Field? = null
+    var fieldOfParent: Field? = null,
+    var kCascade: KCascade? = null
 )
 
 /**
@@ -83,7 +85,7 @@ data class NodeOfKPojo(
 ) {
     var insertIgnore = false // 该字段用于判断是否忽略插入
     internal val dataMap = kPojo.toDataMap()
-    private val validCascades by lazy {
+    internal val validCascades by lazy {
         findValidRefs(
             kPojo::class,
             kPojo.kronosColumns(),
@@ -251,7 +253,8 @@ data class NodeOfKPojo(
                                     NodeInfo(
                                         data?.updateReferenceValue == true,
                                         this,
-                                        cascade.field
+                                        cascade.field,
+                                        cascade.kCascade
                                     ),
                                     cascadeAllowed,
                                     operationType,

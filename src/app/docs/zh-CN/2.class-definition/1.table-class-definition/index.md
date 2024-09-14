@@ -23,6 +23,29 @@ data class User(
 
 注意，`var`关键词声明的的属性才能在**update**或**upsert**的`set`中修改。
 
+### 列注释
+
+Kronos支持为列添加注释，我们通过编译器插件读取您在属性定义上的**单行注释**并在创建/同步表时添加到列上，如：
+
+我们支持以下4种注释：
+
+```kotlin
+import com.kotlinorm.beans.dsl.KPojo
+
+data class User(
+    // 添加列注释
+    var property1: Int? = null,
+    var property2: String? = null, // 添加列注释
+    /* 添加列注释 */
+    var property3: Int? = null,
+    var property4: String? = null /* 添加列注释 */
+) : KPojo
+```
+
+通常来说定义在属性同一行的注释会被优先读取，如果没有定义在同一行的注释则会读取前面的注释。
+
+若一行中有多个属性定义，只有第一个属性的注释会被读取。
+
 ### 使用委托实现级联多对多跨中间表关系
 
 请参考 {{ $.keyword("advanced/cascade-definition", ["进阶用法", "使用委托实现级联多对多跨中间表关系"]) }}。

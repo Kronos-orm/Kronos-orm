@@ -183,6 +183,22 @@ Kronos.timeZone = ZoneId.systemDefault()
 Kronos.timeZone = ZoneId.of("GMT+8")
 ```
 
+## 无值策略
+
+用于设置全局默认条件下，当`where`/`having`/`on`等条件语句中的值为`null`时，生成SQL语句的策略。
+
+> **Note**
+> 如在查询场景下，条件值为null时可能想要忽略该查询条件，或将其转为`is null`，`is not null`等条件。
+> `NoValueStrategy`策略用于处理在不同场景下的`null`值条件
+
+> **Alert**
+> 注意，如果您正在自定义无值策略，在`DELETE`和`UPDATE`操作中，请谨慎使用`Ignore`策略，以免造成全表删除或全表更新。
+
+**参数**：
+{{$.params([['noValueStrategy', '无值策略', 'NoValueStrategy', 'DefaultNoValueStrategy']])}}
+
+`NoValueStrategy`策略接受操作类型（`SELECT`/`UPDATE`/`DELETE`）和语句条件两个参数，返回`NoValueStrategyType`，详见：{{ $.keyword("concept/no-value-strategy", ["概念","无值策略"]) }}。
+
 ## 序列化反序列化处理器
 
 将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。

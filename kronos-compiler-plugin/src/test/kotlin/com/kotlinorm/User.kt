@@ -2,7 +2,7 @@ package com.kotlinorm
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.KColumnType.CHAR
 import com.kotlinorm.enums.SQLite
 import com.kotlinorm.orm.join.join

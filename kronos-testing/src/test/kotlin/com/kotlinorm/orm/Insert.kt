@@ -1,7 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import kotlin.test.Test

@@ -43,6 +43,7 @@ class SelectParserTest {
             import com.kotlinorm.annotations.*
             import com.kotlinorm.enums.KColumnType.CHAR
             import com.kotlinorm.enums.SQLite
+            import com.kotlinorm.enums.NoValueStrategyType.Ignore
             import java.time.LocalDateTime
 
             @Table(name = "tb_user")

@@ -2,7 +2,7 @@ package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.database.table

@@ -66,19 +66,19 @@ fun setCriteriaIr() = applyIrCall(
  *
  * @param element The element to build the criteria IR from.
  * @param setNot Whether to set the not flag. Default is false.
- * @param noValueStrategy The strategy to use when there is no value. Default is null.
+ * @param noValueStrategyType The strategy to use when there is no value. Default is null.
  * @return The built criteria IR variable, or null if the element is a constant.
  */
 context(IrBlockBuilder, IrPluginContext, IrFunction)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategy: IrExpression? = null): IrVariable? {
+fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyType: IrExpression? = null): IrVariable? {
     var paramName: IrExpression? = null
     var type = "ROOT"
     var not = setNot
     var value: IrExpression? = null
     val children: MutableList<IrVariable?> = mutableListOf()
     var tableName: IrExpression? = null
-    var strategy = noValueStrategy
+    var strategy = noValueStrategyType
 
     when (element) {
         is IrBlockBody -> {

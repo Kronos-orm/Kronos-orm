@@ -1,7 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
 import com.kotlinorm.orm.delete.delete

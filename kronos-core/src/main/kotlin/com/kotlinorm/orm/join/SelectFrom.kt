@@ -555,6 +555,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         updateMap: (map: MutableMap<String, Any?>) -> Unit
     ): JoinClauseInfo {
         val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(
+            KOperationType.SELECT,
             wrapper,
             buildCondition,
             showTable = true,
@@ -578,6 +579,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             }
 
             val (onSql, mapOfOn) = buildConditionSqlWithParams(
+                KOperationType.SELECT,
                 wrapper,
                 joinCondition,
                 paramMap,
@@ -604,7 +606,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 ) + " " + it.second
             } else null
         val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
-            wrapper, havingCondition, showTable = true, databaseOfTable = databaseOfTable
+            KOperationType.SELECT, wrapper, havingCondition, showTable = true, databaseOfTable = databaseOfTable
         ).toHavingClause() else null to mutableMapOf()
         updateMap(mapOfWhere)
         updateMap(mapOfHaving)

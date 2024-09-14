@@ -37,7 +37,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
  * @property value The value to compare with, optional
  * @property children List of child variables, optional
  * @property tableName The name of the table, optional
- * @property noValueStrategy The strategy for handling missing values
+ * @property noValueStrategyType The strategy for handling missing values
  * @author: OUSC, Jieyao Lu
  */
 class CriteriaIR(
@@ -47,7 +47,7 @@ class CriteriaIR(
     private val value: IrExpression? = null,
     private val children: List<IrVariable> = listOf(),
     private var tableName: IrExpression? = null,
-    private var noValueStrategy: IrExpression? = null
+    private var noValueStrategyType: IrExpression? = null
 ) {
 
     /**
@@ -57,6 +57,6 @@ class CriteriaIR(
      */
     context(IrBlockBuilder, IrPluginContext)
     fun toIrVariable(): IrVariable {
-        return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategy)
+        return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategyType)
     }
 }

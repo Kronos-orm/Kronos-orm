@@ -3,7 +3,7 @@ package com.kotlinorm.orm.relationQuery
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert

@@ -2,9 +2,9 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
-import com.kotlinorm.KronosBasicWrapper
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.database.table
@@ -233,6 +233,17 @@ class Select {
 
         assertEquals(
             "SELECT count(1) FROM `test`.`tb_user` WHERE `gender` = :gender AND `deleted` = 0",
+            sql
+        )
+    }
+
+    @Test
+    fun testSelectCount1() {
+        val (sql, paramMap) = user.select { "count(1)" }.where { it.gender.gt.ifNoValue(Ignore) }
+            .build()
+
+        assertEquals(
+            "SELECT count(1) FROM `tb_user` WHERE `deleted` = 0",
             sql
         )
     }

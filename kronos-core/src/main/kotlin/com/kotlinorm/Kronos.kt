@@ -21,14 +21,15 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsw.NoneDataSourceWrapper
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.beans.namingStrategy.NoneNamingStrategy
+import com.kotlinorm.beans.strategies.NoneNamingStrategy
 import com.kotlinorm.beans.serializeResolver.NoneSerializeResolver
+import com.kotlinorm.beans.strategies.DefaultNoValueStrategy
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
-import com.kotlinorm.enums.NoValueStrategy
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeResolver
+import com.kotlinorm.interfaces.NoValueStrategy
 import com.kotlinorm.types.KLoggerFactory
 import java.time.ZoneId
 
@@ -52,7 +53,7 @@ object Kronos {
     var logPath = listOf("console")
 
     // 无值策略
-    var noValueStrategy = NoValueStrategy.Smart
+    var noValueStrategy: NoValueStrategy = DefaultNoValueStrategy
 
     // 数据源
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }

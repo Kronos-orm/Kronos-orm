@@ -17,7 +17,7 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.annotations.UnsafeCriteria
-import com.kotlinorm.enums.NoValueStrategy
+import com.kotlinorm.enums.NoValueStrategyType
 
 /**
  * KTableConditional
@@ -101,7 +101,7 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      * @return `1`
      */
     @Suppress("UnusedReceiverParameter")
-    fun Boolean?.ifNoValue(@Suppress("UNUSED_PARAMETER") strategy: NoValueStrategy) = true
+    fun Boolean?.ifNoValue(@Suppress("UNUSED_PARAMETER") strategy: NoValueStrategyType) = true
 
     /**
      * Checks if the given value is like the specified string.

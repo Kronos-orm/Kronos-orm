@@ -145,7 +145,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         // 构建条件SQL语句及参数映射
-        val (whereClauseSql, paramMap) = buildConditionSqlWithParams(wrapper, condition)
+        val (whereClauseSql, paramMap) = buildConditionSqlWithParams(KOperationType.DELETE, wrapper, condition)
         paramMap.putAll(paramMapNew)
 
         // 处理逻辑删除时的更新字段逻辑

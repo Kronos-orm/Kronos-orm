@@ -454,7 +454,7 @@ class SelectClause<T : KPojo>(
         wrapper: KronosDataSourceWrapper? = null, updateMap: (map: MutableMap<String, Any?>) -> Unit
     ): SelectClauseInfo {
         // 构建带有参数的查询条件SQL
-        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(wrapper, buildCondition).toWhereClause()
+        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(KOperationType.SELECT, wrapper, buildCondition).toWhereClause()
         val groupByClauseSql =
             if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
                 it.quoted(wrapper.orDefault())
@@ -465,6 +465,7 @@ class SelectClause<T : KPojo>(
             } else null
 
         val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
+            KOperationType.SELECT,
             wrapper, havingCondition
         ).toHavingClause() else null to mutableMapOf()
         updateMap(mapOfWhere)

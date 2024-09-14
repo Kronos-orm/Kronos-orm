@@ -239,7 +239,7 @@ class UpdateClause<T : KPojo>(
         }
 
         // 构建完整的更新SQL语句，包括条件部分
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(wrapper, condition)
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(KOperationType.UPDATE, wrapper, condition)
             .toWhereClause()
 
         val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), versionField, whereClauseSql)

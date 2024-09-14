@@ -16,12 +16,18 @@
 
 package com.kotlinorm.utils
 
+import com.kotlinorm.Kronos.noValueStrategy
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.database.SqlManager.quote
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.enums.NoValueStrategyType.Ignore
+import com.kotlinorm.enums.NoValueStrategyType.False
+import com.kotlinorm.enums.NoValueStrategyType.True
+import com.kotlinorm.enums.NoValueStrategyType.JudgeNull
+import com.kotlinorm.enums.NoValueStrategyType.Auto
 import com.kotlinorm.enums.ConditionType.Companion.And
 import com.kotlinorm.enums.ConditionType.Companion.Between
 import com.kotlinorm.enums.ConditionType.Companion.Equal
@@ -36,11 +42,8 @@ import com.kotlinorm.enums.ConditionType.Companion.Or
 import com.kotlinorm.enums.ConditionType.Companion.Regexp
 import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.ConditionType.Companion.Sql
-import com.kotlinorm.enums.alwaysFalse
-import com.kotlinorm.enums.alwaysTrue
-import com.kotlinorm.enums.ignore
-import com.kotlinorm.enums.judgeNull
-import com.kotlinorm.enums.smart
+import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
@@ -92,7 +95,7 @@ object ConditionSqlBuilder {
         key: String,
         value: Any?
     ) {
-        if(field.serializable && value != null) {
+        if (field.serializable && value != null) {
             this[key] = serializeResolver.serialize(value)
         } else {
             this[key] = value.toString()
@@ -109,6 +112,7 @@ object ConditionSqlBuilder {
      * @return 返回构建好的SQL条件字符串，如果条件为空则返回null。
      */
     fun buildConditionSqlWithParams(
+        operationType: KOperationType,
         wrapper: KronosDataSourceWrapper? = null,
         condition: Criteria?,
         paramMap: MutableMap<String, Any?> = mutableMapOf(),
@@ -122,47 +126,15 @@ object ConditionSqlBuilder {
         }
 
         if (condition.value == null && condition.valueAcceptable) { // 如果值为 null，且条件不允许值为 null，则进入无值策略处理
-            when (condition.noValueStrategy) {
-                ignore -> return KotoBuildResultSet(null, paramMap) // 直接返回
-                judgeNull -> {
-                    condition.type = IsNull
-                } // 条件转为 ISNULL
-
-                alwaysTrue -> {
-                    condition.type = Sql
-                    condition.value = "true"
-                } // 条件转为 TRUE
-
-                alwaysFalse -> {
-                    condition.type = Sql
-                    condition.value = "false"
-                } // 条件转为 FALSE
-
-                smart -> {
-                    /*
-                    *   无值策略：根据条件类型进行转换
-                    *   当条件类型为“Equal”时，将其修改为“ISNULL”。
-                    *   当条件类型为“Like”、“In”或者“BETWEEN”时，返回相应的操作描述和参数映射表。
-                    *   当条件类型为“GT”、“GE”、“LT”或者“LE”时，返回false值和参数映射表。
-                    *   对于其他条件类型(SQL)，返回null值和参数映射表。
-                    *
-                    * */
-                    when (condition.type) {
-                        Equal -> condition.type = IsNull
-                        Like, In, Between, Regexp -> return KotoBuildResultSet((!condition.not).toString(), paramMap)
-                        Gt, Ge, Lt, Le -> return KotoBuildResultSet("false", paramMap)
-                        else -> return KotoBuildResultSet(null, paramMap)
-                    }
-                }
-
-                else -> throw UnsupportedOperationException()
-            }
+            if (handleNoValueStrategy(condition, operationType, paramMap) != null)
+                return KotoBuildResultSet(null, paramMap)
         }
 
         val sql = when (condition.type) {
             Root -> {
                 listOf(
                     buildConditionSqlWithParams(
+                        operationType,
                         wrapper,
                         condition.children.firstOrNull(),
                         paramMap,
@@ -264,6 +236,7 @@ object ConditionSqlBuilder {
                 // 将子条件转换为SQL字符串，并根据需要添加括号。
                 val branches = condition.children.mapNotNull { child ->
                     val (childSql, _) = buildConditionSqlWithParams(
+                        operationType,
                         wrapper,
                         child,
                         paramMap,
@@ -337,6 +310,31 @@ object ConditionSqlBuilder {
         return when (data) {
             is Criteria -> data.value
             else -> data
+        }
+    }
+
+    private fun handleNoValueStrategy(
+        condition: Criteria,
+        operationType: KOperationType,
+        paramMap: MutableMap<String, Any?>
+    ): KotoBuildResultSet? {
+        fun handleStrategy(strategy: NoValueStrategyType): KotoBuildResultSet? {
+            when (strategy) {
+                Ignore -> return KotoBuildResultSet(null, paramMap) // 直接返回
+                JudgeNull -> condition.type = IsNull // 条件转为 ISNULL
+                True, False -> {
+                    condition.type = Sql
+                    condition.value = condition.noValueStrategyType!!.value
+                }
+
+                else -> throw IllegalArgumentException("NoValueStrategyType:$strategy not supported")
+            }
+            return null
+        }
+
+        return when (condition.noValueStrategyType) {
+            Ignore, JudgeNull, True, False -> handleStrategy(condition.noValueStrategyType!!)
+            null, Auto -> handleStrategy(noValueStrategy.ifNoValue(operationType, condition))
         }
     }
 }

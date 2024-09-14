@@ -2,8 +2,8 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-import com.kotlinorm.enums.NoValueStrategy
+import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
@@ -851,7 +851,7 @@ class Update {
     fun testUpdateWhereNull() {
         val (sql, paramMap) = testUser.update()
             .set { it.id = 1 }
-            .where { it.gender.eq.ifNoValue(NoValueStrategy.Ignore) }
+            .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
 
         println(sql)
@@ -867,7 +867,7 @@ class Update {
     fun testUpdateWhereNoNull() {
         val (sql, paramMap) = testUser1.update()
             .set { it.id = 1 }
-            .where { it.gender.eq.ifNoValue(NoValueStrategy.Ignore) }
+            .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
 
         println(sql)

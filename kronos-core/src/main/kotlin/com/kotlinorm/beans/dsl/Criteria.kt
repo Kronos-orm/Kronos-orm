@@ -16,14 +16,12 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.ConditionType.Companion.And
 import com.kotlinorm.enums.ConditionType.Companion.IsNull
 import com.kotlinorm.enums.ConditionType.Companion.Or
 import com.kotlinorm.enums.ConditionType.Companion.Root
-import com.kotlinorm.enums.NoValueStrategy
-import com.kotlinorm.enums.smart
+import com.kotlinorm.enums.NoValueStrategyType
 
 /**
  * Criteria
@@ -35,7 +33,7 @@ import com.kotlinorm.enums.smart
  * @property not whether the condition is not
  * @property value the value
  * @property tableName the table name
- * @property noValueStrategy when the value is null, whether to generate sql
+ * @property noValueStrategyType when the value is null, whether to generate sql
  * @property children the children criteria
  */
 class Criteria(
@@ -44,16 +42,9 @@ class Criteria(
     var not: Boolean = false, // whether the condition is not
     var value: Any? = null, // value
     val tableName: String? = "", // table name
-    var noValueStrategy: NoValueStrategy = Kronos.noValueStrategy, // when the value is null, whether to generate sql,
+    var noValueStrategyType: NoValueStrategyType? = NoValueStrategyType.Auto, // when the value is null, whether to generate sql,
     var children: MutableList<Criteria?> = mutableListOf()
 ) {
-
-    init {
-        if (type != ConditionType.EQUAL && noValueStrategy == NoValueStrategy.Ignore) {
-            noValueStrategy = NoValueStrategy.Smart
-        }
-    }
-
     internal val valueAcceptable: Boolean
         get() = type != IsNull && type != And && type != Or && type != Root
 

@@ -152,7 +152,7 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
  * @param value The value for the Criteria object. Default is null.
  * @param children The list of child Criteria objects. Default is an empty list.
  * @param tableName The table name for the Criteria object. Default is null.
- * @param noValueStrategy The strategy for handling missing values. Default is null.
+ * @param noValueStrategyType The strategy for handling missing values. Default is null.
  * @return The created Criteria object.
  */
 context(IrBlockBuilder, IrPluginContext)
@@ -164,7 +164,7 @@ fun createCriteria(
     value: IrExpression? = null,
     children: List<IrVariable> = listOf(),
     tableName: IrExpression? = null,
-    noValueStrategy: IrExpression? = null
+    noValueStrategyType: IrExpression? = null
 ): IrVariable {
     //创建Criteria
     val irVariable = irTemporary(
@@ -175,7 +175,7 @@ fun createCriteria(
             irBoolean(not),
             value,
             tableName,
-            noValueStrategy
+            noValueStrategyType
         )
     )
     //添加子条件

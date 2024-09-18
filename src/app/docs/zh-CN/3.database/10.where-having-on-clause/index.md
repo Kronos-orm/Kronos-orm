@@ -284,11 +284,11 @@ User().select().where { it.eq || it.name like "Kronos%" }.query()
 ```kotlin {3,5,7}
 val user = User(id = 1, name = "Kronos", age = 18)
 
+where { "name = 'Kronos' and age > 18".asSql() } // where name = 'Kronos' and age > 18
+
 where { (it.id == 1 || it.age > 18).asSql() } // where false
 
 where { (it.name == null).asSql() } // where false
-
-where { "name = 'Kronos' and age > 18".asSql() } // where name = 'Kronos' and age > 18
 ```
 
 自定义字符串SQL查询条件中支持命名参数，如`"name = :name and age > :age"`，Kronos会自动将`name`和`age`替换为具体的值。

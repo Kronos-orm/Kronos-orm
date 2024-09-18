@@ -1,7 +1,7 @@
 {# Nunjucks: https://mozilla.github.io/nunjucks/ #}
 
 {% macro extract(str) -%}
-    {{ str | lower | replace("@", "") | replace("（", "") | replace("）", "") | replace(".", "") | replace(" ", "-") }}
+    {{ str | lower | replace("@", "") | replace("（", "") | replace("）", "") | replace(".", "") | replace(" ", "-") | replace("(", "") | replace(")", "") | replace("/", "") }}
 {%- endmacro %}
 
 {% macro parseString(input) -%}

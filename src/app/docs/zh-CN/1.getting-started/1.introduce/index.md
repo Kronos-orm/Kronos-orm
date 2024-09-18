@@ -1,7 +1,8 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 # 什么是Kronos
-Kronos是一款基于**Code First**模式、KCP（**编译器插件**），为kotlin设计的现代化的**ORM**框架，它同时支持**JVM**和**Android**平台。
+Kronos是一款基于{{ $.noun("Code First") }} 模式、KCP（**编译器插件**），为kotlin设计的现代化的**ORM**框架，它同时支持**JVM**和**Android**平台。
 
 ```mermaid
 graph LR

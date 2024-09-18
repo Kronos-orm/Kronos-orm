@@ -25,3 +25,7 @@
 {% macro params(paramList) -%}
     {{ common.params(["参数", "说明", "类型", "默认值"], paramList) }}
 {%- endmacro %}
+
+{% macro noun(str) -%}
+    {{ common.noun(str, 'zh-CN') }}
+{%- endmacro %}

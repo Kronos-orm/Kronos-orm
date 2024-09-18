@@ -2,14 +2,14 @@ import {NgDocPage} from '@ng-doc/core';
 import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const CascadeDefinitionPage: NgDocPage = {
-    title: `级联关系定义`,
+const CascadeInsertPage: NgDocPage = {
+    title: `级联插入`,
     mdFile: './index.md',
-    route: 'cascade-definition',
+    route: 'cascade-insert',
     category: AdvancedCategory,
-    order: 3,
+    order: 4,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default CascadeDefinitionPage;
+export default CascadeInsertPage;

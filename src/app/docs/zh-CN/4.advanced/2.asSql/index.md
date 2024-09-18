@@ -67,7 +67,7 @@ when (case) {
 }
 ```
 
-而使用`asSql`，我们可以将这四种情况整合进一个sql语句中：
+而使用`asSql`，我们可以将这四种情况整合进一个sql语句中，使用短路逻辑来实现，如：
 
 ```kotlin
 User(id = 1).select().where { 

@@ -149,7 +149,7 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("UseSerializeResolver") }}列序列化反序列化设置
+## {{ $.annotation("Serializable") }}列序列化反序列化设置
 
 用于声明该列是否需要进行自动序列化、反序列化，使用该注解的字段Kronos将调用序列化反序列化处理器（见{{
 $.keyword("getting-started/global-config", ["全局设置", "序列化反序列化处理器"])
@@ -157,7 +157,7 @@ $.keyword("getting-started/global-config", ["全局设置", "序列化反序列�
 
 ```kotlin
 data class User(
-    @UseSerializeResolver
+    @Serializable
     val info: List<String>? = emptyList()
 ) : KPojo
 ```

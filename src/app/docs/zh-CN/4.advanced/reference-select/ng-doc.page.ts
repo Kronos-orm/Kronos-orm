@@ -5,7 +5,7 @@ const ReferenceSelectPage: NgDocPage = {
 	title: `级联查询`,
 	mdFile: './index.md',
   category: AdvancedCategory,
-  order: 5
+  order: 8
 };
 
 export default ReferenceSelectPage;

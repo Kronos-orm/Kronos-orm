@@ -50,3 +50,13 @@ img {
   width: 10px;
   border-radius: 5px;
 }
+
+.wiki.p-overlaypanel {
+  color: var(--ng-doc-text);
+  background-color: var(--ng-doc-background);
+
+  .p-overlaypanel-content {
+    padding: .5rem !important;
+    border-radius: .5rem;
+  }
+}

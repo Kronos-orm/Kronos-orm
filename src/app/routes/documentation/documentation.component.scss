@@ -71,6 +71,20 @@
     }
   }
 
+  .wiki_mode {
+    .ng-doc-header, ng-doc-page-navigation, footer {
+      display: none;
+    }
+
+    main {
+      padding-top: 0 !important;
+    }
+
+    .ng-doc-page-controls {
+      display: none!important;
+    }
+  }
+
 
   .code-blue {
     color: rgba(0, 55, 185, 0.8);

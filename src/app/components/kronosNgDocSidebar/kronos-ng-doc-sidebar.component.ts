@@ -48,7 +48,7 @@ export class KronosNgDocSidebarComponent {
           }
         }),
         routerLinkActiveOptions: {exact: true},
-        visible: item.route.startsWith(`/documentation/${this._app.language}/`),
+        visible: item.route.startsWith(`/documentation/${this._app.language}/`) && item.title != "Wiki",
       }
     });
 

@@ -1,4 +1,4 @@
-<ng-doc-root [noWidthLimit]="true" [footerContent]="footer">
+<ng-doc-root [noWidthLimit]="true" [footerContent]="footer" [class]="wikiMode ? 'wiki_mode' : ''">
     <ng-doc-navbar>
         <div ngDocNavbarLeft>
             <a class="logo" [routerLink]="['/']">
@@ -64,10 +64,4 @@
         }
     </ul>
 </p-overlayPanel>
-
-<p-overlayPanel #wikiPanel styleClass="wiki">
-    <div class="flex flex-column gap-3" style="width: 50vw;height: 50vw;min-width: 25rem;min-height: 25rem">
-        {{ title }}
-        <iframe class="w-full h-full" src="/#/documentation/zh-CN/concept/cascade-delete-action" frameborder="0"></iframe>
-    </div>
-</p-overlayPanel>
+<document-wiki/>

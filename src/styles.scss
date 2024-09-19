@@ -52,8 +52,8 @@ img {
 }
 
 .wiki.p-overlaypanel {
-  color: var(--ng-doc-text);
-  background-color: var(--ng-doc-background);
+  color: var(--ng-doc-text) !important;
+  background-color: var(--ng-doc-background) !important;
 
   .p-overlaypanel-content {
     padding: .5rem !important;

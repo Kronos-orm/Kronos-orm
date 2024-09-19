@@ -3,12 +3,13 @@ import {SharedModule} from "../../shared.module";
 import {KronosNgDocSidebarComponent} from "../../components/kronosNgDocSidebar/kronos-ng-doc-sidebar.component";
 import {AppService} from "../../app.service";
 import {TranslocoService} from "@jsverse/transloco";
-import {Router} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {NgDocThemeToggleComponent} from "@ng-doc/app";
 import {NgDocButtonIconComponent, NgDocIconComponent, NgDocTooltipDirective} from "@ng-doc/ui-kit";
-import {DomSanitizer} from "@angular/platform-browser";
+import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {OverlayPanel} from "primeng/overlaypanel";
-import { debounceTime } from 'rxjs/operators';
+import {NG_DOC_ROUTING} from "@ng-doc/generated";
+import {WikiComponent} from "../../components/wiki.component";
 
 @Component({
     selector: 'app-documentation',
@@ -19,23 +20,26 @@ import { debounceTime } from 'rxjs/operators';
         NgDocThemeToggleComponent,
         NgDocIconComponent,
         NgDocButtonIconComponent,
-        NgDocTooltipDirective
+        NgDocTooltipDirective,
+        WikiComponent
     ],
     templateUrl: './documentation.component.html',
     styleUrl: './documentation.component.scss'
 })
 export class DocumentationComponent implements OnDestroy {
-    constructor(private appService: AppService, private translocoService: TranslocoService, private router: Router, private _sanitizer: DomSanitizer) {
-        window.onWikiChange = new EventEmitter<{ id: string, event: MouseEvent }>();
-        window.onWikiChange.subscribe(({id, event}) => {
-            this.title = id;
-            if (this.wikiPanel) {
-                this.wikiPanel!!.toggle(event);
-            }
-        })
-    }
+    wikiMode = false;
 
-    @ViewChild("wikiPanel", {static: false}) wikiPanel: OverlayPanel | undefined;
+    constructor(
+        private appService: AppService,
+        private translocoService: TranslocoService,
+        private router: Router,
+        private activatedRoute: ActivatedRoute) {
+        activatedRoute.queryParams.subscribe(params => {
+            if (params.wiki) {
+                this.wikiMode = true;
+            }
+        });
+    }
 
     get language(): string {
         return this.appService.language;
@@ -47,9 +51,6 @@ export class DocumentationComponent implements OnDestroy {
         const newUrl = `/documentation/${lang}/${this.router.url.split("/").slice(3).join("/")}`;
         await this.router.navigate([newUrl]);
     }
-
-    title: string = "";
-    url: string = "";
 
     ngOnDestroy() {
         window.onWikiChange.unsubscribe();

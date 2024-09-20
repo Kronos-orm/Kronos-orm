@@ -22,6 +22,8 @@ import com.kotlinorm.enums.KLogLevel
 import com.kotlinorm.interfaces.KLogger
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import java.nio.file.Files
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.io.path.Path
 
 /**
@@ -33,8 +35,8 @@ import kotlin.io.path.Path
  */
 class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
     companion object {
-        private var logLock = false
-        private var logTaskList = mutableListOf<LogTask>() // log task queue
+        private val synchronized = ReentrantLock()
+        private var logTaskList = ConcurrentLinkedQueue<LogTask>() // log task queue
         private const val SEMICOLON = ";"
 
         var logDateTimeFormat = "yyyy-MM-dd HH:mm:ss.SSS"
@@ -90,7 +92,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                     }
             )
         )
-        if (!logLock) executeLogTask()
+        executeLogTask()
     }
 
     override fun isDebugEnabled(): Boolean {
@@ -113,7 +115,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                     }
             )
         )
-        if (!logLock) executeLogTask()
+       executeLogTask()
     }
 
     override fun isInfoEnabled(): Boolean {
@@ -136,7 +138,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                     }
             )
         )
-        if (!logLock) executeLogTask()
+        executeLogTask()
     }
 
     override fun isWarnEnabled(): Boolean {
@@ -159,7 +161,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                     }
             )
         )
-        if (!logLock) executeLogTask()
+        executeLogTask()
     }
 
     override fun isErrorEnabled(): Boolean {
@@ -182,36 +184,39 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
                     }
             )
         )
-        if (!logLock) executeLogTask()
+        executeLogTask()
     }
 
     /**
      * Executes the log task asynchronously.
      */
     private fun executeLogTask() {
-        Runnable {
-            logLock = true
-            while (logTaskList.isNotEmpty()) {
-                val logTask = logTaskList.first()
-                logPath.forEach { path ->
-                    if (path == "console") {
-                        logTask.messages.forEach { message ->
-                            message.print(logTask.level)
-                        }
-                    } else {
-                        val directory = Path(path)
-                        if (!Files.exists(directory)) {
-                            Files.createDirectories(directory)
-                        }
-                        val logFileName = logFileNameRule()
-                        logTask.messages.forEach { message ->
-                            message.write(Path(path, logFileName))
+        if (synchronized.tryLock()) { // 尝试获取锁
+            Runnable {
+                try {
+                    while (logTaskList.isNotEmpty()) {
+                        val logTask = logTaskList.poll()
+                        logPath.forEach { path ->
+                            if (path == "console") {
+                                logTask.messages.forEach { message ->
+                                    message.print(logTask.level)
+                                }
+                            } else {
+                                val directory = Path(path)
+                                if (!Files.exists(directory)) {
+                                    Files.createDirectories(directory)
+                                }
+                                val logFileName = logFileNameRule()
+                                logTask.messages.forEach { message ->
+                                    message.write(Path(path, logFileName))
+                                }
+                            }
                         }
                     }
+                } finally {
+                    synchronized.unlock()
                 }
-                logTaskList.removeFirst()
-            }
-            logLock = false
-        }.run()
+            }.run()
+        }
     }
 }

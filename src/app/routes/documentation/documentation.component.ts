@@ -1,6 +1,6 @@
 import {Component, EventEmitter, OnDestroy, ViewChild} from '@angular/core';
 import {SharedModule} from "../../shared.module";
-import {KronosNgDocSidebarComponent} from "../../components/kronosNgDocSidebar/kronos-ng-doc-sidebar.component";
+import {KronosNgDocSidebarComponent} from "../../components/kronos-ng-doc-sidebar/kronos-ng-doc-sidebar.component";
 import {AppService} from "../../app.service";
 import {TranslocoService} from "@jsverse/transloco";
 import {ActivatedRoute, Router} from "@angular/router";

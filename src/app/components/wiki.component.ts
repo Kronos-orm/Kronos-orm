@@ -1,14 +1,10 @@
-import {
-  Component, EventEmitter, ViewChild,
-} from '@angular/core';
+import {Component, EventEmitter, ViewChild,} from '@angular/core';
 import {SharedModule} from "../shared.module";
 import {AnimateOnScrollModule} from "primeng/animateonscroll";
 import {NG_DOC_ROUTING} from "@ng-doc/generated";
 import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {OverlayPanel} from "primeng/overlaypanel";
 import {AppService} from "../app.service";
-import {TranslocoService} from "@jsverse/transloco";
-import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'document-wiki',

@@ -5,10 +5,12 @@
 
 ## 1. 一对多级联关系
 
-本节将介绍如何在Kronos中定义一对多级联关系。
+本节将介绍如何使用Kronos中定义的一对多级联关系的级联删除。
 
 ### 数据类定义
 首先，我们定义以下的`Parent`和`Child`两个实体类，`Parent`实体类中包含了一个`Child`实体类的集合，`Child`实体类中包含了一个`Parent`实体类的引用。
+
+{{ $.annotation("@Cascade") }}注解支持设置级联删除操作的策略，如`CASCADE`、`RESTRICT`、`SET_NULL`等，默认为`NO_ACTION`，更多内容参考{{ $.keyword("concept/cascade-delete-action", ["级联删除策略"]) }}
 
 ```kotlin group="case1" name="Parent.kt" icon="kotlin"
 data class Parent(
@@ -29,7 +31,7 @@ data class Child(
 )
 ```
 
-### 级联插入
+### 级联删除
 使用`KPojo.insert()`方法，可以实现一对多级联关系的级联插入。
 
 在Kronos中，仅支持`Parent -> Child`方向的级联插入。

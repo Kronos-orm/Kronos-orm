@@ -3,9 +3,64 @@
 
 本文将指导您如何使用Kronos的级联插入功能。
 
-## 1. 一对多级联关系
+
+## 1. 一对一级联关系
 
 本节将介绍对于Kronos中定义的一对多级联关系的级联插入。
+
+### 数据类定义
+
+我们定义`User`和`Profile`两个实体类，`User`实体类中包含了一个`Profile`实体类的引用，`Profile`实体类中包含了一个`User`实体类的引用。
+
+```kotlin group="case3" name="User.kt" icon="kotlin"
+data class User(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var profileId: Long? = null,
+    @Cascade(["profileId"], ["id"])
+    var profile: Profile? = null
+)
+```
+
+```kotlin group="case3" name="Profile.kt" icon="kotlin"
+data class Profile(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var userId: Long? = null,
+    @Cascade(["userId"], ["id"])
+    var user: User? = null
+)
+```
+
+### 级联插入
+
+插入`User`或`Profile`实体都可以进行级联插入，级联插入会自动为级联创建的实体的引用属性赋值（支持自增主键和多层级级联关系）。
+
+```kotlin
+User(
+    name = "user",
+    profile = Profile(
+        name = "profile"
+    )
+).insert().execute()
+```
+
+或者：
+
+```kotlin
+Profile(
+    name = "profile",
+    user = User(
+        name = "user"
+    )
+).insert().execute()
+```
+
+## 2. 一对多级联关系
+
+一对多关系和一对一关系的用法类似。
 
 ### 数据类定义
 首先，我们定义以下的`Parent`和`Child`两个实体类，`Parent`实体类中包含了一个`Child`实体类的集合，`Child`实体类中包含了一个`Parent`实体类的引用。
@@ -32,7 +87,7 @@ data class Child(
 ### 级联插入
 使用`KPojo.insert()`方法，可以实现一对多级联关系的级联插入。
 
-在Kronos中，仅支持`Parent -> Child`方向的级联插入。
+在Kronos中的一对多插入时，仅支持`Parent -> Child`方向的级联插入。
 
 在级联插入时不需要指定`Child`实体的`parentId`，级联插入会自动为`Child`实体的`parentId`赋值（支持自增主键和多层级级联关系）。
 
@@ -110,60 +165,6 @@ School(
                 )
             )
         )
-    )
-).insert().execute()
-```
-
-## 2. 一对一级联关系
-
-一对一关系和一对多关系的用法类似，但是级联插入时不限制插入的方向。
-
-### 数据类定义
-
-我们定义`User`和`Profile`两个实体类，`User`实体类中包含了一个`Profile`实体类的引用，`Profile`实体类中包含了一个`User`实体类的引用。
-
-```kotlin group="case3" name="User.kt" icon="kotlin"
-data class User(
-    @PrimaryKey
-    var id: Long? = null,
-    var name: String? = null,
-    var profileId: Long? = null,
-    @Cascade(["profileId"], ["id"])
-    var profile: Profile? = null
-)
-```
-
-```kotlin group="case3" name="Profile.kt" icon="kotlin"
-data class Profile(
-    @PrimaryKey
-    var id: Long? = null,
-    var name: String? = null,
-    var userId: Long? = null,
-    @Cascade(["userId"], ["id"])
-    var user: User? = null
-)
-```
-
-### 级联插入
-
-插入`User`或`Profile`实体都可以进行级联插入，级联插入会自动为级联创建的实体的引用属性赋值（支持自增主键和多层级级联关系）。
-
-```kotlin
-User(
-    name = "user",
-    profile = Profile(
-        name = "profile"
-    )
-).insert().execute()
-```
-
-或者：
-
-```kotlin
-Profile(
-    name = "profile",
-    user = User(
-        name = "user"
     )
 ).insert().execute()
 ```

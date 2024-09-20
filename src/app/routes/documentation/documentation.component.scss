@@ -23,6 +23,10 @@
     background: aliceblue !important;
   }
 
+  li.ngde::marker {
+    color: deeppink;
+  }
+
   .ngde {
     &.title {
       color: var(--ng-doc-primary);
@@ -81,7 +85,7 @@
     }
 
     .ng-doc-page-controls {
-      display: none!important;
+      display: none !important;
     }
   }
 
@@ -104,16 +108,6 @@
 
   .code-red {
     color: #FF0000;
-  }
-
-  pre {
-    margin: var(--ng-doc-code-margin);
-
-    code {
-      white-space: unset;
-      box-shadow: inset 0px 6px 6px rgba(16, 19, 19, 0.32);
-      background-color: var(--ng-doc-code-background);
-    }
   }
 
   h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.ngde + h5.ngde, h1.ngde + h6.ngde, h2.ngde + h1.ngde, h2.ngde + h2.ngde, h2.ngde + h3.ngde, h2.ngde + h4.ngde, h2.ngde + h5.ngde, h2.ngde + h6.ngde, h3.ngde + h1.ngde, h3.ngde + h2.ngde, h3.ngde + h3.ngde, h3.ngde + h4.ngde, h3.ngde + h5.ngde, h3.ngde + h6.ngde, h4.ngde + h1.ngde, h4.ngde + h2.ngde, h4.ngde + h3.ngde, h4.ngde + h4.ngde, h4.ngde + h5.ngde, h4.ngde + h6.ngde, h5.ngde + h1.ngde, h5.ngde + h2.ngde, h5.ngde + h3.ngde, h5.ngde + h4.ngde, h5.ngde + h5.ngde, h5.ngde + h6.ngde, h6.ngde + h1.ngde, h6.ngde + h2.ngde, h6.ngde + h3.ngde, h6.ngde + h4.ngde, h6.ngde + h5.ngde, h6.ngde + h6.ngde {

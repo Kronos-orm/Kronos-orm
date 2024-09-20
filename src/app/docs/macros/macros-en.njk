@@ -21,3 +21,11 @@
 {% macro params(paramList) -%}
     {{ common.params(["param", "description", "type", "default"], paramList) }}
 {%- endmacro %}
+
+{% macro members(memberList) -%}
+    {{ common.members(["name", "description", "default"], memberList) }}
+{%- endmacro %}
+
+{% macro noun(str) -%}
+    {{ common.noun(str, 'zh-CN') }}
+{%- endmacro %}

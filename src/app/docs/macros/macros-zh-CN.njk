@@ -26,6 +26,10 @@
     {{ common.params(["参数", "说明", "类型", "默认值"], paramList) }}
 {%- endmacro %}
 
+{% macro members(memberList) -%}
+    {{ common.members(["名称", "说明", "类型"], memberList) }}
+{%- endmacro %}
+
 {% macro noun(str) -%}
     {{ common.noun(str, 'zh-CN') }}
 {%- endmacro %}

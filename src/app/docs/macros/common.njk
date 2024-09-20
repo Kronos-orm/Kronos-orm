@@ -32,7 +32,9 @@
 
 {%- macro code(name, types) -%}
 <code class="ngde">
-    <span class="type" style="color: #c41d7f">{{- name | escape -}}</span>
+    {%- block type -%}
+        <span class="type" style="color: #c41d7f">{{- name | escape -}}</span>
+    {%- endblock -%}
     {%- if types != null -%}
     {%- block lt -%}
         <span style="color: #666">{{- "<" | escape -}}</span>
@@ -86,6 +88,33 @@
                             </code>
                         {%- endblock -%}
                     </td>
+                </tr>
+            {%- endfor -%}
+            </tbody>
+        {%- endblock -%}
+    </table>
+{%- endmacro %}
+
+{% macro members(headers, paramList) -%}
+    <table class="ngde" style="min-width: 692px">
+        {%- block mthead -%}
+            <thead class="ngde">
+            {%- block mtr -%}
+                <tr class="ngde">
+                    {%- for title in headers -%}
+                        <th class="ngde">{{ title }}</th>
+                    {%- endfor -%}
+                </tr>
+            {%- endblock -%}
+            </thead>
+        {%- endblock -%}
+        {%- block mtbody -%}
+            <tbody>
+            {%- for param in paramList -%}
+                <tr class="ngde">
+                    <td class="ngde" style="white-space: nowrap">{{ title(param[0]) }}</td>
+                    <td class="ngde" style="min-width: 150px">{{ param[1] }}</td>
+                    <td class="ngde">{{ parseString(param[2]) | escape }}</td>
                 </tr>
             {%- endfor -%}
             </tbody>

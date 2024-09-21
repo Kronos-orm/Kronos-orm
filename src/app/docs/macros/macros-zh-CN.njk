@@ -30,6 +30,9 @@
     {{ common.members(["名称", "说明", "类型"], memberList) }}
 {%- endmacro %}
 
-{% macro noun(str) -%}
-    {{ common.noun(str, 'zh-CN') }}
+{% macro noun(str, name, anchor) -%}
+    {%- if(anchor == null) -%}
+        {%- set anchor = name -%}
+    {%- endif -%}
+    {{ common.noun(str, 'zh-CN', name, anchor) }}
 {%- endmacro %}

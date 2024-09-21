@@ -19,9 +19,6 @@
 }
 
 :host ::ng-deep {
-  ng-doc-mermaid-viewer {
-    background: aliceblue !important;
-  }
 
   li.ngde::marker {
     color: deeppink;
@@ -76,8 +73,13 @@
   }
 
   .wiki_mode {
-    .ng-doc-header, ng-doc-page-navigation, footer {
+    .ng-doc-header, .ng-doc-sidenav, ng-doc-breadcrumb, ng-doc-page-navigation, footer {
       display: none;
+    }
+
+    .ng-doc-sidenav-content {
+      margin-left: 0 !important;
+      width: 100% !important;
     }
 
     main {

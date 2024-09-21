@@ -32,6 +32,15 @@ h1, h2, h3, h4, h5, h6 {
   --ng-doc-code-max-height: 1080px !important;
   --ng-doc-icon-width: 24px !important;
   --ng-doc-app-horizontal-padding: 5rem !important;
+  --ng-doc-mermaid-viewer-background: aliceblue;
+}
+
+:root[data-theme='dark']{
+  --ng-doc-mermaid-viewer-background: darkslategrey;
+}
+
+:root[data-theme='auto']{
+  --ng-doc-mermaid-viewer-background: gray;
 }
 
 img {
@@ -51,12 +60,19 @@ img {
   border-radius: 5px;
 }
 
-.wiki.p-overlaypanel {
+.wiki.p-dialog {
   color: var(--ng-doc-text) !important;
-  background-color: var(--ng-doc-background) !important;
+  background-color: transparent !important;
+  border-radius: 1rem !important;
+  overflow: hidden;
 
-  .p-overlaypanel-content {
-    padding: .5rem !important;
-    border-radius: .5rem;
+  .p-dialog-header {
+    padding: .5rem 0 0;
+    background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
+  }
+
+  .p-dialog-content {
+    padding: 1rem;
+    background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
   }
 }

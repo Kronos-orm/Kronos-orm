@@ -3,6 +3,6 @@ import {EventEmitter} from "@angular/core";
 
 declare global {
     interface Window {
-        onWikiChange: EventEmitter<{ id: string, event: MouseEvent }>;
+        onWikiChange: EventEmitter<{ id: string, anchor: string }>;
     }
 }

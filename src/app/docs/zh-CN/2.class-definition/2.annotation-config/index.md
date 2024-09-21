@@ -29,8 +29,8 @@ data class User(
 {{$.params([
   ['name', '索引名', 'String'],
   ['columns', '索引列名', 'Array<String>'],
-  ['type', $.keyword("concept/table-index", ["索引类型"]), 'String', '数据库类型默认'],
-  ['method', $.keyword("concept/table-index", ["索引方法"]), 'String', '数据库类型默认'],
+  ['type', $.noun("table-index", "索引类型"), 'String', '数据库类型默认'],
+  ['method', $.noun("table-index", "索引方法"), 'String', '数据库类型默认'],
   ['concurrently', '是否并发创建索引，<b>仅适用于 PostgreSQL</b>', 'Boolean', false]
 ])}}
 

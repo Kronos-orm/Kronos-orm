@@ -32,13 +32,8 @@ export class DocumentationComponent implements OnDestroy {
     constructor(
         private appService: AppService,
         private translocoService: TranslocoService,
-        private router: Router,
-        private activatedRoute: ActivatedRoute) {
-        activatedRoute.queryParams.subscribe(params => {
-            if (params.wiki) {
-                this.wikiMode = true;
-            }
-        });
+        private router: Router) {
+        this.wikiMode = window.frames.length !== parent.frames.length;
     }
 
     get language(): string {

@@ -55,7 +55,6 @@ import kotlin.reflect.KProperty
  */
 class UpsertClause<T : KPojo>(
     private val pojo: T,
-    private var isExcept: Boolean = false,
     private var setUpsertFields: ToSelect<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
@@ -77,15 +76,6 @@ class UpsertClause<T : KPojo>(
                 setUpsertFields!!(it)
                 toUpdateFields += fields
             }
-        }
-    }
-
-    private fun updateUpsertFields(updateOnFields: Boolean = false): (Field, Any?) -> Unit {
-        return { field: Field, value: Any? ->
-            toInsertFields += field
-            toUpdateFields -= field
-            if (updateOnFields) onFields += field
-            paramMap[field.name] = value
         }
     }
 
@@ -140,10 +130,6 @@ class UpsertClause<T : KPojo>(
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         val dataSource = wrapper.orDefault()
-
-        if (isExcept) {
-            toUpdateFields = (allFields - toUpdateFields.toSet()) as LinkedHashSet<Field>
-        }
 
         if (toInsertFields.isEmpty()) {
             toInsertFields = allFields.filter { null != paramMap[it.name] }.toLinkedSet()

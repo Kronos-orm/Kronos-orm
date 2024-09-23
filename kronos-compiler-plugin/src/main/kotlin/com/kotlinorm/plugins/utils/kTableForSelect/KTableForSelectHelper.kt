@@ -19,10 +19,10 @@ package com.kotlinorm.plugins.utils.kTableForSelect
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.extensionBy
-import com.kotlinorm.plugins.utils.getKColumnType
+import com.kotlinorm.plugins.utils.*
 import com.kotlinorm.plugins.utils.fieldSymbol
-import com.kotlinorm.plugins.utils.funcName
-import com.kotlinorm.plugins.utils.getColumnName
+import com.kotlinorm.plugins.utils.getKColumnType
+import com.kotlinorm.plugins.utils.kTableForCondition.analyzeMinusExpression
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.properties
 
 /**
  * Adds a list of fields to the given IrReturn by gathering field names and applying the `addField` operation to each name.
@@ -75,6 +76,17 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
 
         is IrCall -> {
             when (element.origin) {
+                IrStatementOrigin.MINUS -> {
+                    val (irClass, _, excludes) = analyzeMinusExpression(element)
+                    irClass.properties.forEach { prop ->
+                        if (prop.isColumn() && prop.name.asString() !in excludes) {
+                            fieldNames.add(
+                                getColumnName(prop)
+                            )
+                        }
+                    }
+                }
+
                 IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。

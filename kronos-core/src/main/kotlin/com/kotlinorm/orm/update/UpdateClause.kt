@@ -59,7 +59,6 @@ import kotlin.reflect.KProperty
  */
 class UpdateClause<T : KPojo>(
     private val pojo: T,
-    private var isExcept: Boolean = false,
     private var setUpdateFields: ToSelect<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
@@ -125,11 +124,7 @@ class UpdateClause<T : KPojo>(
                 paramMapNew[assignField + "2MinusNew"] = assign.second
             }
 
-            if (isExcept) {
-                toUpdateFields -= fields.toSet()
-            } else {
-                toUpdateFields += fields
-            }
+            toUpdateFields += fields
             paramMapNew.putAll(fieldParamMap.map { e -> e.key + "New" to e.value })
         }
         return this
@@ -206,16 +201,6 @@ class UpdateClause<T : KPojo>(
             condition = allFields.filter { it.isColumn }.mapNotNull { field ->
                 field.eq(paramMap[field.name]).takeIf { it.value != null }
             }.toCriteria()
-        }
-
-        // 处理字段更新逻辑，如果isExcept为true，则移除特定字段，否则更新所有字段
-        if (isExcept) {
-            // 移除指定字段并处理"create_time"字段的特殊情况
-            toUpdateFields = (allFields.filter { it.isColumn } - toUpdateFields.toSet()).toLinkedSet()
-            // 为更新的字段生成新的参数映射
-            toUpdateFields.forEach {
-                paramMapNew[it + "New"] = paramMap[it.name]
-            }
         }
 
         // 如果没有指定字段需要更新，则更新所有字段

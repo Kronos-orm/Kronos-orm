@@ -44,6 +44,13 @@ open class KTableForSelect<T : KPojo> {
      * @return an integer value of 1.
      */
     operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Int = 1
+    /**
+     * Overloaded operator function that minus two objects of type Any?.
+     *
+     * @param other the object to be added to this object.
+     * @return an integer value of 1.
+     */
+    operator fun KPojo?.minus(@Suppress("UNUSED_PARAMETER") other: Any?) = this
 
     /**
      * Sets an alias for the given object.

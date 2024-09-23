@@ -211,7 +211,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         if (irClass?.kotlinFqName == KPojoFqName) {
                             if (extensionReceiver is IrCallImpl && extensionReceiver.asIrCall().origin == IrStatementOrigin.MINUS) {
                                 type = "AND"
-                                val (kPojoClass, kPojo, excludes) = getExcludes(element.extensionReceiver!!.asIrCall())
+                                val (kPojoClass, kPojo, excludes) = analyzeMinusExpression(element.extensionReceiver!!.asIrCall())
                                 generateEq(kPojoClass, kPojo, excludes)
                             } else if (irClass.superTypes.any { it.classFqName == KPojoFqName }) {
                                 type = "AND"
@@ -331,8 +331,8 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
     ).toIrVariable()
 }
 
-context(IrBlockBuilder, IrPluginContext, IrFunction)
-fun getExcludes(irCall: IrCall): Triple<IrClass, IrExpression, List<String>> {
+context(IrPluginContext)
+fun analyzeMinusExpression(irCall: IrCall): Triple<IrClass, IrExpression, List<String>> {
     val (kPojo, properties) = getIrMinusParent(irCall)
     return Triple(
         kPojo.type.getClass()!!,
@@ -341,7 +341,7 @@ fun getExcludes(irCall: IrCall): Triple<IrClass, IrExpression, List<String>> {
     )
 }
 
-context(IrBlockBuilder, IrPluginContext, IrFunction)
+context(IrPluginContext)
 fun getIrMinusParent(irCall: IrCall): Pair<IrExpression, List<String>> {
     val property = listOfNotNull(
         irCall.valueArguments.find { it is IrCallImpl && it.origin == IrStatementOrigin.GET_PROPERTY }?.funcName()

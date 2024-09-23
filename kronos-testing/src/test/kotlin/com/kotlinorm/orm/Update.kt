@@ -9,7 +9,6 @@ import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
-import com.kotlinorm.orm.update.updateExcept
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.test.Test
@@ -123,7 +122,7 @@ class Update {
 
     @Test
     fun testUpdateExceptWithSetAndBy() {
-        val (sql, paramMap) = testUser.updateExcept { it.username }
+        val (sql, paramMap) = testUser.update { it - it.username }
             .by { it.id }
             .build()
 
@@ -826,7 +825,7 @@ class Update {
 
     @Test
     fun testUpdateExceptWithSet() {
-        val (sql, paramMap) = testUser.updateExcept { it.username }
+        val (sql, paramMap) = testUser.update { it - it.username }
             .set { it.id = 1 }
             .by { it.id }
             .build()
@@ -905,7 +904,7 @@ class Update {
 
     @Test
     fun testBatchUpdateExceptBy() {
-        val (sql, _, list) = arrayOf(user, testUser).updateExcept { it.username }.by { it.id }.build()
+        val (sql, _, list) = arrayOf(user, testUser).update { it - it.username }.by { it.id }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -953,7 +952,7 @@ class Update {
 
     @Test
     fun testBatchUpdateIterWhere() {
-        val (sql, _, list) = listOf(user, testUser).updateExcept { it.username }.where { it.id.eq }.build()
+        val (sql, _, list) = listOf(user, testUser).update { it - it.username }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -980,7 +979,7 @@ class Update {
 
     @Test
     fun testBatchUpdateExceptIterWhere() {
-        val (sql, _, list) = listOf(user, testUser).updateExcept { it.gender }.where { it.id.eq }.build()
+        val (sql, _, list) = listOf(user, testUser).update { it - it.id }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql

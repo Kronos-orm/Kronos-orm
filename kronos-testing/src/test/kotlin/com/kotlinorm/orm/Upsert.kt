@@ -5,7 +5,6 @@ import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.build
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
 import com.kotlinorm.orm.upsert.upsert
-import com.kotlinorm.orm.upsert.upsertExcept
 import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import kotlin.test.Test
@@ -134,7 +133,7 @@ class Upsert {
     @Test
     fun testUpsertExcept() {
         val testUser = MysqlUser(1, "test")
-        val (sql, paramMap) = testUser.upsertExcept { it.username }
+        val (sql, paramMap) = testUser.upsert { it - it.username }
             .on { it.id }.build()
 
         assertEquals(

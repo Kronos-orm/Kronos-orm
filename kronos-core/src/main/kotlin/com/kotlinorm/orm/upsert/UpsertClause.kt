@@ -18,7 +18,7 @@ package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
@@ -34,7 +34,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
-import com.kotlinorm.types.KTableField
+import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
@@ -56,7 +56,7 @@ import kotlin.reflect.KProperty
 class UpsertClause<T : KPojo>(
     private val pojo: T,
     private var isExcept: Boolean = false,
-    private var setUpsertFields: KTableField<T, Any?> = null
+    private var setUpsertFields: ToSelect<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
@@ -73,7 +73,7 @@ class UpsertClause<T : KPojo>(
 
     init {
         if (setUpsertFields != null) {
-            pojo.tableRun {
+            pojo.afterSelect {
                 setUpsertFields!!(it)
                 toUpdateFields += fields
             }
@@ -96,9 +96,9 @@ class UpsertClause<T : KPojo>(
      * @throws NeedFieldsException if the new value is null
      * @return the upsert UpdateClause object
      */
-    fun on(someFields: KTableField<T, Any?>): UpsertClause<T> {
+    fun on(someFields: ToSelect<T, Any?>): UpsertClause<T> {
         if (null == someFields) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSelect {
             someFields(it)
             onFields += fields.toSet()
         }
@@ -205,7 +205,7 @@ class UpsertClause<T : KPojo>(
     }
 
     companion object {
-        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: KTableField<T, Unit>): List<UpsertClause<T>> {
+        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: ToSelect<T, Unit>): List<UpsertClause<T>> {
             return map { it.on(someFields) }
         }
 

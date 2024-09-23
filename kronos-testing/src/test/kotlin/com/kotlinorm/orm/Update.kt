@@ -1,7 +1,6 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.orm.beans.Movie
@@ -36,9 +35,13 @@ class Update {
         val (sql, paramMap) =
             user.update()
                 .set {
-                    Field("username").setValue("123")
+                    it["username"].setValue("123")
                     it.username = "123"
                     it.gender = 1
+                    it.gender += 10
+                    it["gender"] += 12
+                    it.gender -= 10
+                    it["gender"] -= 12
                 }
                 .by { it.id }
                 .build()

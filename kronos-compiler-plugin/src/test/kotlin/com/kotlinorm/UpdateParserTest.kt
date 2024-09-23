@@ -23,7 +23,7 @@ class UpdateParserTest {
       import com.kotlinorm.annotations.Table
       import com.kotlinorm.annotations.UpdateTime
       import com.kotlinorm.annotations.LogicDelete
-      import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+      import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
       import com.kotlinorm.beans.dsl.KPojo
       import com.kotlinorm.orm.update.UpdateClause.Companion.by
       import com.kotlinorm.orm.update.UpdateClause.Companion.execute
@@ -50,7 +50,11 @@ class UpdateParserTest {
         val testUser = User(1, "test")
 
         
-        testUser.update { it.username }
+        testUser.update()
+            .set{
+                  it["id"] += 10
+                  it.id += 1
+              }
             .where{ it.id == 1 }.execute()
       }
       """.trimIndent()

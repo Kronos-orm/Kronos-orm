@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.plugins.transformer.criteria
+package com.kotlinorm.plugins.transformer.kTable
 
-import com.kotlinorm.plugins.utils.kTableConditional.setCriteriaIr
+import com.kotlinorm.plugins.utils.kTableForCondition.setCriteriaIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -56,7 +56,7 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  *          KTableConditional<T>().action(this)
  *    }
  **/
-class CriteriaParseReturnTransformer(
+class KTableParserForConditionTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction
 ) : IrElementTransformerVoidWithContext() {

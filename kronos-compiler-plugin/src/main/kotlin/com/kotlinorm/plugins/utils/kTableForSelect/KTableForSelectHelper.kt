@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.plugins.utils.kTable
+package com.kotlinorm.plugins.utils.kTableForSelect
 
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.extensionBy
-import com.kotlinorm.plugins.helpers.referenceClass
 import com.kotlinorm.plugins.utils.getKColumnType
-import com.kotlinorm.plugins.utils.kTableConditional.funcName
+import com.kotlinorm.plugins.utils.fieldSymbol
+import com.kotlinorm.plugins.utils.funcName
+import com.kotlinorm.plugins.utils.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -31,11 +32,6 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
-
-
-context(IrPluginContext)
-internal val fieldSymbol
-    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 /**
  * Adds a list of fields to the given IrReturn by gathering field names and applying the `addField` operation to each name.

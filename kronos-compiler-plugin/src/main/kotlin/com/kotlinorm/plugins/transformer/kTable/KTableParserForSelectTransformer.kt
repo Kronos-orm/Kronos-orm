@@ -16,7 +16,7 @@
 
 package com.kotlinorm.plugins.transformer.kTable
 
-import com.kotlinorm.plugins.utils.kTable.addFieldList
+import com.kotlinorm.plugins.utils.kTableForSelect.addFieldList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -35,26 +35,31 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  * Roughly speaking, the transform will turn the following:
  *
  *     // file: Foo.kt
+ *     ```kotlin
  *     fun <T: KPojo> T.foo() {
- *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
- *              it.username + it.password
+ *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
+ *              it.username + it.password + it.createTime.`as`("time")
  *          }
  *          KTable<T>().action(this)
  *     }
+ *     ```
  *
  * into the following equivalent representation:
  *
  *    // file: Foo.kt
+ *    ```kotlin
  *     fun <T: KPojo> foo() {
- *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
  *              addField(Field("username"))
  *              addField(Field("password"))
- *              it.username + it.password
+ *              addField(Field("password").setAlias("time"))
+ *              it.username + it.password + it.createTime.`as`("time")
  *          }
  *          KTable<T>().action(this)
  *    }
+ *    ```
  */
-class KTableAddFieldTransformer(
+class KTableParserForSelectTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction
 ) : IrElementTransformerVoidWithContext() {

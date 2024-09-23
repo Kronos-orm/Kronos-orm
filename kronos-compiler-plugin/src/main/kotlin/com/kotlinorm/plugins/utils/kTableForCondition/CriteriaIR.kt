@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.plugins.utils.kTableConditional
+package com.kotlinorm.plugins.utils.kTableForCondition
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder

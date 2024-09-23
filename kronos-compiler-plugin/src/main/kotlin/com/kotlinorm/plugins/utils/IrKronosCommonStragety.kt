@@ -17,7 +17,6 @@
 package com.kotlinorm.plugins.utils
 
 import com.kotlinorm.plugins.helpers.*
-import com.kotlinorm.plugins.utils.kTable.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean

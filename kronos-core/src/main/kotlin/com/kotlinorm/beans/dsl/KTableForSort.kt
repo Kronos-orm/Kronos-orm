@@ -22,27 +22,27 @@ import com.kotlinorm.enums.SortType.Companion.Asc
 import com.kotlinorm.enums.SortType.Companion.Desc
 
 /**
- * KTableSortable
+ * KTableForSort
  *
  * DSL Class of Kronos, which the compiler plugin use to generate the `order by` code.
  * @param T the type of the table
  */
-class KTableSortable<T : KPojo> : KTable<T>() {
-    internal val sortFields = mutableListOf<Pair<Field, SortType>>()
+class KTableForSort<T : KPojo>: KTableForSelect<T>() {
+    internal val sortedFields = mutableListOf<Pair<Field, SortType>>()
 
     @Suppress("UNCHECKED_CAST", "UNUSED")
     fun addSortField(field: Any) {
         when (field) {
             is Pair<*, *> -> {
-                sortFields.add(field as Pair<Field, SortType>)
+                sortedFields.add(field as Pair<Field, SortType>)
             }
 
             is String -> {
-                sortFields.add(Field(field, field, type = CUSTOM_CRITERIA_SQL) to Asc)
+                sortedFields.add(Field(field, field, type = CUSTOM_CRITERIA_SQL) to Asc)
             }
 
             else -> {
-                sortFields.add((field to Asc) as Pair<Field, SortType>)
+                sortedFields.add((field to Asc) as Pair<Field, SortType>)
             }
         }
     }
@@ -67,7 +67,7 @@ class KTableSortable<T : KPojo> : KTable<T>() {
          * @param block The block of code to be applied to the KTable instance.
          * @return The resulting KTable instance after applying the block.
          */
-        fun <T : KPojo> T.sortableRun(block: KTableSortable<T>.(T) -> Unit) =
-            KTableSortable<T>().block(this)
+        fun <T : KPojo> T.afterSort(block: KTableForSort<T>.(T) -> Unit) =
+            KTableForSort<T>().block(this)
     }
 }

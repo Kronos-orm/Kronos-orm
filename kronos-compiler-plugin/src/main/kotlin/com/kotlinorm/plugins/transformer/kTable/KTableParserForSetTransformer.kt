@@ -16,7 +16,7 @@
 
 package com.kotlinorm.plugins.transformer.kTable
 
-import com.kotlinorm.plugins.utils.kTable.putFieldParamMap
+import com.kotlinorm.plugins.utils.kTableForSet.putFieldParamMap
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -24,7 +24,6 @@ import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 
 /**
  * KTable Add Param Transformer
@@ -35,19 +34,22 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
  * Roughly speaking, the transform will turn the following:
  *
  *     // file: Foo.kt
+ *     ```kotlin
  *     fun <T: KPojo> T.foo() {
- *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *          val action: (KTableForSet<T>.(T) -> Unit) = { it: T ->
  *              it.username = "Hello World"
  *              it.password = "123456"
  *          }
  *          KTable<T>().action(this)
  *     }
+ *     ```
  *
  * into the following equivalent representation:
  *
  *    // file: Foo.kt
+ *     ```kotlin
  *     fun <T: KPojo> foo() {
- *          val action: (KTable<T>.(T) -> Unit) = { it: T ->
+ *          val action: (KTableForSet<T>.(T) -> Unit) = { it: T ->
  *              setValue(Field("username"), "Hello World")
  *              setValue(Field("password"), "123456")
  *              it.username = "Hello World"
@@ -55,8 +57,9 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
  *          }
  *          KTable<T>().action(this)
  *    }
+ *    ```
  */
-class KTableAddParamTransformer(
+class KTableParserForSetTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction
 ) : IrElementTransformerVoidWithContext() {

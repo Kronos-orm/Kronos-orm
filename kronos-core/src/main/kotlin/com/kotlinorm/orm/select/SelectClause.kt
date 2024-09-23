@@ -20,9 +20,9 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
-import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
-import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
-import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
+import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
@@ -37,9 +37,9 @@ import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
 import com.kotlinorm.orm.pagination.PagedClause
-import com.kotlinorm.types.KTableConditionalField
-import com.kotlinorm.types.KTableField
-import com.kotlinorm.types.KTableSortableField
+import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToSelect
+import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
@@ -51,7 +51,7 @@ import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KProperty
 
 class SelectClause<T : KPojo>(
-    override val pojo: T, setSelectFields: KTableField<T, Any?> = null
+    override val pojo: T, setSelectFields: ToSelect<T, Any?> = null
 ) : KSelectable<T>(pojo) {
     private var tableName = pojo.kronosTableName()
     internal var paramMap = pojo.toDataMap()
@@ -91,7 +91,7 @@ class SelectClause<T : KPojo>(
      */
     init {
         if (setSelectFields != null) {
-            pojo.tableRun {
+            pojo.afterSelect {
                 setSelectFields(it) // 设置选择的字段
                 selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
                 if (selectFields.isNotEmpty()) {
@@ -119,17 +119,17 @@ class SelectClause<T : KPojo>(
     /**
      * 根据指定的字段对当前对象进行排序。
      *
-     * @param someFields 可排序字段的集合，这里的字段类型为 [KTableSortableField]，单位为 [Unit]。
+     * @param someFields 可排序字段的集合，这里的字段类型为 [ToSort]，单位为 [Unit]。
      *                   该参数指定了排序时所依据的字段。
      * @return 返回 [SelectClause] 对象，允许链式调用。
      */
-    fun orderBy(someFields: KTableSortableField<T, Any?>): SelectClause<T> {
+    fun orderBy(someFields: ToSort<T, Any?>): SelectClause<T> {
         if (someFields == null) throw NeedFieldsException()
 
         orderEnabled = true
-        pojo.sortableRun {
+        pojo.afterSort {
             someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
-            orderByFields = sortFields.toLinkedSet()
+            orderByFields = sortedFields.toLinkedSet()
         }
         return this // 返回当前对象，允许继续进行其他查询操作。
     }
@@ -142,11 +142,11 @@ class SelectClause<T : KPojo>(
      * @return 返回 SelectClause<T> 实例，允许链式调用。
      * @throws NeedFieldsException 如果 someFields 为空，则抛出此异常。
      */
-    fun groupBy(someFields: KTableField<T, Any?>): SelectClause<T> {
+    fun groupBy(someFields: ToSelect<T, Any?>): SelectClause<T> {
         groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (someFields == null) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSelect {
             someFields(it)
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
@@ -193,10 +193,10 @@ class SelectClause<T : KPojo>(
      *                   不能为空，否则会抛出NeedFieldsException异常。
      * @return 返回当前SelectClause实例，允许链式调用。
      */
-    fun by(someFields: KTableField<T, Any?>): SelectClause<T> {
+    fun by(someFields: ToSelect<T, Any?>): SelectClause<T> {
         // 检查someFields是否为空，为空则抛出异常
         if (someFields == null) throw NeedFieldsException()
-        pojo.tableRun { t ->
+        pojo.afterSelect { t ->
             // 执行someFields中定义的查询逻辑
             someFields(t)
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
@@ -209,13 +209,13 @@ class SelectClause<T : KPojo>(
     /**
      * 根据提供的选择条件构建查询条件。
      *
-     * @param selectCondition 一个函数，用于定义条件查询。该函数接收一个 [KTableConditionalField] 类型的参数，
+     * @param selectCondition 一个函数，用于定义条件查询。该函数接收一个 [ToFilter] 类型的参数，
      *                        并返回一个 [Boolean]? 类型的值，用于指定条件是否成立。如果为 null，则表示选择所有字段。
      * @return [SelectClause] 的实例，代表了一个查询的选择子句。
      */
-    fun where(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
+    fun where(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T> {
         if (selectCondition == null) return this
-        pojo.conditionalRun {
+        pojo.afterFilter {
             propParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
             condition = criteria // 设置查询条件
@@ -231,11 +231,11 @@ class SelectClause<T : KPojo>(
      * @return 返回SelectClause类型的实例，允许链式调用。
      * @throws NeedFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
      */
-    fun having(selectCondition: KTableConditionalField<T, Boolean?> = null): SelectClause<T> {
+    fun having(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T> {
         havingEnabled = true // 标记为HAVING条件
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
-        pojo.conditionalRun {
+        pojo.afterFilter {
             propParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
             havingCondition = criteria // 设置HAVING条件
@@ -389,7 +389,7 @@ class SelectClause<T : KPojo>(
 
     companion object {
 
-        fun <T : KPojo> Iterable<SelectClause<T>>.by(someFields: KTableField<T, Any?>): List<SelectClause<T>> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.by(someFields: ToSelect<T, Any?>): List<SelectClause<T>> {
             return map { it.by(someFields) }
         }
 
@@ -406,7 +406,7 @@ class SelectClause<T : KPojo>(
          * @param selectCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Iterable<SelectClause<T>>.where(selectCondition: KTableConditionalField<T, Boolean?> = null): List<SelectClause<T>> {
+        fun <T : KPojo> Iterable<SelectClause<T>>.where(selectCondition: ToFilter<T, Boolean?> = null): List<SelectClause<T>> {
             return map { it.where(selectCondition) }
         }
 

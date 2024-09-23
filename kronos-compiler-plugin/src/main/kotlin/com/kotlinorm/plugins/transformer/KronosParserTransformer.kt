@@ -17,13 +17,14 @@
 package com.kotlinorm.plugins.transformer
 
 import com.kotlinorm.plugins.helpers.referenceFunctions
-import com.kotlinorm.plugins.transformer.criteria.CriteriaParseReturnTransformer
-import com.kotlinorm.plugins.transformer.kTable.KTableAddFieldTransformer
-import com.kotlinorm.plugins.transformer.kTable.KTableAddParamTransformer
-import com.kotlinorm.plugins.transformer.kTable.KTableSortableParseReturnTransformer
-import com.kotlinorm.plugins.utils.kTable.KTABLE_CLASS
-import com.kotlinorm.plugins.utils.kTableConditional.KTABLE_CONDITIONAL_CLASS
-import com.kotlinorm.plugins.utils.kTableSortType.KTABLE_SORTABLE_CLASS
+import com.kotlinorm.plugins.transformer.kTable.KTableParserForConditionTransformer
+import com.kotlinorm.plugins.transformer.kTable.KTableParserForSelectTransformer
+import com.kotlinorm.plugins.transformer.kTable.KTableParserForSetTransformer
+import com.kotlinorm.plugins.transformer.kTable.KTableParserForSortReturnTransformer
+import com.kotlinorm.plugins.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
+import com.kotlinorm.plugins.utils.kTableForSelect.KTABLE_FOR_SELECT_CLASS
+import com.kotlinorm.plugins.utils.kTableForSet.KTABLE_FOR_SET_CLASS
+import com.kotlinorm.plugins.utils.kTableForSort.KTABLE_FOR_SORT_CLASS
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -66,9 +67,10 @@ class KronosParserTransformer(
      */
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
         when (declaration.extensionReceiverParameter?.type?.classFqName?.asString()) {
-            KTABLE_CLASS -> declaration.body = transformKTable(declaration)
-            KTABLE_CONDITIONAL_CLASS -> declaration.body = transformKTableConditional(declaration)
-            KTABLE_SORTABLE_CLASS -> declaration.body = transformKTableSortable(declaration)
+            KTABLE_FOR_SELECT_CLASS -> declaration.body = transformKTableForSelect(declaration)
+            KTABLE_FOR_SET_CLASS -> declaration.body = transformKTableForSet(declaration)
+            KTABLE_FOR_CONDITION_CLASS -> declaration.body = transformKTableForCondition(declaration)
+            KTABLE_FOR_SORT_CLASS -> declaration.body = transformKTableForSort(declaration)
         }
         return super.visitFunctionNew(declaration)
     }
@@ -93,14 +95,31 @@ class KronosParserTransformer(
      * @param irFunction the [IrFunction] to be transformed
      * @return the transformed IrBlockBody representing the ktable declaration
      */
-    private fun transformKTable(
+    private fun transformKTableForSelect(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock {
                 +irFunction.body!!.statements
-            }.transform(KTableAddFieldTransformer(pluginContext, irFunction), null)
-                .transform(KTableAddParamTransformer(pluginContext, irFunction), null)
+            }
+                .transform(KTableParserForSelectTransformer(pluginContext, irFunction), null)
+        }
+    }
+
+    /**
+     * Transforms the given IrFunction representing a ktable declaration into an IrBlockBody.
+     *
+     * @param irFunction the [IrFunction] to be transformed
+     * @return the transformed IrBlockBody representing the ktable declaration
+     */
+    private fun transformKTableForSet(
+        irFunction: IrFunction
+    ): IrBlockBody {
+        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
+            +irBlock {
+                +irFunction.body!!.statements
+            }
+                .transform(KTableParserForSetTransformer(pluginContext, irFunction), null)
         }
     }
 
@@ -110,13 +129,13 @@ class KronosParserTransformer(
      * @param irFunction the [IrFunction] to be transformed
      * @return the transformed IrBlockBody representing the ktable conditional declaration
      */
-    private fun transformKTableConditional(
+    private fun transformKTableForCondition(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock(resultType = irFunction.returnType) {
                 +irFunction.body!!.statements
-            }.transform(CriteriaParseReturnTransformer(pluginContext, irFunction), null)
+            }.transform(KTableParserForConditionTransformer(pluginContext, irFunction), null)
         }
     }
 
@@ -126,14 +145,14 @@ class KronosParserTransformer(
      * @param irFunction the IrFunction to be transformed
      * @return the transformed IrBlockBody representing the ktable sortable declaration
      */
-    private fun transformKTableSortable(
+    private fun transformKTableForSort(
         irFunction: IrFunction
     ): IrBlockBody {
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
             +irBlock(resultType = irFunction.returnType) {
                 +irFunction.body!!.statements
             }
-                .transform(KTableSortableParseReturnTransformer(pluginContext, irFunction), null)
+                .transform(KTableParserForSortReturnTransformer(pluginContext, irFunction), null)
         }
     }
 }

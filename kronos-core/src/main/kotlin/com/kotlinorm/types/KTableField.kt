@@ -16,35 +16,9 @@
 
 package com.kotlinorm.types
 
-import com.kotlinorm.beans.dsl.KTable
-import com.kotlinorm.beans.dsl.KTableConditional
-import com.kotlinorm.beans.dsl.KTableSortable
+import com.kotlinorm.beans.dsl.*
 
-typealias KTableField<T, R> = (KTable<T>.(it: T) -> R)?
-typealias KTableSortableField<T, R> = (KTableSortable<T>.(it: T) -> R)?
-typealias KTableConditionalField<T, R> = (KTableConditional<T>.(it: T) -> R)?
-//
-//
-//class Company {
-//    fun work() {
-//
-//    }
-//
-//    fun main() {
-//        work()
-//    }
-////
-////    fun a(content: String){
-////        work()
-////        print(content)
-////    }
-//}
-//
-//fun main() {
-//    Company().work()
-//    val a: Company.(content: String) -> Unit = {
-//        work()
-//        print(it)
-//    }
-//    Company().a("something")
-//}
+typealias ToSelect<T, R> = (KTableForSelect<T>.(it: T) -> R)?
+typealias ToSet<T, R> = (KTableForSet<T>.(it: T) -> R)?
+typealias ToSort<T, R> = (KTableForSort<T>.(it: T) -> R)?
+typealias ToFilter<T, R> = (KTableForCondition<T>.(it: T) -> R)?

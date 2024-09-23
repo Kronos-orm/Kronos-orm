@@ -1,11 +1,11 @@
-package com.kotlinorm.plugins.utils.kTableSortType
+package com.kotlinorm.plugins.utils.kTableForSort
 
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.extensionBy
-import com.kotlinorm.plugins.utils.kTable.getColumnName
-import com.kotlinorm.plugins.utils.kTableConditional.funcName
+import com.kotlinorm.plugins.utils.funcName
+import com.kotlinorm.plugins.utils.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments

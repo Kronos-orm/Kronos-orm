@@ -1,15 +1,15 @@
-package com.kotlinorm.plugins.utils.kTableSortType
+package com.kotlinorm.plugins.utils.kTableForSort
 
 import com.kotlinorm.plugins.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
-const val KTABLE_SORTABLE_CLASS = "com.kotlinorm.beans.dsl.KTableSortable"
+const val KTABLE_FOR_SORT_CLASS = "com.kotlinorm.beans.dsl.KTableForSort"
 
 context(IrPluginContext)
 private val sortableClassSymbol
-    get() = referenceClass(KTABLE_SORTABLE_CLASS)!!
+    get() = referenceClass(KTABLE_FOR_SORT_CLASS)!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)

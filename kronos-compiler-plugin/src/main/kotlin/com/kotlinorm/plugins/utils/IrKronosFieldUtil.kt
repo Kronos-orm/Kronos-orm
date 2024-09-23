@@ -1,25 +1,10 @@
-/**
- * Copyright 2022-2024 kronos-orm
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package com.kotlinorm.plugins.utils
 
-package com.kotlinorm.plugins.utils.kTable
-
-import com.kotlinorm.plugins.helpers.*
-import com.kotlinorm.plugins.utils.LRUCache
-import com.kotlinorm.plugins.utils.getKColumnType
-import com.kotlinorm.plugins.utils.kTableConditional.funcName
+import com.kotlinorm.plugins.helpers.applyIrCall
+import com.kotlinorm.plugins.helpers.findByFqName
+import com.kotlinorm.plugins.helpers.referenceClass
+import com.kotlinorm.plugins.helpers.referenceFunctions
+import com.kotlinorm.plugins.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
@@ -36,32 +21,9 @@ import org.jetbrains.kotlin.name.FqName
 import java.io.File
 import kotlin.text.Charsets.UTF_8
 
-
-const val KTABLE_CLASS = "com.kotlinorm.beans.dsl.KTable"
-
 context(IrPluginContext)
-private val kTableSymbol
-    get() = referenceClass("com.kotlinorm.beans.dsl.KTable")!!
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val setValueSymbol
-    get() = kTableSymbol.functions.first { it.owner.name.toString() == "setValue" && it.owner.valueParameters.size == 2 }
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val addFieldSymbol
-    get() = kTableSymbol.getSimpleFunction("addField")!!
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val propParamSymbol
-    get() = kTableSymbol.getSimpleFunction("getValueByFieldName")
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val aliasSymbol
-    get() = kTableSymbol.getSimpleFunction("setAlias")!!
+internal val fieldSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -80,6 +42,8 @@ context(IrPluginContext)
 internal val kReferenceSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KCascade")!!
 
+
+
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val TableIndexAnnotationsFqName = FqName("com.kotlinorm.annotations.TableIndex")
 val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
@@ -91,6 +55,7 @@ val SelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.SelectIgno
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
+
 
 /**
  * Returns the column name of the given IrExpression.
@@ -318,6 +283,36 @@ fun getColumnOrValue(expression: IrExpression?): IrExpression? {
         KronosColumnValueType.Value -> expr
         KronosColumnValueType.ColumnName -> getColumnName(expr)
     }
+}
+
+/**
+ * Returns a string representing the function name based on the IrExpression type and origin, with optional logic for setNot parameter.
+ *
+ * @param setNot a boolean value indicating whether to add the "not" prefix to the function name
+ * @return a string representing the function name
+ */
+context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrExpression.funcName(setNot: Boolean = false): String {
+    return when (this) {
+        is IrCall -> when (origin) {
+            IrStatementOrigin.EQEQ, IrStatementOrigin.EXCLEQ -> "equal"
+            IrStatementOrigin.GT -> "gt"
+            IrStatementOrigin.LT -> "lt"
+            IrStatementOrigin.GTEQ -> "ge"
+            IrStatementOrigin.LTEQ -> "le"
+            else -> correspondingName?.asString() ?: symbol.owner.name.asString()
+        }
+
+        is IrWhen -> when {
+            (origin == IrStatementOrigin.OROR && !setNot) || (origin == IrStatementOrigin.ANDAND && setNot) -> "OR"
+            (origin == IrStatementOrigin.ANDAND && !setNot) || (origin == IrStatementOrigin.OROR && setNot) -> "AND"
+            else -> origin.toString()
+        }
+
+        else -> ""
+    }
+
 }
 
 /**

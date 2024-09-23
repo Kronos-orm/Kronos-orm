@@ -18,9 +18,8 @@ package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.*
-import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
-import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
-import com.kotlinorm.beans.dsl.KTableSortable.Companion.sortableRun
+import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.database.SqlManager.getJoinSql
@@ -32,11 +31,12 @@ import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
-import com.kotlinorm.types.KTableConditionalField
-import com.kotlinorm.types.KTableField
-import com.kotlinorm.types.KTableSortableField
+import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToSelect
+import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.*
 import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -84,14 +84,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private val databaseOfTable: MutableMap<String, String> = mutableMapOf()
     internal var operationType = KOperationType.SELECT
 
-    fun on(on: KTableConditionalField<T1, Boolean?>) {
+    fun on(on: ToFilter<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
 
         val criteriaMap = mutableMapOf<String, MutableList<Criteria>>()
         val constMap = mutableMapOf<String, MutableList<Criteria>>()
         val repeatlist = mutableListOf<Triple<Criteria, String, String>>()
 
-        t1.conditionalRun {
+        t1.afterFilter {
             propParamMap = paramMap
             on(t1)
             criteria
@@ -185,10 +185,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param on The condition for the join.
      * @throws NeedFieldsException If the `on` parameter is null.
      */
-    inline fun <reified T : KPojo> leftJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+    inline fun <reified T : KPojo> leftJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
-        t1.conditionalRun {
+        t1.afterFilter {
             propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
@@ -202,10 +202,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param on The condition for the join.
      * @throws NeedFieldsException If the `on` parameter is null.
      */
-    inline fun <reified T : KPojo> rightJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+    inline fun <reified T : KPojo> rightJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
-        t1.conditionalRun {
+        t1.afterFilter {
             propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another.kronosLogicDelete()))
@@ -219,10 +219,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param on The condition for the join.
      * @throws NeedFieldsException If the `on` parameter is null.
      */
-    inline fun <reified T : KPojo> crossJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+    inline fun <reified T : KPojo> crossJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
-        t1.conditionalRun {
+        t1.afterFilter {
             propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another.kronosLogicDelete()))
@@ -236,10 +236,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param on The condition for the join.
      * @throws NeedFieldsException If the `on` parameter is null.
      */
-    inline fun <reified T : KPojo> innerJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+    inline fun <reified T : KPojo> innerJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
-        t1.conditionalRun {
+        t1.afterFilter {
             propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another.kronosLogicDelete()))
@@ -253,10 +253,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param on The condition for the join.
      * @throws NeedFieldsException If the `on` parameter is null.
      */
-    inline fun <reified T : KPojo> fullJoin(another: T, noinline on: KTableConditionalField<T1, Boolean?>) {
+    inline fun <reified T : KPojo> fullJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
-        t1.conditionalRun {
+        t1.afterFilter {
             propParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another.kronosLogicDelete()))
@@ -269,10 +269,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param someFields The KTableField representing the fields to be selected.
      */
     @Suppress("UNCHECKED_CAST")
-    fun select(someFields: KTableField<T1, Any?>) {
+    fun select(someFields: ToSelect<T1, Any?>) {
         if (null == someFields) return
 
-        pojo.tableRun {
+        pojo.afterSelect {
             someFields(t1)
             selectFields += fields
             fields.forEach { field ->
@@ -304,13 +304,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param someFields The fields to order the result set by.
      * @throws NeedFieldsException If the `someFields` parameter is null.
      */
-    fun orderBy(someFields: KTableSortableField<T1, Any?>) {
+    fun orderBy(someFields: ToSort<T1, Any?>) {
         if (someFields == null) throw NeedFieldsException()
 
         orderEnabled = true
-        pojo.sortableRun {
+        pojo.afterSort {
             someFields(t1)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
-            orderByFields = sortFields.toLinkedSet()
+            orderByFields = sortedFields.toLinkedSet()
         }
     }
 
@@ -321,11 +321,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param someFields The fields to group the result set by.
      * @throws NeedFieldsException If the `someFields` parameter is null.
      */
-    fun groupBy(someFields: KTableField<T1, Any?>) {
+    fun groupBy(someFields: ToSelect<T1, Any?>) {
         groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (null == someFields) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSelect {
             someFields(t1)
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
@@ -366,10 +366,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param someFields the fields to be queried
      * @throws NeedFieldsException if [someFields] is null
      */
-    fun by(someFields: KTableField<T1, Any?>) {
+    fun by(someFields: ToSelect<T1, Any?>) {
         // 检查someFields是否为空，为空则抛出异常
         if (null == someFields) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSelect {
             // 执行someFields中定义的查询逻辑
             someFields(t1)
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
@@ -384,14 +384,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * If null, a condition is built to query all fields. Otherwise, the provided select condition is executed
      * and the resulting condition is set.
      */
-    fun where(selectCondition: KTableConditionalField<T1, Boolean?> = null) {
+    fun where(selectCondition: ToFilter<T1, Boolean?> = null) {
         if (selectCondition == null) {
             // 当没有提供选择条件时，构建一个查询所有字段的条件
             condition = paramMap.keys.map { propName ->
                 allFields.first { it.name == propName }.eq(paramMap[propName])
             }.toCriteria()
         } else {
-            pojo.conditionalRun {
+            pojo.afterFilter {
                 propParamMap = paramMap
                 selectCondition(t1) // 执行用户提供的条件函数
                 condition = criteria // 设置查询条件
@@ -408,11 +408,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      *
      * @throws NeedFieldsException if the selectCondition parameter is null.
      */
-    fun having(selectCondition: KTableConditionalField<T1, Boolean?> = null) {
+    fun having(selectCondition: ToFilter<T1, Boolean?> = null) {
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
         havingEnabled = true // 标记为HAVING条件
-        pojo.conditionalRun {
+        pojo.afterFilter {
             propParamMap = paramMap // 设置属性参数映射
             selectCondition(t1) // 执行传入的条件函数
             havingCondition = criteria // 设置HAVING条件

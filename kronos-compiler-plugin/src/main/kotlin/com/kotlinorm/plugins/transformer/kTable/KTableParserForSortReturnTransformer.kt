@@ -1,6 +1,6 @@
 package com.kotlinorm.plugins.transformer.kTable
 
-import com.kotlinorm.plugins.utils.kTableSortType.addFieldSortsIr
+import com.kotlinorm.plugins.utils.kTableForSort.addFieldSortsIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -18,16 +18,19 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  * Roughly speaking, the transform will turn the following:
  *
  *     // file: Foo.kt
+ *     ```kotlin
  *     fun <T: KPojo> T.foo() {
  *          val action: (KTableSortable<T>.(T) -> Unit) = { it: T ->
  *              it.username.desc() + it.password.asc() + it.age
  *          }
  *          KTableSortable<T>().action(this)
  *     }
+ *     ```
  *
  * into the following equivalent representation:
  *
  *    // file: Foo.kt
+ *    ```kotlin
  *     fun <T: KPojo> foo() {
  *          val action: (KTableSortable<T>.(T) -> Unit) = { it: T ->
  *              addSortField(Field("username").desc())
@@ -37,8 +40,9 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
  *          }
  *          KTableSortable<T>().action(this)
  *    }
+ *    ```
  **/
-class KTableSortableParseReturnTransformer(
+class KTableParserForSortReturnTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction
 ) : IrElementTransformerVoidWithContext() {

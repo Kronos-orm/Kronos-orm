@@ -17,31 +17,31 @@
 package com.kotlinorm.orm.update
 
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.types.KTableField
+import com.kotlinorm.types.ToSelect
 
 
-fun <T : KPojo> T.update(setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, false, setUpdateFields)
+fun <T : KPojo> T.update(fields: ToSelect<T, Any?> = null): UpdateClause<T> {
+    return UpdateClause(this, false, fields)
 }
 
-fun <T : KPojo> T.updateExcept(setUpdateFields: KTableField<T, Any?> = null): UpdateClause<T> {
-    return UpdateClause(this, true, setUpdateFields)
+fun <T : KPojo> T.updateExcept(fields: ToSelect<T, Any?> = null): UpdateClause<T> {
+    return UpdateClause(this, true, fields)
 }
 
-fun <T : KPojo> Iterable<T>.update(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, false, setUpdateFields) }
-}
-
-//  添加测试用例
-fun <T : KPojo> Iterable<T>.updateExcept(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, true, setUpdateFields) }
-}
-
-fun <T : KPojo> Array<T>.update(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, false, setUpdateFields) }
+fun <T : KPojo> Iterable<T>.update(fields: ToSelect<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, false, fields) }
 }
 
 //  添加测试用例
-fun <T : KPojo> Array<T>.updateExcept(setUpdateFields: KTableField<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, true, setUpdateFields) }
+fun <T : KPojo> Iterable<T>.updateExcept(fields: ToSelect<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, true, fields) }
+}
+
+fun <T : KPojo> Array<T>.update(fields: ToSelect<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, false, fields) }
+}
+
+//  添加测试用例
+fun <T : KPojo> Array<T>.updateExcept(fields: ToSelect<T, Any?> = null): List<UpdateClause<T>> {
+    return map { UpdateClause(it, true, fields) }
 }

@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.plugins.utils.kTableConditional
+package com.kotlinorm.plugins.utils.kTableForCondition
 
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.extensionBy
-import com.kotlinorm.plugins.utils.kTable.*
+import com.kotlinorm.plugins.utils.*
+import com.kotlinorm.plugins.utils.kTableForSelect.propParamSymbol
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -275,7 +276,8 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         args.first()
                     }
                     paramName = getColumnOrValue(element.extensionReceiver!!)
-                    value = applyIrCall(stringPlusSymbol, applyIrCall(
+                    value = applyIrCall(
+                        stringPlusSymbol, applyIrCall(
                         stringPlusSymbol, irString("%")
                     ) {
                         dispatchBy(str)

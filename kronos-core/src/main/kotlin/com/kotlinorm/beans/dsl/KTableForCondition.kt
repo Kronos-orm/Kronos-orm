@@ -20,13 +20,14 @@ import com.kotlinorm.annotations.UnsafeCriteria
 import com.kotlinorm.enums.NoValueStrategyType
 
 /**
- * KTableConditional
+ * kTableForCondition
  *
  * DSL Class of Kronos, which the compiler plugin use to generate the `where` code.
  *
  * @param T the type of the table
  */
-open class KTableConditional<T : KPojo> : KTable<T>() {
+open class KTableForCondition<T : KPojo> {
+    var propParamMap: MutableMap<String, Any?> = mutableMapOf()
     var criteria: Criteria? = null
 
     val <T : Any?> T?.value get() = this
@@ -41,13 +42,17 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
      * @param other the element to check
      * @return `true`
      */
-    operator fun <T> Iterable<T>?.contains(
+    operator fun Iterable<Any?>?.contains(
         @Suppress("UNUSED_PARAMETER") other: @Suppress(
             "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer T?
+        ) @kotlin.internal.NoInfer Any?
     ) = true
 
     fun <T> T?.cast() = this as Any?
+
+    operator fun KPojo.minus(field: Any?) = this to listOf(field)
+
+    fun Pair<KPojo, List<Any?>>.minus(field: Any?) = this.first to this.second + field
 
     /**
      * Check if the Comparable<*> is greater than the specified
@@ -229,6 +234,9 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
     @Suppress("UnusedReceiverParameter")
     val KPojo.eq get() = true
 
+    @Suppress("UnusedReceiverParameter")
+    val Pair<KPojo, List<Any?>>.eq get() = true
+
     /**
      * Checks if the given value is null.
      *
@@ -378,13 +386,13 @@ open class KTableConditional<T : KPojo> : KTable<T>() {
 
     companion object {
         /**
-         * Runs the given block on a new instance of [KTableConditional] with the given [T] object as the data source.
+         * Runs the given block on a new instance of [KTableForCondition] with the given [T] object as the data source.
          *
          * @param T The type of the KPojo object.
-         * @param block The block of code to be applied to the [KTableConditional] instance.
-         * @return The resulting [KTableConditional] instance after applying the block.
+         * @param block The block of code to be applied to the [KTableForCondition] instance.
+         * @return The resulting [KTableForCondition] instance after applying the block.
          */
-        fun <T : KPojo> T.conditionalRun(block: KTableConditional<T>.(T) -> Unit) =
-            KTableConditional<T>().block(this)
+        fun <T : KPojo> T.afterFilter(block: KTableForCondition<T>.(T) -> Unit) =
+            KTableForCondition<T>().block(this)
     }
 }

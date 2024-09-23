@@ -19,8 +19,8 @@ package com.kotlinorm.orm.delete
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
-import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -32,8 +32,8 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeDeleteClause
-import com.kotlinorm.types.KTableConditionalField
-import com.kotlinorm.types.KTableField
+import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.ConditionSqlBuilder.toWhereSql
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -74,10 +74,10 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      * @return DeleteClause类型，表示构建完成的删除语句实例。
      * @throws NeedFieldsException 如果someFields为空或者最终没有有效的字段用于构建条件时抛出。
      */
-    fun by(someFields: KTableField<T, Any?>): DeleteClause<T> {
+    fun by(someFields: ToSelect<T, Any?>): DeleteClause<T> {
         // 检查传入的someFields是否为null，若为null则抛出异常
         if (someFields == null) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSelect {
             someFields(it)
             // 若fields为空，则抛出异常，表示需要至少一个字段来构建删除条件
             if (fields.isEmpty()) {
@@ -101,14 +101,14 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      *
      * 该函数允许用户指定一个删除条件，用于过滤需要被删除的数据。如果未指定条件，则默认删除所有匹配的数据。
      *
-     * @param deleteCondition 一个函数，用于定义删除操作的条件。该函数接收一个 [KTableConditionalField] 类型的参数，
+     * @param deleteCondition 一个函数，用于定义删除操作的条件。该函数接收一个 [ToFilter] 类型的参数，
      *                        并返回一个 [Boolean?] 类型的值，用于指示是否满足删除条件。如果为 null，则表示删除所有数据。
      * @return [DeleteClause] 类型的实例，用于链式调用其它删除操作。
      */
-    fun where(deleteCondition: KTableConditionalField<T, Boolean?> = null): DeleteClause<T> {
+    fun where(deleteCondition: ToFilter<T, Boolean?> = null): DeleteClause<T> {
         if (deleteCondition == null) return this
         // 如果指定了删除条件，执行条件函数，并设置条件
-        pojo.conditionalRun {
+        pojo.afterFilter {
             propParamMap = paramMap
             deleteCondition(it)
             condition = criteria
@@ -209,7 +209,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param someFields the fields to set the condition for
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Iterable<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
+        fun <T : KPojo> Iterable<DeleteClause<T>>.by(someFields: ToSelect<T, Any?>): List<DeleteClause<T>> {
             return map { it.by(someFields) }
         }
 
@@ -219,7 +219,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param updateCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Iterable<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
+        fun <T : KPojo> Iterable<DeleteClause<T>>.where(updateCondition: ToFilter<T, Boolean?> = null): List<DeleteClause<T>> {
             return map { it.where(updateCondition) }
         }
 
@@ -260,7 +260,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param someFields the fields to set the condition for
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Array<DeleteClause<T>>.by(someFields: KTableField<T, Any?>): List<DeleteClause<T>> {
+        fun <T : KPojo> Array<DeleteClause<T>>.by(someFields: ToSelect<T, Any?>): List<DeleteClause<T>> {
             return map { it.by(someFields) }
         }
 
@@ -270,7 +270,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @param updateCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> Array<DeleteClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<DeleteClause<T>> {
+        fun <T : KPojo> Array<DeleteClause<T>>.where(updateCondition: ToFilter<T, Boolean?> = null): List<DeleteClause<T>> {
             return map { it.where(updateCondition) }
         }
 

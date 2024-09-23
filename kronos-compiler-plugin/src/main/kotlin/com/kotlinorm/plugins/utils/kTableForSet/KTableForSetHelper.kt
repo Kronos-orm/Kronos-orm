@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.plugins.utils.kTable
+package com.kotlinorm.plugins.utils.kTableForSet
 
 import com.kotlinorm.plugins.helpers.applyIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
+import com.kotlinorm.plugins.utils.getColumnName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -62,8 +64,8 @@ fun putParamMapStatements(receiver: IrExpression, element: IrElement): MutableLi
         is IrCall -> {
             // Handle assignment operations (EQ origin) to map field parameters.
             // 处理赋值操作（EQ 原点）以映射字段参数。
-            if (element.origin == IrStatementOrigin.EQ) { // Assignment statement
-                statements.add(
+            when (element.origin) { // Assignment statement
+                IrStatementOrigin.EQ -> statements.add(
                     applyIrCall(
                         setValueSymbol,
                         getColumnName(element),
@@ -72,6 +74,32 @@ fun putParamMapStatements(receiver: IrExpression, element: IrElement): MutableLi
                         dispatchBy(receiver)
                     }
                 )
+
+                IrStatementOrigin.PLUSEQ -> statements.add(
+                    applyIrCall(
+                        setAssignSymbol,
+                        irString("+"),
+                        getColumnName(element.extensionReceiver ?: element.dispatchReceiver!!),
+                        element.valueArguments[0]
+                    ) {
+                        dispatchBy(receiver)
+                    }
+                )
+
+                IrStatementOrigin.MINUSEQ -> statements.add(
+                    applyIrCall(
+                        setAssignSymbol,
+                        irString("-"),
+                        getColumnName(element.extensionReceiver ?: element.dispatchReceiver!!),
+                        element.valueArguments[0]
+                    ) {
+                        dispatchBy(receiver)
+                    }
+                )
+
+
+                else -> {
+                }
             }
         }
     }

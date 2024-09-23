@@ -1,10 +1,6 @@
 package com.kotlinorm.plugins.utils
 
 import com.kotlinorm.plugins.helpers.*
-import com.kotlinorm.plugins.utils.kTable.SerializableAnnotationsFqName
-import com.kotlinorm.plugins.utils.kTable.TableIndexAnnotationsFqName
-import com.kotlinorm.plugins.utils.kTable.getColumnName
-import com.kotlinorm.plugins.utils.kTable.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
@@ -42,10 +38,6 @@ val createTableIndexListSymbol
 context(IrPluginContext)
 private val getSafeValueSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue").first()
-
-context(IrPluginContext)
-private val fieldSymbol
-    get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)

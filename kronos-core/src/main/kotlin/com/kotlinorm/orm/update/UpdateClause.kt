@@ -20,8 +20,9 @@ import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.beans.dsl.KTable.Companion.tableRun
-import com.kotlinorm.beans.dsl.KTableConditional.Companion.conditionalRun
+import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -32,8 +33,9 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeUpdateClause
-import com.kotlinorm.types.KTableConditionalField
-import com.kotlinorm.types.KTableField
+import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToSelect
+import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
@@ -58,7 +60,7 @@ import kotlin.reflect.KProperty
 class UpdateClause<T : KPojo>(
     private val pojo: T,
     private var isExcept: Boolean = false,
-    private var setUpdateFields: KTableField<T, Any?> = null
+    private var setUpdateFields: ToSelect<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
@@ -83,7 +85,7 @@ class UpdateClause<T : KPojo>(
     init {
         // 如果设置了更新字段，则进行字段配置和更新字段列表的构建
         if (setUpdateFields != null) {
-            pojo.tableRun {
+            pojo.afterSelect {
                 setUpdateFields!!(it) // 配置更新字段
                 toUpdateFields += fields // 将当前字段添加到更新字段列表
             }
@@ -101,10 +103,13 @@ class UpdateClause<T : KPojo>(
      * @throws NeedFieldsException if the new value is null
      * @return the updated UpdateClause object
      */
-    fun set(newValue: KTableField<T, Unit>): UpdateClause<T> {
+    fun set(newValue: ToSet<T, Unit>): UpdateClause<T> {
         if (newValue == null) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSet {
             newValue(it)
+            // TODO deal with assigns
+            val plusAssign = plusAssignFields
+            val minusAssign = minusAssignFields
             if (isExcept) {
                 toUpdateFields -= fields.toSet()
             } else {
@@ -128,9 +133,9 @@ class UpdateClause<T : KPojo>(
      * @throws NeedFieldsException if the provided fields are null
      * @return the updated UpdateClause object
      */
-    fun by(someFields: KTableField<T, Any?>): UpdateClause<T> {
+    fun by(someFields: ToSelect<T, Any?>): UpdateClause<T> {
         if (someFields == null) throw NeedFieldsException()
-        pojo.tableRun {
+        pojo.afterSelect {
             someFields(it)
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
@@ -143,7 +148,7 @@ class UpdateClause<T : KPojo>(
      * @param updateCondition the condition for the update clause. Defaults to null.
      * @return the updated UpdateClause object.
      */
-    fun where(updateCondition: KTableConditionalField<T, Boolean?> = null): UpdateClause<T> {
+    fun where(updateCondition: ToFilter<T, Boolean?> = null): UpdateClause<T> {
         if (updateCondition == null) return this
             .apply {
                 // 获取所有字段 且去除null
@@ -151,7 +156,7 @@ class UpdateClause<T : KPojo>(
                     field.eq(paramMap[field.name]).takeIf { it.value != null }
                 }.toCriteria()
             }
-        pojo.conditionalRun {
+        pojo.afterFilter {
             propParamMap = paramMap // 更新 propParamMap
             updateCondition(it)
             condition = criteria
@@ -289,7 +294,7 @@ class UpdateClause<T : KPojo>(
          * @param rowData the row data to set
          * @return a list of UpdateClause objects with the updated row data
          */
-        fun <T : KPojo> List<UpdateClause<T>>.set(rowData: KTableField<T, Unit>): List<UpdateClause<T>> {
+        fun <T : KPojo> List<UpdateClause<T>>.set(rowData: ToSet<T, Unit>): List<UpdateClause<T>> {
             return map { it.set(rowData) }
         }
 
@@ -306,7 +311,7 @@ class UpdateClause<T : KPojo>(
          * @param someFields the fields to set the condition for
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> List<UpdateClause<T>>.by(someFields: KTableField<T, Any?>): List<UpdateClause<T>> {
+        fun <T : KPojo> List<UpdateClause<T>>.by(someFields: ToSelect<T, Any?>): List<UpdateClause<T>> {
             return map { it.by(someFields) }
         }
 
@@ -316,7 +321,7 @@ class UpdateClause<T : KPojo>(
          * @param updateCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo> List<UpdateClause<T>>.where(updateCondition: KTableConditionalField<T, Boolean?> = null): List<UpdateClause<T>> {
+        fun <T : KPojo> List<UpdateClause<T>>.where(updateCondition: ToFilter<T, Boolean?> = null): List<UpdateClause<T>> {
             return map { it.where(updateCondition) }
         }
 

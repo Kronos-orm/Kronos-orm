@@ -17,13 +17,13 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.KPojo
-import com.kotlinorm.types.KTableField
+import com.kotlinorm.types.ToSelect
 
 
-fun <T : KPojo> T.select(fields: KTableField<T, Any?> = null): SelectClause<T> {
+fun <T : KPojo> T.select(fields: ToSelect<T, Any?> = null): SelectClause<T> {
     return SelectClause(this, fields)
 }
 
 fun <T : KPojo> T.db(name: String) = this to name
 
-fun <T : KPojo> Pair<T, String>.select(fields: KTableField<T, Any?>) = this.first.select(fields).db(this.second)
+fun <T : KPojo> Pair<T, String>.select(fields: ToSelect<T, Any?>) = this.first.select(fields).db(this.second)

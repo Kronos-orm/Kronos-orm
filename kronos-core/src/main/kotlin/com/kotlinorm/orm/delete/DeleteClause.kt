@@ -109,7 +109,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         if (deleteCondition == null) return this
         // 如果指定了删除条件，执行条件函数，并设置条件
         pojo.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             deleteCondition(it)
             condition = criteria
         }

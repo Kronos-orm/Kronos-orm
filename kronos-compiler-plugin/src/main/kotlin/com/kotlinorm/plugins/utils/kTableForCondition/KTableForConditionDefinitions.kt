@@ -35,11 +35,15 @@ import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.properties
 
-const val KTABLE_FOR_CONDITION_CLASS = "com.kotlinorm.beans.dsl.kTableForCondition"
+const val KTABLE_FOR_CONDITION_CLASS = "com.kotlinorm.beans.dsl.KTableForCondition"
 
 context(IrBuilderWithScope, IrPluginContext)
 internal val conditionTypeSymbol
     get() = referenceClass("com.kotlinorm.enums.ConditionType")!!
+
+context(IrPluginContext)
+private val kTableForConditionSymbol
+    get() = referenceClass(KTABLE_FOR_CONDITION_CLASS)!!
 
 /**
  * Retrieves the condition type enum value based on the given type string.
@@ -58,7 +62,7 @@ internal fun getConditionType(type: String): IrExpression {
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val criteriaSetterSymbol
-    get() = referenceClass(KTABLE_FOR_CONDITION_CLASS)!!.getPropertySetter("criteria")!!
+    get() = kTableForConditionSymbol.getPropertySetter("criteria")!!
 
 context(IrPluginContext)
 private val criteriaClassSymbol
@@ -77,7 +81,7 @@ internal val stringPlusSymbol
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val ComparableEq
-    get() = referenceClass("com.kotlinorm.beans.dsl.KTableConditional")!!.owner.properties.first {
+    get() = kTableForConditionSymbol.owner.properties.first {
             it.name.toString() == "eq" && it.getter?.extensionReceiverParameter?.type?.classFqName?.asString() == "kotlin.Comparable"
         }
 

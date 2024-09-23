@@ -29,7 +29,7 @@ class SelectParserTest {
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.Table
             import com.kotlinorm.annotations.TableIndex
-            import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
+            import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
             import com.kotlinorm.beans.dsl.KPojo
             import com.kotlinorm.orm.delete.delete
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
@@ -98,7 +98,7 @@ class SelectParserTest {
                 val m = mapOf("id" to 2)
                 val u = m.safeMapperTo<User>()
                                 
-                val (sql, paramMap) = user.select { it.username.`as`("name") + it.gender }.build()
+                val (sql, paramMap) = user.select().where { (it - it.id - it.username).eq }.build()
                 println(user.toDataMap())
             }        
       """.trimIndent()

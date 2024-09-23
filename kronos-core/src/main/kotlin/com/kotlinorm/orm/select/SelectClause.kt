@@ -216,7 +216,7 @@ class SelectClause<T : KPojo>(
     fun where(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T> {
         if (selectCondition == null) return this
         pojo.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
             condition = criteria // 设置查询条件
         }
@@ -236,7 +236,7 @@ class SelectClause<T : KPojo>(
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw NeedFieldsException()
         pojo.afterFilter {
-            propParamMap = paramMap // 设置属性参数映射
+            criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
             havingCondition = criteria // 设置HAVING条件
         }

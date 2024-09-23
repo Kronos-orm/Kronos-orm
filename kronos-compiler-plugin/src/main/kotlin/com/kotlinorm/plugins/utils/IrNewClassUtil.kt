@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
 val createPairSymbol
@@ -41,12 +42,16 @@ private val getSafeValueSymbol
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private val mapGetterSymbol
-    get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")
+val mapGetterSymbol
+    get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")!!
 
 context(IrPluginContext)
 private val KTableIndexSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KTableIndex")!!
+
+context(IrPluginContext)
+val KPojoFqName
+    get() = FqName("com.kotlinorm.beans.dsl.KPojo")
 
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
@@ -92,7 +97,7 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
         +declaration.properties.toList().mapNotNull { property ->
             dispatcher.setValue(property, applyIrCall(
-                mapGetterSymbol!!, irString(property.name.asString())
+                mapGetterSymbol, irString(property.name.asString())
             ) {
                 dispatchBy(irGet(map))
             })

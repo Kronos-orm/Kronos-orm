@@ -21,21 +21,23 @@ import com.kotlinorm.plugins.helpers.asIrCall
 import com.kotlinorm.plugins.helpers.dispatchBy
 import com.kotlinorm.plugins.helpers.extensionBy
 import com.kotlinorm.plugins.utils.*
-import com.kotlinorm.plugins.utils.kTableForSelect.propParamSymbol
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 
 /**
@@ -123,7 +125,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         paramName = getColumnOrValue(element.extensionReceiver!!)
                         tableName = getTableName(element.dispatchReceiver!!)
                         value = applyIrCall(
-                            propParamSymbol!!,
+                            mapGetterSymbol,
                             irString(element.extensionReceiver!!.asIrCall().funcName())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -174,7 +176,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         val dispatchReceiver = element.asIrCall().dispatchReceiver!!
                         paramName = getColumnOrValue(extensionReceiver)
                         value = applyIrCall(
-                            propParamSymbol!!,
+                            mapGetterSymbol,
                             irString(extensionReceiver.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -182,10 +184,10 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         tableName = getTableName(dispatchReceiver)
                     } else if (extensionReceiver != null) {
                         val irClass = element.extensionReceiver?.type?.getClass()
-                        if (irClass != null && irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }) {
-                            type = "AND"
-                            irClass.properties.forEach { prop ->
-                                if (prop.isColumn()) {
+
+                        fun generateEq(kPojo: IrClass, receiver: IrExpression, excludes: List<String>) {
+                            kPojo.properties.forEach { prop ->
+                                if (prop.isColumn() && prop.name.asString() !in excludes) {
                                     children.add(
                                         buildCriteria(
                                             applyIrCall(
@@ -194,8 +196,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                                                 dispatchBy(extensionReceiver)
                                                 extensionBy(
                                                     irGet(
-                                                        prop.backingField!!.type,
-                                                        element.extensionReceiver,
+                                                        prop.backingField!!.type, receiver,
                                                         prop.getter!!.symbol
                                                     )
                                                 )
@@ -206,6 +207,17 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                                 }
                             }
                         }
+
+                        if (irClass?.kotlinFqName == KPojoFqName) {
+                            if (extensionReceiver is IrCallImpl && extensionReceiver.asIrCall().origin == IrStatementOrigin.MINUS) {
+                                type = "AND"
+                                val (kPojoClass, kPojo, excludes) = getExcludes(element.extensionReceiver!!.asIrCall())
+                                generateEq(kPojoClass, kPojo, excludes)
+                            } else if (irClass.superTypes.any { it.classFqName == KPojoFqName }) {
+                                type = "AND"
+                                generateEq(irClass, extensionReceiver, listOf())
+                            }
+                        }
                     }
                 }
 
@@ -213,7 +225,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = if (args.isEmpty()) {
                         applyIrCall(
-                            propParamSymbol!!,
+                            mapGetterSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -227,7 +239,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "matchLeft" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
-                            propParamSymbol!!,
+                            mapGetterSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -247,7 +259,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "matchRight" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
-                            propParamSymbol!!,
+                            mapGetterSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -267,7 +279,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "matchBoth" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
-                            propParamSymbol!!,
+                            mapGetterSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -317,4 +329,28 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
     return CriteriaIR(
         paramName, type, not, value, children.filterNotNull(), tableName, strategy
     ).toIrVariable()
+}
+
+context(IrBlockBuilder, IrPluginContext, IrFunction)
+fun getExcludes(irCall: IrCall): Triple<IrClass, IrExpression, List<String>> {
+    val (kPojo, properties) = getIrMinusParent(irCall)
+    return Triple(
+        kPojo.type.getClass()!!,
+        kPojo,
+        properties
+    )
+}
+
+context(IrBlockBuilder, IrPluginContext, IrFunction)
+fun getIrMinusParent(irCall: IrCall): Pair<IrExpression, List<String>> {
+    val property = listOfNotNull(
+        irCall.valueArguments.find { it is IrCallImpl && it.origin == IrStatementOrigin.GET_PROPERTY }?.funcName()
+    )
+    val (kPojo, properties) = if(irCall.extensionReceiver is IrCallImpl) {
+        getIrMinusParent(irCall.extensionReceiver!!.asIrCall())
+    } else {
+        irCall.extensionReceiver!! to listOf()
+    }
+
+    return kPojo to (properties + property)
 }

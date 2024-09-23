@@ -157,7 +157,7 @@ class UpdateClause<T : KPojo>(
                 }.toCriteria()
             }
         pojo.afterFilter {
-            propParamMap = paramMap // 更新 propParamMap
+            criteriaParamMap = paramMap // 更新 propParamMap
             updateCondition(it)
             condition = criteria
         }

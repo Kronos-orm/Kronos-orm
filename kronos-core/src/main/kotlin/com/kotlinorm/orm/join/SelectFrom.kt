@@ -92,7 +92,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         val repeatlist = mutableListOf<Triple<Criteria, String, String>>()
 
         t1.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             on(t1)
             criteria
 
@@ -189,7 +189,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -206,7 +206,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -223,7 +223,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -240,7 +240,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -257,7 +257,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == on) throw NeedFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
-            propParamMap = paramMap
+            criteriaParamMap = paramMap
             on(t1)
             joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another.kronosLogicDelete()))
         }
@@ -392,7 +392,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             }.toCriteria()
         } else {
             pojo.afterFilter {
-                propParamMap = paramMap
+                criteriaParamMap = paramMap
                 selectCondition(t1) // 执行用户提供的条件函数
                 condition = criteria // 设置查询条件
             }
@@ -413,7 +413,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (selectCondition == null) throw NeedFieldsException()
         havingEnabled = true // 标记为HAVING条件
         pojo.afterFilter {
-            propParamMap = paramMap // 设置属性参数映射
+            criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(t1) // 执行传入的条件函数
             havingCondition = criteria // 设置HAVING条件
         }

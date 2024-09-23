@@ -27,8 +27,8 @@ import com.kotlinorm.enums.NoValueStrategyType
  * @param T the type of the table
  */
 open class KTableForCondition<T : KPojo> {
-    var propParamMap: MutableMap<String, Any?> = mutableMapOf()
     var criteria: Criteria? = null
+    var criteriaParamMap: MutableMap<String, Any?> = mutableMapOf()
 
     val <T : Any?> T?.value get() = this
 
@@ -50,9 +50,7 @@ open class KTableForCondition<T : KPojo> {
 
     fun <T> T?.cast() = this as Any?
 
-    operator fun KPojo.minus(field: Any?) = this to listOf(field)
-
-    fun Pair<KPojo, List<Any?>>.minus(field: Any?) = this.first to this.second + field
+    operator fun KPojo.minus( @Suppress("UNUSED_PARAMETER") field: Any?) = this
 
     /**
      * Check if the Comparable<*> is greater than the specified
@@ -233,9 +231,6 @@ open class KTableForCondition<T : KPojo> {
 
     @Suppress("UnusedReceiverParameter")
     val KPojo.eq get() = true
-
-    @Suppress("UnusedReceiverParameter")
-    val Pair<KPojo, List<Any?>>.eq get() = true
 
     /**
      * Checks if the given value is null.

@@ -247,4 +247,16 @@ class Select {
             sql
         )
     }
+
+    @Test
+    fun testSelectUseEqMinus() {
+        val (sql, paramMap) = user.select { "1" }
+            .where { (it - it.gender).eq }
+            .build()
+
+        assertEquals(
+            "SELECT count(1) FROM `test`.`tb_user` WHERE `gender` = :gender AND `deleted` = 0",
+            sql
+        )
+    }
 }

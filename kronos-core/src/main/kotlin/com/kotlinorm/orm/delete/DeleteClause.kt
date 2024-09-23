@@ -159,9 +159,14 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             setCommonStrategy(updateTimeStrategy, true, callBack = updateFields)
             setCommonStrategy(logicDeleteStrategy, defaultValue = 1, callBack = updateFields)
 
-            var versionField: String? = null
+            var plusAssign: Pair<Field, String>? = null
             setCommonStrategy(optimisticStrategy) { field, _ ->
-                versionField = field.columnName
+                if (toUpdateFields.any { it.columnName == field.columnName }) {
+                    throw IllegalArgumentException("The version field cannot be updated manually.")
+                }
+
+                plusAssign = field to field.name + "2PlusNew"
+                paramMapNew[field.name + "2PlusNew"] = 1
             }
 
             return CascadeDeleteClause.build(
@@ -170,8 +175,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                         wrapper.orDefault(),
                         tableName,
                         toUpdateFields,
-                        versionField,
-                        toWhereSql(whereClauseSql)
+                        toWhereSql(whereClauseSql),
+                        if (plusAssign != null) mutableListOf(plusAssign!!) else mutableListOf(),
+                        mutableListOf()
                     ),
                     paramMap,
                     operationType = KOperationType.DELETE

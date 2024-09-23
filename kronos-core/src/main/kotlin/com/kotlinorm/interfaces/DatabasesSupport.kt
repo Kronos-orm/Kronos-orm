@@ -108,8 +108,9 @@ interface DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
-        versionField: String?,
-        whereClauseSql: String?
+        whereClauseSql: String?,
+        plusAssigns: MutableList<Pair<Field, String>>,
+        minusAssigns: MutableList<Pair<Field, String>>
     ): String
 
     fun getSelectSql(

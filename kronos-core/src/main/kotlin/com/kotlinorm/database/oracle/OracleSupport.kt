@@ -263,13 +263,13 @@ object OracleSupport : DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
-        versionField: String?,
-        whereClauseSql: String?
+        whereClauseSql: String?,
+        plusAssigns: MutableList<Pair<Field, String>>,
+        minusAssigns: MutableList<Pair<Field, String>>
     ) =
         "UPDATE ${quote(tableName.uppercase())} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
-                if (!versionField.isNullOrEmpty()) ", ${quote(versionField)} = ${quote(versionField)} + 1" else {
-                    ""
-                } +
+                plusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} + :${it.second}" } +
+                minusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} - :${it.second}" } +
                 whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {

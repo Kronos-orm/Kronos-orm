@@ -298,21 +298,23 @@ object SqlManager {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
         toUpdateFields: List<Field>,
-        versionField: String?,
-        whereClauseSql: String?
+        whereClauseSql: String?,
+        plusAssigns: MutableList<Pair<Field, String>>,
+        minusAssigns: MutableList<Pair<Field, String>>
     ) = when (dataSource.dbType) {
-        Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        Mysql -> MysqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns)
         Postgres -> PostgresqlSupport.getUpdateSql(
             dataSource,
             tableName,
             toUpdateFields,
-            versionField,
-            whereClauseSql
+            whereClauseSql,
+            plusAssigns,
+            minusAssigns
         )
 
-        Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
-        SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
-        Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, versionField, whereClauseSql)
+        Oracle -> OracleSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns)
+        SQLite -> SqliteSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns)
+        Mssql -> MssqlSupport.getUpdateSql(dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns)
         else -> throw RuntimeException("Unsupported database type: ${dataSource.dbType}")
     }
 

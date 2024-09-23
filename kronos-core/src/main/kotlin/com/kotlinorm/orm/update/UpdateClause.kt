@@ -72,6 +72,8 @@ class UpdateClause<T : KPojo>(
     internal var toUpdateFields = linkedSetOf<Field>()
     internal var condition: Criteria? = null
     internal var paramMapNew = mutableMapOf<Field, Any?>()
+    private val plusAssigns = mutableListOf<Pair<Field, String>>()
+    private val minusAssigns = mutableListOf<Pair<Field, String>>()
     private var cascadeEnabled = true
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
 
@@ -107,9 +109,22 @@ class UpdateClause<T : KPojo>(
         if (newValue == null) throw NeedFieldsException()
         pojo.afterSet {
             newValue(it)
-            // TODO deal with assigns
             val plusAssign = plusAssignFields
             val minusAssign = minusAssignFields
+
+            plusAssign.forEach {  assign ->
+                val assignField = assign.first
+                val assignKey = assignField.name + "2PlusNew"
+                plusAssigns += assignField to assignKey
+                paramMapNew[assignField + "2PlusNew"] = assign.second
+            }
+            minusAssign.forEach {  assign ->
+                val assignField = assign.first
+                val assignKey = assignField.name + "2MinusNew"
+                minusAssigns += assignField to assignKey
+                paramMapNew[assignField + "2MinusNew"] = assign.second
+            }
+
             if (isExcept) {
                 toUpdateFields -= fields.toSet()
             } else {
@@ -235,19 +250,20 @@ class UpdateClause<T : KPojo>(
 
         toUpdateFields = toUpdateFields.distinctBy { it.columnName }.filter { it.isColumn }.toLinkedSet()
 
-        var versionField: String? = null
         setCommonStrategy(optimisticStrategy) { field, _ ->
-            versionField = field.columnName
-            if (toUpdateFields.any { it.columnName == versionField }) {
+            if (toUpdateFields.any { it.columnName == field.columnName }) {
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }
+
+            plusAssigns += field to field.name + "2PlusNew"
+            paramMapNew[field + "2PlusNew"] = 1
         }
 
         // 构建完整的更新SQL语句，包括条件部分
         val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(KOperationType.UPDATE, wrapper, condition)
             .toWhereClause()
 
-        val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), versionField, whereClauseSql)
+        val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), whereClauseSql, plusAssigns, minusAssigns)
 
         // 合并参数映射，准备执行SQL所需的参数
         paramMapNew.forEach { (key, value) ->

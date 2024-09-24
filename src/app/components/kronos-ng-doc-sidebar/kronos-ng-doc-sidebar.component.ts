@@ -74,8 +74,6 @@ export class KronosNgDocSidebarComponent {
             }
         });
 
-        console.log(this.items);
-
         const matchesRouterUrl = (item: MenuItem) => {
             if (item.routerLink) {
                 if (item.routerLinkActiveOptions?.exact === true) {

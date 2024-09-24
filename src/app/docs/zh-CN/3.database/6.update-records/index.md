@@ -12,35 +12,100 @@
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
-  .update()
-  .set { it.name = "Kronos ORM" }
-  .execute()
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .execute()
+
+// 根据字符串动态设置赋值列：
+//    .set { it["name"] = "Kronos ORM" }
 ```
 
 ```sql group="Case 1" name="Mysql" icon="mysql"
-UPDATE `user` SET `name` = :nameNew WHERE `id` = :id and `name` = :name and `age` = :age
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
+  and `name` = :name
+  and `age` = :age
 ```
 
 ```sql group="Case 1" name="PostgreSQL" icon="postgres"
-UPDATE "user" SET "name" = :nameNew WHERE "id" = :id and "name" = :name and "age" = :age
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "age" = :age
 ```
 
 ```sql group="Case 1" name="SQLite" icon="sqlite"
-UPDATE `user` SET `name` = :nameNew WHERE `id` = :id and `name` = :name and `age` = :age
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
+  and `name` = :name
+  and `age` = :age
 ```
 
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
-UPDATE [user] SET [name] = :nameNew WHERE [id] = :id and [name] = :name and [age] = :age
+UPDATE [user]
+SET [name] = :nameNew
+WHERE [id] = :id and [name] = : name and [age] = :age
 ```
 
 ```sql group="Case 1" name="Oracle" icon="oracle"
-UPDATE "user" SET "name" = :nameNew WHERE "id" = :id and "name" = :name and "age" = :age
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "age" = :age
+```
+
+### {{ $.title("+=") }} {{ $.title("-=") }} 复合赋值运算符
+
+Kronos支持语义化的`+=`和`-=`加减法赋值运算来更新数据库中的数值列
+
+```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-4}
+user
+    .update()
+    .set { it.age += 2 }
+    .execute()
+
+// 根据字符串动态设置赋值列：
+//    .set { it["age"] += 2 }
+```
+
+```sql group="Case 1-1" name="Mysql" icon="mysql"
+UPDATE `user`
+SET `age` = `age` + :age2PlusNew
+WHERE `id` = :id
+```
+
+```sql group="Case 1-1" name="PostgreSQL" icon="postgres"
+UPDATE "user"
+SET "age" = "age" + :age2PlusNew
+WHERE "id" = :id
+```
+
+```sql group="Case 1-1" name="SQLite" icon="sqlite"
+UPDATE `user`
+SET `age` = `age` + :age2PlusNew
+WHERE `id` = :id
+```
+
+```sql group="Case 1-1" name="SQLServer" icon="sqlserver"
+UPDATE [user]
+SET [age] = [age] + :age2PlusNew
+WHERE [id] = :id
+```
+
+```sql group="Case 1-1" name="Oracle" icon="oracle"
+UPDATE "user"
+SET "age" = "age" + :age2PlusNew
+WHERE "id" = :id
 ```
 
 ## {{ $.title("by") }} 设置更新条件
@@ -49,36 +114,46 @@ UPDATE "user" SET "name" = :nameNew WHERE "id" = :id and "name" = :name and "age
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {7-11}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
-  .update()
-  .set { it.name = "Kronos ORM" }
-  .by { it.id }
-  .execute()
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .by { it.id }
+    .execute()
 ```
 
 ```sql group="Case 2" name="Mysql" icon="mysql"
-UPDATE `user` SET `name` = :nameNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 2" name="PostgreSQL" icon="postgres"
-UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
 ```
 
 ```sql group="Case 2" name="SQLite" icon="sqlite"
-UPDATE `user` SET `name` = :nameNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 2" name="SQLServer" icon="sqlserver"
-UPDATE [user] SET [name] = :nameNew WHERE [id] = :id
+UPDATE [user]
+SET [name] = :nameNew
+WHERE [id] = :id
 ```
 
 ```sql group="Case 2" name="Oracle" icon="oracle"
-UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
 ```
 
 ## {{ $.title("where") }} 设置更新条件
@@ -87,48 +162,165 @@ UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
 
 ```kotlin group="Case 3" name="kotlin" icon="kotlin" {7-11}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
-  .update()
-  .set { it.name = "Kronos ORM" }
-  .where { it.id eq 1 }
-  .execute()
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .where { it.id == 1 }
+    .execute()
 ```
 
 ```sql group="Case 3" name="Mysql" icon="mysql"
-UPDATE `user` SET `name` = :nameNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 3" name="PostgreSQL" icon="postgres"
-UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
 ```
 
 ```sql group="Case 3" name="SQLite" icon="sqlite"
-UPDATE `user` SET `name` = :nameNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 3" name="SQLServer" icon="sqlserver"
-UPDATE [user] SET [name] = :nameNew WHERE [id] = :id
+UPDATE [user]
+SET [name] = :nameNew
+WHERE [id] = :id
 ```
 
 ```sql group="Case 3" name="Oracle" icon="oracle"
-UPDATE "user" SET "name" = :nameNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+```
+
+可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件:
+
+```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
+val user: User = User(
+    id = 1,
+    name = "Kronos"
+)
+
+user.update { it.name }.where { it.eq && it.status > 1 }.execute()
+```
+
+```sql group="Case 3-1" name="Mysql" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
+  and `name` = :name
+  and `status` = :status
+  and `status` > :statusMin
+```
+
+```sql group="Case 3-1" name="PostgreSQL" icon="postgres"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "status" = :status
+  and "status" > :statusMin
+```
+
+```sql group="Case 3-1" name="SQLite" icon="sqlite"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "status" = :status
+  and "status" > :statusMin
+```
+
+```sql group="Case 3-1" name="SQLServer" icon="sqlserver"
+UPDATE [user]
+SET [name] = :nameNew
+WHERE [id] = :id 
+  and [name] = : name
+  and [status] = :status
+  and [status] > :statusMin
+```
+
+```sql group="Case 3-1" name="Oracle" icon="oracle"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "status" = :status
+  and "status" > :statusMin
+```
+
+Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+
+```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
+val user: User = User(
+    id = 1,
+    name = "Kronos"
+)
+
+user.update { it.name }.where { (it - it.status).eq && it.status > 1 }.execute()
+```
+
+```sql group="Case 3-2" name="Mysql" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE `id` = :id
+  and `name` = :name
+  and `status` > :statusMin
+```
+
+```sql group="Case 3-2" name="PostgreSQL" icon="postgres"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "status" > :statusMin
+```
+
+```sql group="Case 3-2" name="SQLite" icon="sqlite"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "status" > :statusMin
+```
+
+```sql group="Case 3-2" name="SQLServer" icon="sqlserver"
+UPDATE [user]
+SET [name] = :nameNew
+WHERE [id] = :id
+  and [name] = :name
+  and [status] > :statusMin
+```
+
+```sql group="Case 3-2" name="Oracle" icon="oracle"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE "id" = :id
+  and "name" = :name
+  and "status" > :statusMin
 ```
 
 ## {{ $.title("patch") }}为自定义删除条件添加参数
 
 在Kronos中，我们可以使用`patch`方法为自定义删除条件添加参数。
 
-```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {7-12}
+```kotlin group="Case 3-3" name="kotlin" icon="kotlin" {7-12}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
     .update()
@@ -138,24 +330,34 @@ user
     .execute()
 ```
 
-```sql group="Case 3-1" name="Mysql" icon="mysql"
-UPDATE `user` SET `name` = :nameNew WHERE id = :id
+```sql group="Case 3-3" name="Mysql" icon="mysql"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE id = :id
 ```
 
-```sql group="Case 3-1" name="PostgreSQL" icon="postgres"
-UPDATE "user" SET "name" = :nameNew WHERE id = :id
+```sql group="Case 3-3" name="PostgreSQL" icon="postgres"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE id = :id
 ```
 
-```sql group="Case 3-1" name="SQLite" icon="sqlite"
-UPDATE `user` SET `name` = :nameNew WHERE id = :id
+```sql group="Case 3-3" name="SQLite" icon="sqlite"
+UPDATE `user`
+SET `name` = :nameNew
+WHERE id = :id
 ```
 
-```sql group="Case 3-1" name="SQLServer" icon="sqlserver"
-UPDATE [user] SET [name] = :nameNew WHERE id = :id
+```sql group="Case 3-3" name="SQLServer" icon="sqlserver"
+UPDATE [user]
+SET [name] = :nameNew
+WHERE id = :id
 ```
 
-```sql group="Case 3-1" name="Oracle" icon="oracle"
-UPDATE "user" SET "name" = :nameNew WHERE id = :id
+```sql group="Case 3-3" name="Oracle" icon="oracle"
+UPDATE "user"
+SET "name" = :nameNew
+WHERE id = :id
 ```
 
 ## {{ $.title("update") }} 设置需要更新的字段
@@ -164,72 +366,100 @@ UPDATE "user" SET "name" = :nameNew WHERE id = :id
 
 ```kotlin group="Case 4" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
-  .update { it.name + it.age }
-  .where { it.id == 1 }
-  .execute()
+    .update { it.name + it.age }
+    .where { it.id == 1 }
+    .execute()
 ```
 
 ```sql group="Case 4" name="Mysql" icon="mysql"
-UPDATE `user` SET `name` = :nameNew, `age` = :ageNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew,
+    `age`  = :ageNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 4" name="PostgreSQL" icon="postgres"
-UPDATE "user" SET "name" = :nameNew, "age" = :ageNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew,
+    "age"  = :ageNew
+WHERE "id" = :id
 ```
 
 ```sql group="Case 4" name="SQLite" icon="sqlite"
-UPDATE `user` SET `name` = :nameNew, `age` = :ageNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew,
+    `age`  = :ageNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 4" name="SQLServer" icon="sqlserver"
-UPDATE [user] SET [name] = :nameNew, [age] = :ageNew WHERE [id] = :id
+UPDATE [user]
+SET [name] = :nameNew, [age] = :ageNew
+WHERE [id] = :id
 ```
 
 ```sql group="Case 4" name="Oracle" icon="oracle"
-UPDATE "user" SET "name" = :nameNew, "age" = :ageNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew,
+    "age"  = :ageNew
+WHERE "id" = :id
 ```
 
-## {{ $.title("updateExcept") }} 设置排除的字段
+## {{ $.title("update") }} {{ $.title("-") }}设置排除的字段
 
-在Kronos中，我们可以使用`updateExcept`方法设置需要排除的字段，未在`updateExcept`方法中设置的字段将会被更新。
+在Kronos中，我们可以使用减号表达式`-`设置需要排除的字段。
 
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
-  .updateExcept { it.id }
-  .where { it.id == 1 }
-  .execute()
+    .update { it - it.id }
+    .where { it.id == 1 }
+    .execute()
 ```
 
 ```sql group="Case 5" name="Mysql" icon="mysql"
-UPDATE `user` SET `name` = :nameNew, `age` = :ageNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew,
+    `age`  = :ageNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 5" name="PostgreSQL" icon="postgres"
-UPDATE "user" SET "name" = :nameNew, "age" = :ageNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew,
+    "age"  = :ageNew
+WHERE "id" = :id
 ```
 
 ```sql group="Case 5" name="SQLite" icon="sqlite"
-UPDATE `user` SET `name` = :nameNew, `age` = :ageNew WHERE `id` = :id
+UPDATE `user`
+SET `name` = :nameNew,
+    `age`  = :ageNew
+WHERE `id` = :id
 ```
 
 ```sql group="Case 5" name="SQLServer" icon="sqlserver"
-UPDATE [user] SET [name] = :nameNew, [age] = :ageNew WHERE [id] = :id
+UPDATE [user]
+SET [name] = :nameNew, [age] = :ageNew
+WHERE [id] = :id
 ```
 
 ```sql group="Case 5" name="Oracle" icon="oracle"
-UPDATE "user" SET "name" = :nameNew, "age" = :ageNew WHERE "id" = :id
+UPDATE "user"
+SET "name" = :nameNew,
+    "age"  = :ageNew
+WHERE "id" = :id
 ```
 
 ## 影响行数
@@ -238,15 +468,15 @@ UPDATE "user" SET "name" = :nameNew, "age" = :ageNew WHERE "id" = :id
 
 ```kotlin name="demo" icon="kotlin" {7-10}
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
-    
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
+
 val (affectedRows) = user
-                .update()
-                .set { it.name = "Kronos ORM" }
-                .execute()
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .execute()
 ```
 
 ## 批量更新记录
@@ -268,9 +498,9 @@ val users: List<User> = listOf(
 )
 
 users
-  .update { it.name + it.age }
-  .where { it.id eq 1 }
-  .execute()
+    .update { it.name + it.age }
+    .where { it.id eq 1 }
+    .execute()
 ```
 
 ## 指定使用的数据源
@@ -281,13 +511,13 @@ users
 val customWrapper = CustomWrapper()
 
 val user: User = User(
-        id = 1,
-        name = "Kronos",
-        age = 18
-    )
+    id = 1,
+    name = "Kronos",
+    age = 18
+)
 
 user
-  .update()
-  .set { it.name = "Kronos ORM" }
-  .execute(customWrapper)
+    .update()
+    .set { it.name = "Kronos ORM" }
+    .execute(customWrapper)
 ```

@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何向数据库中插入或更新记录。
-
 在Kronos中，我们可以使用`KPojo.upsert().execute()`方法用于向数据库中插入或更新记录。
 
 由于各个数据库的实现不同，因此在Kronos中，我们对`upsert`操作进行了统一的封装，以实现跨数据库的兼容性。
@@ -121,7 +119,7 @@ UPDATE "user" SET "name" = :name WHERE "id" = :id;
 INSERT INTO "user" ("id", "name", "age") VALUES (:id, :name, :age);
 ```
 
-## {{ $.title("upsertExcept") }} 设置不更新字段
+## {{ $.title("upsert") }} {{ $.title("-") }}设置排除的字段
 
 用于指定当记录存在时不需要更新的字段。
 
@@ -133,7 +131,7 @@ val user: User = User(
     )
 
 user
-  .upsertExcept { it.id }
+  .upsert { it - it.id }
   .on { it.id }
   .execute()
 ```

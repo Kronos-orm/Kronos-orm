@@ -1,19 +1,9 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何使用Kronos的级联删除功能。
-
 ## 级联删除策略
 
-{{ $.annotation("Cascade") }}注解支持设置级联删除操作的策略，包括：
-
-1. {{$.code("CASCADE")}}（级联删除）
-2. {{$.code("RESTRICT")}}（若存在关联数据，不允许删除该实体）
-3. {{$.code("SET_NULL")}}（删除当前实体，将关联实体的引用列设置为`null`)
-4. {{$.code("SET_DEFAULT")}}（删除当前实体，将关联实体的引用列设置为默认值，默认值需要在注解中指定`defaultValue`属性）
-5. {{$.code("NO_ACTION")}}（不做任何操作，若不设置，则默认为`NO_ACTION`)
-
-在此处可以查看全部的{{ $.keyword("concept/cascade-delete-action", ["级联删除策略"]) }}。
+{{ $.annotation("Cascade") }}注解支持设置级联删除操作的策略，请参考：{{ $.keyword("concept/cascade-delete-action", ["级联删除策略"]) }}。
 
 ### 设置默认值
 
@@ -22,7 +12,7 @@
 {{$.code("defaultValue")}}接受一个字符串数组，如`["a", "b"]`，对应关联实体的多个引用列的默认值
 
 > **Note**
-> 请保证`defaultValue`数组长度与`targetProperties`数组长度一致
+> 请保证`defaultValue`、`properties`、`targetProperties`数组长度一致
 
 若其中的某个引用列不需要修改，可以通过将其设置为`RESERVED`，Kronos在级联删除设置为`SET_DEFAULT`时会忽略该引用列，如：
 
@@ -57,6 +47,16 @@ KPojo.delete().cascade(enable = false).execute()
 KPojo.delete().cascade(KPojo::property1, KPojo::property2).execute()
 ```
 
+可以限制其子属性级联删除，如下：
+
+```kotlin
+KPojo.delete().cascade(
+    KPojo::property1, 
+    KPojo::property2, 
+    Property1::subProperty1, 
+    Property1::subProperty2
+).execute()
+```
 
 ## 逻辑删除
 
@@ -232,14 +232,14 @@ data class Relation(
 )
 ```
 
-### 级联插入
+### 级联删除
 
-插入`User`或`Role`实体都可以进行级联插入，级联插入会自动为级联创建的实体的引用属性赋值（支持自增主键和多层级级联关系）。
+插入`User`或`Role`实体都可以进行级联删除，根据注解定义的级联删除策略，级联删除会自动删除关联表记录。
 
 ```kotlin
 User(name = "user")
     .apply { roles = listOf(Role(name = "role")) }
-    .insert().execute()
+    .delete().execute()
 ```
 
 或者：
@@ -247,5 +247,5 @@ User(name = "user")
 ```kotlin
 Role(name = "role")
     .apply { users = listOf(User(name = "user")) }
-    .insert().execute()
+    .delete().execute()
 ``` 

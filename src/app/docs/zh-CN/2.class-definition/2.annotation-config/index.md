@@ -196,6 +196,30 @@ data class Company(
 ) : KPojo
 ```
 
+## {{ $.annotation("CascadeSelectIgnore") }}关闭属性级联查询
+
+此注解用于声明属性忽略级联查询。
+
+```kotlin
+@Table("tb_user")
+data class Employee(
+  val id: Int? = null,
+  val companyId: Int? = null,
+  @Cascade(["companyId"], ["id"], SET_DEFAULT, ["0"])
+  val company: Company? = null
+) : KPojo
+
+@Table("tb_company")
+data class Company(
+  val id: Int? = null,
+  @SelectIgnore
+  val employees: List<Employee>? = null
+) : KPojo
+```
+
+> **Note**
+> 请注意，此注解是单向的，即给`employees`加上`@CascadeSelectIgnore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
+
 ## {{ $.annotation("PrimaryKey") }}列主键设置
 
 此注解用于声明列为主键。

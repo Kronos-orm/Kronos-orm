@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos通过自定义创建继承`KronosDataSourceWrapper`接口的包装类，可以轻松与第三方框架结合使用。
-
 ## Spring示例
 
 以下是一个使用Springboot + Kronos + JDK 17 + Maven + Kotlin 2.0.0 的示例，演示了如何将Kronos与Spring框架结合使用。

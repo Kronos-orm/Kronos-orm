@@ -16,7 +16,7 @@ import {DialogModule} from "primeng/dialog";
   ],
   template: `
       <p-dialog styleClass="wiki" [closable]="false" [modal]="false" [(visible)]="visible"
-                [style]="{ width: '80vw', height: '80vh' }">
+                [style]="{ width: '70vw', height: '70vh' }">
           <div class="flex flex-column gap-3 w-full h-full">
               <iframe style="opacity: 0.7" *ngIf="safeUrl" class="w-full h-full" [src]="safeUrl"
                       frameborder="0"></iframe>

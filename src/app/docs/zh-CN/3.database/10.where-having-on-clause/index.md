@@ -277,6 +277,14 @@ val user = User(id = 1, name = "Kronos", age = 18)
 User().select().where { it.eq || it.name like "Kronos%" }.query()
 ```
 
+使用`-`可以忽略某个字段的判等条件。
+
+```kotlin {3}
+val user = User(id = 1, name = "Kronos", age = 18)
+// 将不会生成`it.id == 1`的判等条件
+User().select().where { (it - it.id).eq }.query()
+```
+
 ### {{ $.title("(String/Boolean).asSql") }} 自定义SQL查询条件
 
 可以将Kotlin的boolean表达式的结果或者字符串作为SQL查询条件，从而方便地定义复杂的查询条件。

@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos提供了一个基础的SQL构建器，它允许您使用命名参数来构建SQL操作，本章将介绍如何使用该构建器执行SQL查询等操作。
-
 ## {{ $.title("query") }} 查询Map列表
 
 `query`方法用于执行查询多行记录，返回一个`List<Map<String, Any>>`对象。

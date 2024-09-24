@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-`AsSql`是Kronos定义的SQL转换器，用于将Kotlin原生表达式转换为SQL语句。
-
 ## 基础用法
 
 在`where`、`having`、`on`等语句中，可以使用`asSql`方法将`String`类型的自定义SQL语句插入到Kronos的条件语句构建中：

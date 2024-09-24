@@ -1,5 +1,4 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
-{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 规定级联删除时的操作，级联删除的使用方法详见 {{ $.keyword("advanced/cascade-delete", ["级联删除"]) }}
 

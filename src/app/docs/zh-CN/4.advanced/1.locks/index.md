@@ -1,9 +1,11 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何使用Kronos的**锁**功能。
+## 悲观锁
 
-## {{$.title("PessimisticLock.S")}} 共享锁
+Kronos共提供**共享锁**和**独占锁**两种悲观锁。
+
+### {{$.title("PessimisticLock.S")}} 共享锁
 
 Kronos提供**共享锁**，其锁等级为**行锁**。
 
@@ -13,7 +15,7 @@ Kronos提供**共享锁**，其锁等级为**行锁**。
 在Kronos中，**共享锁**可用于{{$.keyword("database/select-records", ["查询记录", "lock设置查询时行锁"])}}与{{
 $.keyword("database/upsert-records", ["更新插入", "lock设置查询时行锁"])}}功能。
 
-## {{$.title("PessimisticLock.X")}} 独占锁
+### {{$.title("PessimisticLock.X")}} 独占锁
 
 Kronos提供**独占锁**，其锁等级为**表锁**。
 

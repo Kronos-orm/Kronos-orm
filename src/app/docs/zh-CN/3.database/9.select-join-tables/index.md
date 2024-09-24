@@ -1,15 +1,15 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何查询多表关联数据。
+本章将介绍如何查询多表关联数据（或许您也想看看{{ $.keyword("advanced/reference-select", ["级联查询"]) }}）。
 
 ## 查询多表关联数据
 
 在Kronos中，我们可以使用`KPojo.join(KPojo1, KPojo2, ...)`方法来查询多表关联数据。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.query()
@@ -20,8 +20,8 @@ val users: List<User> =
 在Kronos中，我们默认使用`left join`连接多表，如果不需要指定连接方式，可以使用`on`方法指定连接条件。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.query()
@@ -30,8 +30,8 @@ val users: List<User> =
 可以通过`leftJoin`、`rightJoin`、`innerJoin`、`crossJoin`、`fullJoin`等函数同时指定连接方式和连接条件。
 
 ```kotlin name="demo" icon="kotlin" {2-6}
-val users: List<User> = 
-    User().join(UserInfo(), UserTeam()){ user, userInfo, userTeam ->
+val users: List<User> =
+    User().join(UserInfo(), UserTeam()) { user, userInfo, userTeam ->
         leftJoin { user.id == userInfo.userId }
         innerJoin { user.id == userTeam.userId }
         select { user.id + user.name + userInfo.age + userTeam.teamId }
@@ -45,8 +45,8 @@ val users: List<User> =
 将一张或多张表与其所处的数据库名组合通过一个或多个`Pair`类作为参数传入该方法进行跨库连表查询
 
 ```kotlin name="demo" icon="kotlin" {4}
-val users: List<User> = 
-    User().join(UserInfo(), UserTeam(), UserRole()){ user, userInfo, userTeam, userRole ->
+val users: List<User> =
+    User().join(UserInfo(), UserTeam(), UserRole()) { user, userInfo, userTeam, userRole ->
         on { user.id == userInfo.userId && user.id == userTeam.userId && user.id == userRole.userId }
         db(userInfo to "user_info_database", userRole to "user_role_database")
         select { user.id + user.name + userInfo.age + userTeam.teamId + userRole.roleName }
@@ -66,11 +66,24 @@ val users: List<User> =
 可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".as("count") }```。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.queryList()
+```
+
+### 查询全部字段、排除部分列
+
+可以传入`KPojo`查询全部列，并使用`+`、`-`在全部列基础上增加减去部分列。
+
+```kotlin name="kotlin" icon="kotlin" {6}
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
+        on { user.id == userInfo.userId }
+        select { user - user.id + userInfo.age }
+    }
+        .query()
 ```
 
 ## {{ $.title("by") }}指定查询条件
@@ -78,22 +91,44 @@ val users: List<User> =
 在Kronos中，我们可以使用`by`方法指定查询字段，多个字段之间使用`+`连接。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         by { user.id + user.name + userInfo.age }
     }.query()
 ```
 
-## 使用<span style="color: #DD6666">where</span>指定查询条件
+## {{ $.title("where") }}指定查询条件
 
 在Kronos中，我们可以使用`where`方法指定查询条件。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user.id == 1 }
+        select { user.id + user.name + userInfo.age }
+    }.query()
+```
+
+可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件：
+
+```kotlin name="demo" name="kotlin" icon="kotlin" {6}
+val users: List<User> =
+    User(1, "Kronos").join(UserInfo()) { user, userInfo ->
+        on { user.id == userInfo.userId }
+        where { user.eq }
+        select { user.id + user.name + userInfo.age }
+    }.query()
+```
+
+Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+
+```kotlin name="demo" name="kotlin" icon="kotlin" {6}
+val users: List<User> =
+    User(1, "Kronos").join(UserInfo()) { user, userInfo ->
+        on { user.id == userInfo.userId }
+        where { user - user.id }
         select { user.id + user.name + userInfo.age }
     }.query()
 ```
@@ -104,7 +139,7 @@ val users: List<User> =
 
 ```kotlin name="demo" icon="kotlin" {2-7}
 val users: List<User> =
-    User().join(UserInfo()){ user, userInfo ->
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
         where { "user.id = :id" }
@@ -117,8 +152,8 @@ val users: List<User> =
 在Kronos中，我们可以使用`groupBy`方法指定分组字段。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         groupBy { user.id + userInfo.age }
         having { userInfo.age > 18 }
@@ -131,8 +166,8 @@ val users: List<User> =
 在Kronos中，我们可以使用`orderBy`方法指定排序字段。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         orderBy { user.id.asc() + userInfo.age.desc() }
         select { user.id + user.name + userInfo.age }
@@ -144,8 +179,8 @@ val users: List<User> =
 在Kronos中，我们可以使用`limit`方法指定查询数量。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         limit(10)
         select { user.id + user.name + userInfo.age }
@@ -157,8 +192,8 @@ val users: List<User> =
 在Kronos中，我们可以使用`distinct`方法指定查询去重。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         distinct()
         select { user.id + user.name + userInfo.age }
@@ -177,8 +212,8 @@ val users: List<User> =
 > 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请务必使用withTotal方法</a>。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val (total, list) = 
-    User().join(UserInfo()){ user, userInfo ->
+val (total, list) =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         page(1, 10)
         select { user.id + user.name + userInfo.age }
@@ -190,8 +225,8 @@ val (total, list) =
 `query`方法用于执行查询并返回Map列表。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.query()
@@ -211,8 +246,8 @@ val users: List<User> =
 > queryList使用kronos-compiler-plugin实现Map转换为KPojo，详见：KPojo与Map互相转换
 
 ```kotlin name="demo" icon="kotlin" {2-5}
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.queryList()
@@ -230,10 +265,11 @@ val users: List<User> =
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: Map<String, Any> =
-    User().join(UserInfo()){ user, userInfo ->
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo
-    }.queryMap()
+        select {
+            user.id + user.name + userInfo
+        }.queryMap()
 ```
 
 ## {{ $.title("queryMapOrNull") }}查询单条记录Map（可空）
@@ -242,9 +278,10 @@ val user: Map<String, Any> =
 
 ```kotlin group="Case 15" name="demo" icon="kotlin" {2-5}
 val user: Map<String, Any>? =
-    User().join(UserInfo()){ user, userInfo ->
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo
+        select {
+            user.id + user.name + userInfo
         }.queryMapOrNull()
 ```
 
@@ -263,10 +300,11 @@ val user: Map<String, Any>? =
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: User =
-    User().join(UserInfo()){ user, userInfo ->
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo
-    }.queryOne()
+        select {
+            user.id + user.name + userInfo
+        }.queryOne()
 ```
 
 ## {{ $.title("queryOneOrNull") }}查询单条记录（可空）
@@ -284,7 +322,7 @@ val user: User =
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: User? =
-    User().join(UserInfo()){ user, userInfo ->
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.queryOneOrNull()
@@ -297,8 +335,8 @@ val user: User? =
 ```kotlin name="demo" icon="kotlin" {1}
 val customWrapper = CustomWrapper()
 
-val users: List<User> = 
-    User().join(UserInfo()){ user, userInfo ->
+val users: List<User> =
+    User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { user.id + user.name + userInfo.age }
     }.queryLIST(customWrapper)

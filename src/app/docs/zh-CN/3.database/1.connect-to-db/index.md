@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将详细介绍如何创建数据库连接。
-
 Kronos访问数据库通过{{ $.keyword("concept/kronos-data-source-wrapper", ["概念", "数据源包装器"]) }}实现，`KronosDataSourceWrapper`是一个接口，是对数据库操作的封装，它不关心具体的数据库连接细节，与平台无关，只关心数据库操作的逻辑。
 
 > **Note**

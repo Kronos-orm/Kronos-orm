@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何定义一个Kronos数据表类。
-
 ## 创建数据表类
 
 在Kronos中声明一个class为数据表类非常简单，只需要让该类继承`KPojo`即可，以下是一个简单示例：
@@ -62,11 +60,24 @@ data class User(
     var list: List<String>? by serializable(::listStr)
 }
 ```
+### 使用匿名类创建对象进行数据库操作
+
+在Kronos中，我们可以通过创建匿名类对象灵活地进行数据库操作，如：
+
+```kotlin
+val obj = @Table("tb_name") object : KPojo { @PrimaryKey(true) var id = 1 }
+
+if(!dataSource.table.exists(obj)) {
+    dataSource.table.createTable(obj)
+}
+
+obj.insert().execute()
+```
 
 ## 使用注解设置表属性
 
-在Kronos中，我们可以通过注解来设置表的属性，如：表名、列名、列类型、列长度、主键、自增、唯一键、索引、默认值、非空等。
-Kronos还提供了级联、序列化/反序列化、日期格式化、逻辑删除、创建时间、更新时间、乐观锁等功能。
+在Kronos中，我们可以通过注解来设置表的属性，如：**表名**、**列名**、**列类型**、**列长度**、**主键**、**自增**、**唯一键**、**索引**、**默认值**、**非空**等。
+Kronos还提供了**级联**、**序列化/反序列化**、**日期格式化**、**逻辑删除**、**创建时间**、**更新时间**、**乐观锁等**功能。
 
 以下是一个示例，包含了一些常用的注解：
 

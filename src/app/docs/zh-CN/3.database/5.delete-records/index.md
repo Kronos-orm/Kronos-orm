@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何删除数据库行记录。
-
 ## 根据KPojo对象值生成条件语句并删除记录
 
 在Kronos中，我们可以使用`KPojo.delete().execute()`方法用于删除数据库中的记录
@@ -152,7 +150,63 @@ WHERE "id" = :id
   and "age" > :ageMin
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件：
+可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件:
+
+```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
+val user: User = User(
+    id = 1,
+    name = "Kronos"
+)
+
+user.delete().where { it.eq && it.status > 1 }.execute()
+```
+
+```sql group="Case 3-1" name="Mysql" icon="mysql"
+DELETE
+FROM `user`
+WHERE `id` = :id
+  and `name` = :name
+  and `status` = :status
+  and `status` > :statusMin
+```
+
+```sql group="Case 3-1" name="PostgreSQL" icon="postgres"
+DELETE
+FROM "user"
+WHERE "id" = :id
+  and "name" = :name
+  and "status" = :status
+  and "status" > :statusMin
+```
+
+```sql group="Case 3-1" name="SQLite" icon="sqlite"
+DELETE
+FROM "user"
+WHERE "id" = :id
+  and "name" = :name
+  and "status" = :status
+  and "status" > :statusMin
+```
+
+```sql group="Case 3-1" name="SQLServer" icon="sqlserver"
+DELETE
+FROM [user]
+WHERE [id] = :id 
+  and [name] = : name
+  and [status] = :status
+  and [status] > :statusMin
+```
+
+```sql group="Case 3-1" name="Oracle" icon="oracle"
+DELETE
+FROM "user"
+WHERE "id" = :id
+  and "name" = :name
+  and "status" = :status
+  and "status" > :statusMin
+```
+
+Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -160,7 +214,7 @@ val user: User = User(
     name = "Kronos"
 )
 
-user.delete().where { it.eq && it.status == 1 }.execute()
+user.delete().where { (it - it.status).eq && it.status > 1 }.execute()
 ```
 
 ```sql group="Case 3-2" name="Mysql" icon="mysql"
@@ -168,7 +222,7 @@ DELETE
 FROM `user`
 WHERE `id` = :id
   and `name` = :name
-  and `status` = :status
+  and `status` > :statusMin
 ```
 
 ```sql group="Case 3-2" name="PostgreSQL" icon="postgres"
@@ -176,7 +230,7 @@ DELETE
 FROM "user"
 WHERE "id" = :id
   and "name" = :name
-  and "status" = :status
+  and "status" > :statusMin
 ```
 
 ```sql group="Case 3-2" name="SQLite" icon="sqlite"
@@ -184,15 +238,15 @@ DELETE
 FROM "user"
 WHERE "id" = :id
   and "name" = :name
-  and "status" = :status
+  and "status" > :statusMin
 ```
 
 ```sql group="Case 3-2" name="SQLServer" icon="sqlserver"
 DELETE
 FROM [user]
-WHERE [id] = :id 
-  and [name] = : name
-  and [status] = :status
+WHERE [id] = :id
+  and [name] = :name
+  and [status] > :statusMin
 ```
 
 ```sql group="Case 3-2" name="Oracle" icon="oracle"
@@ -200,7 +254,7 @@ DELETE
 FROM "user"
 WHERE "id" = :id
   and "name" = :name
-  and "status" = :status
+  and "status" > :statusMin
 ```
 
 ## {{ $.title("patch") }}为自定义删除条件添加参数

@@ -3,17 +3,17 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将指导您如何使用Kronos的级联删除功能。
- * @status:success 新
+ * 本文将指导您如何使用Kronos的级联更新功能。
+ * @status:warning 版本落后
  */
-const CascadeDeletePage: NgDocPage = {
-    title: `级联删除`,
+const CascadeUpdatePage: NgDocPage = {
+    title: `级联更新`,
     mdFile: './index.md',
-    route: 'cascade-delete',
+    route: 'cascade-update',
     category: AdvancedCategory,
-    order: 5,
+    order: 6,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default CascadeDeletePage;
+export default CascadeUpdatePage;

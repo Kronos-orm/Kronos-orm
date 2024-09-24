@@ -1,9 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何使用Kronos的级联插入功能。
-
-
 ## 1. 一对一级联关系
 
 本节将介绍对于Kronos中定义的一对多级联关系的级联插入。

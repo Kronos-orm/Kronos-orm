@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何全局设置Kronos。
-
 ## 默认数据源设置
 
 在数据库操作时，若不指定数据源，kronos会自动使用该默认数据源。
@@ -212,16 +210,14 @@ Kronos.timeZone = ZoneId.of("GMT+8")
 
 ```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
 object GsonResolver : KronosSerializeResolver {
-    override fun <T> deserialize(serializedStr: String, kClass: KClass<*>): T {
-        return Gson().fromJson<T>(serializedStr, kClass.java)
-    }
-
-    override fun deserializeObj(serializedStr: String, kClass: KClass<*>): Any {
-        return Gson().fromJson(serializedStr, kClass.java)
-    }
-
+    // 使用GSON序列化对象
     override fun serialize(obj: Any): String {
         return Gson().toJson(obj)
+    }
+    
+    // 使用GSON反序列化对象
+    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
+        return Gson().fromJson(serializedStr, kClass.java)
     }
 }
 ```

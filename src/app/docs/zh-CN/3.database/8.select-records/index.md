@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何查询数据库中的记录。
-
 ## 查询所有记录
 
 在Kronos中，我们可以使用`KPojo.select()`方法用于查询数据库中的记录。
@@ -42,7 +40,9 @@ FROM "user"
 
 可以传入字符串作为查询字段，使用`+`连接多个字段，`as`方法用于设置字段别名。
 
-```kotlin group="Case 16" name="kotlin" icon="kotlin" {1-5}
+可以使用`+`连接多个查询字段。
+
+```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-5}
 val listOfUser: List<User> = User()
     .select {
         it.id + it.name.`as`("username") + "count(*) as total" + "1"
@@ -50,28 +50,66 @@ val listOfUser: List<User> = User()
     .queryList()
 ```
 
-```sql group="Case 16" name="Mysql" icon="mysql"
+```sql group="Case 1-1" name="Mysql" icon="mysql"
 SELECT `id`, `name` AS `username`, count(*) AS total, 1
 FROM `user`
 ```
 
-```sql group="Case 16" name="PostgreSQL" icon="postgres"
+```sql group="Case 1-1" name="PostgreSQL" icon="postgres"
 SELECT "id", "name" AS "username", count(*) AS total, 1
 FROM "user"
 ```
 
-```sql group="Case 16" name="SQLite" icon="sqlite"
+```sql group="Case 1-1" name="SQLite" icon="sqlite"
 SELECT "id", `name` AS `username`, count(*) AS total, 1
 FROM `user`
 ```
 
-```sql group="Case 16" name="SQLServer" icon="sqlserver"
+```sql group="Case 1-1" name="SQLServer" icon="sqlserver"
 SELECT [id], [name] AS [username], count (*) AS total, 1
 FROM [user]
 ```
 
-```sql group="Case 16" name="Oracle" icon="oracle"
+```sql group="Case 1-1" name="Oracle" icon="oracle"
 SELECT "id", "name" AS "username", count(*) AS total, 1
+FROM "user"
+```
+
+### 查询全部字段、排除部分列
+
+可以传入`KPojo`查询全部列，并使用`+`、`-`在全部列基础上增加减去部分列。
+
+> **Note**
+> 请注意，`-`必须用在`KPojo`之后。
+
+```kotlin group="Case 1-2" name="kotlin" icon="kotlin"
+val listOfUser: List<User> = User()
+    .select { it - it.id + "count(*) as total" }
+    .queryList()
+```
+
+```sql group="Case 1-2" name="Mysql" icon="mysql"
+SELECT `name`, `age`, count(*) AS total
+FROM `user`
+```
+
+```sql group="Case 1-2" name="PostgreSQL" icon="postgres"
+SELECT "name", "age", count(*) AS total
+FROM "user"
+```
+
+```sql group="Case 1-2" name="SQLite" icon="sqlite"
+SELECT "name", "age", count(*) AS total
+FROM "user"
+```
+
+```sql group="Case 1-2" name="SQLServer" icon="sqlserver"
+SELECT [name], [age], count (*) AS total
+FROM [user]
+```
+
+```sql group="Case 1-2" name="Oracle" icon="oracle"
+SELECT "name", "age", count(*) AS total
 FROM "user"
 ```
 
@@ -279,13 +317,13 @@ WHERE "id" > :id
 
 可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件：
 
-```kotlin group="Case 4-2" name="kotlin" icon="kotlin" {5}
+```kotlin group="Case 4-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
     id = 1,
     name = "Kronos"
 )
 
-user.select().where { it.eq && it.status == 1 }.queryOneOrNull()
+user.select().where { it.eq && it.status > 1 }.queryOneOrNull()
 ```
 
 ```sql group="Case 4-2" name="Mysql" icon="mysql"
@@ -294,6 +332,7 @@ FROM `user`
 WHERE `id` = :id
   and `name` = :name
   and `status` = :status
+  and `status` > :statusMin
 ```
 
 ```sql group="Case 4-2" name="PostgreSQL" icon="postgres"
@@ -302,6 +341,7 @@ FROM "user"
 WHERE "id" = :id
   and "name" = :name
   and "status" = :status
+  and "status" > :statusMin
 ```
 
 ```sql group="Case 4-2" name="SQLite" icon="sqlite"
@@ -310,6 +350,7 @@ FROM "user"
 WHERE "id" = :id
   and "name" = :name
   and "status" = :status
+  and "status" > :statusMin
 ```
 
 ```sql group="Case 4-2" name="SQLServer" icon="sqlserver"
@@ -318,6 +359,7 @@ FROM [user]
 WHERE [id] = :id
   and [name] = : name
   and [status] = :status
+  and [status] > :statusMin
 ```
 
 ```sql group="Case 4-2" name="Oracle" icon="oracle"
@@ -326,6 +368,57 @@ FROM "user"
 WHERE "id" = :id
   and "name" = :name
   and "status" = :status
+  and "status" > :statusMin
+```
+Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+
+```kotlin group="Case 4-3" name="kotlin" icon="kotlin" {6}
+val user: User = User(
+    id = 1,
+    name = "Kronos"
+)
+
+user.select().where { (it - it.status).eq && it.status == 1 }.queryOneOrNull()
+```
+
+```sql group="Case 4-3" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`
+FROM `user`
+WHERE `id` = :id
+  and `name` = :name
+  and `status` > :statusMin
+```
+
+```sql group="Case 4-3" name="PostgreSQL" icon="postgres"
+SELECT "id", "name", "age"
+FROM "user"
+WHERE "id" = :id
+  and "name" = :name
+  and "status" > :statusMin
+```
+
+```sql group="Case 4-3" name="SQLite" icon="sqlite"
+SELECT "id", "name", "age"
+FROM "user"
+WHERE "id" = :id
+  and "name" = :name
+  and "status" > :statusMin
+```
+
+```sql group="Case 4-3" name="SQLServer" icon="sqlserver"
+SELECT [id], [name], [age]
+FROM [user]
+WHERE [id] = :id
+  and [name] = :name
+  and [status] > :statusMin
+```
+
+```sql group="Case 4-3" name="Oracle" icon="oracle"
+SELECT "id", "name", "age"
+FROM "user"
+WHERE "id" = :id
+  and "name" = :name
+  and "status" > :statusMin
 ```
 
 ## {{ $.title("patch") }}为自定义查询条件添加参数

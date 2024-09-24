@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何在KPojo实体类中定义级联关系。
-
 ## 级联关系注解
 
 KPojo提供了`@Cascade`注解来定义级联关系，详见：{{ $.keyword("

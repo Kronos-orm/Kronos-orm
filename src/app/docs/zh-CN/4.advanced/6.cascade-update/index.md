@@ -1,100 +1,200 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 配置级联关系
 
-通过配置`KPojo`的<a href="/documentation/zh-CN/class-definition/table-class-definition#列关联设置">[列关联设置]</a>，指定关联字段关联信息（`@Reference`）中`usage`属性包含`Update`（或不指定，使用默认），即可开启该类（被）级联更新的功能。
+## 1. 一对一级联关系
 
-```kotlin name="kotlin" icon="kotlin" {6, 14-18, 26-33}
-@Table("school")
+本节将介绍对于Kronos中定义的一对多级联关系的级联更新。
+
+### 数据类定义
+
+我们定义`User`和`Profile`两个实体类，`User`实体类中包含了一个`Profile`实体类的引用，`Profile`实体类中包含了一个`User`实体类的引用。
+
+```kotlin group="case3" name="User.kt" icon="kotlin"
+data class User(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var profileName: String? = null,
+    @Cascade(["profileName"], ["name"])
+    var profile: Profile? = null
+)
+```
+
+```kotlin group="case3" name="Profile.kt" icon="kotlin"
+data class Profile(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var userName: String? = null,
+    @Cascade(["userName"], ["name"])
+    var user: User? = null
+)
+```
+
+### 级联更新
+
+更新`User`或`Profile`实体都可以进行级联更新，级联更新会自动修改为级联创建的实体的引用属性（支持自增主键和多层级级联关系）。
+
+```kotlin
+User(
+    id = 1,
+    name = "user" //这里会级联更新Profile的userName字段
+).update().by { it.id }.execute()
+```
+
+或者：
+
+```kotlin
+Profile(
+    id = 1,
+    name = "profile" //这里会级联更新User的profileName字段
+).update().by { it.id }.execute()
+```
+
+## 2. 一对多级联关系
+
+一对多关系和一对一关系的用法类似。
+
+### 数据类定义
+首先，我们定义以下的`Parent`和`Child`两个实体类，`Parent`实体类中包含了一个`Child`实体类的集合，`Child`实体类中包含了一个`Parent`实体类的引用。
+
+```kotlin group="case1" name="Parent.kt" icon="kotlin"
+data class Parent(
+    @PrimaryKey(identity = true)
+    var id: Long? = null,
+    var name: String? = null,
+    var children: List<Child> = listOf()
+)
+```
+```kotlin group="case1" name="Child.kt" icon="kotlin"
+data class Child(
+    @PrimaryKey(identity = true)
+    var id: Long? = null,
+    var name: String? = null,
+    var parentName: String? = null,
+    @Cascade(["parentName"], ["name"])
+    var parent: Parent? = null
+)
+```
+
+### 级联更新
+使用`KPojo.update()`方法，可以实现一对多级联关系的级联更新。
+
+在Kronos中的一对多更新时，仅支持`Parent -> Child`方向的级联更新。
+
+在级联更新时不需要指定`Child`实体的`parentId`，级联更新会自动修改为`Child`实体的`parentId`（支持自增主键和多层级级联关系）。
+
+```kotlin
+Parent(
+    id = 1,
+    name = "parent" //这里会级联更新Child的parentName字段
+).update().by { it.id }.execute()
+```
+
+以下是一个更加复杂的、层级更深的例子：
+
+```kotlin group="case2" name="School.kt" icon="kotlin"
 data class School(
-    @PrimaryKey(identity = true)
-    var id: Int? = null,
+    @PrimaryKey
+    var id: Long? = null,
     var name: String? = null,
-    var groupClass: List<GroupClass>? = null
-) : KPojo
+    var groupClasses: List<GroupClass> = listOf()
+)
+```
 
-@Table("group_class")
+```kotlin group="case2" name="GroupClass.kt" icon="kotlin"
 data class GroupClass(
-    @PrimaryKey(identity = true)
-    var id: Int? = null,
-    val name: String? = null,
-    @NotNull
-    var schoolName: String? = null,
-    @Reference(["schoolName"], ["name"], mapperBy = School::class)
-    var school: School? = null,
-    var students: List<Student>? = null
-) : KPojo
-
-@Table("student")
-data class Student(
-    @PrimaryKey(identity = true)
-    var id: Int? = null,
+    @PrimaryKey
+    var id: Long? = null,
     var name: String? = null,
     var schoolName: String? = null,
-    var groupClassName: String? = null,
-    @Reference(
-        ["groupClassName", "schoolName"],
-        ["name", "schoolName"],
-        mapperBy = GroupClass::class
-    )
+    @Cascade(["schoolName"], ["name"])
+    var school: School? = null,
+    var students: List<Student> = listOf()
+)
+```
+
+```kotlin group="case2" name="Student.kt" icon="kotlin"
+data class Student(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var groupClassName: Name? = null,
+    var schoolName: String? = null,
+    @Cascade(["groupClassName", "schoolName"], ["name", "schoolName"])
     var groupClass: GroupClass? = null
-) : KPojo
+)
+```
+```kotlin
+School(
+    id = 1,
+    name = "school" //这里会级联更新GroupClass和Student的schoolName字段
+).update().by { it.id }.execute()
 ```
 
-## 使用<span style="color: #DD6666">cascade</span>设置当前级联操作
+## 3. 多对多级联关系
 
-在Kronos中，我们可以使用`cascade`方法设置是否开启本次更新的级联功能并限制级联的最大层数
+通过`manyToMany`委托，Kronos简化多对多关系为一对多关系，并为您自动创建关联表记录，详见：{{$.keyword("advanced/cascade-definition", ["级联关系定义", "使用委托实现级联多对多跨中间表关系"] )}}。
 
-`KPojo.update().cascade().excute()`
+### 数据类定义
 
-- `enabled`： `Boolean` 手动设置是否开启本次更新的级联功能（可选，默认为`true`开启级联）
-- `depth`： `Int` 限制级联的最大层数，默认为`-1`，即不限制级联层数， `0`表示不进行级联更新
+首先我们定义`User`、`Role`、`Relation`三个实体类，其中`Relation`实体类中包含了`User`和`Role`两个实体类的引用，`User`和`Role`通过`manyToMany`委托关联。
 
-## 使用<span style="color: #DD6666">update</span>及相关方法进行级联更新操作
-
-级联更新的各方法与操作同[更新记录](/documentation/zh-CN/database/update-records)相关方法与操作基本一致。
-
-```kotlin group="Case 1" name="kotlin" icon="kotlin" {7-11}
-School(name = "School").update().set { it.name = "School2" }.execute()
+```kotlin group="case4" name="User.kt" icon="kotlin"
+data class User(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var relations: List<Relation> = listOf()
+){
+    var roles: List<Role> by manyToMany(::relations)
+}
 ```
 
-```sql group="Case 1" name="Mysql" icon="mysql"
-UPDATE `student` SET `school_name` = "School2" WHERE `id` = :id AND `name` = :name AND `student_no` = :studentNo AND `school_name` = "School" AND `group_class_name` = :groupClassName
-
-UPDATE `group_class` SET `school_name` = "School2" WHERE `id` = :id AND `name` = :name AND `school_name` = "School"
-
-UPDATE `school` SET `name` = "School2" WHERE `id` = :id AND `name` = "School"
+```kotlin group="case4" name="Role.kt" icon="kotlin"
+data class Role(
+    @PrimaryKey
+    var id: Long? = null,
+    var name: String? = null,
+    var relations: List<Relation> = listOf()
+){
+    var users: List<User> by manyToMany(::relations)
+}
 ```
 
-```sql group="Case 1" name="PostgreSQL" icon="postgres"
-UPDATE "student" SET "school_name" = "School2" WHERE "id" = :id AND "name" = :name AND "student_no" = :studentNo AND "school_name" = "School" AND "group_class_name" = :groupClassName
-
-UPDATE "group_class" SET "school_name" = "School2" WHERE "id" = :id AND "name" = :name AND "school_name" = "School"
-
-UPDATE "school" SET "name" = "School2" WHERE "id" = :id AND "name" = "School"
+```kotlin group="case4" name="Relation.kt" icon="kotlin"
+data class Relation(
+    @PrimaryKey
+    var id: Long? = null,
+    var userName: String? = null,
+    var roleName: String? = null,
+    @Cascade(["userName", "roleName"], ["name", "name"])
+    var user: User? = null,
+    @Cascade(["userName", "roleName"], ["name", "name"])
+    var role: Role? = null
+)
 ```
 
-```sql group="Case 1" name="SQLite" icon="sqlite"
-UPDATE `student` SET `school_name` = "School2" WHERE `id` = :id AND `name` = :name AND `student_no` = :studentNo AND `school_name` = "School" AND `group_class_name` = :groupClassName
+### 级联更新
 
-UPDATE `group_class` SET `school_name` = "School2" WHERE `id` = :id AND `name` = :name AND `school_name` = "School"
+更新`User`或`Role`实体都可以进行级联更新，并自动更新级联创建的中间表实体的引用属性赋值。
 
-UPDATE `school` SET `name` = "School2" WHERE `id` = :id AND `name` = "School"
+> **warning**
+> 这里我们并不会自动级联更新级联的另一端的实体，因为我们无法保证级联的另一端的实体是否被其他记录所引用，因此该功能属于业务层面的范畴，需要用户自行增加更新逻辑。
+
+```kotlin
+User(
+    id = 1,
+    name = "user" //这里会级联更新Relation的userName字段
+).update().by { it.id }.execute()
 ```
 
-```sql group="Case 1" name="SQLServer" icon="sqlserver"
-UPDATE [student] SET [school_name] = "School2" WHERE [id] = :id AND [name] = :name AND [student_no] = :studentNo AND [school_name] = "School" AND [group_class_name] = :groupClassName
+或者：
 
-UPDATE [group_class] SET [school_name] = "School2" WHERE [id] = :id AND [name] = :name AND [school_name] = "School"
-
-UPDATE [school] SET [name] = "School2" WHERE [id] = :id AND [name] = "School"
-```
-
-```sql group="Case 1" name="Oracle" icon="oracle"
-UPDATE "student" SET "school_name" = "School2" WHERE "id" = :id AND "name" = :name AND "student_no" = :studentNo AND "school_name" = "School" AND "group_class_name" = :groupClassName
-
-UPDATE "group_class" SET "school_name" = "School2" WHERE "id" = :id AND "name" = :name AND "school_name" = "School"
-
-UPDATE "school" SET "name" = "School2" WHERE "id" = :id AND "name" = "School"
-```
+```kotlin
+Role(
+    id = 1,
+    name = "role" //这里会级联更新Relation的roleName字段
+).update().by { it.id }.execute()
+``` 

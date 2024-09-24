@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本文将指导您如何使用Kronos的级联更新功能。
- * @status:warning 版本落后
+ * @status:success 新
  */
 const CascadeUpdatePage: NgDocPage = {
     title: `级联更新`,

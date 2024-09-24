@@ -1,1 +1,0 @@
-import"./chunk-ODN5LVDJ.js";var t=[{path:"",redirectTo:"welcome",pathMatch:"full"},{path:"",title:"\u5FEB\u901F\u5F00\u59CB",children:[{path:"welcome",loadChildren:()=>import("./chunk-X3BO74OB.js")},{path:"quick-start",loadChildren:()=>import("./chunk-SCV7OQLX.js")}]}],e=t;export{e as default};

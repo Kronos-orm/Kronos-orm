@@ -267,10 +267,10 @@ val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role -
 
 ```kotlin
 // single insert
-user.insert()
+user.insert().execute()
 
 // batch insert
-listOfUser.insert()
+listOfUser.insert().execute()
 ```
 
 ### ✏️ Update

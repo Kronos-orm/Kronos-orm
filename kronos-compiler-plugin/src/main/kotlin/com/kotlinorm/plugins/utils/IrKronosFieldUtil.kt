@@ -349,7 +349,7 @@ fun getTableName(irClass: IrClass): IrExpression {
 }
 
 /**
- * for custom serialization, the property is a column if it has a `@ColumnDeserialize` annotation
+ * for custom serialization, the property is a column if it has a `@Serializable` annotation
  * for properties that are not columns, we need to check if :
  * 1. the type is a KPojo
  * 2. has a KPojo in its super types

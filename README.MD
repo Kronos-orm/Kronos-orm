@@ -176,7 +176,7 @@ data class Movie(
     @Cascade(["directorId"], ["id"])
     val director: Director? = null, // cascade table & one-to-many
     val relations: List<MovieActorRelation>? = null, // reference list & many-to-many
-    @ColumnDeserialize
+    @Serializable
     val type: List<String>? = null, // deserialize from string
     @Column("movie_summary")
     val summary: String? = null, // summary with column name

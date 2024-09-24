@@ -51,7 +51,7 @@ val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val CascadeAnnotationsFqName = FqName("com.kotlinorm.annotations.Cascade")
-val SelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.SelectIgnore")
+val CascadeSelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.CascadeSelectIgnore")
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
@@ -111,7 +111,7 @@ fun getColumnName(
     val columnDefaultValue =
         irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
-    val selectIgnoreAnnotation = irProperty.annotations.findByFqName(SelectIgnoreAnnotationsFqName)
+    val selectIgnoreAnnotation = irProperty.annotations.findByFqName(CascadeSelectIgnoreAnnotationsFqName)
     val cascadeAnnotation = irProperty.annotations.findByFqName(CascadeAnnotationsFqName)
     var cascadeTypeKClassName = irPropertyType.getClass()!!.classId!!.asFqNameString()
     if (cascadeTypeKClassName.startsWith("kotlin.collections")) {

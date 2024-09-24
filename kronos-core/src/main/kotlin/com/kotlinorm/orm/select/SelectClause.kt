@@ -72,7 +72,7 @@ class SelectClause<T : KPojo>(
     private var cascadeEnabled = true
 
     /**
-     * 级联查询允许的字段，若为空则表示所有字段均可级联查询，优先级高于[com.kotlinorm.annotations.SelectIgnore]注解
+     * 级联查询允许的字段，若为空则表示所有字段均可级联查询，优先级高于[com.kotlinorm.annotations.CascadeSelectIgnore]注解
      * */
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf()
     internal var cascadeSelectedProps: Set<Field>? = null

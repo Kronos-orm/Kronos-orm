@@ -17,7 +17,7 @@
 package com.kotlinorm.annotations
 
 /**
- * SelectIgnore
+ * CascadeSelectIgnore
  *
  * Annotation to specify the property in KPojo to be ignored in cascade query.
  * The priority is lower than the .cascade(vararg [kotlin.reflect.KProperty]<*>) method.
@@ -29,4 +29,4 @@ package com.kotlinorm.annotations
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class SelectIgnore
+annotation class CascadeSelectIgnore

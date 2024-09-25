@@ -161,11 +161,11 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-序列化反序列化的功能使用请参考：{{ $.keyword("advanced/serializable", ["进阶用法","序列化反序列化"]) }}。
+序列化反序列化的功能使用请参考：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"]) }}。
 
 ## {{ $.annotation("Cascade") }}级联关系声明
 
-此注解用于声明列的级联关系，详细定义及用法请参考{{ $.keyword("advanced/cascade", ["进阶用法","级联关系声明"]) }}。
+此注解用于声明列的级联关系，详细定义及用法请参考{{ $.keyword("advanced/cascade-definition", ["进阶用法","级联关系定义"]) }}。
 
 > **Note**
 > 请将此注解加在类型为`KPojo`或`Collection<KPojo>`的属性上，确保当前定义的表内有关联字段（如以下例子中的companyId）。

@@ -4,7 +4,7 @@
 ## 级联关系注解
 
 KPojo提供了`@Cascade`注解来定义级联关系，详见：{{ $.keyword("
-class-definition/annotation-config", ["注解配置", "@Cascade级联关系声明"]) }}。
+class-definition/annotation-config", ["注解配置", "@Cascade级联关系定义"]) }}。
 
 ## 1. 一对多级联关系
 

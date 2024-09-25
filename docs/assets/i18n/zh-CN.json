@@ -37,5 +37,10 @@
   "SUBTEXT_OF_PLUGIN": "插件系统介绍及使用",
   "CHANGELOG": "更新日志",
   "SUBTEXT_OF_CHANGELOG": "版本更新日志",
-  "INSTALL_PACKAGES": "安装依赖包"
+  "INSTALL_PACKAGES": "安装依赖包",
+  "OPEN_IN_NEW_WINDOW": "在新窗口打开",
+  "CLOSE_WIKI_DIALOG": "关闭Wiki",
+  "MAXIMIZE": "最大化",
+  "MAXIMIZED": "窗口化",
+  "JUMP_TO_WIKI": "跳转到Wiki"
 }

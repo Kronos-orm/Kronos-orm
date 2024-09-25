@@ -204,7 +204,7 @@ Kronos.timeZone = ZoneId.of("GMT+8")
 **参数**：
 {{$.params([['serializeResolver', '序列化反序列化处理器', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
 
-通过创建`KronosSerializeResolver`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-resolver", ["概念","序列化反序列化处理器"])}}。
+通过创建`KronosSerializeResolver`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"])}}。
 
 如可以通过引入`GSON`库来实现序列化解析器：
 
@@ -227,5 +227,3 @@ Kronos.serializeResolver = GsonResolver
 ```
 
 这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
-
-序列化反序列化的功能使用请参考：{{ $.keyword("advanced/serializable", ["进阶用法","序列化反序列化"]) }}。

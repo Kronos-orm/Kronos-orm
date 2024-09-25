@@ -5,7 +5,7 @@
 
 ### 关闭级联查询
 
-Kronos默认开启级联删除功能，需要在`delete`函数中显式关闭：
+Kronos默认开启级联查询功能，需要在`select`函数中显式关闭：
 
 ```kotlin
 KPojo.select().cascade(enable = false).queryList()
@@ -13,14 +13,14 @@ KPojo.select().cascade(enable = false).queryList()
 
 ### 部分开启级联查询
 
-当KPojo中有多个级联声明，但只有部分需要级联查询时，可以将需要级联删除的属性传入`cascade`函数，其余的属性及子属性将不触发级联删除。
+当KPojo中有多个级联声明，但只有部分需要级联查询时，可以将需要级联查询的属性传入`cascade`函数，其余的属性及子属性将不触发级联查询。
 
 ```kotlin
 // 若KPojo中只有property1和property2需要级联删除，那么如下：
 KPojo.select().cascade(KPojo::property1, KPojo::property2).queryList()
 ```
 
-可以限制其子属性级联删除，如下：
+可以限制其子属性级联查询，如下：
 
 ```kotlin
 KPojo.select().cascade(
@@ -33,8 +33,8 @@ KPojo.select().cascade(
 
 ### {{ $.annotation("CascadeSelectIgnore") }} 声明关闭级联查询
 
-在定义`KPojo`类时,通过添加`@SelectIgnore`注解声明某属性查询时不级联查询, 详见：{{ $.keyword("
-class-definition/annotation-config", ["注解配置", "CascadeSelectIgnore关闭属性级联查询"]) }}
+在定义`KPojo`类时,通过添加`@CascadeSelectIgnore`注解声明某属性查询时不级联查询, 详见：
+{{ $.keyword("class-definition/annotation-config", ["注解配置", "CascadeSelectIgnore关闭属性级联查询"]) }}
 
 ## 级联查询
 

@@ -40,12 +40,8 @@ val user: User = User(
     age = 18
 )
 
- // 如果表不存在则创建表，否则同步表
-if(!dataSource.table.exsits(user)){
-    dataSource.table.create(user)
-} else {
-    dataSource.table.sync(user)
-}
+ // 如果表不存在则创建表，否则同步表结构，包括表列、索引、备注等
+dataSource.table.sync(user)
 
 // 插入数据
 user.insert().execute()

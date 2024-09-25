@@ -7985,10 +7985,10 @@ primeicons@^7.0.0:
   resolved "https://registry.npmmirror.com/primeicons/-/primeicons-7.0.0.tgz#6b25c3fdcb29bb745a3035bdc1ed5902f4a419cf"
   integrity sha512-jK3Et9UzwzTsd6tzl2RmwrVY/b8raJ3QZLzoDACj+oTJ0oX7L9Hy+XnVwgo4QVKlKpnP/Ur13SXV/pVh4LzaDw==
 
-primeng@^17.18.4:
-  version "17.18.9"
-  resolved "https://registry.npmmirror.com/primeng/-/primeng-17.18.9.tgz#dc3b65689548b53ce07ce7032a0aa3d1eb5dfbea"
-  integrity sha512-1FT0B8wtgvs/joduB1DDOLe2IsP1pegOiEfSPAHSbc6otgNx/6iLR0k2M/xr2c9Ur1aC7tAikkVfH3FGpWof3w==
+primeng@^17.18.10:
+  version "17.18.10"
+  resolved "https://registry.npmmirror.com/primeng/-/primeng-17.18.10.tgz#e25e4057fdeb6a7d7be62ddfea456bfdc7d8477b"
+  integrity sha512-P3UskInOZ7qYICxSYvf0K8nUEb7DmndiXmyvLGU1wch+XcVWmVs4FZsWKNfdvK7TUdxxYj8WW44nodNV/epr3A==
   dependencies:
     tslib "^2.3.0"
 

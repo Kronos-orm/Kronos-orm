@@ -94,6 +94,27 @@
   h1.ngde + h1.ngde, h1.ngde + h2.ngde, h1.ngde + h3.ngde, h1.ngde + h4.ngde, h1.ngde + h5.ngde, h1.ngde + h6.ngde, h2.ngde + h1.ngde, h2.ngde + h2.ngde, h2.ngde + h3.ngde, h2.ngde + h4.ngde, h2.ngde + h5.ngde, h2.ngde + h6.ngde, h3.ngde + h1.ngde, h3.ngde + h2.ngde, h3.ngde + h3.ngde, h3.ngde + h4.ngde, h3.ngde + h5.ngde, h3.ngde + h6.ngde, h4.ngde + h1.ngde, h4.ngde + h2.ngde, h4.ngde + h3.ngde, h4.ngde + h4.ngde, h4.ngde + h5.ngde, h4.ngde + h6.ngde, h5.ngde + h1.ngde, h5.ngde + h2.ngde, h5.ngde + h3.ngde, h5.ngde + h4.ngde, h5.ngde + h5.ngde, h5.ngde + h6.ngde, h6.ngde + h1.ngde, h6.ngde + h2.ngde, h6.ngde + h3.ngde, h6.ngde + h4.ngde, h6.ngde + h5.ngde, h6.ngde + h6.ngde {
     margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
   }
+
+  .wiki.p-dialog {
+    color: var(--ng-doc-text) !important;
+    background-color: transparent !important;
+    border-radius: .5rem !important;
+    overflow: hidden;
+
+    &.p-dialog-maximized {
+      border-radius: 0 !important;
+    }
+
+    .p-dialog-header {
+      padding: .5rem 0 0 0;
+      background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
+    }
+
+    .p-dialog-content {
+      padding: 1rem;
+      background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
+    }
+  }
 }
 
 .logo {

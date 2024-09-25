@@ -33,6 +33,7 @@ h1, h2, h3, h4, h5, h6 {
   --ng-doc-icon-width: 24px !important;
   --ng-doc-mermaid-viewer-background: aliceblue;
   --ng-doc-app-horizontal-padding: 3rem !important;
+  --scrollbar-width: 10px !important;
 }
 
 img {
@@ -70,21 +71,4 @@ img {
 
 .code-red {
   color: #FF0000;
-}
-
-.wiki.p-dialog {
-  color: var(--ng-doc-text) !important;
-  background-color: transparent !important;
-  border-radius: 1rem !important;
-  overflow: hidden;
-
-  .p-dialog-header {
-    padding: .5rem 0 0;
-    background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
-  }
-
-  .p-dialog-content {
-    padding: 1rem;
-    background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
-  }
 }

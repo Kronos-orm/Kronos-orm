@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {SharedModule} from "./shared.module";
 import {MessageService, PrimeNGConfig} from 'primeng/api';
 import {AppService} from "./app.service";
@@ -22,7 +22,7 @@ import {Subject, takeUntil} from "rxjs";
     styleUrl: './app.component.scss',
     providers: [AppService, MessageService]
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
     private unsubscribe$ = new Subject<void>();
     constructor(
         private primengConfig: PrimeNGConfig,

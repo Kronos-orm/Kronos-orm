@@ -277,12 +277,13 @@ class SelectClause<T : KPojo>(
             selectFields += allFields.filter { it.isColumn }
         }
 
+        val columns = allFields.filter { it.isColumn }
         // 如果条件为空，则根据paramMap构建查询条件
         if (buildCondition == null) {
             buildCondition = paramMap.keys.filter {
                 paramMap[it] != null
             }.mapNotNull { propName ->
-                allFields.filter { it.isColumn }.find { it.name == propName }?.eq(paramMap[propName])
+                columns.find { it.name == propName }?.eq(paramMap[propName])
             }.toCriteria()
         }
 

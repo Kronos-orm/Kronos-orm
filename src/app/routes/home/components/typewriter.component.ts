@@ -115,7 +115,7 @@ export class TypewriterComponent {
     `.<span class="code-green">insert()</span><br/>.<span class="code-green">execute()</span>`,
     `.<span class="code-green">delete()</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }</span><br/>.<span class="code-green">execute()</span>`,
     `.<span class="code-green">select()</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }</span><br/>.<span class="code-green">queryOne()</span>`,
-    `.<span class="code-green">update()</span><br/>.<span class="code-green">set{ </span><span class="code-red">it.name </span>= "name"<span class="code-green"> }</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id </span>== 1<span class="code-green"> }<br/>.<span class="code-green">execute()</span>`,
+    `.<span class="code-green">update()</span><br/>.<span class="code-green">set{ </span><span class="code-red">it.name </span>= "name"<span class="code-green"> }</span><br/>.<span class="code-green">where{ </span><span class="code-red">it.id</span> == 1<span class="code-green"> }</span><br/>.<span class="code-green">execute()</span>`,
   ];
 
   focused = false;

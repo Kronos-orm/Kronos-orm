@@ -38,7 +38,7 @@ export class AppComponent implements OnInit, OnDestroy {
             if (evt instanceof NavigationError || evt instanceof NavigationCancel) {
                 this.isFetching = false;
                 if (evt instanceof NavigationError) {
-                    messageService.add({ severity: 'error', summary: 'Page Load Error', detail: '${evt.url} page load error, please refresh the page', closable: false });
+                    messageService.add({ severity: 'error', summary: 'Page Load Error', detail: `${evt.url} page load error, please refresh the page`, closable: false });
                 }
                 return;
             }

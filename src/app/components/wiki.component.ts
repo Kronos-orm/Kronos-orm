@@ -21,6 +21,7 @@ import {TranslocoPipe} from "@jsverse/transloco";
                   styleClass="wiki"
                   [closable]="false"
                   [modal]="true"
+                  [dismissableMask]="true"
                   [(visible)]="visible"
                   [style]="{ width: '70vw', height: '70vh' }"
                   [blockScroll]="false"

@@ -49,11 +49,17 @@
             ],
             "styles": [
               "node_modules/@ng-doc/app/styles/global.css",
-              "src/styles.scss"
+              "src/styles.scss",
+              "src/assets/fonts/hack-font-3.3.0/hack-subset.css"
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "@ng-doc/core"
+              "@braintree/sanitize-url",
+              "@ng-doc/core",
+              "cytoscape-cose-bilkent",
+              "dayjs",
+              "dompurify",
+              "elkjs"
             ]
           },
           "configurations": {
@@ -66,8 +72,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "5kb",
+                  "maximumError": "10kb"
                 }
               ],
               "outputHashing": "all"
@@ -112,7 +118,9 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.scss"
+              "node_modules/@ng-doc/app/styles/global.css",
+              "src/styles.scss",
+              "src/assets/fonts/hack-font-3.3.0/hack-subset.css"
             ],
             "scripts": []
           }

@@ -42,5 +42,7 @@
   "CLOSE_WIKI_DIALOG": "关闭Wiki",
   "MAXIMIZE": "最大化",
   "MAXIMIZED": "窗口化",
-  "JUMP_TO_WIKI": "跳转到Wiki"
+  "JUMP_TO_WIKI": "跳转到Wiki",
+  "COMING_SOON": "敬请期待",
+  "CODE_GENERATOR": "代码生成器"
 }

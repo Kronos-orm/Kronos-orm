@@ -19,6 +19,19 @@
 }
 
 :host ::ng-deep {
+  .ng-doc-blockquote, .ng-doc-code-wrapper {
+    overflow: auto;
+  }
+
+  .ng-doc-code-body pre {
+    min-width: 100% !important;
+    width: fit-content;
+
+    code .line.highlighted {
+      min-width: 100% !important;
+      width: max-content !important;
+    }
+  }
 
   li.ngde::marker {
     color: deeppink;

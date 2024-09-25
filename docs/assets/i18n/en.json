@@ -42,5 +42,7 @@
   "CLOSE_WIKI_DIALOG": "Close Wiki dialog",
   "MAXIMIZE": "Maximize",
   "MAXIMIZED": "Restore maximize",
-  "JUMP_TO_WIKI": "Jump to Wiki"
+  "JUMP_TO_WIKI": "Jump to Wiki",
+  "COMING_SOON": "Coming soon",
+  "CODE_GENERATOR": "Code Generator"
 }

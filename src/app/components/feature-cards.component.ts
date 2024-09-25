@@ -18,11 +18,7 @@ import {AnimateOnScrollModule} from "primeng/animateonscroll";
     </div>
   `,
   standalone: true,
-  styles: [`
-    p-card :hover {
-
-    }
-  `]
+  styles: []
 })
 export class FeatureCardsComponent {
 }

@@ -1,19 +1,22 @@
-import {Component} from '@angular/core';
-import {MegaMenuItem} from "primeng/api";
+import {Component, OnInit} from '@angular/core';
+import {MegaMenuItem, MessageService} from "primeng/api";
 import {AppService} from "../../../app.service";
 import {SharedModule} from "../../../shared.module";
 import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
+import {ListItem, UIListComponent} from "../../../components/ui-list.component";
 
 @Component({
     selector: 'layout-menu-bar',
     imports: [
         SharedModule,
-        TranslocoPipe
+        TranslocoPipe,
+        UIListComponent
     ],
     template: `
-        <p-megaMenu [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
+        <p-toast />
+        <p-megaMenu class="hidden md:block" [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
             <ng-template pTemplate="start">
-                <img [routerLink]="['/']" src="https://cdn.leinbo.com/assets/images/kronos/logo_dark.png" class="logo"
+                <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
                      draggable="false"
                      [style.width.px]="60" alt="logo"/>
                 <span [routerLink]="['/']" class="logo">Kronos ORM</span>
@@ -44,33 +47,45 @@ import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
             </ng-template>
             <ng-template pTemplate="end">
                 <p-button
-                        [text]="true"
                         class="mr-4"
+                        link
                         (click)="op.toggle($event)"
                         icon="pi pi-language"/>
-                <p-overlayPanel #op styleClass="m-0 p-0">
-                    <ul class="list-none m-0 p-0 w-12rem">
-                        @for (item of [{lang: 'zh-CN', label: '简体中文'}, {
-                            lang: 'en',
-                            label: 'English'
-                        }]; track $index) {
-                            <a class="block p-2 border-round hover:surface-hover w-full cursor-pointer flex"
-                               (click)="setLang(item.lang)">
-                                <span class="font-bold text-900 flex-1">{{ item.label }}</span>
-                                <span class="ml-2 text-700 flex-1 text-right">
-            <span class="pi pi-globe"></span>
-          </span>
-                            </a>
-                        }
-                    </ul>
-                </p-overlayPanel>
                 <a href="https://github.com/Kronos-orm/Kronos-orm"
                    target="_blank"
-                   class="mr-4 p-button p-button-text">
+                   [style.height.px]="42"
+                   class="mr-4 p-ripple p-element p-button p-component p-button-icon-only p-button-link">
                     <i class="pi pi-github"></i>
                 </a>
             </ng-template>
         </p-megaMenu>
+        <div class="block md:hidden flex align-items-center border-none menu-bar p-0 pl-4">
+            <div>
+                <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
+                     draggable="false"
+                     [style.width.px]="60" alt="logo"/>
+                <span [routerLink]="['/']" class="logo">Kronos ORM</span>
+            </div>
+            <div [style.margin-left]="'auto'">
+                <p-button link
+                          (click)="op.toggle($event)"
+                          icon="pi pi-language"/>
+                <a href="https://github.com/Kronos-orm/Kronos-orm"
+                   target="_blank"
+                   [style.height.px]="42"
+                   class="p-ripple p-element p-button p-component p-button-icon-only p-button-link">
+                    <i class="pi pi-github"></i>
+                </a>
+                <p-button class="mr-4" icon="pi pi-bars" link
+                          (click)="menu.toggle($event)"/>
+            </div>
+        </div>
+        <p-overlayPanel #op styleClass="m-0 p-0">
+            <ui-list [list]="languages" (onClick)="setLang($event.lang)"/>
+        </p-overlayPanel>
+        <p-overlayPanel #menu styleClass="m-0 p-0">
+            <ui-list [list]="menus" (onClick)="onSelect($event)"/>
+        </p-overlayPanel>
     `,
     standalone: true,
     styles: [
@@ -103,6 +118,7 @@ import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
               vertical-align: middle;
               font-family: "Poppins", sans-serif;
               font-weight: bolder;
+              padding: 15px;
 
               &:hover {
                 filter: grayscale(100%);
@@ -121,9 +137,10 @@ import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
             text-decoration: none;
           }
         `
-    ]
+    ],
+    providers: [MessageService]
 })
-export class LayoutMenuBarComponent {
+export class LayoutMenuBarComponent implements OnInit {
     items: MegaMenuItem[] | undefined;
 
     ngOnInit() {
@@ -138,7 +155,6 @@ export class LayoutMenuBarComponent {
                 label: 'DOCUMENTATION',
                 icon: 'pi pi-book',
                 root: true,
-                routerLink: `/documentation/${this.appService.language}/getting-started/introduce`,
                 items: [
                     [
                         {
@@ -232,8 +248,8 @@ export class LayoutMenuBarComponent {
                     [{
                         items: [{
                             image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
-                            label: 'Coming soon',
-                            subtext: '代码生成器',
+                            label: 'COMING_SOON',
+                            subtext: 'CODE_GENERATOR',
                         }]
                     }]
                 ]
@@ -245,13 +261,42 @@ export class LayoutMenuBarComponent {
                 routerLink: 'https://github.com/Kronos-orm/Kronos-orm/discussions'
             }
         ];
+        this.translocoService.selectTranslate(["DOCUMENTATION", "CODE_GENERATOR", "DISCUSSION"])
+            .subscribe(([documentation, code_generator, discussion]) => {
+                this.menus = [
+                    {
+                        label: documentation,
+                        href: `/#/documentation/${this.appService.language}/getting-started/introduce`
+                    },
+                    {label: code_generator},
+                    {label: discussion, href: 'https://github.com/Kronos-orm/Kronos-orm/discussions'},
+                ];
+            })
     }
 
-    constructor(private appService: AppService, private translocoService: TranslocoService) {
+    constructor(private appService: AppService, private translocoService: TranslocoService, private messageService: MessageService) {
     }
 
     setLang(lang: string) {
         this.appService.language = lang; // update language
         this.translocoService.setActiveLang(lang);
+    }
+
+    languages = [
+        {lang: 'zh-CN', label: '简体中文', rightIcon: 'pi pi-globe'},
+        {lang: 'en', label: 'English', rightIcon: 'pi pi-globe'}]
+
+    menus = [];
+
+    onSelect(item: ListItem) {
+        if (item.href) {
+            window.location.href = item.href;
+        } else {
+            this.messageService.add({
+                severity: 'info',
+                summary: this.translocoService.translate("COMING_SOON"),
+                detail: item.label
+            });
+        }
     }
 }

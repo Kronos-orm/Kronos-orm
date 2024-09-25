@@ -16,6 +16,7 @@ import {TooltipModule} from "primeng/tooltip";
 import {TerminalModule} from "primeng/terminal";
 import {InputTextModule} from "primeng/inputtext";
 import {CardModule} from "primeng/card";
+import {ToastModule} from "primeng/toast";
 
 const primengModules = [
   ButtonModule,
@@ -30,7 +31,8 @@ const primengModules = [
   TooltipModule,
   TerminalModule,
   InputTextModule,
-  CardModule
+  CardModule,
+  ToastModule
 ];
 
 const ngDocModules = [

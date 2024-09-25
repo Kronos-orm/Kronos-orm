@@ -95,10 +95,12 @@ object ConditionSqlBuilder {
         key: String,
         value: Any?
     ) {
-        if (field.serializable && value != null) {
-            this[key] = serializeResolver.serialize(value)
-        } else {
-            this[key] = value.toString()
+        if (value != null) {
+            this[key] = when {
+                field.serializable -> serializeResolver.serialize(value)
+                this[key] is Iterable<*> || this[key] is Array<*> -> value
+                else -> value.toString()
+            }
         }
     }
 

@@ -200,7 +200,7 @@ class SelectClause<T : KPojo>(
             // 执行someFields中定义的查询逻辑
             someFields(t)
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
-            havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
+            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this // 返回当前SelectClause实例，允许链式调用
     }

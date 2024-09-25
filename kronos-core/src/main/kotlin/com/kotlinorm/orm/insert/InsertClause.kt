@@ -98,8 +98,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     companion object {
         fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
-            enabled: Boolean,
             vararg props: KProperty<*>,
+            enabled: Boolean
         ): Iterable<InsertClause<T>> {
             return this.onEach { it.cascade(*props, enabled = enabled) }
         }

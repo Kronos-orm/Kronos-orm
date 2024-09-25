@@ -234,8 +234,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(
-            enabled: Boolean = true,
-            vararg props: KProperty<*>
+            vararg props: KProperty<*>,
+            enabled: Boolean = true
         ): List<DeleteClause<T>> {
             return map { it.cascade(*props, enabled = enabled) }
         }
@@ -285,8 +285,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         fun <T : KPojo> Array<DeleteClause<T>>.cascade(
-            enabled: Boolean = true,
-            vararg props: KProperty<*>
+            vararg props: KProperty<*>,
+            enabled: Boolean = true
         ): List<DeleteClause<T>> {
             return map { it.cascade(*props, enabled = enabled) }
         }

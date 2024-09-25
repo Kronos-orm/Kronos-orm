@@ -395,8 +395,8 @@ class SelectClause<T : KPojo>(
         }
 
         fun <T : KPojo> Iterable<SelectClause<T>>.cascade(
-            enabled: Boolean,
-            vararg props: KProperty<*>
+            vararg props: KProperty<*>,
+            enabled: Boolean
         ): List<SelectClause<T>> {
             return map { it.cascade(*props, enabled = enabled) }
         }

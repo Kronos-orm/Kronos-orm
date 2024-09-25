@@ -32,13 +32,13 @@ import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
                 </span>
                     <span class="inline-flex flex-column gap-1" style="width: calc(100% - 3.5rem)">
                     <span class="font-medium text-lg text-900">{{ item.label | transloco }}</span>
-                    <span class="white-space-nowrap text-overflow-ellipsis overflow-hidden">{{ item.subtext | transloco }}</span>
+                    <span class="white-space-nowrap text-overflow-ellipsis overflow-hidden text-gray-200">{{ item.subtext | transloco }}</span>
                 </span>
                 </a>
                 <div [routerLink]="item.routerLink" *ngIf="item.image"
                      class="flex flex-column align-items-start gap-3 p-2">
                     <img [src]="item.image" alt="megamenu-demo" class="w-full"/>
-                    <span>{{ item.subtext | transloco }}</span>
+                    <span class="text-900 text-gray-200">{{ item.subtext | transloco }}</span>
                     <p-button [label]="item.label | transloco" [outlined]="true"></p-button>
                 </div>
             </ng-template>
@@ -116,6 +116,10 @@ import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
               background: rgba(255, 255, 255, 0.2);
             }
           }
+
+          a {
+            text-decoration: none;
+          }
         `
     ]
 })
@@ -134,39 +138,77 @@ export class LayoutMenuBarComponent {
                 label: 'DOCUMENTATION',
                 icon: 'pi pi-book',
                 root: true,
+                routerLink: `/documentation/${this.appService.language}/getting-started/introduce`,
                 items: [
                     [
                         {
                             items: [
-                                {label: 'CHARACTERISTIC', icon: 'pi pi-list', subtext: 'SUBTEXT_OF_CHARACTERISTIC'},
-                                {label: 'INSTALLATION', icon: 'pi pi-download', subtext: 'SUBTEXT_OF_INSTALLATION'},
-                                {label: 'QUICK_START', icon: 'pi pi-play', subtext: 'SUBTEXT_OF_QUICK_START'}
+                                {
+                                    label: 'QUICK_START',
+                                    icon: 'pi pi-play',
+                                    subtext: 'SUBTEXT_OF_QUICK_START',
+                                    routerLink: `/documentation/${this.appService.language}/getting-started/quick-start`
+                                },
+                                {
+                                    label: 'CLASS_DEFINITION',
+                                    icon: 'pi pi-list',
+                                    subtext: 'SUBTEXT_OF_CLASS_DEFINITION',
+                                    routerLink: `/documentation/${this.appService.language}/class-definition/table-class-definition`
+                                },
+                                {
+                                    label: 'CONNECT_TO_DB',
+                                    icon: 'pi pi-download',
+                                    subtext: 'SUBTEXT_OF_CONNECT_TO_DB',
+                                    routerLink: `/documentation/${this.appService.language}/database/connect-to-db`
+                                },
                             ]
                         }
                     ],
                     [
                         {
                             items: [
-                                {label: 'API', icon: 'pi pi-info', subtext: 'SUBTEXT_OF_API'},
-                                {
-                                    label: 'CLASS_DEFINITION',
-                                    icon: 'pi pi-search',
-                                    subtext: 'SUBTEXT_OF_CLASS_DEFINITION'
-                                },
                                 {
                                     label: 'DATABASE_OPERATION',
                                     icon: 'pi pi-user',
-                                    subtext: 'SUBTEXT_OF_DATABASE_OPERATION'
-                                }
+                                    subtext: 'SUBTEXT_OF_DATABASE_OPERATION',
+                                    routerLink: `/documentation/${this.appService.language}/database/database-operation`
+                                },
+                                {
+                                    label: 'SQL_EXECUTE',
+                                    icon: 'pi pi-info',
+                                    subtext: 'SUBTEXT_OF_SQL_EXECUTE',
+                                    routerLink: `/documentation/${this.appService.language}/database/named-arguments-base-sql`
+                                },
+                                {
+                                    label: 'CRITERIA_DEFINITION',
+                                    icon: 'pi pi-search',
+                                    subtext: 'SUBTEXT_OF_CRITERIA_DEFINITION',
+                                    routerLink: `/documentation/${this.appService.language}/database/where-having-on-clause`
+                                },
                             ]
                         }
                     ],
                     [
                         {
                             items: [
-                                {label: 'ADVANCED', icon: 'pi pi-star', subtext: 'SUBTEXT_OF_ADVANCED'},
-                                {label: 'PLUGIN', icon: 'pi pi-globe', subtext: 'SUBTEXT_OF_PLUGIN'},
-                                {label: 'CHANGELOG', icon: 'pi pi-clock', subtext: 'SUBTEXT_OF_CHANGELOG'}
+                                {
+                                    label: 'ADVANCED',
+                                    icon: 'pi pi-star',
+                                    subtext: 'SUBTEXT_OF_ADVANCED',
+                                    routerLink: `/documentation/${this.appService.language}/advanced/some-locks`
+                                },
+                                {
+                                    label: 'PLUGIN',
+                                    icon: 'pi pi-globe',
+                                    subtext: 'SUBTEXT_OF_PLUGIN',
+                                    routerLink: `/documentation/${this.appService.language}/plugin/datasource-wrapper-and-third-part-framework`
+                                },
+                                {
+                                    label: 'CHANGELOG',
+                                    icon: 'pi pi-clock',
+                                    subtext: 'SUBTEXT_OF_CHANGELOG',
+                                    routerLink: `/documentation/${this.appService.language}/getting-started/changelog`
+                                }
                             ]
                         }
                     ],
@@ -175,7 +217,7 @@ export class LayoutMenuBarComponent {
                             items: [{
                                 image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
                                 label: 'GET_START',
-                                subtext: 'GET_START',
+                                subtext: 'SUBTEXT_OF_QUICK_START',
                                 routerLink: [`/documentation/${this.appService.language}/getting-started/quick-start`]
                             }]
                         }
@@ -185,12 +227,22 @@ export class LayoutMenuBarComponent {
             {
                 label: 'RESOURCES',
                 icon: 'pi pi-palette',
-                root: true
+                root: true,
+                items: [
+                    [{
+                        items: [{
+                            image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
+                            label: 'Coming soon',
+                            subtext: '代码生成器',
+                        }]
+                    }]
+                ]
             },
             {
                 label: 'DISCUSSION',
                 icon: 'pi pi-comments',
-                root: true
+                root: true,
+                routerLink: 'https://github.com/Kronos-orm/Kronos-orm/discussions'
             }
         ];
     }

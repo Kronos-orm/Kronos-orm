@@ -35,14 +35,6 @@ h1, h2, h3, h4, h5, h6 {
   --ng-doc-app-horizontal-padding: 3rem !important;
 }
 
-:root[data-theme='dark'] {
-  --ng-doc-mermaid-viewer-background: darkslategrey;
-}
-
-:root[data-theme='auto'] {
-  --ng-doc-mermaid-viewer-background: gray;
-}
-
 img {
   user-drag: none;
   -webkit-user-drag: none;

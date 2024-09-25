@@ -52,6 +52,26 @@ img {
   border-radius: 5px;
 }
 
+.code-blue {
+  color: rgba(0, 55, 185, 0.8);
+}
+
+.code-green {
+  color: rgba(28, 99, 109, 0.8)
+}
+
+.code-black {
+  color: #000;
+}
+
+.code-white {
+  color: #FFF;
+}
+
+.code-red {
+  color: #FF0000;
+}
+
 .wiki.p-dialog {
   color: var(--ng-doc-text) !important;
   background-color: transparent !important;

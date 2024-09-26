@@ -191,6 +191,7 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
      * Executes the log task asynchronously.
      */
     private fun executeLogTask() {
+        if(logPath.isEmpty()) return
         if (synchronized.tryLock()) { // 尝试获取锁
             Runnable {
                 try {

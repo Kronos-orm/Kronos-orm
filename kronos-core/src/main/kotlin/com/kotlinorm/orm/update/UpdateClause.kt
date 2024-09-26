@@ -111,21 +111,22 @@ class UpdateClause<T : KPojo>(
             val plusAssign = plusAssignFields
             val minusAssign = minusAssignFields
 
-            plusAssign.forEach {  assign ->
+            plusAssign.forEach { assign ->
                 val assignField = assign.first
                 val assignKey = assignField.name + "2PlusNew"
                 plusAssigns += assignField to assignKey
                 paramMapNew[assignField + "2PlusNew"] = assign.second
             }
-            minusAssign.forEach {  assign ->
+            minusAssign.forEach { assign ->
                 val assignField = assign.first
                 val assignKey = assignField.name + "2MinusNew"
                 minusAssigns += assignField to assignKey
                 paramMapNew[assignField + "2MinusNew"] = assign.second
             }
 
-            toUpdateFields += fields
-            paramMapNew.putAll(fieldParamMap.map { e -> e.key + "New" to e.value })
+            toUpdateFields += fields.filter { field -> field !in plusAssign.map { item -> item.first } + minusAssign.map { item -> item.first } }
+            paramMapNew.putAll(fieldParamMap.filter { field -> field.key !in plusAssign.map { item -> item.first } + minusAssign.map { item -> item.first } }
+                .map { e -> e.key + "New" to e.value })
         }
         return this
     }
@@ -245,10 +246,21 @@ class UpdateClause<T : KPojo>(
         }
 
         // 构建完整的更新SQL语句，包括条件部分
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(KOperationType.UPDATE, wrapper, condition)
+        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(
+            KOperationType.UPDATE,
+            wrapper,
+            condition
+        )
             .toWhereClause()
 
-        val sql = getUpdateSql(wrapper.orDefault(), tableName, toUpdateFields.toList(), whereClauseSql, plusAssigns, minusAssigns)
+        val sql = getUpdateSql(
+            wrapper.orDefault(),
+            tableName,
+            toUpdateFields.toList(),
+            whereClauseSql,
+            plusAssigns,
+            minusAssigns
+        )
 
         // 合并参数映射，准备执行SQL所需的参数
         paramMapNew.forEach { (key, value) ->

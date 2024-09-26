@@ -42,8 +42,6 @@ context(IrPluginContext)
 internal val kReferenceSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KCascade")!!
 
-
-
 val TableAnnotationsFqName = FqName("com.kotlinorm.annotations.Table")
 val TableIndexAnnotationsFqName = FqName("com.kotlinorm.annotations.TableIndex")
 val PrimaryKeyAnnotationsFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
@@ -384,55 +382,107 @@ fun IrProperty.getKDocString(): IrExpression {
     return irNull()
 }
 
+/**
+ * Extract the comment content within the specified range.
+ *
+ * This function will extract single-line or multi-line comments within the specified range from the given list of lines.
+ * If no comments are found within the specified range, the function will search upwards to the beginning of the file to find possible comments.
+ *
+ * 提取指定范围内的注释内容。
+ *
+ * 此函数会从给定的行列表中提取位于指定范围内的单行或多行注释。
+ * 如果在指定范围内没有找到注释，函数将向上查找直到文件的开头，以获取可能的注释。
+ *
+ * @param lines a list of code lines 包含代码行的列表
+ * @param range the range of lines to check 指定要检查的行范围
+ * @return the extracted comment content, or null if no comment is found 找到的注释内容，如果没有找到则返回 null
+ */
 fun extractPropertyComment(lines: List<String>, range: IntRange): String? {
     val startIndex = range.first
     val endIndex = range.last
 
-    // 用于存储找到的注释
     var comment: String? = null
 
-    // 遍历范围内的每一行
+    // Find single-line or multi-line comments within the specified range
+    // 在指定范围内查找单行或多行注释
     for (i in startIndex..endIndex) {
         val line = lines.getOrNull(i)?.trim() ?: continue
 
-        // 查找同一行的注释
+        // Extract single-line comments
+        // 提取单行注释
         val singleLineComment = line.substringAfter("//", "").substringBefore("//").trim()
+        // Extract multi-line comments
+        // 查找多行注释的起始和结束位置
         val multiLineCommentStart = line.indexOf("/*")
         val multiLineCommentEnd = line.indexOf("*/")
 
+        // If a single-line comment is found
+        // 如果找到单行注释
         if (singleLineComment.isNotEmpty()) {
             comment = singleLineComment
             break
-        } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
-            comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
+        }
+
+        // If a multi-line comment is found
+        // 如果找到多行注释
+        else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
+            comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim { it == '*' || it == ' ' }
             break
         }
     }
 
-    // 如果没有找到注释，向上查找
+    // If no comments are found within the specified range, search upwards
+    // 如果在指定范围内没有找到注释，向上查找
     if (comment == null) {
+        var multiLineCommentFlag = false
+        var singleLineCommentFlag = false
         for (i in (startIndex - 1) downTo 0) {
             val line = lines.getOrNull(i)?.trim() ?: continue
-            val singleLineComment = line.substringAfter("//", "").substringBefore("//").trim()
+            val singleLineComment = line.substringAfter("//", "").trim()
             val multiLineCommentStart = line.indexOf("/*")
             val multiLineCommentEnd = line.indexOf("*/")
 
+            // Handle single-line comments
+            // 处理单行注释
             if (singleLineComment.isNotEmpty()) {
-                comment = singleLineComment
+                if (singleLineCommentFlag) {
+                    comment = singleLineComment + comment
+                } else {
+                    comment = singleLineComment
+                    singleLineCommentFlag = true
+                }
+                continue
+            }
+            // Handle multi-line comments
+            // 处理多行注释
+            else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
+                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim { it == '*' || it == ' ' }
                 break
-            } else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
-                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim()
-                break
-            } else if(line.isDeclaredLine()) {
+            }
+            // Handle multi-line comments that start but do not end
+            // 处理多行注释开始但未结束的情况
+            else if (multiLineCommentStart != -1 && multiLineCommentFlag) {
+                comment = line.substring(multiLineCommentStart + 2).trim { it == '*' || it == ' ' } + comment
+                multiLineCommentFlag = true
+                continue
+            }
+            // Handle multi-line comments that end but do not start
+            // 处理多行注释结束的情况
+            else if (multiLineCommentEnd != -1) {
+                comment = line.substring(0, multiLineCommentEnd).trim { it == '*' || it == ' ' }
+                multiLineCommentFlag = true
+                continue
+            }
+            // Handle non-empty lines
+            // 处理非空行
+            else if (line.isNotBlank()) {
+                if (multiLineCommentFlag) {
+                    comment = line.trim { it == '*' || it == ' ' } + comment
+                    continue
+                }
                 break
             }
         }
     }
     return comment
-}
-
-fun String.isDeclaredLine(): Boolean {
-    return startsWith("var") || startsWith("val") || startsWith("private") || startsWith("protected") || startsWith("public") || startsWith(
-        "internal"
-    ) || startsWith("override") || startsWith("lateinit") || startsWith("open")
 }

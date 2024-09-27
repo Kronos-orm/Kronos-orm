@@ -32,9 +32,16 @@ import com.kotlinorm.beans.dsl.KPojo
 
 data class User(
     // 添加列注释
+    // 支持多行
     var property1: Int? = null,
     var property2: String? = null, // 添加列注释
     /* 添加列注释 */
+    var property3: Int? = null,
+    /* 
+    * 添加列注释
+    * 支持多行
+    前面可以不加“*”
+    */
     var property3: Int? = null,
     var property4: String? = null /* 添加列注释 */
 ) : KPojo

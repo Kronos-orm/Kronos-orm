@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何对数据库表进行创建、删除、清空、同步等操作。
-
 请确保您的KPojo具有正确的注解，以便Kronos能够正确识别表名、字段、索引等信息。
 
 > **Note**

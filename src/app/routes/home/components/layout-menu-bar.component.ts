@@ -278,8 +278,10 @@ export class LayoutMenuBarComponent implements OnInit {
     }
 
     setLang(lang: string) {
+        if(this.appService.language === lang) return;
         this.appService.language = lang; // update language
         this.translocoService.setActiveLang(lang);
+        window.location.reload();
     }
 
     languages = [

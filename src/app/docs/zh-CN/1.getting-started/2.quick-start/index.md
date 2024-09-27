@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本文将指导您如何快速开始使用Kronos，你可以在[这里](https://github.com/Kronos-orm?tab=repositories)找到一些示例项目。
-
 ## 🖥 JDK、Kotlin 版本及构建工具
 
 - **JDK** 8+
@@ -88,13 +86,13 @@ plugins {
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jdbc-wrappere:2.0.0") // 供了基础的ORM功能
+    implementation("com.kotlinorm.kronos-jdbc-wrappere:2.0.0") // 提供了数据库操作的基础功能
 }
 ```
 
 ```groovy group="importDriver" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:2.0.0' // 供了基础的ORM功能
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:2.0.0' // 提供了数据库操作的基础功能
 }
 ```
 

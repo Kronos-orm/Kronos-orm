@@ -14,18 +14,25 @@
     {{ common.annotation(name) }}
 {%- endmacro %}
 
+{% macro code(name) -%}
+    {{ common.code(name) }}
+{%- endmacro %}
+
 {% macro required() -%}
     {{ common.required() }}
 {%- endmacro %}
 
 {% macro params(paramList) -%}
-    {{ common.params(["param", "description", "type", "default"], paramList) }}
+    {{ common.params(["name", "description", "type", "default"], paramList) }}
 {%- endmacro %}
 
 {% macro members(memberList) -%}
-    {{ common.members(["name", "description", "default"], memberList) }}
+    {{ common.members(["name", "description", "type"], memberList) }}
 {%- endmacro %}
 
-{% macro noun(str) -%}
-    {{ common.noun(str, 'zh-CN') }}
+{% macro noun(str, name, anchor) -%}
+    {%- if(anchor == null) -%}
+        {%- set anchor = name -%}
+    {%- endif -%}
+    {{ common.noun(str, 'en', name, anchor) }}
 {%- endmacro %}

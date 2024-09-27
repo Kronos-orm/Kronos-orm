@@ -1,8 +1,6 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何向数据库中插入记录。
-
 ## 插入单条记录
 
 在Kronos中，我们可以使用`KPojo.insert().execute()`方法向数据库中插入一条记录。

@@ -23,6 +23,8 @@ import com.kotlinorm.orm.select.SelectClauseInfo
 object PostgresqlSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
 
+    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("//").last().split("/").first()
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "BOOLEAN"

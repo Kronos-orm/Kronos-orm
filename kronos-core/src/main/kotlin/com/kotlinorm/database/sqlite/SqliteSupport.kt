@@ -22,6 +22,8 @@ import com.kotlinorm.orm.select.SelectClauseInfo
 object SqliteSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
 
+    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("//").last()
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT, TINYINT, SMALLINT, INT, MEDIUMINT, BIGINT, SERIAL, YEAR, SET -> "INTEGER"

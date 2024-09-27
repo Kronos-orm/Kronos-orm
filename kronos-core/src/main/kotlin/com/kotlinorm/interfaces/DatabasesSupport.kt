@@ -16,6 +16,8 @@ import com.kotlinorm.orm.select.SelectClauseInfo
 interface DatabasesSupport {
     var quotes: Pair<String, String>
 
+    fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper): String
+
     fun String?.orEmpty(): String = this ?: ""
 
     fun quote(str: String): String = "${quotes.first}$str${quotes.second}"

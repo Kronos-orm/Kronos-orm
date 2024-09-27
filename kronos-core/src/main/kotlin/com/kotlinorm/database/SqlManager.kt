@@ -32,11 +32,11 @@ import com.kotlinorm.orm.select.SelectClauseInfo
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
     internal fun getDBNameFrom(wrapper: KronosDataSourceWrapper) = when (wrapper.dbType) {
-        Mysql -> wrapper.url.split("?").first().split("//")[1].split("/").last()
-        SQLite -> wrapper.url.split("//").last()
-        Oracle -> wrapper.userName
-        Mssql -> wrapper.url.split("//").last().split(";").first()
-        Postgres -> wrapper.url.split("//").last().split("/").first()
+        Mysql -> MysqlSupport.getDBNameFromUrl(wrapper)
+        SQLite -> SqliteSupport.getDBNameFromUrl(wrapper)
+        Oracle -> OracleSupport.getDBNameFromUrl(wrapper)
+        Mssql -> MssqlSupport.getDBNameFromUrl(wrapper)
+        Postgres -> PostgresqlSupport.getDBNameFromUrl(wrapper)
         else -> tryGetDBNameFromUrlCustom(wrapper)
             ?: throw UnsupportedDatabaseTypeException("Unsupported database type: ${wrapper.dbType}")
     }

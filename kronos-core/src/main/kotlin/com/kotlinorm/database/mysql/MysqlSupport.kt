@@ -22,6 +22,8 @@ import com.kotlinorm.orm.select.SelectClauseInfo
 object MysqlSupport : DatabasesSupport {
     override var quotes = Pair("`", "`")
 
+    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("?").first().split("//")[1].split("/").last()
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "TINYINT(1)"

@@ -23,6 +23,8 @@ import java.math.BigDecimal
 object OracleSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
 
+    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.userName
+
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
             BIT -> "NUMBER(1)"

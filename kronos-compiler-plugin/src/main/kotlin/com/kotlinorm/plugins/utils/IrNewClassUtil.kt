@@ -161,6 +161,15 @@ fun createKronosTableName(declaration: IrClass): IrBlockBody {
 }
 
 context(IrBuilderWithScope, IrPluginContext)
+fun createKronosComment(declaration: IrClass): IrBlockBody {
+    return irBlockBody {
+        +irReturn(
+            declaration.getKDocString()
+        )
+    }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
     return irBlockBody {

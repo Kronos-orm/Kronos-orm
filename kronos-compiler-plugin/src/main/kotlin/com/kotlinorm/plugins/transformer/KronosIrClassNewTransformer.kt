@@ -121,6 +121,7 @@ class KronosIrClassNewTransformer(
                         "safeFromMapData" -> replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }
                         "fromMapData" -> replaceFakeBody { createFromMapValueFunction(irClass, declaration) }
                         "kronosTableName" -> replaceFakeBody { createKronosTableName(irClass) }
+                        "kronosTableComment" -> replaceFakeBody { createKronosComment(irClass) }
                         "kronosTableIndex" -> replaceFakeBody { createKronosTableIndex(irClass) }
                         "kronosColumns" -> replaceFakeBody { createGetFieldsFunction(irClass) }
                         "kronosCreateTime" -> replaceFakeBody { createKronosCreateTime(irClass) }

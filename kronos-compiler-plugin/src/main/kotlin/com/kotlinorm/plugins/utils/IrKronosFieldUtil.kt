@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
@@ -363,7 +364,7 @@ fun IrProperty.isColumn(irPropertyType: IrType = this.backingField?.type ?: irBu
 
 private val sourceFileCache: LRUCache<String, List<String>> = LRUCache(128)
 context(IrBuilderWithScope, IrPluginContext)
-fun IrProperty.getKDocString(): IrExpression {
+fun IrDeclaration.getKDocString(): IrExpression {
     val sourceOffsets = sourceElement()
     if (sourceOffsets != null) {
         val startOffset = sourceOffsets.startOffset

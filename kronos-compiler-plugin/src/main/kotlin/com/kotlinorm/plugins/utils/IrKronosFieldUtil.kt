@@ -375,7 +375,11 @@ fun IrDeclaration.getKDocString(): IrExpression {
             File(sourceRange.filePath).readLines(UTF_8)
         }
         val comment =
-            extractPropertyComment(source, sourceRange.startLineNumber..sourceRange.endLineNumber)
+            when (this) {
+                is IrProperty -> extractDeclarationComment(source, sourceRange.startLineNumber..sourceRange.endLineNumber)
+                is IrClass -> extractDeclarationComment(source, sourceRange.startLineNumber..sourceRange.startLineNumber)
+                else -> null
+            }
         if (comment != null) {
             return irString(comment)
         }
@@ -398,7 +402,7 @@ fun IrDeclaration.getKDocString(): IrExpression {
  * @param range the range of lines to check 指定要检查的行范围
  * @return the extracted comment content, or null if no comment is found 找到的注释内容，如果没有找到则返回 null
  */
-fun extractPropertyComment(lines: List<String>, range: IntRange): String? {
+fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
     val startIndex = range.first
     val endIndex = range.last
 

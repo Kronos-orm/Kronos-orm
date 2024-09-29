@@ -1,6 +1,6 @@
 package com.kotlinorm
 
-import com.kotlinorm.plugins.utils.extractPropertyComment
+import com.kotlinorm.plugins.utils.extractDeclarationComment
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -14,17 +14,21 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 1..1
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
     fun testExtractOneLineComment2() {
         val sourceCode = """
             val a: String? = null, // this is some comment
+            val b: String? = null,
         """.trimIndent().split("\n")
         val declarationRange = 0..0
         assertEquals(listOf("val a: String? = null, // this is some comment"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+        val declarationRange2 = 1..1
+        assertEquals(listOf("val b: String? = null,"), sourceCode.slice(declarationRange2))
+        assertEquals(null, extractDeclarationComment(sourceCode, declarationRange2))
     }
 
     @Test
@@ -36,7 +40,7 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 2..2
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment,this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment,this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
@@ -50,7 +54,7 @@ class CommentExtractTest {
             listOf("val a: List<String>? = // this is some comment", "listOf(\"123\")"),
             sourceCode.slice(declarationRange)
         )
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
@@ -64,7 +68,22 @@ class CommentExtractTest {
             listOf("val a: List<String>? =", "listOf(\"123\") // this is some comment"),
             sourceCode.slice(declarationRange)
         )
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+    }
+
+    @Test
+    fun testExtractOneLineComment6() {
+        val sourceCode = """
+             // this is some comment
+            @Column("a_a")
+            val a: List<String>? = 
+                listOf("123")
+        """.trimIndent().split("\n").map { it.trim() }
+        val declarationRange = 1..3
+        assertEquals(
+            listOf("@Column(\"a_a\")", "val a: List<String>? =", "listOf(\"123\")"), sourceCode.slice(declarationRange)
+        )
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
@@ -75,7 +94,7 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 1..1
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
@@ -85,7 +104,7 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 0..0
         assertEquals(listOf("val a: String? = null, /* this is some comment */"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
@@ -98,7 +117,7 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 3..3
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 
     @Test
@@ -112,6 +131,20 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 4..4
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment,this is some comment", extractPropertyComment(sourceCode, declarationRange))
+        assertEquals("this is some comment,this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+    }
+
+    @Test
+    fun testExtractDataClassComment1() {
+        val sourceCode = """
+            // this is some comment
+            data class A(
+                // this is another comment
+                val a: String? = null,
+            )
+        """.trimIndent().split("\n").map { it.trim() }
+        val declarationRange = 1..1
+        assertEquals(listOf("data class A("), sourceCode.slice(declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 }

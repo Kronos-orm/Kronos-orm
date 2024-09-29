@@ -108,7 +108,10 @@ object MssqlSupport : DatabasesSupport {
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
-            *indexesSql.toTypedArray()
+            *indexesSql.toTypedArray(),
+            *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
+                "exec sys.sp_addextendedproperty @name=N'MS_Description', @value=N'${it.kDoc}', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
+            }.toTypedArray()
         )
     }
 
@@ -162,9 +165,14 @@ object MssqlSupport : DatabasesSupport {
                                 and a.name = 'tb_user'
                                 and b.name = c.COLUMN_NAME
                         ) THEN 'YES' ELSE 'NO' 
-                    END AS AUTOINCREAMENT
+                    END AS AUTOINCREAMENT,
+                    ep.value AS COLUMN_COMMENT
                 FROM 
                     INFORMATION_SCHEMA.COLUMNS c
+                LEFT JOIN
+                    sys.extended_properties ep ON ep.major_id = OBJECT_ID(:tableName) 
+                    AND ep.minor_id = c.ORDINAL_POSITION 
+                    AND ep.name = 'MS_Description'
                 WHERE 
                     c.TABLE_CATALOG = DB_NAME() AND 
                     c.TABLE_NAME = :tableName
@@ -180,7 +188,8 @@ object MssqlSupport : DatabasesSupport {
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = it["PRIMARY_KEY"] == "YES",
                 identity = it["AUTOINCREAMENT"] == "YES",
-                defaultValue = removeOuterParentheses(it["COLUMN_DEFAULT"] as String?)
+                defaultValue = removeOuterParentheses(it["COLUMN_DEFAULT"] as String?),
+                kDoc = it["COLUMN_COMMENT"] as String?
             )
         }
     }

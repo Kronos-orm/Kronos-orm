@@ -65,6 +65,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    override var selectAll: Boolean = false
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
     private var keyCounters: ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()
     val joinables: MutableList<KJoinable> = mutableListOf()
@@ -78,7 +79,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var limitCapacity = 0
     private var cascadeEnabled = true
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
-    internal var cascadeSelectedProps: Set<Field>? = null
+    private var cascadeSelectedProps: Set<Field>? = null
     private var pi = 0
     private var ps = 0
     private val databaseOfTable: MutableMap<String, String> = mutableMapOf()

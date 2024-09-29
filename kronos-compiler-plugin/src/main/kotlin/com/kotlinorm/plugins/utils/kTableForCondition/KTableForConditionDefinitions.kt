@@ -85,6 +85,11 @@ internal val ComparableEq
             it.name.toString() == "eq" && it.getter?.extensionReceiverParameter?.type?.classFqName?.asString() == "kotlin.Comparable"
         }
 
+context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val getValueByFieldNameSymbol
+    get() = kTableForConditionSymbol.getSimpleFunction("getValueByFieldName")!!
+
 /**
  * Parses the condition type based on the given function name.
  *

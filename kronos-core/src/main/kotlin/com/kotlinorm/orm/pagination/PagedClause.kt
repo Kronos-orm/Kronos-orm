@@ -63,6 +63,7 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
     fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
         val recordsTask = selectClause.build(wrapper)
         selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
+        selectClause.selectAll = false
         val cntTask = selectClause.build(wrapper)
         cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS t"
         cntTask.beforeQuery = null

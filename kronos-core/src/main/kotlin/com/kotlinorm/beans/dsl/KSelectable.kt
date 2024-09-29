@@ -23,5 +23,6 @@ abstract class KSelectable<T : KPojo>(
     internal open val pojo: T
 ) {
     open var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    abstract var selectAll: Boolean
     abstract fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask
 }

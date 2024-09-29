@@ -30,6 +30,17 @@ open class KTableForCondition<T : KPojo> {
     var criteria: Criteria? = null
     var criteriaParamMap: MutableMap<String, Any?> = mutableMapOf()
 
+    /**
+     * Retrieves the value from the 'propParamMap' based on the provided 'fieldName'.
+     *
+     * @param fieldName the name of the field to retrieve the value for
+     * @return the value associated with the provided 'fieldName', or null if not found
+     */
+    @Suppress("UNUSED")
+    fun getValueByFieldName(fieldName: String): Any? {
+        return criteriaParamMap[fieldName]
+    }
+
     val <T : Any?> T?.value get() = this
 
     /**

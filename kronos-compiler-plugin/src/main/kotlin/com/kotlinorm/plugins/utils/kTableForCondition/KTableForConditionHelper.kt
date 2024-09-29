@@ -125,7 +125,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         paramName = getColumnOrValue(element.extensionReceiver!!)
                         tableName = getTableName(element.dispatchReceiver!!)
                         value = applyIrCall(
-                            mapGetterSymbol,
+                            getValueByFieldNameSymbol,
                             irString(element.extensionReceiver!!.asIrCall().funcName())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -158,16 +158,26 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
 
                 "equal" -> {
                     not = not xor element.valueArguments.isEmpty()
-                    val index = if (args.first() is IrCall && null != (args.first()!! as IrCall).origin) 0 else 1
-                    val irCall = args[index]!!.asIrCall()
-                    val (left, _, right) = runExpressionAnalysis(
-                        irCall,
-                        funcName,
-                        args[1 - index]
-                    )
-                    paramName = left
-                    value = right
-                    tableName = getTableName(irCall.dispatchReceiver!!)
+                    val index = when {
+                        args[0].isKronosColumn() -> 0
+                        args[1].isKronosColumn() -> 1
+                        else -> {
+                            type = "sql"
+                            value = element
+                            -1
+                        }
+                    }
+                    if (index != -1) {
+                        val irCall = args[index]!!.asIrCall()
+                        val (left, _, right) = runExpressionAnalysis(
+                            irCall,
+                            funcName,
+                            args[1 - index]
+                        )
+                        paramName = left
+                        value = right
+                        tableName = getTableName(irCall.dispatchReceiver!!)
+                    }
                 }
 
                 "eq", "neq" -> {
@@ -176,7 +186,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         val dispatchReceiver = element.asIrCall().dispatchReceiver!!
                         paramName = getColumnOrValue(extensionReceiver)
                         value = applyIrCall(
-                            mapGetterSymbol,
+                            getValueByFieldNameSymbol,
                             irString(extensionReceiver.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -225,7 +235,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = if (args.isEmpty()) {
                         applyIrCall(
-                            mapGetterSymbol,
+                            getValueByFieldNameSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -239,7 +249,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "matchLeft" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
-                            mapGetterSymbol,
+                            getValueByFieldNameSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -259,7 +269,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "matchRight" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
-                            mapGetterSymbol,
+                            getValueByFieldNameSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -279,7 +289,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "matchBoth" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
-                            mapGetterSymbol,
+                            getValueByFieldNameSymbol,
                             irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
@@ -290,10 +300,10 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
                         stringPlusSymbol, applyIrCall(
-                        stringPlusSymbol, irString("%")
-                    ) {
-                        dispatchBy(str)
-                    }) {
+                            stringPlusSymbol, irString("%")
+                        ) {
+                            dispatchBy(str)
+                        }) {
                         dispatchBy(irString("%"))
                     }
                     tableName = getTableName(element.dispatchReceiver!!)
@@ -321,7 +331,12 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
         }
 
         is IrConstImpl<*> -> {
-            return null
+            if(element.type == irBuiltIns.stringType) {
+                type = "sql"
+                value = element
+            } else {
+                return null
+            }
         }
 
     }
@@ -346,7 +361,7 @@ fun getIrMinusParent(irCall: IrCall): Pair<IrExpression, List<String>> {
     val property = listOfNotNull(
         irCall.valueArguments.find { it is IrCallImpl && it.origin == IrStatementOrigin.GET_PROPERTY }?.funcName()
     )
-    val (kPojo, properties) = if(irCall.extensionReceiver is IrCallImpl) {
+    val (kPojo, properties) = if (irCall.extensionReceiver is IrCallImpl) {
         getIrMinusParent(irCall.extensionReceiver!!.asIrCall())
     } else {
         irCall.extensionReceiver!! to listOf()

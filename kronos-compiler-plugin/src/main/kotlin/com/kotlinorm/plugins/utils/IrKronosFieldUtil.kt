@@ -254,12 +254,12 @@ fun IrExpression?.isKronosColumn(): Boolean {
 
 context(IrBuilderWithScope, IrPluginContext)
 fun IrClass.isKronosColumn(): Boolean {
-    return superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+    return superTypes.any { it.classFqName == KPojoFqName }
 }
 
 context(IrBuilderWithScope, IrPluginContext)
 fun IrType.isKronosColumn(): Boolean {
-    return superTypes().any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }
+    return superTypes().any { it.classFqName == KPojoFqName }
 }
 
 /**

@@ -77,7 +77,7 @@ class SelectClause<T : KPojo>(
     private var cascadeAllowed: Array<out KProperty<*>> = arrayOf()
     internal var cascadeSelectedProps: Set<Field>? = null
     private var lock: PessimisticLock? = null
-    internal var selectAll = true
+    override var selectAll = true
     private var ps = 0
     private var pi = 0
     private var databaseName: String? = null

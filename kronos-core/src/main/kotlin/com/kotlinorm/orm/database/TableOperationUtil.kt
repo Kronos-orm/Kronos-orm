@@ -49,19 +49,18 @@ fun differ(
     current: List<Field>
 ): TableColumnDiff {
     val toAdd = expect.filter { col -> col.columnName !in current.map { it.columnName } }
+    val toDelete = current.filter { col -> col.columnName !in expect.map { it.columnName } }
     val toModified = expect.filter { col ->
         val tableColumn = current.find { col.columnName == it.columnName }
-        tableColumn == null ||
-                columnCreateDefSql(dbType, col) != columnCreateDefSql(dbType, tableColumn)
-    }.filter {
-        // 筛掉不在current中的列
-        if (it.columnName !in current.map { f -> f.columnName }) {
-            return@filter false
+        if (tableColumn == null) {
+             false
         } else {
-            return@filter true
+            (columnCreateDefSql(dbType, col) != columnCreateDefSql(
+                dbType,
+                tableColumn
+            ) || col.kDoc != tableColumn.kDoc)
         }
     }
-    val toDelete = current.filter { col -> col.columnName !in expect.map { it.columnName } }
     return TableColumnDiff(toAdd, toModified, toDelete)
 }
 

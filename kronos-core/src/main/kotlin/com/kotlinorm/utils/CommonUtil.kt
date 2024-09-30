@@ -215,3 +215,7 @@ fun getSafeValue(
         }
     }
 }
+
+fun String.trimWhitespace(): String {
+    return replace("\\s+".toRegex(), " ").trim()
+}

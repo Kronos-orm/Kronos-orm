@@ -57,6 +57,8 @@ interface DatabasesSupport {
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String> {
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
         return listOf(

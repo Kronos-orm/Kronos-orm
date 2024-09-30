@@ -196,7 +196,7 @@ class CommentExtractTest {
 
         val declarationRange = 0..2
         assertEquals(
-            listOf("@Table(\"a\")", "data class A("), sourceCode.slice(declarationRange)
+            listOf("@Table(\"a\")","// this is some comment", "data class A("), sourceCode.slice(declarationRange)
         )
         assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }

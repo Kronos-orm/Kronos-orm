@@ -26,23 +26,23 @@ open class KronosParserExtension : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment.transform(KronosParserTransformer(pluginContext), null)
-        print(
-            moduleFragment.dumpKotlinLike(
-                KotlinLikeDumpOptions(
-                    CustomKotlinLikeDumpStrategy.Default,
-                    printRegionsPerFile = true,
-                    printFileName = true,
-                    printFilePath = true,
-                    useNamedArguments = true,
-                    labelPrintingStrategy = LabelPrintingStrategy.ALWAYS,
-                    printFakeOverridesStrategy = FakeOverridesStrategy.ALL,
-                    bodyPrintingStrategy = BodyPrintingStrategy.PRINT_BODIES,
-                    printElseAsTrue = false,
-                    printUnitReturnType = true,
-                    stableOrder = true
-                )
-            )
-//            moduleFragment.dump()
-        )
+//        print(
+//            moduleFragment.dumpKotlinLike(
+//                KotlinLikeDumpOptions(
+//                    CustomKotlinLikeDumpStrategy.Default,
+//                    printRegionsPerFile = true,
+//                    printFileName = true,
+//                    printFilePath = true,
+//                    useNamedArguments = true,
+//                    labelPrintingStrategy = LabelPrintingStrategy.ALWAYS,
+//                    printFakeOverridesStrategy = FakeOverridesStrategy.ALL,
+//                    bodyPrintingStrategy = BodyPrintingStrategy.PRINT_BODIES,
+//                    printElseAsTrue = false,
+//                    printUnitReturnType = true,
+//                    stableOrder = true
+//                )
+//            )
+////            moduleFragment.dump()
+//        )
     }
 }

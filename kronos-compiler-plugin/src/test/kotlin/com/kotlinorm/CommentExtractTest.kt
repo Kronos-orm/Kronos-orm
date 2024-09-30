@@ -21,13 +21,14 @@ class CommentExtractTest {
     fun testExtractOneLineComment2() {
         val sourceCode = """
             val a: String? = null, // this is some comment
+            @ColumnType(VARCHAR, 254)
             val b: String? = null,
         """.trimIndent().split("\n")
         val declarationRange = 0..0
         assertEquals(listOf("val a: String? = null, // this is some comment"), sourceCode.slice(declarationRange))
         assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
-        val declarationRange2 = 1..1
-        assertEquals(listOf("val b: String? = null,"), sourceCode.slice(declarationRange2))
+        val declarationRange2 = 1..2
+        assertEquals(listOf("@ColumnType(VARCHAR, 254)", "val b: String? = null,"), sourceCode.slice(declarationRange2))
         assertEquals(null, extractDeclarationComment(sourceCode, declarationRange2))
     }
 
@@ -40,7 +41,10 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 2..2
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment,this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+        assertEquals(
+            "this is some comment,this is some comment",
+            extractDeclarationComment(sourceCode, declarationRange)
+        )
     }
 
     @Test
@@ -131,20 +135,69 @@ class CommentExtractTest {
         """.trimIndent().split("\n")
         val declarationRange = 4..4
         assertEquals(listOf("val a: String? = null,"), sourceCode.slice(declarationRange))
-        assertEquals("this is some comment,this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+        assertEquals(
+            "this is some comment,this is some comment",
+            extractDeclarationComment(sourceCode, declarationRange)
+        )
     }
 
     @Test
     fun testExtractDataClassComment1() {
         val sourceCode = """
             // this is some comment
+            @Table("a")
             data class A(
                 // this is another comment
                 val a: String? = null,
             )
         """.trimIndent().split("\n").map { it.trim() }
-        val declarationRange = 1..1
-        assertEquals(listOf("data class A("), sourceCode.slice(declarationRange))
+        val declarationRange = 1..2
+        assertEquals(listOf("@Table(\"a\")", "data class A("), sourceCode.slice(declarationRange))
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+    }
+
+    @Test
+    fun testExtractDataClassComment2() {
+        val sourceCode = """
+            @Table("a")
+            data class A( // this is some comment
+                // this is another comment
+                val a: String? = null,
+                val b: String? = null,
+            )
+        """.trimIndent().split("\n").map { it.trim() }
+        val declarationRange = 0..1
+        assertEquals(
+            listOf("@Table(\"a\")", "data class A( // this is some comment"),
+            sourceCode.slice(declarationRange)
+        )
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+
+        val declarationRange2 = 3..3
+        assertEquals(
+            listOf("val a: String? = null,"), sourceCode.slice(declarationRange2)
+        )
+        assertEquals("this is another comment", extractDeclarationComment(sourceCode, declarationRange2))
+
+        val declarationRange3 = 4..4
+        assertEquals(
+            listOf("val b: String? = null,"), sourceCode.slice(declarationRange3)
+        )
+        assertEquals(null, extractDeclarationComment(sourceCode, declarationRange3))
+    }
+
+    @Test
+    fun testExtractDataClassComment3() {
+        val sourceCode = """
+            @Table("a")
+             // this is some comment
+            data class A(
+        """.trimIndent().split("\n").map { it.trim() }
+
+        val declarationRange = 0..2
+        assertEquals(
+            listOf("@Table(\"a\")", "data class A("), sourceCode.slice(declarationRange)
+        )
         assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }
 }

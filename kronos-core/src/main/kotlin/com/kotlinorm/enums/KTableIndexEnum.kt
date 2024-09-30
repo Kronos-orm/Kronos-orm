@@ -224,36 +224,11 @@ object SQLite {
     val type = DBType.SQLite
 
     /**
-     * This object represents the index methods supported by SQLite.
-     *
-     * It contains two constants, BTREE and HASH, which represent the B-tree and hash index methods respectively.
-     */
-    object KIndexMethod {
-        /**
-         * This constant represents the B-tree index method.
-         */
-        const val UNIQUE = "UNIQUE"
-    }
-
-    /**
      * This object represents the index types supported by SQLite.
      *
      * It contains two constants, NORMAL and UNIQUE, which represent the normal and unique index types respectively.
      */
     object KIndexType {
-        /**
-         * This constant represents the normal index type.
-         */
-        const val BINARY = "BINARY"
-
-        /**
-         * This constant represents the unique index type.
-         */
-        const val NOCASE = "NOCASE"
-
-        /**
-         * This constant represents the unique index type.
-         */
-        const val RTRIM = "RTRIM"
+        const val UNIQUE = "UNIQUE"
     }
 }

@@ -7,7 +7,8 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
-import com.kotlinorm.database.mssql.MssqlSupport
+import com.kotlinorm.database.SqlManager.indexCreateDefSql
+import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -23,7 +24,8 @@ import com.kotlinorm.utils.trimWhitespace
 object MysqlSupport : DatabasesSupport {
     override var quotes = Pair("`", "`")
 
-    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("?").first().split("//")[1].split("/").last()
+    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) =
+        wrapper.url.split("?").first().split("//")[1].split("/").last()
 
     override fun getColumnType(type: KColumnType, length: Int): String {
         return when (type) {
@@ -66,11 +68,49 @@ object MysqlSupport : DatabasesSupport {
         }
     }
 
+    override fun getColumnCreateSql(dbType: DBType, column: Field): String =
+        "${
+            quote(column.columnName)
+        }${
+            " ${sqlColumnType(dbType, column.type, column.length)}"
+        }${
+            if (column.nullable) "" else " NOT NULL"
+        }${
+            if (column.primaryKey) " PRIMARY KEY" else ""
+        }${
+            if (column.identity) " AUTO_INCREMENT" else ""
+        }${
+            if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+        }${
+            if (column.kDoc != null) " COMMENT '${column.kDoc}'" else ""
+        }"
+
+    override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
+        "CREATE ${index.type} INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
+
+    override fun getTableCreateSqlList(
+        dbType: DBType,
+        tableName: String,
+        columns: List<Field>,
+        indexes: List<KTableIndex>
+    ): List<String>  {
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
+        val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
+        val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
+        return listOf(
+            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
+            *indexesSql.toTypedArray()
+        )
+    }
+
     override fun getTableExistenceSql(dbType: DBType) =
         "SELECT COUNT(1) FROM information_schema.tables WHERE table_name = :tableName AND table_schema = :dbName"
 
     override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
         "TRUNCATE TABLE ${quote(tableName)}"
+
+    override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         return dataSource.forList(

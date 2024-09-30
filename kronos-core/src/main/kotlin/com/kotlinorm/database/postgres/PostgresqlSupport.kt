@@ -7,6 +7,7 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
+import com.kotlinorm.database.SqlManager.indexCreateDefSql
 import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
@@ -84,6 +85,8 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
         "TRUNCATE ${quote(tableName)} ${if (restartIdentity) "RESTART IDENTITY" else ""}"
 
+    override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
+
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
         "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
             quote(tableName)
@@ -93,6 +96,23 @@ object PostgresqlSupport : DatabasesSupport {
             ) { quote(it) }
         })"
 
+    override fun getTableCreateSqlList(
+        dbType: DBType,
+        tableName: String,
+        columns: List<Field>,
+        indexes: List<KTableIndex>
+    ): List<String> {
+        val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
+        val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
+        return listOf(
+            "CREATE TABLE IF NOT EXISTS \"public\".${quote(tableName)} ($columnsSql)",
+            *indexesSql.toTypedArray(),
+            *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
+                "COMMENT ON COLUMN \"public\".${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
+            }.toTypedArray()
+        )
+    }
+
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         return dataSource.forList(
@@ -100,6 +120,7 @@ object PostgresqlSupport : DatabasesSupport {
                 """
                 SELECT 
                     c.column_name AS COLUMN_NAME,
+					col_description((current_schema() || '.' || c.table_name)::regclass::oid, c.ordinal_position) AS COLUMN_COMMENT,
                     CASE 
                         WHEN c.data_type IN ('character varying', 'varchar') THEN 'VARCHAR'
                         WHEN c.data_type IN ('integer', 'int') THEN 'INT'
@@ -148,7 +169,8 @@ object PostgresqlSupport : DatabasesSupport {
                     null
                 } else {
                     it["column_default"] as String?
-                }
+                },
+                kDoc = it["column_comment"] as String?
             )
         }
     }
@@ -180,7 +202,6 @@ object PostgresqlSupport : DatabasesSupport {
         columns: TableColumnDiff,
         indexes: TableIndexDiff
     ): List<String> {
-        //TODO: add Column#KDOC to comment support
         //TODO: add Table#KDOC to comment support
         return indexes.toDelete.map {
             "DROP INDEX ${quote("public")}.${it.name};"
@@ -196,6 +217,12 @@ object PostgresqlSupport : DatabasesSupport {
             } ${if (it.defaultValue != null) ",AlTER COLUMN ${it.columnName} SET DEFAULT ${it.defaultValue}" else ""} ${
                 if (it.nullable) ",ALTER COLUMN ${it.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.columnName} SET NOT NULL"
             }"
+        } + columns.toModified.map {
+            if(it.kDoc.isNullOrEmpty()) {
+                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.columnName)} IS NULL"
+            } else {
+                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
+            }
         } + columns.toDelete.map {
             "ALTER TABLE ${quote("public")}.${quote(tableName)} DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {

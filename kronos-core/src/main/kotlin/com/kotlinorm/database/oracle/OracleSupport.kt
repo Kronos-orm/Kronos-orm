@@ -106,12 +106,15 @@ object OracleSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
-        //TODO: add Column#KDOC to comment support
         //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE ${quote(tableName.uppercase())} ($columnsSql)", *indexesSql.toTypedArray()
+            "CREATE TABLE ${quote(tableName.uppercase())} ($columnsSql)",
+            *indexesSql.toTypedArray(),
+            *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
+                "COMMENT ON COLUMN ${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
+            }.toTypedArray(),
         )
     }
 
@@ -133,7 +136,6 @@ object OracleSupport : DatabasesSupport {
         """.trimIndent()
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
-        //TODO: add Column#KDOC to comment support
         //TODO: add Table#KDOC to comment support
         return dataSource.forList(
             KronosAtomicQueryTask(
@@ -147,6 +149,7 @@ object OracleSupport : DatabasesSupport {
                         cols.nullable AS IS_NULLABLE,
                         cols.data_default AS COLUMN_DEFAULT,
                         CASE WHEN cons.constraint_type = 'P' THEN '1' ELSE '0' END AS PRIMARY_KEY,
+                        col_comments.comments AS COLUMN_COMMENT,
                         ROW_NUMBER() OVER (PARTITION BY cols.column_name ORDER BY CASE WHEN cons.constraint_type = 'P' THEN 0 ELSE 1 END, cons.constraint_type) AS rn
                     FROM 
                         all_tab_columns cols
@@ -156,11 +159,14 @@ object OracleSupport : DatabasesSupport {
                     LEFT JOIN 
                         all_constraints cons 
                         ON cols.owner = cons.owner AND cons_cols.constraint_name = cons.constraint_name AND cons_cols.table_name = cons.table_name
+                    LEFT JOIN 
+                        all_col_comments col_comments
+                        ON cols.owner = col_comments.owner AND cols.table_name = col_comments.table_name AND cols.column_name = col_comments.column_name
                     WHERE 
                         cols.table_name = :tableName AND cols.OWNER = :dbName
                 )
                 SELECT 
-                    COLUMN_NAME, DATE_TYPE, LENGTH, PRECISION, IS_NULLABLE, COLUMN_DEFAULT, PRIMARY_KEY
+                    COLUMN_NAME, DATE_TYPE, LENGTH, PRECISION, IS_NULLABLE, COLUMN_DEFAULT, PRIMARY_KEY, COLUMN_COMMENT
                 FROM 
                     RankedColumns
                 WHERE 
@@ -187,7 +193,8 @@ object OracleSupport : DatabasesSupport {
                     null
                 } else {
                     it["COLUMN_DEFAULT"] as String?
-                }
+                },
+                kDoc = it["COLUMN_COMMENT"] as String?
             )
         }
     }
@@ -215,7 +222,6 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        //TODO: add Column#KDOC to comment support
         //TODO: add Table#KDOC to comment support
         dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
@@ -229,6 +235,12 @@ object OracleSupport : DatabasesSupport {
             "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it)})"
         } + columns.toAdd.map {
             "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it)}"
+        } + columns.toModified.map {
+            if(it.kDoc.isNullOrEmpty()) {
+                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.columnName)} IS NULL"
+            } else {
+                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
+            }
         } + indexes.toAdd.map {
             "CREATE ${it.type} INDEX ${it.name} ON ${quote(dbName)}.${quote(tableName)} (${
                 it.columns.joinToString(",") { col ->

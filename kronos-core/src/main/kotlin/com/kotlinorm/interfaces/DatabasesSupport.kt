@@ -3,9 +3,6 @@ package com.kotlinorm.interfaces
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.ConflictResolver
-import com.kotlinorm.database.SqlManager.columnCreateDefSql
-import com.kotlinorm.database.SqlManager.indexCreateDefSql
-import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -31,41 +28,16 @@ interface DatabasesSupport {
 
     fun getKColumnType(type: String, length: Int = 0): KColumnType = KColumnType.fromString(type)
 
-    fun getColumnCreateSql(dbType: DBType, column: Field): String =
-        "${
-            quote(column.columnName)
-        }${
-            " ${sqlColumnType(dbType, column.type, column.length)}"
-        }${
-            if (column.nullable) "" else " NOT NULL"
-        }${
-            if (column.primaryKey) " PRIMARY KEY" else ""
-        }${
-            if (column.identity) " AUTO_INCREMENT" else ""
-        }${
-            if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
-        }${
-            if (column.kDoc != null) " COMMENT '${column.kDoc}'" else ""
-        }"
+    fun getColumnCreateSql(dbType: DBType, column: Field): String
 
-    fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE ${index.type} INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
+    fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String
 
     fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
         columns: List<Field>,
         indexes: List<KTableIndex>
-    ): List<String> {
-        //TODO: add Column#KDOC to comment support
-        //TODO: add Table#KDOC to comment support
-        val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
-        val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
-        return listOf(
-            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
-            *indexesSql.toTypedArray()
-        )
-    }
+    ): List<String>
 
     fun getTableExistenceSql(
         dbType: DBType
@@ -75,7 +47,7 @@ interface DatabasesSupport {
     fun getTableDropSql(
         dbType: DBType,
         tableName: String
-    ) = "DROP TABLE IF EXISTS $tableName"
+    ): String
 
     fun getTableColumns(
         dataSource: KronosDataSourceWrapper,

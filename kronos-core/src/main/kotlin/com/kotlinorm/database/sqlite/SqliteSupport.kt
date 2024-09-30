@@ -5,9 +5,9 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
+import com.kotlinorm.database.SqlManager.columnCreateDefSql
+import com.kotlinorm.database.SqlManager.indexCreateDefSql
 import com.kotlinorm.database.SqlManager.sqlColumnType
-import com.kotlinorm.database.mssql.MssqlSupport
-import com.kotlinorm.database.oracle.OracleSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -70,6 +70,20 @@ object SqliteSupport : DatabasesSupport {
         })"
     }
 
+    override fun getTableCreateSqlList(
+        dbType: DBType,
+        tableName: String,
+        columns: List<Field>,
+        indexes: List<KTableIndex>
+    ): List<String> {
+        val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
+        val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
+        return listOf(
+            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
+            *indexesSql.toTypedArray()
+        )
+    }
+
     override fun getTableExistenceSql(dbType: DBType) =
         "SELECT COUNT(1)  as CNT FROM sqlite_master where type='table' and name= :tableName"
 
@@ -78,6 +92,8 @@ object SqliteSupport : DatabasesSupport {
             VACUUM;
             ${if (restartIdentity) "DELETE FROM sqlite_sequence WHERE name='$tableName';" else ""}
         """.trimIndent()
+
+    override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun extractNumberInParentheses(input: String): Int {
@@ -97,9 +113,9 @@ object SqliteSupport : DatabasesSupport {
                         mapOf("tableName" to tableName)
                     ), String::class
                 ) as String?
-                if (sql != null && Regex("""(\w+)\sINTEGER\sNOT\sNULL\sPRIMARY\sKEY\sAUTOINCREMENT""").find(sql)?.groupValues?.get(
+                if(sql != null && Regex("""("?\w+"?)\sINTEGER\sNOT\sNULL\sPRIMARY\sKEY\sAUTOINCREMENT""").find(sql)?.groupValues?.get(
                         1
-                    ) == it["name"] as String
+                    ) == quote(it["name"] as String)
                 ) {
                     identity = true
                 }
@@ -113,7 +129,8 @@ object SqliteSupport : DatabasesSupport {
                 nullable = it["notnull"] as Int == 0, // 直接使用notnull字段判断是否可空
                 primaryKey = it["pk"] as Int == 1,
                 identity = identity,
-                defaultValue = it["dflt_value"] as String?
+                defaultValue = it["dflt_value"] as String?,
+                // SQLITE DO NOT SUPPORT COMMENT FOR COLUMN/TABLE
             )
         }
     }
@@ -136,8 +153,6 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
-        //TODO: add Column#KDOC to comment support
-        //TODO: add Table#KDOC to comment support
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
             "DROP INDEX ${it.name}"

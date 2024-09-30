@@ -3,13 +3,7 @@ package com.kotlinorm.database
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
-import com.kotlinorm.database.mssql.MssqlSupport
-import com.kotlinorm.database.mysql.MysqlSupport
-import com.kotlinorm.database.oracle.OracleSupport
-import com.kotlinorm.database.postgres.PostgresqlSupport
-import com.kotlinorm.database.sqlite.SqliteSupport
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.enums.DBType.*
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper

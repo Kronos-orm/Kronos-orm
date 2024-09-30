@@ -30,8 +30,7 @@ object MssqlSupport : DatabasesSupport {
             KColumnType.BIT -> "BIT"
             KColumnType.TINYINT -> "TINYINT"
             KColumnType.SMALLINT -> "SMALLINT"
-            KColumnType.INT -> "INT"
-            KColumnType.MEDIUMINT -> "INT"
+            KColumnType.INT, KColumnType.MEDIUMINT, KColumnType.SERIAL, KColumnType.YEAR -> "INT"
             KColumnType.BIGINT -> "BIGINT"
             KColumnType.REAL -> "REAL"
             KColumnType.FLOAT -> "FLOAT"
@@ -40,28 +39,20 @@ object MssqlSupport : DatabasesSupport {
             KColumnType.NUMERIC -> "NUMERIC"
             KColumnType.CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
             KColumnType.VARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.TEXT -> "TEXT"
-            KColumnType.MEDIUMTEXT -> "TEXT"
-            KColumnType.LONGTEXT -> "TEXT"
+            KColumnType.TEXT, KColumnType.MEDIUMTEXT, KColumnType.LONGTEXT, KColumnType.CLOB -> "TEXT"
             KColumnType.DATE -> "DATE"
             KColumnType.TIME -> "TIME"
             KColumnType.DATETIME -> "DATETIME"
             KColumnType.TIMESTAMP -> "TIMESTAMP"
             KColumnType.BINARY -> "BINARY"
             KColumnType.VARBINARY -> "VARBINARY"
-            KColumnType.LONGVARBINARY -> "IMAGE"
-            KColumnType.BLOB -> "IMAGE"
-            KColumnType.MEDIUMBLOB -> "IMAGE"
-            KColumnType.LONGBLOB -> "IMAGE"
-            KColumnType.CLOB -> "TEXT"
+            KColumnType.LONGVARBINARY, KColumnType.BLOB, KColumnType.MEDIUMBLOB, KColumnType.LONGBLOB -> "IMAGE"
             KColumnType.JSON -> "JSON"
             KColumnType.ENUM -> "ENUM"
             KColumnType.NVARCHAR -> "NVARCHAR(${length.takeIf { it > 0 } ?: 255})"
             KColumnType.NCHAR -> "NCHAR(${length.takeIf { it > 0 } ?: 255})"
             KColumnType.NCLOB -> "NTTEXT"
             KColumnType.UUID -> "CHAR(36)"
-            KColumnType.SERIAL -> "INT"
-            KColumnType.YEAR -> "INT"
             KColumnType.SET -> "SET"
             KColumnType.GEOMETRY -> "GEOMETRY"
             KColumnType.POINT -> "POINT"
@@ -71,9 +62,7 @@ object MssqlSupport : DatabasesSupport {
         }
     }
 
-    override
-
-    fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
+    override fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
         quote(column.columnName)
     }${
         " ${sqlColumnType(dbType, column.type, column.length)}"
@@ -98,9 +87,6 @@ object MssqlSupport : DatabasesSupport {
             )
         }])"
     }
-
-    //"IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$kronosTableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$kronosTableName]($columnDefinitions)"
-
 
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
@@ -280,7 +266,7 @@ object MssqlSupport : DatabasesSupport {
                 'TABLE', N'$tableName',
                 'COLUMN', N'${it.columnName}')) > 0)
                     BEGIN
-                          EXEC sp_updateextendedproperty 'MS_Description', N'${it.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.columnName}';
+                        EXEC sp_updateextendedproperty 'MS_Description', N'${it.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.columnName}';
                     END
                 ELSE
                     BEGIN

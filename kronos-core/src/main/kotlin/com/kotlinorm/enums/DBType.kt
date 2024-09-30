@@ -24,16 +24,50 @@ package com.kotlinorm.enums
  * @author OUSC
  */
 enum class DBType {
+    /**
+     * [MySQL](https://www.mysql.com/) Database
+     */
     Mysql,
+    /**
+     * [Oracle](https://www.oracle.com/database/) Database
+     */
     Oracle,
+    /**
+     * [PostgreSQL](https://www.postgresql.org/) Database
+     */
     Postgres,
+    /**
+     * [Microsoft SQL Server](https://www.microsoft.com/en-us/sql-server) Database
+     */
     Mssql,
+    /**
+     * [SQLite](https://www.sqlite.org/index.html) Database
+     */
     SQLite,
+    /**
+     * [DB2](https://www.ibm.com/analytics/db2) Database
+     */
     DB2,
+    /**
+     * [Sybase](https://www.sap.com/products/sybase.html) Database
+     */
     Sybase,
+    /**
+     * [H2](https://www.h2database.com/html/main.html) Database
+     */
     H2,
+    /**
+     * [OceanBase](https://www.oceanbase.com/) Database
+     */
     OceanBase,
-    DM8;
+    /**
+     * [DM8](https://www.dameng.com/) Database
+     */
+    DM8,
+    /**
+     * [GaussDB](https://www.huawei.com/en/psirt/security-advisories/huawei-sa-20210811-01-database-en) Database
+     */
+    GaussDB;
 
     companion object {
         /**

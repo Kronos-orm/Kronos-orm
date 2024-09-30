@@ -18,6 +18,7 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.trimWhitespace
 
 object MssqlSupport : DatabasesSupport {
     override var quotes = Pair("[", "]")
@@ -104,13 +105,14 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
+        //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
             *indexesSql.toTypedArray(),
             *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
-                "exec sys.sp_addextendedproperty @name=N'MS_Description', @value=N'${it.kDoc}', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
+                "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'${it.kDoc}', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
             }.toTypedArray()
         )
     }
@@ -176,7 +178,7 @@ object MssqlSupport : DatabasesSupport {
                 WHERE 
                     c.TABLE_CATALOG = DB_NAME() AND 
                     c.TABLE_NAME = :tableName
-            """.trimIndent(), mapOf("tableName" to tableName)
+            """.trimWhitespace(), mapOf("tableName" to tableName)
             )
         ).map {
             val length = it["CHARACTER_MAXIMUM_LENGTH"] as Int? ?: 0
@@ -208,7 +210,7 @@ object MssqlSupport : DatabasesSupport {
                     WHERE 
                      object_id = object_id(:tableName) AND 
                      name NOT LIKE 'PK__${tableName}__%'  
-                """, mapOf(
+                """.trimWhitespace(), mapOf(
                     "tableName" to tableName
                 )
             )
@@ -220,6 +222,7 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
+        //TODO: add Table#KDOC to comment support
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
             "DROP INDEX [${it.name}] ON [dbo].[$tableName]"
@@ -235,11 +238,11 @@ object MssqlSupport : DatabasesSupport {
                 );
 
                 IF @ConstraintName IS NOT NULL
-                BEGIN
-                    DECLARE @DropStmt NVARCHAR(MAX) = N'ALTER TABLE dbo.$tableName DROP CONSTRAINT ' + QUOTENAME(@ConstraintName);
-                    EXEC sp_executesql @DropStmt;
-                END
-            """.trimIndent()
+                    BEGIN
+                        DECLARE @DropStmt NVARCHAR(MAX) = N'ALTER TABLE dbo.$tableName DROP CONSTRAINT ' + QUOTENAME(@ConstraintName);
+                        EXEC sp_executesql @DropStmt;
+                    END
+            """.trimWhitespace()
         } + columns.toDelete.map {
             "ALTER TABLE [dbo].[$tableName] DROP COLUMN [${it.columnName}]"
         } + columns.toAdd.map {
@@ -256,17 +259,35 @@ object MssqlSupport : DatabasesSupport {
                 );
 
                 IF @ConstraintName IS NOT NULL
-                BEGIN
-                    DECLARE @DropStmt NVARCHAR(MAX) = N'ALTER TABLE dbo.$tableName DROP CONSTRAINT ' + QUOTENAME(@ConstraintName);
-                    EXEC sp_executesql @DropStmt;
-                END
+                    BEGIN
+                        DECLARE @DropStmt NVARCHAR(MAX) = N'ALTER TABLE dbo.$tableName DROP CONSTRAINT ' + QUOTENAME(@ConstraintName);
+                        EXEC sp_executesql @DropStmt;
+                    END
                 ELSE
-                BEGIN
-                    PRINT 'No default constraint found on the specified column.';
-                END
-            """.trimIndent()
+                    BEGIN
+                        PRINT 'No default constraint found on the specified column.';
+                    END
+            """.trimWhitespace()
         } + columns.toModified.map {
             "ALTER TABLE [dbo].[$tableName] ALTER COLUMN ${columnCreateDefSql(dbType, it)}"
+        } + columns.toModified.map {
+            if(it.kDoc.isNullOrEmpty()) {
+                "exec sys.sp_dropextendedproperty @name=N'MS_Description', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
+            } else {
+                """
+                IF ((SELECT COUNT(*) FROM ::fn_listextendedproperty('MS_Description',
+                'SCHEMA', N'dbo',
+                'TABLE', N'$tableName',
+                'COLUMN', N'${it.columnName}')) > 0)
+                    BEGIN
+                          EXEC sp_updateextendedproperty 'MS_Description', N'${it.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.columnName}';
+                    END
+                ELSE
+                    BEGIN
+                        EXEC sp_addextendedproperty 'MS_Description', N'${it.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.columnName}';
+                    END
+                """.trimWhitespace()
+            }
         } + indexes.toAdd.map {
             getIndexCreateSql(dbType, tableName, it)
         }
@@ -284,7 +305,7 @@ object MssqlSupport : DatabasesSupport {
                     INSERT INTO ${quote(tableName)} (${toInsertFields.joinToString { quote(it) }})
                     VALUES (${toInsertFields.joinToString(", ") { ":$it" }})
                 END
-    """
+    """.trimWhitespace()
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =

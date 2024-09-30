@@ -18,6 +18,7 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.trimWhitespace
 import java.math.BigDecimal
 
 object OracleSupport : DatabasesSupport {
@@ -105,6 +106,8 @@ object OracleSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
         return listOf(
@@ -130,6 +133,8 @@ object OracleSupport : DatabasesSupport {
         """.trimIndent()
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
         return dataSource.forList(
             KronosAtomicQueryTask(
                 """
@@ -160,7 +165,7 @@ object OracleSupport : DatabasesSupport {
                     RankedColumns
                 WHERE 
                     rn = 1
-            """.trimIndent(),
+            """.trimWhitespace(),
                 mapOf("tableName" to tableName.uppercase(), "dbName" to getDBNameFrom(dataSource).uppercase())
             )
         ).map {
@@ -199,7 +204,8 @@ object OracleSupport : DatabasesSupport {
                 WHERE i.TABLE_NAME = UPPER(:tableName) 
                 AND i.OWNER = :dbName
                 AND i.INDEX_NAME NOT LIKE UPPER('SYS_%')
-                """, mapOf(
+                """.trimWhitespace(),
+                mapOf(
                     "tableName" to tableName.uppercase(), "dbName" to getDBNameFrom(dataSource).uppercase()
                 )
             )
@@ -209,6 +215,8 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
         dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
@@ -233,22 +241,22 @@ object OracleSupport : DatabasesSupport {
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
         val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver
         return """
-            |BEGIN
-            |    INSERT INTO ${quote(tableName)}
-            |        (${toInsertFields.joinToString { quote(it) }})
-            |    VALUES 
-            |    (${toInsertFields.joinToString(", ") { ":$it" }}) 
-            |    EXCEPTION 
-            |        WHEN 
-            |            DUP_VAL_ON_INDEX 
-            |        THEN 
-            |            UPDATE ${quote(tableName)}
-            |            SET 
-            |                ${toUpdateFields.joinToString(", ") { equation(it) }}
-            |            WHERE 
-            |                ${onFields.joinToString(" AND ") { equation(it) }};
-            |END;
-        """.trimMargin()
+            BEGIN
+                INSERT INTO ${quote(tableName)}
+                    (${toInsertFields.joinToString { quote(it) }})
+               VALUES 
+                (${toInsertFields.joinToString(", ") { ":$it" }}) 
+                EXCEPTION 
+                    WHEN 
+                        DUP_VAL_ON_INDEX 
+                    THEN 
+                        UPDATE ${quote(tableName)}
+                        SET 
+                            ${toUpdateFields.joinToString(", ") { equation(it) }}
+                        WHERE 
+                            ${onFields.joinToString(" AND ") { equation(it) }};
+            END;
+        """.trimWhitespace()
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
@@ -277,7 +285,10 @@ object OracleSupport : DatabasesSupport {
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
         val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
 
-        if (!databaseName.isNullOrEmpty()) throw UnsupportedDatabaseTypeException("Oracle does not support databaseName in select clause because of its dblink-liked configuration mode")
+        if (!databaseName.isNullOrEmpty()) throw UnsupportedDatabaseTypeException(
+            DBType.Oracle,
+            "Oracle does not support databaseName in select clause because of its dblink-liked configuration mode"
+        )
 
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
@@ -312,9 +323,12 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable,  whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
 
-        if (databaseOfTable.isNotEmpty()) throw UnsupportedDatabaseTypeException("Oracle does not support databaseName in select clause because of its dblink-liked configuration mode")
+        if (databaseOfTable.isNotEmpty()) throw UnsupportedDatabaseTypeException(
+            DBType.Oracle,
+            "Oracle does not support databaseName in select clause because of its dblink-liked configuration mode"
+        )
 
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {

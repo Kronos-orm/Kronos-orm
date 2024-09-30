@@ -19,6 +19,7 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.trimWhitespace
 
 object PostgresqlSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
@@ -131,7 +132,7 @@ object PostgresqlSupport : DatabasesSupport {
                 WHERE 
                     c.table_schema = current_schema() AND 
                     c.table_name = :tableName
-            """.trimIndent(), mapOf("tableName" to tableName, "dbName" to getDBNameFrom(dataSource))
+            """.trimWhitespace(), mapOf("tableName" to tableName, "dbName" to getDBNameFrom(dataSource))
             )
         ).map {
             Field(
@@ -158,15 +159,13 @@ object PostgresqlSupport : DatabasesSupport {
         return dataSource.forList(
             KronosAtomicQueryTask(
                 """
-                    SELECT 
-                        indexname AS name
-                    FROM 
-                        pg_indexes 
-                    WHERE 
-                        tablename = :tableName AND 
-                        schemaname = 'public' AND 
-                        indexname NOT LIKE CONCAT(tablename, '_pkey');
-                     """, mapOf(
+                SELECT indexname AS name
+                FROM pg_indexes 
+                WHERE tablename = :tableName AND 
+                    schemaname = 'public' AND 
+                    indexname NOT LIKE CONCAT(tablename, '_pkey');
+                 """.trimWhitespace(),
+                mapOf(
                     "tableName" to tableName
                 )
             )
@@ -181,6 +180,8 @@ object PostgresqlSupport : DatabasesSupport {
         columns: TableColumnDiff,
         indexes: TableIndexDiff
     ): List<String> {
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
         return indexes.toDelete.map {
             "DROP INDEX ${quote("public")}.${it.name};"
         } + columns.toAdd.map {
@@ -221,7 +222,7 @@ object PostgresqlSupport : DatabasesSupport {
         } WHERE ${
             onFields.joinToString(" AND ") { equation(it) }
         };
-        """.trimIndent()
+        """.trimWhitespace()
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
@@ -241,12 +242,15 @@ object PostgresqlSupport : DatabasesSupport {
         "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
                 plusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} + :${it.second}" } +
                 minusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} - :${it.second}" } +
-        whereClauseSql.orEmpty()
+                whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (databaseName,tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
 
-        if (!databaseName.isNullOrEmpty()) throw UnsupportedDatabaseTypeException("Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode")
+        if (!databaseName.isNullOrEmpty()) throw UnsupportedDatabaseTypeException(
+            DBType.Postgres,
+            "Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode"
+        )
 
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
@@ -258,10 +262,10 @@ object PostgresqlSupport : DatabasesSupport {
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
-        val lockSql = when(lock) {
+        val lockSql = when (lock) {
             PessimisticLock.X -> " FOR UPDATE"
             PessimisticLock.S -> " FOR SHARE"
-            else-> null
+            else -> null
         }
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             quote(tableName)
@@ -283,7 +287,10 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
         val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
 
-        if (databaseOfTable.isNotEmpty()) throw UnsupportedDatabaseTypeException("Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode")
+        if (databaseOfTable.isNotEmpty()) throw UnsupportedDatabaseTypeException(
+            DBType.Postgres,
+            "Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode"
+        )
 
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {

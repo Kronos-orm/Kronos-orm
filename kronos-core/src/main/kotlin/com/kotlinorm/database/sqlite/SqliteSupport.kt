@@ -136,6 +136,8 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
+        //TODO: add Column#KDOC to comment support
+        //TODO: add Table#KDOC to comment support
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
             "DROP INDEX ${it.name}"
@@ -203,7 +205,10 @@ object SqliteSupport : DatabasesSupport {
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
 
-        if (null != lock) throw UnsupportedDatabaseTypeException("Sqlite doesn't support the lock() method because Sqlite only has database locks")
+        if (null != lock) throw UnsupportedDatabaseTypeException(
+            DBType.SQLite,
+            "Sqlite doesn't support the lock() method because Sqlite only has database locks"
+        )
 
         return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
             databaseName?.let { quote(it) + "." } ?: ""

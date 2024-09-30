@@ -18,6 +18,7 @@ import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.trimWhitespace
 
 object MysqlSupport : DatabasesSupport {
     override var quotes = Pair("`", "`")
@@ -89,7 +90,7 @@ object MysqlSupport : DatabasesSupport {
                 WHERE 
                  c.TABLE_SCHEMA = DATABASE() AND 
                  c.TABLE_NAME = :tableName
-            """.trimIndent(), mapOf("tableName" to tableName)
+            """.trimWhitespace(), mapOf("tableName" to tableName)
             )
         ).map {
             Field(
@@ -123,7 +124,7 @@ object MysqlSupport : DatabasesSupport {
                  TABLE_SCHEMA = DATABASE() AND 
                  TABLE_NAME = :tableName AND 
                  INDEX_NAME != 'PRIMARY'  
-                """, mapOf(
+                """.trimWhitespace(), mapOf(
                     "tableName" to tableName
                 )
             )
@@ -138,6 +139,7 @@ object MysqlSupport : DatabasesSupport {
         columns: TableColumnDiff,
         indexes: TableIndexDiff,
     ): List<String> {
+        //TODO: add Table#KDOC to comment support
         return indexes.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP INDEX ${it.name}"
         } + columns.toAdd.map {

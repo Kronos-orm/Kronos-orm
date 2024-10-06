@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        mavenLocal()
         mavenCentral()
         gradlePluginPortal()
         maven("https://dl.bintray.com/kotlin/kotlin-eap")
@@ -12,16 +11,6 @@ pluginManagement {
                     username = providers.gradleProperty("aliyunUsername").get()
                     password = providers.gradleProperty("aliyunPassword").get()
                 }
-            }
-        }
-    }
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.namespace == "org.jetbrains.kotlin") {
-                useVersion(file("kotlin.version").readText().trim())
-            }
-            if (requested.id.namespace == "com.kotlinorm") {
-                useVersion(file("kronos.version").readText().trim())
             }
         }
     }

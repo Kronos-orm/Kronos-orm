@@ -31,3 +31,9 @@ dependencies {
     testImplementation("org.springframework:spring-beans:5.3.37")
     testImplementation("org.springframework:spring-core:5.3.37")
 }
+
+configurations.all {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("com.kotlinorm:kronos-compiler-plugin")).using(project(":kronos-compiler-plugin"))
+    }
+}

@@ -1,5 +1,4 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.internal.Kapt3GradleSubplugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -9,7 +8,6 @@ buildscript {
         google()
         mavenCentral()
         gradlePluginPortal()
-        mavenLocal()
     }
 }
 

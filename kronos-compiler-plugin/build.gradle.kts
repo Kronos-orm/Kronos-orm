@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     kotlin("kapt")
     id("kronos.publishing")
 }
@@ -23,12 +23,4 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(project(":kronos-core"))
     testImplementation("dev.zacsweers.kctfork:core:0.5.1")
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(8)
 }

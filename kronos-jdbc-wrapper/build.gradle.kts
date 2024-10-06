@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     id("kronos.publishing")
 }
 
@@ -8,12 +8,4 @@ description = "Kronos 's built-in database operation plug-in based on the origin
 dependencies {
     compileOnly(project(":kronos-core"))
     implementation(kotlin("reflect"))
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(8)
 }

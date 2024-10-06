@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     id("kronos.publishing")
 }
 
@@ -8,12 +8,4 @@ description = "An easy-to-use, flexible, lightweight ORM framework designed for 
 dependencies {
     api(kotlin("reflect"))
     testImplementation(kotlin("test"))
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(8)
 }

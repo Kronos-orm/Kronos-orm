@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     id("com.kotlinorm.kronos-gradle-plugin")
 }
 
@@ -30,12 +30,4 @@ dependencies {
     testImplementation("org.springframework:spring-tx:5.3.37")
     testImplementation("org.springframework:spring-beans:5.3.37")
     testImplementation("org.springframework:spring-core:5.3.37")
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(8)
 }

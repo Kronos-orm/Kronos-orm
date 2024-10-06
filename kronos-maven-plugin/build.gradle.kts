@@ -14,7 +14,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     kotlin("kapt")
     id("kronos.publishing")
 }
@@ -42,10 +42,6 @@ val copyServices =
         from(kotlinPlugin.kaptGeneratedServicesDir)
         into(kaptGeneratedServicesDir)
     }
-
-kotlin {
-    jvmToolchain(8)
-}
 
 tasks.withType<KotlinCompile> {
     dependsOn(copyServices)

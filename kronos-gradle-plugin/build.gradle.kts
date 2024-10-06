@@ -25,7 +25,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     id("java-gradle-plugin")
     kotlin("kapt")
     id("kronos.publishing")
@@ -40,10 +40,6 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api")
     api(project(":kronos-compiler-plugin"))
-}
-
-kotlin {
-    jvmToolchain(8)
 }
 
 gradlePlugin {

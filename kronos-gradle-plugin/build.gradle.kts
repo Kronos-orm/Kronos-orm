@@ -33,10 +33,6 @@ plugins {
 
 description = "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api")
     api(project(":kronos-compiler-plugin"))

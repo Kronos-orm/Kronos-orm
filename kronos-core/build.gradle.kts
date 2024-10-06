@@ -1,9 +1,9 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
-
 plugins {
     kotlin("jvm")
+    id("kronos.publishing")
 }
+
+description = "An easy-to-use, flexible, lightweight ORM framework designed for kotlin."
 
 dependencies {
     api(kotlin("reflect"))
@@ -17,10 +17,3 @@ tasks.test {
 kotlin {
     jvmToolchain(8)
 }
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "An easy-to-use, flexible, lightweight ORM framework designed for kotlin."
-)

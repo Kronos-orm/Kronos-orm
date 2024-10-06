@@ -1,11 +1,12 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
     kotlin("kapt")
+    id("kronos.publishing")
 }
+
+description = "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
@@ -31,10 +32,3 @@ tasks.test {
 kotlin {
     jvmToolchain(8)
 }
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-)

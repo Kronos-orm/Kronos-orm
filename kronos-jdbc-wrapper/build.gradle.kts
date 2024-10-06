@@ -1,9 +1,9 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
-
 plugins {
     kotlin("jvm")
+    id("kronos.publishing")
 }
+
+description = "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
 
 dependencies {
     compileOnly(project(":kronos-core"))
@@ -17,10 +17,3 @@ tasks.test {
 kotlin {
     jvmToolchain(8)
 }
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
-)

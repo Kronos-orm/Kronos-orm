@@ -28,7 +28,10 @@ plugins {
     kotlin("jvm")
     id("java-gradle-plugin")
     kotlin("kapt")
+    id("kronos.publishing")
 }
+
+description = "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 repositories {
     mavenCentral()
@@ -51,10 +54,3 @@ gradlePlugin {
         }
     }
 }
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    GradlePlugin(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-)

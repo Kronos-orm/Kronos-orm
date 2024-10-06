@@ -16,7 +16,10 @@ buildscript {
 plugins {
     kotlin("jvm")
     kotlin("kapt")
+    id("kronos.publishing")
 }
+
+description = "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
@@ -62,10 +65,3 @@ val Project.kaptGeneratedServicesDir: File
         Kapt3GradleSubplugin.getKaptGeneratedClassesDir(this, sourceSets.main.get().name).resolve(
             servicesDirectory
         )
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-)

@@ -196,7 +196,56 @@ class CommentExtractTest {
 
         val declarationRange = 0..2
         assertEquals(
-            listOf("@Table(\"a\")","// this is some comment", "data class A("), sourceCode.slice(declarationRange)
+            listOf("@Table(\"a\")", "// this is some comment", "data class A("), sourceCode.slice(declarationRange)
+        )
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+    }
+
+    @Test
+    fun testExtractDataClassComment4() {
+        val sourceCode = """
+            @Table("a")
+             /** this is some comment */
+            data class A(
+        """.trimIndent().split("\n").map { it.trim() }
+
+        val declarationRange = 0..2
+        assertEquals(
+            listOf("@Table(\"a\")", "/** this is some comment */", "data class A("), sourceCode.slice(declarationRange)
+        )
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+    }
+
+    @Test
+    fun testExtractDataClassComment5() {
+        val sourceCode = """
+             /** this is some comment */
+            @Table("a")
+            data class A(
+        """.trimIndent().split("\n").map { it.trim() }
+
+        val declarationRange = 0..2
+        assertEquals(
+            listOf("/** this is some comment */", "@Table(\"a\")", "data class A("), sourceCode.slice(declarationRange)
+        )
+        assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
+    }
+
+    @Test
+    fun testExtractDataClassComment6() {
+        val sourceCode = """
+            import com.kotlinorm.orm.annotations.Table
+            
+             /** 
+              * this is some comment
+              */
+            @Table("a")
+            data class A(
+        """.trimIndent().split("\n").map { it.trim() }
+
+        val declarationRange = 5..6
+        assertEquals(
+            listOf("@Table(\"a\")", "data class A("), sourceCode.slice(declarationRange)
         )
         assertEquals("this is some comment", extractDeclarationComment(sourceCode, declarationRange))
     }

@@ -172,8 +172,7 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
             // 处理多行注释开始但未结束的情况
             else if (multiLineCommentStart != -1 && multiLineCommentFlag) {
                 comment = line.substring(multiLineCommentStart + 2).trim { it == '*' || it == ' ' } + comment
-                multiLineCommentFlag = true
-                continue
+                break
             }
             // Handle multi-line comments that end but do not start
             // 处理多行注释结束的情况

@@ -11,8 +11,8 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Table(name = "tb_user")
-@TableIndex("aaa", ["username"], SQLite.KIndexType.BINARY, SQLite.KIndexMethod.UNIQUE)
-@TableIndex("bbb", columns = ["username", "gender"], type = SQLite.KIndexType.NOCASE)
+@TableIndex("aaa", ["username"], SQLite.KIndexType.UNIQUE)
+@TableIndex("bbb", columns = ["username", "gender"])
 @TableIndex("ccc", columns = ["gender"])
 data class SqlliteUser(
     @PrimaryKey(identity = true)

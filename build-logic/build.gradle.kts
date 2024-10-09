@@ -21,3 +21,25 @@ tasks.withType<KotlinCompile>().configureEach {
         freeCompilerArgs.add("-Xcontext-receivers")
     }
 }
+apply(from = "generate-join-clause.gradle.kts")
+
+@Suppress("UNCHECKED_CAST")
+val generateJoin = extra["export"] as () -> Unit
+
+tasks.create("generateJoinClauses") {
+    group = "publishing"
+    description = "Generate join clauses"
+    doLast {
+        generateJoin()
+    }
+}
+
+tasks.create("publishAllToAliMaven") {
+    group = "publishing"
+    description = "Publishes all the plugins to Aliyun Maven"
+}
+
+tasks.create("publishAllToMavenLocal") {
+    group = "publishing"
+    description = "Publishes all the plugins to Aliyun Maven"
+}

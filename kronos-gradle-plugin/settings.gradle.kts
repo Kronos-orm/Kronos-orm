@@ -33,4 +33,4 @@ pluginManagement {
     includeBuild("../build-logic")
 }
 
-rootProject.name = "kronos-orm-gradle-plugin"
+rootProject.name = "kronos-gradle-plugin"

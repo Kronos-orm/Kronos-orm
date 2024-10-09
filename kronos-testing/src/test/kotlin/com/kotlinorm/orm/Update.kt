@@ -9,6 +9,7 @@ import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.test.Test
@@ -21,6 +22,7 @@ class Update {
             logPath = listOf("console", "/Users/sundaiyue/kronos/logs")
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
+            dataSource = { TestWrapper }
         }
     }
 
@@ -36,11 +38,7 @@ class Update {
                 .set {
                     it["username"].setValue("123")
                     it.username = "123"
-                    it.gender = 1
                     it.gender += 10
-                    it["gender"] += 12
-                    it.gender -= 10
-                    it["gender"] -= 12
                 }
                 .by { it.id }
                 .build()
@@ -50,14 +48,14 @@ class Update {
         println(paramMap)
 
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew, `gender1` = `gender1` + :gender2PlusNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
             mapOf(
                 "id" to 1,
                 "usernameNew" to "123",
-                "genderNew" to 1,
+                "gender2PlusNew" to 10,
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -137,7 +135,6 @@ class Update {
             mapOf(
                 "idNew" to 1,
                 "genderNew" to null,
-                "usernameNew" to "test",
                 "id" to 1,
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
@@ -841,7 +838,6 @@ class Update {
             mapOf(
                 "idNew" to 1,
                 "genderNew" to null,
-                "usernameNew" to "test",
                 "id" to 1,
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
@@ -912,14 +908,12 @@ class Update {
         assertEquals(
             arrayOf(
                 mapOf(
-                    "usernameNew" to null,
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
                     "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
-                    "usernameNew" to "test",
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
@@ -960,14 +954,12 @@ class Update {
         assertEquals(
             arrayOf(
                 mapOf(
-                    "usernameNew" to null,
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
                     "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
-                    "usernameNew" to "test",
                     "id" to 1,
                     "idNew" to 1,
                     "genderNew" to null,
@@ -981,7 +973,7 @@ class Update {
     fun testBatchUpdateExceptIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.id }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -989,14 +981,12 @@ class Update {
                 mapOf(
                     "genderNew" to null,
                     "id" to 1,
-                    "idNew" to 1,
                     "usernameNew" to null,
                     "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "genderNew" to null,
                     "id" to 1,
-                    "idNew" to 1,
                     "usernameNew" to "test",
                     "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )

@@ -1,4 +1,3 @@
-
 plugins {
     id("kronos.jvm")
     id("java-gradle-plugin")

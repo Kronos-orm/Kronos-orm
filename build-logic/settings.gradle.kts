@@ -16,4 +16,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "kronos-orm-build"
+rootProject.name = "build-logic"

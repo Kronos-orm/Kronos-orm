@@ -15,7 +15,7 @@ data class MysqlUser(
     var id: Int? = null,
     @ColumnType(VARCHAR, 254)
     var username: String? = null,
-    @Column("gender")
+    @Column("gender1")
     @ColumnType(TINYINT)
     @Default("0")
     var gender: Int? = null,
@@ -28,7 +28,7 @@ data class MysqlUser(
     @UpdateTime
     @NotNull
     var updateTime: LocalDateTime? = null,
-    @LogicDelete
     @NotNull
+    @LogicDelete
     var deleted: Boolean? = null
 ) : KPojo

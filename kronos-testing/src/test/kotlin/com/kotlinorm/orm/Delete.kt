@@ -3,6 +3,7 @@ package com.kotlinorm.orm
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
+import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.utils.TestWrapper
@@ -24,7 +25,7 @@ class Delete {
 
     @Test
     fun testDelete() {
-        val (sql, paramMap) = user.delete().by { it.id }.build()
+        val (sql, paramMap) = user.delete().logic(false).by { it.id }.build()
         //delete from tb_user where id = 1
         assertEquals("DELETE FROM `tb_user` WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1), paramMap)
@@ -32,7 +33,7 @@ class Delete {
 
     @Test
     fun testDelete2() {
-        val (sql, paramMap) = user.delete().build()
+        val (sql, paramMap) = user.delete().logic(false).build()
         //delete from tb_user where id = 1 and deleted = 0
         assertEquals("DELETE FROM `tb_user` WHERE `id` = :id", sql)
         assertEquals(mapOf("id" to 1), paramMap)
@@ -40,7 +41,7 @@ class Delete {
 
     @Test
     fun testDelete3() {
-        val (sql, paramMap) = user.delete().where {
+        val (sql, paramMap) = user.delete().logic(false).where {
             it.id > 10 && it.id < 100
         }.build()
         //delete from tb_user where id > 10 and id < 100
@@ -50,7 +51,7 @@ class Delete {
 
     @Test
     fun testDelete4() {
-        val (sql, paramMap) = user.delete().where {
+        val (sql, paramMap) = user.delete().logic(false).where {
             it.id.eq
         }.build()
         //delete from tb_user where id > 10 and id < 100
@@ -60,7 +61,7 @@ class Delete {
 
     @Test
     fun testDelete5() {
-        val (sql, paramMap) = user.delete().logic().where {
+        val (sql, paramMap) = user.delete().where {
             it.id.eq
         }.build()
         //delete from tb_user where id > 10 and id < 100
@@ -73,7 +74,7 @@ class Delete {
 
     @Test
     fun testDelete6() {
-        val (sql, paramMap) = user.delete().where {
+        val (sql, paramMap) = user.delete().logic(false).where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
@@ -83,7 +84,7 @@ class Delete {
 
     @Test
     fun testDeleteArray() {
-        val (sql, _, list) = arrayOf(user, testUser).delete().where {
+        val (sql, _, list) = arrayOf(user, testUser).delete().logic(false).where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
@@ -99,7 +100,7 @@ class Delete {
 
     @Test
     fun testDeleteIter() {
-        val (sql, _, list) = listOf(user, testUser).delete().where {
+        val (sql, _, list) = listOf(user, testUser).delete().logic(false).where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'

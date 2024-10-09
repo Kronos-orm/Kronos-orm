@@ -11,21 +11,16 @@ import java.time.LocalDateTime
 data class User(
     @PrimaryKey(identity = true)
     var id: Int? = null,
-    @Column("name")
     @NotNull
     var username: String? = null,
     @ColumnType(TINYINT)
     @Default("0")
-    var age: Int? = null,
+    var gender: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     var createTime: String? = null,
-    @NotNull
-    var companyId: Int? = null,
     @UpdateTime
     var updateTime: LocalDateTime? = null,
     @LogicDelete
-    var deleted: Boolean? = null,
-    @Version
-    var version: Int? = null
+    var deleted: Boolean? = null
 ) : KPojo

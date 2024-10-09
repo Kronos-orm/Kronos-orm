@@ -1,31 +1,17 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
-import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.User
-import com.kotlinorm.orm.database.table
-import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.orm.utils.TestWrapper
-import com.kotlinorm.tableOperation.beans.MysqlUser
-import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Select {
-
-    private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/test"
-        username = "root"
-        password = ""
-    }
-
     init {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
@@ -35,11 +21,11 @@ class Select {
         }
     }
 
-    val user = MysqlUser(2)
+    val user = User(2)
 
     @Test
     fun testSelectAllParams() {
-        val (sql, paramMap) = user.select { }.build()
+        val (sql, paramMap) = user.select().build()
 
         assertEquals(mapOf("id" to 2), paramMap)
         assertEquals(

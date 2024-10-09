@@ -35,6 +35,7 @@ interface DatabasesSupport {
     fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
+        tableComment: String,
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String>
@@ -47,6 +48,10 @@ interface DatabasesSupport {
     fun getTableDropSql(
         dbType: DBType,
         tableName: String
+    ): String
+
+    fun getTableComment(
+        dbType: DBType
     ): String
 
     fun getTableColumns(
@@ -62,6 +67,8 @@ interface DatabasesSupport {
     fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
+        originalTableComment: String,
+        tableComment: String,
         columns: TableColumnDiff,
         indexes: TableIndexDiff,
     ): List<String>

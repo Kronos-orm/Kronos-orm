@@ -73,6 +73,7 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
+        tableComment: String,
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String> {
@@ -94,6 +95,9 @@ object SqliteSupport : DatabasesSupport {
         """.trimIndent()
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
+
+    override fun getTableComment(dbType: DBType) =
+        "SELECT 'comment on table '||table_name||' is '||''''||comments||''';' FROM user_tab_comments WHERE table_name='LANEEXLIST_CXC_ALL';"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun extractNumberInParentheses(input: String): Int {
@@ -151,7 +155,7 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String, tableComment: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
@@ -159,7 +163,7 @@ object SqliteSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} ADD COLUMN ${getColumnCreateSql(dbType, it)}"
         } + columns.toModified.map {
-            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${getColumnCreateSql(dbType, it.first)}"
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN ${it.columnName}"
         } + indexes.toAdd.map {

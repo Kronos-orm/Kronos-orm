@@ -104,7 +104,7 @@ object OracleSupport : DatabasesSupport {
         })"
 
     override fun getTableCreateSqlList(
-        dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
+        dbType: DBType, tableName: String, tableComment: String, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
         //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
@@ -134,6 +134,10 @@ object OracleSupport : DatabasesSupport {
                   END IF;
             END;
         """.trimIndent()
+
+    override fun getTableComment(dbType: DBType): String {
+        TODO("Not yet implemented")
+    }
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         //TODO: add Table#KDOC to comment support
@@ -223,7 +227,7 @@ object OracleSupport : DatabasesSupport {
 
     override fun getTableSyncSqlList(
         //TODO: add Table#KDOC to comment support
-        dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String, tableComment: String, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
         val dbName = getDBNameFrom(dataSource)
@@ -232,14 +236,14 @@ object OracleSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN \"${it.columnName}\""
         } + columns.toModified.map {
-            "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it)})"
+            "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it.first)})"
         } + columns.toAdd.map {
-            "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it)}"
+            "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it.first)}"
         } + columns.toModified.map {
-            if(it.kDoc.isNullOrEmpty()) {
-                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.columnName)} IS NULL"
+            if(it.first.kDoc.isNullOrEmpty()) {
+                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL"
             } else {
-                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
+                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.first.columnName)} IS '${it.first.kDoc}'"
             }
         } + indexes.toAdd.map {
             "CREATE ${it.type} INDEX ${it.name} ON ${quote(dbName)}.${quote(tableName)} (${

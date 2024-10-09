@@ -38,8 +38,8 @@ object SqlManager {
     )
 
     fun getTableCreateSqlList(
-        dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
-    ) = dbType.dbSupport?.getTableCreateSqlList(dbType, tableName, columns, indexes)
+        dbType: DBType, tableName: String, tableComment: String, columns: List<Field>, indexes: List<KTableIndex>
+    ) = dbType.dbSupport?.getTableCreateSqlList(dbType, tableName, tableComment, columns, indexes)
         ?: throw UnsupportedDatabaseTypeException(dbType)
 
     fun getTableExistenceSql(
@@ -55,6 +55,12 @@ object SqlManager {
         dbType: DBType, tableName: String
     ) = dbType.dbSupport?.getTableDropSql(dbType, tableName) ?: throw UnsupportedDatabaseTypeException(dbType)
 
+    fun getTableComment(
+        dataSource: KronosDataSourceWrapper
+    ) = dataSource.dbType.dbSupport?.getTableComment(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(
+        dataSource.dbType
+    )
+
     fun getTableColumns(
         dataSource: KronosDataSourceWrapper, tableName: String
     ) = dataSource.dbType.dbSupport?.getTableColumns(dataSource, tableName) ?: throw UnsupportedDatabaseTypeException(
@@ -69,8 +75,8 @@ object SqlManager {
     )
 
     fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
-    ) = dataSource.dbType.dbSupport?.getTableSyncSqlList(dataSource, tableName, columns, indexes)
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String, tableComment: String, columns: TableColumnDiff, indexes: TableIndexDiff
+    ) = dataSource.dbType.dbSupport?.getTableSyncSqlList(dataSource, tableName, originalTableComment,  tableComment, columns, indexes)
         ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
     fun getOnConflictSql(

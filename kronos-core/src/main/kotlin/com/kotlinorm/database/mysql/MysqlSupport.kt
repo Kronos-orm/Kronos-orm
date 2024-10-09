@@ -82,7 +82,7 @@ object MysqlSupport : DatabasesSupport {
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
         }${
-            if (column.kDoc != null) " COMMENT '${column.kDoc}'" else ""
+            if (!column.kDoc.isNullOrEmpty()) " COMMENT '${column.kDoc}'" else ""
         }"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
@@ -91,14 +91,14 @@ object MysqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
+        tableComment: String,
         columns: List<Field>,
         indexes: List<KTableIndex>
-    ): List<String>  {
-        //TODO: add Table#KDOC to comment support
+    ): List<String> {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
+            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql) COMMENT = '$tableComment'",
             *indexesSql.toTypedArray()
         )
     }
@@ -110,6 +110,9 @@ object MysqlSupport : DatabasesSupport {
         "TRUNCATE TABLE ${quote(tableName)}"
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
+
+    override fun getTableComment(dbType: DBType) =
+        "SELECT `TABLE_COMMENT` FROM information_schema.TABLES WHERE TABLE_NAME = :tableName AND TABLE_SCHEMA = :dbName"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         return dataSource.forList(
@@ -152,54 +155,96 @@ object MysqlSupport : DatabasesSupport {
         dataSource: KronosDataSourceWrapper,
         tableName: String,
     ): List<KTableIndex> {
-        return dataSource.forList(
+
+        val resultSet = dataSource.forList(
             KronosAtomicQueryTask(
                 """
-                SELECT DISTINCT
-                    INDEX_NAME AS name
-                FROM 
-                 INFORMATION_SCHEMA.STATISTICS
-                WHERE 
-                 TABLE_SCHEMA = DATABASE() AND 
-                 TABLE_NAME = :tableName AND 
-                 INDEX_NAME != 'PRIMARY'  
-                """.trimWhitespace(), mapOf(
+            SELECT DISTINCT
+                INDEX_NAME AS `indexName`,
+                COLUMN_NAME AS `columnName`,
+                SEQ_IN_INDEX AS `seqInIndex`,
+                NON_UNIQUE AS `nonUnique`,
+                INDEX_TYPE AS `indexType`
+            FROM 
+                INFORMATION_SCHEMA.STATISTICS
+            WHERE 
+                TABLE_SCHEMA = DATABASE() AND 
+                TABLE_NAME = :tableName AND 
+                INDEX_NAME != 'PRIMARY'
+            """.trimWhitespace(), mapOf(
                     "tableName" to tableName
                 )
             )
-        ).map {
-            KTableIndex(it["name"] as String, arrayOf(), "", "")
+        )
+
+        val indexMap = resultSet.groupBy { it["indexName"].toString() }
+
+        return indexMap.mapNotNull { (indexName, columns) ->
+            columns.sortedBy { it["seqInIndex"] as Long }
+
+            val exp = columns.firstOrNull() ?: return@mapNotNull null
+
+            val method = exp["indexType"].toString()
+            val type = when {
+                exp["indexType"] == "FULLTEXT" -> "FULLTEXT"
+                exp["indexType"] == "SPATIAL" -> "SPATIAL"
+                exp["nonUnique"] as Int == 0 -> "UNIQUE"
+                else -> "NORMAL"
+            }
+
+            KTableIndex(
+                name = indexName,
+                columns = columns.map { it["columnName"].toString() }.toTypedArray(),
+                type = type,
+                method = method
+            )
         }
     }
+
 
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
+        originalTableComment: String,
+        tableComment: String,
         columns: TableColumnDiff,
         indexes: TableIndexDiff,
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
-        return indexes.toDelete.map {
+        val syncSqlList = mutableListOf<String>()
+
+        if (originalTableComment != tableComment) {
+            syncSqlList.add("ALTER TABLE ${quote(tableName)} COMMENT = '$tableComment'")
+        }
+
+        syncSqlList.addAll(indexes.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP INDEX ${it.name}"
         } + columns.toAdd.map {
             "ALTER TABLE ${quote(tableName)} ADD COLUMN ${
                 columnCreateDefSql(
-                    DBType.Mysql, it
+                    DBType.Mysql, it.first
                 )
-            }"
+            } " + if (it.second != null) "AFTER ${quote(it.second!!)}" else "FIRST"
         } + columns.toModified.map {
             "ALTER TABLE ${quote(tableName)} MODIFY COLUMN ${
                 columnCreateDefSql(
-                    DBType.Mysql, it
+                    DBType.Mysql, it.first
                 ).replace(" PRIMARY KEY", "")
-            } ${if (it.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${quote(it)})" else ""}"
+            } ${if (it.second != null) "AFTER ${quote(it.second!!)}" else "FIRST"} ${
+                if (it.first.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${
+                    quote(
+                        it.first
+                    )
+                })" else ""
+            }"
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {
             "ALTER TABLE ${quote(tableName)} ADD ${it.type} INDEX ${it.name} (${
                 it.columns.joinToString(", ") { f -> quote(f) }
             }) USING ${it.method}"
-        }
+        })
+
+        return syncSqlList
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {

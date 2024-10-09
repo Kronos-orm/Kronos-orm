@@ -86,6 +86,9 @@ object PostgresqlSupport : DatabasesSupport {
         "TRUNCATE ${quote(tableName)} ${if (restartIdentity) "RESTART IDENTITY" else ""}"
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
+    override fun getTableComment(dbType: DBType): String {
+        TODO("Not yet implemented")
+    }
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
         "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
@@ -99,6 +102,7 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
+        tableComment: String,
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String> {
@@ -199,6 +203,8 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
+        originalTableComment: String,
+        tableComment: String,
         columns: TableColumnDiff,
         indexes: TableIndexDiff
     ): List<String> {
@@ -206,22 +212,22 @@ object PostgresqlSupport : DatabasesSupport {
         return indexes.toDelete.map {
             "DROP INDEX ${quote("public")}.${it.name};"
         } + columns.toAdd.map {
-            "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.columnName} ${
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.first.columnName} ${
                 columnCreateDefSql(
-                    DBType.Postgres, it
+                    DBType.Postgres, it.first
                 )
             }"
         } + columns.toModified.map {
-            "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.columnName} TYPE ${
-                getColumnType(it.type, it.length)
-            } ${if (it.defaultValue != null) ",AlTER COLUMN ${it.columnName} SET DEFAULT ${it.defaultValue}" else ""} ${
-                if (it.nullable) ",ALTER COLUMN ${it.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.columnName} SET NOT NULL"
+            "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.first.columnName} TYPE ${
+                getColumnType(it.first.type, it.first.length)
+            } ${if (it.first.defaultValue != null) ",AlTER COLUMN ${it.first.columnName} SET DEFAULT ${it.first.defaultValue}" else ""} ${
+                if (it.first.nullable) ",ALTER COLUMN ${it.first.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.first.columnName} SET NOT NULL"
             }"
         } + columns.toModified.map {
-            if(it.kDoc.isNullOrEmpty()) {
-                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.columnName)} IS NULL"
+            if(it.first.kDoc.isNullOrEmpty()) {
+                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL"
             } else {
-                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
+                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.first.columnName)} IS '${it.first.kDoc}'"
             }
         } + columns.toDelete.map {
             "ALTER TABLE ${quote("public")}.${quote(tableName)} DROP COLUMN ${it.columnName}"

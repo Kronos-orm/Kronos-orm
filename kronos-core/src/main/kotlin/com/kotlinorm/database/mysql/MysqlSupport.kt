@@ -156,27 +156,7 @@ object MysqlSupport : DatabasesSupport {
         tableName: String,
     ): List<KTableIndex> {
 
-        val resultSet = dataSource.forList(
-            KronosAtomicQueryTask(
-                """
-            SELECT DISTINCT
-                INDEX_NAME AS `indexName`,
-                COLUMN_NAME AS `columnName`,
-                SEQ_IN_INDEX AS `seqInIndex`,
-                NON_UNIQUE AS `nonUnique`,
-                INDEX_TYPE AS `indexType`
-            FROM 
-                INFORMATION_SCHEMA.STATISTICS
-            WHERE 
-                TABLE_SCHEMA = DATABASE() AND 
-                TABLE_NAME = :tableName AND 
-                INDEX_NAME != 'PRIMARY'
-            """.trimWhitespace(), mapOf(
-                    "tableName" to tableName
-                )
-            )
-        )
-
+        val resultSet = queryTableIndexes(dataSource, tableName)
         val indexMap = resultSet.groupBy { it["indexName"].toString() }
 
         return indexMap.mapNotNull { (indexName, columns) ->
@@ -201,6 +181,29 @@ object MysqlSupport : DatabasesSupport {
         }
     }
 
+    private fun queryTableIndexes(
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+    ) = dataSource.forList(
+        KronosAtomicQueryTask(
+            """
+            SELECT DISTINCT
+                INDEX_NAME AS `indexName`,
+                COLUMN_NAME AS `columnName`,
+                SEQ_IN_INDEX AS `seqInIndex`,
+                NON_UNIQUE AS `nonUnique`,
+                INDEX_TYPE AS `indexType`
+            FROM 
+                INFORMATION_SCHEMA.STATISTICS
+            WHERE 
+                TABLE_SCHEMA = DATABASE() AND 
+                TABLE_NAME = :tableName AND 
+                INDEX_NAME != 'PRIMARY'
+            """.trimWhitespace(), mapOf(
+                "tableName" to tableName
+            )
+        )
+    )
 
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper,

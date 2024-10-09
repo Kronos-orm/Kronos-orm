@@ -5,7 +5,6 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.database.SqlHandler.execute
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getTableComment
@@ -100,42 +99,67 @@ fun moveColumn(
 ): List<String> {
 
     // 取交集
-    val filterdExpect =
-        expect.map { it.columnName }.filter { name -> name in current.map { it.columnName } }.toMutableList()
-    val filterdCurrent =
-        current.map { it.columnName }.filter { name -> name in expect.map { it.columnName } }.toMutableList()
+    val expectedNames = expect.map { it.columnName }.toSet()
+    val currentNames = current.map { it.columnName }.toSet()
+
+    val filteredExpect = expectedNames.intersect(currentNames).toList()
+    val filteredCurrent = currentNames.intersect(expectedNames).toList()
 
     val lFields = mutableListOf<String>()
     val rFields = mutableListOf<String>()
 
-    val size = filterdExpect.size
-    if (0 == size) return lFields
+    val size = filteredExpect.size
+    if (size == 0) return lFields
 
     var l = 0
     var r = size - 1
+
     for (i in 0 until size) {
         // 正向查找向前移动的字段
-        if (filterdExpect[i] != filterdCurrent[l] && !lFields.contains(filterdCurrent[l]))
-            lFields.add(filterdExpect[i])
-        else {
-            // 归位
-            if (lFields.contains(filterdCurrent[l])) while (lFields.contains(filterdCurrent[l])) l += 1
-            l += 1
-        }
+        processLeft(filteredExpect, filteredCurrent, lFields, l)
+        if (l < size) l++
 
         // 逆向查找向后移动的字段
-        if (filterdExpect[size - i - 1] != filterdCurrent[r] && !rFields.contains(filterdCurrent[r]))
-            rFields.add(filterdExpect[size - i - 1])
-        else {
-            // 归位
-            if (rFields.contains(filterdCurrent[r])) while (rFields.contains(filterdCurrent[r])) r -= 1
-            r -= 1
-        }
+        processRight(filteredExpect, filteredCurrent, rFields, r)
+        if (r >= 0) r--
     }
 
     // 选择两种移动方式中移动字段较少的
     return if (lFields.size < rFields.size) lFields else rFields
 }
+
+private fun processLeft(
+    filteredExpect: List<String>,
+    filteredCurrent: List<String>,
+    lFields: MutableList<String>,
+    lStart: Int
+) {
+    var l = lStart
+    if (l < filteredCurrent.size && filteredExpect[l] != filteredCurrent[l] && !lFields.contains(filteredCurrent[l])) {
+        lFields.add(filteredExpect[l])
+    } else {
+        while (l < filteredCurrent.size && lFields.contains(filteredCurrent[l])) {
+            l++
+        }
+    }
+}
+
+private fun processRight(
+    filteredExpect: List<String>,
+    filteredCurrent: List<String>,
+    rFields: MutableList<String>,
+    rStart: Int
+) {
+    var r = rStart
+    if (r >= 0 && filteredExpect[filteredExpect.size - r - 1] != filteredCurrent[r] && !rFields.contains(filteredCurrent[r])) {
+        rFields.add(filteredExpect[filteredExpect.size - r - 1])
+    } else {
+        while (r >= 0 && rFields.contains(filteredCurrent[r])) {
+            r--
+        }
+    }
+}
+
 
 fun TableColumnDiff.doLog(tableName: String) {
     defaultLogger("tableSync").info(

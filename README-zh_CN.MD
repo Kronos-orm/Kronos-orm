@@ -10,8 +10,6 @@
     Kronos-ORM
 </h1>
 
--------
-
 [English](https://github.com/Kronos-orm/Kronos-orm/blob/main/README.MD) | 简体中文
 
 <h3 align="center">

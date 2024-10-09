@@ -19,8 +19,7 @@ A modern ORM framework designed for Kotlin.
 
 Kronos is a modern ORM framework designed for Kotlin, which is **suitable for both backend and mobile applications, support multi-database, and high performance**.
 
-Through the expression tree analysis support implemented by KCP and the generics and high-order functions of Kotlin, 
-it provides **a super expressive, concise and semantic writing method, making it easier to operate the database**.
+KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has **powerful expressive power and concise , semantic writing to make the operation of the database has become more simple**.
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
@@ -36,17 +35,17 @@ it provides **a super expressive, concise and semantic writing method, making it
 
 ❓ **Why Kronos?**
 
-- [x] **Kotlin Compiler Plugin** and **Coroutines** Powered **High Performance**
-- [x] **Mainstream database support** and **easy to extend**
-- [x] **Concise** and **expressive** writing, supports **native kotlin syntax** `==`, `>`, `<`, `in`, etc. instead of `.eq`,
-  `.gt`, `.lt`, etc.
-- [x] Strong type checking
-- [x] Supports **logical deletion**, **optimistic lock**, **transactions**, **complex cascading operations without foreign keys**, **cross-database queries**,
-  **database table/index/note create and structure synchronization**, and more
-- [x] Easily integrate with any third-party framework
-- [x] **Native SQL database operations based on named parameters**
-- [x] **No need to reflect**, quickly convert `KPojo` to Map or Convert Map to `KPojo`
-- [x] Greatly reduce additional `class` definitions
+* Utilizes the **entire ecosystem and resources** of the JVM platform, such as **database drivers and logging frameworks**, with potential future support for Kotlin Multiplatform.
+* **Kotlin compiler plugins and coroutine-driven** design significantly **reduce the use of reflection**, providing a **high-performance** database operation experience.
+* Supports most **mainstream databases** and allows **freely adding database extensions through plugins**.
+* **Concise and expressive writing, supporting Kotlin native syntax** `==`, `>`, `<`, `in`, etc., instead of .eq, .gt, .lt, etc.
+* Strong type checking.
+* Supports **transactions**, **complex cascading operations without foreign keys (one-to-one, one-to-many, many-to-many)**, **serialization and deserialization**, **cross-database queries**, and **database table/index/remarks creation and structure synchronization**, etc.
+* Supports **Logical Deletion**, **Optimistic Lock**, **Creation Time**, **Update Time**, and offers flexible customization settings.
+* Easy integration with any third-party framework.
+* **Native SQL database manipulation based on named parameters**.
+* Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **no reflection, near-zero overhead**.
+* Data classes can be treated as database table models, **significantly reducing additional class definitions**.
 
 -------
 

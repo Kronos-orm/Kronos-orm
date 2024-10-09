@@ -323,7 +323,7 @@ user.delete()
 
 Please refer to the following example projects for more information:
 
-[Example for Spring](https://github.com/Kronos-orm/kronos-spring-demo)
+[Example for SpringBoot](https://github.com/Kronos-orm/kronos-spring-demo)
 
 ## 📚 Documentation
 

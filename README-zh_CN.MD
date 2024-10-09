@@ -335,7 +335,7 @@ user.delete()
 
 有关更多信息，请参阅以下示例项目：
 
-[Springboot 示例](https://github.com/Kronos-orm/kronos-spring-demo)
+[SpringBoot 示例](https://github.com/Kronos-orm/kronos-spring-demo)
 
 ## 📚 官方文档
 

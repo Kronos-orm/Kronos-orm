@@ -41,8 +41,8 @@ it provides **a super expressive, concise and semantic writing method, making it
 - [x] **Concise** and **expressive** writing, supports **native kotlin syntax** `==`, `>`, `<`, `in`, etc. instead of `.eq`,
   `.gt`, `.lt`, etc.
 - [x] Strong type checking
-- [x] Supports **logical deletion**, **locks**, **transactions**, **cascading operations**, **cross-database queries**,
-  **database table/index create and structure synchronization**, and **one-click switching of database types**, and more
+- [x] Supports **logical deletion**, **optimistic lock**, **transactions**, **complex cascading operations without foreign keys**, **cross-database queries**,
+  **database table/index/note create and structure synchronization**, and more
 - [x] Easily integrate with any third-party framework
 - [x] **Native SQL database operations based on named parameters**
 - [x] **No need to reflect**, quickly convert `KPojo` to Map or Convert Map to `KPojo`

@@ -19,8 +19,7 @@
 
 Kronos是一个为Kotlin设计的现代ORM框架，**适用于后端和移动应用，支持多数据库, 高性能**。
 
-通过KCP实现的表达式树分析支持以及Kotlin的泛型和高阶函数，它提供了一种**超级富有表现力、简洁而又语义化的写法，使操作数据库变得更加简单
-**。
+通过KCP实现的表达式树分析支持以及Kotlin的泛型和高阶函数，它提供了一种**超级富有表现力、简洁而又语义化的写法，使操作数据库变得更加简单**。
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
@@ -35,18 +34,17 @@ Kronos是一个为Kotlin设计的现代ORM框架，**适用于后端和移动应
 
 # 重新定义 Kotlin ORM
 
-❓ **Why Kronos?**
+❓ **为什么选择 Kronos?**
 
 - [x] **Kotlin 编译器插件**和**协程**驱动的**高性能**
 
-- [x] **主流数据库支持**且**易于扩展**
+- [x] **支持大多数主流数据库**且**支持添加数据库扩展**
 
 - [x] **简洁**和**富有表现力**的写法，支持**原生Kotlin 语法** `==`、`>`、`<`、`in`等，而不是`.eq`、`.gt`、`.lt`等。
 
 - [x] 强类型检查
 
-- [x] 支持**逻辑删除**、**锁**、**事务**、**级联操作**、**跨数据库查询**、**数据库表/索引创建和结构同步**，以及**一键切换数据库类型
-  **等功能
+- [x] 支持**逻辑删除**、**乐观锁**、**事务**、**无外键复杂级联操作**、**序列化反序列化**、**跨数据库查询**、**数据库表/索引/备注创建和结构同步**等功能
 
 - [x] 轻松与任何第三方框架集成
 
@@ -173,7 +171,7 @@ Kronos.dataSource = { KronosBasicWrapper(SomeDataSource()) }
 ```
 
 有关连接数据库和使用动态数据源或多个数据源的更多详情，请参阅
-文档](https://kotlinorm.com/#/documentation/en/database/connect-to-db)。
+文档](https://kotlinorm.com/#/documentation/zh-CN/database/connect-to-db)。
 
 ### 🎨 Table Model Definition(Annotation Style)
 
@@ -335,16 +333,16 @@ user.delete()
 
 有关更多信息，请参阅以下示例项目：
 
-[SpringBoot 示例](https://github.com/Kronos-orm/kronos-spring-demo)
+[SpringBoot 示例项目](https://github.com/Kronos-orm/kronos-spring-demo)
 
 ## 📚 官方文档
 
 如需了解更多信息，请访问 [官方网站](https://www.kotlinorm.com) 或
-文档](https://kotlinorm.com/#/documentation/en/getting-started/quick-start)。
+文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)。
 
 ## 📜 License
 
-Kronos-ORM 根据 Apache 2.0 许可发布。
+Kronos-ORM 遵循 Apache 2.0 许可发布。
 
 ## 🤝 Contributing
 

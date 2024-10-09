@@ -110,6 +110,7 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
     val endIndex = range.last
 
     var comment: String? = null
+    val commentIgnore = { char: Char -> char == '*' || char == ' ' }
 
     // Find single-line or multi-line comments within the specified range
     // 在指定范围内查找单行或多行注释
@@ -134,7 +135,7 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
         // If a multi-line comment is found
         // 如果找到多行注释
         else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
-            comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim { it == '*' || it == ' ' }
+            comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim(commentIgnore)
             break
         }
     }
@@ -165,19 +166,19 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
             // Handle multi-line comments
             // 处理多行注释
             else if (multiLineCommentStart != -1 && multiLineCommentEnd != -1) {
-                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim { it == '*' || it == ' ' }
+                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim(commentIgnore)
                 break
             }
             // Handle multi-line comments that start but do not end
             // 处理多行注释开始但未结束的情况
             else if (multiLineCommentStart != -1 && multiLineCommentFlag) {
-                comment = line.substring(multiLineCommentStart + 2).trim { it == '*' || it == ' ' } + comment
+                comment = line.substring(multiLineCommentStart + 2).trim(commentIgnore) + comment
                 break
             }
             // Handle multi-line comments that end but do not start
             // 处理多行注释结束的情况
             else if (multiLineCommentEnd != -1) {
-                comment = line.substring(0, multiLineCommentEnd).trim { it == '*' || it == ' ' }
+                comment = line.substring(0, multiLineCommentEnd).trim(commentIgnore)
                 multiLineCommentFlag = true
                 continue
             }
@@ -185,7 +186,7 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
             // 处理非空行
             else if (line.isNotBlank()) {
                 if (multiLineCommentFlag) {
-                    comment = line.trim { it == '*' || it == ' ' } + comment
+                    comment = line.trim(commentIgnore) + comment
                     continue
                 }
                 if (line.startsWith("@")) { // 如果是注解

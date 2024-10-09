@@ -12,17 +12,17 @@
 
 -------
 
-English | [简体中文](https://github.com/Kronos-orm/Kronos-orm/blob/main/README-zh_CN.MD)
+[English](https://github.com/Kronos-orm/Kronos-orm/blob/main/README.MD) | 简体中文
 
 <h3 align="center">
-A modern ORM framework designed for Kotlin.
+为Kotlin设计的现代ORM框架。
 </h3>
 <div align="center">
 
-Kronos is a modern ORM framework designed for Kotlin, which is **suitable for both backend and mobile applications, support multi-database, and high performance**.
+Kronos是一个为Kotlin设计的现代ORM框架，**适用于后端和移动应用，支持多数据库, 高性能**。
 
-Through the expression tree analysis support implemented by KCP and the generics and high-order functions of Kotlin, 
-it provides **a super expressive, concise and semantic writing method, making it easier to operate the database**.
+通过KCP实现的表达式树分析支持以及Kotlin的泛型和高阶函数，它提供了一种**超级富有表现力、简洁而又语义化的写法，使操作数据库变得更加简单
+**。
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
@@ -30,41 +30,50 @@ it provides **a super expressive, concise and semantic writing method, making it
 [![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.kotoframework/koto-core.svg)](https://s01.oss.sonatype.org/content/repositories/snapshots/com/kotoframework/)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-[Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start)
+[官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)
 </div>
 
 --------
-# Re-define KotlinORM
+
+# 重新定义 Kotlin ORM
 
 ❓ **Why Kronos?**
 
-- [x] **Kotlin Compiler Plugin** and **Coroutines** Powered **High Performance**
-- [x] **Mainstream database support** and **easy to extend**
-- [x] **Concise** and **expressive** writing, supports **native kotlin syntax** `==`, `>`, `<`, `in`, etc. instead of `.eq`,
-  `.gt`, `.lt`, etc.
-- [x] Strong type checking
-- [x] Supports **logical deletion**, **locks**, **transactions**, **cascading operations**, **cross-database queries**,
-  **database table/index create and structure synchronization**, and **one-click switching of database types**, and more
-- [x] Easily integrate with any third-party framework
-- [x] **Native SQL database operations based on named parameters**
-- [x] **No need to reflect**, quickly convert `KPojo` to Map or Convert Map to `KPojo`
-- [x] Greatly reduce additional `class` definitions
+- [x] **Kotlin 编译器插件**和**协程**驱动的**高性能**
+
+- [x] **主流数据库支持**且**易于扩展**
+
+- [x] **简洁**和**富有表现力**的写法，支持**原生Kotlin 语法** `==`、`>`、`<`、`in`等，而不是`.eq`、`.gt`、`.lt`等。
+
+- [x] 强类型检查
+
+- [x] 支持**逻辑删除**、**锁**、**事务**、**级联操作**、**跨数据库查询**、**数据库表/索引创建和结构同步**，以及**一键切换数据库类型
+  **等功能
+
+- [x] 轻松与任何第三方框架集成
+
+- [x] **基于命名参数的原生SQL数据库操作**
+
+- [x] **无需反射**，快速将 `KPojo` 转换为 Map 或将 Map 转换为 `KPojo`
+
+- [x] 大大减少额外的 `class` 定义
 
 -------
 
-## 🖥 JDK、Kotlin and Build Tools
+## 🖥 JDK、Kotlin 和构建工具
 
 - **JDK 8+**
 - **Kotlin 2.0.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> Please make sure your kotlin plugin for ide supports kotlin 2.0.0 or higher.
+> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.0.0 或更高版本。
 >
-> If you built failed in **Intellij IDEA** and build with **Maven**,
-> please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.
+> 如果您在 **Intellij IDEA** 中构建失败，并使用 **Maven** 构建、
+> 请尝试启用以下设置: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner /
+Delegate IDE build/run actions to Maven**.
 -------
 
-## 📦  Installation
+## 📦 安装
 
 <summary>
 
@@ -76,7 +85,7 @@ it provides **a super expressive, concise and semantic writing method, making it
 
 ```kotlin
 plugins {
-  id("com.kotlinorm.kronos-gradle-plugin") version "2.0.0"
+    id("com.kotlinorm.kronos-gradle-plugin") version "2.0.0"
 }
 
 dependencies {
@@ -96,7 +105,7 @@ dependencies {
 
 ```groovy
 plugins {
-  id 'com.kotlinorm.kronos-gradle-plugin' version '2.0.0'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '2.0.0'
 }
 
 dependencies {
@@ -151,21 +160,22 @@ dependencies {
 
 </details>
 
-## 🚀 Quick Start
+## 🚀 快速入门
 
-### 🔗 Connect to Database
+### 🔗 连接数据库
 
-You can set default data source by:
+您可以通过以下方式设置默认数据源
 
 ```kotlin
 Kronos.dataSource = { KronosBasicWrapper(SomeDataSource()) }
-// for example:
+// 具体数据源的示例：
 //Kronos.dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
 //Kronos.dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
 //Kronos.dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
 ```
 
-More details about connecting to the database and use dynamic data source or multiple data sources, please refer to the [docs](https://kotlinorm.com/#/documentation/en/database/connect-to-db).
+有关连接数据库和使用动态数据源或多个数据源的更多详情，请参阅
+文档](https://kotlinorm.com/#/documentation/en/database/connect-to-db)。
 
 ### 🎨 Table Model Definition(Annotation Style)
 
@@ -174,69 +184,71 @@ More details about connecting to the database and use dynamic data source or mul
 @TableIndex("idx_name", ["name"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
 data class Movie(
     @PrimaryKey(identity = true)
-    val id: Long? = null, // primary key and auto increment
-    val name: String? = null, // movie name
-    val directorId: Long? = null, // director id
+    val id: Long? = null,// 主键和自动递增
+    val name: String? = null, // 电影名称
+    val directorId: Long? = null, // 导演 ID
     @Cascade(["directorId"], ["id"])
-    val director: Director? = null, // cascade table & one-to-many
-    val relations: List<MovieActorRelation>? = null, // reference list & many-to-many
+    val director: Director? = null, // 级联关系：一对多
+    val relations: List<MovieActorRelation>? = null, // 级联关系：多对多
     @Serializable
-    val type: List<String>? = null, // deserialize from string
+    val type: List<String>? = null, // 从字符串反序列化
     @Column("movie_summary")
-    val summary: String? = null, // summary with column name
-    @Version val version: Long? = null, // version for optimistic lock
-    @LogicDelete val deleted: Boolean? = null, // logic delete
+    val summary: String? = null, // 电影摘要，列别名
+    @Version val version: Long? = null, // 乐观锁的版本
+    @LogicDelete val deleted: Boolean? = null, // 逻辑删除
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
-    @UpdateTime val updateTime: String? = null, // update time and date format
-    @CreateTime val createTime: LocalDateTime? = null // create time
-) : KPojo { // KPojo is a marker interface
-    var actors: List<Actor>? by manyToMany(::relations) // many-to-many
+    @UpdateTime val updateTime: String? = null, // 更新时间，日期格式化
+    @CreateTime val createTime: LocalDateTime? = null // 创建时间
+) : KPojo { // KPojo 是一个标记接口，用于标记实体类
+    var actors: List<Actor>? by manyToMany(::relations) // 使用 Kotlin 委托简化多对多关系的操作
 }
 ```
 
-### 🎨 Table Model Definition(Dsl Style)
+### 🎨 Table Model Definition(Dsl 风格)
 
-Coming soon...
+即将推出...
 
 ------------
 
-### 📝 Transform `KPojo` to Map or from Map
+### 📝 将 `KPojo` 转换为 Map 或将 Map 转换为 `KPojo`
 
-It's easy to transform `KPojo` to Map or from Map, and you can get the table name and column information through the
-`kronosTable` and `kronosColumns` methods in a **NO REFLECTION** way.
+将 `KPojo` 转换为 Map 或从 Map 转换为 `KPojo` 都很容易，而且可以通过
+kronosTable` 和 `kronosColumns` 方法获取表名和列信息。
 
 ```kotlin
 val movie = Movie(1)
 val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1)
 val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class)
-val tableName = movie.kronosTable() // "tb_movie", NO REFLECTION used
-val columns = movie.kronosColumns() // [Field(id), Field(name), ...], NO REFLECTION used
+val tableName = movie.kronosTable() // "tb_movie", 没有使用反射
+val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 没有使用反射
 ```
 
 ------
+
 ### 🔨 Table Operation
 
 ```kotlin
-//is table exists
+// 表是否存在
 dataSource.table.exists<Movie>()
 
-// create table
+// 创建表
 dataSource.table.createTable<Movie>()
 
-// drop table
+// 删除表
 dataSource.table.dropTable<Movie>()
-// or
+// 或者
 dataSource.table.dropTable("tb_movie")
 
-//sync table structure
+// 同步表结构
 dataSource.table.syncTable<Movie>()
 ```
 
 ------
+
 ### 📜 Query
 
 ```kotlin
-// single query
+// 一个简单的查询，包括指定字段、条件、排序、分组、去重
 val listOfUser: List<User> = User()
     .select { it.id + it.username }
     .where { it.id < 10 && it.age >= 18 }
@@ -245,7 +257,7 @@ val listOfUser: List<User> = User()
     .orderBy { it.username.desc() }
     .queryList()
 
-// with Pagination
+// 带有分页和总数查询
 val (total, list) = User()
     .select { it.id + it.username }
     .where { it.id < 10 && it.username like "a%" }
@@ -256,11 +268,11 @@ val (total, list) = User()
     .withTotal()
     .queryList()
 
-// multi-table query
+// 联表查询
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
-        user.id + user.username + relation.id.`as`("relationId") + 
+        user.id + user.username + relation.id.`as`("relationId") +
                 role.role + "count(1) as count"
     }
     where { user.id < 10 }
@@ -270,17 +282,17 @@ val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role -
 ### ➕ Insert
 
 ```kotlin
-// single insert
+// 插入单个实体
 user.insert().execute()
 
-// batch insert
+// 插入多个实体
 listOfUser.insert().execute()
 ```
 
 ### ✏️ Update
 
 ```kotlin
-// update by some conditions use `set`
+// 使用set函数更新
 user.update()
     .set {
         it.username = "123"
@@ -289,7 +301,7 @@ user.update()
     .by { it.id }
     .execute()
 
-// update by some conditions, data from record
+// 根据某些条件更新，更新的数据来自传入的记录
 user.update { it.username + it.gender }
     .by { it.id }
     .execute()
@@ -298,22 +310,22 @@ user.update { it.username + it.gender }
 ### 🔄 Upsert
 
 ```kotlin
-// upsert on some columns
+// 在某些列上执行插入或更新
 user.upsert { it.username }
     .on { it.id }
-//  .lock(PessimisticLock.X) // You can specify the type of lock, and pessimistic lock is used by default
+//  .lock(PessimisticLock.X) // 您可以指定锁的类型，默认使用悲观锁
     .execute()
 
-// upsert on duplicate key
+// 只有在冲突时才更新
 user.upsert { it.username }
-    .onConfict() // We have achieved compatibility with different databases
+    .onConfict() // 我们实现了不同数据库的兼容
     .execute()
 ```
 
 ### 🗑 Delete
 
 ```kotlin
-// delete rows by some conditions
+// 根据某些条件删除行
 user.delete()
     .where { it.id == 1 }
     .execute()
@@ -321,28 +333,28 @@ user.delete()
 
 ------
 
-## 🛠️ Working with Spring or Other Frameworks
+## 🛠️ 与 Spring 或其他框架集成
 
-Please refer to the following example projects for more information:
+有关更多信息，请参阅以下示例项目：
 
-[Example for Spring](https://github.com/Kronos-orm/kronos-spring-demo)
+[Springboot 示例](https://github.com/Kronos-orm/kronos-spring-demo)
 
-## 📚 Documentation
+## 📚 官方文档
 
-For more information, please visit the [official website](https://www.kotlinorm.com) or
-the [documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start).
+如需了解更多信息，请访问 [官方网站](https://www.kotlinorm.com) 或
+文档](https://kotlinorm.com/#/documentation/en/getting-started/quick-start)。
 
 ## 📜 License
 
-Kronos-ORM is released under the Apache 2.0 license.
+Kronos-ORM 根据 Apache 2.0 许可发布。
 
 ## 🤝 Contributing
 
-Please refer to the [CONTRIBUTING.md](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md) for more.
+更多信息请参阅 [CONTRIBUTING.md](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md)。
 
 ## Contributors
 
-We would like to express our gratitude to all the individuals who have already contributed to Kronos-ORM!
+我们对所有已经为 Kronos-ORM 做出贡献的个人表示感谢！
 
 <a href="https://github.com/Kronos-orm/Kronos-orm/graphs/contributors">
   <img alt="contributors" src="https://contrib.rocks/image?repo=Kronos-orm/Kronos-orm"/>
@@ -350,4 +362,4 @@ We would like to express our gratitude to all the individuals who have already c
 
 -------------------
 
-**If you like Kronos-ORM, please give us a star ⭐️, thank you!**
+**如果您喜欢 Kronos-ORM，请给我们一个Star ⭐️，谢谢！**

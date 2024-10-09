@@ -1,46 +1,17 @@
-import com.vanniktech.maven.publish.GradlePlugin
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
-import com.vanniktech.maven.publish.SonatypeHost
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-        mavenLocal()
-    }
-
-    dependencies {
-        classpath("com.android.tools.build:gradle:2.3.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${file("../kotlin.version").readText().trim()}")
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
-    }
-}
 
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     id("java-gradle-plugin")
     kotlin("kapt")
+    id("kronos.publishing")
 }
 
-repositories {
-    mavenCentral()
-}
+group = "com.kotlinorm"
+version = file("../kronos.version").readText().trim()
+description = "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api")
-    api(project(":kronos-compiler-plugin"))
-}
-
-kotlin {
-    jvmToolchain(8)
 }
 
 gradlePlugin {
@@ -51,10 +22,3 @@ gradlePlugin {
         }
     }
 }
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    GradlePlugin(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-)

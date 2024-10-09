@@ -1,11 +1,12 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     kotlin("kapt")
+    id("kronos.publishing")
 }
+
+description = "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
@@ -23,18 +24,3 @@ dependencies {
     testImplementation(project(":kronos-core"))
     testImplementation("dev.zacsweers.kctfork:core:0.5.1")
 }
-
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(8)
-}
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-)

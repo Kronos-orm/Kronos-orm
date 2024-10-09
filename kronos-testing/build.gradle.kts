@@ -1,7 +1,5 @@
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.dokka") apply false
-    id("com.vanniktech.maven.publish") apply false
+    id("kronos.jvm")
     id("com.kotlinorm.kronos-gradle-plugin")
 }
 
@@ -34,10 +32,8 @@ dependencies {
     testImplementation("org.springframework:spring-core:5.3.37")
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
-
-kotlin {
-    jvmToolchain(8)
+configurations.all {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("com.kotlinorm:kronos-compiler-plugin")).using(project(":kronos-compiler-plugin"))
+    }
 }

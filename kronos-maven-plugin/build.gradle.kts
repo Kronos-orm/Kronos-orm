@@ -1,5 +1,4 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.internal.Kapt3GradleSubplugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -9,14 +8,16 @@ buildscript {
         google()
         mavenCentral()
         gradlePluginPortal()
-        mavenLocal()
     }
 }
 
 plugins {
-    kotlin("jvm")
+    id("kronos.jvm")
     kotlin("kapt")
+    id("kronos.publishing")
 }
+
+description = "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
@@ -40,10 +41,6 @@ val copyServices =
         into(kaptGeneratedServicesDir)
     }
 
-kotlin {
-    jvmToolchain(8)
-}
-
 tasks.withType<KotlinCompile> {
     dependsOn(copyServices)
     compilerOptions {
@@ -62,10 +59,3 @@ val Project.kaptGeneratedServicesDir: File
         Kapt3GradleSubplugin.getKaptGeneratedClassesDir(this, sourceSets.main.get().name).resolve(
             servicesDirectory
         )
-
-kronosPublishing(
-    mavenPublishing,
-    publishing,
-    KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true),
-    "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-)

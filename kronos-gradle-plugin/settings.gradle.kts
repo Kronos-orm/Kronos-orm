@@ -25,24 +25,12 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             if (requested.id.namespace == "org.jetbrains.kotlin") {
-                useVersion(file("kotlin.version").readText().trim())
+                useVersion(file("../kotlin.version").readText().trim())
             }
         }
     }
 
-    includeBuild("build-logic")
-    includeBuild("kronos-gradle-plugin")
+    includeBuild("../build-logic")
 }
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
-}
-
-rootProject.name = "kronos-orm"
-
-include("kronos-core")
-include("kronos-logging")
-include("kronos-compiler-plugin")
-include("kronos-jdbc-wrapper")
-include("kronos-testing")
-include("kronos-maven-plugin")
+rootProject.name = "kronos-orm-gradle-plugin"

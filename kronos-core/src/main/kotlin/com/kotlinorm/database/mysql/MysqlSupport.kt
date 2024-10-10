@@ -130,6 +130,7 @@ object MysqlSupport : DatabasesSupport {
                 WHERE 
                  c.TABLE_SCHEMA = DATABASE() AND 
                  c.TABLE_NAME = :tableName
+                ORDER BY ORDINAL_POSITION
             """.trimWhitespace(), mapOf("tableName" to tableName)
             )
         ).map {

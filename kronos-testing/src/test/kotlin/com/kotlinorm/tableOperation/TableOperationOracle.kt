@@ -50,16 +50,16 @@ class TableOperationOracle {
      */
     @Test
     fun testExists() {
-//        // 不管有没有先删
-//        dataSource.table.dropTable(user)
+        // 不管有没有先删
+        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(false, exists)
-//        // 创建表
-//        dataSource.table.createTable(user)
-//        // 判断表是否存在
-//        val exists2 = dataSource.table.exists(user)
-//        assertEquals(exists2, true)
+        // 创建表
+        dataSource.table.createTable(user)
+        // 判断表是否存在
+        val exists2 = dataSource.table.exists(user)
+        assertEquals(exists2, true)
     }
 
     /**

@@ -9,6 +9,7 @@ import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.indexCreateDefSql
 import com.kotlinorm.database.mssql.MssqlSupport
+import com.kotlinorm.database.mysql.MysqlSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -87,13 +88,12 @@ object PostgresqlSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
-    override fun getTableComment(dbType: DBType): String {
-        TODO("Not yet implemented")
-    }
+    override fun getTableComment(dbType: DBType) =
+        "select cast(obj_description(relfilenode, 'pg_class') as varchar) as comment  from pg_class c  where relname = :tableName"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE${if (index.type.isNotEmpty()) " ${index.type}" else ""} INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
-            quote(tableName)
+        "CREATE${if (index.type.isNotEmpty()) " ${index.type} " else " "}INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
+            tableName
         }${if (index.method.isNotEmpty()) " USING ${index.method}" else ""} (${
             index.columns.joinToString(
                 ", "
@@ -109,12 +109,13 @@ object PostgresqlSupport : DatabasesSupport {
     ): List<String> {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
-        return listOf(
+        return listOfNotNull(
             "CREATE TABLE IF NOT EXISTS \"public\".${quote(tableName)} ($columnsSql)",
             *indexesSql.toTypedArray(),
             *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
                 "COMMENT ON COLUMN \"public\".${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
-            }.toTypedArray()
+            }.toTypedArray(),
+            if (tableComment.isNullOrEmpty()) null else "COMMENT ON TABLE \"public\".${quote(tableName)} IS '$tableComment'"
         )
     }
 
@@ -209,32 +210,40 @@ object PostgresqlSupport : DatabasesSupport {
         columns: TableColumnDiff,
         indexes: TableIndexDiff
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
-        return indexes.toDelete.map {
-            "DROP INDEX ${quote("public")}.${it.name};"
-        } + columns.toAdd.map {
-            "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.first.columnName} ${
-                columnCreateDefSql(
-                    DBType.Postgres, it.first
-                )
-            }"
-        } + columns.toModified.map {
-            "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.first.columnName} TYPE ${
-                getColumnType(it.first.type, it.first.length)
-            } ${if (it.first.defaultValue != null) ",AlTER COLUMN ${it.first.columnName} SET DEFAULT ${it.first.defaultValue}" else ""} ${
-                if (it.first.nullable) ",ALTER COLUMN ${it.first.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.first.columnName} SET NOT NULL"
-            }"
-        } + columns.toModified.map {
-            if(it.first.kDoc.isNullOrEmpty()) {
-                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL"
-            } else {
-                "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.first.columnName)} IS '${it.first.kDoc}'"
-            }
-        } + columns.toDelete.map {
-            "ALTER TABLE ${quote("public")}.${quote(tableName)} DROP COLUMN ${it.columnName}"
-        } + indexes.toAdd.map {
-            getIndexCreateSql(DBType.Postgres, "${quote("public")}.${quote(tableName)}", it)
+        val syncSqlList = mutableListOf<String>()
+
+        if (originalTableComment.orEmpty() != tableComment.orEmpty()) {
+            syncSqlList.add("COMMENT ON TABLE ${quote("public")}.${quote(tableName)} IS '${tableComment.orEmpty()}'")
         }
+
+        syncSqlList.addAll(
+            indexes.toDelete.map {
+                "DROP INDEX ${quote("public")}.${it.name};"
+            } + columns.toAdd.map {
+                "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.first.columnName} ${
+                    columnCreateDefSql(
+                        DBType.Postgres, it.first
+                    )
+                }"
+            } + columns.toModified.map {
+                "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.first.columnName} TYPE ${
+                    getColumnType(it.first.type, it.first.length)
+                } ${if (it.first.defaultValue != null) ",AlTER COLUMN ${it.first.columnName} SET DEFAULT ${it.first.defaultValue}" else ""} ${
+                    if (it.first.nullable) ",ALTER COLUMN ${it.first.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.first.columnName} SET NOT NULL"
+                }"
+            } + columns.toModified.map {
+                if(it.first.kDoc.isNullOrEmpty()) {
+                    "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL"
+                } else {
+                    "COMMENT ON COLUMN ${quote("public")}.${quote(tableName)}.${quote(it.first.columnName)} IS '${it.first.kDoc}'"
+                }
+            } + columns.toDelete.map {
+                "ALTER TABLE ${quote("public")}.${quote(tableName)} DROP COLUMN ${it.columnName}"
+            } + indexes.toAdd.map {
+                getIndexCreateSql(DBType.Postgres, "${quote("public")}.${quote(tableName)}", it)
+            }
+        )
+        return syncSqlList
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {

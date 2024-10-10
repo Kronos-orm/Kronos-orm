@@ -8,6 +8,7 @@ import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
+import com.kotlinorm.database.oracle.OracleSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
@@ -90,15 +91,15 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, tableComment: String?, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
-        return listOf(
+        return listOfNotNull(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
             *indexesSql.toTypedArray(),
             *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
                 "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'${it.kDoc}', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
-            }.toTypedArray()
+            }.toTypedArray(),
+            if (tableComment != null) "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'" else null
         )
     }
 
@@ -110,9 +111,8 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableDropSql(dbType: DBType, tableName: String) =
         "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'$tableName') AND type in (N'U')) BEGIN DROP TABLE $tableName END"
 
-    override fun getTableComment(dbType: DBType): String {
-        TODO("Not yet implemented")
-    }
+    override fun getTableComment(dbType: DBType): String =
+        "SELECT ep.value AS TABLE_COMMENT FROM sys.extended_properties ep WHERE ep.major_id = OBJECT_ID(:tableName) AND ep.minor_id = 0 AND ep.name = 'MS_Description'"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun removeOuterParentheses(input: String?): String? {
@@ -211,7 +211,18 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
+        val syncSqlList = mutableListOf<String>()
+
+        if (originalTableComment.orEmpty() != tableComment.orEmpty()) {
+            syncSqlList.add(
+                if (originalTableComment == null) {
+                    "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'"
+                } else {
+                    "EXEC sys.sp_updateextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'"
+                }
+            )
+        }
+
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
             "DROP INDEX [${it.name}] ON [dbo].[$tableName]"

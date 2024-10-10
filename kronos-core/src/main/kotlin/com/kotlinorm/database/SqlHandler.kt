@@ -45,6 +45,4 @@ object SqlHandler {
             )
         )
     }
-
-
 }

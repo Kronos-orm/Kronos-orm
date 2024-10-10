@@ -7,6 +7,7 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
+import com.kotlinorm.database.postgres.PostgresqlSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
@@ -106,15 +107,15 @@ object OracleSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType, tableName: String, tableComment: String?, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
-        return listOf(
+        return listOfNotNull(
             "CREATE TABLE ${quote(tableName.uppercase())} ($columnsSql)",
             *indexesSql.toTypedArray(),
             *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
                 "COMMENT ON COLUMN ${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
             }.toTypedArray(),
+            if (tableComment.isNullOrEmpty()) null else "COMMENT ON TABLE ${quote(tableName)} IS '$tableComment'"
         )
     }
 
@@ -135,12 +136,10 @@ object OracleSupport : DatabasesSupport {
             END;
         """.trimIndent()
 
-    override fun getTableComment(dbType: DBType): String {
-        TODO("Not yet implemented")
-    }
+    override fun getTableComment(dbType: DBType): String =
+        "SELECT comments FROM all_tab_comments WHERE table_name = :tableName AND owner = :dbName"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
-        //TODO: add Table#KDOC to comment support
         return dataSource.forList(
             KronosAtomicQueryTask(
                 """
@@ -226,32 +225,44 @@ object OracleSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        //TODO: add Table#KDOC to comment support
-        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper,
+        tableName: String,
+        originalTableComment: String?,
+        tableComment: String?,
+        columns: TableColumnDiff,
+        indexes: TableIndexDiff
     ): List<String> {
+        val syncSqlList = mutableListOf<String>()
+
+        if (originalTableComment.orEmpty() != tableComment.orEmpty()) {
+            syncSqlList.add("COMMENT ON TABLE ${quote(tableName)} IS '$tableComment'")
+        }
         val dbType = dataSource.dbType
         val dbName = getDBNameFrom(dataSource)
-        return indexes.toDelete.map {
-            "DROP INDEX ${quote(dbName)}.\"${it.name}\""
-        } + columns.toDelete.map {
-            "ALTER TABLE ${quote(tableName)} DROP COLUMN \"${it.columnName}\""
-        } + columns.toModified.map {
-            "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it.first)})"
-        } + columns.toAdd.map {
-            "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it.first)}"
-        } + columns.toModified.map {
-            if(it.first.kDoc.isNullOrEmpty()) {
-                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL"
-            } else {
-                "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.first.columnName)} IS '${it.first.kDoc}'"
-            }
-        } + indexes.toAdd.map {
-            "CREATE ${it.type} INDEX ${it.name} ON ${quote(dbName)}.${quote(tableName)} (${
-                it.columns.joinToString(",") { col ->
-                    quote(col.uppercase())
+        syncSqlList.addAll(
+            indexes.toDelete.map {
+                "DROP INDEX ${quote(dbName)}.\"${it.name}\""
+            } + columns.toDelete.map {
+                "ALTER TABLE ${quote(tableName)} DROP COLUMN \"${it.columnName}\""
+            } + columns.toModified.map {
+                "ALTER TABLE ${quote(tableName)} MODIFY(${getColumnCreateSql(dbType, it.first)})"
+            } + columns.toAdd.map {
+                "ALTER TABLE ${quote(tableName)} ADD ${getColumnCreateSql(dbType, it.first)}"
+            } + columns.toModified.map {
+                if (it.first.kDoc.isNullOrEmpty()) {
+                    "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL"
+                } else {
+                    "COMMENT ON COLUMN ${quote(dbName)}.${quote(tableName)}.${quote(it.first.columnName)} IS '${it.first.kDoc}'"
                 }
-            })"
-        }
+            } + indexes.toAdd.map {
+                "CREATE ${it.type} INDEX ${it.name} ON ${quote(dbName)}.${quote(tableName)} (${
+                    it.columns.joinToString(",") { col ->
+                        quote(col.uppercase())
+                    }
+                })"
+            }
+        )
+        return syncSqlList
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {

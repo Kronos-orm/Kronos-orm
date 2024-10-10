@@ -41,7 +41,7 @@ fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): S
             )
         ),
         String::class
-    ) as String
+    ) as String? ?: ""
 }
 
 

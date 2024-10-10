@@ -84,7 +84,7 @@ object MysqlSupport : DatabasesSupport {
         } COMMENT '${column.kDoc.orEmpty()}'"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE ${index.type} INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
+        "CREATE${if(index.type == "NORMAL") " " else " ${index.type} "}INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
 
     override fun getTableCreateSqlList(
         dbType: DBType,
@@ -214,7 +214,7 @@ object MysqlSupport : DatabasesSupport {
     ): List<String> {
         val syncSqlList = mutableListOf<String>()
 
-        if (originalTableComment != tableComment) {
+        if (originalTableComment.orEmpty() != tableComment.orEmpty()) {
             syncSqlList.add("ALTER TABLE ${quote(tableName)} COMMENT '${tableComment.orEmpty()}'")
         }
 
@@ -241,7 +241,7 @@ object MysqlSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {
-            "ALTER TABLE ${quote(tableName)} ADD ${it.type} INDEX ${it.name} (${
+            "ALTER TABLE ${quote(tableName)} ADD${if(it.type == "NORMAL") " " else " ${it.type} "}INDEX ${it.name} (${
                 it.columns.joinToString(", ") { f -> quote(f) }
             }) USING ${it.method}"
         })

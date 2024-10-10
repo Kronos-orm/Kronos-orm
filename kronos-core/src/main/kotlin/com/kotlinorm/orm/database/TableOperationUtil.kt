@@ -56,6 +56,17 @@ data class TableIndexDiff(
     val toDelete: List<KTableIndex>
 )
 
+/**
+ * Compares the expected and current table columns to determine the differences.
+ *
+ * This function identifies columns that need to be added, modified, or deleted
+ * by comparing the expected columns with the current columns in the database.
+ *
+ * @param dbType The type of the database.
+ * @param expect The list of expected columns.
+ * @param current The list of current columns in the database.
+ * @return A `TableColumnDiff` object containing the columns to add, modify, and delete.
+ */
 fun columnDiffer(
     dbType: DBType,
     expect: List<Field>,
@@ -70,7 +81,6 @@ fun columnDiffer(
     val need2Move = moveColumn(expect, current)
     val toModified = expect.mapIndexedNotNull { index, col ->
         val tableColumn = current.find { col.columnName == it.columnName }
-
         if (tableColumn != null && (columnCreateDefSql(dbType, col) != columnCreateDefSql(dbType, tableColumn) || col.columnName in need2Move)
         ) {
             Pair(col, if (index == 0) null else expect[index - 1])
@@ -82,6 +92,16 @@ fun columnDiffer(
     return TableColumnDiff(toAdd, toModified, toDelete)
 }
 
+/**
+ * Compares the expected and current table indexes to determine the differences.
+ *
+ * This function identifies indexes that need to be added or deleted
+ * by comparing the expected indexes with the current indexes in the database.
+ *
+ * @param expect The list of expected indexes.
+ * @param current The list of current indexes in the database.
+ * @return A `TableIndexDiff` object containing the indexes to add and delete.
+ */
 fun indexDiffer(
     expect: List<KTableIndex>,
     current: List<KTableIndex>
@@ -93,6 +113,17 @@ fun indexDiffer(
     return TableIndexDiff(toAdd, toDelete)
 }
 
+/**
+ * Determines the columns that need to be moved by comparing the expected and current columns.
+ *
+ * This function identifies columns that need to be moved to match the expected order.
+ * It compares the expected columns with the current columns and returns a list of column names
+ * that need to be moved.
+ *
+ * @param expect The list of expected columns.
+ * @param current The list of current columns in the database.
+ * @return A list of column names that need to be moved.
+ */
 fun moveColumn(
     expect: List<Field>,
     current: List<Field>

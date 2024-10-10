@@ -81,9 +81,7 @@ object MysqlSupport : DatabasesSupport {
             if (column.identity) " AUTO_INCREMENT" else ""
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
-        }${
-            if (!column.kDoc.isNullOrEmpty()) " COMMENT '${column.kDoc}'" else ""
-        }"
+        } COMMENT '${column.kDoc.orEmpty()}'"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
         "CREATE ${index.type} INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
@@ -216,7 +214,7 @@ object MysqlSupport : DatabasesSupport {
         val syncSqlList = mutableListOf<String>()
 
         if (originalTableComment != tableComment) {
-            syncSqlList.add("ALTER TABLE ${quote(tableName)}" + if (tableComment.isNullOrEmpty()) "" else " COMMENT '$tableComment'")
+            syncSqlList.add("ALTER TABLE ${quote(tableName)} COMMENT '$tableComment'")
         }
 
         syncSqlList.addAll(indexes.toDelete.map {

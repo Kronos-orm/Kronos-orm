@@ -157,8 +157,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val diffIndexes = indexDiffer(kronosIndexes, tableIndexes)
 
         dataSource.transact {
-            val tableSyncSqlList = getTableSyncSqlList(dataSource, tableName, originalTableComment, tableComment, diffColumns, diffIndexes)
-            tableSyncSqlList.forEach {
+            getTableSyncSqlList(dataSource, tableName, originalTableComment, tableComment, diffColumns, diffIndexes).forEach {
                 dataSource.execute(it)
             }
         }

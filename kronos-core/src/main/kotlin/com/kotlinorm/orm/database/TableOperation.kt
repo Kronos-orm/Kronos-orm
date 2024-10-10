@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.database
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.database.SqlHandler.execute
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.database.SqlManager.getTableCreateSqlList

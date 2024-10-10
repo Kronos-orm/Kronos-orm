@@ -1,6 +1,6 @@
 package com.kotlinorm.kronosWrapper.springDataWrapper
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask

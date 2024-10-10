@@ -31,7 +31,7 @@ class UpsertParserTest {
             import com.kotlinorm.annotations.Table
             import com.kotlinorm.annotations.UpdateTime
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
-            import com.kotlinorm.beans.dsl.KPojo
+            import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.orm.upsert.upsert
             
             @Table(name = "tb_user")

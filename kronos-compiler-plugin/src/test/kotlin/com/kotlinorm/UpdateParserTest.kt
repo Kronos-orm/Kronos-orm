@@ -24,7 +24,7 @@ class UpdateParserTest {
       import com.kotlinorm.annotations.UpdateTime
       import com.kotlinorm.annotations.LogicDelete
       import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
-      import com.kotlinorm.beans.dsl.KPojo
+      import com.kotlinorm.interfaces.KPojo
       import com.kotlinorm.orm.update.UpdateClause.Companion.by
       import com.kotlinorm.orm.update.UpdateClause.Companion.execute
       import com.kotlinorm.orm.update.update

@@ -3,7 +3,7 @@ package com.kotlinorm.utils
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.UpdateTime
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import java.util.*
 
 /**

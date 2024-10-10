@@ -17,7 +17,7 @@
 package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL

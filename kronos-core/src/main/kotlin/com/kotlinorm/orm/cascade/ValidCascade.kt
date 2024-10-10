@@ -18,10 +18,9 @@ package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.utils.LRUCache
-import com.sun.org.apache.xpath.internal.operations.Bool
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 

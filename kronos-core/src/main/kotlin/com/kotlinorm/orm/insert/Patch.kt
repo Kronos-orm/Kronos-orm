@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 
 fun <T : KPojo> T.insert(): InsertClause<T> {

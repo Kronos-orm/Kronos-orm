@@ -1,7 +1,7 @@
 package com.kotlinorm.beans.serializeResolver
 
 import com.kotlinorm.Kronos.serializeResolver
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.get
 import com.kotlinorm.orm.cascade.set
 import kotlin.properties.ReadWriteProperty

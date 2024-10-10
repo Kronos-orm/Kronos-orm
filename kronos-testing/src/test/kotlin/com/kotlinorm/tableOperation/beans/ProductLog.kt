@@ -2,7 +2,7 @@ package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
 @Table(name = "product_log")

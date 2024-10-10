@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.dsl
+package com.kotlinorm.interfaces
 
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.utils.getCreateTimeStrategy
 import com.kotlinorm.utils.getLogicDeleteStrategy
 import com.kotlinorm.utils.getOptimisticLockStrategy

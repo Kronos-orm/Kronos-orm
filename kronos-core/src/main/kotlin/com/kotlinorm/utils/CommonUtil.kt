@@ -22,7 +22,7 @@ import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import com.kotlinorm.utils.KotlinClassMapper.kotlinBuiltInClassMap
 import java.time.OffsetDateTime

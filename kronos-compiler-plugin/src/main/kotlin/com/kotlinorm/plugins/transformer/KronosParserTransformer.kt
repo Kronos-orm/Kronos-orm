@@ -82,7 +82,7 @@ class KronosParserTransformer(
      * @return the transformed class declaration or the result of calling the super class's implementation
      */
     override fun visitClassNew(declaration: IrClass): IrStatement {
-        if (declaration.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.beans.dsl.KPojo" }) {
+        if (declaration.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
             return super.visitClassNew(declaration)
                 .transform(KronosIrClassNewTransformer(pluginContext, declaration), null) as IrStatement
         }

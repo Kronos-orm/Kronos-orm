@@ -2,7 +2,7 @@ package com.kotlinorm.kronosWrapper.jdbcDriverWrapper
 
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 @Table("mysql_user")
 data class MysqlUser(

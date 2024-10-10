@@ -5,7 +5,7 @@ import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.annotations.Cascade.Companion.RESERVED
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.CascadeDeleteAction
 
 data class Student(

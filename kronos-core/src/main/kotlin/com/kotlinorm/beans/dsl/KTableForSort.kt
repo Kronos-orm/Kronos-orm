@@ -20,6 +20,7 @@ import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.enums.SortType.Companion.Asc
 import com.kotlinorm.enums.SortType.Companion.Desc
+import com.kotlinorm.interfaces.KPojo
 
 /**
  * KTableForSort

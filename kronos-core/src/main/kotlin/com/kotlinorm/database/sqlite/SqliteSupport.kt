@@ -73,7 +73,7 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
-        tableComment: String,
+        tableComment: String?,
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String> {
@@ -154,7 +154,7 @@ object SqliteSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String, tableComment: String, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
         return indexes.toDelete.map {

@@ -38,7 +38,7 @@ object SqlManager {
     )
 
     fun getTableCreateSqlList(
-        dbType: DBType, tableName: String, tableComment: String, columns: List<Field>, indexes: List<KTableIndex>
+        dbType: DBType, tableName: String, tableComment: String?, columns: List<Field>, indexes: List<KTableIndex>
     ) = dbType.dbSupport?.getTableCreateSqlList(dbType, tableName, tableComment, columns, indexes)
         ?: throw UnsupportedDatabaseTypeException(dbType)
 
@@ -75,7 +75,7 @@ object SqlManager {
     )
 
     fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String, tableComment: String, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
     ) = dataSource.dbType.dbSupport?.getTableSyncSqlList(dataSource, tableName, originalTableComment,  tableComment, columns, indexes)
         ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 

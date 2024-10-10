@@ -86,6 +86,7 @@ object PostgresqlSupport : DatabasesSupport {
         "TRUNCATE ${quote(tableName)} ${if (restartIdentity) "RESTART IDENTITY" else ""}"
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
+
     override fun getTableComment(dbType: DBType): String {
         TODO("Not yet implemented")
     }
@@ -102,7 +103,7 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
-        tableComment: String,
+        tableComment: String?,
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String> {
@@ -203,8 +204,8 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
-        originalTableComment: String,
-        tableComment: String,
+        originalTableComment: String?,
+        tableComment: String?,
         columns: TableColumnDiff,
         indexes: TableIndexDiff
     ): List<String> {

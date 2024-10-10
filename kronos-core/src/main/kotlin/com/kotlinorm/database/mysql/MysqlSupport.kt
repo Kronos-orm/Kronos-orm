@@ -91,14 +91,14 @@ object MysqlSupport : DatabasesSupport {
     override fun getTableCreateSqlList(
         dbType: DBType,
         tableName: String,
-        tableComment: String,
+        tableComment: String?,
         columns: List<Field>,
         indexes: List<KTableIndex>
     ): List<String> {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
         return listOf(
-            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql) COMMENT = '$tableComment'",
+            "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)" + if (tableComment.isNullOrEmpty()) "" else " COMMENT = '$tableComment'",
             *indexesSql.toTypedArray()
         )
     }
@@ -208,15 +208,15 @@ object MysqlSupport : DatabasesSupport {
     override fun getTableSyncSqlList(
         dataSource: KronosDataSourceWrapper,
         tableName: String,
-        originalTableComment: String,
-        tableComment: String,
+        originalTableComment: String?,
+        tableComment: String?,
         columns: TableColumnDiff,
         indexes: TableIndexDiff,
     ): List<String> {
         val syncSqlList = mutableListOf<String>()
 
         if (originalTableComment != tableComment) {
-            syncSqlList.add("ALTER TABLE ${quote(tableName)} COMMENT = '$tableComment'")
+            syncSqlList.add("ALTER TABLE ${quote(tableName)}" + if (tableComment.isNullOrEmpty()) "" else " COMMENT '$tableComment'")
         }
 
         syncSqlList.addAll(indexes.toDelete.map {

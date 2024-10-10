@@ -104,7 +104,7 @@ object OracleSupport : DatabasesSupport {
         })"
 
     override fun getTableCreateSqlList(
-        dbType: DBType, tableName: String, tableComment: String, columns: List<Field>, indexes: List<KTableIndex>
+        dbType: DBType, tableName: String, tableComment: String?, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
         //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { getColumnCreateSql(dbType, it) }
@@ -227,7 +227,7 @@ object OracleSupport : DatabasesSupport {
 
     override fun getTableSyncSqlList(
         //TODO: add Table#KDOC to comment support
-        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String, tableComment: String, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
         val dbType = dataSource.dbType
         val dbName = getDBNameFrom(dataSource)

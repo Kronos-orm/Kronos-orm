@@ -57,6 +57,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
         dataSource.dbType,
         instance.kronosTableName(),
+        instance.kronosTableComment(),
         instance.kronosColumns().filter { it.isColumn },
         instance.kronosTableIndex()
     ).forEach { dataSource.execute(it) }
@@ -143,17 +144,20 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         }
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = instance.kronosTableIndex()
+        val originalTableComment = queryTableComment(tableName, dataSource)
+        val tableComment = instance.kronosTableComment()
+
         // 获取实际表字段信息
         val tableColumns = getTableColumns(dataSource, tableName)
         // 获取实际表索引信息
         val tableIndexes = getTableIndexes(dataSource, tableName)
 
         // 新增、修改、删除字段
-        val diffColumns = differ(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }
-        val diffIndexes = TableIndexDiff(kronosIndexes, tableIndexes)
+        val diffColumns = columnDiffer(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }
+        val diffIndexes = indexDiffer(kronosIndexes, tableIndexes)
 
         dataSource.transact {
-            getTableSyncSqlList(dataSource, tableName, diffColumns, diffIndexes).forEach {
+            getTableSyncSqlList(dataSource, tableName, originalTableComment, tableComment, diffColumns, diffIndexes).forEach {
                 dataSource.execute(it)
             }
         }

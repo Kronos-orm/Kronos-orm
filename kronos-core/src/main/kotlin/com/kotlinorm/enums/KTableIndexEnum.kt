@@ -47,6 +47,11 @@ object Mysql {
          * This constant represents the full-text index method.
          */
         const val FULLTEXT = "FULLTEXT"
+
+        /**
+         * This constant represents the spatial index method.
+         */
+        const val SPATIAL = "SPATIAL"
     }
 
     /**

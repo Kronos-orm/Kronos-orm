@@ -215,7 +215,7 @@ object MysqlSupport : DatabasesSupport {
         val syncSqlList = mutableListOf<String>()
 
         if (originalTableComment != tableComment) {
-            syncSqlList.add("ALTER TABLE ${quote(tableName)} COMMENT '$tableComment'")
+            syncSqlList.add("ALTER TABLE ${quote(tableName)} COMMENT '${tableComment.orEmpty()}'")
         }
 
         syncSqlList.addAll(indexes.toDelete.map {

@@ -96,8 +96,7 @@ object SqliteSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
-    override fun getTableComment(dbType: DBType) =
-        "SELECT 'comment on table '||table_name||' is '||''''||comments||''';' FROM user_tab_comments WHERE table_name='LANEEXLIST_CXC_ALL';"
+    override fun getTableComment(dbType: DBType) = ""
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun extractNumberInParentheses(input: String): Int {

@@ -1,11 +1,10 @@
 package com.kotlinorm
 
 import com.kotlinorm.annotations.*
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.KColumnType.CHAR
 import com.kotlinorm.enums.SQLite
-import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.update.update
 import java.time.LocalDateTime
 import java.util.*

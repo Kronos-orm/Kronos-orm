@@ -18,6 +18,7 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.annotations.UnsafeCriteria
 import com.kotlinorm.enums.NoValueStrategyType
+import com.kotlinorm.interfaces.KPojo
 
 /**
  * kTableForCondition
@@ -61,7 +62,7 @@ open class KTableForCondition<T : KPojo> {
 
     fun <T> T?.cast() = this as Any?
 
-    operator fun KPojo.minus( @Suppress("UNUSED_PARAMETER") field: Any?) = this
+    operator fun KPojo.minus(@Suppress("UNUSED_PARAMETER") field: Any?) = this
 
     /**
      * Check if the Comparable<*> is greater than the specified

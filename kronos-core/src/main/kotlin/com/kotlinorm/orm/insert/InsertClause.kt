@@ -18,7 +18,7 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask

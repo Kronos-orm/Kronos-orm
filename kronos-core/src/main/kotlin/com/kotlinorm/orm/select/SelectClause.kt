@@ -18,7 +18,7 @@ package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect

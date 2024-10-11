@@ -2,7 +2,7 @@ package com.kotlinorm.orm.relationQuery.manyToMany
 
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.beans.dsl.KCascade.Companion.manyToMany
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 data class Permission(
     @PrimaryKey(identity = true)

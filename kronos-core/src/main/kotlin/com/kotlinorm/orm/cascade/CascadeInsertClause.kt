@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.cascade
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.KOperationType

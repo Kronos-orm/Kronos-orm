@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.delete
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 
 inline fun <reified T : KPojo> T.delete(): DeleteClause<T> {

@@ -51,7 +51,7 @@ private val KTableIndexSymbol
 
 context(IrPluginContext)
 val KPojoFqName
-    get() = FqName("com.kotlinorm.beans.dsl.KPojo")
+    get() = FqName("com.kotlinorm.interfaces.KPojo")
 
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass

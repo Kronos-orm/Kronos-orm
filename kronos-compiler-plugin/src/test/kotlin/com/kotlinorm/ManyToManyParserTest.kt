@@ -29,7 +29,7 @@ class ManyToManyParserTest {
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
             import com.kotlinorm.annotations.PrimaryKey
             import com.kotlinorm.beans.dsl.KCascade.Companion.manyToMany
-            import com.kotlinorm.beans.dsl.KPojo
+            import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.annotations.Cascade
             
             data class Role(

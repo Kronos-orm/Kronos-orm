@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.annotations.Column
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.fieldK2db
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation

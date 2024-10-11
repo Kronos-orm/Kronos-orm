@@ -1,7 +1,7 @@
 package com.kotlinorm.orm.beans
 
 import com.kotlinorm.annotations.*
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 @Table(name = "tb_user")
 data class UserToBeSync(

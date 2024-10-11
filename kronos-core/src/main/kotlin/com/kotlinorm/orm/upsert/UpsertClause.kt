@@ -17,7 +17,7 @@
 package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge

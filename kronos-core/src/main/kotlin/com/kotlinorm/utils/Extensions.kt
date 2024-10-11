@@ -18,7 +18,7 @@ package com.kotlinorm.utils
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.ConditionType.Companion.And
 import kotlin.reflect.KClass

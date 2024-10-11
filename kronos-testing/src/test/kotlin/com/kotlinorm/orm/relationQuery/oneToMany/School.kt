@@ -1,7 +1,7 @@
 package com.kotlinorm.orm.relationQuery.oneToMany
 
 import com.kotlinorm.annotations.PrimaryKey
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 /**
  *@program: kronos-orm

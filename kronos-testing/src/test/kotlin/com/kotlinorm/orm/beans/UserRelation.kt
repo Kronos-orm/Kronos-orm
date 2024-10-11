@@ -1,7 +1,7 @@
 package com.kotlinorm.orm.beans
 
 import com.kotlinorm.annotations.PrimaryKey
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 
 data class UserRelation(
     @PrimaryKey() var id: Int? = null,

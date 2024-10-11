@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.select
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
 
 

@@ -19,6 +19,7 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.CascadeDeleteAction
 import com.kotlinorm.enums.CascadeDeleteAction.NO_ACTION
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.get
 import com.kotlinorm.orm.cascade.set
 import kotlin.properties.ReadWriteProperty

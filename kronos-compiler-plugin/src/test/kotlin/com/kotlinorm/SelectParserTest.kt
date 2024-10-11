@@ -30,7 +30,7 @@ class SelectParserTest {
             import com.kotlinorm.annotations.Table
             import com.kotlinorm.annotations.TableIndex
             import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
-            import com.kotlinorm.beans.dsl.KPojo
+            import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.orm.delete.delete
             import com.kotlinorm.orm.delete.DeleteClause.Companion.build
             import com.kotlinorm.orm.delete.DeleteClause.Companion.by

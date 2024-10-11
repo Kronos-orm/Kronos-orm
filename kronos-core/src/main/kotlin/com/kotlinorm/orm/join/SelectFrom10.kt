@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.join
 
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.pagination.PagedClause
 import com.kotlinorm.utils.toLinkedSet
 

@@ -1,6 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.orm.beans.Movie
@@ -9,20 +10,27 @@ import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
-import com.kotlinorm.orm.utils.TestWrapper
+import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.tableOperation.beans.MysqlUser
 import com.kotlinorm.utils.Extensions.mapperTo
+import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Update {
+    private val ds = BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver"
+        url = "jdbc:mysql://localhost:3306/test"
+        username = "root"
+        password = "rootroot"
+    }
 
     init {
         Kronos.apply {
-            logPath = listOf("console", "/Users/sundaiyue/kronos/logs")
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { TestWrapper }
+            dataSource = { KronosBasicWrapper(ds) }
+            serializeResolver = GsonResolver
         }
     }
 
@@ -36,9 +44,9 @@ class Update {
         val (sql, paramMap) =
             user.update()
                 .set {
-                    it["username"].setValue("123")
                     it.username = "123"
                     it.gender += 10
+                    it.gender = 1
                 }
                 .by { it.id }
                 .build()

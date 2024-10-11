@@ -1,7 +1,7 @@
 package com.kotlinorm.tableOperation.beans
 
 import com.kotlinorm.annotations.*
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KColumnType.TINYINT
 import com.kotlinorm.enums.KColumnType.VARCHAR
 import com.kotlinorm.enums.Postgres

@@ -1,6 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
@@ -8,16 +9,30 @@ import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.orm.utils.TestWrapper
+import com.kotlinorm.tableOperation.beans.MysqlUser
+import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Select {
+    private val ds = BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
+        url =
+            "jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false" // 数据库URL
+        username = "root" // 数据库用户名
+        password = "rootroot" // 数据库密码
+        maxIdle = 10 // 最大空闲连接数
+    }
+
     init {
+        // 配置Kronos ORM框架的基本设置
         Kronos.apply {
+            // 设置字段命名策略为驼峰命名
             fieldNamingStrategy = LineHumpNamingStrategy
+            // 设置表命名策略为驼峰命名
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { TestWrapper }
-            serializeResolver = GsonResolver
+            // 设置数据源提供器
+            dataSource = { KronosBasicWrapper(ds) }
         }
     }
 

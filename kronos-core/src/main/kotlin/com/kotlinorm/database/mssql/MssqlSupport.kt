@@ -8,10 +8,10 @@ import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
+import com.kotlinorm.database.oracle.OracleSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
-import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -89,17 +89,17 @@ object MssqlSupport : DatabasesSupport {
     }
 
     override fun getTableCreateSqlList(
-        dbType: DBType, tableName: String, columns: List<Field>, indexes: List<KTableIndex>
+        dbType: DBType, tableName: String, tableComment: String?, columns: List<Field>, indexes: List<KTableIndex>
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { getIndexCreateSql(dbType, tableName, it) }
-        return listOf(
+        return listOfNotNull(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
             *indexesSql.toTypedArray(),
             *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
                 "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'${it.kDoc}', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
-            }.toTypedArray()
+            }.toTypedArray(),
+            if (tableComment != null) "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'" else null
         )
     }
 
@@ -110,6 +110,9 @@ object MssqlSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) =
         "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'$tableName') AND type in (N'U')) BEGIN DROP TABLE $tableName END"
+
+    override fun getTableComment(dbType: DBType): String =
+        "SELECT ep.value AS TABLE_COMMENT FROM sys.extended_properties ep WHERE ep.major_id = OBJECT_ID(:tableName) AND ep.minor_id = 0 AND ep.name = 'MS_Description'"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun removeOuterParentheses(input: String?): String? {
@@ -206,9 +209,20 @@ object MssqlSupport : DatabasesSupport {
     }
 
     override fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper, tableName: String, columns: TableColumnDiff, indexes: TableIndexDiff
+        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
     ): List<String> {
-        //TODO: add Table#KDOC to comment support
+        val syncSqlList = mutableListOf<String>()
+
+        if (originalTableComment.orEmpty() != tableComment.orEmpty()) {
+            syncSqlList.add(
+                if (originalTableComment == null) {
+                    "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'"
+                } else {
+                    "EXEC sys.sp_updateextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'"
+                }
+            )
+        }
+
         val dbType = dataSource.dbType
         return indexes.toDelete.map {
             "DROP INDEX [${it.name}] ON [dbo].[$tableName]"
@@ -232,7 +246,7 @@ object MssqlSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE [dbo].[$tableName] DROP COLUMN [${it.columnName}]"
         } + columns.toAdd.map {
-            "ALTER TABLE $tableName ADD [${it.columnName}] ${it.type} ${if (it.length > 0 && it.type != KColumnType.TINYINT) "(${it.length})" else ""} ${if (it.primaryKey) "PRIMARY KEY" else ""} ${if (it.defaultValue != null) "DEFAULT '${it.defaultValue}'" else ""} ${if (it.nullable) "" else "NOT NULL"};"
+            "ALTER TABLE $tableName ADD [${it.first.columnName}] ${it.first.type} ${if (it.first.length > 0 && it.first.type != KColumnType.TINYINT) "(${it.first.length})" else ""} ${if (it.first.primaryKey) "PRIMARY KEY" else ""} ${if (it.first.defaultValue != null) "DEFAULT '${it.first.defaultValue}'" else ""} ${if (it.first.nullable) "" else "NOT NULL"};"
         } + columns.toModified.map {
             // 删除默认值约束
             """
@@ -241,7 +255,7 @@ object MssqlSupport : DatabasesSupport {
                     SELECT name
                     FROM sys.default_constraints
                     WHERE parent_object_id = OBJECT_ID(N'dbo.$tableName') 
-                    AND COL_NAME(parent_object_id, parent_column_id) = N'${it.name}' 
+                    AND COL_NAME(parent_object_id, parent_column_id) = N'${it.first.name}' 
                 );
 
                 IF @ConstraintName IS NOT NULL
@@ -255,22 +269,22 @@ object MssqlSupport : DatabasesSupport {
                     END
             """.trimWhitespace()
         } + columns.toModified.map {
-            "ALTER TABLE [dbo].[$tableName] ALTER COLUMN ${columnCreateDefSql(dbType, it)}"
+            "ALTER TABLE [dbo].[$tableName] ALTER COLUMN ${columnCreateDefSql(dbType, it.first)}"
         } + columns.toModified.map {
-            if(it.kDoc.isNullOrEmpty()) {
-                "exec sys.sp_dropextendedproperty @name=N'MS_Description', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
+            if(it.first.kDoc.isNullOrEmpty()) {
+                "exec sys.sp_dropextendedproperty @name=N'MS_Description', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.first.columnName}'"
             } else {
                 """
                 IF ((SELECT COUNT(*) FROM ::fn_listextendedproperty('MS_Description',
                 'SCHEMA', N'dbo',
                 'TABLE', N'$tableName',
-                'COLUMN', N'${it.columnName}')) > 0)
+                'COLUMN', N'${it.first.columnName}')) > 0)
                     BEGIN
-                        EXEC sp_updateextendedproperty 'MS_Description', N'${it.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.columnName}';
+                        EXEC sp_updateextendedproperty 'MS_Description', N'${it.first.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.first.columnName}';
                     END
                 ELSE
                     BEGIN
-                        EXEC sp_addextendedproperty 'MS_Description', N'${it.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.columnName}';
+                        EXEC sp_addextendedproperty 'MS_Description', N'${it.first.kDoc}', 'SCHEMA', N'dbo', 'TABLE', N'$tableName', 'COLUMN', N'${it.first.columnName}';
                     END
                 """.trimWhitespace()
             }

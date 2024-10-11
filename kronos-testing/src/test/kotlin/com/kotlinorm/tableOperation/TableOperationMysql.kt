@@ -53,14 +53,13 @@ class TableOperationMysql {
      */
     @Test
     fun testExists() {
-//        // 不管有没有先删
         dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(false, exists)
-//        // 创建表
+        // 创建表
         dataSource.table.createTable(user)
-//        // 判断表是否存在
+        // 判断表是否存在
         val exists2 = dataSource.table.exists(user)
         assertEquals(exists2, true)
     }
@@ -72,7 +71,7 @@ class TableOperationMysql {
     @Test
     fun testCreateTable_mysql() {
         // 不管有没有先删
-        dataSource.table.
+        dataSource.table.dropTable(user)
             // 创建表
         dataSource.table.createTable(user)
         // 判断表是否存在

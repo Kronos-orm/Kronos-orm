@@ -17,12 +17,17 @@
 package com.kotlinorm.beans.dsw
 
 import com.kotlinorm.exceptions.InvalidParameterException
+import com.kotlinorm.interfaces.KPojo
 
 
 /**
  * Created by OUSC on 2022/11/4 11:32
  *
  * Codes based on <a href="https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/main/java/org/springframework/jdbc/core/namedparam/NamedParameterUtils.java">NamedParameterUtils</a>
+ *
+ * Add path parse support for NamedParameterParameterSource
+ *
+ * Such as `:array[0].list[1].map[KPojo].id`
  *
  * All rights reserved.
  */
@@ -355,8 +360,52 @@ object NamedParameterUtils {
         }
         val paramNames: List<String> = parsedSql.parameterNames
         for (i in paramNames.indices) {
-            paramArray[i] = paramSource[paramNames[i]]
+            paramArray[i] = getValueFromMap(paramSource, paramNames[i])
         }
         return paramArray
+    }
+
+    private fun getValueFromMap(map: Map<String, Any?>, path: String): Any? {
+        // 解析路径
+        val keys = parsePath(path)
+
+        // 逐级取值
+        var current: Any? = map
+        for (key in keys) {
+            current = when (current) {
+                is Map<*, *> -> current[key] // 如果当前值是 Map，取出对应的值
+                is KPojo -> current.toDataMap()[key] // 如果当前值是 KPojo，取出对应的值
+                is Iterable<*>, is Array<*>, is IntArray, is LongArray, is ShortArray, is ByteArray, is DoubleArray, is FloatArray, is BooleanArray ->
+                    // 如果当前值是 List，取出对应的索引
+                    key.toIntOrNull()?.let {
+                        when (current) {
+                            is IntArray -> (current as IntArray)[it]
+                            is LongArray -> (current as LongArray)[it]
+                            is ShortArray -> (current as ShortArray)[it]
+                            is ByteArray -> (current as ByteArray)[it]
+                            is DoubleArray -> (current as DoubleArray)[it]
+                            is FloatArray -> (current as FloatArray)[it]
+                            is BooleanArray -> (current as BooleanArray)[it]
+                            is Array<*> -> (current as Array<*>)[it]
+                            is Iterable<*> -> (current as Iterable<*>).elementAt(it)
+                            else -> throw InvalidDataAccessApiUsageException(
+                                "Collection named '$key' in parameter source is not an Iterable or Array"
+                            )
+                        }
+                    } // 如果当前值是 List，取出对应的索引
+                else -> null // 其他类型则返回 null
+            }
+            if (current == null) break // 如果中途遇到 null，停止
+        }
+
+        return current
+    }
+
+    private fun parsePath(path: String): List<String> {
+        // 使用正则表达式解析路径
+        val regex = """\.|(\[([0-9]+)])|(?<key>[^.\[\]]+)""".toRegex()
+        return regex.findAll(path).mapNotNull {
+            it.groups["key"]?.value ?: it.groups[2]?.value
+        }.toList()
     }
 }

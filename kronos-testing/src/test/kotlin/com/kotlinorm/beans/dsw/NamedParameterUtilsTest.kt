@@ -1,10 +1,9 @@
-package com.kotlinorm.utils.beans.dsw
+package com.kotlinorm.beans.dsw
 
 import com.kotlinorm.beans.dsw.InvalidDataAccessApiUsageException
-import com.kotlinorm.beans.dsw.NamedParameterUtils
 import com.kotlinorm.beans.dsw.NamedParameterUtils.buildValueArray
 import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
-import com.kotlinorm.beans.dsw.ParsedSql
+import com.kotlinorm.interfaces.KPojo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertContains
@@ -242,17 +241,38 @@ class NamedParameterUtilsTest {
 
     @Test
     fun paramNameWithNestedSquareBrackets() {
+        data class GeneratedAlways(val id: String, val firstName: String, val lastName: String) : KPojo
+
+        val records = listOf(
+            GeneratedAlways("1", "John", "Doe"),
+            GeneratedAlways("2", "Jane", "Doe")
+        )
+
+        val paramMap = mapOf("records" to records)
+
         val sql = "insert into GeneratedAlways (id, first_name, last_name) values " +
                 "(:records[0].id, :records[0].firstName, :records[0].lastName), " +
                 "(:records[1].id, :records[1].firstName, :records[1].lastName)"
 
-        val parsedSql = parseSqlStatement(sql)
+        val parsedSql = parseSqlStatement(sql, paramMap)
         assertContentEquals(
             listOf(
                 "records[0].id", "records[0].firstName", "records[0].lastName",
                 "records[1].id", "records[1].firstName", "records[1].lastName"
             ),
             parsedSql.parameterNames
+        )
+        assertEquals(
+            "insert into GeneratedAlways (id, first_name, last_name) values (?, ?, ?), (?, ?, ?)",
+            parsedSql.jdbcSql
+        )
+        assertEquals(6, parsedSql.jdbcParamList.size)
+        assertContentEquals(
+            arrayOf(
+                "1", "John", "Doe",
+                "2", "Jane", "Doe"
+            ),
+            parsedSql.jdbcParamList
         )
     }
 
@@ -270,6 +290,34 @@ class NamedParameterUtilsTest {
         val paramMap = mapOf("headers" to headers)
 
         assertEquals("insert into foos (id) values (?)", parseSqlStatement(sql, paramMap).jdbcSql)
+        assertEquals(1, parseSqlStatement(sql, paramMap).jdbcParamList[0])
+
+        val headerList = listOf(1)
+
+        val sq2 = "insert into foos (id) values (:headers[0])"
+
+        val paramMap2 = mapOf("headers" to headerList)
+        val parsedSql2 = parseSqlStatement(sq2, paramMap2)
+
+        assertEquals("insert into foos (id) values (?)", parsedSql2.jdbcSql)
+        assertEquals(1, parsedSql2.jdbcParamList[0])
+
+        val headerArr = arrayOf(1)
+
+        val paramMap3 = mapOf("headers" to headerArr)
+        val parsedSql3 = parseSqlStatement(sq2, paramMap3)
+
+        assertEquals("insert into foos (id) values (?)", parsedSql3.jdbcSql)
+        assertEquals(1, parsedSql3.jdbcParamList[0])
+    }
+
+    @Test
+    fun parseSqlStatementWithBrackets() {
+        val sql = "select * from `tb&user` where id in (:id)"
+        val parsedSql = parseSqlStatement(sql, mapOf("id" to listOf(1)))
+        assertContentEquals(listOf("id"), parsedSql.parameterNames)
+        assertEquals("select * from `tb&user` where id in (?)", parsedSql.jdbcSql)
+        assertEquals(listOf(1), parsedSql.jdbcParamList[0])
     }
 
     @Test

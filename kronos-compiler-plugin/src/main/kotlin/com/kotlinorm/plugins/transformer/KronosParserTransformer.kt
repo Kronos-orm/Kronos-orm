@@ -76,7 +76,7 @@ class KronosParserTransformer(
     }
 
     /**
-     * Visits a new class declaration and performs transformation if it is a subclass of "com.kotlinorm.beans.dsl.KPojo".
+     * Visits a new class declaration and performs transformation if it is a subclass of "com.kotlinorm.interfaces.KPojo".
      *
      * @param declaration the class declaration to visit
      * @return the transformed class declaration or the result of calling the super class's implementation

@@ -18,10 +18,11 @@ package com.kotlinorm.beans.dsw
 
 import com.kotlinorm.exceptions.InvalidParameterException
 
+
 /**
  * Created by OUSC on 2022/11/4 11:32
  *
- * Codes based on <a href="https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/main/java/org/springframework/jdbc/support/NamedParameterUtils.java">NamedParameterUtils</a>
+ * Codes based on <a href="https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/main/java/org/springframework/jdbc/core/namedparam/NamedParameterUtils.java">NamedParameterUtils</a>
  *
  * All rights reserved.
  */
@@ -66,7 +67,7 @@ object NamedParameterUtils {
      * @param sql the SQL statement
      * @return the parsed statement, represented as com.kotlinorm.beans.dsw.ParsedSql instance
      */
-    fun parseSqlStatement(sql: String, paramMap: Map<String, Any?>): ParsedSql {
+    fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = mapOf()): ParsedSql {
         val namedParameters: MutableSet<String> = HashSet()
         val sqlToUse = StringBuilder(sql)
         val parameterList: MutableList<ParameterHolder> = ArrayList()
@@ -173,15 +174,13 @@ object NamedParameterUtils {
             }
             i++
         }
-        val parsedSql = ParsedSql(sqlToUse.toString())
+        val parsedSql = ParsedSql(sqlToUse.toString(), paramMap)
         for (ph: ParameterHolder in parameterList) {
             parsedSql.addNamedParameter(ph.parameterName, ph.startIndex, ph.endIndex)
         }
         parsedSql.namedParameterCount = namedParameterCount
         parsedSql.unnamedParameterCount = unnamedParameterCount
         parsedSql.totalParameterCount = totalParameterCount
-        parsedSql.paramMap = paramMap
-        parsedSql.executeParse()
         return parsedSql
     }
 
@@ -203,13 +202,10 @@ object NamedParameterUtils {
         parameter: String
     ): Int {
         if (!namedParameters.contains(parameter)) {
-            namedParameters.add(parameter)
+            namedParameters.add(parameter);
+            return namedParameterCount + 1
         }
-        return if (namedParameters.contains(parameter)) {
-            namedParameterCount + 1
-        } else {
-            namedParameterCount
-        }
+        return namedParameterCount
     }
 
     /**
@@ -270,4 +266,97 @@ object NamedParameterUtils {
 
     private class ParameterHolder(val parameterName: String, val startIndex: Int, val endIndex: Int)
 
+    /**
+     * Parse the SQL statement and locate any placeholders or named parameters. Named
+     * parameters are substituted for a JDBC placeholder, and any select list is expanded
+     * to the required number of placeholders. Select lists may contain an array of
+     * objects, and in that case the placeholders will be grouped and enclosed with
+     * parentheses. This allows for the use of "expression lists" in the SQL statement
+     * like: <br></br><br></br>
+     * `select id, name, state from table where (name, age) in (('John', 35), ('Ann', 50))`
+     *
+     * The parameter values passed in are used to determine the number of
+     * placeholders to be used for a select list. Select lists should not be empty
+     * and should be limited to 100 or fewer elements. An empty list or a larger
+     * number of elements is not guaranteed to be supported by the database and
+     * is strictly vendor-dependent.
+     * @param parsedSql the parsed representation of the SQL statement
+     * @param paramSource the source for named parameters
+     * @return the SQL statement with substituted parameters
+     * @see .parseSqlStatement
+     */
+    fun substituteNamedParameters(parsedSql: ParsedSql, paramSource: Map<String, Any?>? = null): String {
+        val originalSql: String = parsedSql.originalSql
+        val paramNames: List<String> = parsedSql.parameterNames
+        if (paramNames.isEmpty()) {
+            return originalSql
+        }
+
+        val actualSql = java.lang.StringBuilder(originalSql.length)
+        var lastIndex = 0
+        for (i in paramNames.indices) {
+            val paramName = paramNames[i]
+            val indexes: IntArray = parsedSql.parameterIndexes[i]
+            val startIndex = indexes[0]
+            val endIndex = indexes[1]
+            actualSql.append(originalSql, lastIndex, startIndex)
+            if (paramSource != null && paramSource.containsKey(paramName) && paramSource[paramName] != null) {
+                val value: Any = paramSource[paramName]!!
+                if (value is Iterable<*>) {
+                    for ((k, entryItem) in value.withIndex()) {
+                        if (k > 0) {
+                            actualSql.append(", ")
+                        }
+                        if (entryItem is Array<*> && entryItem.isArrayOf<Any>()) {
+                            actualSql.append('(')
+                            for (m in entryItem.indices) {
+                                if (m > 0) {
+                                    actualSql.append(", ")
+                                }
+                                actualSql.append('?')
+                            }
+                            actualSql.append(')')
+                        } else {
+                            actualSql.append('?')
+                        }
+                    }
+                } else {
+                    actualSql.append('?')
+                }
+            } else {
+                actualSql.append('?')
+            }
+            lastIndex = endIndex
+        }
+        actualSql.append(originalSql, lastIndex, originalSql.length)
+        return actualSql.toString()
+    }
+
+    /**
+     * Convert a Map of named parameter values to a corresponding array.
+     * @param parsedSql the parsed SQL statement
+     * @param paramSource the source for named parameters
+     * @param declaredParams the List of declared SqlParameter objects
+     * (may be `null`). If specified, the parameter metadata will
+     * be built into the value array in the form of SqlParameterValue objects.
+     * @return the array of values
+     */
+    fun buildValueArray(
+        parsedSql: ParsedSql, paramSource: Map<String, Any?>
+    ): Array<Any?> {
+        val paramArray = arrayOfNulls<Any>(parsedSql.totalParameterCount)
+        if (parsedSql.namedParameterCount > 0 && parsedSql.unnamedParameterCount > 0) {
+            throw InvalidDataAccessApiUsageException(
+                "Not allowed to mix named and traditional ? placeholders. You have " +
+                        parsedSql.namedParameterCount + " named parameter(s) and " +
+                        parsedSql.unnamedParameterCount + " traditional placeholder(s) in statement: " +
+                        parsedSql.originalSql
+            )
+        }
+        val paramNames: List<String> = parsedSql.parameterNames
+        for (i in paramNames.indices) {
+            paramArray[i] = paramSource[paramNames[i]]
+        }
+        return paramArray
+    }
 }

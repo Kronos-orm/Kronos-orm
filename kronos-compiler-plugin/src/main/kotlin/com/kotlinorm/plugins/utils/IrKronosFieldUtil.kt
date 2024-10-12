@@ -236,7 +236,7 @@ fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> 
  *
  * This function checks if the given IrExpression is an instance of IrCallImpl and if its origin is either GET_PROPERTY or EQ.
  * If these conditions are met, it retrieves the property name from the IrExpression and finds the corresponding property in the class.
- * It then checks if any of the super types of the parent class of the property is "com.kotlinorm.beans.dsl.KPojo".
+ * It then checks if any of the super types of the parent class of the property is "com.kotlinorm.interfaces.KPojo".
  *
  * @receiver the `IrExpression` to check. It can be null.
  * @return returns true if the IrExpression is a Kronos Column, false otherwise.

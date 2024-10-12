@@ -1,4 +1,4 @@
-package com.kotlinorm.utils
+package com.kotlinorm.utils.utils
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field

@@ -1,4 +1,4 @@
-package com.kotlinorm.utils
+package com.kotlinorm.utils.utils
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType

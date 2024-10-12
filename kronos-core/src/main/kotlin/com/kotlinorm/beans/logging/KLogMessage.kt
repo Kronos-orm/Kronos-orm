@@ -21,6 +21,7 @@ import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
 import kotlin.io.path.writeText
 import java.nio.file.Path
+import kotlin.io.path.exists
 
 /**
  * Log line
@@ -35,7 +36,7 @@ import java.nio.file.Path
  * @create 2022/11/12 14:21
  */
 class KLogMessage(
-    private val text: String,
+    val text: String,
     internal var codes: Array<ColorPrintCode> = arrayOf(),
     private var endLine: Boolean = false,
 ) {
@@ -69,7 +70,13 @@ class KLogMessage(
      * @param path
      */
     fun write(path: Path) {
-        path.writeText(text + ("\r\n".takeIf { endLine } ?: ""))
+        if (path.exists()) {
+            path.writeText(text + ("\r\n".takeIf { endLine } ?: ""),
+                Charsets.UTF_8,
+                java.nio.file.StandardOpenOption.APPEND)
+        } else {
+            path.writeText(text + ("\r\n".takeIf { endLine } ?: ""), Charsets.UTF_8)
+        }
     }
 
     /**

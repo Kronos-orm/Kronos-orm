@@ -1,10 +1,7 @@
-package com.kotlinorm
+package com.kotlinorm.plugins.outdated
 
-import com.kotlinorm.plugins.KronosParserCompilerPluginRegistrar
-import com.tschuchort.compiletesting.JvmCompilationResult
+import com.kotlinorm.plugins.KotlinSourceDynamicCompiler
 import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.SourceFile
-import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,13 +16,9 @@ class JoinParserTest {
 
     @OptIn(ExperimentalCompilerApi::class)
     @Test
-    fun `IR plugin success`() {
-//    val result = compile(
-//      sourceFile = SourceFile.fromPath(File("/Users/sundaiyue/IdeaProjects/kotlinorm/koto-plugins/src/test/kotlin/com/kotlinorm/plugins/test/UpdateParserTest.kt"))
-//    )
-        val result = compile(
-            sourceFile = SourceFile.kotlin(
-                "main.kt", """
+    fun `test join parser`() {
+        val result = KotlinSourceDynamicCompiler.compile(
+            """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.Table
             import com.kotlinorm.beans.namingStrategy.LineHumpNamingStrategy
@@ -91,32 +84,12 @@ class JoinParserTest {
                 }.build()
             }        
       """.trimIndent()
-            )
         )
+
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 
         val ktClazz = result.classLoader.loadClass("MainKt")
         val main = ktClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
         main.invoke(null)
-    }
-
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compile(
-        sourceFiles: List<SourceFile>,
-        plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
-    ): JvmCompilationResult {
-        return KotlinCompilation().apply {
-            sources = sourceFiles
-            compilerPluginRegistrars = listOf(plugin)
-            inheritClassPath = true
-        }.compile()
-    }
-
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compile(
-        sourceFile: SourceFile,
-        plugin: CompilerPluginRegistrar = KronosParserCompilerPluginRegistrar(),
-    ): JvmCompilationResult {
-        return compile(listOf(sourceFile), plugin)
     }
 }

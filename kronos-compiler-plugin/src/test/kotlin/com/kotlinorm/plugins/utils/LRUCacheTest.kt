@@ -1,6 +1,5 @@
-package com.kotlinorm.utils.utils
+package com.kotlinorm.plugins.utils
 
-import com.kotlinorm.utils.LRUCache
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import kotlin.test.Test

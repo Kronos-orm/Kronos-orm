@@ -42,6 +42,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
  *         fake override fun safeFromMapData(data: Map<String, Any?>): Foo
  *         fake override fun fromMapData(data: Map<String, Any?>): Foo
  *         fake override fun kronosTableName(): String
+ *         fake override fun kronosTableComment(): String
  *         fake override fun kronosTableIndex(): List<KTableIndex>
  *         fake override fun kronosColumns(): List<Field>
  *         fake override fun kronosCreateTime(): KronosCommonStrategy
@@ -78,6 +79,10 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
  *
  *         override fun kronosTableName(): String {
  *               return "foo"
+ *         }
+ *
+ *         override fun kronosTableComment(): String {
+ *              return "file: Foo.kt"
  *         }
  *
  *         override fun kronosTableIndex(): List<KTableIndex> {

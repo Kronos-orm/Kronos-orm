@@ -1,10 +1,9 @@
-package com.kotlinorm
+package com.kotlinorm.plugins.utils
 
-import com.kotlinorm.plugins.utils.extractDeclarationComment
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class CommentExtractTest {
+class IrKDocUtilTest {
 
     @Test
     fun testExtractOneLineComment1() {

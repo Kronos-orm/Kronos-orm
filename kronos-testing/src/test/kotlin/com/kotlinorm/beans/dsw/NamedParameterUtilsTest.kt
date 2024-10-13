@@ -1,6 +1,5 @@
 package com.kotlinorm.beans.dsw
 
-import com.kotlinorm.beans.dsw.InvalidDataAccessApiUsageException
 import com.kotlinorm.beans.dsw.NamedParameterUtils.buildValueArray
 import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.interfaces.KPojo

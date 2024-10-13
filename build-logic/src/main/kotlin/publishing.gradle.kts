@@ -17,12 +17,11 @@ import com.vanniktech.maven.publish.SonatypeHost
  */
 
 plugins {
-    id("org.jetbrains.dokka")
     id("com.vanniktech.maven.publish")
 }
 
 mavenPublishing {
-    configure(KotlinJvm(JavadocJar.Dokka("dokkaHtml"), sourcesJar = true))
+    configure(KotlinJvm(JavadocJar.Javadoc(), sourcesJar = true))
     coordinates(project.group.toString(), project.name, project.version.toString())
 
     pom {

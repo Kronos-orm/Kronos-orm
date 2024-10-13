@@ -21,14 +21,12 @@ import com.kotlinorm.interfaces.KPojo
 /**
  * KTable
  *
- * DSL Class of Kronos, which the compiler plugin use to generate the `select` or `set` code.
- * to add Fields, you can use `it.<field1> + it.<field2>`
- * or `addField(Field(columnName, optionalName))`
- *
- * to set values, you can use `it.<field1> = value`
- * or `Field(columnName, optionalName).setValue(value)`
- * or `it::<field1>.setValue(value)`
- * or `setValue(Field(columnName, optionalName), value)`
+ * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
+ * to add Fields, you can use following:
+ * 1. `it.<field1> + it.<field2>`
+ * 2. `it.<field1> + it.<field2>.as("<alias>")`
+ * 3. `addField(Field(columnName, optionalName))`
+ * 4. `Field(columnName, optionalName).setAlias("<alias>")`
  *
  * @param T the type of the table
  */

@@ -176,7 +176,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.matchLeft(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.startsWith(@Suppress("UNUSED_PARAMETER") other: String?) = true
 
     /**
      * Checks if the given value matches the specified string.
@@ -188,7 +188,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.matchRight(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.endsWith(@Suppress("UNUSED_PARAMETER") other: String?) = true
 
     /**
      * Checks if the given value matches the specified string.
@@ -200,7 +200,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?) = true  // TODO: migrate matchBoth to contains
 
 
     infix fun Comparable<*>?.regexp(@Suppress("UNUSED_PARAMETER") other: String?) = true
@@ -290,7 +290,7 @@ open class KTableForCondition<T : KPojo> {
      * @return `true`
      */
     @Suppress("UnusedReceiverParameter")
-    val Comparable<*>?.matchLeft get() = true
+    val Comparable<*>?.startsWith get() = true
 
     /**
      * Checks if the given value is null.
@@ -302,7 +302,7 @@ open class KTableForCondition<T : KPojo> {
      * @return `true`
      */
     @Suppress("UnusedReceiverParameter")
-    val Comparable<*>?.matchRight get() = true
+    val Comparable<*>?.endsWith get() = true
 
     /**
      * Checks if the given value is null.
@@ -314,7 +314,7 @@ open class KTableForCondition<T : KPojo> {
      * @return `true`
      */
     @Suppress("UnusedReceiverParameter")
-    val Comparable<*>?.matchBoth get() = true
+    val Comparable<*>?.matchBoth get() = true  // TODO: migrate matchBoth to contains
 
     /**
      * Checks if the given value is null.

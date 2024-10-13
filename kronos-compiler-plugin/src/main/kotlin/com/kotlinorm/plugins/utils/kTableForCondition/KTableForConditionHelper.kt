@@ -246,7 +246,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
-                "matchLeft" -> {
+                "startsWith" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
                             getValueByFieldNameSymbol,
@@ -266,7 +266,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
-                "matchRight" -> {
+                "endsWith" -> {
                     val str = if (args.isEmpty()) {
                         applyIrCall(
                             getValueByFieldNameSymbol,
@@ -286,7 +286,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
-                "matchBoth" -> {
+                "matchBoth" -> { // TODO: migrate to contains
                     val str = if (args.isEmpty()) {
                         applyIrCall(
                             getValueByFieldNameSymbol,

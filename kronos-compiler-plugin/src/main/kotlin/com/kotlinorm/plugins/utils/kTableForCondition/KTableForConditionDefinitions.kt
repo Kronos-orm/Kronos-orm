@@ -108,7 +108,7 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
         "neq" -> "equal" to true
         "between" -> "between" to false
         "notBetween" -> "between" to true
-        "like", "matchLeft", "matchRight", "matchBoth" -> "like" to false
+        "like", "startsWith", "endsWith", "matchBoth" -> "like" to false // TODO: migrate matchBoth to contains
         "notLike" -> "like" to true
         "contains" -> "in" to false
         "asSql" -> "sql" to false

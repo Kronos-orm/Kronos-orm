@@ -1,7 +1,6 @@
 plugins {
     id("kronos.jvm")
     id("java-gradle-plugin")
-    kotlin("kapt")
     id("kronos.publishing")
 }
 

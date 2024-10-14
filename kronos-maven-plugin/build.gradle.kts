@@ -13,7 +13,6 @@ buildscript {
 
 plugins {
     id("kronos.jvm")
-    kotlin("kapt")
     id("kronos.publishing")
 }
 

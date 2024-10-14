@@ -37,7 +37,7 @@ class BundledSimpleLoggerAdapterTest {
     fun testInfo() {
         val expected = "Hello, World!"
         logger.info(kMsgOf(expected).toArray())
-        assertLogLineEquals(expected, logFile.readText(Charset.forName("UTF-8")))
+        assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
@@ -48,7 +48,7 @@ class BundledSimpleLoggerAdapterTest {
                 kMsgOf("Hello, World!")
             )
         logger.info(expected)
-        val actual = logFile.readLines(Charset.forName("UTF-8"))
+        val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
     }
 
@@ -56,7 +56,7 @@ class BundledSimpleLoggerAdapterTest {
     fun testWarn() {
         val expected = "Hello, World!"
         logger.warn(kMsgOf(expected).toArray())
-        assertLogLineEquals(expected, logFile.readText(Charset.forName("UTF-8")))
+        assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
@@ -67,7 +67,7 @@ class BundledSimpleLoggerAdapterTest {
                 kMsgOf("Hello, World!")
             )
         logger.warn(expected)
-        val actual = logFile.readLines(Charset.forName("UTF-8"))
+        val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
     }
 
@@ -75,7 +75,7 @@ class BundledSimpleLoggerAdapterTest {
     fun testError() {
         val expected = "Hello, World!"
         logger.error(kMsgOf(expected).toArray())
-        assertLogLineEquals(expected, logFile.readText(Charset.forName("UTF-8")))
+        assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
@@ -86,7 +86,7 @@ class BundledSimpleLoggerAdapterTest {
                 kMsgOf("Hello, World!")
             )
         logger.error(expected)
-        val actual = logFile.readLines(Charset.forName("UTF-8"))
+        val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
     }
 
@@ -94,7 +94,7 @@ class BundledSimpleLoggerAdapterTest {
     fun testDebug() {
         val expected = "Hello, World!"
         logger.debug(kMsgOf(expected).toArray())
-        assertLogLineEquals(expected, logFile.readText(Charset.forName("UTF-8")))
+        assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
@@ -105,7 +105,7 @@ class BundledSimpleLoggerAdapterTest {
                 kMsgOf("Hello, World!")
             )
         logger.debug(expected)
-        val actual = logFile.readLines(Charset.forName("UTF-8"))
+        val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
     }
 
@@ -113,7 +113,7 @@ class BundledSimpleLoggerAdapterTest {
     fun testTrace() {
         val expected = "Hello, World!"
         logger.trace(kMsgOf(expected).toArray())
-        assertLogLineEquals(expected, logFile.readText(Charset.forName("UTF-8")))
+        assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
@@ -124,7 +124,7 @@ class BundledSimpleLoggerAdapterTest {
                 kMsgOf("Hello, World!")
             )
         logger.trace(expected)
-        val actual = logFile.readLines(Charset.forName("UTF-8"))
+        val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
     }
 }

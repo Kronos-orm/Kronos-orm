@@ -4,7 +4,7 @@
             <role>org.jetbrains.kotlin.maven.KotlinMavenPluginExtension</role>
             <role-hint>kronos-maven-plugin</role-hint>
             <implementation>
-                com.kotlinorm.plugins.KronosMavenPlugin
+                com.kotlinorm.compiler.fir.KronosMavenPlugin
             </implementation>
             <configuration/>
         </component>

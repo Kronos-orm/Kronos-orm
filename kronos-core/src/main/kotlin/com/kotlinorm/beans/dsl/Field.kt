@@ -19,7 +19,9 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.fieldDb2k
+import kotlin.reflect.KClass
 
 /**
  * Field
@@ -50,7 +52,7 @@ class Field(
     val dateFormat: String? = null,
     val tableName: String = "",
     val cascade: KCascade? = null,
-    val cascadeKClassName: String? = null,
+    val cascadeKClass: KClass<KPojo>? = null,
     val cascadeSelectIgnore: Boolean = false,
     val isColumn: Boolean = true,
     val length: Int = 0,
@@ -115,7 +117,7 @@ class Field(
         dateFormat: String? = this.dateFormat,
         tableName: String = this.tableName,
         cascade: KCascade? = this.cascade,
-        cascadeKClassName: String? = this.cascadeKClassName,
+        cascadeKClass: KClass<KPojo>? = this.cascadeKClass,
         cascadeSelectIgnore: Boolean = false,
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
@@ -131,7 +133,7 @@ class Field(
             dateFormat,
             tableName,
             cascade,
-            cascadeKClassName,
+            cascadeKClass,
             cascadeSelectIgnore,
             isColumn,
             length,

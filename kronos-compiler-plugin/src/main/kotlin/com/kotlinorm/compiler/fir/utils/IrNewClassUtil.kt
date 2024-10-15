@@ -123,22 +123,31 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
     val map = irFunction.valueParameters.first()
     return irBlockBody {
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-
-        +declaration.properties.toList().mapNotNull { property ->
-            dispatcher.setValue(property, applyIrCall(getSafeValueSymbol,
-                irGet(irFunction.dispatchReceiverParameter!!),
-                createKClassExpr(property.backingField!!.type.classOrFail),
-                applyIrCall(createStringListSymbol,
-                    irVararg(irBuiltIns.stringType, property.backingField!!.type.getClass()!!.superTypes.map { type ->
-                        irString(type.getClass()!!.kotlinFqName.asString())
-                    })),
-                irGet(map),
-                irString(property.name.asString()),
-                irBoolean(property.hasAnnotation(SerializableAnnotationsFqName)))
-            )?.let {
-                irTry(
-                    irUnit().type, it, listOf(), null
-                )
+        +irBlock {
+            declaration.properties.toList().mapNotNull { property ->
+                dispatcher.setValue(
+                    property, applyIrCall(
+                        getSafeValueSymbol,
+                        irGet(irFunction.dispatchReceiverParameter!!),
+                        createKClassExpr(property.backingField!!.type.classOrFail),
+                        applyIrCall(
+                            createStringListSymbol,
+                            irVararg(
+                                irBuiltIns.stringType,
+                                property.backingField!!.type.getClass()!!.superTypes.map { type ->
+                                    irString(type.getClass()!!.kotlinFqName.asString())
+                                })
+                        ),
+                        irGet(map),
+                        irString(property.name.asString()),
+                        irBoolean(property.hasAnnotation(SerializableAnnotationsFqName))
+                    )
+                )?.let {
+                    +irTry(
+                        it,
+                        irBuiltIns.unitType,
+                    ) { irCatch() }
+                }
             }
         }
 

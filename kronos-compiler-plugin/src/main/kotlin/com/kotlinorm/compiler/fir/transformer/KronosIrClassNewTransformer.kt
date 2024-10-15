@@ -66,8 +66,8 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
  *         }
  *
  *         override fun safeFromMapData(data: Map<String, Any?>): Foo {
- *              try this.username = getSafeValue(data, "username")
- *              try this.password = getSafeValue(data, "password")
+ *              try this.username = getSafeValue(data, "username") catch (e: Exception) e.printStackTrace()
+ *              try this.password = getSafeValue(data, "password") catch (e: Exception) e.printStackTrace()
  *              return this
  *         }
  *

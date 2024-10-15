@@ -19,7 +19,12 @@ object KronosLoggerApp {
      * @throws KotoNoLoggerException if the logger type specified in Kronos is not supported
      */
     private fun getKotoLoggerInstance(loggingClazz: Any): KLogger {
-        val tag = loggingClazz::class.simpleName!!
+        val tag = if (loggingClazz is String) {
+            loggingClazz
+        } else {
+            loggingClazz::class.simpleName!!
+        }
+
         return when (Kronos.loggerType) {
             KLoggerType.ANDROID_LOGGER -> AndroidUtilLoggerAdapter(tag)
             KLoggerType.COMMONS_LOGGER -> ApacheCommonsLoggerAdapter(tag)

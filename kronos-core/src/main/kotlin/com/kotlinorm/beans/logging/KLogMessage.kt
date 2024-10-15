@@ -97,7 +97,7 @@ class KLogMessage(
          *
          * @return The formatted string containing the text of each KLogMessage object, with an optional newline character after each message.
          */
-        fun Array<KLogMessage>.formatted() = this.joinToString {
+        fun Array<KLogMessage>.formatted() = this.joinToString("") {
             it.text + (if (it.endLine) "\r\n" else "")
         }
     }

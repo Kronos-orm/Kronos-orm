@@ -197,9 +197,7 @@ class Select {
             ), paramMap
         )
 
-        val data = task.query()
-
-        println(data)
+        task.query()
     }
 
     @Test

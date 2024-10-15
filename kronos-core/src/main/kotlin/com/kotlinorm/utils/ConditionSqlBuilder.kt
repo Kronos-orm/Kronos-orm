@@ -341,7 +341,7 @@ object ConditionSqlBuilder {
         }
     }
 
-    private fun Any?.isEmptyArrayOrCollection(): Boolean {
+    internal fun Any?.isEmptyArrayOrCollection(): Boolean {
         return when (this) {
             is Iterable<*> -> this.spliterator().exactSizeIfKnown == 0L
             is Array<*> -> this.isEmpty()

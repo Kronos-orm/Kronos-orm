@@ -313,25 +313,6 @@ internal fun KClass<out KPojo>.findPropByName(name: String): KProperty<*> { // �
 }
 
 /**
- * Extension property to determine if a [KProperty] represents an iterable collection.
- *
- * Utilizes Kotlin reflection to check if the property's return type is a subtype of [Iterable].
- * This is particularly useful for identifying properties that represent collections, such as lists or sets,
- * which may require special handling in operations like cascading updates or deletes in an ORM context.
- *
- * 用于确定 [KProperty] 是否表示可迭代集合。
- *
- * 利用 Kotlin 反射检查属性的返回类型是否为 [Iterable] 的子类型。
- * 这对于识别表示集合（例如列表或集合）的属性特别有用， 这可能需要在 ORM 上下文中的级联更新或删除等操作中进行特殊处理。
- *
- * @return `true` if the property is of a type that implements [Iterable], `false` otherwise.
- */
-internal val KProperty<*>.isIterable
-    get(): Boolean { // 判断属性是否为集合
-        return this.returnType.classifier?.starProjectedType?.isSubtypeOf(Iterable::class.starProjectedType) == true
-    }
-
-/**
  * Sets the value of a specified property on a [KPojo] instance using reflection.
  *
  * This function attempts to set the value of a [KMutableProperty] on the [KPojo] instance. It uses Kotlin reflection

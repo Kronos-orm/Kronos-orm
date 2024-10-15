@@ -78,6 +78,20 @@ fun getColumnName(expression: IrExpression): IrExpression {
     }
 }
 
+private val ARRAY_OR_COLLECTION_FQ_NAMES = arrayOf(
+    FqName("kotlin.collections.Collection"),
+    FqName("kotlin.collections.Iterator"),
+    FqName("kotlin.Array"),
+    FqName("kotlin.IntArray"),
+    FqName("kotlin.LongArray"),
+    FqName("kotlin.ShortArray"),
+    FqName("kotlin.DoubleArray"),
+    FqName("kotlin.FloatArray"),
+    FqName("kotlin.CharArray"),
+    FqName("kotlin.ByteArray"),
+    FqName("kotlin.BooleanArray"),
+)
+
 /**
  * Returns the column name of the given IrProperty.
  *
@@ -104,12 +118,13 @@ fun getColumnName(
     val tableName = getTableName(parent)
     val selectIgnoreAnnotation = irProperty.annotations.findByFqName(CascadeSelectIgnoreAnnotationsFqName)
     val cascadeAnnotation = irProperty.annotations.findByFqName(CascadeAnnotationsFqName)
+    val propKClass = irPropertyType.getClass()
+    val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
     val cascadeTypeKClass = if (irProperty.isDelegated) {
         irNull()
     } else {
-        val propKClass = irPropertyType.getClass()
         createKClassExpr(
-            (if (propKClass!!.classId!!.asFqNameString().startsWith("kotlin.collections")) {
+            (if (cascadeIsArrayOrCollection) {
                 irPropertyType.subType()!!.getClass()
             } else {
                 propKClass
@@ -132,6 +147,14 @@ fun getColumnName(
     val columnNotNull =
         irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
 
+    val irTableName = when (tableName) {
+        is IrCall -> applyIrCall(
+            fieldK2dbSymbol, irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
+        )
+
+        else -> irString((tableName as IrConst<*>).value.toString())
+    }
+
     return applyIrCall(
         fieldSymbol.constructors.first(),
         columnName,
@@ -139,14 +162,9 @@ fun getColumnName(
         columnType,
         irBoolean(primaryKeyAnnotation != null),
         irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0),
-        when (tableName) {
-            is IrCall -> applyIrCall(
-                fieldK2dbSymbol, irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
-            )
-
-            else -> irString((tableName as IrConst<*>).value.toString())
-        },
+        irTableName,
         kCascade,
+        irBoolean(cascadeIsArrayOrCollection),
         cascadeTypeKClass,
         irBoolean(selectIgnoreAnnotation != null),
         isColumn,

@@ -211,7 +211,7 @@ object CascadeSelectClause {
             validRef.refPojo::class, *listOfPair.toTypedArray()
         )
 
-        pojo[prop] = if (prop.isIterable) { // 判断属性是否为集合
+        pojo[prop] = if (pojo.kronosColumns().first { it.name == prop.name }.cascadeIsCollectionOrArray) { // 判断属性是否为集合
             refPojo.select().cascade(*cascadeAllowed).apply {
                 this.operationType = operationType
                 this.cascadeSelectedProps = cascadeSelectedProps

@@ -24,7 +24,6 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
-import com.kotlinorm.utils.KotlinClassMapper.kotlinBuiltInClassMap
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import kotlin.reflect.KClass
@@ -185,7 +184,7 @@ fun getTypeSafeValue(
 @Suppress("UNUSED")
 fun getSafeValue(
     kPojo: KPojo,
-    kotlinType: String,
+    kClass: KClass<*>,
     superTypes: List<String>,
     map: Map<String, Any?>,
     key: String,
@@ -202,13 +201,13 @@ fun getSafeValue(
         map[safeKey] == null -> null
         else -> {
             val kClassOfVal = map[safeKey]!!::class
-            if (kotlinType != kClassOfVal.qualifiedName) {
+            if (kClass != kClassOfVal) {
                 if (serializable) {
                     return serializeResolver.deserialize(
-                        map[safeKey].toString(), kotlinBuiltInClassMap[kotlinType] ?: Class.forName(kotlinType).kotlin
+                        map[safeKey].toString(), kClass
                     )
                 }
-                getTypeSafeValue(kotlinType, map[safeKey]!!, superTypes, column.dateFormat, kClassOfVal)
+                getTypeSafeValue(kClass.qualifiedName!!, map[safeKey]!!, superTypes, column.dateFormat, kClassOfVal)
             } else {
                 map[safeKey]
             }

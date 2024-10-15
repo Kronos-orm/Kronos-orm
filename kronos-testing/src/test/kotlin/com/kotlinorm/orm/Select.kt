@@ -1,29 +1,16 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.orm.utils.TestWrapper
-import com.kotlinorm.tableOperation.beans.MysqlUser
-import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Select {
-    private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
-        url =
-            "jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false" // 数据库URL
-        username = "root" // 数据库用户名
-        password = "rootroot" // 数据库密码
-        maxIdle = 10 // 最大空闲连接数
-    }
-
     init {
         // 配置Kronos ORM框架的基本设置
         Kronos.apply {
@@ -32,7 +19,7 @@ class Select {
             // 设置表命名策略为驼峰命名
             tableNamingStrategy = LineHumpNamingStrategy
             // 设置数据源提供器
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { TestWrapper }
         }
     }
 
@@ -130,7 +117,8 @@ class Select {
     @Test
     fun testAsSql() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }.lock(PessimisticLock.X)
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
+            .lock(PessimisticLock.X)
             .build()
 
         assertEquals(
@@ -168,6 +156,29 @@ class Select {
     }
 
     @Test
+    fun testSelectIn() {
+        val (sql, paramMap) = user.select { it.id + it.username }
+            .where { it.id in listOf(0, 2, 3) }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE `id` IN (:idList) AND `deleted` = 0",
+            sql
+        )
+        assertEquals(mapOf("idList" to listOf(0, 2, 3)), paramMap)
+
+        val (sql2, paramMap2) = user.select { it.id + it.username }
+            .where { it.id in listOf<Int>() }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE false AND `deleted` = 0",
+            sql2
+        )
+        assertEquals(mapOf<String, Any>(), paramMap2)
+    }
+
+    @Test
     fun testRegexp() {
         val (sql, paramMap, task) = user.select { it.id + it.username }
             .where { (it.id == 0 || it.id == 2 || it.id == 3) && it.username.regexp("\\d+") }
@@ -186,9 +197,7 @@ class Select {
             ), paramMap
         )
 
-        val data = task.query()
-
-        println(data)
+        task.query()
     }
 
     @Test

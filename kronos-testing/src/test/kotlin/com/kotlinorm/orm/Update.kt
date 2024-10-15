@@ -410,7 +410,7 @@ class Update {
             favorite = 1
         )
 
-        val (sql, paramMap) = movie.update().where {
+        val (sql, paramMap) = movie.update().where {  // TODO: migrate matchBoth to contains
             "xxxxxxx".asSql() && it.id.eq && it.name.matchBoth && it.score.between(1..2) && it.tags.eq && it.description.matchBoth &&
                     (it.year in listOf(2021, 2022) || it.vote < 10 || it.favorite == 1) &&
                     it.director.eq && it.actor.eq &&
@@ -575,14 +575,14 @@ class Update {
         )
     }
 
-    //    infix fun Comparable<*>?.matchLeft(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
-    //    infix fun Comparable<*>?.matchRight(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
-    //    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
+    //    infix fun Comparable<*>?.startsWith(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
+    //    infix fun Comparable<*>?.endsWith(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
+    //    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true  // TODO: migrate matchBoth to contains
 
     @Test
-    fun testUpdateWhereMatchLeftInfix() {
+    fun testUpdateWherestartsWithInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id matchLeft "1" }.build()
+            .where { it.id startsWith "1" }.build()
 
         println(sql)
         println(paramMap)
@@ -602,9 +602,9 @@ class Update {
     }
 
     @Test
-    fun testUpdateWhereMatchRightInfix() {
+    fun testUpdateWhereendsWithInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id matchRight "1" }.build()
+            .where { it.id endsWith "1" }.build()
 
         println(sql)
         println(paramMap)
@@ -626,7 +626,7 @@ class Update {
     @Test
     fun testUpdateWhereMatchBothInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id matchBoth "1" }.build()
+            .where { it.id matchBoth "1" }.build() // TODO: migrate matchBoth to contains
 
         println(sql)
         println(paramMap)
@@ -647,8 +647,8 @@ class Update {
 
     //  val Comparable<*>?.like get() = true
     //    val Comparable<*>?.notLike get() = true
-    //    val Comparable<*>?.matchLeft get() = true
-    //    val Comparable<*>?.matchRight get() = true
+    //    val Comparable<*>?.startsWith get() = true
+    //    val Comparable<*>?.endsWith get() = true
     @Test
     fun testUpdateWhereLike() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
@@ -694,9 +694,9 @@ class Update {
     }
 
     @Test
-    fun testUpdateWhereMatchLeft() {
+    fun testUpdateWherestartsWith() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.username.matchLeft }.build()
+            .where { it.username.startsWith }.build()
 
         println(sql)
         println(paramMap)
@@ -716,9 +716,9 @@ class Update {
     }
 
     @Test
-    fun testUpdateWhereMatchRight() {
+    fun testUpdateWhereendsWith() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.username.matchRight }.build()
+            .where { it.username.endsWith }.build()
 
         println(sql)
         println(paramMap)

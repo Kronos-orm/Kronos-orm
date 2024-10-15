@@ -25,14 +25,19 @@ import kotlin.reflect.full.findAnnotation
 /**
  * KTable
  *
- * DSL Class of Kronos, which the compiler plugin use to generate the `select` or `set` code.
- * to add Fields, you can use `it.<field1> + it.<field2>`
- * or `addField(Field(columnName, optionalName))`
+ * DSL Class of Kronos, which the compiler plugin use to generate the `set` code.
+ * to set values, you can use following:
+ * 1. `it.<field1> = value`
+ * 2. `Field(columnName, optionalName).setValue(value)`
+ * 3. `it::<field1>.setValue(value)`
+ * 4. `setValue(Field(columnName, optionalName), value)`
+ * 5. `it["columnName"] = value`
  *
- * to set values, you can use `it.<field1> = value`
- * or `Field(columnName, optionalName).setValue(value)`
- * or `it::<field1>.setValue(value)`
- * or `setValue(Field(columnName, optionalName), value)`
+ * for plusAssign and minusAssign, you can use
+ * 1. `it.<field1> += inc` or `it.<field1> -= dec`
+ * 2. `Field(columnName, optionalName) += inc` or `Field(columnName, optionalName) -= dec`
+ * 3. `it["columnName"] += inc` or `it["columnName"] -= dec`
+ * 4. `it::<field1> += inc` or `it::<field1> -= dec`
  *
  * @param T the type of the table
  */

@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.strategies
 
 import com.kotlinorm.interfaces.KronosNamingStrategy
+import java.util.*
 
 object LineHumpNamingStrategy : KronosNamingStrategy {
     override fun k2db(name: String): String {
@@ -34,10 +35,13 @@ object LineHumpNamingStrategy : KronosNamingStrategy {
      * @return The hump case string.
      */
     private fun lineToHump(line: String): String {
-        return line
-            .split("_")
-            .joinToString("") { it.replaceFirstChar(Char::uppercase) }
-            .replaceFirstChar { it.lowercase() }
+        val str = line.trim()
+        if (str.isEmpty()) return ""
+        return str.split("_")
+            .mapIndexed { index, it ->
+                if (it[0] in 'a'..'z' && index != 0) it[0] - 32 + it.substring(1) else it
+            }
+            .joinToString("")
     }
 
     /**
@@ -47,9 +51,20 @@ object LineHumpNamingStrategy : KronosNamingStrategy {
      * @return The line separated string.
      */
     private fun humpToLine(hump: String): String {
-        return hump
-            .split("(?<=[a-z])(?=[A-Z])".toRegex())
-            .joinToString("_") { it.lowercase() }
+        val str = hump.trim()
+        if (str.isEmpty()) return ""
+        val list = mutableListOf<String>()
+        var i = 1
+        var j = 0
+        while (i < str.length) {
+            if (str[i] in 'A'..'Z') {
+                list.add(str.substring(j, i))
+                j = i
+            }
+            i++
+        }
+        list.add(str.substring(j))
+        return list.joinToString("_") { it.lowercase(Locale.getDefault()) }
     }
 }
 

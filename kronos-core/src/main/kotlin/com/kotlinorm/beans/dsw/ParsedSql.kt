@@ -16,6 +16,9 @@
 
 package com.kotlinorm.beans.dsw
 
+import com.kotlinorm.beans.dsw.NamedParameterUtils.buildValueArray
+import com.kotlinorm.beans.dsw.NamedParameterUtils.substituteNamedParameters
+
 /**
  * Created by OUSC on 2022/11/4 14:09
  *
@@ -23,11 +26,11 @@ package com.kotlinorm.beans.dsw
  *
  * All rights reserved.
  */
-class ParsedSql(private var originalSql: String = "") {
+class ParsedSql(var originalSql: String = "", var paramMap: Map<String, Any?> = mapOf()) {
 
-    private val parameterNames: MutableList<String> = ArrayList()
+    val parameterNames: MutableList<String> = ArrayList()
 
-    private val parameterIndexes: MutableList<IntArray> = ArrayList()
+    val parameterIndexes: MutableList<IntArray> = ArrayList()
 
     var namedParameterCount = 0
 
@@ -46,27 +49,6 @@ class ParsedSql(private var originalSql: String = "") {
         parameterIndexes.add(intArrayOf(startIndex, endIndex))
     }
 
-    var paramMap: Map<String, Any?> = mapOf()
-
-    var jdbcSql: String = ""
-    val jdbcParamList: MutableList<Any?> = mutableListOf()
-
-    fun executeParse() {
-        var sql = originalSql
-        for (parameterName in parameterNames) {
-            sql = if (paramMap[parameterName] is Collection<*>) {
-                jdbcParamList.addAll(paramMap[parameterName] as Collection<*>)
-                sql.replace(
-                    ":$parameterName",
-                    (paramMap[parameterName] as Collection<*>).joinToString(",") { _ -> "?" })
-            } else {
-                jdbcParamList.add(paramMap[parameterName])
-                sql.replace(":$parameterName", "?")
-            }
-        }
-        jdbcSql = sql
-    }
-
     /**
      * Exposes the original SQL String.
      */
@@ -74,11 +56,14 @@ class ParsedSql(private var originalSql: String = "") {
         return originalSql
     }
 
+    val jdbcSql by lazy { substituteNamedParameters(this) }
+    val jdbcParamList by lazy { buildValueArray(this, paramMap) }
+
     operator fun component1(): String {
         return jdbcSql
     }
 
-    operator fun component2(): List<Any?> {
+    operator fun component2(): Array<Any?> {
         return jdbcParamList
     }
 

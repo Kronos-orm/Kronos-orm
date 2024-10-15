@@ -74,7 +74,7 @@ fun findValidRefs(
     kClass: KClass<*>, columns: List<Field>, operationType: KOperationType, allowed: Set<String>, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
-    return columns.filter { !it.isColumn && (it.name in allowed || allowAll) && !it.cascadeKClassName.isNullOrEmpty() }.map { col ->
+    return columns.filter { !it.isColumn && (it.name in allowed || allowAll) && it.cascadeKClass != null }.map { col ->
         //如果是Select并且该列有cascadeSelectIgnore，且没有明确指定允许当前列，直接返回空
         if (col.cascadeSelectIgnore && allowAll && operationType == KOperationType.SELECT) {
             return@map listOf<ValidCascade>()
@@ -84,51 +84,19 @@ fun findValidRefs(
         return@map if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
             if(operationType == KOperationType.DELETE) return@map listOf<ValidCascade>() // 插入操作不允许子级向上级级联
             val ref =
-                col.cascadeKClassName.kClass.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
+                col.cascadeKClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             listOf(
                 ValidCascade(col, col.cascade, ref, col.tableName)
             ) // 若有级联映射，返回引用
         } else {
             val ref =
-                col.cascadeKClassName.kClass.createInstance() as KPojo // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
+                col.cascadeKClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             val tableName = ref.kronosTableName() // 获取引用所在的表名
             ref.kronosColumns().filter {
-                it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.cascadeKClassName == kClass.qualifiedName
+                it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.cascadeKClass == kClass
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName, false)
             } // 若没有级联映射，返回引用的所有关于本表级联映射
         }
     }.flatten()
 }
-
-private val lruCacheOfKClass = LRUCache<String, KClass<*>>() // 用于存储实例化的对象
-
-/**
- * Instantiates an object from a class name string, utilizing a cache to improve performance.
- *
- * This extension function for nullable String objects attempts to instantiate an object of the class specified by the string.
- * If the string is null or the class cannot be found, it throws an UnsupportedOperationException.
- * To optimize performance, especially for repeated instantiations of the same class, this function uses an LRU (Least Recently Used) cache.
- * If an instance of the specified class name already exists in the cache, it is returned directly to avoid redundant instantiation.
- * Otherwise, a new instance is created using reflection, added to the cache, and then returned.
- *
- * 从类名字符串实例化对象，利用缓存来提高性能。
- *
- * 此可空字符串对象的扩展函数尝试实例化字符串指定的类的对象。
- * 如果字符串为空或找不到该类，则会抛出 UnsupportedOperationException。
- * 为了优化性能，尤其是对于同一类的重复实例化，此函数使用 LRU（最近最少使用）缓存。
- * 如果缓存中已存在指定类名的实例，则直接返回以避免冗余实例化。
- * 否则，使用反射创建一个新实例，将其添加到缓存中，然后返回。
- *
- * @receiver A nullable String representing the fully qualified name of the class to instantiate.
- * @return The instantiated object of the specified class.
- * @throws UnsupportedOperationException if the class name is null or the class cannot be found.
- */
-private val String?.kClass
-    get(): KClass<*> {
-        this
-            ?: throw UnsupportedOperationException("The cascade class only support KPojo/Collections<KPojo>, please check the cascade class!")
-        return lruCacheOfKClass.getOrPut(this) {
-            Class.forName(this).kotlin
-        }
-    }

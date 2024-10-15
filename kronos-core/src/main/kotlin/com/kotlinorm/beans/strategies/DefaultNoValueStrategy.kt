@@ -18,18 +18,23 @@ import com.kotlinorm.enums.NoValueStrategyType.JudgeNull
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.NoValueStrategyType.False
 import com.kotlinorm.interfaces.NoValueStrategy
+import com.kotlinorm.utils.ConditionSqlBuilder.isEmptyArrayOrCollection
 
 object DefaultNoValueStrategy : NoValueStrategy {
     override fun ifNoValue(kOperateType: KOperationType, criteria: Criteria): NoValueStrategyType {
         return when (kOperateType) {
             UPDATE, DELETE -> when (criteria.type) {
                 Equal -> JudgeNull
-                Like, In, Between, Regexp -> NoValueStrategyType.valueOf((!criteria.not).toString())
+                Like, In, Between, Regexp -> NoValueStrategyType.fromValue((criteria.not).toString())
                 Gt, Ge, Lt, Le -> False
                 else -> Ignore
             }
 
-            else -> Ignore
+            else ->
+                if (criteria.type == In && criteria.value.isEmptyArrayOrCollection())
+                    NoValueStrategyType.fromValue((criteria.not).toString())
+                else
+                    Ignore
         }
     }
 }

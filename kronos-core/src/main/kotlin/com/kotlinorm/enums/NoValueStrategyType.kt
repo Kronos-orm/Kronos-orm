@@ -21,5 +21,18 @@ enum class NoValueStrategyType(val value: String) {
     False("false"),
     True("true"),
     JudgeNull("judgeNull"),
-    Auto("auto")
+    Auto("auto");
+
+    companion object {
+        fun fromValue(value: String): NoValueStrategyType {
+            return when (value) {
+                "ignore" -> Ignore
+                "false" -> False
+                "true" -> True
+                "judgeNull" -> JudgeNull
+                "auto" -> Auto
+                else -> throw IllegalArgumentException("No such value for NoValueStrategyType: $value")
+            }
+        }
+    }
 }

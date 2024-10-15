@@ -117,7 +117,8 @@ class Select {
     @Test
     fun testAsSql() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }.lock(PessimisticLock.X)
+        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
+            .lock(PessimisticLock.X)
             .build()
 
         assertEquals(
@@ -152,6 +153,29 @@ class Select {
             sql
         )
         assertEquals(mapOf("id" to 0, "id@1" to 2, "id@2" to 3), paramMap)
+    }
+
+    @Test
+    fun testSelectIn() {
+        val (sql, paramMap) = user.select { it.id + it.username }
+            .where { it.id in listOf(0, 2, 3) }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE `id` IN (:idList) AND `deleted` = 0",
+            sql
+        )
+        assertEquals(mapOf("idList" to listOf(0, 2, 3)), paramMap)
+
+        val (sql2, paramMap2) = user.select { it.id + it.username }
+            .where { it.id in listOf<Int>() }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE false AND `deleted` = 0",
+            sql2
+        )
+        assertEquals(mapOf<String, Any>(), paramMap2)
     }
 
     @Test

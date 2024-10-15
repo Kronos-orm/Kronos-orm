@@ -24,12 +24,12 @@ object DefaultNoValueStrategy : NoValueStrategy {
         return when (kOperateType) {
             UPDATE, DELETE -> when (criteria.type) {
                 Equal -> JudgeNull
-                Like, In, Between, Regexp -> NoValueStrategyType.valueOf((!criteria.not).toString())
+                Like, In, Between, Regexp -> NoValueStrategyType.fromValue((criteria.not).toString())
                 Gt, Ge, Lt, Le -> False
                 else -> Ignore
             }
 
-            else -> Ignore
+            else -> if (criteria.type == In) NoValueStrategyType.fromValue((criteria.not).toString()) else Ignore
         }
     }
 }

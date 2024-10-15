@@ -126,7 +126,9 @@ object ConditionSqlBuilder {
             return KotoBuildResultSet(null, paramMap)
         }
 
-        if (condition.value == null && condition.valueAcceptable) { // 如果值为 null，且条件不允许值为 null，则进入无值策略处理
+        if ((condition.value == null && condition.valueAcceptable) ||
+            (condition.value.isEmptyArrayOrCollection() && condition.type == In)
+        ) { // 如果值为 null，且条件不允许值为 null，则进入无值策略处理
             if (handleNoValueStrategy(condition, operationType, paramMap) != null)
                 return KotoBuildResultSet(null, paramMap)
         }
@@ -325,7 +327,7 @@ object ConditionSqlBuilder {
                 JudgeNull -> condition.type = IsNull // 条件转为 ISNULL
                 True, False -> {
                     condition.type = Sql
-                    condition.value = condition.noValueStrategyType!!.value
+                    condition.value = strategy.value
                 }
 
                 else -> throw IllegalArgumentException("NoValueStrategyType:$strategy not supported")
@@ -336,6 +338,21 @@ object ConditionSqlBuilder {
         return when (condition.noValueStrategyType) {
             Ignore, JudgeNull, True, False -> handleStrategy(condition.noValueStrategyType!!)
             null, Auto -> handleStrategy(noValueStrategy.ifNoValue(operationType, condition))
+        }
+    }
+
+    private fun Any?.isEmptyArrayOrCollection(): Boolean {
+        return when (this) {
+            is Iterable<*> -> this.spliterator().exactSizeIfKnown == 0L
+            is Array<*> -> this.isEmpty()
+            is IntArray -> this.isEmpty()
+            is LongArray -> this.isEmpty()
+            is ShortArray -> this.isEmpty()
+            is FloatArray -> this.isEmpty()
+            is DoubleArray -> this.isEmpty()
+            is BooleanArray -> this.isEmpty()
+            is ByteArray -> this.isEmpty()
+            else -> false
         }
     }
 }

@@ -55,7 +55,7 @@ class IrTryBuilder(private val builder: IrBuilderWithScope) {
             builder.startOffset,
             builder.endOffset,
             IrDeclarationOrigin.CATCH_PARAMETER,
-            Name.identifier("t_${catches.size}"),
+            Name.identifier("e_${catches.size}"),
             throwableType
         )
 

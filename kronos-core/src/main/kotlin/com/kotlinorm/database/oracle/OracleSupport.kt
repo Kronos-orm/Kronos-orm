@@ -7,7 +7,6 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
-import com.kotlinorm.database.postgres.PostgresqlSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*

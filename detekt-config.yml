@@ -657,3 +657,4 @@ style:
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**']
     excludeImports:
       - 'java.util.*'
+      - 'com.kotlinorm.enums.KColumnType.*'

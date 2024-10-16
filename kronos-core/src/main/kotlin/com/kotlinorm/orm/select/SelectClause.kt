@@ -31,7 +31,9 @@ import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PessimisticLock
-import com.kotlinorm.enums.QueryType.*
+import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.enums.QueryType.QueryOne
+import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper

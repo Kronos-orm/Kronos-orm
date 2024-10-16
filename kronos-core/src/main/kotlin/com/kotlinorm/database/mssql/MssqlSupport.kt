@@ -8,7 +8,6 @@ import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
-import com.kotlinorm.database.oracle.OracleSupport.orEmpty
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL

@@ -35,7 +35,8 @@ import kotlin.reflect.KClass
  * @property dateFormat the format of the date field
  * @property tableName the name of the table
  * @property cascade the cascade of the field
- * @property cascadeKClassName the name of the cascade class
+ * @property cascadeIsCollectionOrArray whether the cascade field is a collection or array
+ * @property cascadeKClass the class of the cascade field
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field

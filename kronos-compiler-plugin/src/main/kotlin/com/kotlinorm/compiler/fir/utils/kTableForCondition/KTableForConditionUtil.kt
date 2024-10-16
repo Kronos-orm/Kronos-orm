@@ -16,11 +16,17 @@
 
 package com.kotlinorm.compiler.fir.utils.kTableForCondition
 
+import com.kotlinorm.compiler.fir.utils.findKronosColumn
+import com.kotlinorm.compiler.fir.utils.funcName
+import com.kotlinorm.compiler.fir.utils.getColumnOrValue
+import com.kotlinorm.compiler.fir.utils.getTableName
+import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.fir.utils.correspondingName
+import com.kotlinorm.compiler.fir.utils.isColumn
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
-import com.kotlinorm.compiler.fir.utils.*
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -30,7 +36,9 @@ import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
@@ -39,6 +47,7 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.superTypes
 
 /**
  * Generates IR for setting simple criteria.
@@ -286,33 +295,33 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     tableName = getTableName(element.dispatchReceiver!!)
                 }
 
-                "matchBoth" -> { // TODO: migrate to contains
-                    val str = if (args.isEmpty()) {
-                        applyIrCall(
-                            getValueByFieldNameSymbol,
-                            irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
-                        ) {
-                            dispatchBy(irGet(extensionReceiverParameter!!))
-                        }
-                    } else {
-                        args.first()
-                    }
-                    paramName = getColumnOrValue(element.extensionReceiver!!)
-                    value = applyIrCall(
-                        stringPlusSymbol, applyIrCall(
-                            stringPlusSymbol, irString("%")
-                        ) {
-                            dispatchBy(str)
-                        }) {
-                        dispatchBy(irString("%"))
-                    }
-                    tableName = getTableName(element.dispatchReceiver!!)
-                }
-
                 "contains" -> {
                     paramName = getColumnOrValue(args.first()!!)
-                    value = element.extensionReceiver
                     tableName = getTableName(element.dispatchReceiver!!)
+                    if (element.extensionReceiver!!.type.superTypes()
+                            .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
+                    ) {
+                        value = element.extensionReceiver
+                    } else {
+                        val str = if (args.isEmpty()) {
+                            applyIrCall(
+                                getValueByFieldNameSymbol,
+                                irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                            ) {
+                                dispatchBy(irGet(extensionReceiverParameter!!))
+                            }
+                        } else {
+                            args.first()
+                        }
+                        value = applyIrCall(
+                            stringPlusSymbol, applyIrCall(
+                                stringPlusSymbol, irString("%")
+                            ) {
+                                dispatchBy(str)
+                            }) {
+                            dispatchBy(irString("%"))
+                        }
+                    }
                 }
 
                 "asSql" -> {
@@ -331,7 +340,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
         }
 
         is IrConstImpl<*> -> {
-            if(element.type == irBuiltIns.stringType) {
+            if (element.type == irBuiltIns.stringType) {
                 type = "sql"
                 value = element
             } else {

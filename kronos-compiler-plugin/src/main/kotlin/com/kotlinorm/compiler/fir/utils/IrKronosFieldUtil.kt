@@ -78,7 +78,7 @@ fun getColumnName(expression: IrExpression): IrExpression {
     }
 }
 
-private val ARRAY_OR_COLLECTION_FQ_NAMES = arrayOf(
+val ARRAY_OR_COLLECTION_FQ_NAMES = arrayOf(
     FqName("kotlin.collections.Collection"),
     FqName("kotlin.collections.Iterator"),
     FqName("kotlin.Array"),

@@ -19,7 +19,7 @@ package com.kotlinorm.compiler.fir.utils.kTableForSelect
 import com.kotlinorm.compiler.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
 
 const val KTABLE_FOR_SELECT_CLASS = "com.kotlinorm.beans.dsl.KTableForSelect"

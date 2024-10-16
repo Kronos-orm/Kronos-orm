@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.fir.utils.kTableForCondition
+package com.kotlinorm.compiler.fir.beans
 
+import com.kotlinorm.compiler.fir.utils.kTableForCondition.createCriteria
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
-/**
- * Criteria IR
- *
- * @author: OUSC, Jieyao Lu
- */
 /**
  * Criteria IR
  *

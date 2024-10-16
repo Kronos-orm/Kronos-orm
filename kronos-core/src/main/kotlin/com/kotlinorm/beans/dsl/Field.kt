@@ -44,6 +44,7 @@ import kotlin.reflect.KClass
  * @property nullable whether the field is nullable
  * @property cascadeSelectIgnore whether the field should be ignored in cascade select
  *
+ * @author: OUSC
  */
 class Field(
     var columnName: String,

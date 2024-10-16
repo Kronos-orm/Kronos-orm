@@ -2,6 +2,7 @@ package com.kotlinorm.beans.dsw
 
 import com.kotlinorm.beans.dsw.NamedParameterUtils.buildValueArray
 import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.interfaces.KPojo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

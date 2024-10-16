@@ -16,13 +16,16 @@
 
 package com.kotlinorm.compiler.fir.utils.kTableForCondition
 
+import com.kotlinorm.compiler.fir.beans.CriteriaIR
+import com.kotlinorm.compiler.fir.utils.ARRAY_OR_COLLECTION_FQ_NAMES
+import com.kotlinorm.compiler.fir.utils.KPojoFqName
+import com.kotlinorm.compiler.fir.utils.correspondingName
 import com.kotlinorm.compiler.fir.utils.findKronosColumn
 import com.kotlinorm.compiler.fir.utils.funcName
 import com.kotlinorm.compiler.fir.utils.getColumnOrValue
 import com.kotlinorm.compiler.fir.utils.getTableName
-import com.kotlinorm.compiler.fir.utils.isKronosColumn
-import com.kotlinorm.compiler.fir.utils.correspondingName
 import com.kotlinorm.compiler.fir.utils.isColumn
+import com.kotlinorm.compiler.fir.utils.isKronosColumn
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
@@ -39,6 +42,8 @@ import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
@@ -131,6 +136,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "lt", "gt", "le", "ge" -> {
                     if (args.isEmpty()) {
                         // 形如it.<property>.lt的写法
+                        // Write like it.<property>.lt with no arguments
                         paramName = getColumnOrValue(element.extensionReceiver!!)
                         tableName = getTableName(element.dispatchReceiver!!)
                         value = applyIrCall(
@@ -140,9 +146,12 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        // it.xxx > xx或 xx > it.xxx
+                        // it.xxx > xx 或 xx > it.xxx
+                        // it.xxx > xx or xx > it.xxx
                         val irCall = args.first()!!.asIrCall()
                         // 提供fun(a, b)形式和A.B.C形式的函数调用支持(!!属于fun(a, b))
+                        // Provides support for function calls of the form fun(a, b)
+                        // and of the form A.B.C (!!!). belongs to fun(a, b))
                         val columnExpr = irCall.findKronosColumn()
                         val (left, operator, right) = runExpressionAnalysis(
                             columnExpr,
@@ -301,9 +310,14 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     if (element.extensionReceiver!!.type.superTypes()
                             .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
                     ) {
+                        // 形如 it.<property> in [1, 2, 3]的写法
+                        // Write like it.<property> in listOf(1, 2, 3)
                         value = element.extensionReceiver
                     } else {
+                        type = "like"
                         val str = if (args.isEmpty()) {
+                            // 形如 it.<property>.contains后面不加参数的写法
+                            // Write it as it.<property>.contains with no arguments after it
                             applyIrCall(
                                 getValueByFieldNameSymbol,
                                 irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
@@ -311,6 +325,8 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                                 dispatchBy(irGet(extensionReceiverParameter!!))
                             }
                         } else {
+                            // 形如 it.<property>.contains("xx")的写法
+                            // Writes like it.<property>.contains("xx") or "xx" in it.<property>
                             args.first()
                         }
                         value = applyIrCall(

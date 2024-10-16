@@ -1,23 +1,38 @@
 package com.kotlinorm.compiler.fir.utils
 
-import com.kotlinorm.compiler.helpers.*
+import com.kotlinorm.compiler.fir.beans.FieldIR
 import com.kotlinorm.compiler.helpers.applyIrCall
+import com.kotlinorm.compiler.helpers.createKClassExpr
 import com.kotlinorm.compiler.helpers.findByFqName
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
-import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrBlock
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrGetValue
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
@@ -105,19 +120,38 @@ fun getColumnName(
     irProperty: IrProperty, propertyName: String = irProperty.name.asString()
 ): IrExpression {
     val parent = irProperty.parent as IrClass
-    val columnAnnotation = irProperty.annotations.findByFqName(ColumnAnnotationsFqName)
-    val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
+    val annotations = irProperty.annotations
 
-    val columnTypeAnnotation = irProperty.annotations.findByFqName(ColumnTypeAnnotationsFqName)
+    // detect annotations
+    var columnAnnotation: IrConstructorCall? = null // @Column
+    var columnTypeAnnotation: IrConstructorCall? = null // @ColumnType
+    var cascadeAnnotation: IrConstructorCall? = null // @Cascade
+    var cascadeSelectIgnoreAnnotation: IrConstructorCall? = null // @CascadeSelectIgnore
+    var defaultValueAnnotation: IrConstructorCall? = null // @DefaultValue
+    var primaryKeyAnnotation: IrConstructorCall? = null // @PrimaryKey
+    var dateTimeFormatAnnotation: IrConstructorCall? = null // @DateTimeFormat
+    var notNullAnnotation: IrConstructorCall? = null // @NotNull
+    var serializableAnnotation: IrConstructorCall? = null // @Serializable
+
+    annotations.forEach {
+        when (it.symbol.owner.fqNameWhenAvailable) {
+            ColumnTypeAnnotationsFqName -> columnTypeAnnotation = it
+            ColumnAnnotationsFqName -> columnAnnotation = it
+            CascadeAnnotationsFqName -> cascadeAnnotation = it
+            CascadeSelectIgnoreAnnotationsFqName -> cascadeSelectIgnoreAnnotation = it
+            DefaultValueAnnotationsFqName -> defaultValueAnnotation = it
+            PrimaryKeyAnnotationsFqName -> primaryKeyAnnotation = it
+            DateTimeFormatAnnotationsFqName -> dateTimeFormatAnnotation = it
+            NotNullAnnotationsFqName -> notNullAnnotation = it
+            SerializableAnnotationsFqName -> serializableAnnotation = it
+        }
+    }
+
+    val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
     val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
     val propertyType = irPropertyType.classFqName!!.asString()
     val columnType = columnTypeAnnotation?.getValueArgument(0) ?: getKColumnType(propertyType)
-    val columnTypeLength = columnTypeAnnotation?.getValueArgument(1) ?: irInt(0)
-    val columnDefaultValue =
-        irProperty.annotations.findByFqName(DefaultValueAnnotationsFqName)?.getValueArgument(0) ?: irNull()
     val tableName = getTableName(parent)
-    val selectIgnoreAnnotation = irProperty.annotations.findByFqName(CascadeSelectIgnoreAnnotationsFqName)
-    val cascadeAnnotation = irProperty.annotations.findByFqName(CascadeAnnotationsFqName)
     val propKClass = irPropertyType.getClass()
     val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
     val cascadeTypeKClass = if (irProperty.isDelegated) {
@@ -134,47 +168,38 @@ fun getColumnName(
 
     val kCascade = if (cascadeAnnotation != null) {
         applyIrCall(
-            kReferenceSymbol.constructors.first(), *cascadeAnnotation.valueArguments.toTypedArray()
+            kReferenceSymbol.constructors.first(), *cascadeAnnotation!!.valueArguments.toTypedArray()
         )
     } else {
         irNull()
     }
 
-    val primaryKeyAnnotation = irProperty.annotations.findByFqName(PrimaryKeyAnnotationsFqName)
-    val identity = primaryKeyAnnotation?.getValueArgument(0) ?: irBoolean(false)
-    val isColumn = irBoolean(irProperty.isColumn(irPropertyType))
-
-    val columnNotNull =
-        irBoolean(null == irProperty.annotations.findByFqName(NotNullAnnotationsFqName) && null == primaryKeyAnnotation)
-
     val irTableName = when (tableName) {
         is IrCall -> applyIrCall(
             fieldK2dbSymbol, irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
         )
-
         else -> irString((tableName as IrConst<*>).value.toString())
     }
 
-    return applyIrCall(
-        fieldSymbol.constructors.first(),
-        columnName,
-        irString(propertyName),
-        columnType,
-        irBoolean(primaryKeyAnnotation != null),
-        irProperty.annotations.findByFqName(DateTimeFormatAnnotationsFqName)?.getValueArgument(0),
-        irTableName,
-        kCascade,
-        irBoolean(cascadeIsArrayOrCollection),
-        cascadeTypeKClass,
-        irBoolean(selectIgnoreAnnotation != null),
-        isColumn,
-        columnTypeLength,
-        columnDefaultValue,
-        identity,
-        columnNotNull,
-        irBoolean(irProperty.hasAnnotation(SerializableAnnotationsFqName)),
-        irProperty.getKDocString()
-    )
+    return FieldIR(
+        columnName = columnName,
+        name = propertyName,
+        type = columnType,
+        primaryKey = primaryKeyAnnotation != null,
+        dateTimeFormat = dateTimeFormatAnnotation?.getValueArgument(0),
+        tableName = irTableName,
+        cascade = kCascade,
+        cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
+        cascadeTypeKClass = cascadeTypeKClass,
+        cascadeSelectIgnore = cascadeSelectIgnoreAnnotation != null,
+        isColumn = irProperty.isColumn(irPropertyType),
+        columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
+        columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),
+        identity = primaryKeyAnnotation?.getValueArgument(0) != null,
+        nullable = notNullAnnotation == null && primaryKeyAnnotation == null,
+        serializable = serializableAnnotation != null,
+        kDoc = irProperty.getKDocString()
+    ).build()
 }
 
 /**

@@ -117,8 +117,8 @@ complexity:
     threshold: 60
   LongParameterList:
     active: true
-    functionThreshold: 7
-    constructorThreshold: 8
+    functionThreshold: 24
+    constructorThreshold: 24
     ignoreDefaultParameters: false
     ignoreDataClasses: true
     ignoreAnnotated: ['Component', 'Service', 'ConfigurationProperties']

@@ -1,7 +1,12 @@
 package com.kotlinorm.beans.task
 
 import com.kotlinorm.enums.QueryType
-import com.kotlinorm.enums.QueryType.*
+import com.kotlinorm.enums.QueryType.Query
+import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.enums.QueryType.QueryMap
+import com.kotlinorm.enums.QueryType.QueryMapOrNull
+import com.kotlinorm.enums.QueryType.QueryOne
+import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn

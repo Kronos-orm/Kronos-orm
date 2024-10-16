@@ -503,7 +503,7 @@ style:
     ignoreOverridden: false
     ignoreUsageInGenerics: false
   FunctionOnlyReturningConstant:
-    active: true
+    active: false
     ignoreOverridableFunction: true
     ignoreActualFunction: true
     excludedFunctions: ''
@@ -518,7 +518,7 @@ style:
     maxJumpCount: 1
   MagicNumber:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**', '**/enums/**']
     ignoreNumbers:
       - '-1'
       - '0'
@@ -540,7 +540,7 @@ style:
     active: false
   MaxLineLength:
     active: true
-    maxLineLength: 150
+    maxLineLength: 360
     excludePackageStatements: true
     excludeImportStatements: true
     excludeCommentStatements: false

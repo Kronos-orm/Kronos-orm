@@ -1,43 +1,35 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.orm.beans.Movie
+import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.utils.GsonResolver
-import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.utils.Extensions.mapperTo
-import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Update {
-    private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/test"
-        username = "root"
-        password = "rootroot"
-    }
-
     init {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { TestWrapper }
             serializeResolver = GsonResolver
         }
     }
 
 
-    private val user = MysqlUser(1)
-    private val testUser = MysqlUser(1, "test")
-    private val testUser1 = MysqlUser(1, "test", 1)
+    private val user = User(1)
+    private val testUser = User(1, "test")
+    private val testUser1 = User(1, "test", 1)
 
     @Test
     fun testUpdateWithSetAndBy() {
@@ -51,12 +43,8 @@ class Update {
                 .by { it.id }
                 .build()
 
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew, `gender1` = `gender1` + :gender2PlusNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew, `gender` = `gender` + :gender2PlusNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -81,12 +69,8 @@ class Update {
             .by { it.id + it.username }
             .build()
 
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -107,12 +91,8 @@ class Update {
         val (sql, paramMap) = user.update { it.username + it.gender }
             .by { it.id }
             .build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -131,12 +111,8 @@ class Update {
         val (sql, paramMap) = testUser.update { it - it.username }
             .by { it.id }
             .build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -158,7 +134,7 @@ class Update {
             .build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(mapOf("id" to 1, "genderNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
@@ -169,8 +145,6 @@ class Update {
     fun testUpdateWhereComparable() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id < 1 && it.id > 0 }.build()
-        println(sql)
-        println(paramMap)
 
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` < :idMax AND `id` > :idMin AND `deleted` = 0",
@@ -192,10 +166,6 @@ class Update {
     fun testUpdateWhereNeq() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.neq }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` != :id AND `deleted` = 0",
             sql
@@ -214,10 +184,6 @@ class Update {
     fun testUpdateWhereNotEqual() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id != 1 }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` != :id AND `deleted` = 0",
             sql
@@ -236,10 +202,6 @@ class Update {
     fun testUpdateWhereLikeInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username like "%t" }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
             sql
@@ -258,10 +220,6 @@ class Update {
     fun testUpdateWhereLikeBracket() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.like("%t") }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
             sql
@@ -280,10 +238,6 @@ class Update {
     fun testUpdateWhereNotLikeInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username notLike "%t" }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
             sql
@@ -302,10 +256,6 @@ class Update {
     fun testUpdateWhereNotLikeBracket() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.notLike("%t") }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
             sql
@@ -324,10 +274,6 @@ class Update {
     fun testUpdateWhereBetweenInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id between (1..2) }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` BETWEEN :idMin AND :idMax AND `deleted` = 0",
             sql
@@ -347,10 +293,6 @@ class Update {
     fun testUpdateWhereNotBetweenInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id notBetween (1..2) }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` NOT BETWEEN :idMin AND :idMax AND `deleted` = 0",
             sql
@@ -375,10 +317,6 @@ class Update {
     fun testUpdateWhereIsNull() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.isNull }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IS NULL AND `deleted` = 0",
             sql
@@ -410,8 +348,8 @@ class Update {
             favorite = 1
         )
 
-        val (sql, paramMap) = movie.update().where {  // TODO: migrate matchBoth to contains
-            "xxxxxxx".asSql() && it.id.eq && it.name.matchBoth && it.score.between(1..2) && it.tags.eq && it.description.matchBoth &&
+        val (sql, paramMap) = movie.update().where {
+            "xxxxxxx".asSql() && it.id.eq && it.name.contains && it.score.between(1..2) && it.tags.eq && it.description.contains &&
                     (it.year in listOf(2021, 2022) || it.vote < 10 || it.favorite == 1) &&
                     it.director.eq && it.actor.eq &&
                     (it.country !in listOf("China", "Japan") || it.language.eq ||
@@ -465,10 +403,6 @@ class Update {
     fun testUpdateWhereNotNull() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.notNull }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IS NOT NULL AND `deleted` = 0",
             sql
@@ -494,10 +428,6 @@ class Update {
     fun testUpdateWhereIn() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id in listOf(1, 2, 3) }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IN (:idList) AND `deleted` = 0",
             sql
@@ -517,9 +447,6 @@ class Update {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id !in listOf(1, 2, 3) }.build()
 
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` NOT IN (:idList) AND `deleted` = 0",
             sql
@@ -538,9 +465,6 @@ class Update {
     fun testUpdateWhereContains() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { listOf(1, 2, 3).contains(it.id) }.build()
-
-        println(sql)
-        println(paramMap)
 
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IN (:idList) AND `deleted` = 0",
@@ -575,17 +499,11 @@ class Update {
         )
     }
 
-    //    infix fun Comparable<*>?.startsWith(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
-    //    infix fun Comparable<*>?.endsWith(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true
-    //    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?): Boolean = true  // TODO: migrate matchBoth to contains
 
     @Test
     fun testUpdateWherestartsWithInfix() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id startsWith "1" }.build()
-
-        println(sql)
-        println(paramMap)
 
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` LIKE :id AND `deleted` = 0",
@@ -606,9 +524,6 @@ class Update {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id endsWith "1" }.build()
 
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` LIKE :id AND `deleted` = 0",
             sql
@@ -624,22 +539,19 @@ class Update {
     }
 
     @Test
-    fun testUpdateWhereMatchBothInfix() {
+    fun testUpdateWhereStringContains() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id matchBoth "1" }.build() // TODO: migrate matchBoth to contains
-
-        println(sql)
-        println(paramMap)
+            .where { it.username.contains("test") }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` LIKE :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
             sql
         )
         assertEquals(
             mapOf(
                 "idNew" to 1,
+                "username" to "%test%",
                 "usernameNew" to "test",
-                "id" to "%1%",
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -653,10 +565,6 @@ class Update {
     fun testUpdateWhereLike() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.like }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
             sql
@@ -675,10 +583,6 @@ class Update {
     fun testUpdateWhereNotLike() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.notLike }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
             sql
@@ -697,10 +601,6 @@ class Update {
     fun testUpdateWherestartsWith() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.startsWith }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
             sql
@@ -719,10 +619,6 @@ class Update {
     fun testUpdateWhereendsWith() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.endsWith }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
             sql
@@ -745,10 +641,6 @@ class Update {
     fun testUpdateWhereLt() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.lt }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` < :idMax AND `deleted` = 0",
             sql
@@ -767,10 +659,6 @@ class Update {
     fun testUpdateWhereGt() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.gt }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` > :idMin AND `deleted` = 0",
             sql
@@ -789,10 +677,6 @@ class Update {
     fun testUpdateWhereLe() {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.le }.build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` <= :idMax AND `deleted` = 0",
             sql
@@ -812,8 +696,6 @@ class Update {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.ge }.build()
 
-        println(sql)
-        println(paramMap)
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` >= :idMin AND `deleted` = 0",
             sql
@@ -834,12 +716,8 @@ class Update {
             .set { it.id = 1 }
             .by { it.id }
             .build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -859,14 +737,9 @@ class Update {
             .set { it.id = 1 }
             .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0", sql)
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
-        assertEquals(testUser.mapperTo<MysqlUser>().equals(testUser), true)
-        // Update tb_user set username = 'test' where id = 1
+        assertEquals(testUser.mapperTo<User>(), testUser)
     }
 
     @Test
@@ -875,12 +748,8 @@ class Update {
             .set { it.id = 1 }
             .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
-
-        println(sql)
-        println(paramMap)
-
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `gender1` = :gender AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `gender` = :gender AND `deleted` = 0",
             sql
         )
         assertEquals(mapOf("idNew" to 1, "gender" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
@@ -910,7 +779,7 @@ class Update {
     fun testBatchUpdateExceptBy() {
         val (sql, _, list) = arrayOf(user, testUser).update { it - it.username }.by { it.id }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -935,7 +804,7 @@ class Update {
     fun testBatchUpdateWhere() {
         val (sql, _, list) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -956,7 +825,7 @@ class Update {
     fun testBatchUpdateIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.username }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -981,7 +850,7 @@ class Update {
     fun testBatchUpdateExceptIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.id }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender1` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(

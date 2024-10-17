@@ -369,18 +369,6 @@ open class KTableForCondition<T : KPojo> {
      * @return `true`
      */
     @Suppress("UnusedReceiverParameter")
-    val Comparable<*>?.matchBoth get() = true  // TODO: migrate matchBoth to contains
-
-    /**
-     * Checks if the given value is null.
-     *
-     * Only for compiler plugin to parse to [Criteria]
-     *
-     * Return `true` whether the value is null or not
-     *
-     * @return `true`
-     */
-    @Suppress("UnusedReceiverParameter")
     val Any?.isNull get() = true
 
     /**

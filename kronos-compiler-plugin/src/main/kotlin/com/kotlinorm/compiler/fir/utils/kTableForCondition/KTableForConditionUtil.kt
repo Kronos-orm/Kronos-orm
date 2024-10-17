@@ -28,7 +28,6 @@ import com.kotlinorm.compiler.fir.utils.isColumn
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
-import com.kotlinorm.compiler.helpers.asSimpleType
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
 import com.kotlinorm.compiler.helpers.subType
@@ -52,7 +51,6 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
@@ -202,7 +200,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
-                        tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
+                        tableName = getTableName(dispatchReceiver)
                     } else if (extensionReceiver != null) {
                         val irClass = element.extensionReceiver?.type?.getClass()
 

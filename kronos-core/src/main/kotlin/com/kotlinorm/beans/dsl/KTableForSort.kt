@@ -29,7 +29,7 @@ import com.kotlinorm.interfaces.KPojo
  * @param T the type of the table
  */
 class KTableForSort<T : KPojo>: KTableForSelect<T>() {
-    internal val sortedFields = mutableListOf<Pair<Field, SortType>>()
+    val sortedFields = mutableListOf<Pair<Field, SortType>>()
 
     @Suppress("UNCHECKED_CAST", "UNUSED")
     fun addSortField(field: Any) {

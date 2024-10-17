@@ -1,20 +1,55 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.compiler.fir.utils
 
-import com.kotlinorm.compiler.helpers.*
 import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.filterByFqName
+import com.kotlinorm.compiler.helpers.referenceFunctions
+import com.kotlinorm.compiler.helpers.referenceClass
+import com.kotlinorm.compiler.helpers.dispatchBy
+import com.kotlinorm.compiler.helpers.createKClassExpr
+import com.kotlinorm.compiler.helpers.irTry
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
-import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.irReturn
+import org.jetbrains.kotlin.ir.builders.irVararg
+import org.jetbrains.kotlin.ir.builders.irBlock
+import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irSetField
+import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.types.classOrFail
+import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
+import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
@@ -123,22 +158,31 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
     val map = irFunction.valueParameters.first()
     return irBlockBody {
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-
-        +declaration.properties.toList().mapNotNull { property ->
-            dispatcher.setValue(property, applyIrCall(getSafeValueSymbol,
-                irGet(irFunction.dispatchReceiverParameter!!),
-                createKClassExpr(property.backingField!!.type.classOrFail),
-                applyIrCall(createStringListSymbol,
-                    irVararg(irBuiltIns.stringType, property.backingField!!.type.getClass()!!.superTypes.map { type ->
-                        irString(type.getClass()!!.kotlinFqName.asString())
-                    })),
-                irGet(map),
-                irString(property.name.asString()),
-                irBoolean(property.hasAnnotation(SerializableAnnotationsFqName)))
-            )?.let {
-                irTry(
-                    irUnit().type, it, listOf(), null
-                )
+        +irBlock {
+            declaration.properties.toList().mapNotNull { property ->
+                dispatcher.setValue(
+                    property, applyIrCall(
+                        getSafeValueSymbol,
+                        irGet(irFunction.dispatchReceiverParameter!!),
+                        createKClassExpr(property.backingField!!.type.classOrFail),
+                        applyIrCall(
+                            createStringListSymbol,
+                            irVararg(
+                                irBuiltIns.stringType,
+                                property.backingField!!.type.getClass()!!.superTypes.map { type ->
+                                    irString(type.getClass()!!.kotlinFqName.asString())
+                                })
+                        ),
+                        irGet(map),
+                        irString(property.name.asString()),
+                        irBoolean(property.hasAnnotation(SerializableAnnotationsFqName))
+                    )
+                )?.let {
+                    +irTry(
+                        it,
+                        irBuiltIns.unitType,
+                    ) { irCatch() }
+                }
             }
         }
 

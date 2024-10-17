@@ -16,7 +16,12 @@
 
 package com.kotlinorm.beans.sample.cascade.oneToOne
 
-import com.kotlinorm.annotations.*
+import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.DateTimeFormat
+import com.kotlinorm.annotations.LogicDelete
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.UpdateTime
+import com.kotlinorm.annotations.Version
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 

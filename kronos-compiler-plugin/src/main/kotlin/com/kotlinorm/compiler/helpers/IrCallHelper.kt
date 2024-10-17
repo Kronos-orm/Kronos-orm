@@ -68,7 +68,7 @@ internal fun Receivers.extensionBy(extensionReceiver: IrExpression?) {
  * @return The `IrFunctionAccessExpression` representing the applied IR function call.
  * @author OUSC
  */
-context(IrBuilderWithScope, IrPluginContext)
+context(IrBuilderWithScope)
 internal fun applyIrCall(
     irCall: IrFunctionSymbol,
     vararg values: IrExpression?,

@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsw
 
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.exceptions.InvalidParameterException
 import com.kotlinorm.interfaces.KPojo
 

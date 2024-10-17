@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.database
+package com.kotlinorm.exceptions
 
-import com.kotlinorm.beans.dsl.Field
-
-data class ConflictResolver(
-    val tableName: String,
-    val onFields: LinkedHashSet<Field>,
-    val toUpdateFields: LinkedHashSet<Field>,
-    val toInsertFields: LinkedHashSet<Field>
-)
+class InvalidDataAccessApiUsageException(message: String) : RuntimeException(message)

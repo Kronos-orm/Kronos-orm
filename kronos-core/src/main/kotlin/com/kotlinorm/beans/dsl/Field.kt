@@ -35,7 +35,8 @@ import kotlin.reflect.KClass
  * @property dateFormat the format of the date field
  * @property tableName the name of the table
  * @property cascade the cascade of the field
- * @property cascadeKClassName the name of the cascade class
+ * @property cascadeIsCollectionOrArray whether the cascade field is a collection or array
+ * @property cascadeKClass the class of the cascade field
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field
@@ -43,6 +44,7 @@ import kotlin.reflect.KClass
  * @property nullable whether the field is nullable
  * @property cascadeSelectIgnore whether the field should be ignored in cascade select
  *
+ * @author: OUSC
  */
 class Field(
     var columnName: String,
@@ -52,6 +54,7 @@ class Field(
     val dateFormat: String? = null,
     val tableName: String = "",
     val cascade: KCascade? = null,
+    val cascadeIsCollectionOrArray: Boolean = false,
     val cascadeKClass: KClass<KPojo>? = null,
     val cascadeSelectIgnore: Boolean = false,
     val isColumn: Boolean = true,
@@ -117,6 +120,7 @@ class Field(
         dateFormat: String? = this.dateFormat,
         tableName: String = this.tableName,
         cascade: KCascade? = this.cascade,
+        cascadeIsCollectionOrArray: Boolean = this.cascadeIsCollectionOrArray,
         cascadeKClass: KClass<KPojo>? = this.cascadeKClass,
         cascadeSelectIgnore: Boolean = false,
         isColumn: Boolean = this.isColumn,
@@ -133,6 +137,7 @@ class Field(
             dateFormat,
             tableName,
             cascade,
+            cascadeIsCollectionOrArray,
             cascadeKClass,
             cascadeSelectIgnore,
             isColumn,

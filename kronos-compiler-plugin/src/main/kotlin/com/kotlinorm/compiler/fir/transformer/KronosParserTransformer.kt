@@ -21,6 +21,7 @@ import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForConditionTra
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSelectTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSetTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSortReturnTransformer
+import com.kotlinorm.compiler.fir.utils.KPojoFqName
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSelect.KTABLE_FOR_SELECT_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSet.KTABLE_FOR_SET_CLASS
@@ -82,9 +83,11 @@ class KronosParserTransformer(
      * @return the transformed class declaration or the result of calling the super class's implementation
      */
     override fun visitClassNew(declaration: IrClass): IrStatement {
-        if (declaration.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
-            return super.visitClassNew(declaration)
-                .transform(KronosIrClassNewTransformer(pluginContext, declaration), null) as IrStatement
+        with(pluginContext) {
+            if (declaration.superTypes.any { it.classFqName == KPojoFqName }) {
+                return super.visitClassNew(declaration)
+                    .transform(KronosIrClassNewTransformer(pluginContext, declaration), null) as IrStatement
+            }
         }
         return super.visitClassNew(declaration)
     }

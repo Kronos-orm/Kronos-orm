@@ -16,7 +16,17 @@
 
 package com.kotlinorm.compiler.fir.transformer
 
-import com.kotlinorm.compiler.fir.utils.*
+import com.kotlinorm.compiler.fir.utils.createKronosTableName
+import com.kotlinorm.compiler.fir.utils.createKronosComment
+import com.kotlinorm.compiler.fir.utils.createKronosTableIndex
+import com.kotlinorm.compiler.fir.utils.createKronosCreateTime
+import com.kotlinorm.compiler.fir.utils.createKronosUpdateTime
+import com.kotlinorm.compiler.fir.utils.createKronosLogicDelete
+import com.kotlinorm.compiler.fir.utils.createKronosOptimisticLock
+import com.kotlinorm.compiler.fir.utils.createFromMapValueFunction
+import com.kotlinorm.compiler.fir.utils.createGetFieldsFunction
+import com.kotlinorm.compiler.fir.utils.createSafeFromMapValueFunction
+import com.kotlinorm.compiler.fir.utils.createToMapFunction
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -66,8 +76,8 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
  *         }
  *
  *         override fun safeFromMapData(data: Map<String, Any?>): Foo {
- *              try this.username = getSafeValue(data, "username")
- *              try this.password = getSafeValue(data, "password")
+ *              try this.username = getSafeValue(data, "username") catch (e: Exception) e.printStackTrace()
+ *              try this.password = getSafeValue(data, "password") catch (e: Exception) e.printStackTrace()
  *              return this
  *         }
  *

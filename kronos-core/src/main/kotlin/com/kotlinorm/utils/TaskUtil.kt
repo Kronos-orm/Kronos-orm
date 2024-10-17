@@ -31,11 +31,32 @@ import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.ColorPrintCode.Companion.Magenta
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.enums.DBType.*
-import com.kotlinorm.enums.KOperationType.*
+import com.kotlinorm.enums.DBType.Mysql
+import com.kotlinorm.enums.DBType.Oracle
+import com.kotlinorm.enums.DBType.Postgres
+import com.kotlinorm.enums.DBType.SQLite
+import com.kotlinorm.enums.DBType.H2
+import com.kotlinorm.enums.DBType.Mssql
+import com.kotlinorm.enums.DBType.DB2
+import com.kotlinorm.enums.DBType.OceanBase
+import com.kotlinorm.enums.DBType.Sybase
+import com.kotlinorm.enums.KOperationType.SELECT
+import com.kotlinorm.enums.KOperationType.INSERT
+import com.kotlinorm.enums.KOperationType.UPDATE
+import com.kotlinorm.enums.KOperationType.UPSERT
+import com.kotlinorm.enums.KOperationType.DELETE
 import com.kotlinorm.enums.QueryType
-import com.kotlinorm.enums.QueryType.*
-import com.kotlinorm.interfaces.*
+import com.kotlinorm.enums.QueryType.Query
+import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.enums.QueryType.QueryMap
+import com.kotlinorm.enums.QueryType.QueryMapOrNull
+import com.kotlinorm.enums.QueryType.QueryOne
+import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.interfaces.KAtomicTask
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KBatchTask
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.

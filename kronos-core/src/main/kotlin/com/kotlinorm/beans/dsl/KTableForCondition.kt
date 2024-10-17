@@ -54,11 +54,77 @@ open class KTableForCondition<T : KPojo> {
      * @param other the element to check
      * @return `true`
      */
-    operator fun Iterable<Any?>?.contains(
+    operator fun <K> Iterable<K?>?.contains(
         @Suppress("UNUSED_PARAMETER") other: @Suppress(
             "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Any?
+        ) @kotlin.internal.NoInfer K?
     ) = true
+
+    operator fun Iterable<Number?>?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Number?
+    ) = true
+
+    operator fun <K> Array<K?>?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer K?
+    ) = true
+
+    operator fun Array<Number?>?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Number?
+    ) = true
+
+    operator fun IntArray?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Number?
+    ) = true
+
+    operator fun LongArray?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Number?
+    ) = true
+
+    operator fun FloatArray?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Number?
+    ) = true
+
+    operator fun DoubleArray?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Number?
+    ) = true
+
+    operator fun CharArray?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Char?
+    ) = true
+
+    operator fun BooleanArray?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Boolean?
+    ) = true
+
+    operator fun CharSequence?.contains(
+        @Suppress("UNUSED_PARAMETER") other: @Suppress(
+            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
+        ) @kotlin.internal.NoInfer Char?
+    ) = true
+
+
+    operator fun CharSequence?.contains(@Suppress("UNUSED_PARAMETER") other: CharSequence): Boolean =
+        true
+
+    val CharSequence?.contains get() = true
 
     fun <T> T?.cast() = this as Any?
 
@@ -200,7 +266,8 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?) = true  // TODO: migrate matchBoth to contains
+    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?) =
+        true  // TODO: migrate matchBoth to contains
 
 
     infix fun Comparable<*>?.regexp(@Suppress("UNUSED_PARAMETER") other: String?) = true

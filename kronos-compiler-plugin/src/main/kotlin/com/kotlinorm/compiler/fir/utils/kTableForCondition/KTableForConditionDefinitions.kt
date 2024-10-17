@@ -22,7 +22,11 @@ import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.fir.utils.getColumnOrValue
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -108,9 +112,9 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
         "neq" -> "equal" to true
         "between" -> "between" to false
         "notBetween" -> "between" to true
-        "like", "startsWith", "endsWith", "matchBoth" -> "like" to false // TODO: migrate matchBoth to contains
+        "like", "startsWith", "endsWith" -> "like" to false
         "notLike" -> "like" to true
-        "contains" -> "in" to false
+        "contains" -> "in" to false // Extra judgment is needed to determine if it's `like` or `in`
         "asSql" -> "sql" to false
         "ifNoValue" -> "ifNoValue" to false
         "regexp" -> "regexp" to false

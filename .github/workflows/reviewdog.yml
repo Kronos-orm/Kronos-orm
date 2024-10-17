@@ -28,4 +28,4 @@ jobs:
         uses: alaegin/Detekt-Action@v1.23.6
         with:
           github_token: ${{ secrets.github_token }}
-          detekt_config: detekt-config.yml
+          detekt_config: detekt.yml

@@ -256,21 +256,9 @@ open class KTableForCondition<T : KPojo> {
      */
     infix fun Comparable<*>?.endsWith(@Suppress("UNUSED_PARAMETER") other: String?) = true
 
-    /**
-     * Checks if the given value matches the specified string.
-     *
-     * Only for compiler plugin to parse to [Criteria]
-     *
-     * Return `true` whether the value matches the string or not
-     *
-     * @param other The string to compare with.
-     * @return `true`
-     */
-    infix fun Comparable<*>?.matchBoth(@Suppress("UNUSED_PARAMETER") other: String?) =
-        true  // TODO: migrate matchBoth to contains
-
-
     infix fun Comparable<*>?.regexp(@Suppress("UNUSED_PARAMETER") other: String?) = true
+
+    infix fun Comparable<*>?.notRegexp(@Suppress("UNUSED_PARAMETER") other: String?) = true
 
     /**
      * Checks if the given value is null.
@@ -457,6 +445,9 @@ open class KTableForCondition<T : KPojo> {
 
     @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.regexp get() = true
+
+    @Suppress("UnusedReceiverParameter")
+    val Comparable<*>?.notRegexp get() = true
 
     companion object {
         /**

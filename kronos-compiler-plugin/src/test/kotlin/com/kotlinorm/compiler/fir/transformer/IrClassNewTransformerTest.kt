@@ -19,6 +19,8 @@ class IrClassNewTransformerTest {
             import com.kotlinorm.enums.KColumnType.TINYINT
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
+            import kotlin.test.assertNotNull
+            
             
             /**
              * User
@@ -65,6 +67,21 @@ class IrClassNewTransformerTest {
             
                 val user = User(1)
                 assertEquals(user.kronosTableName(), "tb_user")
+                assertNotNull(user.kronosColumns().find { it.name == "id" })
+                assertNotNull(user.kronosColumns().find { it.name == "username" })
+                assertNotNull(user.kronosColumns().find { it.name == "gender" })
+                assertNotNull(user.kronosColumns().find { it.name == "telephone" })
+                assertNotNull(user.kronosColumns().find { it.name == "email" })
+                assertNotNull(user.kronosColumns().find { it.name == "birthday" })
+                assertNotNull(user.kronosColumns().find { it.name == "habits" })
+                assertNotNull(user.kronosColumns().find { it.name == "age" })
+                assertNotNull(user.kronosColumns().find { it.name == "avatar" })
+                assertNotNull(user.kronosColumns().find { it.name == "friendId" })
+                assertNotNull(user.kronosColumns().find { it.name == "friend" })
+                assertNotNull(user.kronosColumns().find { it.name == "createTime" })
+                assertNotNull(user.kronosColumns().find { it.name == "updateTime" })
+                assertNotNull(user.kronosColumns().find { it.name == "version" })
+                assertNotNull(user.kronosColumns().find { it.name == "deleted" })
             }
         """.trimIndent())
 

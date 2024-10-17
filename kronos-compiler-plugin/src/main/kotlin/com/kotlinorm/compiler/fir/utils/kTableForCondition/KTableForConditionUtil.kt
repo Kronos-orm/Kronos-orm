@@ -28,8 +28,10 @@ import com.kotlinorm.compiler.fir.utils.isColumn
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
+import com.kotlinorm.compiler.helpers.asSimpleType
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
+import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -50,6 +52,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
@@ -130,7 +133,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
             when (funcName) {
                 "isNull", "notNull" -> {
                     paramName = getColumnOrValue(element.extensionReceiver!!)
-                    tableName = getTableName(element.dispatchReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                 }
 
                 "lt", "gt", "le", "ge" -> {
@@ -138,7 +141,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         // 形如it.<property>.lt的写法
                         // Write like it.<property>.lt with no arguments
                         paramName = getColumnOrValue(element.extensionReceiver!!)
-                        tableName = getTableName(element.dispatchReceiver!!)
+                        tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                         value = applyIrCall(
                             getValueByFieldNameSymbol,
                             irString(element.extensionReceiver!!.asIrCall().funcName())
@@ -152,25 +155,15 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         // 提供fun(a, b)形式和A.B.C形式的函数调用支持(!!属于fun(a, b))
                         // Provides support for function calls of the form fun(a, b)
                         // and of the form A.B.C (!!!). belongs to fun(a, b))
-                        val columnExpr = irCall.findKronosColumn()
                         val (left, operator, right) = runExpressionAnalysis(
-                            columnExpr,
+                            irCall.extensionReceiver ,
                             funcName,
                             irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
                         )
                         paramName = left
                         type = operator
                         value = right
-                        tableName = if (columnExpr.isKronosColumn()) {
-                            getTableName(columnExpr!!.asIrCall().dispatchReceiver!!)
-                        } else {
-                            val newExpr = irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
-                            if (newExpr.isKronosColumn()) {
-                                getTableName(newExpr!!.asIrCall().dispatchReceiver!!)
-                            } else {
-                                irString("")
-                            }
-                        }
+                        tableName = getTableName(irCall.findKronosColumn()!!.asIrCall().dispatchReceiver!!)
                     }
                 }
 
@@ -209,7 +202,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
-                        tableName = getTableName(dispatchReceiver)
+                        tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                     } else if (extensionReceiver != null) {
                         val irClass = element.extensionReceiver?.type?.getClass()
 
@@ -249,7 +242,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     }
                 }
 
-                "between", "like", "notBetween", "notLike", "regexp" -> {
+                "between", "like", "regexp", "notBetween", "notLike", "notRegexp" -> {
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = if (args.isEmpty()) {
                         applyIrCall(
@@ -261,7 +254,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     } else {
                         args.first()
                     }
-                    tableName = getTableName(element.dispatchReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                 }
 
                 "startsWith" -> {
@@ -281,7 +274,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     ) {
                         dispatchBy(str)
                     }
-                    tableName = getTableName(element.dispatchReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                 }
 
                 "endsWith" -> {
@@ -301,20 +294,21 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     ) {
                         dispatchBy(irString("%"))
                     }
-                    tableName = getTableName(element.dispatchReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                 }
 
                 "contains" -> {
-                    paramName = getColumnOrValue(args.first()!!)
-                    tableName = getTableName(element.dispatchReceiver!!)
+                    tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                     if (element.extensionReceiver!!.type.superTypes()
                             .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
                     ) {
                         // 形如 it.<property> in [1, 2, 3]的写法
                         // Write like it.<property> in listOf(1, 2, 3)
+                        paramName = getColumnOrValue(args.first()!!)
                         value = element.extensionReceiver
                     } else {
                         type = "like"
+                        paramName = getColumnOrValue(element.extensionReceiver!!)
                         val str = if (args.isEmpty()) {
                             // 形如 it.<property>.contains后面不加参数的写法
                             // Write it as it.<property>.contains with no arguments after it
@@ -329,13 +323,17 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             // Writes like it.<property>.contains("xx") or "xx" in it.<property>
                             args.first()
                         }
-                        value = applyIrCall(
-                            stringPlusSymbol, applyIrCall(
-                                stringPlusSymbol, irString("%")
-                            ) {
-                                dispatchBy(str)
-                            }) {
-                            dispatchBy(irString("%"))
+                        value = if(str is IrConstImpl<*> && str.value is String){
+                            irString("%${str.value}%")
+                        } else {
+                            applyIrCall(
+                                stringPlusSymbol, applyIrCall(
+                                    stringPlusSymbol, irString("%")
+                                ) {
+                                    dispatchBy(str)
+                                }) {
+                                dispatchBy(irString("%"))
+                            }
                         }
                     }
                 }

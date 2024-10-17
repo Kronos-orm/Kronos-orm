@@ -30,5 +30,10 @@ class KCascadeTest {
                 )
             }
         )
+
+        assertEquals(
+            course.students,
+            course.studentCourse?.map { it.student }
+        )
     }
 }

@@ -22,7 +22,12 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 object DateTimeUtil {
-    val currentDateTime = { pattern: String ->
-        DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now(Clock.system(timeZone)))
-    }
+    /**
+     * Returns the current date and time formatted according to the specified pattern.
+     *
+     * @param pattern The pattern to format the current date and time.
+     * @return The formatted current date and time as a String.
+     */
+    fun currentDateTime(pattern: String) =
+        DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now(Clock.system(timeZone)))!!
 }

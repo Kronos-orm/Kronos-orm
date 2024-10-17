@@ -19,13 +19,11 @@ package com.kotlinorm.utils
 import com.kotlinorm.Kronos.defaultDateFormat
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.Kronos.strictSetValue
-import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.transformers.TransformerManager.getValueTransformed
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import kotlin.reflect.KClass
 
 
@@ -54,114 +52,30 @@ fun setCommonStrategy(
 
 fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { addAll(this@toLinkedSet) }
 
+
+/**
+ * Converts a given value to a type-safe value based on the provided Kotlin type.
+ *
+ * @param kotlinType The target Kotlin type to convert the value to.
+ * @param value The value to be converted.
+ * @param superTypes A list of super types for the value's class.
+ * @param dateTimeFormat An optional date-time format to use for date-time conversions.
+ * @param kClassOfVal The KClass of the value.
+ * @return The converted value, or null if the conversion is not possible.
+ */
 fun getTypeSafeValue(
     kotlinType: String,
     value: Any,
     superTypes: List<String> = listOf(),
     dateTimeFormat: String? = null,
     kClassOfVal: KClass<*> = value::class
-): Any? {
-    fun getEpochSecond(): Long {
-        return when (value) {
-            is Number -> value.toLong()
-            else -> java.time.LocalDateTime.parse(value.toString()).atZone(timeZone).toInstant().epochSecond
-        }
-    }
-
-    fun <T> Any.safeCast(fromNumber: Number.() -> T, fromStr: String.() -> T): T {
-        return if (this is Number) {
-            fromNumber()
-        } else {
-            toString().fromStr()
-        }
-    }
-
-    return when (kotlinType) {
-        "kotlin.Int" -> value.safeCast(Number::toInt, String::toInt)
-        "kotlin.Long" -> value.safeCast(Number::toLong, String::toLong)
-        "kotlin.Short" -> value.safeCast(Number::toShort, String::toShort)
-        "kotlin.Float" -> value.safeCast(Number::toFloat, String::toFloat)
-        "kotlin.Double" -> value.safeCast(Number::toDouble, String::toDouble)
-        "kotlin.Byte" -> value.safeCast(Number::toByte, String::toByte)
-        "kotlin.Char" -> value.toString().firstOrNull()
-        "kotlin.String" -> {
-            val typeOfValue =
-                setOf(kClassOfVal.qualifiedName, *kClassOfVal.supertypes.map { it.toString() }.toTypedArray())
-            when { //日期类型转换
-                typeOfValue.intersect(
-                    setOf(
-                        "java.util.Date",
-                        "java.time.LocalDateTime",
-                        "java.time.LocalDate",
-                        "java.time.LocalTime",
-                        "java.time.Instant",
-                        "java.time.ZonedDateTime",
-                        "java.time.OffsetDateTime",
-                        "kotlinx.datetime.LocalDateTime",
-                        "kotlinx.datetime.LocalDate",
-                        "kotlinx.datetime.LocalTime",
-                        "kotlinx.datetime.Instant",
-                    )
-                ).isNotEmpty() -> {
-                    java.time.format.DateTimeFormatter.ofPattern(dateTimeFormat ?: defaultDateFormat).format(java.time.LocalDateTime.parse(value.toString()))
-                }
-
-                else -> value.toString()
-            }
-        }
-
-        "kotlin.Boolean" -> (value is Number && value != 0) || value.toString().ifBlank { "false" }.toBoolean()
-
-        "java.time.Instant" -> java.time.Instant.ofEpochSecond(getEpochSecond())
-
-        "java.time.LocalDateTime", "java.time.LocalDate", "java.time.LocalTime",
-        "java.time.ZonedDateTime", "java.time.OffsetDateTime"
-        -> {
-            val localDateTime =
-                java.time.Instant.ofEpochSecond(getEpochSecond()).atZone(timeZone).toLocalDateTime()
-            when (kotlinType) {
-                "java.time.ZonedDateTime", "java.time.LocalDateTime" -> localDateTime
-                "java.time.LocalDate" -> localDateTime.toLocalDate()
-                "java.time.LocalTime" -> localDateTime.toLocalTime()
-                "java.time.OffsetDateTime" -> OffsetDateTime.of(localDateTime, ZoneOffset.of(timeZone.id))
-                else -> value
-            }
-        }
-
-        "kotlinx.datetime.Instant" -> {
-            Class.forName("kotlinx.datetime.Instant").getDeclaredMethod("parse", String::class.java)
-                .invoke(null, value.toString())
-        }
-
-        "kotlinx.datetime.LocalDateTime", "kotlinx.datetime.LocalDate", "kotlinx.datetime.LocalTime" -> {
-            val localDateTime = Class.forName("kotlinx.datetime.Instant").getDeclaredMethod("parse", String::class.java)
-                .invoke(null, value.toString())
-            when (kotlinType) {
-                "kotlinx.datetime.LocalDateTime" -> localDateTime
-                "kotlinx.datetime.LocalDate" -> Class.forName("kotlinx.datetime.LocalDateTime").getDeclaredMethod("toLocalDate")
-                    .invoke(localDateTime)
-                "kotlinx.datetime.LocalTime" -> Class.forName("kotlinx.datetime.LocalDateTime").getDeclaredMethod("toLocalTime")
-                    .invoke(localDateTime)
-                else -> value
-            }
-        }
-
-        else -> {
-            val typeOfProp =
-                setOf(kotlinType, *superTypes.toTypedArray())
-            when {
-                "java.util.Date" in typeOfProp -> {
-                    val constructor =
-                        Class.forName(kotlinType).constructors.find { it.parameters.size == 1 && it.parameterTypes[0] == Long::class.java }!!
-                    constructor.newInstance(getEpochSecond() * 1000)
-                }
-
-                else -> value
-
-            }
-        }
-    }
-}
+): Any = getValueTransformed(
+    kotlinType,
+    value,
+    superTypes,
+    dateTimeFormat,
+    kClassOfVal
+)
 
 /**
  * getSafeValue
@@ -174,11 +88,11 @@ fun getTypeSafeValue(
  * 4.若columnLabel在map中的值为null，尝试查找columnName在map中的值存入KPojo
  *
  * @param kPojo
- * @param kotlinType
+ * @param kClass
  * @param superTypes
  * @param map
  * @param key
- * @param useSerializeResolver
+ * @param serializable
  * @return
  */
 @Suppress("UNUSED")
@@ -194,24 +108,16 @@ fun getSafeValue(
         return map[key]
     }
     val column = kPojo.kronosColumns().find { it.name == key }!!
-
-    val safeKey =
-        if (map[key] != null || kPojo.kronosColumns().any { it.name == column.columnName }) key else column.columnName
-    return when {
-        map[safeKey] == null -> null
-        else -> {
-            val kClassOfVal = map[safeKey]!!::class
-            if (kClass != kClassOfVal) {
-                if (serializable) {
-                    return serializeResolver.deserialize(
-                        map[safeKey].toString(), kClass
-                    )
-                }
-                getTypeSafeValue(kClass.qualifiedName!!, map[safeKey]!!, superTypes, column.dateFormat, kClassOfVal)
-            } else {
-                map[safeKey]
-            }
+    val kClassOfVal = map[key]!!::class
+    return if (kClass != kClassOfVal) {
+        if (serializable) {
+            return serializeResolver.deserialize(
+                map[key].toString(), kClass
+            )
         }
+        getTypeSafeValue(kClass.qualifiedName!!, map[key]!!, superTypes, column.dateFormat, kClassOfVal)
+    } else {
+        map[key]
     }
 }
 

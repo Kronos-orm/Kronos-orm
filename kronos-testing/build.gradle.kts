@@ -4,6 +4,9 @@ plugins {
 }
 
 dependencies {
+    testImplementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3")
+
     testImplementation(kotlin("test"))
     testImplementation(kotlin("reflect"))
     testImplementation(project(":kronos-core"))

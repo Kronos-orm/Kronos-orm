@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.sample
 
+import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.LogicDelete

@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class KTableParserForSelectTransformerTest {
+class KTableParserForSetTransformerTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `KTable Parser For Select Transformer Test`() {
@@ -15,12 +15,12 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.*
             import com.kotlinorm.beans.dsl.Field
-            import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+            import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
             import com.kotlinorm.enums.KColumnType.TINYINT
-            import com.kotlinorm.types.ToSelect
+            import com.kotlinorm.types.ToSet
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
             import kotlin.test.assertNotNull
@@ -65,7 +65,13 @@ class KTableParserForSelectTransformerTest {
                     return kronosColumns().find { it.name == name }!!
                 }
             }
-            
+
+            data class SetResult(
+                val fields: MutableList<Field> = mutableListOf(),
+                val fieldParamMap: MutableMap<Field, Any?> = mutableMapOf(),
+                val plusAssignFields: MutableList<Pair<Field, Number>> = mutableListOf(),
+                val minusAssignFields: MutableList<Pair<Field, Number>> = mutableListOf()
+            )
             
             fun main() {
                 Kronos.apply {
@@ -75,45 +81,46 @@ class KTableParserForSelectTransformerTest {
             
                 val user = User()
             
-                fun select(block: ToSelect<User, Any?>): List<Field>? {
-                    var rst: List<Field>? = null
+                fun set(block: ToSet<User, Unit>): SetResult? {
+                    var rst: SetResult? = null
 
-                    user.afterSelect {
+                    user.afterSet {
                         block!!(it)
-                        rst = fields
+                        rst = SetResult(
+                            fields = fields,
+                            fieldParamMap = fieldParamMap,
+                            plusAssignFields = plusAssignFields,
+                            minusAssignFields = minusAssignFields
+                        )
                     }
                     return rst
                 }
-                
-                assertEquals(
-                    listOf(
+                    
+                val expected = SetResult(
+                    fields = mutableListOf(
                         user["id"],
                         user["username"],
+                        user["age"],
+                        user["version"]
                     ),
-                    select {
-                        it.id + it.username
-                    }
-                )
-                
-                assertEquals(
-                    listOf(
-                        user["id"],
-                        user["username"].apply{ name = "name" },
+                    fieldParamMap = mutableMapOf(
+                        user["id"] to 1,
+                        user["username"] to "test",
                     ),
-                    select {
-                        it.id + it.username.`as`("name")
-                    }
-                )
-                
-                assertEquals(
-                    listOf(
-                        user["id"],
-                        Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL),
+                    plusAssignFields = mutableListOf(
+                        user["version"] to 1
                     ),
-                    select {
-                        it.id + "1"
-                    }
+                    minusAssignFields = mutableListOf(
+                        user["age"] to 10
+                    )
                 )
+
+                assertEquals(expected, set {
+                    it.id = 1
+                    it.username = "test"
+                    it.age -= 10
+                    it.version += 1
+                })
 
             }
         """.trimIndent()

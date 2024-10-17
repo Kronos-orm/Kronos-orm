@@ -108,16 +108,25 @@ fun getSafeValue(
         return map[key]
     }
     val column = kPojo.kronosColumns().find { it.name == key }!!
-    val kClassOfVal = map[key]!!::class
-    return if (kClass != kClassOfVal) {
-        if (serializable) {
-            return serializeResolver.deserialize(
-                map[key].toString(), kClass
-            )
+    return map[key]?.let {
+        val kClassOfVal = it::class
+        if (kClass != kClassOfVal) {
+            if (serializable) {
+                serializeResolver.deserialize(
+                    it.toString(), kClass
+                )
+            } else {
+                getTypeSafeValue(
+                    kClass.qualifiedName!!,
+                    it,
+                    superTypes,
+                    column.dateFormat,
+                    kClassOfVal
+                )
+            }
+        } else {
+            it
         }
-        getTypeSafeValue(kClass.qualifiedName!!, map[key]!!, superTypes, column.dateFormat, kClassOfVal)
-    } else {
-        map[key]
     }
 }
 

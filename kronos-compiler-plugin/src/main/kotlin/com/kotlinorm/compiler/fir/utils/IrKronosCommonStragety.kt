@@ -42,12 +42,7 @@ import org.jetbrains.kotlin.name.Name
 
 context(IrPluginContext)
 internal val globalUpdateTimeSymbol
-    get() = referenceFunctions(
-        CallableId(
-            FqName("com.kotlinorm.utils"),
-            Name.identifier("getUpdateTimeStrategy")
-        )
-    ).first()
+    get() = referenceFunctions("com.kotlinorm.utils","getUpdateTimeStrategy").first()
 
 context(IrPluginContext)
 internal val globalLogicDeleteSymbol

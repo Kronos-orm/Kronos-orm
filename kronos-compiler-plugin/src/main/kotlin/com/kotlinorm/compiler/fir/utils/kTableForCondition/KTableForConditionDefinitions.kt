@@ -118,6 +118,7 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
         "asSql" -> "sql" to false
         "ifNoValue" -> "ifNoValue" to false
         "regexp" -> "regexp" to false
+        "notRegexp" -> "regexp" to true
         else -> throw IllegalArgumentException("Unknown condition type: $funcName")
     }
 }

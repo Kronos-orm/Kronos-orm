@@ -42,10 +42,15 @@ class KTableParserForConditionTransformerTest {
         testCompile(
                 """
                 fun test(){
+                    val ids = listOf<Int?>(1, 2, 3)
+                    val expected1 = user["id"].isIn(ids)
+                    assertEquals(expected1, where { it.id in ids })
+                    assertEquals(expected1, where { ids.contains(it.id) })
+                    
                     val listOfNames = listOf("Alice", "Bob", "Cindy")
-                    val expected = user["username"].isIn(listOfNames)
-                    assertEquals(expected, where { it.username in listOfNames })
-                    assertEquals(expected, where { listOfNames.contains(it.username) })
+                    val expected2 = user["username"].isIn(listOfNames)
+                    assertEquals(expected2, where { it.username in listOfNames })
+                    assertEquals(expected2, where { listOfNames.contains(it.username) })
                 }
                 """
         )

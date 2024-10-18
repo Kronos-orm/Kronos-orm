@@ -154,7 +154,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         // Provides support for function calls of the form fun(a, b)
                         // and of the form A.B.C (!!!). belongs to fun(a, b))
                         val (left, operator, right) = runExpressionAnalysis(
-                            irCall.extensionReceiver ,
+                            irCall.extensionReceiver,
                             funcName,
                             irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
                         )
@@ -192,7 +192,6 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "eq", "neq" -> {
                     val extensionReceiver = element.extensionReceiver
                     if (extensionReceiver != null && extensionReceiver.isKronosColumn()) {
-                        val dispatchReceiver = element.asIrCall().dispatchReceiver!!
                         paramName = getColumnOrValue(extensionReceiver)
                         value = applyIrCall(
                             getValueByFieldNameSymbol,
@@ -200,7 +199,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                         ) {
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
-                        tableName = getTableName(dispatchReceiver)
+                        tableName = getTableName(extensionReceiver.asIrCall().dispatchReceiver!!)
                     } else if (extensionReceiver != null) {
                         val irClass = element.extensionReceiver?.type?.getClass()
 
@@ -296,32 +295,34 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 }
 
                 "contains" -> {
-                    tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
-                    if (element.extensionReceiver!!.type.superTypes()
-                            .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
-                    ) {
+                    val left = element.extensionReceiver ?: element.dispatchReceiver
+                    if (left!!.type.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }) {
+                        tableName = getTableName(args.first()!!.asIrCall().dispatchReceiver!!.type.getClass()!!)
                         // 形如 it.<property> in [1, 2, 3]的写法
                         // Write like it.<property> in listOf(1, 2, 3)
                         paramName = getColumnOrValue(args.first()!!)
-                        value = element.extensionReceiver
+                        value = left
                     } else {
+                        tableName = getTableName(left.asIrCall().dispatchReceiver!!.type.getClass()!!)
                         type = "like"
-                        paramName = getColumnOrValue(element.extensionReceiver!!)
                         val str = if (args.isEmpty()) {
+                            paramName = getColumnOrValue(left)
                             // 形如 it.<property>.contains后面不加参数的写法
                             // Write it as it.<property>.contains with no arguments after it
                             applyIrCall(
                                 getValueByFieldNameSymbol,
-                                irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                                irString(left.asIrCall().correspondingName!!.asString())
                             ) {
                                 dispatchBy(irGet(extensionReceiverParameter!!))
                             }
                         } else {
+                            paramName = getColumnOrValue(left)
                             // 形如 it.<property>.contains("xx")的写法
                             // Writes like it.<property>.contains("xx") or "xx" in it.<property>
                             args.first()
                         }
-                        value = if(str is IrConstImpl<*> && str.value is String){
+
+                        value = if (str is IrConstImpl<*> && str.value is String) {
                             irString("%${str.value}%")
                         } else {
                             applyIrCall(

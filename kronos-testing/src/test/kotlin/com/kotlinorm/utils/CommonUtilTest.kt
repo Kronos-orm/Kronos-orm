@@ -4,7 +4,7 @@ import com.kotlinorm.Kronos.defaultDateFormat
 import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.transformers.TransformerManager.registerValueTransformer
+import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransformer
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import org.junit.jupiter.api.assertThrows
@@ -30,6 +30,7 @@ class CommonUtilTest {
         setCommonStrategy(strategy, true) { _, value ->
             assertTrue(value is String)
             assertTrue(
+
                 LocalDateTime.now(Clock.system(timeZone)).isAfter(
                     LocalDateTime.parse(value, DateTimeFormatter.ofPattern(defaultDateFormat))
                 )
@@ -104,12 +105,32 @@ class CommonUtilTest {
             getTypeSafeValue("java.time.LocalDateTime", dateTimeString)
         )
         assertEquals(
-            getTypeSafeValue("java.time.LocalDate", dateTimeString),
-            LocalDateTime.parse(dateTimeString).toLocalDate()
+            LocalDateTime.parse(dateTimeString).toLocalDate(),
+            getTypeSafeValue("java.time.LocalDate", dateTimeString)
         )
         assertEquals(
-            getTypeSafeValue("java.time.LocalTime", dateTimeString),
-            LocalDateTime.parse(dateTimeString).toLocalTime()
+            LocalDateTime.parse(dateTimeString).toLocalTime(),
+            getTypeSafeValue("java.time.LocalTime", dateTimeString)
+        )
+        assertEquals(
+            LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()),
+            getTypeSafeValue("java.time.ZonedDateTime", dateTimeString)
+        )
+        assertEquals(
+            LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toOffsetDateTime(),
+            getTypeSafeValue("java.time.OffsetDateTime", dateTimeString)
+        )
+        assertEquals(
+            LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant(),
+            getTypeSafeValue("java.time.Instant", dateTimeString)
+        )
+        assertEquals(
+            LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            getTypeSafeValue("kotlin.Long", LocalDateTime.parse(dateTimeString))
+        )
+        assertEquals(
+            "2023-10-17 10:00:00",
+            getTypeSafeValue("kotlin.String", LocalDateTime.parse(dateTimeString))
         )
 
         // 测试Instant类型
@@ -138,6 +159,8 @@ class CommonUtilTest {
         assertEquals(instant, getTypeSafeValue("kotlinx.datetime.Instant", dateTimeString))
         assertEquals(localDate, getTypeSafeValue("kotlinx.datetime.LocalDate", dateTimeString))
         assertEquals(localTime, getTypeSafeValue("kotlinx.datetime.LocalTime", dateTimeString))
+        assertEquals("2023-10-17 10:00:00", getTypeSafeValue("kotlin.String", dateTime))
+        assertEquals(instant.toEpochMilliseconds(), getTypeSafeValue("kotlin.Long", dateTime))
 
         // 测试无效输入
         assertThrows<NumberFormatException> {

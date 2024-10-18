@@ -22,7 +22,7 @@ import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.transformers.TransformerManager.getValueTransformed
+import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import kotlin.reflect.KClass
 

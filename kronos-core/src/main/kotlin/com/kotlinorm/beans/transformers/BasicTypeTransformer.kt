@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.transformers
+package com.kotlinorm.beans.transformers
 
 import com.kotlinorm.interfaces.ValueTransformer
 import kotlin.reflect.KClass

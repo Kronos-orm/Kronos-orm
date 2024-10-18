@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
@@ -134,7 +135,7 @@ fun getColumnName(
     var serializableAnnotation: IrConstructorCall? = null // @Serializable
 
     annotations.forEach {
-        when (it.symbol.owner.fqNameWhenAvailable) {
+        when (it.symbol.owner.returnType.getClass()!!.fqNameWhenAvailable) {
             ColumnTypeAnnotationsFqName -> columnTypeAnnotation = it
             ColumnAnnotationsFqName -> columnAnnotation = it
             CascadeAnnotationsFqName -> cascadeAnnotation = it
@@ -195,7 +196,7 @@ fun getColumnName(
         isColumn = irProperty.isColumn(irPropertyType),
         columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
         columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),
-        identity = primaryKeyAnnotation?.getValueArgument(0) != null,
+        identity = (primaryKeyAnnotation?.getValueArgument(0) as? IrConstImpl<*>)?.value == true,
         nullable = notNullAnnotation == null && primaryKeyAnnotation == null,
         serializable = serializableAnnotation != null,
         kDoc = irProperty.getKDocString()

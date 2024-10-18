@@ -18,9 +18,9 @@ package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
+import com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.utils.LRUCache
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -79,8 +79,8 @@ fun findValidRefs(
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
     return columns.filter { !it.isColumn && (it.name in allowed || allowAll) && it.cascadeKClass != null }.map { col ->
-        //如果是Select并且该列有cascadeSelectIgnore，且没有明确指定允许当前列，直接返回空
-        if (col.cascadeSelectIgnore && allowAll && operationType == KOperationType.SELECT) {
+        //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
+        if (col.ignore?.contains(CASCADE_SELECT) == true && allowAll && operationType == KOperationType.SELECT) {
             return@map listOf<ValidCascade>()
         }
 

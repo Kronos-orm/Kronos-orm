@@ -16,7 +16,7 @@
 
 package com.kotlinorm.beans.task
 
-import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
+import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KAtomicActionTask
 

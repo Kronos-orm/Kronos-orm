@@ -4,7 +4,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType

@@ -17,7 +17,7 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.beans.dsl.Field
             import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
             import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+            import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
             import com.kotlinorm.enums.KColumnType.TINYINT
             import com.kotlinorm.types.ToSelect

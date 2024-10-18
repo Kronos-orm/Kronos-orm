@@ -44,7 +44,7 @@ import org.jetbrains.kotlin.ir.util.constructors
  * @param cascade The cascade type
  * @param cascadeIsArrayOrCollection Whether the cascade is an array or collection
  * @param cascadeTypeKClass The KClass of the cascade type
- * @param cascadeSelectIgnore Whether the cascade should be ignored in select
+ * @param ignore operations should be ignored
  * @param isColumn Whether the field is a column
  * @param columnTypeLength The length of the column type
  * @param columnDefaultValue The default value of the column
@@ -64,7 +64,7 @@ class FieldIR(
     private val cascade: IrExpression,
     private val cascadeIsArrayOrCollection: Boolean,
     private val cascadeTypeKClass: IrExpression,
-    private val cascadeSelectIgnore: Boolean,
+    private val ignore: IrExpression?,
     private val isColumn: Boolean,
     private val columnTypeLength: IrExpression?,
     private val columnDefaultValue: IrExpression?,
@@ -93,7 +93,7 @@ class FieldIR(
             cascade,
             irBoolean(cascadeIsArrayOrCollection),
             cascadeTypeKClass,
-            irBoolean(cascadeSelectIgnore),
+            ignore ?: irNull(),
             irBoolean(isColumn),
             columnTypeLength ?: irInt(0),
             columnDefaultValue ?: irNull(),

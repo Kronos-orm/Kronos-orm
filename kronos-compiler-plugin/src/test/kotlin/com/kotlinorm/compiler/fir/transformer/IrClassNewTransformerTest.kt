@@ -15,7 +15,7 @@ class IrClassNewTransformerTest {
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.*
             import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+            import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType.TINYINT
             import java.time.LocalDateTime
             import kotlin.test.assertEquals

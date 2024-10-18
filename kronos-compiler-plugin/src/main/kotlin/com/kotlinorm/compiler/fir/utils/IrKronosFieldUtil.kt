@@ -64,7 +64,7 @@ val ColumnAnnotationsFqName = FqName("com.kotlinorm.annotations.Column")
 val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val CascadeAnnotationsFqName = FqName("com.kotlinorm.annotations.Cascade")
-val CascadeSelectIgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.CascadeSelectIgnore")
+val IgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.Ignore")
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
@@ -127,7 +127,7 @@ fun getColumnName(
     var columnAnnotation: IrConstructorCall? = null // @Column
     var columnTypeAnnotation: IrConstructorCall? = null // @ColumnType
     var cascadeAnnotation: IrConstructorCall? = null // @Cascade
-    var cascadeSelectIgnoreAnnotation: IrConstructorCall? = null // @CascadeSelectIgnore
+    var ignoreAnnotation: IrConstructorCall? = null // @Ignore
     var defaultValueAnnotation: IrConstructorCall? = null // @DefaultValue
     var primaryKeyAnnotation: IrConstructorCall? = null // @PrimaryKey
     var dateTimeFormatAnnotation: IrConstructorCall? = null // @DateTimeFormat
@@ -139,7 +139,7 @@ fun getColumnName(
             ColumnTypeAnnotationsFqName -> columnTypeAnnotation = it
             ColumnAnnotationsFqName -> columnAnnotation = it
             CascadeAnnotationsFqName -> cascadeAnnotation = it
-            CascadeSelectIgnoreAnnotationsFqName -> cascadeSelectIgnoreAnnotation = it
+            IgnoreAnnotationsFqName -> ignoreAnnotation = it
             DefaultValueAnnotationsFqName -> defaultValueAnnotation = it
             PrimaryKeyAnnotationsFqName -> primaryKeyAnnotation = it
             DateTimeFormatAnnotationsFqName -> dateTimeFormatAnnotation = it
@@ -192,7 +192,7 @@ fun getColumnName(
         cascade = kCascade,
         cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
         cascadeTypeKClass = cascadeTypeKClass,
-        cascadeSelectIgnore = cascadeSelectIgnoreAnnotation != null,
+        ignore = ignoreAnnotation?.getValueArgument(0),
         isColumn = irProperty.isColumn(irPropertyType),
         columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
         columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),

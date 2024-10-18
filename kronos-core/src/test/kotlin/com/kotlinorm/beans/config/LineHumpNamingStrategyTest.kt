@@ -1,4 +1,4 @@
-package com.kotlinorm.beans.strategies
+package com.kotlinorm.beans.config
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

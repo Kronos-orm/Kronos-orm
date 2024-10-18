@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.serializeResolver
+package com.kotlinorm.beans.serialize
 
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.interfaces.KPojo

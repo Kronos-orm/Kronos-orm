@@ -1,7 +1,7 @@
-package com.kotlinorm.beans.dsw
+package com.kotlinorm.beans.parser
 
-import com.kotlinorm.beans.dsw.NamedParameterUtils.buildValueArray
-import com.kotlinorm.beans.dsw.NamedParameterUtils.parseSqlStatement
+import com.kotlinorm.beans.parser.NamedParameterUtils.buildValueArray
+import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.interfaces.KPojo
 import org.junit.jupiter.api.Test

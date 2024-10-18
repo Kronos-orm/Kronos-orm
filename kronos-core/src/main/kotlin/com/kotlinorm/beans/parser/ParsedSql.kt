@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.dsw
+package com.kotlinorm.beans.parser
 
-import com.kotlinorm.beans.dsw.NamedParameterUtils.buildValueArray
-import com.kotlinorm.beans.dsw.NamedParameterUtils.substituteNamedParameters
+import com.kotlinorm.beans.parser.NamedParameterUtils.buildValueArray
+import com.kotlinorm.beans.parser.NamedParameterUtils.substituteNamedParameters
 
 /**
  * Created by OUSC on 2022/11/4 14:09

@@ -16,7 +16,7 @@
 
 package com.kotlinorm.interfaces
 
-import com.kotlinorm.beans.dsw.ParsedSql
+import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.KOperationType
 
 /**

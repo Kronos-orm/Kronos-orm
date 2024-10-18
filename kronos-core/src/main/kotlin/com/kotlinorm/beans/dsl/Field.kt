@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
@@ -42,7 +43,7 @@ import kotlin.reflect.KClass
  * @property defaultValue the default value of the field
  * @property identity whether the field is an identity field
  * @property nullable whether the field is nullable
- * @property cascadeSelectIgnore whether the field should be ignored in cascade select
+ * @property ignore whether the field should be ignored in some operations
  *
  * @author: OUSC
  */
@@ -56,7 +57,7 @@ class Field(
     val cascade: KCascade? = null,
     val cascadeIsCollectionOrArray: Boolean = false,
     val cascadeKClass: KClass<KPojo>? = null,
-    val cascadeSelectIgnore: Boolean = false,
+    val ignore: Array<IgnoreAction>? = null,
     val isColumn: Boolean = true,
     val length: Int = 0,
     val defaultValue: String? = null,
@@ -122,7 +123,7 @@ class Field(
         cascade: KCascade? = this.cascade,
         cascadeIsCollectionOrArray: Boolean = this.cascadeIsCollectionOrArray,
         cascadeKClass: KClass<KPojo>? = this.cascadeKClass,
-        cascadeSelectIgnore: Boolean = false,
+        ignore: Array<IgnoreAction>? = this.ignore,
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
         defaultValue: String? = this.defaultValue,
@@ -139,7 +140,7 @@ class Field(
             cascade,
             cascadeIsCollectionOrArray,
             cascadeKClass,
-            cascadeSelectIgnore,
+            ignore,
             isColumn,
             length,
             defaultValue,

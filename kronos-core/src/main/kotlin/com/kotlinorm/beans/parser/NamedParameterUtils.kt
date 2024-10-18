@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.dsw
+package com.kotlinorm.beans.parser
 
 import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.exceptions.InvalidParameterException
@@ -71,7 +71,7 @@ object NamedParameterUtils {
      * Parse the SQL statement and locate any placeholders or named parameters.
      * Named parameters are substituted for a JDBC placeholder.
      * @param sql the SQL statement
-     * @return the parsed statement, represented as com.kotlinorm.beans.dsw.ParsedSql instance
+     * @return the parsed statement, represented as com.kotlinorm.beans.parser.ParsedSql instance
      */
     fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = mapOf()): ParsedSql {
         val namedParameters: MutableSet<String> = HashSet()

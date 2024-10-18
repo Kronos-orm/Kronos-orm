@@ -1,7 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.build
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
 import com.kotlinorm.orm.upsert.upsert

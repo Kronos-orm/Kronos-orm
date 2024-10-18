@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.dsw
+package com.kotlinorm.beans.parser
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType

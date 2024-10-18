@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.strategies
+package com.kotlinorm.beans.config
 
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import java.util.*

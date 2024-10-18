@@ -1,7 +1,7 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.orm.beans.Movie
 import com.kotlinorm.orm.beans.User

@@ -17,7 +17,7 @@ class KTableParserForSetTransformerTest {
             import com.kotlinorm.beans.dsl.Field
             import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
             import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.beans.strategies.LineHumpNamingStrategy
+            import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
             import com.kotlinorm.enums.KColumnType.TINYINT
             import com.kotlinorm.types.ToSet

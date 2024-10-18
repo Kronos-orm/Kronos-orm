@@ -18,12 +18,12 @@ package com.kotlinorm
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsw.NoneDataSourceWrapper
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.beans.strategies.NoneNamingStrategy
-import com.kotlinorm.beans.serializeResolver.NoneSerializeResolver
-import com.kotlinorm.beans.strategies.DefaultNoValueStrategy
+import com.kotlinorm.beans.config.NoneNamingStrategy
+import com.kotlinorm.beans.serialize.NoneSerializeResolver
+import com.kotlinorm.beans.config.DefaultNoValueStrategy
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper

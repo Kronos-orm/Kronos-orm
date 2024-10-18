@@ -16,17 +16,19 @@
 
 package com.kotlinorm.annotations
 
+import com.kotlinorm.enums.IgnoreAction
+
 /**
- * CascadeSelectIgnore
+ * Ignore
  *
- * Annotation to specify the property in KPojo to be ignored in cascade query.
+ * Annotation to specify the property in KPojo to be ignored in some scenarios, such as cascade query.
  * The priority is lower than the .cascade(vararg [kotlin.reflect.KProperty]<*>) method.
  *
- * 注解用于指定KPojo中的某个属性在级联查询时是否被忽略。
+ * 注解用于指定KPojo中的某个属性在某些场景下是否被忽略，例如级联查询。
  * 优先级低于.cascade(vararg [kotlin.reflect.KProperty]<*>)方法。
  *
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class CascadeSelectIgnore
+annotation class Ignore(val targets: Array<IgnoreAction>)

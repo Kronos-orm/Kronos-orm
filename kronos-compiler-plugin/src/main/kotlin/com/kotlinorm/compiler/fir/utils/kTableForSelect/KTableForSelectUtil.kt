@@ -41,8 +41,8 @@ import org.jetbrains.kotlin.ir.util.properties
  * @return a list of IrExpressions representing the applied `addField` operations
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
-fun addFieldList(irReturn: IrReturn): List<IrExpression> {
-    return addFieldsNames(irReturn).map {
+fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpression> {
+    return addFieldsNames(irReturn, functions).map {
         // Apply the `addField` operation to each field name gathered, passing the receiver.
         // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
         applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
@@ -57,7 +57,7 @@ fun addFieldList(irReturn: IrReturn): List<IrExpression> {
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
+fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。
     val fieldNames = mutableListOf<IrExpression>()
@@ -66,12 +66,12 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
             element.statements.forEach { statement ->
                 // Recursively add field names from each statement in a block body.
                 // 从块体中的每个声明递归添加字段名。
-                fieldNames.addAll(addFieldsNames(statement))
+                fieldNames.addAll(addFieldsNames(statement, functions))
             }
         }
 
         is IrTypeOperatorCall -> {
-            fieldNames.addAll(addFieldsNames(element.argument))
+            fieldNames.addAll(addFieldsNames(element.argument, functions))
         }
 
         is IrCall -> {
@@ -90,10 +90,10 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                 IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
-                    fieldNames.addAll(addFieldsNames((element.extensionReceiver ?: element.dispatchReceiver)!!))
+                    fieldNames.addAll(addFieldsNames((element.extensionReceiver ?: element.dispatchReceiver)!!, functions))
                     val args = element.valueArguments.filterNotNull()
                     args.forEach {
-                        fieldNames.addAll(addFieldsNames(it))
+                        fieldNames.addAll(addFieldsNames(it, functions))
                     }
                 }
 
@@ -114,7 +114,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
                                     ),
                                 )
                                 extensionBy(
-                                    addFieldsNames(element.extensionReceiver!!).first()
+                                    addFieldsNames(element.extensionReceiver!!, functions).first()
                                 )
                             })
                         }
@@ -139,7 +139,7 @@ fun addFieldsNames(element: IrElement): MutableList<IrExpression> {
         is IrReturn -> {
             // Handle return statements by recursively adding field names from the return value.
             // 通过递归从返回值添加字段名来处理返回语句。
-            return addFieldsNames(element.value)
+            return addFieldsNames(element.value, functions)
         }
     }
     return fieldNames

@@ -30,9 +30,11 @@ class KronosCommandLineProcessor : CommandLineProcessor {
     companion object {
         const val OPTION_DEBUG_MODE = "debug"
         const val OPTION_DEBUG_INFO_PATH = "debug-info-path"
+        const val OPTION_FUNCTIONS = "functions"
 
         val ARG_OPTION_DEBUG_MODE = CompilerConfigurationKey<Boolean>(OPTION_DEBUG_MODE)
         val ARG_OPTION_DEBUG_INFO_PATH = CompilerConfigurationKey<String>(OPTION_DEBUG_INFO_PATH)
+        val ARG_OPTION_FUNCTIONS = CompilerConfigurationKey<String>(OPTION_FUNCTIONS)
     }
 
     override val pluginId: String = "kronos-compiler-plugin"
@@ -61,6 +63,7 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         return when (option.optionName) {
             OPTION_DEBUG_MODE -> configuration.put(ARG_OPTION_DEBUG_MODE, value.lowercase() == "true")
             OPTION_DEBUG_INFO_PATH -> configuration.put(ARG_OPTION_DEBUG_INFO_PATH, value)
+            OPTION_FUNCTIONS -> configuration.put(ARG_OPTION_FUNCTIONS, value)
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }

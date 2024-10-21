@@ -32,6 +32,7 @@ class KronosParserCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         val debug = configuration.get(KronosCommandLineProcessor.ARG_OPTION_DEBUG_MODE, false)
         val debugInfoPath = configuration.get(KronosCommandLineProcessor.ARG_OPTION_DEBUG_INFO_PATH, "build/tmp/kronosIrDebug")
-        IrGenerationExtension.registerExtension(KronosParserExtension(debug, debugInfoPath))
+        val functions = configuration.get(KronosCommandLineProcessor.ARG_OPTION_FUNCTIONS, "")
+        IrGenerationExtension.registerExtension(KronosParserExtension(debug, debugInfoPath, functions.split(",").filter { it.isNotBlank() }))
     }
 }

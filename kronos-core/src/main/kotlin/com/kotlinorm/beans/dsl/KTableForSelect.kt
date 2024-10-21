@@ -71,6 +71,8 @@ open class KTableForSelect<T : KPojo> {
         return this
     }
 
+    fun count(field: Any?): String = ""
+
     companion object {
         /**
          * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.

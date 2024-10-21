@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -103,6 +104,14 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
 
                 else -> {
                     when (element.funcName()) {
+                        in functions -> {
+                            fieldNames.add(applyIrCall(
+                                methodTransformSymbol,
+                                irString(element.funcName()),
+                                getColumnName(element.valueArguments.first()!!)
+                            ))
+                        }
+
                         "as" -> {
                             fieldNames.add(applyIrCall(
                                 aliasSymbol,

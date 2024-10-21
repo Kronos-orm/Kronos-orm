@@ -263,10 +263,20 @@ class Select {
     @Test
     fun testSelectUseConstEqualGetValue() {
         val a = User(id = 1)
-        val (sql, paramMap) = user.select { "1" }.where { 1 == a.id.value }.build()
+        val (sql, paramMap) = user.select { "1" }.where { 1 == a.id }.build()
 
         assertEquals(
             "SELECT 1 FROM `tb_user` WHERE true AND `deleted` = 0",
+            sql
+        )
+    }
+
+    @Test
+    fun testSelectBuiltInFunctionCount() {
+        val (sql, paramMap) = user.select { count(it.id) }.build()
+
+        assertEquals(
+            "SELECT COUNT(1) FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
             sql
         )
     }

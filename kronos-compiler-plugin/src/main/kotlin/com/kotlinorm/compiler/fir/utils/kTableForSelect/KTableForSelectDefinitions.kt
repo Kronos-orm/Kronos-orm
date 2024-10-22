@@ -30,7 +30,7 @@ private val kTableForSelectSymbol
     get() = referenceClass(KTABLE_FOR_SELECT_CLASS)!!
 
 context(IrPluginContext)
-private val methodManagerSymbol
+internal val methodManagerSymbol
     get() = referenceClass(METHOD_MANAGER_CLASS)!!
 
 context(IrPluginContext)
@@ -47,3 +47,6 @@ context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val methodTransformSymbol
     get() = methodManagerSymbol.getSimpleFunction("getMethodTransformed")!!
+
+internal val builtinFunctions =
+    arrayOf("count")

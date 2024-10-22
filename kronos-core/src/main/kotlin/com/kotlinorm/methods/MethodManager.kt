@@ -15,14 +15,15 @@ object MethodManager {
     )
 
     fun registerValueTransformer(transformer: MethodTransformer) {
+        Pair(1,2)
         registedMethodTransformers.add(0, transformer)
     }
 
     fun getMethodTransformed(
         funcName: String,
         field: Field,
-        args: List<Any?> = listOf()
-    ): String {
+        args: List<Any?>
+    ): Field {
         if (registedMethodTransformers.none { it.existMethod(funcName) }) {
             throw IllegalArgumentException("Method $funcName not found")
         }

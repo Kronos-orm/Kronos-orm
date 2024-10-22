@@ -1,7 +1,6 @@
 package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.dsl.Field
-import kotlin.reflect.KClass
 
 /**
  *@program: kronos-orm
@@ -17,6 +16,6 @@ interface MethodTransformer {
         funcName: String,
         field: Field,
         args: List<Any?>
-    ): String
+    ): Field
 
 }

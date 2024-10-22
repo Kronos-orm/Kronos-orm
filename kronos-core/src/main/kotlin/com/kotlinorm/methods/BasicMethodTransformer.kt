@@ -11,11 +11,11 @@ object BasicMethodTransformer : MethodTransformer {
 
     override fun existMethod(funcName: String) = funcName in definedMethod
 
-    private fun count(field: Field): String {
-        return "COUNT(${field.columnName})"
+    private fun count(field: Field): Field {
+        return Field("COUNT(${field.columnName})")
     }
 
-    override fun transform(funcName: String, field: Field, args: List<Any?>): String {
+    override fun transform(funcName: String, field: Field, args: List<Any?>): Field {
         return when(funcName) {
             "count" -> count(field)
             else -> throw IllegalArgumentException("Method $funcName not found")

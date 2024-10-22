@@ -26,4 +26,4 @@ package com.kotlinorm.annotations
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class PrimaryKey(val identity: Boolean = false)
+annotation class PrimaryKey(val identity: Boolean = false, val uuid: Boolean = false, val snowflake: Boolean = false)

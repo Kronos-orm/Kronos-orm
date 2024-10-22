@@ -1,6 +1,8 @@
 package com.kotlinorm.methods
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableForFunction
+import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.MethodTransformer
 
 /**
@@ -10,24 +12,24 @@ import com.kotlinorm.interfaces.MethodTransformer
  *@create: 2024/10/21 15:35
  **/
 object MethodManager {
-    private val registedMethodTransformers = mutableListOf<MethodTransformer>(
+    internal val registedMethodTransformers = mutableListOf<MethodTransformer>(
         BasicMethodTransformer
     )
 
     fun registerValueTransformer(transformer: MethodTransformer) {
-        Pair(1,2)
         registedMethodTransformers.add(0, transformer)
     }
 
     fun getMethodTransformed(
-        funcName: String,
-        field: Field,
-        args: List<Any?>
+        func: KTableForFunction,
+        dbType: DBType
     ): Field {
-        if (registedMethodTransformers.none { it.existMethod(funcName) }) {
+        val funcName = func.functionName
+
+        if (registedMethodTransformers.none { it.support(funcName, dbType) }) {
             throw IllegalArgumentException("Method $funcName not found")
         }
 
-        return registedMethodTransformers.first { it.existMethod(funcName) }.transform(funcName, field, args)
+        return registedMethodTransformers.first { it.support(funcName, dbType) }.transform(func, dbType)
     }
 }

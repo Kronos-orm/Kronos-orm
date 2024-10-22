@@ -1,24 +1,30 @@
 package com.kotlinorm.methods
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableForFunction
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.MethodTransformer
 
 object BasicMethodTransformer : MethodTransformer {
 
-    private val definedMethod = listOf(
+    private val definedMethods = listOf(
         "count"
     )
 
-    override fun existMethod(funcName: String) = funcName in definedMethod
-
-    private fun count(field: Field): Field {
-        return Field("COUNT(${field.columnName})")
+    override fun support(funcName: String, dbType: DBType): Boolean {
+        return funcName in definedMethods
     }
 
-    override fun transform(funcName: String, field: Field, args: List<Any?>): Field {
-        return when(funcName) {
-            "count" -> count(field)
-            else -> throw IllegalArgumentException("Method $funcName not found")
+    override fun transform(func: KTableForFunction, dbType: DBType): Field {
+        TODO("Not yet implemented")
+    }
+
+    private fun mysqlMethods(func: KTableForFunction): Field {
+        return when (func.functionName) {
+            "count" -> Field(func.functionName, func.field.columnName, KColumnType.INT)
+            else -> throw IllegalArgumentException("Method ${func.functionName} not found")
         }
     }
+
 }

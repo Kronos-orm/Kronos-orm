@@ -61,7 +61,8 @@ enum class KColumnType(val type: String) {
     POINT("POINT"), // 二进制串。可变长度。
     LINESTRING("LINESTRING"), // 二进制串。可变长度。
     XML("XML"), // 存储 XML 数据
-    CUSTOM_CRITERIA_SQL("CUSTOM_CRITERIA_SQL"); // 用于where查询的由String.asSql()产生的自定义SQL Field类型
+    CUSTOM_CRITERIA_SQL("CUSTOM_CRITERIA_SQL"), // 用于where查询的由String.asSql()产生的自定义SQL Field类型
+    SQL_FUNCTION("SQL_FUNCTION"); // 用于查询操作时使用内置的一些SQL函数的类型
 
     companion object {
         fun fromString(type: String): KColumnType {

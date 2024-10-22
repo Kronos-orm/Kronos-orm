@@ -31,6 +31,7 @@ import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.methods.MethodManager.registedMethodTransformers
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
@@ -100,7 +101,11 @@ object MysqlSupport : DatabasesSupport {
         } COMMENT '${column.kDoc.orEmpty()}'"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE${if(index.type == "NORMAL") " " else " ${index.type} "}INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
+        "CREATE${if (index.type == "NORMAL") " " else " ${index.type} "}INDEX ${index.name} ON ${quote(tableName)} (${
+            index.columns.joinToString(
+                ","
+            ) { quote(it) }
+        }) USING ${index.method.ifEmpty { "BTREE" }}"
 
     override fun getTableCreateSqlList(
         dbType: DBType,
@@ -257,7 +262,7 @@ object MysqlSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {
-            "ALTER TABLE ${quote(tableName)} ADD${if(it.type == "NORMAL") " " else " ${it.type} "}INDEX ${it.name} (${
+            "ALTER TABLE ${quote(tableName)} ADD${if (it.type == "NORMAL") " " else " ${it.type} "}INDEX ${it.name} (${
                 it.columns.joinToString(", ") { f -> quote(f) }
             }) USING ${it.method}"
         })
@@ -294,7 +299,7 @@ object MysqlSupport : DatabasesSupport {
                 whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (databaseName, tableName, selectFields, selectFunctions, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -302,6 +307,11 @@ object MysqlSupport : DatabasesSupport {
                 else -> quote(it)
             }
         }
+
+        val fields = selectFunctions.map { func ->
+            registedMethodTransformers.first { it.support(func.functionName, DBType.Mysql) }.transform(func, DBType.Mysql)
+        }
+
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null

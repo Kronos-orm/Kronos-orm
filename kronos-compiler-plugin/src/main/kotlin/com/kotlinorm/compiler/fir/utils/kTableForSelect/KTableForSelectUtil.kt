@@ -16,11 +16,10 @@
 
 package com.kotlinorm.compiler.fir.utils.kTableForSelect
 
+import com.kotlinorm.compiler.fir.utils.*
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
-import com.kotlinorm.compiler.fir.utils.funcName
-import com.kotlinorm.compiler.fir.utils.getColumnName
+import com.kotlinorm.compiler.fir.utils.functionSymbol
 import com.kotlinorm.compiler.fir.utils.getKColumnType
-import com.kotlinorm.compiler.fir.utils.isColumn
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.analyzeMinusExpression
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
@@ -31,7 +30,6 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -43,8 +41,8 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.util.properties
 
 /**
@@ -58,7 +56,8 @@ fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpressio
     return addFieldsNames(irReturn, functions).map {
         // Apply the `addField` operation to each field name gathered, passing the receiver.
         // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
-        applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
+        if (it.type.classFqName == KTableFunctionFqName) applyIrCall(addFunctionSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
+        else applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
     }
 }
 
@@ -70,7 +69,10 @@ fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpressio
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<IrExpression> {
+fun addFieldsNames(
+    element: IrElement,
+    functions: Array<String>
+): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。
     val fieldNames = mutableListOf<IrExpression>()
@@ -103,7 +105,12 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
                 IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
-                    fieldNames.addAll(addFieldsNames((element.extensionReceiver ?: element.dispatchReceiver)!!, functions))
+                    fieldNames.addAll(
+                        addFieldsNames(
+                            (element.extensionReceiver ?: element.dispatchReceiver)!!,
+                            functions
+                        )
+                    )
                     val args = element.valueArguments.filterNotNull()
                     args.forEach {
                         fieldNames.addAll(addFieldsNames(it, functions))
@@ -118,18 +125,14 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
                     when (element.funcName()) {
                         in builtinFunctions, in functions -> {
                             fieldNames.add(applyIrCall(
-                                methodTransformSymbol,
+                                functionSymbol.constructors.first(),
                                 irString(element.funcName()),
                                 getColumnName(element.valueArguments.first()!!),
                                 irListOf(
                                     irBuiltIns.anyNType,
                                     element.valueArguments.map { it ?: irNull() }
                                 )
-                            ) {
-                                dispatchBy(
-                                    irGetObject(methodManagerSymbol)
-                                )
-                            })
+                            ))
                         }
 
                         "as" -> {

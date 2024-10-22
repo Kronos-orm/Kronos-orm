@@ -1,4 +1,4 @@
-package com.kotlinorm.kronosWrapper.jdbcDriverWrapper
+package com.kotlinorm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
@@ -7,6 +7,7 @@ import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test

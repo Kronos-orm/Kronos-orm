@@ -6,7 +6,6 @@ import com.kotlinorm.compiler.helpers.createKClassExpr
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
 import com.kotlinorm.compiler.helpers.referenceClass
-import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -19,7 +18,6 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
@@ -44,6 +42,10 @@ import org.jetbrains.kotlin.name.FqName
 context(IrPluginContext)
 internal val fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
+
+context(IrPluginContext)
+internal val functionSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTableForFunction")!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -82,6 +84,7 @@ val IgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.Ignore")
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
+val KTableFunctionFqName = FqName("com.kotlinorm.beans.dsl.KTableForFunction")
 
 
 /**

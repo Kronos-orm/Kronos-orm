@@ -1,6 +1,8 @@
 package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableForFunction
+import com.kotlinorm.enums.DBType
 
 /**
  *@program: kronos-orm
@@ -10,12 +12,8 @@ import com.kotlinorm.beans.dsl.Field
  **/
 interface MethodTransformer {
 
-    fun existMethod(funcName: String): Boolean
+    fun support(funcName: String, dbType: DBType): Boolean
 
-    fun transform(
-        funcName: String,
-        field: Field,
-        args: List<Any?>
-    ): Field
+    fun transform(func: KTableForFunction, dbType: DBType): Field
 
 }

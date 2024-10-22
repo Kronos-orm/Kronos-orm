@@ -273,7 +273,7 @@ class Select {
 
     @Test
     fun testSelectBuiltInFunctionCount() {
-        val (sql, paramMap) = user.select { count(it.id) }.build()
+        val (sql, paramMap) = user.select { it.id + count(it.id) }.build()
 
         assertEquals(
             "SELECT COUNT(1) FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",

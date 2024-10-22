@@ -17,10 +17,7 @@
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.beans.dsl.Criteria
-import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KJoinable
-import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.*
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
@@ -71,6 +68,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    override var selectFunctions: LinkedHashSet<KTableForFunction> = linkedSetOf()
     override var selectAll: Boolean = false
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
     private var keyCounters: ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()

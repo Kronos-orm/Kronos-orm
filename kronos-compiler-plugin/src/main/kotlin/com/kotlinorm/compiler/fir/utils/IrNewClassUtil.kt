@@ -23,6 +23,7 @@ import com.kotlinorm.compiler.helpers.filterByFqName
 import com.kotlinorm.compiler.helpers.irListOf
 import com.kotlinorm.compiler.helpers.irMutableMapOf
 import com.kotlinorm.compiler.helpers.irTry
+import com.kotlinorm.compiler.helpers.mapGetterSymbol
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.referenceFunctions
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -47,7 +48,6 @@ import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
@@ -60,11 +60,6 @@ val KronosSymbol
 context(IrPluginContext)
 private val getSafeValueSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue").first()
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-val mapGetterSymbol
-    get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")!!
 
 context(IrPluginContext)
 private val KTableIndexSymbol
@@ -245,7 +240,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalCreateTimeSymbol, CreateTimeFqName)
+            getValidStrategy(declaration, createTimeStrategySymbol, CreateTimeFqName)
         )
     }
 }
@@ -262,7 +257,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalUpdateTimeSymbol, UpdateTimeFqName)
+            getValidStrategy(declaration, updateTimeStrategySymbol, UpdateTimeFqName)
         )
     }
 }
@@ -278,7 +273,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalLogicDeleteSymbol, LogicDeleteFqName)
+            getValidStrategy(declaration, logicDeleteStrategySymbol, LogicDeleteFqName)
         )
     }
 }
@@ -287,7 +282,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalOptimisticLockSymbol, OptimisticLockFqName)
+            getValidStrategy(declaration, optimisticLockStrategySymbol, OptimisticLockFqName)
         )
     }
 }

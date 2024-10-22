@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.isVararg
 
 
@@ -43,9 +44,6 @@ fun irListOf(type: IrType, elements: List<IrExpression>) =
     )
 
 context(IrBuilderWithScope, IrPluginContext)
-fun irListOf(type: IrType, vararg elements: IrExpression) = irListOf(type, elements.toList())
-
-context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun irMutableMapOf(k: IrType, v: IrType, pairs: Map<IrExpression, IrExpression>) =
     applyIrCall(
@@ -63,6 +61,7 @@ fun irMutableMapOf(k: IrType, v: IrType, pairs: Map<IrExpression, IrExpression>)
         typeArguments = arrayOf(k, v)
     )
 
-context(IrBuilderWithScope, IrPluginContext)
-fun irMutableMapOf(k: IrType, v: IrType, vararg pairs: Pair<IrExpression, IrExpression>) =
-    irMutableMapOf(k, v, pairs.toMap())
+context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+val mapGetterSymbol
+    get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")!!

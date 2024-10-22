@@ -16,9 +16,9 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.Kronos.fieldNamingStrategy
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.fieldK2db
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
 
@@ -119,7 +119,7 @@ open class KTableForSet<T : KPojo> {
      */
     @Suppress("MemberVisibilityCanBePrivate")
     fun KProperty<*>.toField(): Field {
-        return Field(this.findAnnotation<Column>()?.name ?: fieldK2db(this.name), this.name)
+        return Field(this.findAnnotation<Column>()?.name ?:fieldNamingStrategy.k2db(this.name), this.name)
     }
 
     companion object {

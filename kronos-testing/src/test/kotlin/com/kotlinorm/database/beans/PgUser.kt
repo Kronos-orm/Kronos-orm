@@ -1,27 +1,31 @@
-package com.kotlinorm.tableOperation.beans
+package com.kotlinorm.database.beans
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.enums.KColumnType.INT
-import com.kotlinorm.enums.SQLite
+import com.kotlinorm.enums.KColumnType.TINYINT
+import com.kotlinorm.enums.KColumnType.VARCHAR
+import com.kotlinorm.enums.Postgres
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("aaa", ["username"], SQLite.KIndexType.UNIQUE)
+@TableIndex("idx_username", ["username"], method = Postgres.KIndexMethod.HASH, concurrently = true)
 @TableIndex(
-    "bbb",
-    columns = ["username", "gender1"],
-    type = SQLite.KIndexType.UNIQUE
+    name = "idx_multi",
+    columns = ["id", "username"],
+    type = Postgres.KIndexType.UNIQUE,
+    method = Postgres.KIndexMethod.BTREE
 )
-@TableIndex("ccc", columns = ["gender1"])
-data class SqlliteUser(
+data class PgUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
+    @ColumnType(VARCHAR, 254)
     var username: String? = null,
     @Column("gender1")
-    @ColumnType(INT)
+    @ColumnType(TINYINT)
     @Default("0")
+    @NotNull
     var gender: Int? = null,
+    var age: Int? = 0,
 //    @ColumnType(INT)
 //    var age: Int? = null,
     @CreateTime

@@ -16,12 +16,12 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.Kronos.fieldNamingStrategy
 import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.fieldDb2k
 import kotlin.reflect.KClass
 
 /**
@@ -49,7 +49,7 @@ import kotlin.reflect.KClass
  */
 class Field(
     var columnName: String,
-    var name: String = fieldDb2k(columnName),
+    var name: String = fieldNamingStrategy.db2k(columnName),
     val type: KColumnType = UNDEFINED,
     var primaryKey: Boolean = false,
     val dateFormat: String? = null,

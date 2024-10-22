@@ -20,11 +20,13 @@ import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
+import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
 import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
@@ -34,27 +36,36 @@ import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.getPropertyGetter
 import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-context(IrPluginContext)
-internal val globalUpdateTimeSymbol
-    get() = referenceFunctions("com.kotlinorm.utils","getUpdateTimeStrategy").first()
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val updateTimeStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("updateTimeStrategy")!!
 
-context(IrPluginContext)
-internal val globalLogicDeleteSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getLogicDeleteStrategy").first()
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val createTimeStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("createTimeStrategy")!!
 
-context(IrPluginContext)
-internal val globalOptimisticLockSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getOptimisticLockStrategy").first()
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val logicDeleteStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("logicDeleteStrategy")!!
 
-context(IrPluginContext)
-internal val globalCreateTimeSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "getCreateTimeStrategy").first()
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val optimisticLockStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("optimisticLockStrategy")!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -95,7 +106,7 @@ internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
-    var strategy: IrExpression = applyIrCall(globalSymbol).asIrCall()
+    var strategy = applyIrCall(globalSymbol){ dispatchBy(irGetObject(KronosSymbol)) }
     val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
     if (tableSetting == null || (tableSetting is IrConst<*> && tableSetting.value == true)) {
         var annotation: IrConstructorCall?

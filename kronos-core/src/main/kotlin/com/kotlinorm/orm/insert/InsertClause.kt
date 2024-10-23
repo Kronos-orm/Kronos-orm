@@ -25,6 +25,7 @@ import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -86,7 +87,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
-                useIdentity = (allFields - toInsertFields).any { it.identity }
+                useIdentity = (allFields - toInsertFields).any { it.primaryKey == PrimaryKeyType.IDENTITY }
             )
         )
 

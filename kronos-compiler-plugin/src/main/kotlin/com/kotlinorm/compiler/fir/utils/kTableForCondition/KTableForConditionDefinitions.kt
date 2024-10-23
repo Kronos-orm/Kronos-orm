@@ -21,6 +21,7 @@ import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.fir.utils.getColumnOrValue
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.helpers.irEnum
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -48,20 +49,6 @@ internal val conditionTypeSymbol
 context(IrPluginContext)
 private val kTableForConditionSymbol
     get() = referenceClass(KTABLE_FOR_CONDITION_CLASS)!!
-
-/**
- * Retrieves the condition type enum value based on the given type string.
- *
- * @param type The type string to retrieve the condition type for.
- * @return The IrExpression representing the condition type enum value.
- */
-context(IrBuilderWithScope, IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal fun getConditionType(type: String): IrExpression {
-    val enumEntries = conditionTypeSymbol.owner.declarations.filterIsInstance<IrEnumEntry>()
-    val enumEntry = enumEntries.find { it.name.asString() == type.uppercase() }!!
-    return IrGetEnumValueImpl(startOffset, endOffset, conditionTypeSymbol.defaultType, enumEntry.symbol)
-}
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -151,7 +138,7 @@ fun createCriteria(
         applyIrCall(
             criteriaClassSymbol.constructors.first(),
             parameterName,
-            getConditionType(type),
+            irEnum(conditionTypeSymbol, type),
             irBoolean(not),
             value,
             tableName,

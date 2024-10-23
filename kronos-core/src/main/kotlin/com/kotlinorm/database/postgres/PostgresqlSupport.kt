@@ -29,6 +29,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -85,11 +86,11 @@ object PostgresqlSupport : DatabasesSupport {
         return "${
             quote(column.columnName)
         }${
-            if (column.identity) " SERIAL" else " ${getColumnType(column.type, column.length)}"
+            if (column.primaryKey == PrimaryKeyType.IDENTITY) " SERIAL" else " ${getColumnType(column.type, column.length)}"
         }${
             if (column.nullable) "" else " NOT NULL"
         }${
-            if (column.primaryKey) " PRIMARY KEY" else ""
+            if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
         }"
@@ -183,8 +184,11 @@ object PostgresqlSupport : DatabasesSupport {
                 length = it["length"] as Int? ?: 0,
                 tableName = tableName,
                 nullable = it["is_nullable"] == true,
-                primaryKey = it["primary_key"] == true,
-                identity = it["column_default"]?.toString()?.startsWith("nextval(") == true,
+                primaryKey = when{
+                    it["primary_key"] == false -> PrimaryKeyType.NOT
+                    it["column_default"]?.toString()?.startsWith("nextval(") == true -> PrimaryKeyType.IDENTITY
+                    else -> PrimaryKeyType.DEFAULT
+                },
                 // 如果defaultValue =  "('${tableName}_id_seq'::regclass)" 设置成 null
                 defaultValue = if (it["column_default"]?.toString()?.startsWith("nextval(") == true) {
                     null

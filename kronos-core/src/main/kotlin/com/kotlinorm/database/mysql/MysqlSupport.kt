@@ -29,6 +29,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -92,9 +93,9 @@ object MysqlSupport : DatabasesSupport {
         }${
             if (column.nullable) "" else " NOT NULL"
         }${
-            if (column.primaryKey) " PRIMARY KEY" else ""
+            if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
         }${
-            if (column.identity) " AUTO_INCREMENT" else ""
+            if (column.primaryKey == PrimaryKeyType.IDENTITY) " AUTO_INCREMENT" else ""
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
         } COMMENT '${column.kDoc.orEmpty()}'"
@@ -139,8 +140,8 @@ object MysqlSupport : DatabasesSupport {
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
                     c.COLUMN_COMMENT,
-                    (CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NO' END) AS IDENTITY,
-                    (CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NO' END) AS PRIMARY_KEY
+                    (CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NOT' END) AS IDENTITY,
+                    (CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NOT' END) AS PRIMARY_KEY
                 FROM 
                     INFORMATION_SCHEMA.COLUMNS c
                 WHERE 
@@ -158,8 +159,11 @@ object MysqlSupport : DatabasesSupport {
                 length = (it["LENGTH"] as Long? ?: 0).toInt(),
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
-                primaryKey = it["PRIMARY_KEY"] == "YES",
-                identity = it["IDENTITY"] == "YES",
+                primaryKey = when {
+                    it["PRIMARY_KEY"] == "NOT" -> PrimaryKeyType.NOT
+                    it["IDENTITY"] == "YES" -> PrimaryKeyType.IDENTITY
+                    else -> PrimaryKeyType.DEFAULT
+                },
                 defaultValue = it["COLUMN_DEFAULT"] as String?,
                 kDoc = it["COLUMN_COMMENT"] as String?
             )
@@ -248,7 +252,7 @@ object MysqlSupport : DatabasesSupport {
                     DBType.Mysql, it.first
                 ).replace(" PRIMARY KEY", "")
             } ${if (it.second != null) "AFTER ${quote(it.second!!)}" else "FIRST"} ${
-                if (it.first.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${
+                if (it.first.primaryKey != PrimaryKeyType.NOT) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${
                     quote(
                         it.first
                     )

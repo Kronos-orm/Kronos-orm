@@ -18,11 +18,11 @@ package com.kotlinorm.compiler.fir.utils.kTableForSelect
 
 import com.kotlinorm.compiler.fir.utils.*
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
-import com.kotlinorm.compiler.fir.utils.getKColumnType
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.analyzeMinusExpression
+import com.kotlinorm.compiler.helpers.irEnum
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -131,7 +131,7 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
                     fieldSymbol.constructors.first(),
                     element,
                     element,
-                    getKColumnType("CUSTOM_CRITERIA_SQL")
+                    irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType("CUSTOM_CRITERIA_SQL"))
                 )
             )
         }

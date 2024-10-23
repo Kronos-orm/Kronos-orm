@@ -27,6 +27,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -102,11 +103,11 @@ object OracleSupport : DatabasesSupport {
         }${
             " ${getColumnType(column.type, column.length)}"
         }${
-            if (column.identity) " GENERATED ALWAYS AS IDENTITY" else ""
+            if (column.primaryKey == PrimaryKeyType.IDENTITY) " GENERATED ALWAYS AS IDENTITY" else ""
         }${
             if (column.nullable) "" else " NOT NULL"
         }${
-            if (column.primaryKey) " PRIMARY KEY" else ""
+            if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
         }"
@@ -205,8 +206,11 @@ object OracleSupport : DatabasesSupport {
                 length = length,
                 tableName = tableName.uppercase(),
                 nullable = it["IS_NULLABLE"] == "Y",
-                primaryKey = it["PRIMARY_KEY"] == "1",
-                identity = it["COLUMN_DEFAULT"]?.toString()?.endsWith(".nextval") == true,
+                primaryKey = when{
+                    it["PRIMARY_KEY"] == 0 -> PrimaryKeyType.NOT
+                    it["COLUMN_DEFAULT"]?.toString()?.endsWith(".nextval") == true -> PrimaryKeyType.IDENTITY
+                    else -> PrimaryKeyType.DEFAULT
+                },
                 defaultValue = if (it["COLUMN_DEFAULT"]?.toString()?.endsWith(".nextval") == true) {
                     null
                 } else {

@@ -27,6 +27,7 @@ import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -84,9 +85,9 @@ object MssqlSupport : DatabasesSupport {
     }${
         if (column.nullable) "" else " NOT NULL"
     }${
-        if (column.primaryKey) " PRIMARY KEY" else ""
+        if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
     }${
-        if (column.identity) " IDENTITY" else ""
+        if (column.primaryKey == PrimaryKeyType.IDENTITY) " IDENTITY" else ""
     }${
         if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
     }"
@@ -160,7 +161,7 @@ object MssqlSupport : DatabasesSupport {
                                 ON ccu.Constraint_Name = tc.Constraint_Name 
                                 AND tc.Constraint_Type = 'PRIMARY KEY'
                             WHERE ccu.COLUMN_NAME = c.COLUMN_NAME AND ccu.TABLE_NAME = c.TABLE_NAME
-                        ) THEN 'YES' ELSE 'NO' 
+                        ) THEN 'YES' ELSE 'NOT' 
                     END AS PRIMARY_KEY,
                     CASE 
                         WHEN EXISTS(
@@ -170,7 +171,7 @@ object MssqlSupport : DatabasesSupport {
                                 and objectproperty(a.id, 'isTable') = 1
                                 and a.name = 'tb_user'
                                 and b.name = c.COLUMN_NAME
-                        ) THEN 'YES' ELSE 'NO' 
+                        ) THEN 'YES' ELSE 'NOT' 
                     END AS AUTOINCREAMENT,
                     ep.value AS COLUMN_COMMENT
                 FROM 
@@ -192,8 +193,11 @@ object MssqlSupport : DatabasesSupport {
                 length = length,
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
-                primaryKey = it["PRIMARY_KEY"] == "YES",
-                identity = it["AUTOINCREAMENT"] == "YES",
+                primaryKey = when {
+                    it["PRIMARY_KEY"] == "NOT" -> PrimaryKeyType.NOT
+                    it["AUTOINCREAMENT"] == "YES" -> PrimaryKeyType.IDENTITY
+                    else -> PrimaryKeyType.DEFAULT
+                },
                 defaultValue = removeOuterParentheses(it["COLUMN_DEFAULT"] as String?),
                 kDoc = it["COLUMN_COMMENT"] as String?
             )
@@ -261,7 +265,7 @@ object MssqlSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE [dbo].[$tableName] DROP COLUMN [${it.columnName}]"
         } + columns.toAdd.map {
-            "ALTER TABLE $tableName ADD [${it.first.columnName}] ${it.first.type} ${if (it.first.length > 0 && it.first.type != KColumnType.TINYINT) "(${it.first.length})" else ""} ${if (it.first.primaryKey) "PRIMARY KEY" else ""} ${if (it.first.defaultValue != null) "DEFAULT '${it.first.defaultValue}'" else ""} ${if (it.first.nullable) "" else "NOT NULL"};"
+            "ALTER TABLE $tableName ADD [${it.first.columnName}] ${it.first.type} ${if (it.first.length > 0 && it.first.type != KColumnType.TINYINT) "(${it.first.length})" else ""} ${if (it.first.primaryKey != PrimaryKeyType.NOT) "PRIMARY KEY" else ""} ${if (it.first.defaultValue != null) "DEFAULT '${it.first.defaultValue}'" else ""} ${if (it.first.nullable) "" else "NOT NULL"};"
         } + columns.toModified.map {
             // 删除默认值约束
             """

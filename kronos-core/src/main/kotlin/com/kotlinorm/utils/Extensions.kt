@@ -53,7 +53,7 @@ object Extensions {
     }
 
     fun KPojo.safeMapperTo(kClass: KClass<KPojo>): Any {
-        return kClass.createInstance().fromMapData(toDataMap())
+        return kClass.createInstance().safeFromMapData(toDataMap())
     }
 
     fun KPojo.mapperTo(kClass: KClass<KPojo>): Any {
@@ -61,7 +61,7 @@ object Extensions {
     }
 
     inline fun <reified K : KPojo> KPojo.safeMapperTo(): K {
-        return K::class.createInstance().fromMapData(toDataMap())
+        return K::class.createInstance().safeFromMapData(toDataMap())
     }
 
     inline fun <reified K : KPojo> KPojo.mapperTo(): K {

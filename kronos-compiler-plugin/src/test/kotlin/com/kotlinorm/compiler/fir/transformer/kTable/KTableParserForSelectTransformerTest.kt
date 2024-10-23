@@ -104,7 +104,7 @@ class KTableParserForSelectTransformerTest {
                         user["username"].apply{ name = "name" },
                     ),
                     select {
-                        it.id + it.username.`as`("name")
+                        it.id + it.username.as_("name")
                     }
                 )
                 
@@ -130,7 +130,7 @@ class KTableParserForSelectTransformerTest {
                         }
                     ),
                     select {
-                        count(it.id).`as`("cnt")
+                        count(it.id).as_("cnt")
                     }
                 )
 

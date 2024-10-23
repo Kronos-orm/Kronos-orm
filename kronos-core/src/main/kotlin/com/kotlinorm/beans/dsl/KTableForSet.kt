@@ -74,15 +74,6 @@ open class KTableForSet<T : KPojo> {
     fun Field.setValue(value: Any?) = setValue(this, value)
 
     /**
-     * Sets an alias for the given object.
-     *
-     * @param alias the alias to set for the object
-     * @return the provided alias
-     */
-    @Suppress("UNUSED")
-    infix fun Any?.`as`(alias: String): String = alias
-
-    /**
      * Adds a field to the collection of fields.
      *
      * @param property the field to be added

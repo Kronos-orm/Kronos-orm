@@ -21,7 +21,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
-import com.kotlinorm.beans.dsl.KTableForFunction
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -64,7 +64,7 @@ class SelectClause<T : KPojo>(
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
-    override var selectFunctions: LinkedHashSet<KTableForFunction> = linkedSetOf()
+    override var selectFunctions: LinkedHashSet<FunctionField> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var limitCapacity = 0

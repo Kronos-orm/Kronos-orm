@@ -6,8 +6,7 @@ package com.kotlinorm.beans.dsl
  *@description:
  *@create: 2024/10/22 10:36
  **/
-class KTableForFunction (
+class FunctionField(
     val functionName: String,
-    val field: Field,
-    val args: List<Any?> = listOf()
-)
+    val fields: List<Pair<Field?, Any?>> = listOf()
+) : Field(functionName)

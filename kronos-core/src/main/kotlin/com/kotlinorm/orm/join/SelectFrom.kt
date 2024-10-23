@@ -68,7 +68,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
-    override var selectFunctions: LinkedHashSet<KTableForFunction> = linkedSetOf()
+    override var selectFunctions: LinkedHashSet<FunctionField> = linkedSetOf()
     override var selectAll: Boolean = false
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
     private var keyCounters: ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()
@@ -289,6 +289,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 )
                 selectFieldsWithNames[safeKey] = field
             }
+            selectFunctions += functions
         }
     }
 
@@ -618,6 +619,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return JoinClauseInfo(
             tableName,
             selectFieldsWithNames.toList(),
+            selectFunctions.toList(),
             distinctEnabled,
             pageEnabled,
             pi,

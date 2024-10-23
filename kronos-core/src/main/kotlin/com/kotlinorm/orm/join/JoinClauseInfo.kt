@@ -17,6 +17,7 @@
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 
 /**
  *@program: kronos-orm
@@ -28,6 +29,7 @@ import com.kotlinorm.beans.dsl.Field
 data class JoinClauseInfo(
     val tableName: String,
     val selectFields: List<Pair<String , Field>>,
+    val selectFunctions: List<FunctionField>,
     val distinct: Boolean,
     val pagination: Boolean,
     val pageIndex: Int,

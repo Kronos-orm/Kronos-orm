@@ -17,6 +17,7 @@
 package com.kotlinorm.database.mssql
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
@@ -27,8 +28,10 @@ import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.functions.FunctionManager.getMethodTransformed
 import com.kotlinorm.orm.database.TableColumnDiff
 import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
@@ -343,7 +346,7 @@ object MssqlSupport : DatabasesSupport {
                 whereClauseSql.orEmpty()
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
+        val (databaseName, tableName, selectFields, selectFunctions, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
@@ -351,11 +354,17 @@ object MssqlSupport : DatabasesSupport {
                 else -> quote(it)
             }
         }
+
+        val selectFunctionSql = selectFunctions.joinToString(", ") {
+            getMethodTransformed(it, dataSource.dbType)
+        }
+
+        val selectSql = listOf(selectFieldsSql, selectFunctionSql).filter { it.isNotEmpty() }.joinToString(", ")
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         val lockSql = if (null != lock) " ROWLOCK" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
             databaseName?.let { quote(it) + "." } ?: ""
         }[dbo].${
             quote(tableName)
@@ -375,7 +384,7 @@ object MssqlSupport : DatabasesSupport {
     }
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
+        val (tableName, selectFields, selectFunctions, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
         val selectFieldsSql = selectFields.joinToString(", ") {
             when {
                 it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
@@ -383,10 +392,16 @@ object MssqlSupport : DatabasesSupport {
                 else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }
+
+        val selectFunctionSql = selectFunctions.joinToString(", ") {
+            getMethodTransformed(it, dataSource.dbType, true)
+        }
+
+        val selectSql = listOf(selectFieldsSql, selectFunctionSql).filter { it.isNotEmpty() }.joinToString(", ")
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM [dbo].${
             SqlManager.quote(dataSource, tableName, true, map = databaseOfTable)
         }${
             joinSql.orEmpty()
@@ -401,5 +416,17 @@ object MssqlSupport : DatabasesSupport {
         }${
             paginationSql ?: limitSql ?: ""
         }"
+    }
+
+    override fun getBasicMethodFunction(func: FunctionField, showTable: Boolean): String {
+        val field = func.fields.first().first!!
+        return when(func.functionName) {
+            "count" -> "COUNT(${quote(field, showTable)})"
+            "average" -> "AVG(${quote(field, showTable)})"
+            "min" -> "MIN(${quote(field, showTable)})"
+            "max" -> "MAX(${quote(field, showTable)})"
+            "sum" -> "SUM(${quote(field, showTable)})"
+            else -> throw UnSupportedFunctionException(DBType.Mysql, func.functionName)
+        } + if (func.name.isNotEmpty()) " AS ${quote(func.name)}" else ""
     }
 }

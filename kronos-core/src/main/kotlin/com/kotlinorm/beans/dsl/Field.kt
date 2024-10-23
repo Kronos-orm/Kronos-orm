@@ -47,7 +47,7 @@ import kotlin.reflect.KClass
  *
  * @author: OUSC
  */
-class Field(
+open class Field(
     var columnName: String,
     var name: String = fieldNamingStrategy.db2k(columnName),
     val type: KColumnType = UNDEFINED,

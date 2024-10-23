@@ -23,15 +23,10 @@ import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
 
 const val KTABLE_FOR_SELECT_CLASS = "com.kotlinorm.beans.dsl.KTableForSelect"
-const val METHOD_MANAGER_CLASS = "com.kotlinorm.methods.MethodManager"
 
 context(IrPluginContext)
 private val kTableForSelectSymbol
     get() = referenceClass(KTABLE_FOR_SELECT_CLASS)!!
-
-context(IrPluginContext)
-internal val methodManagerSymbol
-    get() = referenceClass(METHOD_MANAGER_CLASS)!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -50,8 +45,8 @@ internal val aliasSymbol
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val methodTransformSymbol
-    get() = methodManagerSymbol.getSimpleFunction("getMethodTransformed")!!
+internal val resultNameSymbol
+    get() = kTableForSelectSymbol.getSimpleFunction("setResultName")!!
 
 internal val builtinFunctions =
-    arrayOf("count")
+    arrayOf("count", "average", "sum", "max", "min")

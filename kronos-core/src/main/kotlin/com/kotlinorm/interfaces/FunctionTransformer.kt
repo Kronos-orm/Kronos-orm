@@ -1,7 +1,6 @@
 package com.kotlinorm.interfaces
 
-import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTableForFunction
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
 
 /**
@@ -10,10 +9,10 @@ import com.kotlinorm.enums.DBType
  *@description:
  *@create: 2024/10/21 16:05
  **/
-interface MethodTransformer {
+interface FunctionTransformer {
 
     fun support(funcName: String, dbType: DBType): Boolean
 
-    fun transform(func: KTableForFunction, dbType: DBType): Field
+    fun transform(func: FunctionField, dbType: DBType, showTable: Boolean = false): String
 
 }

@@ -10,6 +10,7 @@ class KTableParserForSelectTransformerTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `KTable Parser For Select Transformer Test`() {
+
         val result = compile(
             """
             import com.kotlinorm.Kronos
@@ -116,7 +117,7 @@ class KTableParserForSelectTransformerTest {
                 )
                 
                     select {
-                        count(it.id)
+                        count(it.id).`as`("cnt")
                     }
 
             }

@@ -45,7 +45,7 @@ internal val fieldSymbol
 
 context(IrPluginContext)
 internal val functionSymbol
-    get() = referenceClass("com.kotlinorm.beans.dsl.KTableForFunction")!!
+    get() = referenceClass("com.kotlinorm.beans.dsl.FunctionField")!!
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -84,7 +84,7 @@ val IgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.Ignore")
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
-val KTableFunctionFqName = FqName("com.kotlinorm.beans.dsl.KTableForFunction")
+val KTableFunctionFqName = FqName("com.kotlinorm.beans.dsl.KSqlFunction")
 
 
 /**

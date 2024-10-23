@@ -1,14 +1,14 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTableForFunction
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.PessimisticLock
 
 data class SelectClauseInfo(
     val databaseName: String?,
     val tableName: String,
     val selectFields: List<Field>,
-    val selectFunctions: List<KTableForFunction>,
+    val selectFunctions: List<FunctionField>,
     val distinct: Boolean,
     val pagination: Boolean,
     val pageIndex: Int,

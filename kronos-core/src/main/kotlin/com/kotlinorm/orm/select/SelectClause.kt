@@ -21,6 +21,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForFunction
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -63,6 +64,7 @@ class SelectClause<T : KPojo>(
     private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    override var selectFunctions: LinkedHashSet<KTableForFunction> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var limitCapacity = 0
@@ -96,6 +98,7 @@ class SelectClause<T : KPojo>(
             pojo.afterSelect {
                 setSelectFields(it) // 设置选择的字段
                 selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
+                selectFunctions = functions.toLinkedSet() // 将函数集合转换为不可变的链接集合并赋值给selectFunctions
                 if (selectFields.isNotEmpty()) {
                     selectAll = false
                 }
@@ -477,6 +480,7 @@ class SelectClause<T : KPojo>(
             databaseName,
             tableName,
             selectFields.toList(),
+            selectFunctions.toList(),
             distinctEnabled,
             pageEnabled,
             pi,

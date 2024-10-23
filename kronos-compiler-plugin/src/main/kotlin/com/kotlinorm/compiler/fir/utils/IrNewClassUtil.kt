@@ -17,24 +17,26 @@
 package com.kotlinorm.compiler.fir.utils
 
 import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.filterByFqName
-import com.kotlinorm.compiler.helpers.referenceFunctions
-import com.kotlinorm.compiler.helpers.referenceClass
-import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.createKClassExpr
+import com.kotlinorm.compiler.helpers.dispatchBy
+import com.kotlinorm.compiler.helpers.filterByFqName
+import com.kotlinorm.compiler.helpers.irListOf
+import com.kotlinorm.compiler.helpers.irMutableMapOf
 import com.kotlinorm.compiler.helpers.irTry
+import com.kotlinorm.compiler.helpers.mapGetterSymbol
+import com.kotlinorm.compiler.helpers.referenceClass
+import com.kotlinorm.compiler.helpers.referenceFunctions
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
-import org.jetbrains.kotlin.ir.builders.irBlockBody
-import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irString
-import org.jetbrains.kotlin.ir.builders.irReturn
-import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.builders.irBlock
+import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irBoolean
-import org.jetbrains.kotlin.ir.builders.irSetField
+import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
+import org.jetbrains.kotlin.ir.builders.irReturn
+import org.jetbrains.kotlin.ir.builders.irSetField
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -44,42 +46,20 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrFail
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.util.getSimpleFunction
-import org.jetbrains.kotlin.ir.util.kotlinFqName
-import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 
 context(IrPluginContext)
-val createPairSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createPair").first()
-
-context(IrPluginContext)
-val createMutableMapSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createMutableMap").first()
-
-context(IrPluginContext)
-val createFieldListSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createFieldList").first()
-
-context(IrPluginContext)
-val createStringListSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createStringList").first()
-
-context(IrPluginContext)
-val createTableIndexListSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "createTableIndexList").first()
+val KronosSymbol
+    get() = referenceClass("com.kotlinorm.Kronos")!!
 
 context(IrPluginContext)
 private val getSafeValueSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue").first()
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-val mapGetterSymbol
-    get() = referenceClass("kotlin.collections.Map")!!.getSimpleFunction("get")!!
 
 context(IrPluginContext)
 private val KTableIndexSymbol
@@ -102,17 +82,13 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     return irBlockBody {
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-        val pairs = declaration.properties.map {
-            applyIrCall(
-                createPairSymbol, irString(it.name.asString()),
-                dispatcher.getValue(it)
-            )
-        }.toList()
         +irReturn(
-            applyIrCall(
-                createMutableMapSymbol, irVararg(
-                    createPairSymbol.owner.returnType, pairs
-                )
+            irMutableMapOf(
+                irBuiltIns.stringType,
+                irBuiltIns.anyNType,
+                declaration.properties.associate {
+                    irString(it.name.asString()) to dispatcher.getValue(it)
+                }
             )
         )
     }
@@ -165,13 +141,11 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                         getSafeValueSymbol,
                         irGet(irFunction.dispatchReceiverParameter!!),
                         createKClassExpr(property.backingField!!.type.classOrFail),
-                        applyIrCall(
-                            createStringListSymbol,
-                            irVararg(
-                                irBuiltIns.stringType,
-                                property.backingField!!.type.getClass()!!.superTypes.map { type ->
-                                    irString(type.getClass()!!.kotlinFqName.asString())
-                                })
+                        irListOf(
+                            irBuiltIns.stringType,
+                            property.backingField!!.type.getClass()!!.superTypes.map { type ->
+                                irString(type.getClass()!!.kotlinFqName.asString())
+                            }
                         ),
                         irGet(map),
                         irString(property.name.asString()),
@@ -220,16 +194,14 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosTableIndex(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
-        val listOfIndexObj = indexesAnnotations.map {
-            applyIrCall(
-                KTableIndexSymbol.constructors.first(), *it.valueArguments.toTypedArray()
-            )
-        }
         +irReturn(
-            applyIrCall(
-                createTableIndexListSymbol, irVararg(
-                    KTableIndexSymbol.defaultType, listOfIndexObj
-                )
+            irListOf(
+                KTableIndexSymbol.defaultType,
+                indexesAnnotations.map {
+                    applyIrCall(
+                        KTableIndexSymbol.constructors.first(), *it.valueArguments.toTypedArray()
+                    )
+                }
             )
         )
     }
@@ -246,12 +218,11 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createGetFieldsFunction(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            applyIrCall(
-                createFieldListSymbol, irVararg(
-                    fieldSymbol.owner.defaultType, declaration.properties.map {
-                        getColumnName(it)
-                    }.toList()
-                )
+            irListOf(
+                fieldSymbol.owner.defaultType,
+                declaration.properties.map {
+                    getColumnName(it)
+                }.toList()
             )
         )
     }
@@ -269,7 +240,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosCreateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalCreateTimeSymbol, CreateTimeFqName)
+            getValidStrategy(declaration, createTimeStrategySymbol, CreateTimeFqName)
         )
     }
 }
@@ -286,7 +257,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosUpdateTime(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalUpdateTimeSymbol, UpdateTimeFqName)
+            getValidStrategy(declaration, updateTimeStrategySymbol, UpdateTimeFqName)
         )
     }
 }
@@ -302,7 +273,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosLogicDelete(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalLogicDeleteSymbol, LogicDeleteFqName)
+            getValidStrategy(declaration, logicDeleteStrategySymbol, LogicDeleteFqName)
         )
     }
 }
@@ -311,7 +282,7 @@ context(IrBuilderWithScope, IrPluginContext)
 fun createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
     return irBlockBody {
         +irReturn(
-            getValidStrategy(declaration, globalOptimisticLockSymbol, OptimisticLockFqName)
+            getValidStrategy(declaration, optimisticLockStrategySymbol, OptimisticLockFqName)
         )
     }
 }

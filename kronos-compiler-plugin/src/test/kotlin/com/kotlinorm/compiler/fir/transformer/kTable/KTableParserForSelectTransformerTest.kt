@@ -114,6 +114,10 @@ class KTableParserForSelectTransformerTest {
                         it.id + "1"
                     }
                 )
+                
+                    select {
+                        count(it.id)
+                    }
 
             }
         """.trimIndent()

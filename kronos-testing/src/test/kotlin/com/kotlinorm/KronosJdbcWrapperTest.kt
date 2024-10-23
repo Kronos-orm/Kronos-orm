@@ -1,23 +1,24 @@
-package com.kotlinorm.kronosWrapper.springDataWrapper
+package com.kotlinorm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
+import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.kronosWrapper.jdbcDriverWrapper.MysqlUser
+import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class SpringWrapperTest {
+class BasicWrapperTest {
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver"
         url = "jdbc:mysql://localhost:3306/test"
         username = "root"
-        password = "rootroot"
+        password = "******"
         maxIdle = 10
     }
 
@@ -29,7 +30,7 @@ class SpringWrapperTest {
         Kronos.apply {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
-            dataSource = { SpringDataWrapper(ds) }
+            dataSource = { KronosBasicWrapper(ds) }
         }
     }
 

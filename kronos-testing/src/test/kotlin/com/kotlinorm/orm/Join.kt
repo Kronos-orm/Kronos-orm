@@ -7,8 +7,8 @@ import com.kotlinorm.orm.beans.UserRelation
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.orm.utils.TestWrapper
-import com.kotlinorm.tableOperation.beans.MysqlUser
-import com.kotlinorm.tableOperation.beans.ProductLog
+import com.kotlinorm.database.beans.MysqlUser
+import com.kotlinorm.database.beans.ProductLog
 import com.kotlinorm.utils.trimWhitespace
 import kotlin.test.Test
 import kotlin.test.assertEquals

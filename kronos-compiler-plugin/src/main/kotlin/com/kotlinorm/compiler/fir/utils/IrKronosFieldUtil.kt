@@ -3,23 +3,24 @@ package com.kotlinorm.compiler.fir.utils
 import com.kotlinorm.compiler.fir.beans.FieldIR
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.createKClassExpr
+import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
 import com.kotlinorm.compiler.helpers.referenceClass
-import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
@@ -31,6 +32,8 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.getPropertyGetter
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
@@ -41,17 +44,30 @@ internal val fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 context(IrPluginContext)
+internal val functionSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.KTableForFunction")!!
+
+context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val IrCall.correspondingName
     get() = symbol.owner.correspondingPropertySymbol?.owner?.name
 
 context(IrPluginContext)
-internal val fieldK2dbSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "fieldK2db").first()
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val k2dbSymbol
+    get() = referenceClass("com.kotlinorm.interfaces.KronosNamingStrategy")!!.getSimpleFunction("k2db")!!
 
-context(IrPluginContext)
-internal val tableK2dbSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val fieldNamingStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("fieldNamingStrategy")!!
+
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val tableNamingStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("tableNamingStrategy")!!
 
 context(IrPluginContext)
 internal val kReferenceSymbol
@@ -68,6 +84,7 @@ val IgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.Ignore")
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
+val KTableFunctionFqName = FqName("com.kotlinorm.beans.dsl.KTableForFunction")
 
 
 /**
@@ -148,7 +165,11 @@ fun getColumnName(
         }
     }
 
-    val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
+    val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(
+        k2dbSymbol, irString(propertyName)
+    ) {
+        dispatchBy(applyIrCall(fieldNamingStrategySymbol) { dispatchBy(irGetObject(KronosSymbol))})
+    }
     val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
     val propertyType = irPropertyType.classFqName!!.asString()
     val columnType = columnTypeAnnotation?.getValueArgument(0) ?: getKColumnType(propertyType)
@@ -175,20 +196,13 @@ fun getColumnName(
         irNull()
     }
 
-    val irTableName = when (tableName) {
-        is IrCall -> applyIrCall(
-            fieldK2dbSymbol, irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
-        )
-        else -> irString((tableName as IrConst<*>).value.toString())
-    }
-
     return FieldIR(
         columnName = columnName,
         name = propertyName,
         type = columnType,
         primaryKey = primaryKeyAnnotation != null,
         dateTimeFormat = dateTimeFormatAnnotation?.getValueArgument(0),
-        tableName = irTableName,
+        tableName = tableName,
         cascade = kCascade,
         cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
         cascadeTypeKClass = cascadeTypeKClass,
@@ -362,7 +376,7 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(expression: IrExpression): IrExpression {
     val irClass = when (expression) {
-        is IrGetValue, is IrCall -> expression.type.getClass()
+        is IrGetValue, is IrCall, is IrGetObjectValue -> expression.type.getClass()
         else -> throw IllegalStateException("Unexpected expression type: $expression")
     }!!
     return getTableName(irClass)
@@ -379,10 +393,10 @@ context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(irClass: IrClass): IrExpression {
     val tableAnnotation = irClass.annotations.findByFqName(TableAnnotationsFqName)
     return tableAnnotation?.getValueArgument(0) ?: applyIrCall(
-        tableK2dbSymbol, irString(
-            irClass.name.asString()
-        )
-    )
+        k2dbSymbol, irString(irClass.name.asString())
+    ) {
+        dispatchBy(applyIrCall(tableNamingStrategySymbol) { dispatchBy(irGetObject(KronosSymbol))})
+    }
 }
 
 /**

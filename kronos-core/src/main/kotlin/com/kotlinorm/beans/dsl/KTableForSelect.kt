@@ -32,7 +32,6 @@ import com.kotlinorm.interfaces.KPojo
  */
 open class KTableForSelect<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
-    val functions: MutableList<FunctionField> = mutableListOf()
     /**
      * Overloaded operator function that adds two objects of type Any?.
      *
@@ -55,7 +54,7 @@ open class KTableForSelect<T : KPojo> {
      * @return the provided alias
      */
     @Suppress("UNUSED")
-    infix fun Any?.`as`(alias: String): String = alias
+    infix fun Any?.as_(alias: String): String = alias
 
     /**
      * Adds a field to the collection of fields.
@@ -75,10 +74,6 @@ open class KTableForSelect<T : KPojo> {
     fun FunctionField.setResultName(alias: String): FunctionField {
         this.name = alias
         return this
-    }
-
-    fun addFunction(property: FunctionField) {
-        functions += property
     }
 
     fun count(field: Any?): String = ""

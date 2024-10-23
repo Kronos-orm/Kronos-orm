@@ -16,6 +16,7 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.*
             import com.kotlinorm.beans.dsl.Field
+            import com.kotlinorm.beans.dsl.FunctionField
             import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.beans.config.LineHumpNamingStrategy
@@ -76,12 +77,13 @@ class KTableParserForSelectTransformerTest {
             
                 val user = User()
             
-                fun select(block: ToSelect<User, Any?>): List<Field>? {
-                    var rst: List<Field>? = null
+                fun select(block: ToSelect<User, Any?>): List<Field> {
+                    val rst: MutableList<Field> = mutableListOf()
 
                     user.afterSelect {
                         block!!(it)
-                        rst = fields
+                        rst += fields
+                        rst += functions
                     }
                     return rst
                 }
@@ -116,9 +118,21 @@ class KTableParserForSelectTransformerTest {
                     }
                 )
                 
+                assertEquals(
+                    listOf(
+                        FunctionField(
+                            "count", 
+                            listOf(
+                                Pair(user["id"], user.id)
+                            )
+                        ).apply{
+                            name = "cnt"
+                        }
+                    ),
                     select {
                         count(it.id).`as`("cnt")
                     }
+                )
 
             }
         """.trimIndent()

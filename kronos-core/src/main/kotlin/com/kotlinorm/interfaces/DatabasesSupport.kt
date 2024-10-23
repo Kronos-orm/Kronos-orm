@@ -17,7 +17,6 @@
 package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.enums.DBType
@@ -121,9 +120,5 @@ interface DatabasesSupport {
     fun getJoinSql(
         dataSource: KronosDataSourceWrapper,
         joinClause: JoinClauseInfo
-    ): String
-
-    fun getBasicMethodFunction(
-        func: FunctionField, showTable: Boolean
     ): String
 }

@@ -2,8 +2,8 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
-import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
+import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.TestWrapper
@@ -117,7 +117,7 @@ class Select {
     @Test
     fun testAsSql() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
+        val (sql, paramMap) = user.select { it.id + it.username.as_("name") + it.gender + "COUNT(1) as `count`" }
             .lock(PessimisticLock.X)
             .build()
 
@@ -131,7 +131,7 @@ class Select {
     @Test
     fun testAlias() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
+        val (sql, paramMap) = user.select { it.id + it.username.as_("name") }
             .where { it.gender == 0 }
             .build()
 
@@ -203,7 +203,7 @@ class Select {
     @Test
     fun testSetDbName() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
+        val (sql, paramMap) = user.select { it.id + it.username.as_("name") }
             .where { it.gender == 0 }.db("test")
             .build()
 
@@ -273,10 +273,12 @@ class Select {
 
     @Test
     fun testSelectBuiltInFunctionCount() {
-        val (sql, paramMap) = user.select { it.id + average(it.id).`as`("cnt") + sum(it.id) }.build()
+        val (sql, paramMap) = user.select {
+            count(it.id).as_("cnt") + it.id + average(it.id).as_("avg") + it.username + sum(it.id).as_("sum")
+        }.build()
 
         assertEquals(
-            "SELECT `id`, COUNT(`id`) FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            "SELECT COUNT(`id`) AS cnt, `id`, AVERAGE(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
             sql
         )
     }

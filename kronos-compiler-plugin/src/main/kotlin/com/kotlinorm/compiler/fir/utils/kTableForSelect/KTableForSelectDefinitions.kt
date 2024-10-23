@@ -35,11 +35,6 @@ internal val addFieldSymbol
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val addFunctionSymbol
-    get() = kTableForSelectSymbol.getSimpleFunction("addFunction")!!
-
-context(IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val aliasSymbol
     get() = kTableForSelectSymbol.getSimpleFunction("setAlias")!!
 

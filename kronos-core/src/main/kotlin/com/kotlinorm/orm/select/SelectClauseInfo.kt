@@ -8,7 +8,6 @@ data class SelectClauseInfo(
     val databaseName: String?,
     val tableName: String,
     val selectFields: List<Field>,
-    val selectFunctions: List<FunctionField>,
     val distinct: Boolean,
     val pagination: Boolean,
     val pageIndex: Int,

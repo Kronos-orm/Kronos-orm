@@ -29,7 +29,6 @@ import com.kotlinorm.beans.dsl.FunctionField
 data class JoinClauseInfo(
     val tableName: String,
     val selectFields: List<Pair<String , Field>>,
-    val selectFunctions: List<FunctionField>,
     val distinct: Boolean,
     val pagination: Boolean,
     val pageIndex: Int,

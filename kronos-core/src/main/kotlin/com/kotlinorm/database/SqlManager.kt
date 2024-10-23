@@ -17,7 +17,6 @@
 package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.enums.DBType
@@ -162,8 +161,4 @@ object SqlManager {
         dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
     ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)
         ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    fun getBasicMethodFunction(
-        func: FunctionField, dbType: DBType, showTable: Boolean
-    ) = dbType.dbSupport?.getBasicMethodFunction(func, showTable) ?: throw UnsupportedDatabaseTypeException(dbType)
 }

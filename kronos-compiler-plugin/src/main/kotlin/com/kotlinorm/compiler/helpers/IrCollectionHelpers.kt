@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.compiler.helpers
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -60,6 +76,16 @@ fun irMutableMapOf(k: IrType, v: IrType, pairs: Map<IrExpression, IrExpression>)
             }),
         typeArguments = arrayOf(k, v)
     )
+
+context(IrBuilderWithScope, IrPluginContext)
+fun irPairOf(first: IrType, second: IrType, pair: Pair<IrExpression?, IrExpression?>) =
+    applyIrCall(
+        pairSymbol,
+        pair.first,
+        pair.second,
+        typeArguments = arrayOf(first, second)
+    )
+
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)

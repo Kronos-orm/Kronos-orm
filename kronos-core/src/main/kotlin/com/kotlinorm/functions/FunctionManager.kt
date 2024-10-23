@@ -1,8 +1,9 @@
 package com.kotlinorm.functions
 
 import com.kotlinorm.beans.dsl.FunctionField
-import com.kotlinorm.enums.DBType
+import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.interfaces.FunctionTransformer
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
 /**
  *@program: kronos-orm
@@ -11,25 +12,20 @@ import com.kotlinorm.interfaces.FunctionTransformer
  *@create: 2024/10/21 15:35
  **/
 object FunctionManager {
-    internal val registedFunctionTransformers = mutableListOf<FunctionTransformer>(
+    private val registeredFunctionTransformers = mutableListOf<FunctionTransformer>(
         BasicFunctionTransformer
     )
 
     fun registerValueTransformer(transformer: FunctionTransformer) {
-        registedFunctionTransformers.add(0, transformer)
+        registeredFunctionTransformers.add(0, transformer)
     }
 
-    fun getMethodTransformed(
-        func: FunctionField,
-        dbType: DBType,
+    fun getFunctionTransformed(
+        field: FunctionField, dataSource: KronosDataSourceWrapper,
         showTable: Boolean = false
     ): String {
-        val funcName = func.functionName
-
-        if (registedFunctionTransformers.none { it.support(funcName, dbType) }) {
-            throw IllegalArgumentException("Method $funcName not found")
-        }
-
-        return registedFunctionTransformers.first { it.support(funcName, dbType) }.transform(func, dbType, showTable)
+        return registeredFunctionTransformers.firstOrNull { it.support(field.functionName, dataSource.dbType) }
+            ?.transform(field, dataSource, showTable)
+            ?: throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
     }
 }

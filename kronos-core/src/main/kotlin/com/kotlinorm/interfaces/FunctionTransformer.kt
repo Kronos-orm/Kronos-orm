@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.dsl.FunctionField
@@ -10,9 +26,18 @@ import com.kotlinorm.enums.DBType
  *@create: 2024/10/21 16:05
  **/
 interface FunctionTransformer {
+    val supportFunctionNames: List<String>
 
-    fun support(funcName: String, dbType: DBType): Boolean
+    val supportDatabase: List<DBType>
 
-    fun transform(func: FunctionField, dbType: DBType, showTable: Boolean = false): String
+    fun support(funcName: String, dbType: DBType): Boolean {
+        return funcName in supportFunctionNames && dbType in supportDatabase
+    }
+
+    fun transform(
+        field: FunctionField,
+        dataSource: KronosDataSourceWrapper,
+        showTable: Boolean
+    ): String
 
 }

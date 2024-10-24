@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.dsl
+package com.kotlinorm.functions
 
-/**
- *@program: kronos-orm
- *@author: Jieyao Lu
- *@description:
- *@create: 2024/10/22 10:36
- **/
-class FunctionField(
-    var functionName: String,
-    var fields: List<Pair<Field?, Any?>> = listOf()
-) : Field(functionName)
+object FunctionHandler

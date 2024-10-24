@@ -18,6 +18,9 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.beans.dsl.Field
             import com.kotlinorm.beans.dsl.FunctionField
             import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+            import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
+            import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+            import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
@@ -64,7 +67,7 @@ class KTableParserForSelectTransformerTest {
                 var deleted: Boolean? = null
             ) : KPojo {
                 operator fun get(name: String): Field {
-                    return kronosColumns().find { it.name == name }!!
+                    return kronosColumns().find { it.name == name } ?: throw IllegalArgumentException("Field ${'$'}name not found")
                 }
             }
             
@@ -83,7 +86,6 @@ class KTableParserForSelectTransformerTest {
                     user.afterSelect {
                         block!!(it)
                         rst += fields
-                        rst += functions
                     }
                     return rst
                 }
@@ -130,7 +132,7 @@ class KTableParserForSelectTransformerTest {
                         }
                     ),
                     select {
-                        count(it.id).as_("cnt")
+                        f.count(it.id).as_("cnt")
                     }
                 )
 

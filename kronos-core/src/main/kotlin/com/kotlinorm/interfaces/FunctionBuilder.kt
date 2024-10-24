@@ -25,13 +25,11 @@ import com.kotlinorm.enums.DBType
  *@description:
  *@create: 2024/10/21 16:05
  **/
-interface FunctionTransformer {
-    val supportFunctionNames: List<String>
+interface FunctionBuilder {
+    val supportFunctionNames: (String) -> Array<DBType>
 
-    val supportDatabase: List<DBType>
-
-    fun support(funcName: String, dbType: DBType): Boolean {
-        return funcName in supportFunctionNames && dbType in supportDatabase
+    fun support(field: FunctionField, dbType: DBType): Boolean {
+        return supportFunctionNames(field.functionName).contains(dbType)
     }
 
     fun transform(

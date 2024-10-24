@@ -46,8 +46,7 @@ import org.jetbrains.kotlin.ir.util.statements
  * @author OUSC, Jieyao Lu
  */
 class KronosParserTransformer(
-    private val pluginContext: IrPluginContext,
-    private val functions: Array<String>
+    private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
 
     /**
@@ -106,7 +105,7 @@ class KronosParserTransformer(
             +irBlock {
                 +irFunction.body!!.statements
             }
-                .transform(KTableParserForSelectTransformer(pluginContext, irFunction, functions), null)
+                .transform(KTableParserForSelectTransformer(pluginContext, irFunction), null)
         }
     }
 

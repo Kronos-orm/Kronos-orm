@@ -4,6 +4,9 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.TestWrapper
@@ -274,11 +277,11 @@ class Select {
     @Test
     fun testSelectBuiltInFunctionCount() {
         val (sql, paramMap) = user.select {
-            count(1).as_("cnt") + it.id + average(it.id).as_("avg") + it.username + sum(it.id).as_("sum")
+            f.count(1).as_("cnt") + it.id + f.avg(it.id).as_("avg") + it.username + f.sum(it.id).as_("sum")
         }.build()
 
         assertEquals(
-            "SELECT COUNT(1) AS cnt, `id`, AVERAGE(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            "SELECT COUNT(1) AS cnt, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
             sql
         )
     }

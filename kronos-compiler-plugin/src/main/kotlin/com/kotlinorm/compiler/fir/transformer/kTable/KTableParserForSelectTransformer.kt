@@ -62,7 +62,6 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
 class KTableParserForSelectTransformer(
     private val pluginContext: IrPluginContext,
     private val irFunction: IrFunction,
-    private val functions: Array<String>
 ) : IrElementTransformerVoidWithContext() {
 
     /**
@@ -76,7 +75,7 @@ class KTableParserForSelectTransformer(
             with(irFunction) {
                 with(DeclarationIrBuilder(pluginContext, irFunction.symbol)) {
                     return irBlock {
-                        +addFieldList(expression, functions)
+                        +addFieldList(expression)
                         +expression
                     }
                 }

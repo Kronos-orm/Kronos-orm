@@ -37,21 +37,3 @@ context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val aliasSymbol
     get() = kTableForSelectSymbol.getSimpleFunction("setAlias")!!
-
-internal val builtinFunctions =
-    arrayOf(
-        "count", "average", "sum", "max", "min",
-        "abs", "bin", "ceiling", "exp", "floor",
-        "greatest", "least", "ln", "log", "mod",
-        "pi", "rand", "round", "sign", "sqrt",
-        "truncate", "groupConcat", "ascii", "bitLength", "concat",
-        "concatWs", "insert", "findInSet", "lcase", "left",
-        "length", "ltrim", "position", "quote", "repeat",
-        "reverse", "right", "rtrim", "strcmp", "trim",
-        "ucase", "curdate", "curtime", "dateAdd", "dateFormat",
-        "dateSub", "dayOfWeek", "dayOfMonth", "dayOfYear", "dayName",
-        "fromUnixTime", "hour", "minute", "month", "monthName",
-        "now", "quarter", "week", "year", "periodDiff",
-        "calculateAge", "aesEncrypt", "aesDecrypt", "decode", "encrypt",
-        "encode", "md5", "password", "sha"
-    )

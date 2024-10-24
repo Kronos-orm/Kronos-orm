@@ -139,7 +139,7 @@ fun collectFields(
                             )
                         }
 
-                        "as" -> {
+                        "as_" -> {
                             fields += applyIrCall(
                                 aliasSymbol,
                                 element.valueArguments.first()

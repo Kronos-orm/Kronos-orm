@@ -76,6 +76,7 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
             * exp: groupConcat(id) => 1,2,3,4,5,6,7,8,9,10
             * Mysql: GROUP_CONCAT(x) SQLite: GROUP_CONCAT(x) Oracle: GROUP_CONCAT(x) Postgres: STRING_AGG(x) Mssql: STRING_AGG(x)
             */
+            "groupConcat" -> all
             else -> emptyArray()
         }
     }

@@ -46,6 +46,8 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.properties
@@ -129,12 +131,24 @@ fun collectFields(
                                 irListOf(
                                     pairSymbol.owner.returnType,
                                     element.valueArguments.map {
-                                        irPairOf(
-                                            fieldSymbol.nType,
-                                            irBuiltIns.anyNType,
-                                            it.irFieldOrNull() to it
-                                        )
-                                    }
+                                        if (it is IrVarargImpl) {
+                                            it.elements.map { element ->
+                                                irPairOf(
+                                                    fieldSymbol.nType,
+                                                    irBuiltIns.anyNType,
+                                                    (element as IrExpression).irFieldOrNull() to element
+                                                )
+                                            }
+                                        } else {
+                                            listOf(
+                                                irPairOf(
+                                                    fieldSymbol.nType,
+                                                    irBuiltIns.anyNType,
+                                                    it.irFieldOrNull() to it
+                                                )
+                                            )
+                                        }
+                                    }.flatten()
                                 ),
                             )
                         }

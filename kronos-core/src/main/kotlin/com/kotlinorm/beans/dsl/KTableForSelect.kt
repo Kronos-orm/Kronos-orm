@@ -71,11 +71,6 @@ open class KTableForSelect<T : KPojo> {
         return this
     }
 
-    fun FunctionField.setResultName(alias: String): FunctionField {
-        this.name = alias
-        return this
-    }
-
     fun count(field: Any?): String = ""
 
     fun average(field: Any?): String = ""
@@ -86,7 +81,133 @@ open class KTableForSelect<T : KPojo> {
 
     fun sum(field: Any?): String = ""
 
-    fun testFunc(field1: Any? , v1: Any? , field2: Any? , v2: Any?): String = ""
+    fun abs(x: Any?): String = ""
+
+    fun bin(x: Any?): String = ""
+
+    fun ceiling(x: Any?): String = ""
+
+    fun exp(x: Any?): String = ""
+
+    fun floor(x: Any?): String = ""
+
+    fun greatest(vararg xs: Any?): String = ""
+
+    fun least(vararg xs: Any?): String = ""
+
+    fun ln(x: Any?): String = ""
+
+    fun log(x: Any?, y: Any?): String = ""
+
+    fun mod(x: Any?, y: Any?): String = ""
+
+    fun pi(): String = ""
+
+    fun rand(seed: Any? = null): String = ""
+
+    fun round(x: Any?, y: Any?): String = ""
+
+    fun sign(x: Any?): String = ""
+
+    fun sqrt(x: Any?): String = ""
+
+    fun truncate(x: Any?, y: Any?): String = ""
+
+    fun groupConcat(x: Any?): String = ""
+
+    fun ascii(char: Any?): String = ""
+
+    fun bitLength(str: Any?): String = ""
+
+    fun concat(vararg fields: Any?): String = ""
+
+    fun concatWs(sep: Any?, vararg fields: Any?): String = ""
+
+    fun insert(str: Any?, x: Any?, y: Any?, instr: Any?): String = ""
+
+    fun findInSet(str: Any?, list: Any?): String = ""
+
+    fun lcase(str: Any?): String = ""
+
+    fun left(str: Any?, x: Any?): String = ""
+
+    fun length(s: Any?): String = ""
+
+    fun ltrim(str: Any?): String = ""
+
+    fun position(substr: Any?, str: Any?): String = ""
+
+    fun quote(str: Any?): String = ""
+
+    fun repeat(str: Any?, times: Any?): String = ""
+
+    fun reverse(str: Any?): String = ""
+
+    fun right(str: Any?, x: Any?): String = ""
+
+    fun rtrim(str: Any?): String = ""
+
+    fun strcmp(s1: Any?, s2: Any?): String = ""
+
+    fun trim(str: Any?): String = ""
+
+    fun ucase(str: Any?): String = ""
+
+    fun curdate(): String = ""
+
+    fun curtime(): String = ""
+
+    fun dateAdd(date: Any?, interval: String): String = ""
+
+    fun dateFormat(date: Any?, fmt: Any?): String = ""
+
+    fun dateSub(date: Any?, interval: String): String = ""
+
+    fun dayOfWeek(date: Any?): String = ""
+
+    fun dayOfMonth(date: Any?): String = ""
+
+    fun dayOfYear(date: Any?): String = ""
+
+    fun dayName(date: Any?): String = ""
+
+    fun fromUnixTime(ts: Any?, fmt: Any?): String = ""
+
+    fun hour(time: Any?): String = ""
+
+    fun minute(time: Any?): String = ""
+
+    fun month(date: Any?): String = ""
+
+    fun monthName(date: Any?): String = ""
+
+    fun now(): String = ""
+
+    fun quarter(date: Any?): String = ""
+
+    fun week(date: Any?): String = ""
+
+    fun year(date: Any?): String = ""
+
+    fun periodDiff(p1: Any?, p2: Any?): String = ""
+
+    fun calculateAge(birthday: Any?): String = ""
+
+    fun aesEncrypt(str: Any?, key: Any?): String = ""
+
+    fun aesDecrypt(str: Any?, key: Any?): String = ""
+
+    fun decode(str: Any?, key: Any?): String = ""
+
+    fun encrypt(str: Any?, salt: Any?): String = ""
+
+    fun encode(str: Any?, key: Any?): String = ""
+
+    fun md5(str: Any?): String = ""
+
+    fun password(str: Any?): String = ""
+
+    fun sha(str: Any?): String = ""
 
     companion object {
         /**

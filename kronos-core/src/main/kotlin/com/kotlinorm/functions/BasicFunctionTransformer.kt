@@ -10,7 +10,20 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 object BasicFunctionTransformer : FunctionTransformer {
 
     override val supportFunctionNames = listOf(
-        "count", "average", "sum", "max", "min"
+        "count", "average", "sum", "max", "min",
+        "abs", "bin", "ceiling", "exp", "floor",
+        "greatest", "least", "ln", "log", "mod",
+        "pi", "rand", "round", "sign", "sqrt",
+        "truncate", "groupConcat", "ascii", "bitLength", "concat",
+        "concatWs", "insert", "findInSet", "lcase", "left",
+        "length", "ltrim", "position", "quote", "repeat",
+        "reverse", "right", "rtrim", "strcmp", "trim",
+        "ucase", "curdate", "curtime", "dateAdd", "dateFormat",
+        "dateSub", "dayOfWeek", "dayOfMonth", "dayOfYear", "dayName",
+        "fromUnixTime", "hour", "minute", "month", "monthName",
+        "now", "quarter", "week", "year", "periodDiff",
+        "calculateAge", "aesEncrypt", "aesDecrypt", "decode", "encrypt",
+        "encode", "md5", "password", "sha"
     )
 
     override val supportDatabase = listOf(
@@ -26,22 +39,33 @@ object BasicFunctionTransformer : FunctionTransformer {
         dataSource: KronosDataSourceWrapper,
         showTable: Boolean
     ): String {
-        if (field.fields.isEmpty()) throw IllegalArgumentException("The ${field.functionName} function needs to accept a column as an argument")
-        when (field.functionName) {
-            "count", "average", "sum", "max", "min" -> {
-                when (dataSource.dbType) {
-                    DBType.Mysql, DBType.Postgres, DBType.SQLite, DBType.Oracle, DBType.Mssql -> {
-                        return "${field.functionName.uppercase()}(${
-                            field.fields.first().first?.quoted(dataSource, showTable) ?: field.fields.first().second
-                        })${
-                            if (field.name.isNotEmpty()) " AS ${field.name}" else ""
-                        }"
-                    }
+        return when (field.functionName) {
+            in this.supportFunctionNames -> {
+                getFunctionSql(field, dataSource, showTable)
+            }
+            else -> {
+                throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
+            }
+        }
+    }
 
-                    else -> {
-                        throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
+    private fun getFunctionSql(
+        field: FunctionField,
+        dataSource: KronosDataSourceWrapper,
+        showTable: Boolean
+    ): String {
+        when (dataSource.dbType) {
+            DBType.Mysql, DBType.Postgres, DBType.SQLite, DBType.Oracle, DBType.Mssql -> {
+                return "${field.functionName.uppercase()}(${
+                    field.fields.joinToString(", ") {
+                        it.first?.quoted(
+                            dataSource,
+                            showTable
+                        ) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
                     }
-                }
+                })${
+                    if (field.name.isNotEmpty()) " AS ${field.name}" else ""
+                }"
             }
 
             else -> {

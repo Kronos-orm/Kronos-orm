@@ -16,4 +16,6 @@
 
 package com.kotlinorm.functions
 
-object FunctionHandler
+object FunctionHandler{
+    fun as_(alias: String): String = throw UnsupportedOperationException("You will never want to alias an empty function handle.")
+}

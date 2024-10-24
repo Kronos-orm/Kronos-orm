@@ -170,14 +170,15 @@ object MathFunctionBuilder : FunctionBuilder {
     }
 
     override fun transform(
-        field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean
+        field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean
     ): String {
-        return getFunctionSql(field, dataSource, showTable)
+        return getFunctionSql(field, dataSource, showTable, showAlias)
     }
 
     private fun getFunctionSql(
-        field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean
+        field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean
     ): String {
+        val alias = if (showAlias) field.name else ""
         return when (field.functionName) {
             "add", "sub", "mul", "div" -> {
                 val operator = when (field.functionName) {
@@ -187,7 +188,7 @@ object MathFunctionBuilder : FunctionBuilder {
                     "div" -> "/"
                     else -> throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
                 }
-                buildOperations(operator, field.name, field.fields, dataSource, showTable)
+                buildOperations(operator, alias, field.fields, dataSource, showTable)
             }
 
             else -> {
@@ -200,13 +201,13 @@ object MathFunctionBuilder : FunctionBuilder {
                         "LOG"
                     }
 
-                    "rand" to DBType.Oracle -> return buildAlias("DBMS_RANDOM.VALUE", field.name)
+                    "rand" to DBType.Oracle -> return buildAlias("DBMS_RANDOM.VALUE", alias)
                     "rand" to DBType.SQLite, "rand" to DBType.Postgres -> "RANDOM"
                     "trunc" to DBType.Mysql -> "TRUNCATE"
                     "trunc" to DBType.Mssql -> "ROUND"
                     else -> field.functionName
                 }
-                buildFields(functionName.uppercase(), field.name, field.fields, dataSource, showTable)
+                buildFields(functionName.uppercase(), alias, field.fields, dataSource, showTable)
             }
         }
     }

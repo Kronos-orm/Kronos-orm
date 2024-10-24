@@ -20,6 +20,7 @@ import com.kotlinorm.Kronos.noValueStrategy
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.database.SqlManager.quote
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.ConditionType
@@ -44,6 +45,7 @@ import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.ConditionType.Companion.Sql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.NoValueStrategyType
+import com.kotlinorm.functions.FunctionManager.getFunctionTransformed
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
@@ -149,14 +151,14 @@ object ConditionSqlBuilder {
 
             Equal -> {
                 if (condition.value is Field) listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "!=".takeIf { condition.not } ?: "=",
-                    quote(wrapper.orDefault(), condition.value as Field, showTable, databaseOfTable))
+                    getParialCriteriaSql(condition.value as Field, wrapper.orDefault(), showTable, databaseOfTable))
                 else {
                     val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                     paramMap.update(condition.field, safeKey, condition.value)
                     listOfNotNull(
-                        quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                        getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                         "!=".takeIf { condition.not } ?: "=",
                         ":$safeKey")
                 }
@@ -355,4 +357,17 @@ object ConditionSqlBuilder {
             else -> false
         }
     }
+
+    private fun getParialCriteriaSql(
+        field: Field,
+        wrapper: KronosDataSourceWrapper? = null,
+        showTable: Boolean = false,
+        databaseOfTable: Map<String, String> = mapOf()
+    ) = if (field is FunctionField) getFunctionTransformed(
+        field,
+        wrapper.orDefault(),
+        showTable,
+        false
+    ) else quote(wrapper.orDefault(), field, showTable, databaseOfTable)
+
 }

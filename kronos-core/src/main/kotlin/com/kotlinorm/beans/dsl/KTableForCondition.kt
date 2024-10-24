@@ -439,6 +439,8 @@ open class KTableForCondition<T : KPojo> {
     @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.notRegexp get() = true
 
+    fun count(field: Any?): Int = 0
+
     companion object {
         /**
          * Runs the given block on a new instance of [KTableForCondition] with the given [T] object as the data source.

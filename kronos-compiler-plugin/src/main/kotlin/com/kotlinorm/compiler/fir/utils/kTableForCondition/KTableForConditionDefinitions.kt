@@ -21,6 +21,7 @@ import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.fir.utils.getColumnOrValue
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.fir.utils.isKronosFunction
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -184,7 +185,7 @@ fun runExpressionAnalysis(
     operator: String,
     right: IrExpression?
 ): Triple<IrExpression?, String, IrExpression?> {
-    if (!left.isKronosColumn() && right.isKronosColumn()) {
+    if (!(left.isKronosColumn() && left.isKronosFunction()) && right.isKronosColumn() && right.isKronosFunction()) {
         return Triple(getColumnOrValue(right), getOperatorRevered(operator), getColumnOrValue(left))
     }
 

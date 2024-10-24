@@ -81,7 +81,7 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
         }
     }
 
-    override fun transform(field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean): String {
+    override fun transform(field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean): String {
         field.functionName = when (field.functionName) {
             "groupConcat" -> {
                 when (dataSource.dbType) {
@@ -92,6 +92,6 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
 
             else -> field.functionName.uppercase()
         }
-        return buildFields(field.functionName, field.name, field.fields, dataSource, showTable)
+        return buildFields(field.functionName, field.name.takeIf { showAlias } ?: "", field.fields, dataSource, showTable)
     }
 }

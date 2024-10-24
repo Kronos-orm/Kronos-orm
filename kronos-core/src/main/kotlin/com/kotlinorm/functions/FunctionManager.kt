@@ -41,10 +41,10 @@ object FunctionManager {
 
     fun getFunctionTransformed(
         field: FunctionField, dataSource: KronosDataSourceWrapper,
-        showTable: Boolean = false
+        showTable: Boolean = false, showAlias: Boolean = true
     ): String {
         return registeredFunctionBuilders.firstOrNull { it.support(field, dataSource.dbType) }
-            ?.transform(field, dataSource, showTable)
+            ?.transform(field, dataSource, showTable, showAlias)
             ?: throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
     }
 }

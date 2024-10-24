@@ -16,6 +16,7 @@
 
 package com.kotlinorm.compiler.fir.utils.kTableForSelect
 
+import com.kotlinorm.compiler.fir.utils.*
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
 import com.kotlinorm.compiler.fir.utils.funcName
 import com.kotlinorm.compiler.fir.utils.functionSymbol
@@ -122,36 +123,10 @@ fun collectFields(
                 }
 
                 else -> {
-                    if (element.extensionReceiver?.type?.classFqName == FqName("com.kotlinorm.functions.FunctionHandler")) {
-                        val args = mutableListOf<IrExpression>()
-                        element.valueArguments.forEach {
-                            if (it is IrVarargImpl) {
-                                args.addAll(it.elements.map { element ->
-                                    irPairOf(
-                                        fieldSymbol.nType,
-                                        irBuiltIns.anyNType,
-                                        (element as IrExpression).irFieldOrNull() to it
-                                    )
-                                })
-                            } else {
-                                args.add(
-                                    irPairOf(
-                                        fieldSymbol.nType,
-                                        irBuiltIns.anyNType,
-                                        it.irFieldOrNull() to it
-                                    )
-                                )
-                            }
-                        }
-                        fields += applyIrCall1(
-                            functionSymbol.constructors.first(),
-                            irString(element.funcName()),
-                            irListOf(
-                                pairSymbol.owner.returnType,
-                                args
-                            ),
-                        )
+                    if (element.isKronosFunction()) {
+                        fields += getFunctionName(element)
                     }
+
                     when (element.funcName()) {
                         "as_" -> {
                             fields += applyIrCall1(

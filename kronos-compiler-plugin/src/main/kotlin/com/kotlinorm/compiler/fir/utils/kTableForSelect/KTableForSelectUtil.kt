@@ -58,7 +58,7 @@ import org.jetbrains.kotlin.ir.util.properties
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpression> {
-    return addFieldsNames(irReturn, functions).map {
+    return collectFields(irReturn, functions).map {
         applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
     }
 }
@@ -71,7 +71,7 @@ fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpressio
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun addFieldsNames(
+fun collectFields(
     element: IrElement,
     functions: Array<String>
 ): MutableList<IrExpression> {
@@ -83,12 +83,12 @@ fun addFieldsNames(
             element.statements.forEach { statement ->
                 // Recursively add field names from each statement in a block body.
                 // 从块体中的每个声明递归添加字段名。
-                fields += addFieldsNames(statement, functions)
+                fields += collectFields(statement, functions)
             }
         }
 
         is IrTypeOperatorCall -> {
-            fields += addFieldsNames(element.argument, functions)
+            fields += collectFields(element.argument, functions)
         }
 
         is IrCall -> {
@@ -107,12 +107,12 @@ fun addFieldsNames(
                 IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
-                    fields += addFieldsNames(
+                    fields += collectFields(
                         (element.extensionReceiver ?: element.dispatchReceiver)!!,
                         functions
                     )
                     element.valueArguments.forEach {
-                        if (it != null) fields += addFieldsNames(it, functions)
+                        if (it != null) fields += collectFields(it, functions)
                     }
                 }
 
@@ -150,7 +150,7 @@ fun addFieldsNames(
                                     )
                                 )
                                 extensionBy(
-                                    addFieldsNames(element.extensionReceiver!!, functions).first()
+                                    collectFields(element.extensionReceiver!!, functions).first()
                                 )
                             }
                         }
@@ -173,7 +173,7 @@ fun addFieldsNames(
         is IrReturn -> {
             // Handle return statements by recursively adding field names from the return value.
             // 通过递归从返回值添加字段名来处理返回语句。
-            return addFieldsNames(element.value, functions)
+            return collectFields(element.value, functions)
         }
     }
     return fields

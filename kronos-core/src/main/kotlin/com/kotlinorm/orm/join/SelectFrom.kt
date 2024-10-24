@@ -17,7 +17,11 @@
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.beans.dsl.*
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KJoinable
+import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
@@ -31,7 +35,6 @@ import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.ToFilter

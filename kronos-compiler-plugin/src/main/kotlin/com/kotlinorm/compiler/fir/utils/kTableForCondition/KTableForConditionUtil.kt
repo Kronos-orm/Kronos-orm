@@ -338,10 +338,6 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                     strategy = args.first()
                     return buildCriteria(element.extensionReceiver!!, not, strategy)
                 }
-
-                else -> {
-                    element
-                }
             }
         }
 

@@ -22,7 +22,6 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.database.SqlManager.quote
-import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.NoValueStrategyType.False

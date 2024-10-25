@@ -159,7 +159,13 @@ object ConditionSqlBuilder {
                     listOfNotNull(
                         getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                         "!=".takeIf { condition.not } ?: "=",
-                        ":$safeKey")
+                        if (condition.value is FunctionField) getParialCriteriaSql(
+                            condition.value as FunctionField,
+                            wrapper.orDefault(),
+                            showTable,
+                            databaseOfTable
+                        ) else ":${safeKey}"
+                    )
                 }
             }
 
@@ -177,7 +183,12 @@ object ConditionSqlBuilder {
                     getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "LIKE",
-                    ":${safeKey}"
+                    if (condition.value is FunctionField) getParialCriteriaSql(
+                        condition.value as FunctionField,
+                        wrapper.orDefault(),
+                        showTable,
+                        databaseOfTable
+                    ) else ":${safeKey}"
                 )
             }
 
@@ -205,7 +216,12 @@ object ConditionSqlBuilder {
                     listOf(
                         getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                         condition.type.value,
-                        ":${safeKey}"
+                        if (condition.value is FunctionField) getParialCriteriaSql(
+                            condition.value as FunctionField,
+                            wrapper.orDefault(),
+                            showTable,
+                            databaseOfTable
+                        ) else ":${safeKey}"
                     )
                 }
             }
@@ -233,7 +249,12 @@ object ConditionSqlBuilder {
                     getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "REGEXP",
-                    ":${safeKey}"
+                    if (condition.value is FunctionField) getParialCriteriaSql(
+                        condition.value as FunctionField,
+                        wrapper.orDefault(),
+                        showTable,
+                        databaseOfTable
+                    ) else ":${safeKey}"
                 )
             }
 

@@ -212,7 +212,13 @@ object MathFunctionBuilder : FunctionBuilder {
         }
     }
 
-    private fun buildOperations(
+    fun buildField(it: Pair<Field?, Any?>, dataSource: KronosDataSourceWrapper, showTable: Boolean): String {
+        return it.first?.quoted(
+            dataSource, showTable
+        ) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
+    }
+
+    fun buildOperations(
         operator: String,
         alias: String,
         fields: List<Pair<Field?, Any?>>,
@@ -221,9 +227,7 @@ object MathFunctionBuilder : FunctionBuilder {
     ): String {
         return buildAlias("(${
             fields.joinToString(" $operator ") {
-                it.first?.quoted(
-                    dataSource, showTable
-                ) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
+                buildField(it, dataSource, showTable)
             }
         })", alias)
     }
@@ -237,9 +241,7 @@ object MathFunctionBuilder : FunctionBuilder {
     ): String {
         return buildAlias("${functionName}(${
             fields.joinToString(", ") {
-                it.first?.quoted(
-                    dataSource, showTable
-                ) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
+                buildField(it, dataSource, showTable)
             }
         })", alias)
     }

@@ -44,7 +44,7 @@ import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.ConditionType.Companion.Sql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.NoValueStrategyType
-import com.kotlinorm.functions.FunctionManager.getFunctionTransformed
+import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
@@ -363,7 +363,7 @@ object ConditionSqlBuilder {
         wrapper: KronosDataSourceWrapper? = null,
         showTable: Boolean = false,
         databaseOfTable: Map<String, String> = mapOf()
-    ) = if (field is FunctionField) getFunctionTransformed(
+    ) = if (field is FunctionField) getBuiltFunctionField(
         field,
         wrapper.orDefault(),
         showTable,

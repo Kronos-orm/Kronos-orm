@@ -20,6 +20,7 @@ import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder
 import com.kotlinorm.functions.bundled.builders.PolymerizationFunctionBuilder
+import com.kotlinorm.functions.bundled.builders.StringFunctionBuilder
 import com.kotlinorm.interfaces.FunctionBuilder
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
@@ -32,14 +33,15 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 object FunctionManager {
     private val registeredFunctionBuilders = mutableListOf<FunctionBuilder>(
         PolymerizationFunctionBuilder,
-        MathFunctionBuilder
+        MathFunctionBuilder,
+        StringFunctionBuilder
     )
 
-    fun registerValueTransformer(transformer: FunctionBuilder) {
+    fun registerFunctionBuilder(transformer: FunctionBuilder) {
         registeredFunctionBuilders.add(0, transformer)
     }
 
-    fun getFunctionTransformed(
+    fun getBuiltFunctionField(
         field: FunctionField, dataSource: KronosDataSourceWrapper,
         showTable: Boolean = false, showAlias: Boolean = true
     ): String {

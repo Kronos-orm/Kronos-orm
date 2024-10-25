@@ -30,7 +30,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
-import com.kotlinorm.functions.FunctionManager.getFunctionTransformed
+import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -303,7 +303,7 @@ object MysqlSupport : DatabasesSupport {
         val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
         val selectSql = selectFields.joinToString(", ") {
             when {
-                it is FunctionField -> getFunctionTransformed(it, dataSource)
+                it is FunctionField -> getBuiltFunctionField(it, dataSource)
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
                 it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it.name)}"
                 else -> quote(it)
@@ -343,7 +343,7 @@ object MysqlSupport : DatabasesSupport {
         val selectSql = selectFields.joinToString(", ") {
             val field = it.second
             when {
-                field is FunctionField -> getFunctionTransformed(field, dataSource, true)
+                field is FunctionField -> getBuiltFunctionField(field, dataSource, true)
                 field.type == CUSTOM_CRITERIA_SQL -> field.toString()
                 field.name != field.columnName -> "${quote(field, true)} AS ${quote(field.name)}"
                 else -> "${SqlManager.quote(dataSource, field, true, databaseOfTable)} AS ${quote(it.first)}"

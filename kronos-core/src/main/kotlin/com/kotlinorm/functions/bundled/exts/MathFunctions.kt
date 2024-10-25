@@ -67,4 +67,16 @@ object MathFunctions {
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.truncate(x: Number?, y: Number?): Number? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.add(vararg x: Number?): Number? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.sub(vararg x: Number?): Number? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.mul(vararg x: Number?): Number? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.div(vararg x: Number?): Number? = null
 }

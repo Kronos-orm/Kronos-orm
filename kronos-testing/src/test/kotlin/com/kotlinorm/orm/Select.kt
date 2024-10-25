@@ -4,6 +4,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.functions.bundled.exts.MathFunctions.add
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
@@ -277,7 +278,9 @@ class Select {
     @Test
     fun testSelectBuiltInFunctionCount() {
         val (sql, paramMap) = user.select {
-            f.count(1).as_("cnt") + it.id + f.avg(it.id).as_("avg") + it.username + f.sum(it.id).as_("sum")
+            f.count(1).as_("cnt")
+        }.where {
+            f.add(1, 2, 100) > 100
         }.build()
 
         assertEquals(

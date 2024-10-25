@@ -21,50 +21,50 @@ import com.kotlinorm.functions.FunctionHandler
 @Suppress("unused")
 object MathFunctions {
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.abs(x: Number?): Any? = null
+    fun FunctionHandler.abs(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.bin(x: Number?): Any? = null
+    fun FunctionHandler.bin(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.ceiling(x: Number?): Any? = null
+    fun FunctionHandler.ceiling(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.exp(x: Number?): Any? = null
+    fun FunctionHandler.exp(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.floor(x: Number?): Any? = null
+    fun FunctionHandler.floor(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.greatest(vararg x: Number?): Any? = null
+    fun FunctionHandler.greatest(vararg x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.least(vararg x: Number?): Any? = null
+    fun FunctionHandler.least(vararg x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.ln(x: Number?): Any? = null
+    fun FunctionHandler.ln(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.log(x: Number?, y: Number?): Any? = null
+    fun FunctionHandler.log(x: Number?, y: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.mod(x: Number?, y: Number?): Any? = null
+    fun FunctionHandler.mod(x: Number?, y: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter")
-    fun FunctionHandler.pi(): Any? = null
+    fun FunctionHandler.pi(): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter")
-    fun FunctionHandler.rand(): Any? = null
+    fun FunctionHandler.rand(): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.round(x: Number?, y: Number?): Any? = null
+    fun FunctionHandler.round(x: Number?, y: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.sign(x: Number?): Any? = null
+    fun FunctionHandler.sign(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.sqrt(x: Number?): Any? = null
+    fun FunctionHandler.sqrt(x: Number?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.truncate(x: Number?, y: Number?): Any? = null
+    fun FunctionHandler.truncate(x: Number?, y: Number?): Number? = null
 }

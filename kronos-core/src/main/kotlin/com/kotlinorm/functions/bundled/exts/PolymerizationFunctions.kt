@@ -21,19 +21,19 @@ import com.kotlinorm.functions.FunctionHandler
 @Suppress("unused")
 object PolymerizationFunctions {
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.count(x: Any?): Any? = null
+    fun FunctionHandler.count(x: Any?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.sum(x: Any?): Any? = null
+    fun FunctionHandler.sum(x: Any?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.avg(x: Any?): Any? = null
+    fun FunctionHandler.avg(x: Any?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.max(x: Any?): Any? = null
+    fun FunctionHandler.max(x: Any?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.min(x: Any?): Any? = null
+    fun FunctionHandler.min(x: Any?): Number? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
     fun FunctionHandler.groupConcat(x: Any?): Any? = null

@@ -292,10 +292,10 @@ class Select {
         }.build()
 
         assertEquals(
-            "SELECT COUNT(1) AS count, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE (`id` + 1) > (`id` - 1) AND LENGTH(`username`) > 5 AND `username` LIKE CONCAT(\"%\", `username`, \"%\") AND `deleted` = 0",
+            "SELECT COUNT(1) AS count, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE (`id` + 1) > (`id` - 1) AND LENGTH(`username`) > :lengthMin AND `username` LIKE CONCAT('%', `username`, '%') AND `deleted` = 0",
             sql
         )
 
-        assertEquals(mapOf("addMin" to 100), paramMap)
+        assertEquals(mapOf("lengthMin" to 5), paramMap)
     }
 }

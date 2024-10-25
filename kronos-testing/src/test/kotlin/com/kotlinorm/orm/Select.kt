@@ -278,14 +278,16 @@ class Select {
     @Test
     fun testSelectBuiltInFunctionCount() {
         val (sql, paramMap) = user.select {
-            f.count(1).as_("cnt")
+            f.count(1).as_("cnt") + it.id + f.avg(it.id).as_("avg") + it.username + f.sum(it.id).as_("sum")
         }.where {
-            f.add(1, 2, 100) > 100
+            f.add(it.id, 1) > 100
         }.build()
 
         assertEquals(
-            "SELECT COUNT(1) AS cnt, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            "SELECT COUNT(1) AS cnt, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE (`id` + 1) > :addMin AND `deleted` = 0",
             sql
         )
+
+        assertEquals(mapOf("addMin" to 100), paramMap)
     }
 }

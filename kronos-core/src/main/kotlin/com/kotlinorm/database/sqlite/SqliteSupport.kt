@@ -28,6 +28,7 @@ import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
@@ -49,7 +50,7 @@ object SqliteSupport : DatabasesSupport {
             DECIMAL, NUMERIC -> "NUMERIC"
             CHAR, VARCHAR, TEXT, MEDIUMTEXT, LONGTEXT, DATE, TIME, DATETIME, TIMESTAMP, CLOB, JSON, ENUM, NVARCHAR, NCHAR, NCLOB, UUID, GEOMETRY, POINT, LINESTRING, XML -> "TEXT"
             BINARY, VARBINARY, LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -> "BLOB"
-            else -> "NONE"
+            else -> "NOT"
         }
     }
 
@@ -67,9 +68,9 @@ object SqliteSupport : DatabasesSupport {
     }${
         if (column.nullable) "" else " NOT NULL"
     }${
-        if (column.primaryKey) " PRIMARY KEY" else ""
+        if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
     }${
-        if (column.identity) " AUTOINCREMENT" else ""
+        if (column.primaryKey == PrimaryKeyType.IDENTITY) " AUTOINCREMENT" else ""
     }${
         if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
     }"
@@ -148,8 +149,11 @@ object SqliteSupport : DatabasesSupport {
                 length = length, // 处理长度
                 tableName = tableName,
                 nullable = it["notnull"] as Int == 0, // 直接使用notnull字段判断是否可空
-                primaryKey = it["pk"] as Int == 1,
-                identity = identity,
+                primaryKey = when{
+                    it["pk"] as Int == 0 -> PrimaryKeyType.NOT
+                    identity -> PrimaryKeyType.IDENTITY
+                    else -> PrimaryKeyType.DEFAULT
+                },
                 defaultValue = it["dflt_value"] as String?,
                 // SQLITE DO NOT SUPPORT COMMENT FOR COLUMN/TABLE
             )

@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
@@ -217,7 +218,7 @@ fun getColumnName(
     }
     val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
     val propertyType = irPropertyType.classFqName!!.asString()
-    val columnType = columnTypeAnnotation?.getValueArgument(0) ?: getKColumnType(propertyType)
+    val columnType = columnTypeAnnotation?.getValueArgument(0) ?: irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType(propertyType))
     val tableName = getTableName(parent)
     val propKClass = irPropertyType.getClass()
     val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
@@ -241,11 +242,19 @@ fun getColumnName(
         irNull()
     }
 
+    val primaryKey = when{
+        primaryKeyAnnotation == null -> "none"
+        (primaryKeyAnnotation!!.getValueArgument(0) as? IrConstImpl<*>)?.value == true -> "identity"
+        (primaryKeyAnnotation!!.getValueArgument(1) as? IrConstImpl<*>)?.value == true -> "uuid"
+        (primaryKeyAnnotation!!.getValueArgument(2) as? IrConstImpl<*>)?.value == true -> "snowflake"
+        else -> "default"
+    }
+
     return FieldIR(
         columnName = columnName,
         name = propertyName,
         type = columnType,
-        primaryKey = primaryKeyAnnotation != null,
+        primaryKey = primaryKey,
         dateTimeFormat = dateTimeFormatAnnotation?.getValueArgument(0),
         tableName = tableName,
         cascade = kCascade,
@@ -255,7 +264,6 @@ fun getColumnName(
         isColumn = irProperty.isColumn(irPropertyType),
         columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
         columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),
-        identity = (primaryKeyAnnotation?.getValueArgument(0) as? IrConstImpl<*>)?.value == true,
         nullable = notNullAnnotation == null && primaryKeyAnnotation == null,
         serializable = serializableAnnotation != null,
         kDoc = irProperty.getKDocString()

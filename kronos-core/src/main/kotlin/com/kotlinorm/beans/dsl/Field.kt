@@ -21,6 +21,7 @@ import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KClass
 
@@ -32,7 +33,7 @@ import kotlin.reflect.KClass
  * @property columnName the name of the column in the database table
  * @property name the name of the field in Kotlin
  * @property type [KColumnType] of the field, default is UNDEFINED
- * @property primaryKey whether the field is a primary key
+ * @property primaryKey whether the field is a primary key and primary key type: none, default, identity, uuid, snowflake
  * @property dateFormat the format of the date field
  * @property tableName the name of the table
  * @property cascade the cascade of the field
@@ -41,7 +42,6 @@ import kotlin.reflect.KClass
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field
- * @property identity whether the field is an identity field
  * @property nullable whether the field is nullable
  * @property ignore whether the field should be ignored in some operations
  *
@@ -51,7 +51,7 @@ open class Field(
     var columnName: String,
     var name: String = fieldNamingStrategy.db2k(columnName),
     val type: KColumnType = UNDEFINED,
-    var primaryKey: Boolean = false,
+    var primaryKey: PrimaryKeyType = PrimaryKeyType.NOT,
     val dateFormat: String? = null,
     val tableName: String = "",
     val cascade: KCascade? = null,
@@ -61,7 +61,6 @@ open class Field(
     val isColumn: Boolean = true,
     val length: Int = 0,
     val defaultValue: String? = null,
-    val identity: Boolean = false,
     val nullable: Boolean = true,
     val serializable: Boolean = false,
     val kDoc: String? = null
@@ -117,7 +116,7 @@ open class Field(
         columnName: String = this.columnName,
         name: String = this.name,
         type: KColumnType = this.type,
-        primaryKey: Boolean = this.primaryKey,
+        primaryKey: PrimaryKeyType = this.primaryKey,
         dateFormat: String? = this.dateFormat,
         tableName: String = this.tableName,
         cascade: KCascade? = this.cascade,
@@ -127,7 +126,6 @@ open class Field(
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
         defaultValue: String? = this.defaultValue,
-        identity: Boolean = this.identity,
         nullable: Boolean = this.nullable
     ): Field {
         return Field(
@@ -144,7 +142,6 @@ open class Field(
             isColumn,
             length,
             defaultValue,
-            identity,
             nullable
         )
     }

@@ -18,33 +18,22 @@ package com.kotlinorm.compiler.fir.utils.kTableForSelect
 
 import com.kotlinorm.compiler.fir.utils.*
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
-import com.kotlinorm.compiler.fir.utils.funcName
-import com.kotlinorm.compiler.fir.utils.getColumnName
 import com.kotlinorm.compiler.fir.utils.getKColumnType
-import com.kotlinorm.compiler.fir.utils.isColumn
-import com.kotlinorm.compiler.fir.utils.isKronosColumn
-import com.kotlinorm.compiler.fir.utils.kTableForCondition.analyzeMinusExpression
+import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
+import com.kotlinorm.compiler.fir.utils.kTableForCondition.analyzeMinusExpression
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irNull
-import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConst
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrReturn
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
-import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.properties
-import com.kotlinorm.compiler.helpers.applyIrCall as applyIrCall1
 
 /**
  * Adds a list of fields to the given IrReturn by gathering field names and applying the `addField` operation to each name.
@@ -55,7 +44,7 @@ import com.kotlinorm.compiler.helpers.applyIrCall as applyIrCall1
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 fun addFieldList(irReturn: IrReturn): List<IrExpression> {
     return collectFields(irReturn).map {
-        applyIrCall1(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
+        applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
     }
 }
 
@@ -121,7 +110,7 @@ fun collectFields(
 
                     when (element.funcName()) {
                         "as_" -> {
-                            fields += applyIrCall1(
+                            fields += applyIrCall(
                                 aliasSymbol,
                                 element.valueArguments.first()
                             ) {
@@ -143,11 +132,11 @@ fun collectFields(
         is IrConst<*> -> {
             // Add constant values directly to the field names list.
             // 直接将常量值添加到字段名列表。
-            fields += applyIrCall1(
+            fields += applyIrCall(
                 fieldSymbol.constructors.first(),
                 element,
                 element,
-                getKColumnType("CUSTOM_CRITERIA_SQL")
+                irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType("CUSTOM_CRITERIA_SQL"))
             )
         }
 

@@ -24,6 +24,6 @@ enum class CascadeDeleteAction(name: String) {
     CASCADE("CASCADE"),
     RESTRICT("RESTRICT"),
     SET_NULL("SET NULL"),
-    NO_ACTION("NO ACTION"),
+    NO_ACTION("NOT ACTION"),
     SET_DEFAULT("SET DEFAULT");
 }

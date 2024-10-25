@@ -21,6 +21,7 @@ import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.fir.utils.getColumnOrValue
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.helpers.irEnum
 import com.kotlinorm.compiler.fir.utils.isKronosFunction
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
@@ -28,13 +29,10 @@ import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irTemporary
-import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertySetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
@@ -49,20 +47,6 @@ internal val conditionTypeSymbol
 context(IrPluginContext)
 private val kTableForConditionSymbol
     get() = referenceClass(KTABLE_FOR_CONDITION_CLASS)!!
-
-/**
- * Retrieves the condition type enum value based on the given type string.
- *
- * @param type The type string to retrieve the condition type for.
- * @return The IrExpression representing the condition type enum value.
- */
-context(IrBuilderWithScope, IrPluginContext)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal fun getConditionType(type: String): IrExpression {
-    val enumEntries = conditionTypeSymbol.owner.declarations.filterIsInstance<IrEnumEntry>()
-    val enumEntry = enumEntries.find { it.name.asString() == type.uppercase() }!!
-    return IrGetEnumValueImpl(startOffset, endOffset, conditionTypeSymbol.defaultType, enumEntry.symbol)
-}
 
 context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -152,7 +136,7 @@ fun createCriteria(
         applyIrCall(
             criteriaClassSymbol.constructors.first(),
             parameterName,
-            getConditionType(type),
+            irEnum(conditionTypeSymbol, type),
             irBoolean(not),
             value,
             tableName,

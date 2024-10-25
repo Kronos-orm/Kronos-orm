@@ -94,9 +94,9 @@ object MysqlSupport : DatabasesSupport {
         }${
             if (column.nullable) "" else " NOT NULL"
         }${
-            if (column.primaryKey) " PRIMARY KEY" else ""
+            if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
         }${
-            if (column.identity) " AUTO_INCREMENT" else ""
+            if (column.primaryKey == PrimaryKeyType.IDENTITY) " AUTO_INCREMENT" else ""
         }${
             if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
         } COMMENT '${column.kDoc.orEmpty()}'"
@@ -164,8 +164,11 @@ object MysqlSupport : DatabasesSupport {
                 length = (it["LENGTH"] as Long? ?: 0).toInt(),
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
-                primaryKey = it["PRIMARY_KEY"] == "YES",
-                identity = it["IDENTITY"] == "YES",
+                primaryKey = when {
+                    it["PRIMARY_KEY"] == "NO" -> PrimaryKeyType.NOT
+                    it["IDENTITY"] == "YES" -> PrimaryKeyType.IDENTITY
+                    else -> PrimaryKeyType.DEFAULT
+                },
                 defaultValue = it["COLUMN_DEFAULT"] as String?,
                 kDoc = it["COLUMN_COMMENT"] as String?
             )
@@ -254,7 +257,7 @@ object MysqlSupport : DatabasesSupport {
                     DBType.Mysql, it.first
                 ).replace(" PRIMARY KEY", "")
             } ${if (it.second != null) "AFTER ${quote(it.second!!)}" else "FIRST"} ${
-                if (it.first.primaryKey) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${
+                if (it.first.primaryKey != PrimaryKeyType.NOT) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${
                     quote(
                         it.first
                     )

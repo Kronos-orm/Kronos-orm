@@ -18,6 +18,8 @@ package com.kotlinorm.compiler.fir.beans
 
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
 import com.kotlinorm.compiler.helpers.applyIrCall
+import com.kotlinorm.compiler.helpers.irEnum
+import com.kotlinorm.compiler.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
@@ -28,6 +30,10 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
 
+context(IrBuilderWithScope, IrPluginContext)
+internal val primaryKeyTypeSymbol
+    get() = referenceClass("com.kotlinorm.enums.PrimaryKeyType")!!
+
 /**
  * IrField
  *
@@ -35,30 +41,29 @@ import org.jetbrains.kotlin.ir.util.constructors
  *
  * 读取Property信息构造一个Field IR，包含一个字段的所有信息
  *
- * @param columnName The name of the column
- * @param name The name of the field
- * @param type The type of the column
- * @param primaryKey Whether the field is a primary key
- * @param dateTimeFormat The format of the date time
- * @param tableName The name of the table
- * @param cascade The cascade type
- * @param cascadeIsArrayOrCollection Whether the cascade is an array or collection
- * @param cascadeTypeKClass The KClass of the cascade type
- * @param ignore operations should be ignored
- * @param isColumn Whether the field is a column
- * @param columnTypeLength The length of the column type
- * @param columnDefaultValue The default value of the column
- * @param identity Whether the field is an identity
- * @param nullable Whether the field is nullable
- * @param serializable Whether the field is serializable
- * @param kDoc The documentation of the field
+ * @property columnName The name of the column
+ * @property name The name of the field
+ * @property type The type of the column
+ * @property primaryKey whether the field is a primary key and primary key type: none, default, identity, uuid, snowflake
+ * @property dateTimeFormat The format of the date time
+ * @property tableName The name of the table
+ * @property cascade The cascade type
+ * @property cascadeIsArrayOrCollection Whether the cascade is an array or collection
+ * @property cascadeTypeKClass The KClass of the cascade type
+ * @property ignore operations should be ignored
+ * @property isColumn Whether the field is a column
+ * @property columnTypeLength The length of the column type
+ * @property columnDefaultValue The default value of the column
+ * @property nullable Whether the field is nullable
+ * @property serializable Whether the field is serializable
+ * @property kDoc The documentation of the field
  *
  */
 class FieldIR(
     private val columnName: IrExpression,
     private val name: String,
     private val type: IrExpression,
-    private val primaryKey: Boolean,
+    private val primaryKey: String,
     private val dateTimeFormat: IrExpression?,
     private val tableName: IrExpression,
     private val cascade: IrExpression,
@@ -68,14 +73,13 @@ class FieldIR(
     private val isColumn: Boolean,
     private val columnTypeLength: IrExpression?,
     private val columnDefaultValue: IrExpression?,
-    private val identity: Boolean,
     private val nullable: Boolean,
     private val serializable: Boolean,
     private val kDoc: IrExpression
 ) {
 
     /**
-     * Converts the current object to an IrVariable by creating a criteria using the provided parameters.
+     * Converts the current object to an IrVariable by creating a criteria using the provided propertyeters.
      *
      * @return an IrVariable representing the created criteria
      */
@@ -87,7 +91,7 @@ class FieldIR(
             columnName,
             irString(name),
             type,
-            irBoolean(primaryKey),
+            irEnum(primaryKeyTypeSymbol, primaryKey),
             dateTimeFormat ?: irNull(),
             tableName,
             cascade,
@@ -97,7 +101,6 @@ class FieldIR(
             irBoolean(isColumn),
             columnTypeLength ?: irInt(0),
             columnDefaultValue ?: irNull(),
-            irBoolean(identity),
             irBoolean(nullable),
             irBoolean(serializable),
             kDoc

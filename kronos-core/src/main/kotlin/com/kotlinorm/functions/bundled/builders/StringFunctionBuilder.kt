@@ -105,11 +105,16 @@ object StringFunctionBuilder : FunctionBuilder {
             /**
              * 连接字符串
              * concatenate strings
+             * join(x1, x2, ...)
+             * exp: join("a", "b", "c") => "a, b, c"
+             * Mysql: CONCAT(x, y, z) SQLite: CONCAT(x, y, z) Oracle: CONCAT(x, y, z) Postgres: CONCAT(x, y, z) Mssql: CONCAT(x, y, z)
+             */
+            "concat" -> all
+            /**
+             * 连接字符串
+             * concatenate strings
              * join(separator, x1, x2, ...)
              * exp: join(", ", "a", "b", "c") => "a, b, c"
-             * if the first parameter is empty string:
-             * Mysql: CONCAT(x, y, z) SQLite: CONCAT(x, y, z) Oracle: CONCAT(x, y, z) Postgres: CONCAT(x, y, z) Mssql: CONCAT(x, y, z)
-             * if the first parameter is not empty string:
              * Mysql: CONCAT_WS(separator, x, y, z) SQLite: CONCAT_WS(separator, x, y, z) Oracle: x || separator || y || separator || z Postgres: CONCAT_WS(separator, x, y, z) Mssql: CONCAT_WS(separator, x, y, z)
              */
             "join" -> all
@@ -126,19 +131,14 @@ object StringFunctionBuilder : FunctionBuilder {
         val alias = if (showAlias) field.name else ""
         field.functionName = when (field.functionName) {
             "join" -> {
-                if (field.fields.first().second == "") {
-                    field.fields = field.fields.drop(1)
-                    "CONCAT"
+                if (dataSource.dbType == DBType.Oracle) {
+                    val separator = field.fields.first().second
+                    val fields: List<Pair<Field?, Any?>> =
+                        field.fields.drop(1).flatMap { listOf(Pair(null, separator), it) }.drop(1)
+                    return buildOperations("||", alias, fields, dataSource, showTable)
                 } else {
-                    if (dataSource.dbType == DBType.Oracle) {
-                        val separator = field.fields.first().second
-                        val fields: List<Pair<Field?, Any?>> =
-                            field.fields.drop(1).flatMap { listOf(Pair(null, separator), it) }.drop(1)
-                        return buildOperations("||", alias, fields, dataSource, showTable)
-                    } else {
-                        field.fields = field.fields.drop(1)
-                        "CONCAT_WS"
-                    }
+                    field.fields = field.fields.drop(1)
+                    "CONCAT_WS"
                 }
             }
 

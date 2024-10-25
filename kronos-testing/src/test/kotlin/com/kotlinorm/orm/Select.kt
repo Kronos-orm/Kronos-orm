@@ -5,9 +5,13 @@ import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.functions.bundled.exts.MathFunctions.add
+import com.kotlinorm.functions.bundled.exts.MathFunctions.sub
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
+import com.kotlinorm.functions.bundled.exts.StringFunctions.concat
+import com.kotlinorm.functions.bundled.exts.StringFunctions.join
+import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.TestWrapper
@@ -280,7 +284,11 @@ class Select {
         val (sql, paramMap) = user.select {
             f.count(1) + it.id + f.avg(it.id) + it.username + f.sum(it.id)
         }.where {
-            f.add(it.id, 1) > 100
+            f.add(it.id, 1) > f.sub(it.id, 1) && f.length(it.username) > 5 && it.username like f.concat(
+                "%",
+                it.username,
+                "%"
+            )
         }.build()
 
         assertEquals(

@@ -41,5 +41,8 @@ object StringFunctions {
     fun FunctionHandler.rtrim(x: String?): Any? = null
 
     @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
-    fun FunctionHandler.join(x: String?, vararg y: String?): Any? = null
+    fun FunctionHandler.concat(x: String?, vararg y: String?): String? = null
+
+    @Suppress("unused", "UnusedReceiverParameter", "UNUSED_PARAMETER")
+    fun FunctionHandler.join(x: String?, vararg y: String?): String? = null
 }

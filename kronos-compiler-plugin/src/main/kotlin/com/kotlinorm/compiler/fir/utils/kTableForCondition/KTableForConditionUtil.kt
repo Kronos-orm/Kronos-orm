@@ -250,7 +250,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args.first()
+                        getColumnOrValue(args.first())
                     }
                     tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                 }
@@ -264,7 +264,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args.first()
+                        getColumnOrValue(args.first())
                     }
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -284,7 +284,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args.first()
+                        getColumnOrValue(args.first())
                     }
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -320,7 +320,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             paramName = getColumnOrValue(left)
                             // 形如 it.<property>.contains("xx")的写法
                             // Writes like it.<property>.contains("xx") or "xx" in it.<property>
-                            args.first()
+                            getColumnOrValue(args.first())
                         }
 
                         value = if (str is IrConstImpl<*> && str.value is String) {

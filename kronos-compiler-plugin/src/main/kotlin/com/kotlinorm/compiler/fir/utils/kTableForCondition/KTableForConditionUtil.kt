@@ -17,8 +17,16 @@
 package com.kotlinorm.compiler.fir.utils.kTableForCondition
 
 import com.kotlinorm.compiler.fir.beans.CriteriaIR
-import com.kotlinorm.compiler.fir.utils.*
+import com.kotlinorm.compiler.fir.utils.ARRAY_OR_COLLECTION_FQ_NAMES
+import com.kotlinorm.compiler.fir.utils.KPojoFqName
 import com.kotlinorm.compiler.fir.utils.correspondingName
+import com.kotlinorm.compiler.fir.utils.findKronosColumn
+import com.kotlinorm.compiler.fir.utils.funcName
+import com.kotlinorm.compiler.fir.utils.getColumnOrValue
+import com.kotlinorm.compiler.fir.utils.getTableName
+import com.kotlinorm.compiler.fir.utils.isColumn
+import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.fir.utils.isKronosFunction
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy

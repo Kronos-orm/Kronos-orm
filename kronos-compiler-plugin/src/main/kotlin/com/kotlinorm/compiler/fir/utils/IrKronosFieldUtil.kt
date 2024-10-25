@@ -2,10 +2,14 @@ package com.kotlinorm.compiler.fir.utils
 
 import com.kotlinorm.compiler.fir.beans.FieldIR
 import com.kotlinorm.compiler.fir.utils.kTableForSelect.irFieldOrNull
-import com.kotlinorm.compiler.helpers.*
 import com.kotlinorm.compiler.helpers.applyIrCall
+import com.kotlinorm.compiler.helpers.createKClassExpr
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
+import com.kotlinorm.compiler.helpers.irListOf
+import com.kotlinorm.compiler.helpers.irPairOf
+import com.kotlinorm.compiler.helpers.nType
+import com.kotlinorm.compiler.helpers.pairSymbol
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext

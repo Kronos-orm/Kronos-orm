@@ -19,7 +19,6 @@ package com.kotlinorm.compiler.fir.utils.kTableForSelect
 import com.kotlinorm.compiler.fir.utils.*
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
 import com.kotlinorm.compiler.fir.utils.funcName
-import com.kotlinorm.compiler.fir.utils.functionSymbol
 import com.kotlinorm.compiler.fir.utils.getColumnName
 import com.kotlinorm.compiler.fir.utils.getKColumnType
 import com.kotlinorm.compiler.fir.utils.isColumn
@@ -27,10 +26,6 @@ import com.kotlinorm.compiler.fir.utils.isKronosColumn
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.analyzeMinusExpression
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
-import com.kotlinorm.compiler.helpers.irListOf
-import com.kotlinorm.compiler.helpers.irPairOf
-import com.kotlinorm.compiler.helpers.nType
-import com.kotlinorm.compiler.helpers.pairSymbol
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
@@ -46,12 +41,9 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
-import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.name.FqName
 import com.kotlinorm.compiler.helpers.applyIrCall as applyIrCall1
 
 /**

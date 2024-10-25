@@ -6,6 +6,7 @@ import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.createKClassExpr
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
+import com.kotlinorm.compiler.helpers.irEnum
 import com.kotlinorm.compiler.helpers.irListOf
 import com.kotlinorm.compiler.helpers.irPairOf
 import com.kotlinorm.compiler.helpers.nType
@@ -23,7 +24,6 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
@@ -243,7 +243,7 @@ fun getColumnName(
     }
 
     val primaryKey = when{
-        primaryKeyAnnotation == null -> "none"
+        primaryKeyAnnotation == null -> "not"
         (primaryKeyAnnotation!!.getValueArgument(0) as? IrConstImpl<*>)?.value == true -> "identity"
         (primaryKeyAnnotation!!.getValueArgument(1) as? IrConstImpl<*>)?.value == true -> "uuid"
         (primaryKeyAnnotation!!.getValueArgument(2) as? IrConstImpl<*>)?.value == true -> "snowflake"

@@ -304,7 +304,7 @@ naming:
     minimumFunctionNameLength: 3
   FunctionNaming:
     active: true
-    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**', 'kronos-core/src/main/kotlin/com/kotlinorm/beans/dsl/KTableForSelect.kt', "kronos-core/src/main/kotlin/com/kotlinorm/functions/**" ]
+    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**', '**/KTableForSelect.kt', "**/com/kotlinorm/functions/**" ]
     functionPattern: '[a-z][a-zA-Z0-9]*'
     excludeClassPattern: '$^'
     ignoreOverridden: true

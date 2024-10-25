@@ -125,7 +125,7 @@ fun getFunctionName(expression: IrExpression): IrExpression {
                         irPairOf(
                             fieldSymbol.nType,
                             irBuiltIns.anyNType,
-                            (element as IrExpression).irFieldOrNull() to it
+                            (element as IrExpression).irFieldOrNull() to element
                         )
                     })
                 } else {

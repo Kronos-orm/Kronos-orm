@@ -96,7 +96,7 @@ object ConditionSqlBuilder {
         key: String,
         value: Any?
     ) {
-        if (value != null) {
+        if (value != null && field !is FunctionField) {
             this[key] = when {
                 field.serializable -> serializeResolver.serialize(value)
                 else -> value
@@ -133,6 +133,9 @@ object ConditionSqlBuilder {
             if (handleNoValueStrategy(condition, operationType, paramMap) != null)
                 return KotoBuildResultSet(null, paramMap)
         }
+
+        if (condition.field is FunctionField) paramMap.remove(condition.field.name)
+        if (condition.value is FunctionField) paramMap.remove((condition.value as FunctionField).name)
 
         val sql = when (condition.type) {
             Root -> {

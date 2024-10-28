@@ -96,7 +96,7 @@ object ConditionSqlBuilder {
         key: String,
         value: Any?
     ) {
-        if (value != null && field !is FunctionField) {
+        if (value != null && value !is FunctionField) {
             this[key] = when {
                 field.serializable -> serializeResolver.serialize(value)
                 else -> value

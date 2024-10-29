@@ -66,7 +66,7 @@ class UpsertClause<T : KPojo>(
     private var toUpdateFields = linkedSetOf<Field>()
     private var onFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+    private var cascadeAllowed: Set<Field>? = null
     private var lock: PessimisticLock? = null
     private var paramMapNew = mutableMapOf<String, Any?>()
 
@@ -74,6 +74,9 @@ class UpsertClause<T : KPojo>(
         if (setUpsertFields != null) {
             pojo.afterSelect {
                 setUpsertFields!!(it)
+                if (fields.isEmpty()) {
+                    throw NeedFieldsException()
+                }
                 toUpdateFields += fields
             }
         }
@@ -90,6 +93,9 @@ class UpsertClause<T : KPojo>(
         if (null == someFields) throw NeedFieldsException()
         pojo.afterSelect {
             someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             onFields += fields.toSet()
         }
         return this
@@ -107,9 +113,21 @@ class UpsertClause<T : KPojo>(
         return this
     }
 
-    fun cascade(vararg cascadeAllowed: KProperty<*>, enabled: Boolean = true): UpsertClause<T> {
+    fun cascade(enabled: Boolean): UpsertClause<T> {
         this.cascadeEnabled = enabled
-        this.cascadeAllowed = cascadeAllowed
+        return this
+    }
+
+    fun cascade(someFields: ToSelect<T, Any?>): UpsertClause<T> {
+        if (someFields == null) throw NeedFieldsException()
+        cascadeEnabled = true
+        pojo.afterSelect {
+            someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
+            cascadeAllowed = fields.toSet()
+        }
         return this
     }
 
@@ -176,15 +194,20 @@ class UpsertClause<T : KPojo>(
                         .queryOneOrNull<Int>() ?: 0)
                     > 0
                 ) {
-                    pojo.update().cascade(*cascadeAllowed, enabled = cascadeEnabled)
+                    pojo.update().cascade(cascadeEnabled)
                         .apply {
+                            this@UpsertClause.cascadeAllowed = this.cascadeAllowed
+                            this@UpsertClause.toUpdateFields = this.toUpdateFields
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
-                            this@UpsertClause.toUpdateFields = this.toUpdateFields
                         }
                         .execute(wrapper)
                 } else {
-                    pojo.insert().cascade(*cascadeAllowed, enabled = cascadeEnabled).execute(wrapper)
+                    pojo.insert().cascade(cascadeEnabled)
+                        .apply {
+                            this@UpsertClause.cascadeAllowed = this.cascadeAllowed
+                        }
+                        .execute(wrapper)
                 }
             }
         }
@@ -200,10 +223,15 @@ class UpsertClause<T : KPojo>(
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.cascade(
-            vararg props: KProperty<*>,
-            enabled: Boolean = true
+            enabled: Boolean
         ): List<UpsertClause<T>> {
-            return map { it.cascade(*props, enabled = enabled) }
+            return map { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> List<UpsertClause<T>>.cascade(
+            someFields: ToSelect<T, Any?>
+        ): List<UpsertClause<T>> {
+            return map { it.cascade(someFields) }
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.build(): KronosActionTask {

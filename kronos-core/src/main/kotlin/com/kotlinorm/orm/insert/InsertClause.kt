@@ -18,6 +18,7 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
@@ -26,8 +27,10 @@ import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
+import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
@@ -43,7 +46,15 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private val toInsertFields = linkedSetOf<Field>()
     private var cascadeEnabled = true
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+
+    /**
+     * cascadeAllowed
+     *
+     * Fields that are allowed to use cascade, if not set, all fields are allowed to use cascade
+     *
+     * 允许级联的字段，若为空则允许所有字段级联
+     */
+    internal var cascadeAllowed: Set<Field>? = null
 
     private val updateInsertFields = { field: Field, value: Any? ->
         if (field.isColumn && value != null) {
@@ -52,9 +63,19 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
     }
 
-    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): InsertClause<T> {
+    fun cascade(enabled: Boolean): InsertClause<T> {
         cascadeEnabled = enabled
-        cascadeAllowed = props
+        return this
+    }
+
+    fun cascade(someFields: ToSelect<T, Any?>): InsertClause<T> {
+        if(someFields == null) throw NeedFieldsException()
+        cascadeEnabled = true
+        pojo.afterSelect {
+            someFields(it)
+            if(fields.isEmpty()) throw NeedFieldsException()
+            cascadeAllowed = fields.toSet()
+        }
         return this
     }
 
@@ -99,10 +120,15 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     companion object {
         fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
-            vararg props: KProperty<*>,
             enabled: Boolean
         ): Iterable<InsertClause<T>> {
-            return this.onEach { it.cascade(*props, enabled = enabled) }
+            return this.onEach { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
+            someFields: ToSelect<T, Any?>
+        ): Iterable<InsertClause<T>> {
+            return this.onEach { it.cascade(someFields) }
         }
 
         /**
@@ -130,8 +156,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
             return build().execute(wrapper)
         }
 
-        fun <T : KPojo> Array<InsertClause<T>>.cascade(vararg props: KProperty<*>, enabled: Boolean = true): Array<out InsertClause<T>> {
-            return this.onEach { it.cascade(*props, enabled = enabled) }
+        fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean): Array<out InsertClause<T>> {
+            return this.onEach { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> Array<InsertClause<T>>.cascade(someFields: ToSelect<T, Any?>): Array<out InsertClause<T>> {
+            return this.onEach { it.cascade(someFields) }
         }
 
         /**

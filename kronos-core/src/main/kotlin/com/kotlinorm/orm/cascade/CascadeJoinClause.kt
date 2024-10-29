@@ -17,14 +17,15 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.*
+import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.QueryOne
+import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
-import kotlin.reflect.KProperty
 
 /**
  * Defines the logic for building and executing cascade join clauses in the context of ORM operations.
@@ -55,7 +56,7 @@ object CascadeJoinClause {
      */
     fun build(
         cascade: Boolean,
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>? = null,
         listOfPojo: List<KPojo>,
         rootTask: KronosAtomicQueryTask,
         operationType: KOperationType,
@@ -89,7 +90,7 @@ object CascadeJoinClause {
      */
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>? = null,
         cascadeSelectedProps: Set<Field>,
         listOfColumns: List<Pair<KPojo, List<Field>>>,
         operationType: KOperationType,
@@ -100,8 +101,8 @@ object CascadeJoinClause {
                 columns.first::class,
                 columns.second,
                 KOperationType.SELECT,
-                cascadeAllowed.filterReceiver(columns.first::class).map { it.name }.toSet(),
-                cascadeAllowed.isEmpty()
+                cascadeAllowed?.filter { it.tableName == columns.first.kronosTableName() }?.map { it.name }?.toSet(),
+                cascadeAllowed.isNullOrEmpty()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         }
         val validReferences = listOfValidReferences.flatten()
@@ -115,12 +116,11 @@ object CascadeJoinClause {
                             QueryList -> { // 若是查询KPojo列表
                                 val lastStepResult = this as List<KPojo> // this为主表查询的结果
                                 if (lastStepResult.isNotEmpty()) {
-                                    val prop =
-                                        lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+                                    val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
                                     lastStepResult.forEach rowMapper@{
                                         setValues(
                                             it,
-                                            prop,
+                                            propName,
                                             validRef,
                                             cascadeAllowed,
                                             cascadeSelectedProps,
@@ -134,11 +134,10 @@ object CascadeJoinClause {
                             QueryOne, QueryOneOrNull -> {
                                 val lastStepResult = this as KPojo? // this为主表查询的结果
                                 if (lastStepResult != null) {
-                                    val prop =
-                                        lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+                                    val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
                                     setValues(
                                         lastStepResult,
-                                        prop,
+                                        propName,
                                         validRef,
                                         cascadeAllowed,
                                         cascadeSelectedProps,

@@ -74,7 +74,7 @@ class UpdateClause<T : KPojo>(
     private val plusAssigns = mutableListOf<Pair<Field, String>>()
     private val minusAssigns = mutableListOf<Pair<Field, String>>()
     private var cascadeEnabled = true
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+    internal var cascadeAllowed: Set<Field>? = null
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。
@@ -131,9 +131,21 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
-    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): UpdateClause<T> {
-        this.cascadeEnabled = enabled
-        this.cascadeAllowed = props
+    fun cascade(enabled: Boolean): UpdateClause<T> {
+        cascadeEnabled = enabled
+        return this
+    }
+
+    fun cascade(someFields: ToSelect<T, Any?>): UpdateClause<T> {
+        if(someFields == null) throw NeedFieldsException()
+        cascadeEnabled = true
+        pojo.afterSelect {
+            someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
+            cascadeAllowed = fields.toSet()
+        }
         return this
     }
 
@@ -148,6 +160,9 @@ class UpdateClause<T : KPojo>(
         if (someFields == null) throw NeedFieldsException()
         pojo.afterSelect {
             someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
         return this
@@ -312,10 +327,15 @@ class UpdateClause<T : KPojo>(
         }
 
         fun <T : KPojo> List<UpdateClause<T>>.cascade(
-            vararg props: KProperty<*>,
-            enabled: Boolean = true
+            enabled: Boolean
         ): List<UpdateClause<T>> {
-            return map { it.cascade(*props, enabled = enabled) }
+            return map { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> List<UpdateClause<T>>.cascade(
+            someFields: ToSelect<T, Any?>
+        ): List<UpdateClause<T>> {
+            return map { it.cascade(someFields) }
         }
 
         /**

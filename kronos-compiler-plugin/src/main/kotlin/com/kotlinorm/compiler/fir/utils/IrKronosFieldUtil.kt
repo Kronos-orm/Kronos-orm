@@ -91,7 +91,6 @@ val IgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.Ignore")
 val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
 val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
-val KTableFunctionFqName = FqName("com.kotlinorm.beans.dsl.KSqlFunction")
 
 
 /**
@@ -222,7 +221,7 @@ fun getColumnName(
     val tableName = getTableName(parent)
     val propKClass = irPropertyType.getClass()
     val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
-    val cascadeTypeKClass = if (irProperty.isDelegated) {
+    val kClass = if (irProperty.isDelegated) {
         irNull()
     } else {
         createKClassExpr(
@@ -259,7 +258,7 @@ fun getColumnName(
         tableName = tableName,
         cascade = kCascade,
         cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
-        cascadeTypeKClass = cascadeTypeKClass,
+        kClass = kClass,
         ignore = ignoreAnnotation?.getValueArgument(0),
         isColumn = irProperty.isColumn(irPropertyType),
         columnTypeLength = columnTypeAnnotation?.getValueArgument(1),

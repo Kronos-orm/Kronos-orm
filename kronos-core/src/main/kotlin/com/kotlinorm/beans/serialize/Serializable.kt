@@ -27,12 +27,12 @@ import kotlin.reflect.KProperty0
 
 
 inline fun <reified T> serializable(toSerialize: KProperty0<String?>): Serializable<T?> {
-    return Serializable(toSerialize, T::class)
+    return Serializable(toSerialize.name, T::class)
 }
 
 // 自定义委托类
 class Serializable<T>(
-    private val toSerialize: KProperty0<String?>,
+    private val toSerialize: String,
     private val targetKClass: KClass<*>
 ) : ReadWriteProperty<Any, T?> {
     @Suppress("UNCHECKED_CAST")

@@ -45,12 +45,12 @@ class KCascade(
 ) {
     companion object {
         inline fun <reified T : KPojo, reified R> manyToMany(relationOfThis: KProperty0<List<R>?>): ManyToMany<T, R> {
-            return ManyToMany(relationOfThis, R::class, T::class)
+            return ManyToMany(relationOfThis.name, R::class, T::class)
         }
 
         // 自定义委托类
         class ManyToMany<T, R>(
-            private var relationOfThis: KProperty0<List<R>?>,
+            private var relationOfThis: String,
             private val relationClass: KClass<*>,
             private val targetClass: KClass<*>
         ) : ReadWriteProperty<Any, List<T>> {
@@ -68,7 +68,7 @@ class KCascade(
             override fun getValue(thisRef: Any, property: KProperty<*>): List<T> {
                 initKProperty()
                 return ((thisRef as KPojo)[relationOfThis] as List<R>? ?: emptyList()).map {
-                    (it as KPojo)[targetOfRelation!!] as T
+                    (it as KPojo)[targetOfRelation!!.name] as T
                 }
             }
 
@@ -76,7 +76,7 @@ class KCascade(
                 initKProperty()
                 (thisRef as KPojo)[relationOfThis] = value.map {
                     relationClass.createInstance().apply {
-                        (this@apply as KPojo)[targetOfRelation!!] = it
+                        (this@apply as KPojo)[targetOfRelation!!.name] = it
                     }
                 }
             }

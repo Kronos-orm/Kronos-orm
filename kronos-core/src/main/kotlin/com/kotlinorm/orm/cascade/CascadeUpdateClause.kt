@@ -28,13 +28,12 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
-import kotlin.reflect.KProperty
 
 object CascadeUpdateClause {
 
     fun <T : KPojo> build(
         cascade: Boolean,
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>? = null,
         pojo: T,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
@@ -46,7 +45,7 @@ object CascadeUpdateClause {
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>? = null,
         pojo: T,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
@@ -59,10 +58,12 @@ object CascadeUpdateClause {
             doBeforeExecute { wrapper ->
                 toUpdateRecords.addAll(
                     pojo.select()
-                        .cascade(*cascadeAllowed)
                         .where { whereClauseSql.asSql() }
                         .patch(*paramMap.toList().toTypedArray())
-                        .apply { operationType = KOperationType.UPDATE }
+                        .apply {
+                            this.cascadeAllowed = cascadeAllowed
+                            this.operationType = KOperationType.UPDATE
+                        }
                         .queryList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute

@@ -10,12 +10,17 @@ class KTableParserForSelectTransformerTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `KTable Parser For Select Transformer Test`() {
+
         val result = compile(
             """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.*
             import com.kotlinorm.beans.dsl.Field
+            import com.kotlinorm.beans.dsl.FunctionField
             import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+            import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
+            import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+            import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
@@ -62,7 +67,7 @@ class KTableParserForSelectTransformerTest {
                 var deleted: Boolean? = null
             ) : KPojo {
                 operator fun get(name: String): Field {
-                    return kronosColumns().find { it.name == name }!!
+                    return kronosColumns().find { it.name == name } ?: throw IllegalArgumentException("Field ${'$'}name not found")
                 }
             }
             
@@ -75,12 +80,12 @@ class KTableParserForSelectTransformerTest {
             
                 val user = User()
             
-                fun select(block: ToSelect<User, Any?>): List<Field>? {
-                    var rst: List<Field>? = null
+                fun select(block: ToSelect<User, Any?>): List<Field> {
+                    val rst: MutableList<Field> = mutableListOf()
 
                     user.afterSelect {
                         block!!(it)
-                        rst = fields
+                        rst += fields
                     }
                     return rst
                 }
@@ -101,7 +106,7 @@ class KTableParserForSelectTransformerTest {
                         user["username"].apply{ name = "name" },
                     ),
                     select {
-                        it.id + it.username.`as`("name")
+                        it.id + it.username.as_("name")
                     }
                 )
                 
@@ -112,6 +117,22 @@ class KTableParserForSelectTransformerTest {
                     ),
                     select {
                         it.id + "1"
+                    }
+                )
+                
+                assertEquals(
+                    listOf(
+                        FunctionField(
+                            "count", 
+                            listOf(
+                                Pair(user["id"], user.id)
+                            )
+                        ).apply{
+                            name = "cnt"
+                        }
+                    ),
+                    select {
+                        f.count(it.id).as_("cnt")
                     }
                 )
 

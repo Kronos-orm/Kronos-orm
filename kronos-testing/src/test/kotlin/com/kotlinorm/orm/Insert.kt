@@ -4,7 +4,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.utils.TestWrapper
-import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.database.beans.MysqlUser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

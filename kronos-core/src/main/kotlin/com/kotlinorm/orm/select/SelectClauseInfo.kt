@@ -1,6 +1,7 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.PessimisticLock
 
 data class SelectClauseInfo(

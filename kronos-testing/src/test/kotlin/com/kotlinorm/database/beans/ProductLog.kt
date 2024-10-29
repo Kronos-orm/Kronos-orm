@@ -1,4 +1,4 @@
-package com.kotlinorm.tableOperation.beans
+package com.kotlinorm.database.beans
 
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.Table

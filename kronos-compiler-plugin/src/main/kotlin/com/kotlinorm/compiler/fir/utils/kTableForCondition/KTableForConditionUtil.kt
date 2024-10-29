@@ -26,6 +26,7 @@ import com.kotlinorm.compiler.fir.utils.getColumnOrValue
 import com.kotlinorm.compiler.fir.utils.getTableName
 import com.kotlinorm.compiler.fir.utils.isColumn
 import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.fir.utils.isKronosFunction
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
@@ -168,8 +169,8 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                 "equal" -> {
                     not = not xor element.valueArguments.isEmpty()
                     val index = when {
-                        args[0].isKronosColumn() -> 0
-                        args[1].isKronosColumn() -> 1
+                        args[0].isKronosColumn() || args[0].isKronosFunction() -> 0
+                        args[1].isKronosColumn() || args[0].isKronosFunction() -> 1
                         else -> {
                             type = "sql"
                             value = element
@@ -249,7 +250,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args.first()
+                        getColumnOrValue(args.first())
                     }
                     tableName = getTableName(element.dispatchReceiver!!.type.subType()!!.getClass()!!)
                 }
@@ -263,7 +264,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args.first()
+                        getColumnOrValue(args.first())
                     }
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -283,7 +284,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             dispatchBy(irGet(extensionReceiverParameter!!))
                         }
                     } else {
-                        args.first()
+                        getColumnOrValue(args.first())
                     }
                     paramName = getColumnOrValue(element.extensionReceiver!!)
                     value = applyIrCall(
@@ -319,7 +320,7 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             paramName = getColumnOrValue(left)
                             // 形如 it.<property>.contains("xx")的写法
                             // Writes like it.<property>.contains("xx") or "xx" in it.<property>
-                            args.first()
+                            getColumnOrValue(args.first())
                         }
 
                         value = if (str is IrConstImpl<*> && str.value is String) {

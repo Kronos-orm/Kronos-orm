@@ -16,13 +16,13 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.Kronos.fieldNamingStrategy
 import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.utils.fieldDb2k
 import kotlin.reflect.KClass
 
 /**
@@ -38,7 +38,7 @@ import kotlin.reflect.KClass
  * @property tableName the name of the table
  * @property cascade the cascade of the field
  * @property cascadeIsCollectionOrArray whether the cascade field is a collection or array
- * @property cascadeKClass the class of the cascade field
+ * @property kClass the class of the cascade field
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field
@@ -47,16 +47,16 @@ import kotlin.reflect.KClass
  *
  * @author: OUSC
  */
-class Field(
+open class Field(
     var columnName: String,
-    var name: String = fieldDb2k(columnName),
+    var name: String = fieldNamingStrategy.db2k(columnName),
     val type: KColumnType = UNDEFINED,
     var primaryKey: PrimaryKeyType = PrimaryKeyType.NOT,
     val dateFormat: String? = null,
     val tableName: String = "",
     val cascade: KCascade? = null,
     val cascadeIsCollectionOrArray: Boolean = false,
-    val cascadeKClass: KClass<KPojo>? = null,
+    val kClass: KClass<KPojo>? = null,
     val ignore: Array<IgnoreAction>? = null,
     val isColumn: Boolean = true,
     val length: Int = 0,
@@ -121,7 +121,7 @@ class Field(
         tableName: String = this.tableName,
         cascade: KCascade? = this.cascade,
         cascadeIsCollectionOrArray: Boolean = this.cascadeIsCollectionOrArray,
-        cascadeKClass: KClass<KPojo>? = this.cascadeKClass,
+        kClass: KClass<KPojo>? = this.kClass,
         ignore: Array<IgnoreAction>? = this.ignore,
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
@@ -137,7 +137,7 @@ class Field(
             tableName,
             cascade,
             cascadeIsCollectionOrArray,
-            cascadeKClass,
+            kClass,
             ignore,
             isColumn,
             length,

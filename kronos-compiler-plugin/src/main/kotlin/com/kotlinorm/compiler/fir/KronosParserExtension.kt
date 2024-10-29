@@ -23,10 +23,10 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.*
 import java.io.File
 
-open class KronosParserExtension(val debug: Boolean, val debugInfoPath: String, val functions: Array<String>) : IrGenerationExtension {
+open class KronosParserExtension(val debug: Boolean, val debugInfoPath: String) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        moduleFragment.transform(KronosParserTransformer(pluginContext, functions), null)
+        moduleFragment.transform(KronosParserTransformer(pluginContext), null)
         if (debug) {
             if (!File(debugInfoPath).exists()) {
                 File(debugInfoPath).mkdirs()

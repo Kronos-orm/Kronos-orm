@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.functions.FunctionHandler
 import com.kotlinorm.interfaces.KPojo
 
 /**
@@ -24,14 +25,17 @@ import com.kotlinorm.interfaces.KPojo
  * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
  * to add Fields, you can use following:
  * 1. `it.<field1> + it.<field2>`
- * 2. `it.<field1> + it.<field2>.as("<alias>")`
+ * 2. `it.<field1> + it.<field2>.as_("<alias>")`
  * 3. `addField(Field(columnName, optionalName))`
  * 4. `Field(columnName, optionalName).setAlias("<alias>")`
+ * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).as_("<alias>")`
  *
  * @param T the type of the table
  */
 open class KTableForSelect<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
+    val f: FunctionHandler = FunctionHandler
+
     /**
      * Overloaded operator function that adds two objects of type Any?.
      *
@@ -39,6 +43,7 @@ open class KTableForSelect<T : KPojo> {
      * @return an integer value of 1.
      */
     operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Int = 1
+
     /**
      * Overloaded operator function that minus two objects of type Any?.
      *
@@ -54,7 +59,7 @@ open class KTableForSelect<T : KPojo> {
      * @return the provided alias
      */
     @Suppress("UNUSED")
-    infix fun Any?.`as`(alias: String): String = alias
+    infix fun Any?.as_(alias: String): String = alias
 
     /**
      * Adds a field to the collection of fields.

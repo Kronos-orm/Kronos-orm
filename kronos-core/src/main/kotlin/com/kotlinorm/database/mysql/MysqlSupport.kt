@@ -17,6 +17,7 @@
 package com.kotlinorm.database.mysql
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
@@ -30,6 +31,7 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -101,7 +103,11 @@ object MysqlSupport : DatabasesSupport {
         } COMMENT '${column.kDoc.orEmpty()}'"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
-        "CREATE${if(index.type == "NORMAL") " " else " ${index.type} "}INDEX ${index.name} ON ${quote(tableName)} (${index.columns.joinToString(",") { quote(it) }}) USING ${index.method.ifEmpty { "BTREE" }}"
+        "CREATE${if (index.type == "NORMAL") " " else " ${index.type} "}INDEX ${index.name} ON ${quote(tableName)} (${
+            index.columns.joinToString(
+                ","
+            ) { quote(it) }
+        }) USING ${index.method.ifEmpty { "BTREE" }}"
 
     override fun getTableCreateSqlList(
         dbType: DBType,
@@ -140,8 +146,8 @@ object MysqlSupport : DatabasesSupport {
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
                     c.COLUMN_COMMENT,
-                    (CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NOT' END) AS IDENTITY,
-                    (CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NOT' END) AS PRIMARY_KEY
+                    (CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NO' END) AS IDENTITY,
+                    (CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NO' END) AS PRIMARY_KEY
                 FROM 
                     INFORMATION_SCHEMA.COLUMNS c
                 WHERE 
@@ -160,7 +166,7 @@ object MysqlSupport : DatabasesSupport {
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = when {
-                    it["PRIMARY_KEY"] == "NOT" -> PrimaryKeyType.NOT
+                    it["PRIMARY_KEY"] == "NO" -> PrimaryKeyType.NOT
                     it["IDENTITY"] == "YES" -> PrimaryKeyType.IDENTITY
                     else -> PrimaryKeyType.DEFAULT
                 },
@@ -261,7 +267,7 @@ object MysqlSupport : DatabasesSupport {
         } + columns.toDelete.map {
             "ALTER TABLE ${quote(tableName)} DROP COLUMN ${quote(it)}"
         } + indexes.toAdd.map {
-            "ALTER TABLE ${quote(tableName)} ADD${if(it.type == "NORMAL") " " else " ${it.type} "}INDEX ${it.name} (${
+            "ALTER TABLE ${quote(tableName)} ADD${if (it.type == "NORMAL") " " else " ${it.type} "}INDEX ${it.name} (${
                 it.columns.joinToString(", ") { f -> quote(f) }
             }) USING ${it.method}"
         })
@@ -299,13 +305,15 @@ object MysqlSupport : DatabasesSupport {
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
         val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
-        val selectFieldsSql = selectFields.joinToString(", ") {
+        val selectSql = selectFields.joinToString(", ") {
             when {
+                it is FunctionField -> getBuiltFunctionField(it, dataSource)
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
                 it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it.name)}"
                 else -> quote(it)
             }
         }
+
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
@@ -314,7 +322,7 @@ object MysqlSupport : DatabasesSupport {
             PessimisticLock.S -> " LOCK IN SHARE MODE"
             else -> null
         }
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
             databaseName?.let { quote(it) + "." } ?: ""
         }${
             quote(tableName)
@@ -336,18 +344,20 @@ object MysqlSupport : DatabasesSupport {
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
         val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
 
-        val selectFieldsSql = selectFields.joinToString(", ") {
+        val selectSql = selectFields.joinToString(", ") {
+            val field = it.second
             when {
-                it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
-                it.second.name != it.second.columnName -> "${quote(it.second, true)} AS ${quote(it.second.name)}"
-                else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
+                field is FunctionField -> getBuiltFunctionField(field, dataSource, true)
+                field.type == CUSTOM_CRITERIA_SQL -> field.toString()
+                field.name != field.columnName -> "${quote(field, true)} AS ${quote(field.name)}"
+                else -> "${SqlManager.quote(dataSource, field, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }
 
         val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
         val distinctSql = if (distinct) " DISTINCT" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
             SqlManager.quote(dataSource, tableName, true, map = databaseOfTable)
         }${
             joinSql.orEmpty()

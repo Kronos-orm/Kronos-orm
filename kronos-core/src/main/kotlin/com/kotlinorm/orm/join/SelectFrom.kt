@@ -21,6 +21,7 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
@@ -34,7 +35,6 @@ import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.ToFilter
@@ -84,7 +84,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var pageEnabled = false
     private var limitCapacity = 0
     private var cascadeEnabled = true
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+    private var cascadeAllowed: Set<Field>? = null
     private var cascadeSelectedProps: Set<Field>? = null
     private var pi = 0
     private var ps = 0
@@ -281,6 +281,9 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         pojo.afterSelect {
             someFields(t1)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             selectFields += fields
             fields.forEach { field ->
                 val safeKey = ConditionSqlBuilder.getSafeKey(
@@ -300,9 +303,18 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
-    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true) {
+    fun cascade(enabled: Boolean) {
         cascadeEnabled = enabled
-        cascadeAllowed = props
+    }
+
+    fun cascade(someFields: ToSelect<T1, Any?>) {
+        if (someFields == null) throw NeedFieldsException()
+        cascadeEnabled = true
+        pojo.afterSelect {
+            someFields(t1)
+            if (fields.isEmpty()) throw NeedFieldsException()
+            cascadeAllowed = fields.toSet()
+        }
     }
 
     /**
@@ -334,6 +346,9 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (null == someFields) throw NeedFieldsException()
         pojo.afterSelect {
             someFields(t1)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
         }
@@ -379,6 +394,9 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         pojo.afterSelect {
             // 执行someFields中定义的查询逻辑
             someFields(t1)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }

@@ -18,6 +18,7 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.annotations.UnsafeCriteria
 import com.kotlinorm.enums.NoValueStrategyType
+import com.kotlinorm.functions.FunctionHandler
 import com.kotlinorm.interfaces.KPojo
 
 /**
@@ -30,6 +31,7 @@ import com.kotlinorm.interfaces.KPojo
 open class KTableForCondition<T : KPojo> {
     var criteria: Criteria? = null
     var criteriaParamMap: MutableMap<String, Any?> = mutableMapOf()
+    val f: FunctionHandler = FunctionHandler
 
     /**
      * Retrieves the value from the 'propParamMap' based on the provided 'fieldName'.

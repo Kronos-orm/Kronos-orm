@@ -7,7 +7,7 @@ import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.utils.TestWrapper
-import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.database.beans.MysqlUser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

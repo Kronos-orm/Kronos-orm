@@ -2,8 +2,16 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
-import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
+import com.kotlinorm.enums.PessimisticLock
+import com.kotlinorm.functions.bundled.exts.MathFunctions.add
+import com.kotlinorm.functions.bundled.exts.MathFunctions.sub
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
+import com.kotlinorm.functions.bundled.exts.StringFunctions.concat
+import com.kotlinorm.functions.bundled.exts.StringFunctions.join
+import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.orm.beans.User
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.TestWrapper
@@ -117,7 +125,7 @@ class Select {
     @Test
     fun testAsSql() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") + it.gender + "COUNT(1) as `count`" }
+        val (sql, paramMap) = user.select { it.id + it.username.as_("name") + it.gender + "COUNT(1) as `count`" }
             .lock(PessimisticLock.X)
             .build()
 
@@ -131,7 +139,7 @@ class Select {
     @Test
     fun testAlias() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
+        val (sql, paramMap) = user.select { it.id + it.username.as_("name") }
             .where { it.gender == 0 }
             .build()
 
@@ -203,7 +211,7 @@ class Select {
     @Test
     fun testSetDbName() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.`as`("name") }
+        val (sql, paramMap) = user.select { it.id + it.username.as_("name") }
             .where { it.gender == 0 }.db("test")
             .build()
 
@@ -263,11 +271,31 @@ class Select {
     @Test
     fun testSelectUseConstEqualGetValue() {
         val a = User(id = 1)
-        val (sql, paramMap) = user.select { "1" }.where { 1 == a.id.value }.build()
+        val (sql, paramMap) = user.select { "1" }.where { 1 == a.id }.build()
 
         assertEquals(
             "SELECT 1 FROM `tb_user` WHERE true AND `deleted` = 0",
             sql
         )
+    }
+
+    @Test
+    fun testSelectBuiltInFunctionCount() {
+        val (sql, paramMap) = user.select {
+            f.count(1) + it.id + f.avg(it.id) + it.username + f.sum(it.id)
+        }.where {
+            f.add(it.id, 1) > f.sub(it.id, 1) && f.length(it.username) > 5 && it.username like f.concat(
+                "%",
+                it.username,
+                "%"
+            )
+        }.build()
+
+        assertEquals(
+            "SELECT COUNT(1) AS count, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE (`id` + 1) > (`id` - 1) AND LENGTH(`username`) > :lengthMin AND `username` LIKE CONCAT('%', `username`, '%') AND `deleted` = 0",
+            sql
+        )
+
+        assertEquals(mapOf("lengthMin" to 5), paramMap)
     }
 }

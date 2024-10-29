@@ -17,17 +17,17 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.*
+import com.kotlinorm.enums.QueryType.QueryOne
+import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
 
 /**
  * Used to build a cascade select clause.
@@ -55,7 +55,7 @@ object CascadeSelectClause {
      */
     fun <T : KPojo> build(
         cascade: Boolean,
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>? = null,
         pojo: T,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>,
@@ -85,19 +85,20 @@ object CascadeSelectClause {
      */
     @Suppress("UNCHECKED_CAST")
     private fun generateTask(
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>?,
         pojo: KPojo,
         columns: List<Field>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask,
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
+        val tableName = pojo.kronosTableName()
         val validCascades = findValidRefs(
             pojo::class,
             columns,
             operationType,
-            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性
-            cascadeAllowed.isEmpty() // 是否允许所有属性级联
+            cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
+            cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
         ) // 获取所有的非数据库列、有关联注解且用于删除操作
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
@@ -109,13 +110,12 @@ object CascadeSelectClause {
                             QueryList -> { // 若是查询KPojo列表
                                 val lastStepResult = this as List<KPojo> // this为主表查询的结果
                                 if (lastStepResult.isNotEmpty()) {
-                                    val prop =
-                                        lastStepResult.first()::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+                                    val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
                                     if (!cascadeSelectedProps.contains(validRef.field)) {
-                                        if (cascadeAllowed.isEmpty() || prop in cascadeAllowed) lastStepResult.forEach rowMapper@{
+                                        if (cascadeAllowed.isNullOrEmpty() || prop in cascadeAllowed) lastStepResult.forEach rowMapper@{
                                             setValues(
                                                 it,
-                                                prop,
+                                                prop.name,
                                                 validRef,
                                                 cascadeAllowed,
                                                 mutableSetOf(
@@ -133,13 +133,12 @@ object CascadeSelectClause {
                             QueryOne, QueryOneOrNull -> {
                                 val lastStepResult = this as KPojo? // this为主表查询的结果
                                 if (lastStepResult != null) {
-                                    val prop =
-                                        lastStepResult::class.findPropByName(validRef.field.name) // 获取级联字段的属性如：GroupClass.students
+                                    val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
                                     if (!cascadeSelectedProps.contains(validRef.field)) {
-                                        if (cascadeAllowed.isEmpty() || prop in cascadeAllowed) {
+                                        if (cascadeAllowed.isNullOrEmpty() || prop in cascadeAllowed) {
                                             setValues(
                                                 lastStepResult,
-                                                prop,
+                                                prop.name,
                                                 validRef,
                                                 cascadeAllowed,
                                                 mutableSetOf(
@@ -162,31 +161,11 @@ object CascadeSelectClause {
         }
     }
 
-    /**
-     * Sets the values on a [KPojo] instance for a specified property using cascading logic.
-     *
-     * This function is a key component of the ORM's cascading feature, allowing for the dynamic setting of property values
-     * on [KPojo] instances based on the results of cascading operations. It first converts the [KPojo] instance into a map
-     * to facilitate the retrieval of values for specified target fields. These values are then used to patch a cascade [KPojo]
-     * instance, which is subsequently used in a cascading select operation. The result of this select operation is then
-     * assigned to the specified property of the original [KPojo] instance. This process enables the ORM to automatically
-     * populate properties of an object based on the relationships defined between entities.
-     *
-     * 使用级联逻辑设置 [KPojo] 实例上指定属性的值。
-     *
-     * 此功能是 ORM 级联功能的关键组件，允许根据级联操作的结果动态设置 [KPojo] 实例上的属性值。它首先将 [KPojo] 实例转换为映射，以便于检索指定目标字段的值。然后使用这些值修补引用 [KPojo] 实例，该实例随后用于级联选择操作。然后将此选择操作的结果分配给原始 [KPojo] 实例的指定属性。此过程使 ORM 能够根据实体之间定义的关系自动填充对象的属性。
-     *
-     * @param pojo The [KPojo] instance on which values are to be set.
-     * @param prop The [KMutableProperty] representing the property to be set on the [KPojo] instance.
-     * @param validRef A [ValidCascade] instance containing information to be used for cascading.
-     * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no further cascading should occur.
-     * @param wrapper A [KronosDataSourceWrapper] providing access to the data source for executing queries.
-     */
     fun setValues(
         pojo: KPojo,
-        prop: KProperty<*>,
+        prop: String,
         validRef: ValidCascade,
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>?,
         cascadeSelectedProps: Set<Field>,
         operationType: KOperationType,
         wrapper: KronosDataSourceWrapper
@@ -211,14 +190,16 @@ object CascadeSelectClause {
             validRef.refPojo::class, *listOfPair.toTypedArray()
         )
 
-        pojo[prop] = if (pojo.kronosColumns().first { it.name == prop.name }.cascadeIsCollectionOrArray) { // 判断属性是否为集合
-            refPojo.select().cascade(*cascadeAllowed).apply {
+        pojo[prop] = if (pojo.kronosColumns().first { it.name == prop }.cascadeIsCollectionOrArray) { // 判断属性是否为集合
+            refPojo.select().apply {
                 this.operationType = operationType
+                this.cascadeAllowed = cascadeAllowed
                 this.cascadeSelectedProps = cascadeSelectedProps
             }.queryList(wrapper) // 查询级联的POJO
         } else {
-            refPojo.select().cascade(*cascadeAllowed).apply {
+            refPojo.select().apply {
                 this.operationType = operationType
+                this.cascadeAllowed = cascadeAllowed
                 this.cascadeSelectedProps = cascadeSelectedProps
             }.queryOneOrNull(wrapper) // 查询级联的POJO
         }

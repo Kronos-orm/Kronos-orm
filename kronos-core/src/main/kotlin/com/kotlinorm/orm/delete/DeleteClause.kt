@@ -54,7 +54,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var cascadeEnabled = true
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf() // 级联查询的深度限制, 默认为不限制，即所有级联查询都会执行
+    private var cascadeAllowed: Set<Field>? = null
     private var paramMapNew = mutableMapOf<String, Any?>()
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
@@ -90,9 +90,21 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         return this
     }
 
-    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): DeleteClause<T> {
+    fun cascade(enabled: Boolean): DeleteClause<T> {
         this.cascadeEnabled = enabled
-        this.cascadeAllowed = props
+        return this
+    }
+
+    fun cascade(someFields: ToSelect<T, Any?>): DeleteClause<T> {
+        if (someFields == null) throw NeedFieldsException()
+        cascadeEnabled = true
+        pojo.afterSelect {
+            someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
+            cascadeAllowed = fields.toSet()
+        }
         return this
     }
 
@@ -234,10 +246,15 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(
-            vararg props: KProperty<*>,
-            enabled: Boolean = true
+            enabled: Boolean
         ): List<DeleteClause<T>> {
-            return map { it.cascade(*props, enabled = enabled) }
+            return map { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(
+            someFields: ToSelect<T, Any?>,
+        ): List<DeleteClause<T>> {
+            return map { it.cascade(someFields) }
         }
 
         /**
@@ -285,10 +302,15 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         fun <T : KPojo> Array<DeleteClause<T>>.cascade(
-            vararg props: KProperty<*>,
-            enabled: Boolean = true
+            enabled: Boolean
         ): List<DeleteClause<T>> {
-            return map { it.cascade(*props, enabled = enabled) }
+            return map { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> Array<DeleteClause<T>>.cascade(
+            someFields: ToSelect<T, Any?>,
+        ): List<DeleteClause<T>> {
+            return map { it.cascade(someFields) }
         }
 
 

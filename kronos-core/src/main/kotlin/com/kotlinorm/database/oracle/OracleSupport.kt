@@ -17,6 +17,7 @@
 package com.kotlinorm.database.oracle
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
@@ -29,6 +30,7 @@ import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -336,14 +338,15 @@ object OracleSupport : DatabasesSupport {
             "Oracle does not support databaseName in select clause because of its dblink-liked configuration mode"
         )
 
-        val selectFieldsSql = selectFields.joinToString(", ") {
+        val selectSql = selectFields.joinToString(", ") {
             when {
+                it is FunctionField -> getBuiltFunctionField(it, dataSource)
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
-
                 it.name != it.columnName -> "${quote(it.columnName.uppercase())} AS ${quote(it.name)}"
                 else -> quote(it)
             }
         }
+
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql =
             if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
@@ -353,7 +356,7 @@ object OracleSupport : DatabasesSupport {
             PessimisticLock.S -> " LOCK IN SHARE MODE"
             else -> null
         }
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
             quote(tableName.uppercase())
         }${
             whereClauseSql.orEmpty()
@@ -376,18 +379,21 @@ object OracleSupport : DatabasesSupport {
             "Oracle does not support databaseName in select clause because of its dblink-liked configuration mode"
         )
 
-        val selectFieldsSql = selectFields.joinToString(", ") {
+        val selectSql = selectFields.joinToString(", ") {
+            val field = it.second
             when {
-                it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
-                it.second.name != it.second.columnName -> "${quote(it.second, true)} AS ${quote(it.second.name)}"
-                else -> "${quote(it.second, true)} AS ${MssqlSupport.quote(it.first)}"
+                field is FunctionField -> getBuiltFunctionField(field, dataSource, true)
+                field.type == CUSTOM_CRITERIA_SQL -> field.toString()
+                field.name != field.columnName -> "${quote(field, true)} AS ${quote(field.name)}"
+                else -> "${quote(field, true)} AS ${MssqlSupport.quote(it.first)}"
             }
         }
+
         val paginationSql = if (pagination) " OFFSET $pi ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql =
             if (paginationSql == null && limit != null && limit > 0) " FETCH FIRST $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
             quote(tableName.uppercase())
         }${
             joinSql.orEmpty()

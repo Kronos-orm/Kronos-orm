@@ -20,8 +20,8 @@ import com.kotlinorm.Kronos.noValueStrategy
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.database.SqlManager.quote
-import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.NoValueStrategyType.False
@@ -44,6 +44,7 @@ import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.ConditionType.Companion.Sql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.NoValueStrategyType
+import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
@@ -95,7 +96,7 @@ object ConditionSqlBuilder {
         key: String,
         value: Any?
     ) {
-        if (value != null) {
+        if (value != null && value !is FunctionField) {
             this[key] = when {
                 field.serializable -> serializeResolver.serialize(value)
                 else -> value
@@ -133,6 +134,9 @@ object ConditionSqlBuilder {
                 return KotoBuildResultSet(null, paramMap)
         }
 
+        if (condition.field is FunctionField) paramMap.remove(condition.field.name)
+        if (condition.value is FunctionField) paramMap.remove((condition.value as FunctionField).name)
+
         val sql = when (condition.type) {
             Root -> {
                 listOf(
@@ -149,21 +153,28 @@ object ConditionSqlBuilder {
 
             Equal -> {
                 if (condition.value is Field) listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "!=".takeIf { condition.not } ?: "=",
-                    quote(wrapper.orDefault(), condition.value as Field, showTable, databaseOfTable))
+                    getParialCriteriaSql(condition.value as Field, wrapper.orDefault(), showTable, databaseOfTable))
                 else {
                     val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                     paramMap.update(condition.field, safeKey, condition.value)
                     listOfNotNull(
-                        quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                        getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                         "!=".takeIf { condition.not } ?: "=",
-                        ":$safeKey")
+                        if (condition.value is FunctionField) getParialCriteriaSql(
+                            condition.value as FunctionField,
+                            wrapper.orDefault(),
+                            showTable,
+                            databaseOfTable
+                        ) else ":${safeKey}"
+                    )
                 }
             }
 
             IsNull -> listOfNotNull(
-                condition.field.quoted(wrapper.orDefault(), showTable), "IS", "NOT".takeIf { condition.not }, "NULL"
+                getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
+                "IS", "NOT".takeIf { condition.not }, "NULL"
             )
 
             Sql -> listOf(condition.value.toString())
@@ -172,10 +183,15 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)
                 paramMap.update(condition.field, safeKey, condition.value)
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "LIKE",
-                    ":${safeKey}"
+                    if (condition.value is FunctionField) getParialCriteriaSql(
+                        condition.value as FunctionField,
+                        wrapper.orDefault(),
+                        showTable,
+                        databaseOfTable
+                    ) else ":${safeKey}"
                 )
             }
 
@@ -183,7 +199,7 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name + "List", keyCounters, paramMap, condition)
                 paramMap.update(condition.field, safeKey, condition.value)
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "IN",
                     "(:${safeKey})"
@@ -192,18 +208,23 @@ object ConditionSqlBuilder {
 
             Gt, Ge, Lt, Le -> {
                 if (condition.value is Field) listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     condition.type.value,
-                    quote(wrapper.orDefault(), condition.value as Field, showTable, databaseOfTable)
+                    getParialCriteriaSql(condition.value as Field, wrapper.orDefault(), showTable, databaseOfTable)
                 )
                 else {
                     val suffix = "Min".takeIf { condition.type in listOf(Gt, Ge) } ?: "Max"
                     val safeKey = getSafeKey(condition.field.name + suffix, keyCounters, paramMap, condition)
                     paramMap.update(condition.field, safeKey, condition.value)
                     listOf(
-                        quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                        getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                         condition.type.value,
-                        ":${safeKey}"
+                        if (condition.value is FunctionField) getParialCriteriaSql(
+                            condition.value as FunctionField,
+                            wrapper.orDefault(),
+                            showTable,
+                            databaseOfTable
+                        ) else ":${safeKey}"
                     )
                 }
             }
@@ -215,7 +236,7 @@ object ConditionSqlBuilder {
                 paramMap[safeKeyMin] = rangeValue.start
                 paramMap[safeKeyMax] = rangeValue.endInclusive
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "BETWEEN",
                     ":${safeKeyMin}",
@@ -228,10 +249,15 @@ object ConditionSqlBuilder {
                 val safeKey = getSafeKey(condition.field.name + "Pattern", keyCounters, paramMap, condition)
                 paramMap.update(condition.field, safeKey, condition.value)
                 listOfNotNull(
-                    quote(wrapper.orDefault(), condition.field, showTable, databaseOfTable),
+                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
                     "REGEXP",
-                    ":${safeKey}"
+                    if (condition.value is FunctionField) getParialCriteriaSql(
+                        condition.value as FunctionField,
+                        wrapper.orDefault(),
+                        showTable,
+                        databaseOfTable
+                    ) else ":${safeKey}"
                 )
             }
 
@@ -355,4 +381,17 @@ object ConditionSqlBuilder {
             else -> false
         }
     }
+
+    private fun getParialCriteriaSql(
+        field: Field,
+        wrapper: KronosDataSourceWrapper? = null,
+        showTable: Boolean = false,
+        databaseOfTable: Map<String, String> = mapOf()
+    ) = if (field is FunctionField) getBuiltFunctionField(
+        field,
+        wrapper.orDefault(),
+        showTable,
+        false
+    ) else quote(wrapper.orDefault(), field, showTable, databaseOfTable)
+
 }

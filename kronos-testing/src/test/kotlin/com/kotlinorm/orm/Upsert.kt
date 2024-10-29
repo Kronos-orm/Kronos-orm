@@ -6,7 +6,7 @@ import com.kotlinorm.orm.upsert.UpsertClause.Companion.build
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
 import com.kotlinorm.orm.upsert.upsert
 import com.kotlinorm.orm.utils.TestWrapper
-import com.kotlinorm.tableOperation.beans.MysqlUser
+import com.kotlinorm.database.beans.MysqlUser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

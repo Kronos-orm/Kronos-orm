@@ -31,7 +31,6 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
-import kotlin.reflect.KProperty
 
 /**
  * Used to build a cascade delete clause.
@@ -64,7 +63,7 @@ object CascadeDeleteClause {
      */
     fun <T : KPojo> build(
         cascade: Boolean,
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>?,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
@@ -94,7 +93,7 @@ object CascadeDeleteClause {
      *
      * **/
     private fun <T : KPojo> generateTask(
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>?,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
@@ -102,12 +101,13 @@ object CascadeDeleteClause {
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
+        val tableName = pojo.kronosTableName()
         val validCascades = findValidRefs( // 获取有效的引用
             pojo::class,
             columns,
             KOperationType.DELETE,
-            cascadeAllowed.filterReceiver(pojo::class).map { it.name }.toSet(), // 获取当前Pojo内允许级联的属性
-            cascadeAllowed.isEmpty() // 是否允许所有属性级联
+            cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
+            cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
         ).filter { !it.mapperByThis }
 
         return rootTask.toKronosActionTask().apply {
@@ -115,7 +115,10 @@ object CascadeDeleteClause {
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
-                        .cascade(*cascadeAllowed).apply { operationType = KOperationType.DELETE }
+                        .apply {
+                            this.cascadeAllowed = cascadeAllowed
+                            this.operationType = KOperationType.DELETE
+                        }
                         .queryList(wrapper) //先查询出要删除的记录
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 

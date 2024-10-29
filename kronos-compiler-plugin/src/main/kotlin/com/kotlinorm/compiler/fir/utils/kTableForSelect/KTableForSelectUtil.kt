@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -41,10 +42,8 @@ import org.jetbrains.kotlin.ir.util.properties
  * @return a list of IrExpressions representing the applied `addField` operations
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
-fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpression> {
-    return addFieldsNames(irReturn, functions).map {
-        // Apply the `addField` operation to each field name gathered, passing the receiver.
-        // 将 `addField` 操作应用于收集到的每个字段名，传递接收者。
+fun addFieldList(irReturn: IrReturn): List<IrExpression> {
+    return collectFields(irReturn).map {
         applyIrCall(addFieldSymbol, it) { dispatchBy(irGet(extensionReceiverParameter!!)) }
     }
 }
@@ -57,21 +56,23 @@ fun addFieldList(irReturn: IrReturn, functions: Array<String>): List<IrExpressio
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<IrExpression> {
+fun collectFields(
+    element: IrElement
+): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。
-    val fieldNames = mutableListOf<IrExpression>()
+    val fields = mutableListOf<IrExpression>()
     when (element) {
         is IrBlockBody -> {
             element.statements.forEach { statement ->
                 // Recursively add field names from each statement in a block body.
                 // 从块体中的每个声明递归添加字段名。
-                fieldNames.addAll(addFieldsNames(statement, functions))
+                fields += collectFields(statement)
             }
         }
 
         is IrTypeOperatorCall -> {
-            fieldNames.addAll(addFieldsNames(element.argument, functions))
+            fields += collectFields(element.argument)
         }
 
         is IrCall -> {
@@ -80,7 +81,7 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
                     val (irClass, _, excludes) = analyzeMinusExpression(element)
                     irClass.properties.forEach { prop ->
                         if (prop.isColumn() && prop.name.asString() !in excludes) {
-                            fieldNames.add(
+                            fields.add(
                                 getColumnName(prop)
                             )
                         }
@@ -90,33 +91,38 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
                 IrStatementOrigin.PLUS -> {
                     // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
                     // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
-                    fieldNames.addAll(addFieldsNames((element.extensionReceiver ?: element.dispatchReceiver)!!, functions))
-                    val args = element.valueArguments.filterNotNull()
-                    args.forEach {
-                        fieldNames.addAll(addFieldsNames(it, functions))
+                    fields += collectFields(
+                        (element.extensionReceiver ?: element.dispatchReceiver)!!
+                    )
+                    element.valueArguments.forEach {
+                        if (it != null) fields += collectFields(it)
                     }
                 }
 
                 IrStatementOrigin.GET_PROPERTY -> {
-                    getColumnName(element).let { fieldNames.add(it) }
+                    fields += getColumnName(element)
                 }
 
                 else -> {
+                    if (element.isKronosFunction()) {
+                        fields += getFunctionName(element)
+                    }
+
                     when (element.funcName()) {
-                        "as" -> {
-                            fieldNames.add(applyIrCall(
+                        "as_" -> {
+                            fields += applyIrCall(
                                 aliasSymbol,
                                 element.valueArguments.first()
                             ) {
                                 dispatchBy(
                                     irGet(
                                         extensionReceiverParameter!!
-                                    ),
+                                    )
                                 )
                                 extensionBy(
-                                    addFieldsNames(element.extensionReceiver!!, functions).first()
+                                    collectFields(element.extensionReceiver!!).first()
                                 )
-                            })
+                            }
                         }
                     }
                 }
@@ -126,21 +132,24 @@ fun addFieldsNames(element: IrElement, functions: Array<String>): MutableList<Ir
         is IrConst<*> -> {
             // Add constant values directly to the field names list.
             // 直接将常量值添加到字段名列表。
-            fieldNames.add(
-                applyIrCall(
-                    fieldSymbol.constructors.first(),
-                    element,
-                    element,
-                    irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType("CUSTOM_CRITERIA_SQL"))
-                )
+            fields += applyIrCall(
+                fieldSymbol.constructors.first(),
+                element,
+                element,
+                irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType("CUSTOM_CRITERIA_SQL"))
             )
         }
 
         is IrReturn -> {
             // Handle return statements by recursively adding field names from the return value.
             // 通过递归从返回值添加字段名来处理返回语句。
-            return addFieldsNames(element.value, functions)
+            return collectFields(element.value)
         }
     }
-    return fieldNames
+    return fields
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrExpression?.irFieldOrNull(): IrExpression {
+    return if (this != null && this.isKronosColumn()) getColumnName(this) else irNull()
 }

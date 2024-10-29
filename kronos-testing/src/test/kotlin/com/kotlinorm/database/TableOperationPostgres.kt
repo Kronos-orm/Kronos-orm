@@ -1,4 +1,4 @@
-package com.kotlinorm.tableOperation
+package com.kotlinorm.database
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
@@ -9,8 +9,8 @@ import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.tableOperation.beans.OracleUser
-import com.kotlinorm.tableOperation.beans.SsqlUser
+import com.kotlinorm.database.beans.OracleUser
+import com.kotlinorm.database.beans.PgUser
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,17 +20,17 @@ import kotlin.test.assertTrue
  * 此类演示了如何使用KotlinORM进行数据库表的操作，包括查询表是否存在、动态创建表、删除表以及结构同步。
  * 通过与数据库交互，实现了基于实体类的表管理功能。
  */
-class TableOperationSqlserver {
+class TableOperationPostgres {
 
-    // 初始化SQLserver数据库连接池
+    // 初始化Postgres数据库连接池
     private val ds = BasicDataSource().apply {
-        driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver" // SQLServer驱动类名
-        url = "jdbc:sqlserver://localhost:1433;databaseName=test;encrypt=true;trustServerCertificate=true"
-        username = "sa" // SQLServer用户名
-        password = "******" // SQLServer密码
+        driverClassName = "org.postgresql.Driver" // Postgres驱动类名
+        url = "jdbc:postgresql://localhost:5432/postgres" // Postgres数据库URL
+        username = "postgres" // Postgres用户名
+        password = "******" // Postgres密码
         maxIdle = 10 // 最大空闲连接数
     }
-    val user = SsqlUser()
+    val user = PgUser()
 
     init {
         // 配置Kronos ORM框架的基本设置
@@ -51,24 +51,24 @@ class TableOperationSqlserver {
      */
     @Test
     fun testExists() {
-//        // 不管有没有先删
-//        dataSource.table.dropTable(user)
+        // 不管有没有先删
+        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(false, exists)
-//        // 创建表
-//        dataSource.table.createTable(user)
-//        // 判断表是否存在
-//        val exists2 = dataSource.table.exists(user)
-//        assertEquals(exists2, true)
+        // 创建表
+        dataSource.table.createTable(user)
+        // 判断表是否存在
+        val exists2 = dataSource.table.exists(user)
+        assertEquals(exists2, true)
     }
 
     /**
-     * 测试Sqlserver动态创建表功能。
+     * 测试postgresql动态创建表功能。
      * 此方法应完成一个测试用例，动态创建一个表，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testCreateTable_myssql() {
+    fun testCreateTable_postgresql() {
         // 不管有没有先删
         dataSource.table.dropTable(user)
         // 创建表
@@ -87,11 +87,8 @@ class TableOperationSqlserver {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(DBType.Mssql, column),
-                columnCreateDefSql(
-                    DBType.Mssql,
-                    actualColumn
-                ),
+                columnCreateDefSql(DBType.Postgres, column),
+                columnCreateDefSql(DBType.Postgres, actualColumn),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -119,12 +116,11 @@ class TableOperationSqlserver {
     }
 
     /**
-     * 测试SQLServer结构同步功能。
+     * 测试postgresql结构同步功能。
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncScheme_ssql() {
-        println(user.kronosColumns().map { it.columnName })
+    fun testSyncScheme_postgresql() {
         // 同步user表结构
         val tableSync = dataSource.table.syncTable(user)
         if (!tableSync) {
@@ -144,11 +140,8 @@ class TableOperationSqlserver {
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(
-                    DBType.Mssql,
-                    actualColumn
-                ),
-                columnCreateDefSql(DBType.Mssql, column),
+                columnCreateDefSql(DBType.Postgres, actualColumn),
+                columnCreateDefSql(DBType.Postgres, column),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")

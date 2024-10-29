@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.cascade
 
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -24,8 +25,6 @@ import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.utils.getTypeSafeValue
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.withNullability
 
 /**
  * Used to build a cascade insert clause.
@@ -55,7 +54,7 @@ object CascadeInsertClause {
      */
     fun <T : KPojo> build(
         cascade: Boolean,
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>?,
         pojo: T, rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(cascadeAllowed, pojo, rootTask) else rootTask.toKronosActionTask()
@@ -70,7 +69,7 @@ object CascadeInsertClause {
      * @return A KronosAtomicActionTask object representing the cascade insert operation.
      */
     private fun generateTask(
-        cascadeAllowed: Array<out KProperty<*>>,
+        cascadeAllowed: Set<Field>?,
         pojo: KPojo,
         prevTask: KronosAtomicActionTask
     ) = prevTask.toKronosActionTask().doAfterExecute { wrapper ->
@@ -84,15 +83,15 @@ object CascadeInsertClause {
             } else {
                 operationResult // 若是最外层的插入操作，直接获取当前任务的执行结果
             }
-            if (lastInsertId != null && lastInsertId != 0L && dataMap[identity.name] == null) { // 若自增主键值不为空且未被赋值
-                val prop = kPojo::class.findPropByName(identity.name)
+            val propName = identity.name
+            if (lastInsertId != null && lastInsertId != 0L && dataMap[propName] == null) { // 若自增主键值不为空且未被赋值
                 val typeSafeId =
                     getTypeSafeValue(
-                        prop.returnType.withNullability(false).toString(),
+                        identity.kClass!!.qualifiedName!!,
                         lastInsertId
                     ) // 获取自增主键值的类型安全值，如将Long转为Int/Short等
-                dataMap[identity.name] = typeSafeId // 将自增主键值赋给当前插入任务的数据映射
-                kPojo[prop] = typeSafeId // 将自增主键值赋给当前插入任务的POJO
+                dataMap[propName] = typeSafeId // 将自增主键值赋给当前插入任务的数据映射
+                kPojo[propName] = typeSafeId // 将自增主键值赋给当前插入任务的POJO
             }
         }
     }

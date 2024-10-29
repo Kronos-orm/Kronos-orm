@@ -1,37 +1,46 @@
 package com.kotlinorm.compiler.fir.utils
 
 import com.kotlinorm.compiler.fir.beans.FieldIR
+import com.kotlinorm.compiler.fir.utils.kTableForSelect.irFieldOrNull
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.createKClassExpr
+import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
 import com.kotlinorm.compiler.helpers.irEnum
+import com.kotlinorm.compiler.helpers.irListOf
+import com.kotlinorm.compiler.helpers.irPairOf
+import com.kotlinorm.compiler.helpers.nType
+import com.kotlinorm.compiler.helpers.pairSymbol
 import com.kotlinorm.compiler.helpers.referenceClass
-import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.helpers.subType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.getPropertyGetter
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
@@ -42,17 +51,30 @@ internal val fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
 
 context(IrPluginContext)
+internal val functionSymbol
+    get() = referenceClass("com.kotlinorm.beans.dsl.FunctionField")!!
+
+context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val IrCall.correspondingName
     get() = symbol.owner.correspondingPropertySymbol?.owner?.name
 
 context(IrPluginContext)
-internal val fieldK2dbSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "fieldK2db").first()
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val k2dbSymbol
+    get() = referenceClass("com.kotlinorm.interfaces.KronosNamingStrategy")!!.getSimpleFunction("k2db")!!
 
-context(IrPluginContext)
-internal val tableK2dbSymbol
-    get() = referenceFunctions("com.kotlinorm.utils", "tableK2db").first()
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val fieldNamingStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("fieldNamingStrategy")!!
+
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val tableNamingStrategySymbol
+    get() =
+        KronosSymbol.getPropertyGetter("tableNamingStrategy")!!
 
 context(IrPluginContext)
 internal val kReferenceSymbol
@@ -92,6 +114,45 @@ fun getColumnName(expression: IrExpression): IrExpression {
         }
 
         else -> applyIrCall(fieldSymbol.constructors.first(), irString(""), irString(""))
+    }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun getFunctionName(expression: IrExpression): IrExpression {
+    return when (expression) {
+        is IrCall -> {
+            val args = mutableListOf<IrExpression>()
+            expression.valueArguments.forEach {
+                if (it is IrVarargImpl) {
+                    args.addAll(it.elements.map { element ->
+                        irPairOf(
+                            fieldSymbol.nType,
+                            irBuiltIns.anyNType,
+                            (element as IrExpression).irFieldOrNull() to element
+                        )
+                    })
+                } else {
+                    args.add(
+                        irPairOf(
+                            fieldSymbol.nType,
+                            irBuiltIns.anyNType,
+                            it.irFieldOrNull() to it
+                        )
+                    )
+                }
+            }
+            applyIrCall(
+                functionSymbol.constructors.first(),
+                irString(expression.funcName()),
+                irListOf(
+                    pairSymbol.owner.returnType,
+                    args
+                ),
+            )
+        }
+
+        else -> throw IllegalStateException("Unexpected expression type: $expression")
     }
 }
 
@@ -149,14 +210,18 @@ fun getColumnName(
         }
     }
 
-    val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(fieldK2dbSymbol, irString(propertyName))
+    val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(
+        k2dbSymbol, irString(propertyName)
+    ) {
+        dispatchBy(applyIrCall(fieldNamingStrategySymbol) { dispatchBy(irGetObject(KronosSymbol)) })
+    }
     val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
     val propertyType = irPropertyType.classFqName!!.asString()
     val columnType = columnTypeAnnotation?.getValueArgument(0) ?: irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType(propertyType))
     val tableName = getTableName(parent)
     val propKClass = irPropertyType.getClass()
     val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
-    val cascadeTypeKClass = if (irProperty.isDelegated) {
+    val kClass = if (irProperty.isDelegated) {
         irNull()
     } else {
         createKClassExpr(
@@ -176,15 +241,8 @@ fun getColumnName(
         irNull()
     }
 
-    val irTableName = when (tableName) {
-        is IrCall -> applyIrCall(
-            fieldK2dbSymbol, irString((tableName.valueArguments[0] as IrConst<*>).value.toString())
-        )
-        else -> irString((tableName as IrConst<*>).value.toString())
-    }
-
     val primaryKey = when{
-        primaryKeyAnnotation == null -> "none"
+        primaryKeyAnnotation == null -> "not"
         (primaryKeyAnnotation!!.getValueArgument(0) as? IrConstImpl<*>)?.value == true -> "identity"
         (primaryKeyAnnotation!!.getValueArgument(1) as? IrConstImpl<*>)?.value == true -> "uuid"
         (primaryKeyAnnotation!!.getValueArgument(2) as? IrConstImpl<*>)?.value == true -> "snowflake"
@@ -197,10 +255,10 @@ fun getColumnName(
         type = columnType,
         primaryKey = primaryKey,
         dateTimeFormat = dateTimeFormatAnnotation?.getValueArgument(0),
-        tableName = irTableName,
+        tableName = tableName,
         cascade = kCascade,
         cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
-        cascadeTypeKClass = cascadeTypeKClass,
+        kClass = kClass,
         ignore = ignoreAnnotation?.getValueArgument(0),
         isColumn = irProperty.isColumn(irPropertyType),
         columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
@@ -217,7 +275,7 @@ fun getColumnName(
  * Enum class for the kronos column value type
  */
 enum class KronosColumnValueType {
-    Value, ColumnName
+    Value, ColumnName, Function
 }
 
 /**
@@ -271,6 +329,8 @@ fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> 
         KronosColumnValueType.ColumnName to this
     } else if (this.funcName() == "value") {
         KronosColumnValueType.Value to this
+    } else if (this.isKronosFunction()) {
+        KronosColumnValueType.Function to this
     } else {
         KronosColumnValueType.ColumnName to (findKronosColumn()
             ?: throw IllegalStateException("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
@@ -297,6 +357,12 @@ fun IrExpression?.isKronosColumn(): Boolean {
         val propertyName = correspondingName!!.asString()
         (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKronosColumn()
     }
+}
+
+context(IrBuilderWithScope, IrPluginContext)
+fun IrExpression?.isKronosFunction(): Boolean {
+    if (this == null) return false
+    return this is IrCallImpl && this.extensionReceiver?.type?.classFqName == FqName("com.kotlinorm.functions.FunctionHandler")
 }
 
 context(IrBuilderWithScope, IrPluginContext)
@@ -327,6 +393,7 @@ fun getColumnOrValue(expression: IrExpression?): IrExpression? {
     return when (type) {
         KronosColumnValueType.Value -> expr
         KronosColumnValueType.ColumnName -> getColumnName(expr)
+        KronosColumnValueType.Function -> getFunctionName(expr)
     }
 }
 
@@ -370,7 +437,7 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
 context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(expression: IrExpression): IrExpression {
     val irClass = when (expression) {
-        is IrGetValue, is IrCall -> expression.type.getClass()
+        is IrGetValue, is IrCall, is IrGetObjectValue -> expression.type.getClass()
         else -> throw IllegalStateException("Unexpected expression type: $expression")
     }!!
     return getTableName(irClass)
@@ -387,10 +454,10 @@ context(IrBuilderWithScope, IrPluginContext)
 fun getTableName(irClass: IrClass): IrExpression {
     val tableAnnotation = irClass.annotations.findByFqName(TableAnnotationsFqName)
     return tableAnnotation?.getValueArgument(0) ?: applyIrCall(
-        tableK2dbSymbol, irString(
-            irClass.name.asString()
-        )
-    )
+        k2dbSymbol, irString(irClass.name.asString())
+    ) {
+        dispatchBy(applyIrCall(tableNamingStrategySymbol) { dispatchBy(irGetObject(KronosSymbol)) })
+    }
 }
 
 /**

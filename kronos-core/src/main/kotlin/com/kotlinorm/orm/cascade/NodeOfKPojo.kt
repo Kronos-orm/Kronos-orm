@@ -18,18 +18,8 @@ package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.utils.LRUCache
-import kotlin.reflect.KClass
-import kotlin.reflect.KMutableProperty0
-import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty0
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
-import kotlin.reflect.jvm.javaField
+import com.kotlinorm.interfaces.KPojo
 
 /**
  * Holds information about a node in the ORM cascade operation tree.
@@ -77,7 +67,7 @@ data class NodeInfo(
 data class NodeOfKPojo(
     val kPojo: KPojo,
     val data: NodeInfo? = null,
-    val cascadeAllowed: Array<out KProperty<*>>,
+    val cascadeAllowed: Set<Field>?,
     val operationType: KOperationType,
     val updateParams: MutableMap<String, String> = mutableMapOf(),
     val children: MutableList<NodeOfKPojo> = mutableListOf(),
@@ -86,12 +76,13 @@ data class NodeOfKPojo(
     var insertIgnore = false // 该字段用于判断是否忽略插入
     internal val dataMap = kPojo.toDataMap()
     internal val validCascades by lazy {
+        val tableName = kPojo.kronosTableName()
         findValidRefs(
             kPojo::class,
             kPojo.kronosColumns(),
             operationType,
-            cascadeAllowed.filterReceiver(kPojo::class).map { it.name }.toSet(),
-            cascadeAllowed.isEmpty(),
+            cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(),
+            cascadeAllowed.isNullOrEmpty(),
         )
     }
     val tableName by lazy { kPojo.kronosTableName() }
@@ -131,8 +122,7 @@ data class NodeOfKPojo(
          * @return A [NodeOfKPojo] instance representing the [KPojo] within the cascade operation tree.
          */
         internal fun KPojo.toTreeNode(
-            data: NodeInfo? = null,
-            cascadeAllowed: Array<out KProperty<*>>,
+            data: NodeInfo? = null, cascadeAllowed: Set<Field>?,
             operationType: KOperationType,
             updateParams: MutableMap<String, String> = mutableMapOf(),
             children: MutableList<NodeOfKPojo> = mutableListOf(),
@@ -168,16 +158,16 @@ data class NodeOfKPojo(
         val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
         val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, it ->
             if (tableName == validRef.tableName) {
-                kPojo::class.findPropByName(validRef.kCascade.properties[index]) to (data.parent!!.dataMap[it]
+                validRef.kCascade.properties[index] to (data.parent!!.dataMap[it]
                     ?: return@mapIndexedNotNull null)
             } else {
-                kPojo::class.findPropByName(it) to (data.parent!!.dataMap[it] ?: return@mapIndexedNotNull null)
+                it to (data.parent!!.dataMap[it] ?: return@mapIndexedNotNull null)
             }
         }
         listOfPair.forEach { (prop, value) ->
             if (kPojo[prop] != value) {
                 kPojo[prop] = value
-                dataMap[prop.name] = value
+                dataMap[prop] = value
                 validRef.kCascade.targetProperties.forEachIndexed { index, field ->
                     if (data.parent!!.updateParams[field] != null) {
                         updateParams[validRef.kCascade.properties[index]] = data.parent!!.updateParams[field]!!
@@ -236,9 +226,8 @@ data class NodeOfKPojo(
                     ref.kCascade.targetProperties.any {
                         updateParams.keys.contains(it)
                     }) && (
-                    cascadeAllowed.isEmpty() || cascadeAllowed.contains(
-                        kPojo::class.findPropByName(ref.field.name)
-                    ))
+                    cascadeAllowed.isNullOrEmpty() || cascadeAllowed.contains(ref.field)
+                    )
         }
 
         cascades.forEach { cascade ->
@@ -286,82 +275,8 @@ data class NodeOfKPojo(
     }
 }
 
-private val lruCacheOfProp = LRUCache<Pair<KClass<out KPojo>, String>, KProperty<*>>()
-
-/**
- * Finds and returns a mutable property of a [KPojo] class by its name, utilizing a cache for improved performance.
- *
- * This function leverages Kotlin reflection to find a property (`KProperty`) within a [KPojo] class
- * based on the property's name. It uses an LRUCache to cache and quickly retrieve properties, reducing the overhead
- * of reflection. This is particularly useful for operations that require frequent access to the same properties,
- * such as cascading updates or deletes in an ORM context.
- *
- * 根据名称查找并返回 [KPojo] 类的可变属性，利用缓存来提高性能。
- *
- * 此函数利用 Kotlin 反射根据属性名称在 [KPojo] 类中查找属性（[KProperty]）。
- * 它使用 [LRUCache] 来缓存和快速检索属性，从而减少反射的开销。这对于需要频繁访问相同属性的操作特别有用，例如在 ORM 上下文中级联更新或删除。
- *
- * @param name The name of the property to find within the [KPojo] class.
- * @return The [KProperty] corresponding to the specified name.
- * @throws UnsupportedOperationException If the property is not found or is not mutable, indicating that it cannot
- *         be used for cascading operations.
- */
-internal fun KClass<out KPojo>.findPropByName(name: String): KProperty<*> { // 通过反射获取级联字段的属性
-    return lruCacheOfProp.getOrPut(this to name) {
-        this.memberProperties.find { prop -> prop.name == name } as KProperty<*>
-    }
+internal operator fun KPojo.set(propName: String, value: Any?) {
+    safeFromMapData<KPojo>(toDataMap().apply { set(propName, value) })
 }
 
-/**
- * Sets the value of a specified property on a [KPojo] instance using reflection.
- *
- * This function attempts to set the value of a [KMutableProperty] on the [KPojo] instance. It uses Kotlin reflection
- * to invoke the property's setter method with the provided value. If the property does not exist or is not mutable
- * (i.e., does not have a setter), Java reflection is used to set the property's value.
- *
- *  使用反射设置 [KPojo] 实例上指定属性的值。
- *
- * 此函数尝试设置 [KPojo] 实例上 [KProperty] 的值。它使用 Kotlin 反射使用提供的值调用属性的 setter 方法
- * 如果属性不存在或不可变（即没有 setter），则使用java反射调用属性getDeclaredField，修改isAccessible为true并调用set方法
- *
- * @param prop The [KProperty] whose value is to be set.
- * @param value The new value to assign to the property. Can be `null` if the property allows null values.
- */
-internal operator fun KPojo.set(prop: KProperty<*>, value: Any?) {
-    when (prop) {
-        is KMutableProperty0<*> -> { // 若属性为可变属性
-            prop.setter.call(value) // 通过setter方法设置属性值
-        }
-
-        is KMutableProperty1<*, *> -> { // 若属性为可变属性
-            prop.setter.call(this, value) // 通过setter方法设置属性值
-        }
-
-        else -> { // 若属性为不可变属性
-            val field = prop.javaField // 获取java属性
-            field?.isAccessible = true // 设置为可访问
-            field?.set(this, value) // 通过set方法设置属性值
-        }
-    }
-}
-
-/**
- * Retrieves the value of a specified property on a [KPojo] instance using reflection.
- *
- * This function attempts to retrieve the value of a [KProperty] from the [KPojo] instance. It uses Kotlin reflection
- * to invoke the property's getter method.
- *
- * 使用反射检索 [KPojo] 实例上指定属性的值。
- *
- * 此函数尝试从 [KPojo] 实例中检索 [KProperty] 的值。它使用 Kotlin 反射调用属性的 getter 方法。
- *
- * @param prop The [KProperty] whose value is to be retrieved.
- */
-internal operator fun KPojo.get(prop: KProperty<*>) = if (prop is KProperty0<*>) {
-    prop.getter.call()
-} else {
-    prop.getter.call(this)
-}
-
-internal fun <T : KPojo> Array<out KProperty<*>>.filterReceiver(receiver: KClass<out T>) =
-    filter { it.javaField!!.declaringClass.kotlin == receiver }
+internal operator fun KPojo.get(propName: String) = toDataMap()[propName]

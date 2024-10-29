@@ -21,6 +21,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -76,7 +77,7 @@ class SelectClause<T : KPojo>(
     /**
      * 级联查询允许的字段，若为空则表示所有字段均可级联查询，优先级高于[com.kotlinorm.annotations.Ignore[com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT]]
      * */
-    private var cascadeAllowed: Array<out KProperty<*>> = arrayOf()
+    internal var cascadeAllowed: Set<Field>? = null
     internal var cascadeSelectedProps: Set<Field>? = null
     private var lock: PessimisticLock? = null
     override var selectAll = true
@@ -95,6 +96,9 @@ class SelectClause<T : KPojo>(
         if (setSelectFields != null) {
             pojo.afterSelect {
                 setSelectFields(it) // 设置选择的字段
+                if (fields.isEmpty()) {
+                    throw NeedFieldsException()
+                }
                 selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
                 if (selectFields.isNotEmpty()) {
                     selectAll = false
@@ -150,6 +154,9 @@ class SelectClause<T : KPojo>(
         if (someFields == null) throw NeedFieldsException()
         pojo.afterSelect {
             someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
         }
@@ -182,9 +189,21 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun cascade(vararg props: KProperty<*>, enabled: Boolean = true): SelectClause<T> {
+    fun cascade(enabled: Boolean): SelectClause<T> {
         cascadeEnabled = enabled
-        cascadeAllowed = props
+        return this
+    }
+
+    fun cascade(someFields: ToSelect<T, Any?>): SelectClause<T> {
+        if(someFields == null) throw NeedFieldsException()
+        cascadeEnabled = true
+        pojo.afterSelect {
+            someFields(it)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
+            cascadeAllowed = fields.toSet()
+        }
         return this
     }
 
@@ -201,6 +220,9 @@ class SelectClause<T : KPojo>(
         pojo.afterSelect { t ->
             // 执行someFields中定义的查询逻辑
             someFields(t)
+            if (fields.isEmpty()) {
+                throw NeedFieldsException()
+            }
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
@@ -397,10 +419,15 @@ class SelectClause<T : KPojo>(
         }
 
         fun <T : KPojo> Iterable<SelectClause<T>>.cascade(
-            vararg props: KProperty<*>,
             enabled: Boolean
         ): List<SelectClause<T>> {
-            return map { it.cascade(*props, enabled = enabled) }
+            return map { it.cascade(enabled) }
+        }
+
+        fun <T : KPojo> Iterable<SelectClause<T>>.cascade(
+            someFields: ToSelect<T, Any?>
+        ): List<SelectClause<T>> {
+            return map { it.cascade(someFields) }
         }
 
         /**

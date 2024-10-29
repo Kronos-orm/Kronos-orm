@@ -16,13 +16,16 @@
 
 package com.kotlinorm.compiler.helpers
 
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.name.FqName
 
@@ -72,6 +75,7 @@ context(IrBuilderWithScope)
 internal fun applyIrCall(
     irCall: IrFunctionSymbol,
     vararg values: IrExpression?,
+    typeArguments: Array<IrType> = emptyArray(),
     setReceivers: Receivers.() -> Unit = { }
 ): IrFunctionAccessExpression {
     val receiver = Receivers().apply(setReceivers)
@@ -81,7 +85,19 @@ internal fun applyIrCall(
         values.forEachIndexed { index, value ->
             putValueArgument(index, value)
         }
+        typeArguments.forEachIndexed { index, value ->
+            putTypeArgument(index, value)
+        }
     }
+}
+
+context(IrBuilderWithScope)
+internal fun IrSimpleFunctionSymbol.invoke(
+    vararg values: IrExpression?,
+    typeArguments: Array<IrType> = emptyArray(),
+    setReceivers: Receivers.() -> Unit = { }
+): IrFunctionAccessExpression {
+    return applyIrCall(this, *values, typeArguments = typeArguments, setReceivers = setReceivers)
 }
 
 /**

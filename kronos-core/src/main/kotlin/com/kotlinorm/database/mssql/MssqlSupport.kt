@@ -17,6 +17,7 @@
 package com.kotlinorm.database.mssql
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
@@ -28,6 +29,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.database.TableColumnDiff
@@ -161,7 +163,7 @@ object MssqlSupport : DatabasesSupport {
                                 ON ccu.Constraint_Name = tc.Constraint_Name 
                                 AND tc.Constraint_Type = 'PRIMARY KEY'
                             WHERE ccu.COLUMN_NAME = c.COLUMN_NAME AND ccu.TABLE_NAME = c.TABLE_NAME
-                        ) THEN 'YES' ELSE 'NOT' 
+                        ) THEN 'YES' ELSE 'NO' 
                     END AS PRIMARY_KEY,
                     CASE 
                         WHEN EXISTS(
@@ -171,7 +173,7 @@ object MssqlSupport : DatabasesSupport {
                                 and objectproperty(a.id, 'isTable') = 1
                                 and a.name = 'tb_user'
                                 and b.name = c.COLUMN_NAME
-                        ) THEN 'YES' ELSE 'NOT' 
+                        ) THEN 'YES' ELSE 'NO' 
                     END AS AUTOINCREAMENT,
                     ep.value AS COLUMN_COMMENT
                 FROM 
@@ -194,7 +196,7 @@ object MssqlSupport : DatabasesSupport {
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = when {
-                    it["PRIMARY_KEY"] == "NOT" -> PrimaryKeyType.NOT
+                    it["PRIMARY_KEY"] == "NO" -> PrimaryKeyType.NOT
                     it["AUTOINCREAMENT"] == "YES" -> PrimaryKeyType.IDENTITY
                     else -> PrimaryKeyType.DEFAULT
                 },
@@ -348,18 +350,20 @@ object MssqlSupport : DatabasesSupport {
 
     override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
         val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
-        val selectFieldsSql = selectFields.joinToString(", ") {
+        val selectSql = selectFields.joinToString(", ") {
             when {
+                it is FunctionField -> getBuiltFunctionField(it, dataSource)
                 it.type == CUSTOM_CRITERIA_SQL -> it.toString()
                 it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it.name)}"
                 else -> quote(it)
             }
         }
+
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
         val lockSql = if (null != lock) " ROWLOCK" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM ${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
             databaseName?.let { quote(it) + "." } ?: ""
         }[dbo].${
             quote(tableName)
@@ -380,17 +384,20 @@ object MssqlSupport : DatabasesSupport {
 
     override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
         val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
-        val selectFieldsSql = selectFields.joinToString(", ") {
+        val selectSql = selectFields.joinToString(", ") {
+            val field = it.second
             when {
-                it.second.type == CUSTOM_CRITERIA_SQL -> it.second.toString()
-                it.second.name != it.second.columnName -> "${quote(it.second, true)} AS ${quote(it.second.name)}"
-                else -> "${SqlManager.quote(dataSource, it.second, true, databaseOfTable)} AS ${quote(it.first)}"
+                field is FunctionField -> getBuiltFunctionField(field, dataSource, true)
+                field.type == CUSTOM_CRITERIA_SQL -> field.toString()
+                field.name != field.columnName -> "${quote(field, true)} AS ${quote(field.name)}"
+                else -> "${SqlManager.quote(dataSource, field, true, databaseOfTable)} AS ${quote(it.first)}"
             }
         }
+
         val paginationSql = if (pagination) " OFFSET ${ps * (pi - 1)} ROWS FETCH NEXT $ps ROWS ONLY" else null
         val limitSql = if (paginationSql == null && limit != null && limit > 0) " FETCH NEXT $limit ROWS ONLY" else null
         val distinctSql = if (distinct) " DISTINCT" else null
-        return "SELECT${distinctSql.orEmpty()} $selectFieldsSql FROM [dbo].${
+        return "SELECT${distinctSql.orEmpty()} $selectSql FROM [dbo].${
             SqlManager.quote(dataSource, tableName, true, map = databaseOfTable)
         }${
             joinSql.orEmpty()

@@ -1,17 +1,16 @@
-package com.kotlinorm.tableOperation
+package com.kotlinorm.database
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
-import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.tableOperation.beans.MysqlUser
-import com.kotlinorm.tableOperation.beans.OracleUser
+import com.kotlinorm.database.beans.OracleUser
+import com.kotlinorm.database.beans.SsqlUser
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,18 +20,17 @@ import kotlin.test.assertTrue
  * 此类演示了如何使用KotlinORM进行数据库表的操作，包括查询表是否存在、动态创建表、删除表以及结构同步。
  * 通过与数据库交互，实现了基于实体类的表管理功能。
  */
-class TableOperationMysql {
+class TableOperationSqlserver {
 
-    // 初始化mysql数据库连接池
+    // 初始化SQLserver数据库连接池
     private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
-        url =
-            "jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false" // 数据库URL
-        username = "root" // 数据库用户名
-        password = "rootroot" // 数据库密码
+        driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver" // SQLServer驱动类名
+        url = "jdbc:sqlserver://localhost:1433;databaseName=test;encrypt=true;trustServerCertificate=true"
+        username = "sa" // SQLServer用户名
+        password = "******" // SQLServer密码
         maxIdle = 10 // 最大空闲连接数
     }
-    val user = MysqlUser()
+    val user = SsqlUser()
 
     init {
         // 配置Kronos ORM框架的基本设置
@@ -53,26 +51,27 @@ class TableOperationMysql {
      */
     @Test
     fun testExists() {
-        dataSource.table.dropTable(user)
+//        // 不管有没有先删
+//        dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
         assertEquals(false, exists)
-        // 创建表
-        dataSource.table.createTable(user)
-        // 判断表是否存在
-        val exists2 = dataSource.table.exists(user)
-        assertEquals(exists2, true)
+//        // 创建表
+//        dataSource.table.createTable(user)
+//        // 判断表是否存在
+//        val exists2 = dataSource.table.exists(user)
+//        assertEquals(exists2, true)
     }
 
     /**
-     * 测试mysql动态创建表功能。
+     * 测试Sqlserver动态创建表功能。
      * 此方法应完成一个测试用例，动态创建一个表，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testCreateTable_mysql() {
+    fun testCreateTable_myssql() {
         // 不管有没有先删
         dataSource.table.dropTable(user)
-            // 创建表
+        // 创建表
         dataSource.table.createTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
@@ -82,15 +81,17 @@ class TableOperationMysql {
 
         // 验证表结构：通过查询数据库的表结构信息并与实体类字段对比来实现
         val expectedColumns = user.kronosColumns()
-        println(actualColumns)
 
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
             assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
             assertEquals(
-                columnCreateDefSql(DBType.Mysql, column),
-                columnCreateDefSql(DBType.Mysql, actualColumn),
+                columnCreateDefSql(DBType.Mssql, column),
+                columnCreateDefSql(
+                    DBType.Mssql,
+                    actualColumn
+                ),
                 "列 '$column' 的类型应一致"
             )
             assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
@@ -118,11 +119,12 @@ class TableOperationMysql {
     }
 
     /**
-     * 测试mysql结构同步功能。
+     * 测试SQLServer结构同步功能。
      * 此方法应完成一个测试用例，同步某个表的结构，并使用assertEquals断言结果正确性。
      */
     @Test
-    fun testSyncScheme_mysql() {
+    fun testSyncScheme_ssql() {
+        println(user.kronosColumns().map { it.columnName })
         // 同步user表结构
         val tableSync = dataSource.table.syncTable(user)
         if (!tableSync) {
@@ -140,20 +142,22 @@ class TableOperationMysql {
         // 确保所有期望的列都存在于实际的列列表中，且类型一致
         expectedColumns.forEach { column ->
             val actualColumn = actualColumns.find { it.columnName == column.columnName }
-//            assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
-//            assertEquals(
-//                columnCreateDefSql(DBType.Mysql, column),
-//                columnCreateDefSql(DBType.Mysql, actualColumn),
-//                "列 '$column' 的类型应一致"
-//            )
-//            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
+            assertTrue(actualColumn != null, "列 '$column' 应存在于表中")
+            assertEquals(
+                columnCreateDefSql(
+                    DBType.Mssql,
+                    actualColumn
+                ),
+                columnCreateDefSql(DBType.Mssql, column),
+                "列 '$column' 的类型应一致"
+            )
+            assertEquals(actualColumn.tableName, column.tableName, "列 '$column' 的表名应一致")
         }
 
         // 可选：进一步验证列的属性，如类型、是否为主键等，这通常需要更复杂的数据库查询和比较逻辑
 
         println("表结构同步测试成功")
     }
-
 
     /**
      * 测试获取自增主键
@@ -170,37 +174,5 @@ class TableOperationMysql {
         } else {
             println("插入失败")
         }
-    }
-
-    @Test
-    fun testPojoComment() {
-        val user = MysqlUser()
-        val comment = user.kronosTableComment()
-        println(comment)
-    }
-
-    @Test
-    fun testMoveColumns() {
-        val expect = listOf(
-            Field(columnName = "0"),
-            Field(columnName = "1"),
-            Field(columnName = "2"),
-            Field(columnName = "3"),
-            Field(columnName = "4"),
-            Field(columnName = "5"),
-            Field(columnName = "6"),
-        )
-        val current = listOf(
-            Field(columnName = "0"),
-            Field(columnName = "1"),
-            Field(columnName = "3"),
-            Field(columnName = "4"),
-            Field(columnName = "2"),
-            Field(columnName = "5"),
-            Field(columnName = "6"),
-        )
-
-//        val moved = moveColumn(expect, current)
-//        println(moved.size)
     }
 }

@@ -87,7 +87,7 @@ object CascadeInsertClause {
             if (lastInsertId != null && lastInsertId != 0L && dataMap[propName] == null) { // 若自增主键值不为空且未被赋值
                 val typeSafeId =
                     getTypeSafeValue(
-                        identity.kClass!!.simpleName!!,
+                        identity.kClass!!.qualifiedName!!,
                         lastInsertId
                     ) // 获取自增主键值的类型安全值，如将Long转为Int/Short等
                 dataMap[propName] = typeSafeId // 将自增主键值赋给当前插入任务的数据映射

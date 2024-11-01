@@ -133,6 +133,7 @@ class KronosIrClassNewTransformer(
                 with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {
                     when (declaration.name.asString()) {
                         "toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration) }
+                        "\$toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration, true) }
                         "safeFromMapData" -> replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }
                         "fromMapData" -> replaceFakeBody { createFromMapValueFunction(irClass, declaration) }
                         "kronosTableName" -> replaceFakeBody { createKronosTableName(irClass) }

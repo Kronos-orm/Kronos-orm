@@ -79,15 +79,21 @@ val KPojoFqName
  */
 context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun createToMapFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
+fun createToMapFunction(declaration: IrClass, irFunction: IrFunction, ignoreDelegate: Boolean = false): IrBlockBody {
     return irBlockBody {
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
         +irReturn(
             irMutableMapOf(
                 irBuiltIns.stringType,
                 irBuiltIns.anyNType,
-                declaration.properties.associate {
-                    irString(it.name.asString()) to dispatcher.getValue(it)
+                if (ignoreDelegate) {
+                    declaration.properties.filter { !it.isDelegated }.associate {
+                        irString(it.name.asString()) to dispatcher.getValue(it)
+                    }
+                } else {
+                    declaration.properties.associate {
+                        irString(it.name.asString()) to dispatcher.getValue(it)
+                    }
                 }
             )
         )

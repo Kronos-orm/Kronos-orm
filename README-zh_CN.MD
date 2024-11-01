@@ -50,6 +50,36 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 
 -------
 
+# Simple Example
+
+下面是一些最简单的示例，说明如何使用 Kronos-ORM 进行数据库操作。
+
+```kotlin
+// 定义一个扩展 KPojo 的数据类
+@Table(name = "tb_user") data class User(
+    @PrimaryKey(identity = true) val id: Long? = null,
+    val username: String? = null,
+    val age: Int? = null
+) : KPojo
+
+//我们可以使用dataSource.table.createTable<User>()来创建表，
+//或dataSource.table.sync<User>()来同步表结构。
+dataSource.table.createTable<User>()
+
+// 插入一条记录
+// 可以使用 List<User>.insert().execute() 来批量插入记录
+User(id = 1, username = "test", age = 18).insert().execute()
+
+// 查询
+val listOfUser = User(age = 18).select().queryList()
+
+// 更新
+User(id = 1, age = 19).update().by { it.id }.execute()
+
+// 删除
+User(id = 1).delete().execute()
+```
+
 ## 🖥 JDK、Kotlin 和构建工具
 
 - **JDK 8+**
@@ -267,6 +297,9 @@ val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role -
     }
     where { user.id < 10 }
 }.query()
+
+// 使用原生 SQL + 命名参数 查询
+val result: Map<String, Any> = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
 ```
 
 ### ➕ Insert

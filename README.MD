@@ -49,6 +49,36 @@ KCP implementation of the expression tree analysis support as well as Kotlin its
 
 -------
 
+# Simple Example
+
+Here are some of the simplest examples showing how to use Kronos-ORM for database operations.
+
+```kotlin
+// Define a data class extending KPojo
+@Table(name = "tb_user") data class User(
+    @PrimaryKey(identity = true) val id: Long? = null,
+    val username: String? = null,
+    val age: Int? = null
+) : KPojo
+
+// We can use dataSource.table.createTable<User>() to create the table,
+// or dataSource.table.sync<User>() to synchronize the table structure.
+dataSource.table.createTable<User>()
+
+// Insert a record
+// we can use List<User>.insert().execute() to batch insert
+User(id = 1, username = "test", age = 18).insert().execute()
+
+// Query
+val listOfUser = User(age = 18).select().queryList()
+
+// Update
+User(id = 1, age = 19).update().by { it.id }.execute()
+
+// Delete
+User(id = 1).delete().execute()
+```
+
 ## 🖥 JDK、Kotlin and Build Tools
 
 - **JDK 8+**
@@ -262,6 +292,9 @@ val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role -
     }
     where { user.id < 10 }
 }.query()
+
+// Using Native SQL Queries with Named Parameters
+val result: Map<String, Any> = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
 ```
 
 ### ➕ Insert

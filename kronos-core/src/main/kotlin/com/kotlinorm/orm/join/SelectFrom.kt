@@ -23,6 +23,7 @@ import com.kotlinorm.beans.dsl.KJoinable
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
@@ -38,6 +39,7 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
 import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.ConditionSqlBuilder
@@ -50,7 +52,6 @@ import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 import java.util.Stack
-import kotlin.reflect.KProperty
 
 /**
  * Select From
@@ -307,10 +308,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         cascadeEnabled = enabled
     }
 
-    fun cascade(someFields: ToSelect<T1, Any?>) {
+    fun cascade(someFields: ToReference<T1, Any?>) {
         if (someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
-        pojo.afterSelect {
+        pojo.afterReference {
             someFields(t1)
             if (fields.isEmpty()) throw NeedFieldsException()
             cascadeAllowed = fields.toSet()

@@ -22,3 +22,4 @@ typealias ToSelect<T, R> = (KTableForSelect<T>.(it: T) -> R)?
 typealias ToSet<T, R> = (KTableForSet<T>.(it: T) -> R)?
 typealias ToSort<T, R> = (KTableForSort<T>.(it: T) -> R)?
 typealias ToFilter<T, R> = (KTableForCondition<T>.(it: T) -> R)?
+typealias ToReference<T, R> = (KTableForReference<T>.(it: T) -> R)?

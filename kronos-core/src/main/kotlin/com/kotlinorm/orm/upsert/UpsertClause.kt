@@ -17,6 +17,7 @@
 package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
@@ -34,12 +35,12 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
+import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KProperty
 
 /**
  * Update Clause
@@ -118,10 +119,10 @@ class UpsertClause<T : KPojo>(
         return this
     }
 
-    fun cascade(someFields: ToSelect<T, Any?>): UpsertClause<T> {
+    fun cascade(someFields: ToReference<T, Any?>): UpsertClause<T> {
         if (someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
-        pojo.afterSelect {
+        pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
@@ -229,7 +230,7 @@ class UpsertClause<T : KPojo>(
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.cascade(
-            someFields: ToSelect<T, Any?>
+            someFields: ToReference<T, Any?>
         ): List<UpsertClause<T>> {
             return map { it.cascade(someFields) }
         }

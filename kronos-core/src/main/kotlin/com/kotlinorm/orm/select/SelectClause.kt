@@ -21,7 +21,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
-import com.kotlinorm.beans.dsl.FunctionField
+import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -41,6 +41,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
 import com.kotlinorm.orm.pagination.PagedClause
 import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
@@ -51,7 +52,6 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KProperty
 
 class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: ToSelect<T, Any?> = null
@@ -194,10 +194,10 @@ class SelectClause<T : KPojo>(
         return this
     }
 
-    fun cascade(someFields: ToSelect<T, Any?>): SelectClause<T> {
+    fun cascade(someFields: ToReference<T, Any?>): SelectClause<T> {
         if(someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
-        pojo.afterSelect {
+        pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
@@ -425,7 +425,7 @@ class SelectClause<T : KPojo>(
         }
 
         fun <T : KPojo> Iterable<SelectClause<T>>.cascade(
-            someFields: ToSelect<T, Any?>
+            someFields: ToReference<T, Any?>
         ): List<SelectClause<T>> {
             return map { it.cascade(someFields) }
         }

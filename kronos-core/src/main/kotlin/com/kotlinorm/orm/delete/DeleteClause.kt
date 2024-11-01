@@ -20,6 +20,7 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
@@ -33,6 +34,7 @@ import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeDeleteClause
 import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.ConditionSqlBuilder.toWhereSql
@@ -42,7 +44,6 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KProperty
 
 class DeleteClause<T : KPojo>(private val pojo: T) {
     private var paramMap = pojo.toDataMap()
@@ -95,10 +96,10 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         return this
     }
 
-    fun cascade(someFields: ToSelect<T, Any?>): DeleteClause<T> {
+    fun cascade(someFields: ToReference<T, Any?>): DeleteClause<T> {
         if (someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
-        pojo.afterSelect {
+        pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
@@ -252,7 +253,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         fun <T : KPojo> Iterable<DeleteClause<T>>.cascade(
-            someFields: ToSelect<T, Any?>,
+            someFields: ToReference<T, Any?>,
         ): List<DeleteClause<T>> {
             return map { it.cascade(someFields) }
         }
@@ -308,7 +309,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
 
         fun <T : KPojo> Array<DeleteClause<T>>.cascade(
-            someFields: ToSelect<T, Any?>,
+            someFields: ToReference<T, Any?>,
         ): List<DeleteClause<T>> {
             return map { it.cascade(someFields) }
         }

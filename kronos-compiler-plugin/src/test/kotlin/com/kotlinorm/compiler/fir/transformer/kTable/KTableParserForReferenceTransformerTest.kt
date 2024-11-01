@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class KTableParserForSelectTransformerTest {
+class KTableParserForReferenceTransformerTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `KTable Parser For Select Transformer Test`() {
@@ -17,7 +17,7 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.annotations.*
             import com.kotlinorm.beans.dsl.Field
             import com.kotlinorm.beans.dsl.FunctionField
-            import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+            import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
             import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
             import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
             import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
@@ -25,7 +25,7 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
             import com.kotlinorm.enums.KColumnType.TINYINT
-            import com.kotlinorm.types.ToSelect
+            import com.kotlinorm.types.ToReference
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
             import kotlin.test.assertNotNull
@@ -80,79 +80,32 @@ class KTableParserForSelectTransformerTest {
             
                 val user = User()
             
-                fun select(block: ToSelect<User, Any?>): List<Field> {
+                fun reference(block: ToReference<User, Any?>): List<Field> {
                     val rst: MutableList<Field> = mutableListOf()
 
-                    user.afterSelect {
+                    user.afterReference {
                         block!!(it)
                         rst += fields
                     }
                     return rst
                 }
-
-
-                assertEquals(
-                    listOf(
-                        user["id"],
-                    ),
-                    select {
-                        it.id
-                    }
-                )
-
-
-                assertEquals(
-                    listOf(
-                        user["id"],
-                    ),
-                    select {
-                        +it.id
-                    }
-                )
                 
                 assertEquals(
                     listOf(
                         user["id"],
                         user["username"],
                     ),
-                    select {
-                        it.id + it.username
+                    reference {
+                        it::id + it::username
                     }
                 )
                 
                 assertEquals(
                     listOf(
-                        user["id"],
-                        user["username"].apply{ name = "name" },
+                        user["id"]
                     ),
-                    select {
-                        it::id + it.username.as_("name")
-                    }
-                )
-                
-                assertEquals(
-                    listOf(
-                        user["id"],
-                        Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL),
-                    ),
-                    select {
-                        it.id + "1"
-                    }
-                )
-                
-                assertEquals(
-                    listOf(
-                        FunctionField(
-                            "count", 
-                            listOf(
-                                Pair(user["id"], user.id)
-                            )
-                        ).apply{
-                            name = "cnt"
-                        }
-                    ),
-                    select {
-                        f.count(it.id).as_("cnt")
+                    reference {
+                        +it::id
                     }
                 )
 

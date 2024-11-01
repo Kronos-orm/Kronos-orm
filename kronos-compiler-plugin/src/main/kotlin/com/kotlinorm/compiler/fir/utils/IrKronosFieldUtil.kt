@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
+import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
@@ -110,6 +111,12 @@ fun getColumnName(expression: IrExpression): IrExpression {
             val propertyName = expression.correspondingName!!.asString()
             val irProperty =
                 expression.dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
+            getColumnName(irProperty, propertyName)
+        }
+
+        is IrPropertyReference -> {
+            val propertyName = expression.symbol.owner.name.asString()
+            val irProperty = expression.symbol.owner
             getColumnName(irProperty, propertyName)
         }
 
@@ -217,7 +224,8 @@ fun getColumnName(
     }
     val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
     val propertyType = irPropertyType.classFqName!!.asString()
-    val columnType = columnTypeAnnotation?.getValueArgument(0) ?: irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType(propertyType))
+    val columnType =
+        columnTypeAnnotation?.getValueArgument(0) ?: irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType(propertyType))
     val tableName = getTableName(parent)
     val propKClass = irPropertyType.getClass()
     val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
@@ -241,7 +249,7 @@ fun getColumnName(
         irNull()
     }
 
-    val primaryKey = when{
+    val primaryKey = when {
         primaryKeyAnnotation == null -> "not"
         (primaryKeyAnnotation!!.getValueArgument(0) as? IrConstImpl<*>)?.value == true -> "identity"
         (primaryKeyAnnotation!!.getValueArgument(1) as? IrConstImpl<*>)?.value == true -> "uuid"
@@ -351,12 +359,12 @@ context(IrBuilderWithScope, IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrExpression?.isKronosColumn(): Boolean {
     if (this == null) return false
-    return this is IrCallImpl && this.origin in listOf(
+    return (this is IrCallImpl && this.origin in listOf(
         IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
     ) && this.let {
         val propertyName = correspondingName!!.asString()
         (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKronosColumn()
-    }
+    }) || this is IrPropertyReference && this.symbol.owner.parent is IrClass && (this.symbol.owner.parent as IrClass).isKronosColumn()
 }
 
 context(IrBuilderWithScope, IrPluginContext)

@@ -18,7 +18,7 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
@@ -30,11 +30,10 @@ import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
-import com.kotlinorm.types.ToSelect
+import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KProperty
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private var paramMap = pojo.toDataMap()
@@ -68,10 +67,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return this
     }
 
-    fun cascade(someFields: ToSelect<T, Any?>): InsertClause<T> {
+    fun cascade(someFields: ToReference<T, Any?>): InsertClause<T> {
         if(someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
-        pojo.afterSelect {
+        pojo.afterReference {
             someFields(it)
             if(fields.isEmpty()) throw NeedFieldsException()
             cascadeAllowed = fields.toSet()
@@ -126,7 +125,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
 
         fun <T : KPojo> Iterable<InsertClause<T>>.cascade(
-            someFields: ToSelect<T, Any?>
+            someFields: ToReference<T, Any?>
         ): Iterable<InsertClause<T>> {
             return this.onEach { it.cascade(someFields) }
         }
@@ -160,7 +159,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             return this.onEach { it.cascade(enabled) }
         }
 
-        fun <T : KPojo> Array<InsertClause<T>>.cascade(someFields: ToSelect<T, Any?>): Array<out InsertClause<T>> {
+        fun <T : KPojo> Array<InsertClause<T>>.cascade(someFields: ToReference<T, Any?>): Array<out InsertClause<T>> {
             return this.onEach { it.cascade(someFields) }
         }
 

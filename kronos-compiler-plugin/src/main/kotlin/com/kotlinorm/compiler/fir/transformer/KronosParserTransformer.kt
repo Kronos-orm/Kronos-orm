@@ -18,11 +18,13 @@ package com.kotlinorm.compiler.fir.transformer
 
 import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForConditionTransformer
+import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForReferenceTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSelectTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSetTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSortReturnTransformer
 import com.kotlinorm.compiler.fir.utils.KPojoFqName
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
+import com.kotlinorm.compiler.fir.utils.kTableForReference.KTABLE_FOR_REFERENCE_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSelect.KTABLE_FOR_SELECT_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSet.KTABLE_FOR_SET_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSort.KTABLE_FOR_SORT_CLASS
@@ -72,6 +74,7 @@ class KronosParserTransformer(
             KTABLE_FOR_SET_CLASS -> declaration.body = transformKTableForSet(declaration)
             KTABLE_FOR_CONDITION_CLASS -> declaration.body = transformKTableForCondition(declaration)
             KTABLE_FOR_SORT_CLASS -> declaration.body = transformKTableForSort(declaration)
+            KTABLE_FOR_REFERENCE_CLASS -> declaration.body = transformKTableForReference(declaration)
         }
         return super.visitFunctionNew(declaration)
     }
@@ -156,6 +159,23 @@ class KronosParserTransformer(
                 +irFunction.body!!.statements
             }
                 .transform(KTableParserForSortReturnTransformer(pluginContext, irFunction), null)
+        }
+    }
+
+    /**
+     * Transforms the given IrFunction representing a ktable reference declaration into an IrBlockBody.
+     *
+     * @param irFunction the IrFunction to be transformed
+     * @return the transformed IrBlockBody representing the ktable reference declaration
+     */
+    private fun transformKTableForReference(
+        irFunction: IrFunction
+    ): IrBlockBody {
+        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlockBody {
+            +irBlock(resultType = irFunction.returnType) {
+                +irFunction.body!!.statements
+            }
+                .transform(KTableParserForReferenceTransformer(pluginContext, irFunction), null)
         }
     }
 }

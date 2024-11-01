@@ -21,6 +21,7 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
 import com.kotlinorm.beans.task.KronosActionTask
@@ -34,6 +35,7 @@ import com.kotlinorm.exceptions.NeedFieldsException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeUpdateClause
 import com.kotlinorm.types.ToFilter
+import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.ConditionSqlBuilder
@@ -43,7 +45,6 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.reflect.KProperty
 
 /**
  * Update Clause
@@ -136,10 +137,10 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
-    fun cascade(someFields: ToSelect<T, Any?>): UpdateClause<T> {
+    fun cascade(someFields: ToReference<T, Any?>): UpdateClause<T> {
         if(someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
-        pojo.afterSelect {
+        pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
                 throw NeedFieldsException()
@@ -333,7 +334,7 @@ class UpdateClause<T : KPojo>(
         }
 
         fun <T : KPojo> List<UpdateClause<T>>.cascade(
-            someFields: ToSelect<T, Any?>
+            someFields: ToReference<T, Any?>
         ): List<UpdateClause<T>> {
             return map { it.cascade(someFields) }
         }

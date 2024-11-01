@@ -16,12 +16,19 @@
 
 package com.kotlinorm.compiler.fir.utils.kTableForSelect
 
-import com.kotlinorm.compiler.fir.utils.*
 import com.kotlinorm.compiler.fir.utils.fieldSymbol
+import com.kotlinorm.compiler.fir.utils.funcName
+import com.kotlinorm.compiler.fir.utils.getColumnName
+import com.kotlinorm.compiler.fir.utils.getFunctionName
+import com.kotlinorm.compiler.fir.utils.isColumn
+import com.kotlinorm.compiler.fir.utils.isKronosColumn
+import com.kotlinorm.compiler.fir.utils.isKronosFunction
+import com.kotlinorm.compiler.fir.utils.kColumnTypeSymbol
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.analyzeMinusExpression
+import com.kotlinorm.compiler.fir.utils.kotlinTypeToKColumnType
 import com.kotlinorm.compiler.helpers.irEnum
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
@@ -109,6 +116,14 @@ fun collectFields(
                     }
 
                     when (element.funcName()) {
+                        "unaryPlus"->{
+                            // Add field names from the receiver if the origin is a UPLUS operation.
+                            // 如果起源是 UPLUS 操作，从接收器添加字段名。
+                            fields += collectFields(
+                                element.extensionReceiver ?: element.dispatchReceiver!!
+                            )
+                        }
+
                         "as_" -> {
                             fields += applyIrCall(
                                 aliasSymbol,
@@ -138,6 +153,10 @@ fun collectFields(
                 element,
                 irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType("CUSTOM_CRITERIA_SQL"))
             )
+        }
+
+        is IrPropertyReference -> {
+            fields += getColumnName(element)
         }
 
         is IrReturn -> {

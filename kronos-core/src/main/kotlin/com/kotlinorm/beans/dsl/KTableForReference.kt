@@ -16,8 +16,8 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.functions.FunctionHandler
 import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KProperty
 
 /**
  * KTable
@@ -32,41 +32,14 @@ import com.kotlinorm.interfaces.KPojo
  *
  * @param T the type of the table
  */
-open class KTableForSelect<T : KPojo> {
+open class KTableForReference<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
-    val f: FunctionHandler = FunctionHandler
 
-    /**
-     * Overloaded operator function that adds two objects of type Any?.
-     *
-     * @param other the object to be added to this object.
-     * @return an integer value of 1.
-     */
-    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Int = 1
+    operator fun KProperty<*>.plus(@Suppress("UNUSED_PARAMETER") other: KProperty<*>) = false
+    operator fun KProperty<*>.plus(@Suppress("UNUSED_PARAMETER") other: Boolean?) = false
+    operator fun Boolean.plus(@Suppress("UNUSED_PARAMETER") other: KProperty<*>) = false
 
-    /**
-     * Overloaded operator function that adds two objects of type Any?.
-     *
-     * @return an integer value of 1.
-     */
-    operator fun Any?.unaryPlus(): Int = 1
-
-    /**
-     * Overloaded operator function that minus two objects of type Any?.
-     *
-     * @param other the object to be added to this object.
-     * @return an integer value of 1.
-     */
-    operator fun KPojo?.minus(@Suppress("UNUSED_PARAMETER") other: Any?) = this
-
-    /**
-     * Sets an alias for the given object.
-     *
-     * @param alias the alias to set for the object
-     * @return the provided alias
-     */
-    @Suppress("UNUSED")
-    infix fun Any?.as_(alias: String): String = alias
+    operator fun KProperty<*>.unaryPlus() = false
 
     /**
      * Adds a field to the collection of fields.
@@ -78,11 +51,6 @@ open class KTableForSelect<T : KPojo> {
         fields += property
     }
 
-    fun Field.setAlias(alias: String): Field {
-        this.name = alias
-        return this
-    }
-
     companion object {
         /**
          * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.
@@ -91,6 +59,6 @@ open class KTableForSelect<T : KPojo> {
          * @param block The block of code to be applied to the KTable instance.
          * @return The resulting KTable instance after applying the block.
          */
-        fun <T : KPojo> T.afterSelect(block: KTableForSelect<T>.(T) -> Unit) = KTableForSelect<T>().block(this)
+        fun <T : KPojo> T.afterReference(block: KTableForReference<T>.(T) -> Unit) = KTableForReference<T>().block(this)
     }
 }

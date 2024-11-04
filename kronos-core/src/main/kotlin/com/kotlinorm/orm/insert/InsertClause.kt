@@ -32,8 +32,10 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.SnowflakeIdGenerator
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
+import java.util.UUID.randomUUID
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private var paramMap = pojo.toDataMap()
@@ -68,17 +70,25 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun cascade(someFields: ToReference<T, Any?>): InsertClause<T> {
-        if(someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw NeedFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
-            if(fields.isEmpty()) throw NeedFieldsException()
+            if (fields.isEmpty()) throw NeedFieldsException()
             cascadeAllowed = fields.toSet()
         }
         return this
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+        val pk = pojo.kronosColumns().find { it.primaryKey !in setOf(PrimaryKeyType.NOT, PrimaryKeyType.DEFAULT, PrimaryKeyType.IDENTITY) }
+        if(pk != null && paramMap[pk.name] == null) {
+            paramMap[pk.name] = when (pk.primaryKey){
+                PrimaryKeyType.UUID -> randomUUID().toString()
+                PrimaryKeyType.SNOWFLAKE -> SnowflakeIdGenerator.nextId()
+                else -> throw IllegalArgumentException("Primary key type not supported")
+            }
+        }
         toInsertFields.addAll(allFields.filter { it.isColumn && paramMap[it.name] != null })
 
         setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
@@ -91,7 +101,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         paramMap.forEach { (key, value) ->
             val field = toInsertFields.find { it.name == key }
             if (field != null && value != null) {
-                if(field.serializable){
+                if (field.serializable) {
                     paramMapNew[key] = serializeResolver.serialize(value)
                 } else {
                     paramMapNew[key] = value

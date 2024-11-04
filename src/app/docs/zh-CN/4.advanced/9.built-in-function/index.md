@@ -81,7 +81,7 @@ object CustomerFunctions {
 }
 ```
 
-### 实现自定义函数具体逻辑
+### 步骤二：实现自定义函数具体逻辑
 ```kotlin
 import com.kotlinorm.functions.FunctionHandler
 

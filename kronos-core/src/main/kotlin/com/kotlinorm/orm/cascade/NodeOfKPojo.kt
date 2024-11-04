@@ -276,7 +276,7 @@ data class NodeOfKPojo(
 }
 
 internal operator fun KPojo.set(propName: String, value: Any?) {
-    safeFromMapData<KPojo>(`$toDataMap`().apply { set(propName, value) })
+    fromMapData<KPojo>(`$toDataMap`().apply { set(propName, value) })
 }
 
-internal operator fun KPojo.get(propName: String) = toDataMap()[propName]
+internal operator fun KPojo.get(propName: String) = `$toDataMap`()[propName]

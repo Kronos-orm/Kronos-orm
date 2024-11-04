@@ -32,10 +32,11 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.SnowflakeIdGenerator
+import com.kotlinorm.beans.generator.SnowflakeIdGenerator
+import com.kotlinorm.beans.generator.UUIDGenerator
+import com.kotlinorm.beans.generator.customIdGenerator
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import java.util.UUID.randomUUID
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private var paramMap = pojo.toDataMap()
@@ -81,11 +82,13 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        val pk = pojo.kronosColumns().find { it.primaryKey !in setOf(PrimaryKeyType.NOT, PrimaryKeyType.DEFAULT, PrimaryKeyType.IDENTITY) }
-        if(pk != null && paramMap[pk.name] == null) {
-            paramMap[pk.name] = when (pk.primaryKey){
-                PrimaryKeyType.UUID -> randomUUID().toString()
+        val pk = pojo.kronosColumns()
+            .find { it.primaryKey !in setOf(PrimaryKeyType.NOT, PrimaryKeyType.DEFAULT, PrimaryKeyType.IDENTITY) }
+        if (pk != null && paramMap[pk.name] == null) {
+            paramMap[pk.name] = when (pk.primaryKey) {
+                PrimaryKeyType.UUID -> UUIDGenerator.nextId()
                 PrimaryKeyType.SNOWFLAKE -> SnowflakeIdGenerator.nextId()
+                PrimaryKeyType.CUSTOM -> customIdGenerator?.nextId()
                 else -> throw IllegalArgumentException("Primary key type not supported")
             }
         }

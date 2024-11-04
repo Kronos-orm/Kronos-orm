@@ -5,5 +5,6 @@ enum class PrimaryKeyType {
     DEFAULT,
     IDENTITY,
     UUID,
-    SNOWFLAKE
+    SNOWFLAKE,
+    CUSTOM
 }

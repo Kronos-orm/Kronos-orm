@@ -1,6 +1,28 @@
-package com.kotlinorm.utils
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-object SnowflakeIdGenerator {
+package com.kotlinorm.beans.generator
+
+import com.kotlinorm.interfaces.KIdGenerator
+
+object UUIDGenerator : KIdGenerator<String> {
+    override fun nextId(): String = java.util.UUID.randomUUID().toString()
+}
+
+object SnowflakeIdGenerator : KIdGenerator<Long> {
     private const val SEQUENCE_BITS = 12
     private const val WORKER_ID_BITS = 5
     private const val DATACENTER_ID_BITS = 5
@@ -24,7 +46,8 @@ object SnowflakeIdGenerator {
      * The default value is 1.
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    var datacenterId get() = _datacenterId
+    var datacenterId
+        get() = _datacenterId
         set(value) = run {
             require(value in 0..MAX_DATACENTER_ID) { "Datacenter id must be less than $MAX_DATACENTER_ID" }
             _datacenterId = value
@@ -37,14 +60,15 @@ object SnowflakeIdGenerator {
      * The default value is 1.
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    var workerId get() = _workerId
+    var workerId
+        get() = _workerId
         set(value) = run {
             require(value in 0..MAX_WORKER_ID) { "Worker id must be less than $MAX_WORKER_ID" }
             _workerId = value
         }
 
     @Synchronized
-    fun nextId(): Long {
+    override fun nextId(): Long {
         var timestamp = System.currentTimeMillis()
 
         if (timestamp < lastTimestamp) {
@@ -76,3 +100,5 @@ object SnowflakeIdGenerator {
         return timestamp
     }
 }
+
+var customIdGenerator: KIdGenerator<*>? = null

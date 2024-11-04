@@ -6,7 +6,7 @@ import {
   insertTask2,
   selectTask1,
   selectTask2,
-  selectTask3, selectTask4,
+  selectTask3, selectTask4, selectTask5,
   updateTask1,
   updateTask2,
   updateTask3,
@@ -24,6 +24,7 @@ export const $exec: {
   'execute-select --task=02': selectTask2,
   'execute-select --task=03': selectTask3,
   'execute-select --task=04': selectTask4,
+  'execute-select --task=05': selectTask5,
   'execute-insert --task=01': insertTask1,
   'execute-insert --task=02': insertTask2,
   'execute-delete --task=01': deleteTask1,
@@ -61,9 +62,10 @@ export const commands: Command[] = [
     tip: {},
     slice: {
       0: 'execute-select --task=01',
-      4: 'execute-select --task=02',
-      9: 'execute-select --task=03',
-      11: 'execute-select --task=04'
+      2: 'execute-select --task=02',
+      6: 'execute-select --task=03',
+      11: 'execute-select --task=04',
+      13: 'execute-select --task=05'
     }
   },
   {

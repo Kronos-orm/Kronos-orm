@@ -1,6 +1,20 @@
 import {Product} from "./products";
 
 export const selectTask1 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
+  const selectedRows = data.filter(item => item.code === "7F9V0BpQ2W");
+  callBack(data, selectedRows);
+  return [
+    `---------------Kronos Task---------------`,
+    `Sql: \t${'SELECT `code`, `name`, `category`, `quantity`  FROM `tb_product` WHERE `code` = :code'}`,
+    `Params: {code: "7F9V0BpQ2W"}`,
+    `-----------------------------------------`,
+    `Result: ${JSON.stringify(selectedRows.map(item => {
+      return {code: item.code, name: item.name, category: item.category, quantity: item.quantity}
+    }))}`
+  ]
+}
+
+export const selectTask2 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
   const selectedRows = data.filter(item => item.name === "Sunglasses");
   callBack(data, selectedRows);
   return [
@@ -14,7 +28,7 @@ export const selectTask1 = (data: Product[], callBack: (all: Product[], selected
   ]
 }
 
-export const selectTask2 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
+export const selectTask3 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
   const selectedRows = data.filter(item => ["Sunglasses", "Bamboo Watch"].includes(item.name));
   callBack(data, selectedRows);
   return [
@@ -29,7 +43,7 @@ export const selectTask2 = (data: Product[], callBack: (all: Product[], selected
   ];
 }
 
-export const selectTask3 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
+export const selectTask4 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
   const selectedRows = data.filter(item => item.code === "7F9V0BpQ2W");
   callBack(data, selectedRows);
   return [
@@ -44,7 +58,7 @@ export const selectTask3 = (data: Product[], callBack: (all: Product[], selected
   ]
 }
 
-export const selectTask4 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
+export const selectTask5 = (data: Product[], callBack: (all: Product[], selected: Product[]) => void) => {
   const selectedRows = data.filter(item => item.quantity > 10);
   callBack(data, selectedRows);
   return [

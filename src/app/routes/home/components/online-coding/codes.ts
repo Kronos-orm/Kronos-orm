@@ -10,6 +10,8 @@ data class Product(
 `.trim();
 
 export const $select: string = `
+Product(code = "7F9V0BpQ2W").select().query()
+
 Product().select{ it.code + it.quantity }
   .where{ it.name == "Sunglasses" }
   .query()

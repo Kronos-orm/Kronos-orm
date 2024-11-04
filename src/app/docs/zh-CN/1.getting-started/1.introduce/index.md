@@ -2,7 +2,9 @@
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 # 什么是Kronos
-Kronos是一款基于{{ $.noun("Code First") }} 模式、KCP（**编译器插件**），为kotlin设计的现代化的**ORM**框架，它同时支持**JVM**和**Android**平台。
+Kronos是一款基于KCP（**编译器插件**），为kotlin设计的简单易用、高性能、现代化的**ORM**框架，目前它同时支持**JVM**和**Android**平台（请移步Github查看我们对于KMM的支持计划）。
+
+我们支持{{ $.noun("Code First") }}和{{ $.noun("Database First") }}两种模式，提供了**数据库表结构的自动创建、自动同步，以及对表结构、索引**和代码生成的支持。
 
 ```mermaid
 graph LR
@@ -22,7 +24,7 @@ graph LR
 # 为什么使用Kronos
 *Kronos*为Kotlin而开发，通过KCP实现的表达式树分析支持以及kotlin的泛型和高阶函数，Kronos提供了**超级富有表现力、简洁而又语义化**的写法，使操作数据库变得更加简单。
 
-基于Code First的理念，我们提供了**数据库表结构的自动创建、自动同步，以及对表结构、索引**等操作的支持。
+支持Code First，我们提供了**数据库表结构的自动创建、自动同步，以及对表结构、索引**等操作的支持。
 
 同时通过编译器插件，我们实现了提供了无反射的Pojo和Map互转方案。
 

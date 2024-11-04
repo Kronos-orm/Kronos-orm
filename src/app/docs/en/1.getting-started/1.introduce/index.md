@@ -3,7 +3,9 @@
 
 # What is Kronos
 
-Kronos is a modern **ORM** framework for kotlin based on the {{ $.noun("Code First") }} pattern, KCP (**Compiler Plugin**), which supports both **JVM** and **Android** platforms.
+Kronos is an easy-to-use, high-performance, modern **ORM** framework for kotlin based on KCP (**Compiler Plugin**), which currently supports both **JVM** and **Android** platforms (please move to Github to see our support plans for KMM).
+
+We support {{ $.noun("Code First") }} and {{ $.noun("Database First") }} modes, providing ** automatic creation and automatic synchronization of database table structure, and support for table structure, index ** and code generation.
 
 ```mermaid
 graph LR

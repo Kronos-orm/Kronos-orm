@@ -2,7 +2,7 @@
 
 `Kronos` 严格遵循 Semantic Versioning 2.0.0 语义化版本规范。
 
-- **当前版本:** `2.0.0-SNAPSHOT`
+- **当前版本:** `0.0.1-SNAPSHOT`
 
 > **Note**
 > 版本为开发阶段，不会发布到生产环境。

@@ -81,22 +81,22 @@ export class InstallPackageComponent {
     }[] = [{
         code: `
 dependencies {
-    implementation("com.kotlinorm.kronos-core:2.0.0")
+    implementation("com.kotlinorm.kronos-core:0.0.1")
 }
 
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "2.0.0"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1"
 }
 `.trim(),
         language: 'kotlin'
     }, {
         code: `
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:2.0.0'
+    implementation 'com.kotlinorm:kronos-core:0.0.1'
 }
 
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '2.0.0'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1'
 }`.trim(),
         language: 'groovy'
     }, {
@@ -106,7 +106,7 @@ plugins {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-core</artifactId>
-      <version>2.0.0</version>
+      <version>0.0.1</version>
     </dependency>
   </dependencies>
 
@@ -125,7 +125,7 @@ plugins {
                 <dependency>
                     <groupId>com.kotlinorm</groupId>
                     <artifactId>kronos-maven-plugin</artifactId>
-                    <version>2.0.0</version>
+                    <version>0.0.1</version>
                 </dependency>
             </dependencies>
         </plugin>

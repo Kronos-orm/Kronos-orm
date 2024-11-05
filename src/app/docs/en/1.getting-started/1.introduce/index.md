@@ -51,17 +51,24 @@ val user: User = User(
 // Create the table if it does not exist, otherwise synchronize the table structure, including table columns, indexes, notes, etc.
 dataSource.table.sync(user)
 
-// insert data
+// Insert data
 user.insert().execute()
 
-// Update name field based on id
-user.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
+// Update the name field according to the id.
+user.update().set { it.name = "Kronos ORM" }.by{ it.id }.execute()
+// or
+user.update{ it.name }.by{ it.id }.execute()
+
+// Dynamically query records based on object value
+val name: User = user.select().queryOne()
 
 // Query name field by id
-val name: String = user.select { it.name }.where { it.id == 1 }.queryOne<String>()
+val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
 
 // Delete data with id 1
-User().delete().where { it.id == 1 }.execute()
+User().delete().where{ it.id == 1 }.execute()
+// or
+User(1).delete().execute()
 ```
 
 {{ NgDocActions.demo("FeatureCardsComponent", {container: false}) }}

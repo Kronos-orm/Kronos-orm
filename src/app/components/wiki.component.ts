@@ -6,7 +6,8 @@ import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {AppService} from "../app.service";
 import {Router} from "@angular/router";
 import {Dialog, DialogModule} from "primeng/dialog";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
+import {MessageService} from "primeng/api";
 
 @Component({
     selector: 'document-wiki',
@@ -63,24 +64,36 @@ export class WikiComponent {
         private appService: AppService,
         private sanitizer: DomSanitizer,
         public router: Router,
-        protected elementRef: ElementRef
+        protected elementRef: ElementRef,
+        private msg: MessageService,
+        private translocoService: TranslocoService
     ) {
         window.onWikiChange = new EventEmitter();
         window.onWikiChange.subscribe(({id, anchor}) => {
-            this.url = `/documentation/${this.appService.language}/concept/` +
-                this.routing
-                    .filter(item => item.path.startsWith(this.appService.language))
-                    .map(item => item.children)
-                    .flat()
-                    .find(item => item.path == id).path
-            const _anchor = anchor ? `#${anchor}` : ""
-            this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-                '/#' + this.url + _anchor
-            );
-            this.visible = true;
-            // 如果页面宽度小于900，自动打开全屏模式
-            if (window.innerWidth < 900) {
-                this.dialogTpl.maximize();
+            try {
+                this.url = `/documentation/${this.appService.language}/concept/` +
+                    this.routing
+                        .filter(item => item.path.startsWith(this.appService.language))
+                        .map(item => item.children)
+                        .flat()
+                        .find(item => item.path == id).path
+                const _anchor = anchor ? `#${anchor}` : ""
+                this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+                    '/#' + this.url + _anchor
+                );
+                this.visible = true;
+                // 如果页面宽度小于900，自动打开全屏模式
+                if (window.innerWidth < 900) {
+                    this.dialogTpl.maximize();
+                }
+            } catch (e) {
+                this.translocoService.selectTranslate(["COMING_SOON"])
+                    .subscribe(([comingSoon]) => {
+                        this.msg.add({
+                            severity: 'info',
+                            detail: comingSoon
+                        });
+                    });
             }
         })
     }

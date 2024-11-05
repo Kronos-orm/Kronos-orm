@@ -8,7 +8,7 @@
 Kronos提供了一些内置函数，可以在查询`select`和条件筛选`where`时使用，如下：
 
 ```kotlin
-KPojo.select { f.count(1) }.where { f.concat("%", it.username, "%") }.queryList()
+KPojo.select { f.count(1) }.where { it.username like f.concat("%", it.username, "%") }.queryList()
 ```
 
 ### 内置函数列表
@@ -108,6 +108,8 @@ object CustomerFunctionBuilder : FunctionBuilder {
                     DBType.Postgres, DBType.Mssql -> "CURRENT_DATE"
                     else -> "CURDATE"
                 }
+                
+                //这个函数是Kronos用于生成带参函数sql语句的方法
                 buildFields(field.functionName, field.name.takeIf { showAlias } ?: "", field.fields, dataSource, showTable)
             }
             "showName" -> "'$field.fields.first().value'"

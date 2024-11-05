@@ -6,7 +6,7 @@
 Declaring a class as a datasheet class in Kronos is very simple, just make the class inherit from `KPojo`, here is a simple example:
 
 ```kotlin
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interface.KPojo
 
 data class User(
     val id: Int? = null,
@@ -28,7 +28,7 @@ Kronos支持为列添加注释，我们通过编译器插件读取您在属性�
 我们支持以下4种注释：
 
 ```kotlin
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interface.KPojo
 
 data class User(
     // 添加列注释

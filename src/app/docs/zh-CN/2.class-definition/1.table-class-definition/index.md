@@ -6,7 +6,7 @@
 在Kronos中声明一个class为数据表类非常简单，只需要让该类继承`KPojo`即可，以下是一个简单示例：
 
 ```kotlin
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interface.KPojo
 
 data class User(
     val id: Int? = null,
@@ -28,7 +28,7 @@ Kronos支持为列添加注释，我们通过编译器插件读取您在属性�
 我们支持以下4种注释：
 
 ```kotlin
-import com.kotlinorm.beans.dsl.KPojo
+import com.kotlinorm.interface.KPojo
 
 data class User(
     // 添加列注释

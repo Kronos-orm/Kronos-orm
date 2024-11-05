@@ -254,6 +254,7 @@ fun getColumnName(
         (primaryKeyAnnotation!!.getValueArgument(0) as? IrConstImpl<*>)?.value == true -> "identity"
         (primaryKeyAnnotation!!.getValueArgument(1) as? IrConstImpl<*>)?.value == true -> "uuid"
         (primaryKeyAnnotation!!.getValueArgument(2) as? IrConstImpl<*>)?.value == true -> "snowflake"
+        (primaryKeyAnnotation!!.getValueArgument(3) as? IrConstImpl<*>)?.value == true -> "custom"
         else -> "default"
     }
 

@@ -250,7 +250,7 @@ class UpdateClause<T : KPojo>(
             paramMapNew[field + "New"] = value
         }
 
-        toUpdateFields = toUpdateFields.distinctBy { it.columnName }.filter { it.isColumn }.toLinkedSet()
+        toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()
 
         setCommonStrategy(optimisticStrategy) { field, _ ->
             if (toUpdateFields.any { it.columnName == field.columnName }) {

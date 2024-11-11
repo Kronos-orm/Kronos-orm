@@ -78,7 +78,7 @@ fun findValidRefs(
     kClass: KClass<*>, columns: List<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
-    return columns.filter { !it.isColumn && (allowed == null || it.name in allowed || allowAll) && it.kClass != null }.map { col ->
+    return columns.asSequence().filter { !it.isColumn && (allowed == null || it.name in allowed || allowAll) && it.kClass != null }.map { col ->
         //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
         if (col.ignore?.contains(CASCADE_SELECT) == true && allowAll && operationType == KOperationType.SELECT) {
             return@map listOf<ValidCascade>()
@@ -96,11 +96,11 @@ fun findValidRefs(
             val ref =
                 col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             val tableName = ref.kronosTableName() // 获取引用所在的表名
-            ref.kronosColumns().filter {
+            ref.kronosColumns().asSequence().filter {
                 it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.kClass == kClass
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName, false)
-            } // 若没有级联映射，返回引用的所有关于本表级联映射
+            }.toList() // 若没有级联映射，返回引用的所有关于本表级联映射
         }
-    }.flatten()
+    }.toList().flatten()
 }

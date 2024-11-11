@@ -130,9 +130,9 @@ object OracleSupport : DatabasesSupport {
         return listOfNotNull(
             "CREATE TABLE ${quote(tableName.uppercase())} ($columnsSql)",
             *indexesSql.toTypedArray(),
-            *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
+            *columns.asSequence().filter { !it.kDoc.isNullOrEmpty() }.map {
                 "COMMENT ON COLUMN ${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
-            }.toTypedArray(),
+            }.toList().toTypedArray(),
             if (tableComment.isNullOrEmpty()) null else "COMMENT ON TABLE ${quote(tableName)} IS '$tableComment'"
         )
     }

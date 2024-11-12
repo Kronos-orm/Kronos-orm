@@ -138,6 +138,9 @@ class KronosActionTask {
         fun List<KronosActionTask>.merge(): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(flatMap { it.atomicTasks })
+                if(any { it.beforeExecute != null }) {
+                    beforeExecute = { wrapper -> forEach { it.beforeExecute?.invoke(this, wrapper) } }
+                }
                 if (any { it.afterExecute != null }) {
                     afterExecute = { wrapper -> forEach { it.afterExecute?.invoke(this, wrapper) } }
                 }

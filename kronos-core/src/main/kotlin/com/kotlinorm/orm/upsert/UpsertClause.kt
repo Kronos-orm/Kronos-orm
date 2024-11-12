@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.upsert
 
+import com.kotlinorm.Kronos.serializeResolver
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.interfaces.KPojo
@@ -69,7 +70,7 @@ class UpsertClause<T : KPojo>(
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
     private var lock: PessimisticLock? = null
-    private var paramMapNew = mutableMapOf<String, Any?>()
+    private var paramMapNew = mutableMapOf<Field, Any?>()
 
     init {
         if (setUpsertFields != null) {
@@ -139,7 +140,7 @@ class UpsertClause<T : KPojo>(
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): UpsertClause<T> {
-        paramMapNew.putAll(pairs)
+        paramMapNew.putAll(pairs.map { Field(it.first) to it.second })
         return this
     }
 
@@ -158,9 +159,17 @@ class UpsertClause<T : KPojo>(
             toUpdateFields = allFields.toLinkedSet()
         }
 
-        paramMap = (paramMap.filter { it ->
-            it.key in (toUpdateFields + toInsertFields + onFields).map { it.name }
-        } + paramMapNew).toMutableMap()
+        // 合并参数映射，准备执行SQL所需的参数
+        paramMapNew.forEach { (key, value) ->
+            val field = allFields.find { it.columnName == key.columnName }
+            if (field != null && field.serializable && value != null) {
+                paramMap[key.name] = serializeResolver.serialize(value)
+            } else {
+                paramMap[key.name] = value
+            }
+        }
+
+        val paramMap = (paramMap.filter { it -> it.key in (toUpdateFields + toInsertFields + onFields).map { it.name } }).toMutableMap()
 
         if (onConflict) {
             return KronosAtomicActionTask(
@@ -197,8 +206,11 @@ class UpsertClause<T : KPojo>(
                 ) {
                     pojo.update().cascade(cascadeEnabled)
                         .apply {
-                            this@UpsertClause.cascadeAllowed = this.cascadeAllowed
-                            this@UpsertClause.toUpdateFields = this.toUpdateFields
+                            this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
+                            this@apply.toUpdateFields = this@UpsertClause.toUpdateFields
+                            this@UpsertClause.toUpdateFields.forEach {
+                                this@apply.paramMapNew[it + "New"] = paramMap[it.name]
+                            }
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
                         }
@@ -206,7 +218,7 @@ class UpsertClause<T : KPojo>(
                 } else {
                     pojo.insert().cascade(cascadeEnabled)
                         .apply {
-                            this@UpsertClause.cascadeAllowed = this.cascadeAllowed
+                            this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
                         }
                         .execute(wrapper)
                 }

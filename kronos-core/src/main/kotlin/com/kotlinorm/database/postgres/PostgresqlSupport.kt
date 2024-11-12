@@ -130,9 +130,9 @@ object PostgresqlSupport : DatabasesSupport {
         return listOfNotNull(
             "CREATE TABLE IF NOT EXISTS \"public\".${quote(tableName)} ($columnsSql)",
             *indexesSql.toTypedArray(),
-            *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
+            *columns.asSequence().filter { !it.kDoc.isNullOrEmpty() }.map {
                 "COMMENT ON COLUMN \"public\".${quote(tableName)}.${quote(it.columnName)} IS '${it.kDoc}'"
-            }.toTypedArray(),
+            }.toList().toTypedArray(),
             if (tableComment.isNullOrEmpty()) null else "COMMENT ON TABLE \"public\".${quote(tableName)} IS '$tableComment'"
         )
     }

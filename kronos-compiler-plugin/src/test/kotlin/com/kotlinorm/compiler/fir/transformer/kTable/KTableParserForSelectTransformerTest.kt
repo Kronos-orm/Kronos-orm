@@ -80,14 +80,18 @@ class KTableParserForSelectTransformerTest {
             
                 val user = User()
             
-                fun select(block: ToSelect<User, Any?>): List<Field> {
+                fun User.select(block: ToSelect<User, Any?>): List<Field> {
                     val rst: MutableList<Field> = mutableListOf()
 
-                    user.afterSelect {
+                    afterSelect {
                         block!!(it)
                         rst += fields
                     }
                     return rst
+                }
+                
+                fun List<User>.select(block: ToSelect<User, Any?>): List<List<Field>>{
+                    return map { it.select(block) }
                 }
 
 
@@ -95,7 +99,7 @@ class KTableParserForSelectTransformerTest {
                     listOf(
                         user["id"],
                     ),
-                    select {
+                    user.select {
                         it.id
                     }
                 )
@@ -105,7 +109,7 @@ class KTableParserForSelectTransformerTest {
                     listOf(
                         user["id"],
                     ),
-                    select {
+                    user.select {
                         +it.id
                     }
                 )
@@ -115,7 +119,7 @@ class KTableParserForSelectTransformerTest {
                         user["id"],
                         user["username"],
                     ),
-                    select {
+                    user.select {
                         it.id + it.username
                     }
                 )
@@ -125,7 +129,7 @@ class KTableParserForSelectTransformerTest {
                         user["id"],
                         user["username"].apply{ name = "name" },
                     ),
-                    select {
+                    user.select {
                         it::id + it.username.as_("name")
                     }
                 )
@@ -135,7 +139,7 @@ class KTableParserForSelectTransformerTest {
                         user["id"],
                         Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL),
                     ),
-                    select {
+                    user.select {
                         it.id + "1"
                     }
                 )
@@ -151,10 +155,18 @@ class KTableParserForSelectTransformerTest {
                             name = "cnt"
                         }
                     ),
-                    select {
+                    user.select {
                         f.count(it.id).as_("cnt")
                     }
                 )
+                
+                assertEquals(
+                    listOf(listOf(user["id"])),
+                    listOf(user).select {
+                        it.id
+                    }
+                )
+
 
             }
         """.trimIndent()

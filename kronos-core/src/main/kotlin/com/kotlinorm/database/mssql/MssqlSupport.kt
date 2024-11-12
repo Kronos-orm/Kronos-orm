@@ -114,9 +114,9 @@ object MssqlSupport : DatabasesSupport {
         return listOfNotNull(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[$tableName]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[$tableName]($columnsSql); END;",
             *indexesSql.toTypedArray(),
-            *columns.filter { !it.kDoc.isNullOrEmpty() }.map {
+            *columns.asSequence().filter { !it.kDoc.isNullOrEmpty() }.map {
                 "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'${it.kDoc}', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName', @level2type=N'COLUMN', @level2name=N'${it.columnName}'"
-            }.toTypedArray(),
+            }.toList().toTypedArray(),
             if (tableComment != null) "EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'$tableComment', @level0type=N'SCHEMA', @level0name=N'dbo', @level1type=N'TABLE', @level1name=N'$tableName'" else null
         )
     }

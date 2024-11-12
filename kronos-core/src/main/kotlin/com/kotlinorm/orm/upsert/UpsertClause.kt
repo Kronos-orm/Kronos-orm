@@ -215,7 +215,7 @@ class UpsertClause<T : KPojo>(
     }
 
     companion object {
-        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: ToSelect<T, Unit>): List<UpsertClause<T>> {
+        fun <T : KPojo> List<UpsertClause<T>>.on(someFields: ToSelect<T, Any?>): List<UpsertClause<T>> {
             return map { it.on(someFields) }
         }
 

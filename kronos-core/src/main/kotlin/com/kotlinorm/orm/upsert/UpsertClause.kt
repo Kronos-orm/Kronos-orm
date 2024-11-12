@@ -197,8 +197,8 @@ class UpsertClause<T : KPojo>(
                 ) {
                     pojo.update().cascade(cascadeEnabled)
                         .apply {
-                            this@UpsertClause.cascadeAllowed = this.cascadeAllowed
-                            this@UpsertClause.toUpdateFields = this.toUpdateFields
+                            this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
+                            this@apply.toUpdateFields = this@UpsertClause.toUpdateFields
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
                         }
@@ -206,7 +206,7 @@ class UpsertClause<T : KPojo>(
                 } else {
                     pojo.insert().cascade(cascadeEnabled)
                         .apply {
-                            this@UpsertClause.cascadeAllowed = this.cascadeAllowed
+                            this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
                         }
                         .execute(wrapper)
                 }

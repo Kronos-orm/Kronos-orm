@@ -221,7 +221,7 @@ class UpdateClause<T : KPojo>(
         }
 
         // 如果没有指定字段需要更新，则更新所有字段
-        if (toUpdateFields.isEmpty()) {
+        if (toUpdateFields.isEmpty() && plusAssigns.isEmpty() && minusAssigns.isEmpty()) {
             toUpdateFields = allFields
             // 为所有字段生成新的参数映射
             toUpdateFields.forEach {

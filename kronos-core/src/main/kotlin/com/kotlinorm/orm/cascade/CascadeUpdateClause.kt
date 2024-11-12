@@ -53,9 +53,17 @@ object CascadeUpdateClause {
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
+        val validCascades = findValidRefs( // 获取有效的引用
+            pojo::class,
+            pojo.kronosColumns(),
+            KOperationType.DELETE,
+            cascadeAllowed?.filter { it.tableName == pojo.kronosTableName()}?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
+            cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
+        ).filter { !it.mapperByThis }
 
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
+                if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
                 toUpdateRecords.addAll(
                     pojo.select()
                         .where { whereClauseSql.asSql() }
@@ -110,10 +118,9 @@ object CascadeUpdateClause {
         paramMap: Map<String, Any?>
     ): KronosActionTask? {
         if (null == node.data) return null
-
         return node.kPojo.update().apply {
-            node.updateParams.forEach { (key, value) ->
-                val updateField = allFields.first { it.name == key }
+            node.updateParams.forEach { (_, value) ->
+                val updateField = allFields.first { it.name == value }
                 toUpdateFields += updateField
                 paramMapNew[updateField + "New"] = paramMap[value + "New"]
             }

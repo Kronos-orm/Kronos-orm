@@ -79,6 +79,11 @@ context(IrPluginContext)
 internal val getValueByFieldNameSymbol
     get() = kTableForConditionSymbol.getSimpleFunction("getValueByFieldName")!!
 
+context(IrPluginContext)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal val buildContainsStrSymbol
+    get() = kTableForConditionSymbol.getSimpleFunction("buildContainsStr")!!
+
 /**
  * Parses the condition type based on the given function name.
  *

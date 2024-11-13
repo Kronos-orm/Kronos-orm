@@ -439,6 +439,11 @@ open class KTableForCondition<T : KPojo> {
     @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.notRegexp get() = true
 
+    fun buildContainsStr(str: String?): String? {
+        return if(str == null) null
+        else "%$str%"
+    }
+
     companion object {
         /**
          * Runs the given block on a new instance of [KTableForCondition] with the given [T] object as the data source.

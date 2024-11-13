@@ -327,12 +327,9 @@ fun buildCriteria(element: IrElement, setNot: Boolean = false, noValueStrategyTy
                             irString("%${str.value}%")
                         } else {
                             applyIrCall(
-                                stringPlusSymbol, applyIrCall(
-                                    stringPlusSymbol, irString("%")
-                                ) {
-                                    dispatchBy(str)
-                                }) {
-                                dispatchBy(irString("%"))
+                                buildContainsStrSymbol, str
+                            ) {
+                                dispatchBy(irGet(extensionReceiverParameter!!))
                             }
                         }
                     }

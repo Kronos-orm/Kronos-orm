@@ -17,7 +17,7 @@ A modern ORM framework designed for Kotlin.
 </h3>
 <div align="center">
 
-Kronos is a modern ORM framework designed for Kotlin, which is **suitable for both backend and mobile applications, support multi-database, and high performance**.
+Kronos is a modern ORM framework designed for Kotlin based on the compiler plugin, which is **suitable for both backend and mobile applications, support multi-database. Powerful, high performance, easy to use**.
 
 KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has **powerful expressive power and concise , semantic writing to make the operation of the database has become more simple**.
 
@@ -42,7 +42,7 @@ KCP implementation of the expression tree analysis support as well as Kotlin its
 * Strong type checking.
 * Supports **transactions**, **complex cascading operations without foreign keys (one-to-one, one-to-many, many-to-many)**, **serialization and deserialization**, **cross-database queries**, and **database table/index/remarks creation and structure synchronization**, etc.
 * Supports **Logical Deletion**, **Optimistic Lock**, **Creation Time**, **Update Time**, and offers flexible customization settings.
-* Easy integration with any third-party framework.
+* **Easily integrate with any third-party framework** such as `Spring`, `Ktor`, `Vert.x`, `Solon`, etc. See more information in the sample projects plz.
 * **Native SQL database manipulation based on named parameters**.
 * Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **no reflection, near-zero overhead**.
 * Data classes can be treated as database table models, **significantly reducing additional class definitions**.
@@ -62,20 +62,20 @@ Here are some of the simplest examples showing how to use Kronos-ORM for databas
 ) : KPojo
 
 // We can use dataSource.table.createTable<User>() to create the table,
-// or dataSource.table.sync<User>() to synchronize the table structure.
+// or dataSource.table.syncTable<User>() to synchronize the table structure.
 dataSource.table.createTable<User>()
 
-// Insert a record
+// Insert a record into table `tb_user` (id = 1, username = "test", age = 18)
 // we can use List<User>.insert().execute() to batch insert
 User(id = 1, username = "test", age = 18).insert().execute()
 
-// Query
+// Query records from table `tb_user` where `age` is 18
 val listOfUser = User(age = 18).select().queryList()
 
-// Update
+// Update records in table `tb_user` where `id` is 1, set `age` to 19
 User(id = 1, age = 19).update().by { it.id }.execute()
 
-// Delete
+// Delete records from table `tb_user` where `id` is 1
 User(id = 1).delete().execute()
 ```
 

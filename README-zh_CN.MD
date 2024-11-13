@@ -17,7 +17,7 @@
 </h3>
 <div align="center">
 
-Kronos是一个为Kotlin设计的现代ORM框架，**适用于后端和移动应用，支持多数据库, 高性能**。
+Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
 
 KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
 
@@ -43,14 +43,14 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 * 强类型检查
 * 支持**事务**、**无外键复杂级联操作（一对一，一对多，多对多）**、**序列化反序列化**、**跨数据库查询**、**数据库表/索引/备注创建和结构同步**等功能
 * 支持**逻辑删除**、**乐观锁**、**创建时间**、**更新时间**，且支持灵活的自定义设置
-* 轻松与任何第三方框架集成
+* 轻松与任何第三方框架集成，如`Spring`、`Ktor`、`Vert.x`、`Solon`等，请查看我们的实力项目
 * **基于命名参数的原生SQL数据库操作**
 * 通过编译期操作，支持轻松将**数据实体类转换为Map或从Map转换为数据实体类**，并且**无反射，近乎零开销**
 * 数据类就可以当作数据库表模型，**显著减少额外的类定义**
 
 -------
 
-# Simple Example
+# 简单示例
 
 下面是一些最简单的示例，说明如何使用 Kronos-ORM 进行数据库操作。
 
@@ -63,20 +63,20 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 ) : KPojo
 
 //我们可以使用dataSource.table.createTable<User>()来创建表，
-//或dataSource.table.sync<User>()来同步表结构。
+//或dataSource.table.syncTable<User>()来同步表结构。
 dataSource.table.createTable<User>()
 
-// 插入一条记录
+// 向`tb_user`表插入一条记录(id = 1, username = "test", age = 18)
 // 可以使用 List<User>.insert().execute() 来批量插入记录
 User(id = 1, username = "test", age = 18).insert().execute()
 
-// 查询
+// 查询`tb_user`表中的`age`字段为18的记录
 val listOfUser = User(age = 18).select().queryList()
 
-// 更新
+// 更新`t_user`表中`id`为1的记录的`age`字段为19
 User(id = 1, age = 19).update().by { it.id }.execute()
 
-// 删除
+// 删除`t_user`表中`id`为1的记录
 User(id = 1).delete().execute()
 ```
 

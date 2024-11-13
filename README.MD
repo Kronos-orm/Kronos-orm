@@ -55,7 +55,7 @@ Here are some of the simplest examples showing how to use Kronos-ORM for databas
 
 ```kotlin
 // Define a data class extending KPojo
-@Table(name = "tb_user") data class User(
+data class User(
     @PrimaryKey(identity = true) val id: Long? = null,
     val username: String? = null,
     val age: Int? = null
@@ -65,17 +65,17 @@ Here are some of the simplest examples showing how to use Kronos-ORM for databas
 // or dataSource.table.syncTable<User>() to synchronize the table structure.
 dataSource.table.createTable<User>()
 
-// Insert a record into table `tb_user` (id = 1, username = "test", age = 18)
+// Insert a record into table `user` (id = 1, username = "test", age = 18)
 // we can use List<User>.insert().execute() to batch insert
 User(id = 1, username = "test", age = 18).insert().execute()
 
-// Query records from table `tb_user` where `age` is 18
+// Query records from table `user` where `age` is 18
 val listOfUser = User(age = 18).select().queryList()
 
-// Update records in table `tb_user` where `id` is 1, set `age` to 19
+// Update records in table `user` where `id` is 1, set `age` to 19
 User(id = 1, age = 19).update().by { it.id }.execute()
 
-// Delete records from table `tb_user` where `id` is 1
+// Delete records from table `user` where `id` is 1
 User(id = 1).delete().execute()
 ```
 

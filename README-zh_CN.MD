@@ -56,7 +56,7 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 
 ```kotlin
 // 定义一个扩展 KPojo 的数据类
-@Table(name = "tb_user") data class User(
+data class User(
     @PrimaryKey(identity = true) val id: Long? = null,
     val username: String? = null,
     val age: Int? = null
@@ -66,17 +66,17 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 //或dataSource.table.syncTable<User>()来同步表结构。
 dataSource.table.createTable<User>()
 
-// 向`tb_user`表插入一条记录(id = 1, username = "test", age = 18)
+// 向`user`表插入一条记录(id = 1, username = "test", age = 18)
 // 可以使用 List<User>.insert().execute() 来批量插入记录
 User(id = 1, username = "test", age = 18).insert().execute()
 
-// 查询`tb_user`表中的`age`字段为18的记录
+// 查询`user`表中的`age`字段为18的记录
 val listOfUser = User(age = 18).select().queryList()
 
-// 更新`t_user`表中`id`为1的记录的`age`字段为19
+// 更新`user`表中`id`为1的记录的`age`字段为19
 User(id = 1, age = 19).update().by { it.id }.execute()
 
-// 删除`t_user`表中`id`为1的记录
+// 删除`user`表中`id`为1的记录
 User(id = 1).delete().execute()
 ```
 

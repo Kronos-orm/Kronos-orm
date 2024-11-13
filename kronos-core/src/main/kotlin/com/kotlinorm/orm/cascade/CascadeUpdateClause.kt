@@ -56,7 +56,7 @@ object CascadeUpdateClause {
         val validCascades = findValidRefs( // 获取有效的引用
             pojo::class,
             pojo.kronosColumns(),
-            KOperationType.DELETE,
+            KOperationType.UPDATE,
             cascadeAllowed?.filter { it.tableName == pojo.kronosTableName()}?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
             cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
         ).filter { !it.mapperByThis }

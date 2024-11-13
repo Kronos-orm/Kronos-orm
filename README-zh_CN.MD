@@ -360,7 +360,11 @@ user.delete()
 
 有关更多信息，请参阅以下示例项目：
 
-[SpringBoot 示例项目](https://github.com/Kronos-orm/kronos-spring-demo)
+[SpringBoot 示例项目](https://github.com/Kronos-orm/kronos-example-spring-boot)
+[Ktor 示例项目](https://github.com/Kronos-orm/kronos-example-ktor)
+[Vert.x 示例项目](https://github.com/Kronos-orm/kronos-example-verx)
+[Solon 示例项目](https://github.com/Kronos-orm/kronos-example-solon)
+[Android 示例项目](https://github.com/Kronos-orm/kronos-example-android)
 
 ## 📚 官方文档
 

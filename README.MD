@@ -355,7 +355,11 @@ user.delete()
 
 Please refer to the following example projects for more information:
 
-[Example for SpringBoot](https://github.com/Kronos-orm/kronos-spring-demo)
+[Example for SpringBoot](https://github.com/Kronos-orm/kronos-example-spring-boot)
+[Example for Ktor](https://github.com/Kronos-orm/kronos-example-ktor)
+[Example for Vert.x](https://github.com/Kronos-orm/kronos-example-verx)
+[Example for Solon](https://github.com/Kronos-orm/kronos-example-solon)
+[Example for Android](https://github.com/Kronos-orm/kronos-example-android)
 
 ## 📚 Documentation
 

@@ -2,12 +2,12 @@ import {NgDocPage} from '@ng-doc/core';
 import ConceptCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
-const CascadeDeleteActionPage: NgDocPage = {
-    title: `Cascade Delete Strategy`,
+const KronosDataSourceWrapper: NgDocPage = {
+    title: `Data source wraper`,
     mdFile: './index.md',
-    route: 'cascade-delete-action',
-    order: 1,
-    category: ConceptCategory
+    category: ConceptCategory,
+    order: 4,
+    route: 'kronos-data-source-wrapper'
 };
 
-export default CascadeDeleteActionPage;
+export default KronosDataSourceWrapper;

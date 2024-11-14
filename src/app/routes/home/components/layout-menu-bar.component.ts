@@ -13,7 +13,7 @@ import {ListItem, UIListComponent} from "../../../components/ui-list.component";
         UIListComponent
     ],
     template: `
-        <p-toast />
+        <p-toast/>
         <p-megaMenu class="hidden md:block" [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
             <ng-template pTemplate="start">
                 <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
@@ -27,23 +27,23 @@ import {ListItem, UIListComponent} from "../../../components/ui-list.component";
                     <i [ngClass]="item.icon"></i>
                     <span class="mx-2">{{ item.label | transloco }}</span>
                 </a>
-                <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink"
+                <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink" pRipple routerLinkActive="p-menuitem-active"
                    class="flex align-items-center p-3 cursor-pointer mb-2 gap-2">
-                <span
-                        class="inline-flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
-                    <i [ngClass]="item.icon + ' text-lg'"></i>
-                </span>
-                    <span class="inline-flex flex-column gap-1" style="width: calc(100% - 3.5rem)">
-                    <span class="font-medium text-lg text-900">{{ item.label | transloco }}</span>
-                    <span class="white-space-nowrap text-overflow-ellipsis overflow-hidden text-gray-200">{{ item.subtext | transloco }}</span>
-                </span>
+                    <span
+                            class="inline-flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
+                        <i [ngClass]="item.icon + ' text-lg'"></i>
+                    </span>
+                        <span class="inline-flex flex-column gap-1" style="width: calc(100% - 3.5rem)">
+                        <span class="font-medium text-lg text-900">{{ item.label | transloco }}</span>
+                        <span class="white-space-nowrap text-overflow-ellipsis overflow-hidden text-gray-200">{{ item.subtext | transloco }}</span>
+                    </span>
                 </a>
-                <div [routerLink]="item.routerLink" *ngIf="item.image"
+                <a [routerLink]="item.routerLink" *ngIf="item.image" pRipple routerLinkActive="p-menuitem-active"
                      class="flex flex-column align-items-start gap-3 p-2">
                     <img [src]="item.image" alt="megamenu-demo" class="w-full"/>
                     <span class="text-900 text-gray-200">{{ item.subtext | transloco }}</span>
                     <p-button [label]="item.label | transloco" [outlined]="true"></p-button>
-                </div>
+                </a>
             </ng-template>
             <ng-template pTemplate="end">
                 <p-button
@@ -154,6 +154,7 @@ export class LayoutMenuBarComponent implements OnInit {
             {
                 label: 'DOCUMENTATION',
                 icon: 'pi pi-book',
+                routerLink: `/documentation/${this.appService.language}/getting-started/introduce`,
                 root: true,
                 items: [
                     [
@@ -246,12 +247,17 @@ export class LayoutMenuBarComponent implements OnInit {
                 root: true,
                 items: [
                     [{
-                        items: [{
-                            image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
-                            label: 'COMING_SOON',
-                            subtext: 'CODE_GENERATOR',
-                        }]
-                    }]
+                        items: [
+                            {
+                                label: "BlOG",
+                                icon: 'pi pi-home',
+                                routerLink: '/blog'
+                            }, {
+                                image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
+                                label: 'COMING_SOON',
+                                subtext: 'CODE_GENERATOR',
+                            }]
+                    }],
                 ]
             },
             {
@@ -278,7 +284,7 @@ export class LayoutMenuBarComponent implements OnInit {
     }
 
     setLang(lang: string) {
-        if(this.appService.language === lang) return;
+        if (this.appService.language === lang) return;
         this.appService.language = lang; // update language
         this.translocoService.setActiveLang(lang);
         window.location.reload();

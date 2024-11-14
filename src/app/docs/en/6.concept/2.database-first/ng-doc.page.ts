@@ -4,12 +4,12 @@ import WikiCategory from "../ng-doc.category";
 /**
  * @status:success new
  */
-const CodeFirstPage: NgDocPage = {
-    title: `Code First`,
+const DatabaseFirstPage: NgDocPage = {
+    title: `Database First`,
     mdFile: './index.md',
-    route: 'code-first',
-    order: 1,
+    route: 'database-first',
+    order: 2,
     category: WikiCategory
 };
 
-export default CodeFirstPage;
+export default DatabaseFirstPage;

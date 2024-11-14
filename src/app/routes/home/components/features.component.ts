@@ -1,22 +1,25 @@
 import {Component} from '@angular/core';
 import {SharedModule} from "../../../shared.module";
 import {AnimateOnScrollModule} from "primeng/animateonscroll";
+import {TranslocoPipe} from "@jsverse/transloco";
 
 @Component({
   selector: 'features',
   imports: [
     SharedModule,
     AnimateOnScrollModule,
+    TranslocoPipe,
   ],
   template: `
     <div pAnimateOnScroll enterClass="fadeinleft" leaveClass="fadeoutleft" class="flex flex-wrap justify-content-center gap-3 overflow-hidden animation-duration-1000 animation-ease-in-out">
-      <p-card header="Kotlin multiplatform support" subheader="Kronos" [style]="{ minWidth: 'calc(100vw / 3)', maxWidth: '525px'}">
+      <p-card [header]="'FEATURE_BLOG_TITLE_1' | transloco" subheader="Kronos" [style]="{ minWidth: 'calc(100vw / 3)', maxWidth: '525px'}">
         <ng-template pTemplate="header">
           <img class="card-cover" alt="Kotlin multiplatform support" src="/assets/images/features/img-1.png" />
         </ng-template>
         <p>
-          Some content is waiting to be written here...
+          {{"FEATURE_BLOG_CONTENT_1" | transloco}}
         </p>
+        <a class="p-button p-button-contrast" href="/#/blog?blog=kotlin-multiplatform-support">{{ "READ_MORE" | transloco }}</a>
       </p-card>
       <p-card header="Less runtime reflect, more compile-time task" subheader="Kronos" [style]="{ minWidth: 'calc(100vw / 3)', maxWidth: '525px'}">
         <ng-template pTemplate="header">

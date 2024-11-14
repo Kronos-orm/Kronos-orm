@@ -44,5 +44,13 @@
   "MAXIMIZED": "Restore maximize",
   "JUMP_TO_WIKI": "Jump to Wiki",
   "COMING_SOON": "Coming soon",
-  "CODE_GENERATOR": "Code Generator"
+  "CODE_GENERATOR": "Code Generator",
+  "BlOG": "Blog",
+  "LIST_OF_BLOGS": "List of Blogs",
+  "BACK_TO_BLOGS": "Back to Blogs",
+  "FEATURE_1": "Write Kotlin ORM in Simple and Type-safe Way",
+  "FEATURE_2": "Less runtime reflect, higher runtime efficiency",
+  "FEATURE_3": "Multiple database dialect support",
+  "FEATURE_BLOG_TITLE_1": "Kotlin multiplatform support",
+  "FEATURE_BLOG_CONTENT_1": "The blog talks about our release plans for kotlin multiplatform and our current support for kotlin multiplatform."
 }

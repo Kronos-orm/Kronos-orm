@@ -1,0 +1,41 @@
+<layout-menu-bar/>
+<div class="clearfix container-xl md:px-4 lg:px-5 px-3">
+    <div class="box">
+        @if (blog) {
+            <p-button severity="contrast" (click)="backToList()" styleClass="mb-4" size="small"
+                      iconPos="left"
+                      [label]="'BACK_TO_BLOGS' | transloco"
+                      icon="pi pi-arrow-left"/>
+            <markdown class="markdown-body"
+                      [src]="'/assets/blogs/' + appService.language + '/' + blog + '.md'"
+                      lineNumbers/>
+        } @else {
+            <h1>{{ "LIST_OF_BLOGS" | transloco }}</h1>
+            <p-dataView #dv [value]="blogs">
+                <ng-template pTemplate="list" let-blogs>
+                    <div class="grid grid-nogutter">
+                        <div class="col-12" *ngFor="let item of blogs; let first = first" class="col-12">
+                            <div class="flex flex-column sm:flex-row sm:align-items-center p-4 gap-3" [ngClass]="{ 'border-top-1 surface-border': !first }">
+                                <div class="md:w-10rem relative">
+                                    <img class="block xl:block mx-auto border-round w-full" [src]="item.img" [alt]="item.title | transloco" />
+                                </div>
+                                <div class="flex flex-column md:flex-row justify-content-between md:align-items-center flex-1 gap-4">
+                                    <div class="flex flex-row md:flex-column justify-content-between align-items-start gap-2">
+                                        <div>
+                                            <span class="font-medium text-secondary text-sm">{{ item.title | transloco }}</span>
+                                            <div class="text-lg font-medium text-900 mt-2">{{ item.content | transloco }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-column md:align-items-end gap-5">
+                                        <a class="p-button p-button-contrast" [href]="'/#/blog?blog=' + item.blog">{{ "READ_MORE" | transloco }}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-dataView>
+        }
+    </div>
+</div>
+<kronos-footer/>

@@ -16,6 +16,7 @@ import {provideAnimationsAsync} from "@angular/platform-browser/animations/async
 import {provideTransloco} from "@jsverse/transloco";
 import {TranslocoHttpLoader} from "./TranslocoHttpLoader";
 import {DocSearchEngine} from "./doc-search-engine";
+import {provideMarkdown} from "ngx-markdown";
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -41,6 +42,7 @@ export const appConfig: ApplicationConfig = {
                 prodMode: !isDevMode(),
             },
             loader: TranslocoHttpLoader
-        })
+        }),
+        provideMarkdown()
     ]
 };

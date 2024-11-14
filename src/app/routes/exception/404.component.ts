@@ -4,13 +4,15 @@ import {
 import {SharedModule} from "../../shared.module";
 import {LayoutMenuBarComponent} from "../home/components/layout-menu-bar.component";
 import {TranslocoPipe} from "@jsverse/transloco";
+import {FooterComponent} from "../home/components/footer.component";
 
 @Component({
   selector: 'exception-404',
   imports: [
     SharedModule,
     LayoutMenuBarComponent,
-    TranslocoPipe
+    TranslocoPipe,
+    FooterComponent
   ],
   template: `
     <layout-menu-bar/>
@@ -28,6 +30,7 @@ import {TranslocoPipe} from "@jsverse/transloco";
       </div>
       <p-button [label]="'GO_TO_HOME' | transloco" routerLink="/"></p-button>
     </div>
+    <kronos-footer/>
   `,
   standalone: true,
   styles: [

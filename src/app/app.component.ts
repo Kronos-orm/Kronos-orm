@@ -3,7 +3,6 @@ import {SharedModule} from "./shared.module";
 import {MessageService, PrimeNGConfig} from 'primeng/api';
 import {AppService} from "./app.service";
 import {TranslocoService} from "@jsverse/transloco";
-import {NgxTypedWriterModule} from "ngx-typed-writer";
 import {
     NavigationCancel,
     NavigationEnd,
@@ -28,8 +27,8 @@ export class AppComponent implements OnInit, OnDestroy {
         private primengConfig: PrimeNGConfig,
         private translocoService: TranslocoService,
         private appService: AppService,
-        private router: Router,
-        private messageService: MessageService
+        router: Router,
+        messageService: MessageService
     ) {
         router.events.pipe(takeUntil(this.unsubscribe$)).subscribe((evt) => {
             if (!this.isFetching && evt instanceof RouteConfigLoadStart) {

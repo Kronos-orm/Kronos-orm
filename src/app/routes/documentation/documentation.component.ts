@@ -10,6 +10,7 @@ import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {OverlayPanel} from "primeng/overlaypanel";
 import {NG_DOC_ROUTING} from "@ng-doc/generated";
 import {WikiComponent} from "../../components/wiki.component";
+import {FooterComponent} from "../home/components/footer.component";
 
 @Component({
     selector: 'app-documentation',
@@ -21,7 +22,8 @@ import {WikiComponent} from "../../components/wiki.component";
         NgDocIconComponent,
         NgDocButtonIconComponent,
         NgDocTooltipDirective,
-        WikiComponent
+        WikiComponent,
+        FooterComponent
     ],
     templateUrl: './documentation.component.html',
     styleUrl: './documentation.component.scss'

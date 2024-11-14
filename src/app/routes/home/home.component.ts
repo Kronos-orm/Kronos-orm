@@ -7,6 +7,7 @@ import {BannerComponent} from "./components/banner.component";
 import {FeaturesComponent} from "./components/features.component";
 import {BannerMarqueeComponent} from "./components/banner-marquee.component";
 import {InstallPackageComponent} from "./components/install-package.component";
+import {FooterComponent} from "./components/footer.component";
 
 @Component({
   selector: 'app-home',
@@ -18,7 +19,8 @@ import {InstallPackageComponent} from "./components/install-package.component";
         BannerComponent,
         FeaturesComponent,
         BannerMarqueeComponent,
-        InstallPackageComponent
+        InstallPackageComponent,
+        FooterComponent
     ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',

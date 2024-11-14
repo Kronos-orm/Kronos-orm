@@ -10,6 +10,7 @@
     "serve:ssr:kronos-orm-pro": "node dist/kronos-orm-pro/server/server.mjs"
   },
   "private": true,
+  "packageManager": "yarn@3.6.3",
   "dependencies": {
     "@angular/animations": "^18.2.10",
     "@angular/cdk": "^18.2.10",

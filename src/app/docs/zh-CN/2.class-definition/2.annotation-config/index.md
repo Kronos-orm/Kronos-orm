@@ -196,9 +196,15 @@ data class Company(
 ) : KPojo
 ```
 
-## {{ $.annotation("CascadeSelectIgnore") }}关闭属性级联查询
+## {{ $.annotation("Ignore") }} 查询时忽略字段
 
-此注解用于声明属性忽略级联查询。
+此注解用于声明该列不需要在指定的查询条件中进行查询。
+需要传入忽略的查询类型 {{ $.keyword("concept/ignore-action", ["忽略查询类型"]) }}
+
+**参数**：
+{{ $.params([
+['target', '忽略的查询类型(' + $.code('SELECT') + ', ' + $.code('CASCADE_SELECT') + ')', 'Array<IgnoreAction>']
+])}}
 
 ```kotlin
 @Table("tb_user")
@@ -218,7 +224,7 @@ data class Company(
 ```
 
 > **Note**
-> 请注意，此注解是单向的，即给`employees`加上`@CascadeSelectIgnore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
+> 请注意，在级联操作时，此注解是单向的，即给`employees`加上`@Ignore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
 
 ## {{ $.annotation("PrimaryKey") }}列主键设置
 
@@ -226,7 +232,12 @@ data class Company(
 
 **参数**：
 
-{{$.params([['identity', '是否自增', 'Boolean']])}}
+{{$.params([
+['identity', '是否自增', 'Boolean'],
+['uuid', '是否使用uuid作为主键', 'Boolean'],
+['snowflake', '是否使用雪花算法作为主键', 'Boolean'],
+['custom', '是否使用自定义主键生成器', 'Boolean']
+])}}
 
 ```kotlin
 @Table("tb_user")
@@ -235,6 +246,18 @@ data class User(
     val id: Int? = null
 ) : KPojo
 ```
+
+> **Note**
+> 使用**自增主键**时，请保证`id`列的类型为`Int`或`Long`类型，否则无法正确生成主键。
+
+> **Note**
+> 使用**uuid**作为主键时，请保证`id`列的类型为`String`类型，否则无法正确生成主键。
+
+> **Note**
+> 使用**雪花算法**时，自增字段必须为`Long`类型，否则无法正确生成主键，请您在配置文件中配置`datacenterId`和`workerId`，参考：{{ $.keyword("getting-started/global-config", ["主键生成器", "雪花算法"]) }}。
+
+> **Note**
+> 使用**自定义主键**时，请提前设置配置自定义主键生成器`customIdGenerator`(`KIdGenerator<T>`)，参考：{{ $.keyword("getting-started/global-config", ["主键生成器", "自定义主键生成器"]) }}。
 
 ## {{ $.annotation("ColumnType") }}列类型及长度
 

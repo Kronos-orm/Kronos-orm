@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本文将指导您如何配置注解。
- * @status:success 新注解
+ * @status:info 有更新
  */
 const AnnotationConfigPage: NgDocPage = {
 	title: `注解配置`,

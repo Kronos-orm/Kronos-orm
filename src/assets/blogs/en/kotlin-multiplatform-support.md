@@ -2,7 +2,7 @@
 
 <center>
 
-<img src="http://localhost:3307/assets/images/features/img-1.png" width="300"/>
+<img src="/assets/images/features/img-1.png" width="300"/>
 
 </center>
 

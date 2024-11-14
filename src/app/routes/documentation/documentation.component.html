@@ -26,7 +26,7 @@
             </div>
             <p-overlayPanel #op styleClass="m-0 p-0">
                 <ul class="list-none m-0 p-0 w-12rem">
-                    @for (item of [{lang: 'zh-CN', label: '简体中文'}, {lang: 'en', label: 'English'}]; track $index) {
+                    @for (item of [{lang: 'zh-CN', label: '简体中文'}, {lang: 'en', label: 'English'}];track $index) {
                         <a class="block p-2 border-round hover:surface-hover w-full cursor-pointer flex"
                            (click)="setLang(item.lang)">
                             <span class="font-bold text-900 flex-1">{{ item.label }}</span>
@@ -42,8 +42,11 @@
     <kronos-ng-doc-sidebar ngDocCustomSidebar/>
     <router-outlet/>
     <ng-template #footer>
-        <div class="ng-doc-footer">
-            Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a> | 2022 - 2024 Kronos
+        <div style="width: calc(100% - 20rem);float: right">
+            <kronos-footer/>
+            <div class="ng-doc-footer">
+                Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a>
+            </div>
         </div>
     </ng-template>
 </ng-doc-root>
@@ -53,7 +56,7 @@
         @for (item of [{lang: 'zh-CN', label: '简体中文'}, {
             lang: 'en',
             label: 'English'
-        }]; track $index) {
+        }];track $index) {
             <a class="block p-2 border-round hover:surface-hover w-full cursor-pointer flex"
                (click)="setLang(item.lang)">
                 <span class="font-bold text-900 flex-1">{{ item.label }}</span>
@@ -65,4 +68,3 @@
     </ul>
 </p-overlayPanel>
 <document-wiki/>
-<kronos-footer/>

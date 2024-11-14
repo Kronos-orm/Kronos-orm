@@ -13,10 +13,12 @@ import {SharedModule} from "../../../shared.module";
              style="background:linear-gradient(to right, #19191c, transparent)"></div>
         <div class="marquee-wrapper overflow-hidden flex">
           @for (i of [1,2,3];track i){
-            <div class="marquee">
-              <div><img draggable="false" src="/assets/images/banner-marquee/fast.svg" height="50" alt="fast"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/light-weight.svg" height="80" alt="light-weight"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/safe.svg" height="50" alt="safe"></div>
+            <div class="marquee" pAnimateOnScroll>
+              <div class="width: 200px"></div>
+              <div class="ktor"><img draggable="false" src="/assets/images/banner-marquee/ktor.svg" height="50" alt="ktor"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/springboot.svg" height="50" alt="spring"></div>
+              <div class="solon"><img draggable="false" src="/assets/images/banner-marquee/solon.png" height="80" alt="solon">Solon</div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/vertx.svg" height="50" alt="vertx"></div>
               <div><img draggable="false" src="/assets/images/banner-marquee/multiplatform.svg" height="60" alt="multiplatform"></div>
               <div><img draggable="false" src="/assets/images/banner-marquee/mysql.svg" height="60" alt="mysql"></div>
               <div><img draggable="false" src="/assets/images/banner-marquee/sqlite.svg" height="60" alt="sqlite"></div>
@@ -73,7 +75,7 @@ import {SharedModule} from "../../../shared.module";
       right: 0;
       height: 2px;
       width: 100%;
-      background: linear-gradient(90deg,rgba(0,67,238,.55),rgba(0,102,255,0) 60%,rgba(0,255,240,.45));
+      background: linear-gradient(90deg, rgba(0, 67, 238, .55), rgba(0, 102, 255, 0) 60%, rgba(0, 255, 240, .45));
     }
 
     .banner-section-border:after {
@@ -84,7 +86,24 @@ import {SharedModule} from "../../../shared.module";
       right: 0;
       height: 2px;
       width: 100%;
-      background: linear-gradient(90deg,rgba(0,67,238,.55),rgba(0,102,255,0) 60%,rgba(0,255,240,.45));
+      background: linear-gradient(90deg, rgba(0, 67, 238, .55), rgba(0, 102, 255, 0) 60%, rgba(0, 255, 240, .45));
+    }
+
+    .ktor {
+      background: radial-gradient(rgba(255, 255, 255, 0.4), transparent);
+      padding: 15px 12px;
+      border-radius: 40px;
+    }
+
+    .solon {
+      color: #FFF;
+      font-size: 42px;
+      font-weight: 800;
+    }
+
+    .solon img {
+      vertical-align: middle;
+      margin-right: 10px;
     }
   `]
 })

@@ -17,9 +17,10 @@ import {BannerImgComponent} from "./banner-img.component";
     <typewriter class="mt-8 hidden xl:block"/>
     <banner-img class="mt-8 block xl:hidden" />
     <h1 class="text-6xl font-bold text-center xl:text-left banner-text">
-      {{ "REDEFINE" | transloco }}
-      <span class="font-bold text-primary">Kotlin</span>
-      <span class="font-bold text-purple-200 ml-3">ORM</span>
+      <span class="mr-1">{{ "REDEFINE" | transloco }}</span>
+      <span class="animated-text">
+        <span class="font-bold">Kotlin ORM</span>
+      </span>
     </h1>
     <p class="section-detail xl:text-left text-center px-0 mt-0 mb-5">
       {{ ("DESCRIPTION1") | transloco }}
@@ -48,6 +49,61 @@ import {BannerImgComponent} from "./banner-img.component";
 
     .banner-text{
       text-shadow: rgba(255, 255, 255, 0.5) 0 5px 12px;
+    }
+
+    .animated-text {
+      position: relative;
+      color: var(--home-text-color);
+      padding: .25rem .5rem;
+      border-radius: var(--border-radius);
+      display: inline-block;
+      width: 17.5rem;
+    }
+
+    .animated-text:before {
+      border-radius: var(--border-radius);
+      animation: color-animation 2s linear infinite;
+      background-size: auto auto;
+      background-clip: border-box;
+      background-size: 200% auto;
+      content: "";
+      width: 17.5rem;
+      height: 1.5rem;
+      position: absolute;
+      z-index: 0;
+      background-image: linear-gradient(-225deg,var(--blue-400) 30%,var(--cyan-400) 60%,var(--purple-400) 80%);
+      filter: blur(24px);
+      opacity: .6
+    }
+
+    .animated-text>span {
+      position: relative;
+      z-index: 3;
+      background-image: linear-gradient(-225deg,var(--blue-400) 30%,var(--cyan-400) 60%,var(--purple-400) 80%);
+      animation: color-animation 2s linear infinite;
+      background-size: auto auto;
+      background-clip: border-box;
+      background-size: 200% auto;
+      background-clip: text;
+      text-fill-color: transparent;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent
+    }
+
+    @keyframes color-animation {
+      40%,to {
+        background-position: -200% center
+      }
+    }
+
+    @keyframes scroll {
+      0% {
+        transform: translate(0)
+      }
+
+      to {
+        transform: translate(calc(-100% - 3rem))
+      }
     }
   `]
 })

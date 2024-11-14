@@ -1,34 +1,37 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import {MegaMenuItem, MessageService} from "primeng/api";
 import {AppService} from "../../../app.service";
 import {SharedModule} from "../../../shared.module";
 import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
 import {ListItem, UIListComponent} from "../../../components/ui-list.component";
+import {AnimateOnScrollModule} from "primeng/animateonscroll";
 
 @Component({
     selector: 'layout-menu-bar',
     imports: [
         SharedModule,
         TranslocoPipe,
-        UIListComponent
+        UIListComponent,
+        AnimateOnScrollModule
     ],
     template: `
-        <p-toast/>
-        <p-megaMenu class="hidden md:block" [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
-            <ng-template pTemplate="start">
-                <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
-                     draggable="false"
-                     [style.width.px]="60" alt="logo"/>
-                <span [routerLink]="['/']" class="logo">Kronos ORM</span>
-            </ng-template>
-            <ng-template pTemplate="item" let-item>
-                <a *ngIf="item.root" pRipple [routerLink]="item.routerLink" routerLinkActive="p-menuitem-active"
-                   class="flex align-items-center p-menuitem-link cursor-pointer px-3 py-2 overflow-hidden relative font-semibold text-lg">
-                    <i [ngClass]="item.icon"></i>
-                    <span class="mx-2">{{ item.label | transloco }}</span>
-                </a>
-                <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink" pRipple routerLinkActive="p-menuitem-active"
-                   class="flex align-items-center p-3 cursor-pointer mb-2 gap-2">
+        <div class="container w-full" [class]="fixed ? ['fixed', 'top-0', 'fadeinup'] : ['fadeoutup']">
+            <p-toast/>
+            <p-megaMenu class="hidden md:block" [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
+                <ng-template pTemplate="start">
+                    <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
+                         draggable="false"
+                         [style.width.px]="60" alt="logo"/>
+                    <span [routerLink]="['/']" class="logo">Kronos ORM</span>
+                </ng-template>
+                <ng-template pTemplate="item" let-item>
+                    <a *ngIf="item.root" pRipple [routerLink]="item.routerLink" routerLinkActive="p-menuitem-active"
+                       class="flex align-items-center p-menuitem-link cursor-pointer px-3 py-2 overflow-hidden relative font-semibold text-lg">
+                        <i [ngClass]="item.icon"></i>
+                        <span class="mx-2">{{ item.label | transloco }}</span>
+                    </a>
+                    <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink" pRipple routerLinkActive="p-menuitem-active"
+                       class="flex align-items-center p-3 cursor-pointer mb-2 gap-2">
                     <span
                             class="inline-flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
                         <i [ngClass]="item.icon + ' text-lg'"></i>
@@ -37,60 +40,65 @@ import {ListItem, UIListComponent} from "../../../components/ui-list.component";
                         <span class="font-medium text-lg text-900">{{ item.label | transloco }}</span>
                         <span class="white-space-nowrap text-overflow-ellipsis overflow-hidden text-gray-200">{{ item.subtext | transloco }}</span>
                     </span>
-                </a>
-                <a [routerLink]="item.routerLink" *ngIf="item.image" pRipple routerLinkActive="p-menuitem-active"
-                     class="flex flex-column align-items-start gap-3 p-2">
-                    <img [src]="item.image" alt="megamenu-demo" class="w-full"/>
-                    <span class="text-900 text-gray-200">{{ item.subtext | transloco }}</span>
-                    <p-button [label]="item.label | transloco" [outlined]="true"></p-button>
-                </a>
-            </ng-template>
-            <ng-template pTemplate="end">
-                <p-button
-                        class="mr-4"
-                        link
-                        (click)="op.toggle($event)"
-                        icon="pi pi-language"/>
-                <a href="https://github.com/Kronos-orm/Kronos-orm"
-                   target="_blank"
-                   [style.height.px]="42"
-                   class="mr-4 p-ripple p-element p-button p-component p-button-icon-only p-button-link">
-                    <i class="pi pi-github"></i>
-                </a>
-            </ng-template>
-        </p-megaMenu>
-        <div class="block md:hidden flex align-items-center border-none menu-bar p-0 pl-4">
-            <div>
-                <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
-                     draggable="false"
-                     [style.width.px]="60" alt="logo"/>
-                <span [routerLink]="['/']" class="logo">Kronos ORM</span>
+                    </a>
+                    <a [routerLink]="item.routerLink" *ngIf="item.image" pRipple routerLinkActive="p-menuitem-active"
+                       class="flex flex-column align-items-start gap-3 p-2">
+                        <img [src]="item.image" alt="megamenu-demo" class="w-full"/>
+                        <span class="text-900 text-gray-200">{{ item.subtext | transloco }}</span>
+                        <p-button [label]="item.label | transloco" [outlined]="true"></p-button>
+                    </a>
+                </ng-template>
+                <ng-template pTemplate="end">
+                    <p-button
+                            class="mr-4"
+                            link
+                            (click)="op.toggle($event)"
+                            icon="pi pi-language"/>
+                    <a href="https://github.com/Kronos-orm/Kronos-orm"
+                       target="_blank"
+                       [style.height.px]="42"
+                       class="mr-4 p-ripple p-element p-button p-component p-button-icon-only p-button-link">
+                        <i class="pi pi-github"></i>
+                    </a>
+                </ng-template>
+            </p-megaMenu>
+            <div class="block md:hidden flex align-items-center border-none menu-bar p-0 pl-4">
+                <div>
+                    <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
+                         draggable="false"
+                         [style.width.px]="60" alt="logo"/>
+                    <span [routerLink]="['/']" class="logo">Kronos ORM</span>
+                </div>
+                <div [style.margin-left]="'auto'">
+                    <p-button link
+                              (click)="op.toggle($event)"
+                              icon="pi pi-language"/>
+                    <a href="https://github.com/Kronos-orm/Kronos-orm"
+                       target="_blank"
+                       [style.height.px]="42"
+                       class="p-ripple p-element p-button p-component p-button-icon-only p-button-link">
+                        <i class="pi pi-github"></i>
+                    </a>
+                    <p-button class="mr-4" icon="pi pi-bars" link
+                              (click)="menu.toggle($event)"/>
+                </div>
             </div>
-            <div [style.margin-left]="'auto'">
-                <p-button link
-                          (click)="op.toggle($event)"
-                          icon="pi pi-language"/>
-                <a href="https://github.com/Kronos-orm/Kronos-orm"
-                   target="_blank"
-                   [style.height.px]="42"
-                   class="p-ripple p-element p-button p-component p-button-icon-only p-button-link">
-                    <i class="pi pi-github"></i>
-                </a>
-                <p-button class="mr-4" icon="pi pi-bars" link
-                          (click)="menu.toggle($event)"/>
-            </div>
+            <p-overlayPanel #op styleClass="m-0 p-0">
+                <ui-list [list]="languages" (onClick)="setLang($event.lang)"/>
+            </p-overlayPanel>
+            <p-overlayPanel #menu styleClass="m-0 p-0">
+                <ui-list [list]="menus" (onClick)="onSelect($event)"/>
+            </p-overlayPanel>
         </div>
-        <p-overlayPanel #op styleClass="m-0 p-0">
-            <ui-list [list]="languages" (onClick)="setLang($event.lang)"/>
-        </p-overlayPanel>
-        <p-overlayPanel #menu styleClass="m-0 p-0">
-            <ui-list [list]="menus" (onClick)="onSelect($event)"/>
-        </p-overlayPanel>
     `,
     standalone: true,
     styles: [
         `
           :host ::ng-deep {
+            .container {
+              z-index: 10;
+            }
+
             .p-megamenu-start {
               margin-right: 24px;
             }
@@ -307,5 +315,12 @@ export class LayoutMenuBarComponent implements OnInit {
                 detail: item.label
             });
         }
+    }
+
+    fixed = false
+
+    @HostListener('window:scroll', ['$event'])
+    onScroll() {
+        this.fixed = window.scrollY > window.innerHeight - 100;
     }
 }

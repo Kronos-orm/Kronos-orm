@@ -84,7 +84,7 @@ interface Column {
                   @for (index of [].constructor(command.rowNum); let j = $index; track j) {
                     <div class="w-2rem text-center" style="height: 1.4rem; line-height: 1.6rem">
                       @if (!!command.slice?.[j]) {
-                        <span [pTooltip]="'RUN' | transloco" (click)="run(command, j)" showDelay="300"
+                        <span style="transform: scaleX(1.5)" [pTooltip]="'RUN' | transloco" (click)="run(command, j)" showDelay="300"
                               tooltipPosition="left" class="pi pi-play text-green-500 cursor-pointer"></span>
                       }
                       @if (command.tip[j]) {

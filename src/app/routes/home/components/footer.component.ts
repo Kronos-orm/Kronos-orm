@@ -23,15 +23,18 @@ import {AppService} from "../../../app.service";
                   </a>
               </div>
           </div>
-          <div class="mt-3 flex">
-              <span>Kronos-ORM</span>
-              <span class="mx-2">© 2022 - 2024</span>
-              <a href="https://www.apache.org/licenses/LICENSE-2.0" class="text-light">
-                  Apache 2.0
-              </a>
-              <a class="mx-2" href="https://github.com/kronos-orm/kronos-orm/stargazers">
-                  <img src="https://img.shields.io/github/stars/kronos-orm/kronos-orm.svg?style=social" alt="Stars">
-              </a>
+          <div class="mt-3 flex flex-column">
+              <div class="flex">
+                  <span>Kronos-ORM © 2024</span>
+              </div>
+              <div class="flex mt-4">
+                  <a href="https://www.apache.org/licenses/LICENSE-2.0">
+                      Apache 2.0
+                  </a>
+                  <a class="ml-2" href="https://github.com/kronos-orm/kronos-orm/stargazers">
+                      <img src="https://img.shields.io/github/stars/kronos-orm/kronos-orm.svg?style=social" alt="Stars">
+                  </a>
+              </div>
           </div>
       </footer>
   `,

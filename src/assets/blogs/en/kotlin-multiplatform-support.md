@@ -24,7 +24,7 @@ For JS, we plan to add support for indexedDB.
 
 We hope that our ORM can run on all platforms as soon as possible, and we hope to officially start migrating some of our functionalities after the stable version of the kotlinx-related libraries is released. The main tasks to be done include:
 
-- [ ] Replace Java's datetime with kotlinx.datetime (in fact, we have already implemented this support through value transformer in our test cases ([CommonUtilTest](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/CommonUtilTest.kt))
+- [ ] Replace Java's datetime with kotlinx.datetime (in fact, we have already implemented this support through value transformer in our test cases ([KotlinXDateTimeTransformer](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt))
 
 , related YouTrack issue: ([Promote kotlinx-datetime to Beta](https://youtrack.jetbrains.com/issue/KT-64578))
 

@@ -45,7 +45,7 @@
   "JUMP_TO_WIKI": "跳转到Wiki",
   "COMING_SOON": "敬请期待",
   "CODE_GENERATOR": "代码生成器",
-  "BlOG": "博客",
+  "BLOG": "博客",
   "LIST_OF_BLOGS": "博客列表",
   "BACK_TO_BLOGS": "返回博客列表",
   "FEATURE_1": "简单、类型安全的Kotlin ORM框架",
@@ -53,5 +53,5 @@
   "FEATURE_3": "支持多种数据库方言",
   "READ_MORE": "阅读更多",
   "FEATURE_BLOG_TITLE_1": "Kotlin 多平台支持",
-  "FEATURE_BLOG_CONTENT_1": "该博客介绍了我们的 kotlin 多平台发布计划以及我们目前对 kotlin 多平台的支持情况。"
+  "FEATURE_BLOG_CONTENT_1": "Kronos目前对 kotlin 多平台的支持情况以及我们的kotlin多平台的开发和发布计划。"
 }

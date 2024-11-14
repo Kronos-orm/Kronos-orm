@@ -20,31 +20,7 @@ import {FooterComponent} from "../home/components/footer.component";
     ],
     templateUrl: `./blog.component.html`,
     standalone: true,
-    styles: [`
-      :host {
-        display: block;
-        font: 16px / 1.2 "Arial", "Helvetica Neue", "Helvetica", sans-serif;
-        background: linear-gradient(135deg, #222 0%, #19191c 40%);
-        min-height: 100vh;
-      }
-
-      ::ng-deep .markdown-body p {
-        margin: 0 0 24px;
-      }
-
-      .container-xl {
-        max-width: 1280px;
-        margin-right: auto;
-        margin-left: auto;
-        padding: 32px;
-      }
-
-      .box {
-        padding: 32px;
-        overflow: auto;
-        background: #1e1e1e;
-      }
-    `]
+    styleUrl:"./blog.component.scss"
 })
 export class BlogComponent {
     blog: string;
@@ -64,7 +40,7 @@ export class BlogComponent {
         }
     ]
 
-    backToList(){
+    backToList() {
         this.blog = undefined;
         this.router.navigateByUrl('/blog');
     }

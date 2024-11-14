@@ -249,7 +249,7 @@ export class LayoutMenuBarComponent implements OnInit {
                     [{
                         items: [
                             {
-                                label: "BlOG",
+                                label: "BLOG",
                                 icon: 'pi pi-home',
                                 routerLink: '/blog'
                             }, {
@@ -267,14 +267,15 @@ export class LayoutMenuBarComponent implements OnInit {
                 routerLink: 'https://github.com/Kronos-orm/Kronos-orm/discussions'
             }
         ];
-        this.translocoService.selectTranslate(["DOCUMENTATION", "CODE_GENERATOR", "DISCUSSION"])
-            .subscribe(([documentation, code_generator, discussion]) => {
+        this.translocoService.selectTranslate(["DOCUMENTATION", "CODE_GENERATOR", "DISCUSSION", "BLOG"])
+            .subscribe(([documentation, code_generator, discussion, blog]) => {
                 this.menus = [
                     {
                         label: documentation,
                         href: `/#/documentation/${this.appService.language}/getting-started/introduce`
                     },
                     {label: code_generator},
+                    {label: blog, href: '/#/blog'},
                     {label: discussion, href: 'https://github.com/Kronos-orm/Kronos-orm/discussions'},
                 ];
             })

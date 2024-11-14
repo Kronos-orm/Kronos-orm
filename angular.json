@@ -48,7 +48,6 @@
               "src/assets"
             ],
             "styles": [
-              "node_modules/prismjs/themes/prism-okaidia.css",
               "node_modules/@ng-doc/app/styles/global.css",
               "src/assets/fonts/hack-font-3.3.0/hack-subset.css",
               "node_modules/github-markdown-css/github-markdown-dark.css",
@@ -127,7 +126,6 @@
               "src/assets"
             ],
             "styles": [
-              "node_modules/prismjs/themes/prism-okaidia.css",
               "node_modules/@ng-doc/app/styles/global.css",
               "src/assets/fonts/hack-font-3.3.0/hack-subset.css",
               "node_modules/github-markdown-css/github-markdown-dark.css",

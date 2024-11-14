@@ -42,12 +42,15 @@
     <kronos-ng-doc-sidebar ngDocCustomSidebar/>
     <router-outlet/>
     <ng-template #footer>
-        <div style="width: calc(100% - 20rem);float: right">
-            <kronos-footer/>
-            <div class="ng-doc-footer">
-                Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a>
-            </div>
-        </div>
+       <div class="flex">
+           <div class="hidden md:block" style="width: 20rem"></div>
+           <div class="w-full">
+               <kronos-footer/>
+               <div class="ng-doc-footer">
+                   Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a>
+               </div>
+           </div>
+       </div>
     </ng-template>
 </ng-doc-root>
 

@@ -22,7 +22,7 @@ Kronos设计被用于后端和移动端开发，且支持多种数据库，截�
 我们希望我们的ORM能够尽快运行在所有平台上，但同时，我们希望能够等到kotlinx相关库的稳定版本发布后再正式开始我们的部分功能迁移，这其中需要做的主要工作如下：
 
 - [ ] 使用`kotlinx.datetime`替换java的datetime（实际上我们在测试用例中已经通过value
-  transformer实现了这一支持([CommonUtilTest](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/CommonUtilTest.kt))
+  transformer实现了这一支持([KotlinXDateTimeTransformer](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt))
   ，youtrack相关问题：([Promote kotlinx-datetime to Beta](https://youtrack.jetbrains.com/issue/KT-64578)）
 
 - [ ] 使用`kotlinx.io`处理默认的日志文件读写，youtrack相关问题：([Stabilize the kotlinx-io library](https://youtrack.jetbrains.com/issue/KT-71300))

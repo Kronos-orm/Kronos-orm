@@ -362,7 +362,7 @@ user.delete()
 
 - [SpringBoot 示例项目](https://github.com/Kronos-orm/kronos-example-spring-boot)
 - [Ktor 示例项目](https://github.com/Kronos-orm/kronos-example-ktor)
-- [Vert.x 示例项目](https://github.com/Kronos-orm/kronos-example-verx)
+- [Vert.x 示例项目](https://github.com/Kronos-orm/kronos-example-vertx)
 - [Solon 示例项目](https://github.com/Kronos-orm/kronos-example-solon)
 - [Android 示例项目](https://github.com/Kronos-orm/kronos-example-android)
 

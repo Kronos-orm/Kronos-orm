@@ -1,4 +1,4 @@
-package com.kotlinorm.orm.beans
+package com.kotlinorm.orm.beans.sample
 
 import com.kotlinorm.annotations.*
 import com.kotlinorm.interfaces.KPojo

@@ -87,7 +87,8 @@ object Kronos {
     // 默认日期格式
     var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
-    init {
+    fun init(action: Kronos.() -> Unit) {
+        this.action()
         defaultLogger(this).info(
             kMsgOf("Kronos ORM Framework started.", Green).endl().toArray()
         )

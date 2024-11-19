@@ -3,8 +3,8 @@ package com.kotlinorm.orm
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType
-import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.beans.sample.Movie
+import com.kotlinorm.orm.beans.sample.User
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set

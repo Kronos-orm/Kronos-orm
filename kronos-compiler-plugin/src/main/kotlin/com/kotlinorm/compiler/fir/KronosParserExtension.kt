@@ -16,38 +16,46 @@
 
 package com.kotlinorm.compiler.fir
 
+import com.kotlinorm.compiler.fir.transformer.KronosKClassMapperTransformer
 import com.kotlinorm.compiler.fir.transformer.KronosParserTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.util.*
 import java.io.File
 
-open class KronosParserExtension(val debug: Boolean, val debugInfoPath: String) : IrGenerationExtension {
+open class KronosParserExtension(private val debug: Boolean, private val debugInfoPath: String) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        moduleFragment.transform(KronosParserTransformer(pluginContext), null)
+        moduleFragment
+            .transform(KronosParserTransformer(pluginContext), null)
+            .transform(KronosKClassMapperTransformer(pluginContext), null)
+
         if (debug) {
-            if (!File(debugInfoPath).exists()) {
-                File(debugInfoPath).mkdirs()
-            }
-            File(debugInfoPath, "DEBUG.kt").writeText(
-                moduleFragment.dumpKotlinLike(
-                    KotlinLikeDumpOptions(
-                        CustomKotlinLikeDumpStrategy.Default,
-                        printRegionsPerFile = true,
-                        printFileName = true,
-                        printFilePath = true,
-                        useNamedArguments = true,
-                        labelPrintingStrategy = LabelPrintingStrategy.ALWAYS,
-                        printFakeOverridesStrategy = FakeOverridesStrategy.ALL,
-                        bodyPrintingStrategy = BodyPrintingStrategy.PRINT_BODIES,
-                        printElseAsTrue = false,
-                        printUnitReturnType = true,
-                        stableOrder = true
+            moduleFragment.files.forEach {
+                File(debugInfoPath).let { file ->
+                    if (!file.exists()) file.mkdirs()
+                }
+                File(debugInfoPath, it.name).writeText(
+                    it.module.dumpKotlinLike(
+                        KotlinLikeDumpOptions(
+                            CustomKotlinLikeDumpStrategy.Default,
+                            printRegionsPerFile = true,
+                            printFileName = true,
+                            printFilePath = true,
+                            useNamedArguments = true,
+                            labelPrintingStrategy = LabelPrintingStrategy.ALWAYS,
+                            printFakeOverridesStrategy = FakeOverridesStrategy.ALL,
+                            bodyPrintingStrategy = BodyPrintingStrategy.PRINT_BODIES,
+                            printElseAsTrue = false,
+                            printUnitReturnType = true,
+                            stableOrder = true
+                        )
                     )
                 )
-            )
+                println("Debug info saved to $debugInfoPath/${it.name}")
+            }
         }
     }
 }

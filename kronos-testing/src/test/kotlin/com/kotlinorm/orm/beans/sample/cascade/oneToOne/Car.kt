@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.oneToMany
+package com.kotlinorm.orm.beans.sample.cascade.oneToOne
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
@@ -25,14 +25,15 @@ import com.kotlinorm.annotations.Version
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_book")
-data class Book(
+@Table("tb_car")
+data class Car(
     val id: Int? = null,
-    val authorId: Int? = null, // 外键，关联到 Author
-    val title: String? = null, // 书名
-    val genre: String? = null, // 类型
-    val publishedYear: Int? = null, // 出版年份
-    val price: Double? = null, // 价格
+    val ownerId: Int? = null,
+    val make: String? = null, // 汽车品牌
+    val model: String? = null, // 汽车型号
+    val year: Int? = null, // 生产年份
+    val color: String? = null, // 颜色
+    val details: CarDetails? = null, // 一对一级联
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: LocalDateTime? = null,

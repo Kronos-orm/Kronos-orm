@@ -13,14 +13,10 @@ import kotlin.test.assertEquals
 
 object KotlinSourceDynamicCompiler {
     @OptIn(ExperimentalCompilerApi::class)
-    fun compile(@org.intellij.lang.annotations.Language("kotlin") source: String): JvmCompilationResult {
-        val result = compile(
-            sourceFiles = listOf(
-                SourceFile.kotlin(
-                    "main.kt", source
-                )
-            )
-        )
+    fun compile(
+        @org.intellij.lang.annotations.Language("kotlin") source: String, fileName: String? = null
+    ): JvmCompilationResult {
+        val result = compile(sourceFiles = listOf(SourceFile.kotlin(fileName?.let { "$it.kt" } ?: "main.kt", source)))
         return result
     }
 
@@ -34,10 +30,9 @@ object KotlinSourceDynamicCompiler {
             compilerPluginRegistrars = listOf(plugin)
             val processor = KronosCommandLineProcessor()
             commandLineProcessors = listOf(processor)
-            pluginOptions =
-                listOf(
-                    processor.option(OPTION_DEBUG_MODE, "true"),
-                )
+            pluginOptions = listOf(
+                processor.option(OPTION_DEBUG_MODE, "true"),
+            )
             inheritClassPath = true
         }.compile()
     }
@@ -47,3 +42,6 @@ object KotlinSourceDynamicCompiler {
         return PluginOption(pluginId, key, value.toString())
     }
 }
+
+val Any.testBaseName
+    get() = this::class.simpleName!!

@@ -2,6 +2,7 @@ package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
+import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.functions.bundled.exts.MathFunctions.add
@@ -10,9 +11,8 @@ import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.avg
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
 import com.kotlinorm.functions.bundled.exts.StringFunctions.concat
-import com.kotlinorm.functions.bundled.exts.StringFunctions.join
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
-import com.kotlinorm.orm.beans.User
+import com.kotlinorm.orm.beans.sample.User
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.utils.TestWrapper
 import kotlin.test.Test
@@ -63,7 +63,7 @@ class Select {
 
     @Test
     fun testSingle() {
-        val (sql, paramMap) = user.select { }.single().build()
+        val (sql, paramMap) = user.select().single().build()
 
         assertEquals(mapOf("id" to 2), paramMap)
         assertEquals(
@@ -74,7 +74,7 @@ class Select {
 
     @Test
     fun testLimit() {
-        val (sql, paramMap) = user.select { }.limit(10).build()
+        val (sql, paramMap) = user.select().limit(10).build()
 
         assertEquals(mapOf("id" to 2), paramMap)
         assertEquals(
@@ -271,7 +271,7 @@ class Select {
     @Test
     fun testSelectUseConstEqualGetValue() {
         val a = User(id = 1)
-        val (sql, paramMap) = user.select { "1" }.where { 1 == a.id }.build()
+        val (sql, paramMap) = user.select { "1" }.where { 1 == a.id.value }.build()
 
         assertEquals(
             "SELECT 1 FROM `tb_user` WHERE true AND `deleted` = 0",
@@ -292,7 +292,7 @@ class Select {
         }.build()
 
         assertEquals(
-            "SELECT COUNT(1) AS count, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE (`id` + 1) > (`id` - 1) AND LENGTH(`username`) > :lengthMin AND `username` LIKE CONCAT('%', `username`, '%') AND `deleted` = 0",
+            "SELECT COUNT(1) AS count, `id`, AVG(`id`) AS avg, `username`, SUM(`id`) AS sum FROM `tb_user` WHERE (`id` - 1) < (`id` + 1) AND LENGTH(`username`) > :lengthMin AND `username` LIKE CONCAT('%', `username`, '%') AND `deleted` = 0",
             sql
         )
 

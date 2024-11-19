@@ -1,6 +1,7 @@
 package com.kotlinorm.compiler.fir.transformer.kTable
 
 import com.kotlinorm.compiler.fir.KotlinSourceDynamicCompiler.compile
+import com.kotlinorm.compiler.fir.testBaseName
 import com.tschuchort.compiletesting.KotlinCompilation
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -10,7 +11,7 @@ import kotlin.test.assertEquals
 class KTableParserForConditionTransformerTest {
     @Test
     fun `test 'eq' condition`() {
-        testCompile(
+        "Eq" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].eq("Alice")
@@ -21,12 +22,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.eq })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'notEq' condition`() {
-        testCompile(
+        "NotEq" testCompile (
                 """
                 fun test(){
                     user.username = "Alice"
@@ -34,12 +35,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.neq })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'isIn' condition`() {
-        testCompile(
+        "IsIn" testCompile (
                 """
                 fun test(){
                     val ids = listOf<Int?>(1, 2, 3)
@@ -53,12 +54,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected2, where { listOfNames.contains(it.username) })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'like' condition`() {
-        testCompile(
+        "Like" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].like("%A")
@@ -68,13 +69,13 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.like })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'notLike' condition`() {
-        testCompile(
-            """
+        "NotLike" testCompile (
+                """
                 fun test(){
                     val expected = user["username"].like("%A", not = true)
                     assertEquals(expected, where { it.username notLike "%A" })
@@ -83,12 +84,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.notLike })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'startsWith' condition`() {
-        testCompile(
+        "StartsWith" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].like("A%")
@@ -98,12 +99,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.startsWith })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'endsWith' condition`() {
-        testCompile(
+        "EndsWith" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].like("%A")
@@ -113,12 +114,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.endsWith })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'contains' condition`() {
-        testCompile(
+        "Contains" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].like("%A%")
@@ -129,12 +130,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.contains })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'lt' condition`() {
-        testCompile(
+        "Lt" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].lt(18)
@@ -145,12 +146,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.age.lt })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'gt' condition`() {
-        testCompile(
+        "Gt" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].gt(18)
@@ -161,12 +162,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.age.gt })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'le' condition`() {
-        testCompile(
+        "Le" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].le(18)
@@ -177,12 +178,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.age.le })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'ge' condition`() {
-        testCompile(
+        "Ge" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].ge(18)
@@ -193,60 +194,60 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.age.ge })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'between' condition`() {
-        testCompile(
+        "Between" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].between(18..30)
                     assertEquals(expected, where { it.age between 18..30 })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'notBetween' condition`() {
-        testCompile(
+        "NotBetween" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].between(18..30, not = true)
                     assertEquals(expected, where { it.age notBetween 18..30 })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'isNull' condition`() {
-        testCompile(
+        "IsNull" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].isNull()
                     assertEquals(expected, where { it.age.isNull })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'notNull' condition`() {
-        testCompile(
+        "NotNull" testCompile (
                 """
                 fun test(){
                     val expected = user["age"].isNull(not = true)
                     assertEquals(expected, where { it.age.notNull })
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'regexp' condition`() {
-        testCompile(
+        "Regexp" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].regexp("A.*")
@@ -256,12 +257,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.regexp })    
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'notRegexp' condition`() {
-        testCompile(
+        "NotRegexp" testCompile (
                 """
                 fun test(){
                     val expected = user["username"].regexp("A.*", not = true)
@@ -271,12 +272,12 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected, where { it.username.notRegexp })    
                 }
                 """
-        )
+                )
     }
 
     @Test
     fun `test 'asSql' condition`() {
-        testCompile(
+        "AsSql" testCompile (
                 """
                 fun test(){
                     val expected = sql("username = 'Alice'")
@@ -286,7 +287,7 @@ class KTableParserForConditionTransformerTest {
                     assertEquals(expected2, where { (1 == 1).asSql() })    
                 }
                 """
-        )
+                )
     }
 
     private val mainKt = """
@@ -424,11 +425,14 @@ class KTableParserForConditionTransformerTest {
         """.trimIndent()
 
     @OptIn(ExperimentalCompilerApi::class)
-    fun testCompile(@Language("kotlin") code: String) {
-        val result = compile(mainKt.replace("//inject", code))
+    infix fun String.testCompile(@Language("kotlin") code: String) {
+        if (this.any { !it.isLetter() } && this.first().isLowerCase()) {
+            throw IllegalArgumentException("测试名称必须全部都是字母，且首字母必须大写")
+        }
+        val result = compile(mainKt.replace("//inject", code), this@KTableParserForConditionTransformerTest.testBaseName + this)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 
-        val ktClazz = result.classLoader.loadClass("MainKt")
+        val ktClazz = result.classLoader.loadClass("${this@KTableParserForConditionTransformerTest.testBaseName + this}Kt")
         val main = ktClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
         main.invoke(null)
     }

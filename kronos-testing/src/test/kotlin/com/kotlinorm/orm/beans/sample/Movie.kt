@@ -1,4 +1,4 @@
-package com.kotlinorm.orm.beans
+package com.kotlinorm.orm.beans.sample
 
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.UpdateTime

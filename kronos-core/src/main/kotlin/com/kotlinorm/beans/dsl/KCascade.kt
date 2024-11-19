@@ -22,13 +22,11 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.get
 import com.kotlinorm.orm.cascade.set
+import com.kotlinorm.utils.createInstance
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty0
-import kotlin.reflect.full.createInstance
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
 
 class KCascade(
     val properties: Array<String> = arrayOf(),
@@ -44,23 +42,22 @@ class KCascade(
     )
 ) {
     companion object {
-        inline fun <reified T : KPojo, reified R> manyToMany(relationOfThis: KProperty0<List<R>?>): ManyToMany<T, R> {
+        inline fun <reified T : KPojo, reified R : KPojo> manyToMany(relationOfThis: KProperty0<List<R>?>): ManyToMany<T, R> {
             return ManyToMany(relationOfThis.name, R::class, T::class)
         }
 
         // 自定义委托类
         class ManyToMany<T, R>(
-            private var relationOfThis: String,
-            private val relationClass: KClass<*>,
-            private val targetClass: KClass<*>
+            private var relationOfThis: String, private val relationClass: KClass<*>, private val targetClass: KClass<*>
         ) : ReadWriteProperty<Any, List<T>> {
 
-            private var targetOfRelation: KProperty<*>? = null
+            private var targetOfRelationName: String? = null
 
+            @Suppress("UNCHECKED_CAST")
             private fun initKProperty() {
-                if (targetOfRelation == null) {
-                    targetOfRelation =
-                        relationClass.memberProperties.find { it.returnType.classifier?.starProjectedType == targetClass.starProjectedType }!!
+                if (targetOfRelationName == null) {
+                    val relation = (relationClass as KClass<KPojo>).createInstance()
+                    targetOfRelationName = relation.kronosColumns().find { it.kClass == targetClass }?.name
                 }
             }
 
@@ -68,15 +65,16 @@ class KCascade(
             override fun getValue(thisRef: Any, property: KProperty<*>): List<T> {
                 initKProperty()
                 return ((thisRef as KPojo)[relationOfThis] as List<R>? ?: emptyList()).map {
-                    (it as KPojo)[targetOfRelation!!.name] as T
+                    (it as KPojo)[targetOfRelationName!!] as T
                 }
             }
 
+            @Suppress("UNCHECKED_CAST")
             override fun setValue(thisRef: Any, property: KProperty<*>, value: List<T>) {
                 initKProperty()
                 (thisRef as KPojo)[relationOfThis] = value.map {
-                    relationClass.createInstance().apply {
-                        (this@apply as KPojo)[targetOfRelation!!.name] = it
+                    (relationClass as KClass<KPojo>).createInstance().apply {
+                        this@apply[targetOfRelationName!!] = it
                     }
                 }
             }

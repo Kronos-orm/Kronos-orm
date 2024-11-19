@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.oneToOne
+package com.kotlinorm.orm.beans.sample.cascade.manyToMany
 
+import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.LogicDelete
@@ -25,15 +26,14 @@ import com.kotlinorm.annotations.Version
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_car")
-data class Car(
-    val id: Int? = null,
-    val ownerId: Int? = null,
-    val make: String? = null, // 汽车品牌
-    val model: String? = null, // 汽车型号
-    val year: Int? = null, // 生产年份
-    val color: String? = null, // 颜色
-    val details: CarDetails? = null, // 一对一级联
+@Table("tb_student_course")
+data class StudentCourse(
+    val studentId: Int? = null, // 外键，关联到 Student
+    val courseId: Int? = null, // 外键，关联到 Course
+    @Cascade(["studentId"], ["id"])
+    val student: Student? = null, // 多对多级联
+    @Cascade(["courseId"], ["id"])
+    val course: Course? = null, // 多对多级联
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: LocalDateTime? = null,

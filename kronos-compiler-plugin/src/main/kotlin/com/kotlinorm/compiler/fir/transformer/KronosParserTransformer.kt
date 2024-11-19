@@ -16,18 +16,19 @@
 
 package com.kotlinorm.compiler.fir.transformer
 
-import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForConditionTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForReferenceTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSelectTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSetTransformer
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSortReturnTransformer
+import com.kotlinorm.compiler.fir.utils.KClassCreatorUtil.kPojoClasses
 import com.kotlinorm.compiler.fir.utils.KPojoFqName
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForReference.KTABLE_FOR_REFERENCE_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSelect.KTABLE_FOR_SELECT_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSet.KTABLE_FOR_SET_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSort.KTABLE_FOR_SORT_CLASS
+import com.kotlinorm.compiler.helpers.referenceFunctions
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -37,9 +38,13 @@ import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrClassReference
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.statements
 
 /**
@@ -50,18 +55,6 @@ import org.jetbrains.kotlin.ir.util.statements
 class KronosParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
-
-    /**
-     * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
-     *
-     * @return The symbol of the `println` function.
-     */
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrPluginContext.printlnFunc(): IrSimpleFunctionSymbol = referenceFunctions("kotlin.io", "println").single {
-        val parameters = it.owner.valueParameters
-        parameters.size == 1 && parameters[0].type == irBuiltIns.anyNType
-    }
-
     /**
      * Visits a new function and performs different actions based on the extension receiver's return type.
      *
@@ -88,11 +81,34 @@ class KronosParserTransformer(
     override fun visitClassNew(declaration: IrClass): IrStatement {
         with(pluginContext) {
             if (declaration.superTypes.any { it.classFqName == KPojoFqName }) {
+                kPojoClasses.add(declaration)
                 return super.visitClassNew(declaration)
                     .transform(KronosIrClassNewTransformer(pluginContext, declaration), null) as IrStatement
             }
         }
         return super.visitClassNew(declaration)
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitClassReference(expression: IrClassReference): IrExpression {
+        with(pluginContext) {
+            val declaration = expression.classType.classOrNull?.owner
+            if (declaration != null && declaration.superTypes.any { it.classFqName == KPojoFqName }) {
+                kPojoClasses.add(declaration)
+            }
+        }
+        return super.visitClassReference(expression)
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
+        with(pluginContext) {
+            val declaration = expression.type.classOrNull?.owner
+            if (declaration != null && declaration.superTypes.any { it.classFqName == KPojoFqName }) {
+                kPojoClasses.add(declaration)
+            }
+        }
+        return super.visitConstructorCall(expression)
     }
 
     /**

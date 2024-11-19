@@ -1,4 +1,4 @@
-package com.kotlinorm.orm.beans
+package com.kotlinorm.orm.beans.sample
 
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.interfaces.KPojo

@@ -21,8 +21,8 @@ import com.kotlinorm.beans.dsl.KCascade
 import com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.utils.createInstance
 import kotlin.reflect.KClass
-import kotlin.reflect.full.createInstance
 
 /**
  * Represents a valid cascade within the context of ORM operations.

@@ -1,6 +1,7 @@
 package com.kotlinorm.compiler.fir.transformer.kTable
 
 import com.kotlinorm.compiler.fir.KotlinSourceDynamicCompiler.compile
+import com.kotlinorm.compiler.fir.testBaseName
 import com.tschuchort.compiletesting.KotlinCompilation
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
@@ -108,12 +109,13 @@ class KTableParserForSortTransformerTest {
                 )
 
             }
-        """.trimIndent()
+        """.trimIndent(),
+            testBaseName
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 
-        val ktClazz = result.classLoader.loadClass("MainKt")
+        val ktClazz = result.classLoader.loadClass("${testBaseName}Kt")
         val main = ktClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
         main.invoke(null)
     }

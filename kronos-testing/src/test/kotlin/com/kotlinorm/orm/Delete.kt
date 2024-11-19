@@ -78,7 +78,7 @@ class Delete {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
-        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender1` = :gender", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
         assertEquals(mapOf("username" to "John", "gender" to 0), paramMap)
     }
 
@@ -88,7 +88,7 @@ class Delete {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
-        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender1` = :gender", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
         assertEquals(
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),
@@ -104,7 +104,7 @@ class Delete {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'
-        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender1` = :gender", sql)
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username AND `gender` = :gender", sql)
         assertEquals(
             arrayOf(
                 mapOf("username" to "John", "gender" to 0),

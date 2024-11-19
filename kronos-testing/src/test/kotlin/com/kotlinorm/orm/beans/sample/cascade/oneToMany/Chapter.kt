@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.manyToMany
+package com.kotlinorm.orm.beans.sample.cascade.oneToMany
 
+
+import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.annotations.Version
-import com.kotlinorm.beans.dsl.KCascade.Companion.manyToMany
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_student")
-data class Student(
+@Table("tb_chapter")
+data class Chapter(
     val id: Int? = null,
-    val name: String? = null, // 学生姓名
-    val age: Int? = null, // 学生年龄
-    val studentCourse: List<StudentCourse>? = emptyList(), // 学生课程
+    val bookId: Int? = null, // 外键，关联到 Book'
+    @Cascade(["bookId"], ["id"]) val book: Book? = null, // 一对多级联
+    val title: String? = null, // 章节标题
+    val content: String? = null, // 章节内容
+    val chapterNumber: Int? = null, // 章节编号
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: LocalDateTime? = null,
@@ -41,6 +44,4 @@ data class Student(
     val version: Int? = null,
     @LogicDelete
     val deleted: Boolean? = null,
-) : KPojo {
-    var courses: List<Course> by manyToMany(::studentCourse) // 多对多级联
-}
+) : KPojo

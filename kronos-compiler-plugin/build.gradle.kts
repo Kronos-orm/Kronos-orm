@@ -14,6 +14,11 @@ tasks.withType<KotlinCompile>().configureEach {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+    jvmArgs = listOf("-Xmx2048m")
+}
+
 base.archivesName = "kronos-compiler-plugin"
 
 dependencies {

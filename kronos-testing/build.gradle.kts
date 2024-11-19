@@ -1,6 +1,17 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("kronos.jvm")
     id("com.kotlinorm.kronos-gradle-plugin")
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs = listOf(
+            "-P", "plugin:com.kotlinorm.kronos-compiler-plugin:debug=true",
+            "-P", "plugin:com.kotlinorm.kronos-compiler-plugin:debug-info-path=/Users/sundaiyue/Desktop/kronosIrDebug"
+        )
+    }
 }
 
 dependencies {

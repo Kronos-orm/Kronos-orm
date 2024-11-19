@@ -2,13 +2,14 @@ package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
-import com.kotlinorm.orm.beans.Movie
-import com.kotlinorm.orm.beans.UserRelation
+import com.kotlinorm.orm.beans.sample.Movie
+import com.kotlinorm.orm.beans.sample.UserRelation
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.utils.GsonResolver
 import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.database.beans.ProductLog
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.utils.trimWhitespace
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,11 +40,10 @@ class Join {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`
-                 FROM `tb_user`
-                    LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2`
-                    AND `tb_user`.`gender1` = `user_relation`.`gender` WHERE `tb_user`.`id` = :id
-                    AND `tb_user`.`deleted` = 0 ORDER BY `tb_user`.`id` DESC
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender` FROM `tb_user` 
+                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
+                ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(), sql
         )
         assertEquals(mapOf("id" to 1, "username" to "123", "gender" to 1, "id2" to 1), paramMap)
@@ -66,11 +66,11 @@ class Join {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
-                FROM `tb_user` 
-                    LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender1` = `user_relation`.`gender` 
-                    RIGHT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 
-                    FULL JOIN `product_log` ON `product_log`.`id` = `tb_user`.`id` 
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
+                LEFT JOIN `user_relation` 
+                ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
+                FULL JOIN `product_log` ON `tb_user`.`id` = `product_log`.`id` 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(),
@@ -106,12 +106,11 @@ class Join {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
-                FROM `tb_user` 
-                    LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender1` = `user_relation`.`gender`
-                    LEFT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0
-                    LEFT JOIN `product_log` ON `product_log`.`id` = `tb_user`.`id` 
-                WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
+                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                LEFT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
+                LEFT JOIN `product_log` ON `tb_user`.`id` = `product_log`.`id` 
+                WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(), sql
         )
@@ -148,13 +147,12 @@ class Join {
 
         assertEquals(
             """
-                SELECT COUNT(1) FROM 
-                    (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
-                        FROM `tb_user` 
-                            LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender1` = `user_relation`.`gender` 
-                            RIGHT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 FULL JOIN `product_log` ON `product_log`.`id` = `tb_user`.`id` 
-                        WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
-                        ORDER BY `tb_user`.`id` DESC LIMIT 10 OFFSET 0) AS t
+                SELECT COUNT(1) FROM (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
+                    LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                    RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
+                    FULL JOIN `product_log` ON `tb_user`.`id` = `product_log`.`id` 
+                    WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
+                    ORDER BY `tb_user`.`id` DESC LIMIT 10 OFFSET 0) AS t
             """.trimWhitespace(),
             sql
         )
@@ -177,11 +175,11 @@ class Join {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `test`.`user_relation`.`gender` AS `gender` 
-                FROM `tb_user` 
-                    LEFT JOIN `test`.`user_relation` ON `tb_user`.`id` = `test`.`user_relation`.`id2` AND `tb_user`.`gender1` = `test`.`user_relation`.`gender` 
+                SELECT `tb_user`.`id` AS `id`, `test`.`user_relation`.`gender` AS `gender` FROM `tb_user` 
+                LEFT JOIN `test`.`user_relation` ON `test`.`user_relation`.`id2` = `tb_user`.`id` AND `test`.`user_relation`.`gender` = `tb_user`.`gender` 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
-                ORDER BY `tb_user`.`id` DESC""".trimWhitespace(),
+                ORDER BY `tb_user`.`id` DESC
+            """.trimWhitespace(),
             sql
         )
     }
@@ -193,16 +191,16 @@ class Join {
         ) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 }
             select {
-                "count(1)"
+                f.count(1)
             }
             where { user.id == 1 }
         }.build()
 
         assertEquals(
             """
-                SELECT count(1) 
-                FROM `tb_user` 
-                    LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` 
+                SELECT COUNT(1) AS count FROM `tb_user` 
+                LEFT JOIN `user_relation` 
+                ON `user_relation`.`id2` = `tb_user`.`id`
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0
             """.trimWhitespace(), sql
         )

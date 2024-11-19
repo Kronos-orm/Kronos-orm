@@ -22,7 +22,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.ConditionType.Companion.And
 import kotlin.reflect.KClass
-import kotlin.reflect.full.createInstance
 
 object Extensions {
 

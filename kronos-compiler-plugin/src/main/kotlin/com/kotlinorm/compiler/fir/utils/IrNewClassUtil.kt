@@ -69,6 +69,10 @@ context(IrPluginContext)
 val KPojoFqName
     get() = FqName("com.kotlinorm.interfaces.KPojo")
 
+context(IrPluginContext)
+val KPojoSymbol
+    get() = referenceClass("com.kotlinorm.interfaces.KPojo")!!
+
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
  * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.

@@ -374,7 +374,7 @@ class ConditionSqlBuilderTest {
     fun test18() {
         val condition = "id".eq(1) or "id".eq(2)
 
-        val expect = "`id` = id OR `id` = id@2"
+        val expect = "`id` = :id OR `id` = :id@2"
         val paramMap = mapOf("id" to 1, "id@2" to 2)
         val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(
             KOperationType.SELECT,

@@ -37,5 +37,6 @@ data class MysqlUser(
 
     @LogicDelete
     @NotNull
+    @Default("0")
     var deleted: Boolean? = null
 ) : KPojo

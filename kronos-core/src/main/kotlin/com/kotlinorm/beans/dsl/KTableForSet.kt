@@ -20,7 +20,6 @@ import com.kotlinorm.Kronos.fieldNamingStrategy
 import com.kotlinorm.annotations.Column
 import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KProperty
-import kotlin.reflect.full.findAnnotation
 
 /**
  * KTable
@@ -54,15 +53,6 @@ open class KTableForSet<T : KPojo> {
 
     operator fun KPojo.get(column: String) = this.kronosColumns().first { it.columnName == column }
     operator fun KPojo.set(@Suppress("UNUSED_PARAMETER") column: String, @Suppress("UNUSED_PARAMETER") value: Any?): () -> Unit = {}
-
-    /**
-     * Sets the value of a KProperty with the given value.
-     *
-     * @param value the value to set the property to
-     * @return the updated value of the property
-     */
-    @JvmName("KPropertySetValue")
-    fun KProperty<*>.setValue(value: Any?) = setValue(this.toField(), value)
 
     /**
      * Sets the value of a Field with the given value.
@@ -101,16 +91,6 @@ open class KTableForSet<T : KPojo> {
             "+" -> plusAssignFields += Pair(property, value)
             "-" -> minusAssignFields += Pair(property, value)
         }
-    }
-
-    /**
-     * Converts a Kotlin property to a Field object.
-     *
-     * @return The converted Field object.
-     */
-    @Suppress("MemberVisibilityCanBePrivate")
-    fun KProperty<*>.toField(): Field {
-        return Field(this.findAnnotation<Column>()?.name ?:fieldNamingStrategy.k2db(this.name), this.name)
     }
 
     companion object {

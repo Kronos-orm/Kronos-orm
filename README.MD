@@ -36,7 +36,7 @@ KCP implementation of the expression tree analysis support as well as Kotlin its
 ❓ **Why Kronos?**
 
 * Utilizes the **entire ecosystem and resources** of the JVM platform, such as **database drivers and logging frameworks**, with potential future support for Kotlin Multiplatform.
-* **Kotlin compiler plugins and coroutine-driven** design significantly **reduce the use of reflection**, providing a **high-performance** database operation experience.
+* **Powered by Kotlin compiler plugins and coroutines**, with **NO reflection** used, Kronos delivers unmatched **high-performance** database operations.
 * Supports most **mainstream databases** and allows **freely adding database extensions through plugins**.
 * **Concise and expressive writing, supporting Kotlin native syntax** `==`, `>`, `<`, `in`, etc., instead of .eq, .gt, .lt, etc.
 * Strong type checking.
@@ -44,7 +44,7 @@ KCP implementation of the expression tree analysis support as well as Kotlin its
 * Supports **Logical Deletion**, **Optimistic Lock**, **Creation Time**, **Update Time**, and offers flexible customization settings.
 * **Easily integrate with any third-party framework** such as `Spring`, `Ktor`, `Vert.x`, `Solon`, etc. See more information in the sample projects plz.
 * **Native SQL database manipulation based on named parameters**.
-* Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **no reflection, near-zero overhead**.
+* Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **NO reflection, near-zero overhead**.
 * Data classes can be treated as database table models, **significantly reducing additional class definitions**.
 
 -------
@@ -65,18 +65,18 @@ data class User(
 // or dataSource.table.syncTable<User>() to synchronize the table structure.
 dataSource.table.createTable<User>()
 
-// Insert a record into table `user` (id = 1, username = "test", age = 18)
+// Insert a record into table `user` (username = "test", age = 18), and get the id of the inserted record
 // we can use List<User>.insert().execute() to batch insert
-User(id = 1, username = "test", age = 18).insert().execute()
+val (_, id) = User(username = "test", age = 18).insert().execute()
 
 // Query records from table `user` where `age` is 18
 val listOfUser = User(age = 18).select().queryList()
 
-// Update records in table `user` where `id` is 1, set `age` to 19
-User(id = 1, age = 19).update().by { it.id }.execute()
+// Update records in table `user` where `id` is lastInsertId, set `age` to 19
+User(id = id, age = 19).update().by { it.id }.execute()
 
-// Delete records from table `user` where `id` is 1
-User(id = 1).delete().execute()
+// Delete records from table `user` where `id` is lastInsertId
+User(id = id).delete().execute()
 ```
 
 ## 🖥 JDK、Kotlin and Build Tools
@@ -227,17 +227,23 @@ Coming soon...
 
 ------------
 
-### 📝 Transform `KPojo` to Map or from Map
+### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map &
 
-It's easy to transform `KPojo` to Map or from Map, and you can get the table name and column information through the
-`kronosTable` and `kronosColumns` methods in a **NO REFLECTION** way.
+Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
+Kronos provides functions to easily convert between `KPojo` and `Map`.
+Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
 
 ```kotlin
+val instance = Movie::class.newInstance() // -> Movie() ,dynamic create KPojo instance by reference, NO REFLECTION used
+fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // dynamic create KPojo instance by reference, NO REFLECTION used
+
 val movie = Movie(1)
-val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1)
-val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class)
+val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), NO REFLECTION used
+val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class), NO REFLECTION used
+
 val tableName = movie.kronosTable() // "tb_movie", NO REFLECTION used
 val columns = movie.kronosColumns() // [Field(id), Field(name), ...], NO REFLECTION used
+// We actually provide more functions such as getting the table creation time, update time, logical deletion of field settings and so on
 ```
 
 ------

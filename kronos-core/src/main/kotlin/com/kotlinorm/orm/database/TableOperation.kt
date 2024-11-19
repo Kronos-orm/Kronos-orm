@@ -27,7 +27,7 @@ import com.kotlinorm.database.SqlManager.getTableTruncateSql
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import kotlin.reflect.full.createInstance
+import com.kotlinorm.utils.createInstance
 
 class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     val dataSource by lazy { wrapper.orDefault() }

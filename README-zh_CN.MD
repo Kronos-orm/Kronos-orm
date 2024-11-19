@@ -19,7 +19,8 @@
 
 Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
 
-KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
+KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，
+**使操作数据库变得更加简单**。
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
@@ -37,7 +38,7 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 ❓ **为什么选择 Kronos?**
 
 * 可以使用jvm平台的**全部生态和资源**，如**数据库驱动和日志框架**等，未来可能支持kotlin多平台
-* **Kotlin 编译器插件和协程驱动**，显著**减少反射的使用**，提供**高性能**的数据库操作体验
+* **Kotlin 编译器插件** 和 **协程**驱动，**完全不依赖反射**，Kronos 为用户提供 **超高性能** 的数据库操作体验。
 * 支持大多数**主流数据库**且支持自由地通过插件**添加数据库扩展**
 * **书写简洁、富有表现力，支持 Kotlin 原生语法** `==`、`>`、`<`、`in` 等，而不是 .eq、.gt、.lt 等
 * 强类型检查
@@ -66,18 +67,18 @@ data class User(
 //或dataSource.table.syncTable<User>()来同步表结构。
 dataSource.table.createTable<User>()
 
-// 向`user`表插入一条记录(id = 1, username = "test", age = 18)
+// 向`user`表插入一条记录(username = "test", age = 18), 并获取插入的记录的id
 // 可以使用 List<User>.insert().execute() 来批量插入记录
-User(id = 1, username = "test", age = 18).insert().execute()
+val (_, id) = User(username = "test", age = 18).insert().execute()
 
-// 查询`user`表中的`age`字段为18的记录
+// 查询`user`表中`age`为18的记录
 val listOfUser = User(age = 18).select().queryList()
 
-// 更新`user`表中`id`为1的记录的`age`字段为19
-User(id = 1, age = 19).update().by { it.id }.execute()
+// 更新`user`表中`id`为id的记录的`age`字段为19
+User(id = id, age = 19).update().by { it.id }.execute()
 
-// 删除`user`表中`id`为1的记录
-User(id = 1).delete().execute()
+// 删除`user`表中`id`为id的记录
+User(id = id).delete().execute()
 ```
 
 ## 🖥 JDK、Kotlin 和构建工具
@@ -230,17 +231,23 @@ data class Movie(
 
 ------------
 
-### 📝 将 `KPojo` 转换为 Map 或将 Map 转换为 `KPojo`
+### 📝 动态创建`KPojo` & `KPojo` 与 Map互转 & 获取表名、列等信息
 
-将 `KPojo` 转换为 Map 或从 Map 转换为 `KPojo` 都很容易，而且可以通过
-kronosTable` 和 `kronosColumns` 方法获取表名和列信息。
+Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
+Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
+Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
 
 ```kotlin
+val instance = Movie::class.newInstance() // -> Movie() ,通过引用动态创建 KPojo 实例，不使用反射
+fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // 通过引用动态创建 KPojo 实例，不使用反射
+
 val movie = Movie(1)
-val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1)
-val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class)
-val tableName = movie.kronosTable() // "tb_movie", 没有使用反射
-val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 没有使用反射
+val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), 不使用反射
+val movie2: Movie = dataMap.mapperTo<Movie>() // 或 dataMap.mapperTo(Movie::class), 不使用反射
+
+val tableName = movie.kronosTable() // "tb_movie", 不使用反射
+val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 不使用反射
+// 实际上，我们提供了更多的功能，如获取表的创建时间、更新时间、字段设置的逻辑删除等。
 ```
 
 ------
@@ -368,8 +375,8 @@ user.delete()
 
 ## 📚 官方文档
 
-如需了解更多信息，请访问 [官方网站](https://www.kotlinorm.com) 或
-文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)。
+如需了解更多信息，请访问 [官方网站](https://www.kotlinorm.com) 或 
+[文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)。
 
 ## 📜 License
 

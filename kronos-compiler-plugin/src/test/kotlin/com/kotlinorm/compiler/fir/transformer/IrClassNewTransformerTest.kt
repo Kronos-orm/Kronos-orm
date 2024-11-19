@@ -1,6 +1,7 @@
 package com.kotlinorm.compiler.fir.transformer
 
 import com.kotlinorm.compiler.fir.KotlinSourceDynamicCompiler.compile
+import com.kotlinorm.compiler.fir.testBaseName
 import com.tschuchort.compiletesting.KotlinCompilation
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
@@ -13,10 +14,12 @@ class IrClassNewTransformerTest {
         val result = compile(
             """
             import com.kotlinorm.Kronos
+            import com.kotlinorm.Kronos.init
             import com.kotlinorm.annotations.*
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType.TINYINT
+            import com.kotlinorm.utils.createInstance
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
             import kotlin.test.assertNotNull
@@ -58,14 +61,17 @@ class IrClassNewTransformerTest {
                 var deleted: Boolean? = null
             ) : KPojo
             
+            data class Customer(val id: Int? = null): KPojo
+
+            
             
             fun main() {
-                Kronos.apply {
+                Kronos.init {
                     fieldNamingStrategy = LineHumpNamingStrategy
                     tableNamingStrategy = LineHumpNamingStrategy
                 }
             
-                val user = User(1)
+                val user = User::class.createInstance()
                 assertEquals(user.kronosTableName(), "tb_user")
                 assertNotNull(user.kronosColumns().find { it.name == "id" })
                 assertNotNull(user.kronosColumns().find { it.name == "username" })
@@ -82,12 +88,16 @@ class IrClassNewTransformerTest {
                 assertNotNull(user.kronosColumns().find { it.name == "updateTime" })
                 assertNotNull(user.kronosColumns().find { it.name == "version" })
                 assertNotNull(user.kronosColumns().find { it.name == "deleted" })
+
             }
-        """.trimIndent())
+        """.trimIndent(),
+            testBaseName
+        )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 
-        val ktClazz = result.classLoader.loadClass("MainKt")
+        val ktClazz =
+            result.classLoader.loadClass("${this::class.simpleName!!.replaceFirstChar { it.uppercase() }}Kt")
         val main = ktClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
         main.invoke(null)
     }

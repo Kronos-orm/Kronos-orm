@@ -16,6 +16,7 @@ import com.kotlinorm.orm.relationQuery.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.utils.GsonResolver
+import com.kotlinorm.utils.kClassCreatorCustom
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 
@@ -28,11 +29,22 @@ class RelationQuery {
     }
 
     init {
-        Kronos.apply {
+        Kronos.init {
             fieldNamingStrategy = LineHumpNamingStrategy
             tableNamingStrategy = LineHumpNamingStrategy
             dataSource = { KronosBasicWrapper(ds) }
             serializeResolver = GsonResolver
+            kClassCreatorCustom = { kClass ->
+                when (kClass) {
+                    School::class -> School()
+                    GroupClass::class -> GroupClass()
+                    Student::class -> Student()
+                    Role::class -> Role()
+                    RolePermissionRelation::class -> RolePermissionRelation()
+                    Permission::class -> Permission()
+                    else -> null
+                }
+            }
         }
     }
 

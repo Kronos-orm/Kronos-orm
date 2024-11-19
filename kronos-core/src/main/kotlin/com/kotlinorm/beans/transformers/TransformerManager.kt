@@ -41,7 +41,7 @@ object TransformerManager {
         dateTimeFormat: String? = null,
         kClassOfVal: KClass<*> = value::class
     ): Any {
-        if (targetKotlinType in kClassOfVal.qualifiedName + superTypes) return value
+        if (targetKotlinType in superTypes + kClassOfVal.qualifiedName) return value
         val transformer = (registeredValueTransformers + ToStringTransformer).firstOrNull {
             it.isMatch(targetKotlinType, superTypes, kClassOfVal)
         } ?: return value

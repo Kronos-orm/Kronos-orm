@@ -1,8 +1,10 @@
-package com.kotlinorm.beans.dsl
+package com.kotlinorm.orm.beans.dsl
 
-import com.kotlinorm.beans.sample.cascade.manyToMany.Course
-import com.kotlinorm.beans.sample.cascade.manyToMany.Student
-import com.kotlinorm.beans.sample.cascade.manyToMany.StudentCourse
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.config.LineHumpNamingStrategy
+import com.kotlinorm.orm.beans.sample.cascade.manyToMany.Course
+import com.kotlinorm.orm.beans.sample.cascade.manyToMany.Student
+import com.kotlinorm.orm.beans.sample.cascade.manyToMany.StudentCourse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -12,6 +14,13 @@ import kotlin.test.assertEquals
  * author: OUSC
  */
 class KCascadeTest {
+    init {
+        Kronos.init {
+            fieldNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = LineHumpNamingStrategy
+        }
+    }
+
     @Test
     fun testManyToManyDelegate() {
         val course = Course().apply {

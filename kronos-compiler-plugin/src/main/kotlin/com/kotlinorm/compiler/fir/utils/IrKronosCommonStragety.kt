@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.fir.utils
 
-import com.kotlinorm.compiler.helpers.referenceFunctions
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall

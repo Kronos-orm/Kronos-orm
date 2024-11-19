@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
@@ -76,12 +77,14 @@ internal fun applyIrCall(
     irCall: IrFunctionSymbol,
     vararg values: IrExpression?,
     typeArguments: Array<IrType> = emptyArray(),
+    operator: IrStatementOrigin? = null,
     setReceivers: Receivers.() -> Unit = { }
 ): IrFunctionAccessExpression {
     val receiver = Receivers().apply(setReceivers)
     return irCall(irCall).apply {
         dispatchReceiver = receiver.dispatchReceiver
         extensionReceiver = receiver.extensionReceiver
+        origin = operator
         values.forEachIndexed { index, value ->
             putValueArgument(index, value)
         }

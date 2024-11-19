@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.oneToMany
+package com.kotlinorm.orm.beans.sample.cascade.manyToMany
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
@@ -22,14 +22,16 @@ import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.annotations.Version
+import com.kotlinorm.beans.dsl.KCascade.Companion.manyToMany
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_author")
-data class Author(
+@Table("tb_student")
+data class Student(
     val id: Int? = null,
-    val name: String? = null, // 作者姓名
-    val biography: String? = null, // 作者传记
+    val name: String? = null, // 学生姓名
+    val age: Int? = null, // 学生年龄
+    val studentCourse: List<StudentCourse>? = emptyList(), // 学生课程
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: LocalDateTime? = null,
@@ -39,4 +41,6 @@ data class Author(
     val version: Int? = null,
     @LogicDelete
     val deleted: Boolean? = null,
-) : KPojo
+) : KPojo {
+    var courses: List<Course> by manyToMany(::studentCourse) // 多对多级联
+}

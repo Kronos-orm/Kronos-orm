@@ -1,7 +1,6 @@
 package com.kotlinorm.orm.beans.dsl
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.sample.cascade.manyToMany.Course
 import com.kotlinorm.orm.beans.sample.cascade.manyToMany.Student
 import com.kotlinorm.orm.beans.sample.cascade.manyToMany.StudentCourse
@@ -16,8 +15,8 @@ import kotlin.test.assertEquals
 class KCascadeTest {
     init {
         Kronos.init {
-            fieldNamingStrategy = LineHumpNamingStrategy
-            tableNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
         }
     }
 

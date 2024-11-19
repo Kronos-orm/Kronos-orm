@@ -17,7 +17,6 @@ class IrClassNewTransformerTest {
             import com.kotlinorm.Kronos.init
             import com.kotlinorm.annotations.*
             import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType.TINYINT
             import com.kotlinorm.utils.createInstance
             import java.time.LocalDateTime
@@ -67,8 +66,8 @@ class IrClassNewTransformerTest {
             
             fun main() {
                 Kronos.init {
-                    fieldNamingStrategy = LineHumpNamingStrategy
-                    tableNamingStrategy = LineHumpNamingStrategy
+                    fieldNamingStrategy = lineHumpNamingStrategy
+                    tableNamingStrategy = lineHumpNamingStrategy
                 }
             
                 val user = User::class.createInstance()

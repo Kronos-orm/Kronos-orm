@@ -24,6 +24,7 @@ import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.config.NoneNamingStrategy
 import com.kotlinorm.beans.serialize.NoneSerializeResolver
 import com.kotlinorm.beans.config.DefaultNoValueStrategy
+import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -67,11 +68,16 @@ object Kronos {
     // 序列化
     var serializeResolver: KronosSerializeResolver = NoneSerializeResolver
 
+    val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
+
+    @Suppress("MemberVisibilityCanBePrivate")
+    val noneNamingStrategy by lazy { NoneNamingStrategy() }
+
     // 列名策略
-    var fieldNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
+    var fieldNamingStrategy: KronosNamingStrategy = noneNamingStrategy
 
     // 表名策略
-    var tableNamingStrategy: KronosNamingStrategy = NoneNamingStrategy()
+    var tableNamingStrategy: KronosNamingStrategy = noneNamingStrategy
 
     // 更新时间策略
     var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))

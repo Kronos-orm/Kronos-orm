@@ -1,7 +1,6 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.utils.TestWrapper
 import com.kotlinorm.database.beans.MysqlUser
@@ -11,8 +10,8 @@ import kotlin.test.assertEquals
 class Insert {
     init {
         Kronos.apply {
-            fieldNamingStrategy = LineHumpNamingStrategy
-            tableNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { TestWrapper }
         }
     }

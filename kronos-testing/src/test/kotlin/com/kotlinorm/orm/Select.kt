@@ -1,8 +1,6 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
-import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.functions.bundled.exts.MathFunctions.add
@@ -23,9 +21,9 @@ class Select {
         // 配置Kronos ORM框架的基本设置
         Kronos.apply {
             // 设置字段命名策略为驼峰命名
-            fieldNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
             // 设置表命名策略为驼峰命名
-            tableNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             // 设置数据源提供器
             dataSource = { TestWrapper }
         }

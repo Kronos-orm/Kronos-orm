@@ -1,7 +1,6 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.orm.beans.sample.Movie
 import com.kotlinorm.orm.beans.sample.User
@@ -19,8 +18,8 @@ import kotlin.test.assertEquals
 class Update {
     init {
         Kronos.apply {
-            fieldNamingStrategy = LineHumpNamingStrategy
-            tableNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { TestWrapper }
             serializeResolver = GsonResolver
         }

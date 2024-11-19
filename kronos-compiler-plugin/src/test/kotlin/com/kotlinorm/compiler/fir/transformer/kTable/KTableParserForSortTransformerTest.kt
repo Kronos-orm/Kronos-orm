@@ -18,7 +18,6 @@ class KTableParserForSortTransformerTest {
             import com.kotlinorm.beans.dsl.Field
             import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
             import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
             import com.kotlinorm.enums.KColumnType.TINYINT
             import com.kotlinorm.types.ToSort
@@ -71,8 +70,8 @@ class KTableParserForSortTransformerTest {
             
             fun main() {
                 Kronos.apply {
-                    fieldNamingStrategy = LineHumpNamingStrategy
-                    tableNamingStrategy = LineHumpNamingStrategy
+                    fieldNamingStrategy = lineHumpNamingStrategy
+                    tableNamingStrategy = lineHumpNamingStrategy
                 }
             
                 val user = User()

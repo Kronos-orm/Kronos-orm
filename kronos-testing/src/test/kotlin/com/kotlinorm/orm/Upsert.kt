@@ -1,7 +1,6 @@
 package com.kotlinorm.orm
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.build
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
 import com.kotlinorm.orm.upsert.upsert
@@ -13,8 +12,8 @@ import kotlin.test.assertEquals
 class Upsert {
     init {
         Kronos.apply {
-            fieldNamingStrategy = LineHumpNamingStrategy
-            tableNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { TestWrapper }
         }
     }

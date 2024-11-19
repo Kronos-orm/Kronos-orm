@@ -3,7 +3,6 @@ package com.kotlinorm.orm.relationQuery
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
@@ -30,8 +29,8 @@ class RelationQuery {
 
     init {
         Kronos.init {
-            fieldNamingStrategy = LineHumpNamingStrategy
-            tableNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { KronosBasicWrapper(ds) }
             serializeResolver = GsonResolver
             kClassCreatorCustom = { kClass ->

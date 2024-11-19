@@ -103,11 +103,11 @@ User(id = id).delete().execute()
 
 ```kotlin
 plugins {
-  id("com.kotlinorm.kronos-gradle-plugin") version "2.0.0"
+  id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:2.0.0")
+    implementation("com.kotlinorm:kronos-core:0.0.1")
 }
 ```
 
@@ -123,11 +123,11 @@ dependencies {
 
 ```groovy
 plugins {
-  id 'com.kotlinorm.kronos-gradle-plugin' version '2.0.0'
+  id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:2.0.0'
+    implementation 'com.kotlinorm:kronos-core:0.0.1'
 }
 ```
 
@@ -148,7 +148,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>2.0.0</version>
+            <version>0.0.1</version>
         </dependency>
     </dependencies>
 
@@ -167,7 +167,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>2.0.0</version>
+                        <version>0.0.1</version>
                     </dependency>
                 </dependencies>
             </plugin>

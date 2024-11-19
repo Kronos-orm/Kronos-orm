@@ -1,12 +1,13 @@
 package com.kotlinorm.beans.config
 
+import com.kotlinorm.Kronos.lineHumpNamingStrategy
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class LineHumpNamingStrategyTest {
     @Test
     fun testHump2Line() {
-        val strategy = LineHumpNamingStrategy
+        val strategy = lineHumpNamingStrategy
         assertEquals("hello_world", strategy.k2db("helloWorld"))
         assertEquals("hello_world", strategy.k2db("HelloWorld"))
         assertEquals("hello_world_hello", strategy.k2db("helloWorldHello"))
@@ -26,7 +27,7 @@ class LineHumpNamingStrategyTest {
 
     @Test
     fun testLine2Hump() {
-        val strategy = LineHumpNamingStrategy
+        val strategy = lineHumpNamingStrategy
         assertEquals("helloWorld", strategy.db2k("hello_world"))
         assertEquals("HelloWorld", strategy.db2k("Hello_world"))
         assertEquals("helloWorldHello", strategy.db2k("hello_world_hello"))

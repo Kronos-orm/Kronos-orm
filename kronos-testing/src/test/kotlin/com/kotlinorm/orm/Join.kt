@@ -1,7 +1,6 @@
 package com.kotlinorm.orm//package tests
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.orm.beans.sample.Movie
 import com.kotlinorm.orm.beans.sample.UserRelation
 import com.kotlinorm.orm.join.join
@@ -18,8 +17,8 @@ class Join {
 
     init {
         Kronos.apply {
-            fieldNamingStrategy = LineHumpNamingStrategy
-            tableNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { TestWrapper }
             serializeResolver = GsonResolver
         }

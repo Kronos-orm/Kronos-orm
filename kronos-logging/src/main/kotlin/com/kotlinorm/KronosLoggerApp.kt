@@ -45,6 +45,7 @@ object KronosLoggerApp {
      *
      * @throws KotoNoLoggerException if no logger implementation is found for the given logger type
      */
+    @Suppress("unused")
     fun detectLoggerImplementation() {
         Kronos.defaultLogger = { getKotoLoggerInstance(it) }
         val tag = "com.kotlinorm.core"

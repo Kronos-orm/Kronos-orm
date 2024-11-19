@@ -23,7 +23,6 @@ class KTableParserForSelectTransformerTest {
             import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
             import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
             import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.beans.config.LineHumpNamingStrategy
             import com.kotlinorm.enums.KColumnType
             import com.kotlinorm.enums.KColumnType.TINYINT
             import com.kotlinorm.types.ToSelect
@@ -75,8 +74,8 @@ class KTableParserForSelectTransformerTest {
             
             fun main() {
                 Kronos.apply {
-                    fieldNamingStrategy = LineHumpNamingStrategy
-                    tableNamingStrategy = LineHumpNamingStrategy
+                    fieldNamingStrategy = lineHumpNamingStrategy
+                    tableNamingStrategy = lineHumpNamingStrategy
                 }
             
                 val user = User()

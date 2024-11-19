@@ -3,7 +3,6 @@ package com.kotlinorm.database
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
@@ -36,9 +35,9 @@ class TableOperationPostgres {
         // 配置Kronos ORM框架的基本设置
         Kronos.apply {
             // 设置字段命名策略为驼峰命名
-            fieldNamingStrategy = LineHumpNamingStrategy
+            fieldNamingStrategy = lineHumpNamingStrategy
             // 设置表命名策略为驼峰命名
-            tableNamingStrategy = LineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
             // 设置数据源提供器
             dataSource = { KronosBasicWrapper(ds) }
         }

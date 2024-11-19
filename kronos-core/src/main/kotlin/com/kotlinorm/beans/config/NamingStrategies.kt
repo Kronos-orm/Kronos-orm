@@ -19,7 +19,7 @@ package com.kotlinorm.beans.config
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import java.util.*
 
-object LineHumpNamingStrategy : KronosNamingStrategy {
+class LineHumpNamingStrategy : KronosNamingStrategy {
     override fun k2db(name: String): String {
         return humpToLine(name)
     }

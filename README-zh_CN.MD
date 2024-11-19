@@ -235,9 +235,9 @@ data class Movie(
 
 ### 📝 动态创建`KPojo` & `KPojo` 与 Map互转 & 获取表名、列等信息
 
-Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
-Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
-Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
+- Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
+- Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
+- Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
 
 ```kotlin
 val instance = Movie::class.newInstance() // -> Movie() ,通过引用动态创建 KPojo 实例，不使用反射

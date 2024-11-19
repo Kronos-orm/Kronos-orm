@@ -231,9 +231,9 @@ Coming soon...
 
 ### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map & Get Meta Information
 
-Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
-Kronos provides functions to easily convert between `KPojo` and `Map`.
-Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
+- Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
+- Kronos provides functions to easily convert between `KPojo` and `Map`.
+- Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
 
 ```kotlin
 val instance = Movie::class.newInstance() // -> Movie() ,dynamic create KPojo instance by reference, NO REFLECTION used

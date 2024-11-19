@@ -20,12 +20,17 @@ class KPojoTest {
     }
 
     data class TestPojo(
-        val id: Int? = null, val name: String? = null, val age: Int? = null, val testEnum: TestEnum? = null
+        val id: Int? = null,
+        val name: String? = null,
+        val age: Int? = null,
+        val testEnum: TestEnum? = null
     ) : KPojo
 
     class TestEnumTransformer : ValueTransformer {
         override fun isMatch(
-            targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>
+            targetKotlinType: String,
+            superTypesOfValue: List<String>,
+            kClassOfValue: KClass<*>
         ): Boolean {
             return targetKotlinType == TestEnum::class.qualifiedName && kClassOfValue == String::class
         }
@@ -45,13 +50,22 @@ class KPojoTest {
     fun testKPojo() {
         registerValueTransformer(TestEnumTransformer())
         val map = mapOf(
-            "id" to 1, "name" to "test", "age" to 18, "testEnum" to "A"
+            "id" to 1,
+            "name" to "test",
+            "age" to 18,
+            "testEnum" to "A"
         )
 
+        // Notice:
+        // `value transformer` only work for `safeMapperTo`, not for `mapperTo`
         val pojo = map.safeMapperTo<TestPojo>()
+
         assertEquals(
             TestPojo(
-                id = 1, name = "test", age = 18, testEnum = TestEnum.A
+                id = 1,
+                name = "test",
+                age = 18,
+                testEnum = TestEnum.A
             ), pojo
         )
     }

@@ -155,14 +155,19 @@ dependencies {
 import com.kotlinorm.Kronos
 
 fun main() {
-    val dataSource = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver"
-        url =
-            "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
-        username = "user"
-        password = "******"
+    val ds by lazy {
+        BasicDataSource().apply {
+            driverClassName = "com.mysql.cj.jdbc.Driver"
+            url =
+                "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
+            username = "user"
+            password = "******"
+        }
     }
-    Kronos.dataSource = { dataSource }
+    
+    Kronos.init{
+        dataSource = { ds }
+    }
 }
 ```
 
@@ -175,7 +180,7 @@ import com.kotlinorm.Kronos
 import java.time.ZoneId
 
 fun main() {
-    Kronos.apply {
+    Kronos.init {
         // 表名策略
         tableNamingStrategy = LineHumpStrategy
         // 字段名策略
@@ -205,11 +210,11 @@ fun main() {
 ```kotlin group="KPojo" name="Director.kt"
 data class Director(
     @PrimaryKey(identity = true)
-    var id: Int? = 0,
+    var id: Int? = null,
     var name: String? = "",
     var movies: List<Movie>? = emptyList(),
     @CreateTime
-    var createTime: LocalDateTime? = "",
+    var createTime: LocalDateTime? = null,
     @updateTime
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     var updateTime: String? = "",
@@ -223,7 +228,7 @@ data class Director(
 @TableIndex("idx_name_director", ["name", "director_id"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
 data class Movie(
     @PrimaryKey(identity = true)
-    var id: Int? = 0,
+    var id: Int? = null,
     @Column("name")
     @ColumnType(CHAR)
     var name: String? = "",
@@ -234,9 +239,9 @@ data class Movie(
     @Default("0")
     var deleted: Boolean? = false,
     @CreateTime
-    var createTime: LocalDateTime? = "",
+    var createTime: LocalDateTime? = null,
     @updateTime
-    var updateTime: Date? = ""
+    var updateTime: Date? = null
 ) : KPojo
 ```
 

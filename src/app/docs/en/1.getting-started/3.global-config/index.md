@@ -40,7 +40,9 @@ This policy converts kotlin class names to underscore-separated lowercase string
 This strategy converts database table/column names to camel names, e.g. `user_name` -> `userName`.
 
 ```kotlin
-Kronos.tableNamingStrategy = LineHumpNamingStrategy
+Kronos.init {
+    tableNamingStrategy = lineHumpNamingStrategy
+}
 ```
 
 **2. {{ $.title("NoneNamingStrategy") }} none naming strategy**
@@ -59,7 +61,9 @@ Similar to the global table name strategy, the column name strategy means that b
 The column name strategy class is common to the table name strategy and is set up in the following way:
 
 ```kotlin
-Kronos.fieldNamingStrategy = LineHumpNamingStrategy
+Kronos.init {
+    fieldNamingStrategy = lineHumpNamingStrategy
+}
 ```
 
 ## Create time strategy

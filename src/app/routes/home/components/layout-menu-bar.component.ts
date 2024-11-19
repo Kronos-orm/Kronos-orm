@@ -15,7 +15,7 @@ import {AnimateOnScrollModule} from "primeng/animateonscroll";
         AnimateOnScrollModule
     ],
     template: `
-        <div class="container w-full" [class]="fixed ? ['fixed', 'top-0', 'fadeinup'] : ['fadeoutup']">
+        <div class="container w-full" [class]="fixed ? ['fixed', 'top-0', 'fadeinup', 'opacity-90', 'shadow-8'] : ['fadeoutup']">
             <p-toast/>
             <p-megaMenu class="hidden md:block" [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
                 <ng-template pTemplate="start">

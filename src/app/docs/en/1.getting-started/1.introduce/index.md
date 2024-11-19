@@ -41,6 +41,10 @@ the kotlin co-processing mechanism greatly improves the high concurrency perform
 > Here is a simple example.
 
 ```kotlin name="demo" icon="kotlin"
+Kronos.init {
+    dataSource = { MysqlDataSource("jdbc:mysql://localhost:3306/test") }
+}
+
 // Create a User object
 val user: User = User(
     id = 1,

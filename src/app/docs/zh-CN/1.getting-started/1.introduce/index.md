@@ -35,6 +35,10 @@ graph LR
 > 以下是一个简单的示例。
 
 ```kotlin name="demo" icon="kotlin"
+Kronos.init {
+    dataSource = { MysqlDataSource("jdbc:mysql://localhost:3306/test") }
+}
+
 // 创建一个User对象
 val user: User = User(
     id = 1,

@@ -40,7 +40,9 @@ Kronos.dataSource = { yourDataSourceWrapper }
 ，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
 
 ```kotlin
-Kronos.tableNamingStrategy = LineHumpNamingStrategy
+Kronos.init {
+    tableNamingStrategy = lineHumpNamingStrategy
+}
 ```
 
  **2. {{ $.title("NoneNamingStrategy") }}无命名策略**
@@ -59,7 +61,9 @@ Kronos.tableNamingStrategy = LineHumpNamingStrategy
 列名策略类与表名策略通用，设置方式为：
 
 ```kotlin
-Kronos.fieldNamingStrategy = LineHumpNamingStrategy
+Kronos.init {
+    fieldNamingStrategy = lineHumpNamingStrategy
+}
 ```
 
 ## 创建时间策略
@@ -79,7 +83,9 @@ Kronos.fieldNamingStrategy = LineHumpNamingStrategy
 创建时间策略的全局**默认关闭**，需要手动开启。
 
 ```kotlin
-Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
+Kronos.init {
+    createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
+}
 ```
 
 > **Note**
@@ -102,7 +108,9 @@ Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
 更新时间策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
+Kronos.init {
+    updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
+}
 ```
 
 > **Note**
@@ -120,7 +128,9 @@ Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
 逻辑删除策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+Kronos.init {
+    logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+}
 ```
 
 > **Note**
@@ -143,7 +153,9 @@ Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
 乐观锁策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
+Kronos.init {
+    optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
+}
 ```
 
 > **Note**
@@ -159,7 +171,9 @@ Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
 Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
 
 ```kotlin
-Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
+Kronos.init {
+    defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
+}
 ```
 
 > **Note**
@@ -175,15 +189,23 @@ Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
 
 ```kotlin
-Kronos.timeZone = ZoneId.of("UTC")
-Kronos.timeZone = ZoneId.of("Asia/Shanghai")
-Kronos.timeZone = ZoneId.systemDefault()
-Kronos.timeZone = ZoneId.of("GMT+8")
+Kronos.init {
+    timeZone = ZoneId.of("UTC")
+    timeZone = ZoneId.of("Asia/Shanghai")
+    timeZone = ZoneId.systemDefault()
+    timeZone = ZoneId.of("GMT+8")
+}
 ```
 
 ## 无值策略
 
 用于设置全局默认条件下，当`where`/`having`/`on`等条件语句中的值为`null`时，生成SQL语句的策略。
+
+```kotlin
+Kronos.init {
+    noValueStrategy = YourCustomNoValueStrategy()
+}
+```
 
 > **Note**
 > 如在查询场景下，条件值为null时可能想要忽略该查询条件，或将其转为`is null`，`is not null`等条件。
@@ -208,6 +230,12 @@ Kronos.timeZone = ZoneId.of("GMT+8")
 
 如可以通过引入`GSON`库来实现序列化解析器：
 
+```kotlin group="GsonResolver" name="Main.kt" icon="kotlin"
+Kronos.init {
+    serializeResolver = GsonResolver
+}
+```
+
 ```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
 object GsonResolver : KronosSerializeResolver {
     // 使用GSON序列化对象
@@ -222,8 +250,55 @@ object GsonResolver : KronosSerializeResolver {
 }
 ```
 
-```kotlin group="GsonResolver" name="KronosConfig.kt" icon="kotlin"
-Kronos.serializeResolver = GsonResolver
+这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
+
+## 日志输出路径及开关
+
+用于设置全局默认条件下，日志输出的路径及开关。
+
+- 当`logPath`为空时，关闭日志输出。
+- 当`logPath`不为空时，开启日志输出，日志输出路径为`logPath`内的所有路径，`console`为控制台输出。
+
+**参数**：
+{{$.params([['logPath', '日志输出路径', 'List<String>', 'emptyList()']])}}
+
+```kotlin
+Kronos.init {
+    logPath = listOf("your/log/path")
+}
 ```
 
-这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
+Kronos默认开启日志输出，并输出到控制台。
+
+## 关闭智能值转换
+
+Kronos在进行数据操作时，会自动将预期值与实际值进行智能转换，如`Int`与`Long`、`String`等等，详见：{{ $.keyword("concept/smart-value-conversion", ["概念", "类型处理器"]) }}。
+
+以下是一个简单的例子，展示了智能值转换的功能：
+    
+```kotlin
+data class User(
+    var id: Int? = null,
+    var name: String? = "",
+    var createTime: kotlinx.datetime.LocalDateTime? = null
+)
+
+val mapOfUser = mapOf("id" to 1L, "name" to "Kronos", "createTime" to "2023-10-17T10:00:00")
+
+val user = mapOfUser.mapperTo<User>()
+// ❌ mapperTo函数默认不使用智能值转换，此时会抛出异常
+
+val user = mapOfUser.safeMapperTo<User>()
+// ✅ safeMapperTo函数默认使用智能值转换，此时会自动将1L转为Int，将"2023-10-17T10:00:00"转为LocalDateTime
+
+```
+
+Kronos默认开启`getTypeSafeValue`以及`safeMapperTo`函数进行智能值转换。
+
+Kronos的值转换功能**不使用反射**，而是通过编译器插件生成的代码来实现，这样可以避免反射带来的性能损耗，但是此功能仍然可能会带来一些性能损耗，如果不需要，您可以通过以下方式**关闭智能值转换**：
+
+```kotlin
+Kronos.init {
+    strictSetValue = true
+}
+```

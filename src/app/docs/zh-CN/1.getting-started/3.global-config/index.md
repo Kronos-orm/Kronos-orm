@@ -201,12 +201,6 @@ Kronos.init {
 
 用于设置全局默认条件下，当`where`/`having`/`on`等条件语句中的值为`null`时，生成SQL语句的策略。
 
-```kotlin
-Kronos.init {
-    noValueStrategy = YourCustomNoValueStrategy()
-}
-```
-
 > **Note**
 > 如在查询场景下，条件值为null时可能想要忽略该查询条件，或将其转为`is null`，`is not null`等条件。
 > `NoValueStrategy`策略用于处理在不同场景下的`null`值条件
@@ -218,6 +212,12 @@ Kronos.init {
 {{$.params([['noValueStrategy', '无值策略', 'NoValueStrategy', 'DefaultNoValueStrategy']])}}
 
 `NoValueStrategy`策略接受操作类型（`SELECT`/`UPDATE`/`DELETE`）和语句条件两个参数，返回`NoValueStrategyType`，详见：{{ $.keyword("concept/no-value-strategy", ["概念","无值策略"]) }}。
+
+```kotlin
+Kronos.init {
+    noValueStrategy = YourCustomNoValueStrategy()
+}
+```
 
 ## 序列化反序列化处理器
 

@@ -188,11 +188,13 @@ dependencies {
 您可以通过以下方式设置默认数据源
 
 ```kotlin
-Kronos.dataSource = { KronosBasicWrapper(SomeDataSource()) }
-// 具体数据源的示例：
-//Kronos.dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
-//Kronos.dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
-//Kronos.dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
+Kronos.init {
+    dataSource = { KronosBasicWrapper(SomeDataSource()) }
+    // 具体数据源的示例：
+    //dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
+    //dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
+    //dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
+}
 ```
 
 有关连接数据库和使用动态数据源或多个数据源的更多详情，请参阅

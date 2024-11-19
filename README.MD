@@ -185,11 +185,13 @@ dependencies {
 You can set default data source by:
 
 ```kotlin
-Kronos.dataSource = { KronosBasicWrapper(SomeDataSource()) }
-// for example:
-//Kronos.dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
-//Kronos.dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
-//Kronos.dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
+Kronos.init {
+    dataSource = { KronosBasicWrapper(SomeDataSource()) }
+    // for example:
+    //dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
+    //dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
+    //dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
+}
 ```
 
 More details about connecting to the database and use dynamic data source or multiple data sources, please refer to the [docs](https://kotlinorm.com/#/documentation/en/database/connect-to-db).
@@ -227,7 +229,7 @@ Coming soon...
 
 ------------
 
-### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map &
+### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map & Get Meta Information
 
 Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
 Kronos provides functions to easily convert between `KPojo` and `Map`.

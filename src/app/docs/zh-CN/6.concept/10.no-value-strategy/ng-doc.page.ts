@@ -1,5 +1,4 @@
 import {NgDocPage} from '@ng-doc/core';
-import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 import ConceptCategory from "../ng-doc.category";
 
 const NoValueStrategyPage: NgDocPage = {
@@ -7,8 +6,7 @@ const NoValueStrategyPage: NgDocPage = {
     mdFile: './index.md',
     category: ConceptCategory,
     order: 10,
-    imports: [AnimateLogoComponent],
-    demos: {AnimateLogoComponent}
+    route: 'no-value-strategy',
 };
 
 export default NoValueStrategyPage;

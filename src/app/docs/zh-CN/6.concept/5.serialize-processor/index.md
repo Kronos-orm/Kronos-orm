@@ -1,5 +1,4 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
-{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 `KronosSerializeResolver`是Kronos定义的序列化解析器接口，用于字符串和Kotlin实体类之间的序列化和反序列化转换。
 

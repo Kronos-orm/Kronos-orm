@@ -4,13 +4,16 @@
 请确保您的KPojo具有正确的注解，以便Kronos能够正确识别表名、字段、索引等信息。
 
 > **Note**
-> 相关功能可可以通过`Kronos.dataSource(() -> KronosDataSourceWrapper)`或某个具体的数据源对象`KronosDataSourceWrapper`来调用。
+> 相关功能可可以通过`Kronos.dataSource(() -> KronosDataSourceWrapper)`或某个具体的数据源对象`KronosDataSourceWrapper`
+> 来调用。
 
 ## 1. {{ $.title("table.exists") }} 表是否存在
 
 - ### {{ $.title("table.exists(KPojo)") }}
 
-  通过实体类判断表是否存在
+  _通过实体类判断表是否存在_
+
+ {{ $.hr() }}
 
   ```kotlin
   dataSource.table.exists(user)
@@ -126,10 +129,10 @@
 
 **参数**：
 {{$.params([
-  ['dbType', '数据库类型', 'DBType'],
-  ['tableName', '表名', 'String'],
-  ['fields', '字段列表', 'List<Field>'],
-  ['indexes', '索引列表', 'List<KTableIndex>', '[]']
+['dbType', '数据库类型', 'DBType'],
+['tableName', '表名', 'String'],
+['fields', '字段列表', 'List<Field>'],
+['indexes', '索引列表', 'List<KTableIndex>', '[]']
 ])}}
 
 ```kotlin name="demo" icon="kotlin" {2,31}

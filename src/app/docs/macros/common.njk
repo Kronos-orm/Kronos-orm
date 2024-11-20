@@ -19,7 +19,7 @@
     {%- set anchor = extract(label) if page.length == 1 else extract(page[1]) -%}
     <code class="ngde ng-doc-code-with-link">
         {%- if url.startsWith('concept') -%}
-            {%- set id = url.replace("concept/", "")  -%}
+            {%- set id = url.replace("concept/", "") -%}
             {{- noun(id, language, label, anchor) -}}
         {%- else -%}
             <a class="ngde" href="/documentation/{{ language }}/{{ url }}#{{ anchor }}">
@@ -34,25 +34,25 @@
 {%- endmacro %}
 
 {%- macro code(name, types) -%}
-<code class="ngde">
-    {%- block type -%}
-        <span class="type" style="color: #c41d7f">{{- name | escape -}}</span>
-    {%- endblock -%}
-    {%- if types != null -%}
-    {%- block lt -%}
-        <span style="color: #666">{{- "<" | escape -}}</span>
-    {%- endblock -%}
-    {%- for type in types -%}
-            <span class="generic" style="color: darkcyan">{{- type.trim() | escape -}}</span>
-        {%- if loop.last == false -%}
-            <span class="generic" style="color: #666">{{- ", " | escape -}}</span>
+    <code class="ngde">
+        {%- block type -%}
+            <span class="type" style="color: #c41d7f">{{- name | escape -}}</span>
+        {%- endblock -%}
+        {%- if types != null -%}
+            {%- block lt -%}
+                <span style="color: #666">{{- "<" | escape -}}</span>
+            {%- endblock -%}
+            {%- for type in types -%}
+                <span class="generic" style="color: darkcyan">{{- type.trim() | escape -}}</span>
+                {%- if loop.last == false -%}
+                    <span class="generic" style="color: #666">{{- ", " | escape -}}</span>
+                {%- endif -%}
+            {%- endfor -%}
+            {%- block gt -%}
+                <span style="color: #666">{{- ">" | escape -}}</span>
+            {%- endblock -%}
         {%- endif -%}
-    {%- endfor -%}
-    {%- block gt -%}
-        <span style="color: #666">{{- ">" | escape -}}</span>
-    {%- endblock -%}
-    {%- endif -%}
-</code>
+    </code>
 {%- endmacro %}
 
 {% macro annotation(name) -%}
@@ -125,21 +125,25 @@
     </table>
 {%- endmacro %}
 
+{%- macro hr() -%}
+    <hr style="border-bottom: 1px solid var(--ng-doc-base-2);border-top: 0">
+{%- endmacro %}
+
 {%- macro noun(str, language, name, anchor) -%}
-    {%-  set id = extract(str) -%}
+    {%- set id = extract(str) -%}
     {%- if name == null -%}
         {%- set name = str -%}
     {%- endif -%}
     {%- if anchor != null -%}
-        {%- set anchor = "'" + anchor + "'"  -%}
+        {%- set anchor = "'" + anchor + "'" -%}
     {% else %}
-        {%- set anchor = "null"  -%}
+        {%- set anchor = "null" -%}
     {%- endif -%}
     <span class="noun" id="{{ id }}" onclick="window.onWikiChange.emit({'id': '{{ id }}', 'anchor': {{ anchor }}})">
         {{- name -}}
         {%- block svg -%}
-        <svg class="icon" viewBox="0 0 1026 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
-             width="200" height="200">
+            <svg class="icon" viewBox="0 0 1026 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+                 width="200" height="200">
             <path d="M897.024 0q26.624 0 49.664 10.24t40.448 27.648 27.648 40.448 10.24 49.664v576.512q0 26.624-10.24 49.664t-27.648 40.448-40.448 27.648-49.664 10.24h-128v-128h63.488q26.624 0 45.568-18.432t18.944-45.056V320.512q0-26.624-18.944-45.568T832.512 256h-512q-26.624 0-45.568 18.944T256 320.512V384H128V128q0-26.624 10.24-49.664t27.648-40.448 40.448-27.648T256 0h641.024zM576.512 448.512q26.624 0 49.664 10.24t40.448 27.648 27.648 40.448 10.24 49.664v256q0 26.624-10.24 49.664t-27.648 40.448-40.448 27.648-49.664 10.24h-384q-26.624 0-50.176-10.24t-40.96-27.648-27.648-40.448-10.24-49.664v-256q0-26.624 10.24-49.664t27.648-40.448 40.96-27.648 50.176-10.24h384z m0 256q0-26.624-18.944-45.056T512 641.024H256q-26.624 0-45.056 18.432t-18.432 45.056v64.512q0 26.624 18.432 45.056T256 832.512h256q26.624 0 45.568-18.432t18.944-45.056v-64.512z"></path>
         </svg>
         {%- endblock -%}

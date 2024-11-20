@@ -196,10 +196,10 @@ data class Company(
 ) : KPojo
 ```
 
-## {{ $.annotation("Ignore") }} 查询时忽略字段
+## {{ $.annotation("Ignore") }} 查询时忽略属性
 
 此注解用于声明该列不需要在指定的查询条件中进行查询。
-需要传入忽略的查询类型 {{ $.keyword("concept/ignore-action", ["忽略查询类型"]) }}
+需要传入忽略的查询类型 {{ $.keyword("concept/ignore-action", ["忽略查询策略"]) }}
 
 **参数**：
 {{ $.params([
@@ -218,7 +218,7 @@ data class Employee(
 @Table("tb_company")
 data class Company(
   val id: Int? = null,
-  @SelectIgnore
+  @Ignore([CASCADE_SELECT])
   val employees: List<Employee>? = null
 ) : KPojo
 ```

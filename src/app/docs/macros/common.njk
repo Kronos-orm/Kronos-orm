@@ -125,8 +125,14 @@
     </table>
 {%- endmacro %}
 
-{%- macro hr() -%}
-    <hr style="border-bottom: 1px solid var(--ng-doc-base-2);border-top: 0">
+{%- macro hr(width) -%}
+    <hr style="border-bottom: 1px solid var(--ng-doc-base-2);border-top: 0;width:
+    {%- if width != null -%}
+        {{ width }}%
+    {%- else -%}
+        100%
+    {%- endif -%}
+    ;margin: 16px 0;">
 {%- endmacro %}
 
 {%- macro noun(str, language, name, anchor) -%}

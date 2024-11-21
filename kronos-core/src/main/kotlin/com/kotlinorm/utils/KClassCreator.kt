@@ -22,6 +22,8 @@ var kClassCreator: (KClass<out KPojo>) -> KPojo? = { null }
  */
 var kClassCreatorCustom: (KClass<out KPojo>) -> KPojo? = { null }
 
+fun registerKPojo(vararg kClass: KClass<out KPojo>) {}
+
 @Suppress("UNCHECKED_CAST")
 fun <T : KPojo> KClass<T>.createInstance(): T {
     return kClassCreator(this) as T? ?: kClassCreatorCustom(this) as T? ?: throw NullPointerException(

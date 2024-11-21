@@ -100,7 +100,7 @@ val users: List<User> =
 
 ## {{ $.title("where") }}指定查询条件
 
-在Kronos中，我们可以使用`where`方法指定查询条件。
+在Kronos中，我们可以使用`where`方法指定查询{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =

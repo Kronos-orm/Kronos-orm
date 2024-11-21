@@ -1,11 +1,11 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 根据KPojo对象值生成条件语句并删除记录
+## 根据KPojo对象值自动生成条件语句并删除记录
 
 在Kronos中，我们可以使用`KPojo.delete().execute()`方法用于删除数据库中的记录
 
-当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成删除条件语句。
+**当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成删除条件语句。**
 
 > **Warning**
 > 当KPojo对象的字段值为`null`时，该字段不会生成删除条件，若需要删除字段值为`null`的记录，请使用`where`方法指定。
@@ -18,6 +18,12 @@ val user: User = User(
 )
 
 user.delete().execute()
+// 等同于
+// user.delete().by { it.id  + it.name + it.age }.execute()
+// 或
+// user.delete().where { it.eq }.execute()
+// 或
+// user.delete().where { it.id.eq && it.name.eq && it.age.eq }.execute()
 ```
 
 ```sql group="Case 1" name="Mysql" icon="mysql"
@@ -102,7 +108,7 @@ WHERE "id" = :id
 
 ## {{ $.title("where") }} 设置删除条件
 
-在Kronos中，我们可以使用`where`方法设置删除条件，此时Kronos会根据`where`方法设置的条件生成删除条件语句。
+在Kronos中，我们可以使用`where`方法设置删除条件，此时Kronos会根据`where`方法设置的条件生成删除{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
 
 ```kotlin group="Case 3" name="kotlin" icon="kotlin" {5}
 val user: User = User(
@@ -214,14 +220,13 @@ val user: User = User(
     name = "Kronos"
 )
 
-user.delete().where { (it - it.status).eq && it.status > 1 }.execute()
+user.delete().where { (it - it.name).eq && it.status > 1 }.execute()
 ```
 
 ```sql group="Case 3-2" name="Mysql" icon="mysql"
 DELETE
 FROM `user`
 WHERE `id` = :id
-  and `name` = :name
   and `status` > :statusMin
 ```
 
@@ -229,7 +234,6 @@ WHERE `id` = :id
 DELETE
 FROM "user"
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 
@@ -237,7 +241,6 @@ WHERE "id" = :id
 DELETE
 FROM "user"
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 
@@ -245,7 +248,6 @@ WHERE "id" = :id
 DELETE
 FROM [user]
 WHERE [id] = :id
-  and [name] = :name
   and [status] > :statusMin
 ```
 
@@ -253,7 +255,6 @@ WHERE [id] = :id
 DELETE
 FROM "user"
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 

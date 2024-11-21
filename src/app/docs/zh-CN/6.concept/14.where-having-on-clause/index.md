@@ -1,5 +1,4 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
-{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 ## Criteria 条件对象
 
@@ -179,49 +178,49 @@ where { it.name.notLike("Kronos%") }
 where { it.name notLike "Kronos%" }
 ```
 
-#### {{ $.title("matchLeft") }}左模糊查询
+#### {{ $.title("startsWith") }}左模糊查询
 
-左模糊查询，接收String类型的参数，可以不传入参数，如`it.name.matchLeft()` 或 `it.name.matchLeft`
+左模糊查询，接收String类型的参数，可以不传入参数，如`it.name.startsWith()` 或 `it.name.startsWith`
 
 ```kotlin {2,5,8}
 //等同于where { it.name like "Kronos%" }
-where { it.name.matchLeft("Kronos") }
+where { it.name.startsWith("Kronos") }
 
 //支持中缀调用
-where { it.name matchLeft "Kronos" }
+where { it.name startsWith "Kronos" }
 
 //支持不传入参数
-User(name = "Kronos").select().where { it.name.matchLeft }
+User(name = "Kronos").select().where { it.name.startsWith }
 ```
 
-#### {{ $.title("matchRight") }}右模糊查询
+#### {{ $.title("endsWith") }}右模糊查询
 
-右模糊查询，接收String类型的参数，可以不传入参数，如`it.name.matchRight()` 或 `it.name.matchRight`
+右模糊查询，接收String类型的参数，可以不传入参数，如`it.name.endsWith()` 或 `it.name.endsWith`
 
 ```kotlin {2,5,8}
 //等同于where { it.name like "%Kronos" }
-where { it.name.matchRight("Kronos") }
+where { it.name.endsWith("Kronos") }
 
 //支持中缀调用
-where { it.name matchRight "Kronos" }
+where { it.name endsWith "Kronos" }
 
 //支持不传入参数
-User(name = "Kronos").select().where { it.name.matchRight }
+User(name = "Kronos").select().where { it.name.endsWith }
 ```
 
-#### {{ $.title("matchBoth") }}全模糊查询
+#### {{ $.title("contains") }}全模糊查询
 
-全模糊查询，接收String类型的参数，可以不传入参数，如`it.name.matchBoth()` 或 `it.name.matchBoth`
+全模糊查询，接收String类型的参数，可以不传入参数，如`it.name.contains()` 或 `it.name.contains`
 
 ```kotlin {2,5,8}
 //等同于where { it.name like "%Kronos%" }
-where { it.name.matchBoth("Kronos") }
+where { it.name.contains("Kronos") }
 
 //支持中缀调用
-where { it.name matchBoth "Kronos" }
+where { "Kronos" in it.name }
 
 //支持不传入参数
-User(name = "Kronos").select().where { it.name.matchBoth }
+User(name = "Kronos").select().where { it.name.contains }
 ```
 
 ### 其他

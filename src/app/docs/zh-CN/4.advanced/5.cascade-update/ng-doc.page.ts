@@ -11,7 +11,7 @@ const CascadeUpdatePage: NgDocPage = {
     mdFile: './index.md',
     route: 'cascade-update',
     category: AdvancedCategory,
-    order: 6,
+    order: 5,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

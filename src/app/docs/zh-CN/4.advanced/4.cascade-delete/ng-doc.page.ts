@@ -11,7 +11,7 @@ const CascadeDeletePage: NgDocPage = {
     mdFile: './index.md',
     route: 'cascade-delete',
     category: AdvancedCategory,
-    order: 5,
+    order: 1,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

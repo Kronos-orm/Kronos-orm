@@ -3,17 +3,17 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将指导您如何使用Kronos的级联查询功能。
+ * 本文将指导您如何使用Kronos的内置函数功能及自定义函数功能。
  * @status:success 新
  */
-const CascadeSelectPage: NgDocPage = {
-    title: `级联查询`,
+const CustomFunctionPage: NgDocPage = {
+    title: `自定义函数与方言`,
     mdFile: './index.md',
-    route: 'cascade-select',
+    route: 'custom-function',
     category: AdvancedCategory,
-    order: 7,
+    order: 9,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };
 
-export default CascadeSelectPage;
+export default CustomFunctionPage;

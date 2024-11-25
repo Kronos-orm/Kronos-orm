@@ -1,4 +1,4 @@
-{% import "../../../macros/macros-en.njk" as $ %}
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 ## 悲观锁

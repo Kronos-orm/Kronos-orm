@@ -1,8 +1,8 @@
 import {NgDocCategory} from '@ng-doc/core';
 
 const ClassDefinitionCategory: NgDocCategory = {
-	title: 'Table Class Definition',
-  order: 1,
+	title: 'Class Definition',
+  order: 8,
   route: "en/class-definition"
 };
 

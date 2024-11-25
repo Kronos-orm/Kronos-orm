@@ -3,8 +3,7 @@ import GettingStartedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * This article will guide you on how to get started with Kronos quickly, and you can find some sample projects [here](https://github.com/Kronos-orm?tab=repositories).
- * @status:success new
+ * 本文将指导您如何快速开始使用Kronos，你可以在[这里](https://github.com/Kronos-orm?tab=repositories)找到一些示例项目。
  */
 const QuickStartPage: NgDocPage = {
     title: `Quick Start`,

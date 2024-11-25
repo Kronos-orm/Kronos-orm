@@ -3,7 +3,7 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * This chapter describes how to query records from the database.
+ * 本章将介绍如何查询数据库中的记录。
  * @status:info coming soon
  */
 const SelectRecordsPage: NgDocPage = {

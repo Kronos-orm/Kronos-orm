@@ -1,4 +1,4 @@
-{% import "../../../macros/macros-en.njk" as $ %}
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 
 `KronosDataSourceWrapper`是一个接口，是对数据库操作的封装，它不关心具体的数据库连接细节，与平台无关，只关心数据库操作的逻辑：
 

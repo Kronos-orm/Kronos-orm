@@ -13,14 +13,19 @@ import {TranslocoPipe} from "@jsverse/transloco";
     TranslocoPipe
   ],
   template: `
-    <div pAnimateOnScroll enterClass="zoomin" class="card flex flex-row md:justify-content-between gap-3 animation-duration-1000 animation-ease-in-out">
-      <p-card pRipple [header]="'FEATURE_1' | transloco"/>
-      <p-card pRipple [header]="'FEATURE_2' | transloco"/>
-      <p-card pRipple [header]="'FEATURE_3' | transloco"/>
+    <div pAnimateOnScroll enterClass="zoomin" class="card flex flex-row flex-wrap md:justify-content-between md:align-items-stretch gap-3 animation-duration-1000 animation-ease-in-out">
+      <p-card class="flex-1 flex align-items-center justify-content-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_1' | transloco"/>
+      <p-card class="flex-1 flex align-items-center justify-content-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_2' | transloco"/>
+      <p-card class="flex-1 flex align-items-center justify-content-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_3' | transloco"/>
     </div>
   `,
   standalone: true,
-  styles: []
+  styles: [`
+    ::ng-deep .p-card {
+      width: 100%;
+      height: 100%;
+    }
+  `]
 })
 export class FeatureCardsComponent {
 }

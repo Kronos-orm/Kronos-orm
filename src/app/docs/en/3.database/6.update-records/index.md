@@ -1,4 +1,4 @@
-{% import "../../../macros/macros-en.njk" as $ %}
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 ## {{ $.title("set") }} 设置更新的字段和值
@@ -158,7 +158,7 @@ WHERE "id" = :id
 
 ## {{ $.title("where") }} 设置更新条件
 
-在Kronos中，我们可以使用`where`方法设置更新条件，此时Kronos会根据`where`方法设置的字段生成更新条件语句。
+在Kronos中，我们可以使用`where`方法设置更新条件，此时Kronos会根据`where`方法设置的字段生成更新{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
 
 ```kotlin group="Case 3" name="kotlin" icon="kotlin" {7-11}
 val user: User = User(
@@ -268,14 +268,13 @@ val user: User = User(
     name = "Kronos"
 )
 
-user.update { it.name }.where { (it - it.status).eq && it.status > 1 }.execute()
+user.update { it.name }.where { (it - it.name).eq && it.status > 1 }.execute()
 ```
 
 ```sql group="Case 3-2" name="Mysql" icon="mysql"
 UPDATE `user`
 SET `name` = :nameNew
 WHERE `id` = :id
-  and `name` = :name
   and `status` > :statusMin
 ```
 
@@ -283,7 +282,6 @@ WHERE `id` = :id
 UPDATE "user"
 SET "name" = :nameNew
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 
@@ -291,7 +289,6 @@ WHERE "id" = :id
 UPDATE "user"
 SET "name" = :nameNew
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 
@@ -299,7 +296,6 @@ WHERE "id" = :id
 UPDATE [user]
 SET [name] = :nameNew
 WHERE [id] = :id
-  and [name] = :name
   and [status] > :statusMin
 ```
 
@@ -307,7 +303,6 @@ WHERE [id] = :id
 UPDATE "user"
 SET "name" = :nameNew
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 

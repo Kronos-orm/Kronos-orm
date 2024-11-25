@@ -23,9 +23,9 @@ First:
 Suppose we have a simple user entity class:
 ```kotlin
 data class User(
-   val id: Int?
-   val name: String?
-   val email: String?
+    val id: Int? = null,
+    val name: String? = null,
+    val email: String? = null
 ): KPojo
 ```
 Using Code First, the ORM framework automatically generates a database table named `user` with the fields `id`, `name`

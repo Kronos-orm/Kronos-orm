@@ -1,49 +1,49 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 🖥 JDK, Kotlin versions and build tools
+## 🖥 JDK、Kotlin 版本及构建工具
 
 - **JDK** 8+
 - **Kotlin** 2.0.0+
 - **Maven** 3.6.3+ 或 **Gradle** 6.8.3+
 
 > **Warning**
-> **Please make sure that the kotlin plugin you use with your IDE supports kotlin 2.0.0 or later**.
+> **请确保您使用IDE的的kotlin插件支持kotlin 2.0.0或更高版本**
 >
-> If you fail to build with Maven in Intellij IDEA (or Android Studio), try enabling the following settings:
+> 如果您在Intellij IDEA（或Android Studio）中使用Maven构建失败，请尝试启用以下设置：
 >
 > `Settings` / `Build, Execution, Deployment` / `Build Tools` / `Maven` / `Runner` /
 `Delegate IDE build/run actions to Maven`
 
-## 📦 Adding Kronos Dependencies
+## 📦 添加Kronos依赖
 
-Simply introduce the `kronos-core` module and the `kronos-compiler-plugin` plugin to use Kronos in your project.
+仅需引入`kronos-core`模块和`kronos-compiler-plugin`插件即可在您的项目中使用Kronos。
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-core:0.0.1") // Provides basic ORM functionality
+    implementation("com.kotlinorm.kronos-core:0.0.1") // 供了基础的ORM功能
 }
 
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1" // Compile-time support is provided
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1" // 提供了编译时支持
 }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.1' // Provides basic ORM functionality
+    implementation 'com.kotlinorm:kronos-core:0.0.1' // 供了基础的ORM功能
 }
 
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1' // Compile-time support is provided
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1' // 提供了编译时支持
 }
 ```
 
 ```xml group="import" name="maven" icon="maven"
-<!--Add the plugin to your pom.xml file :-->
+<!--将插件添加到您的pom.xml文件中：-->
 <!--有关详细信息，请参考[https://kotlinlang.org/docs/all-open-plugin.html#maven]。-->
 <project>
-    <!--kronos-core Provides basic ORM functionality-->
+    <!--kronos-core提供了基础的ORM功能-->
     <dependencies>
         <dependency>
             <groupId>com.kotlinorm</groupId>
@@ -60,7 +60,7 @@ plugins {
                 <extensions>true</extensions>
                 <configuration>
                     <compilerPlugins>
-                        <!--kronos-maven-plugin provides compile-time support -->
+                        <!--kronos-maven-plugin提供了编译时支持-->
                         <plugin>kronos-maven-plugin</plugin>
                     </compilerPlugins>
                 </configuration>
@@ -77,28 +77,29 @@ plugins {
 </project>
 ```
 
-### jdbc data source wrapper (kronos-jdbc-wrapper)
-> **Note**
-> kronos-jdbc-wrapper is an optional module, this article uses it as an example to create a database connection, it provides a JDBC-based data source wrapper for the jvm platform, of course, you can use other wrapper plug-ins or write your own wrapper classes with third-party frameworks (such as SpringData, Mybatis, Hibernate, Jdbi , etc.) to use
+### jdbc数据源包装器(kronos-jdbc-wrapper)
 
-Introducing dependency:
+> **Note**
+> kronos-jdbc-wrapper是可选模块，本文以它为实例进行创建数据库连接，它提供了jvm平台基于JDBC的数据源包装器，当然，您可以使用其他包装器插件或自己编写包装类，并搭配第三方框架（如SpringData、Mybatis、Hibernate、Jdbi等）使用
+
+引入依赖：
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jdbc-wrappere:0.0.1") // Provides basic functions for database operations
+    implementation("com.kotlinorm.kronos-jdbc-wrappere:0.0.1") // 提供了数据库操作的基础功能
 }
 ```
 
 ```groovy group="importDriver" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1' // Provides basic functions for database operations
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1' // 提供了数据库操作的基础功能
 }
 ```
 
 ```xml group="importDriver" name="maven" icon="maven"
-<! -- Add the plugin to your pom.xml file: -->
+<!--将插件添加到您的pom.xml文件中：-->
 <project>
-    <! --kronos-jdbc-wrapper provides jdbc data source wrapper -->
+    <!--kronos-jdbc-wrapper提供了jdbc数据源包装器-->
     <dependencies>
         <dependency>
             <groupId>com.kotlinorm</groupId>
@@ -109,14 +110,14 @@ dependencies {
 </project>
 ```
 
-See {{ $.keyword("plugin/datasource-wrapper-and-third-part-framework", ["datasource-and-third-part-framework-extensions"]) }} for details on usage and custom wrappers }}.
+详细使用方法和自定义包装器请参考{{ $.keyword("plugin/datasource-wrapper-and-third-part-framework", ["数据源及三方框架扩展"]) }}。
 
-## 🔗 Configuration Database
+## 🔗 配置数据库
 
-Kronos supports a variety of databases, this article takes `Mysql database` with `commons-dbcp2`.
-connection pool as an example, for more information please refer to {{ $.keyword("database/connect-to-db", ["connect to database"]) }}.
+Kronos支持多种数据库，本文以`Mysql数据库`搭配`commons-dbcp2`
+连接池为例，更多信息请参考{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
 
-### Introduce relevant dependencies
+### 引入相关依赖
 
 ```kotlin group="importRelatedPackages" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -148,7 +149,7 @@ dependencies {
 </dependencies>
 ```
 
-### Configuring Database Connections
+### 配置数据库连接
 
 ```kotlin group="DataSourceConfig" name="Main.kt"
 import com.kotlinorm.Kronos
@@ -170,9 +171,9 @@ fun main() {
 }
 ```
 
-## ⚙️ global setting
+## ⚙️ 全局设置
 
-Kronos supports global settings such as table name policy, field name policy, creation time, update time, logical deletion, etc. Below is only a partial list, please refer to {{ $.keyword("getting-started/global-config", ["Global Settings"]) }} for details.
+Kronos支持表名策略、字段名策略、创建时间、更新时间、逻辑删除等全局设置，以下仅列出部分，详细请参考{{ $.keyword("getting-started/global-config", ["全局设置"]) }}。
 
 ```kotlin group="KronosConfig" name="Main.kt"
 import com.kotlinorm.Kronos
@@ -180,31 +181,31 @@ import java.time.ZoneId
 
 fun main() {
     Kronos.init {
-        // Table Name Strategy
+        // 表名策略
         tableNamingStrategy = LineHumpStrategy
-        // Field Name Strategy
+        // 字段名策略
         fieldNamingStrategy = LineHumpStrategy
-        // time zones
+        // 时区
         timeZone = ZoneId.systemDefault()
-        // Default date format
+        // 默认日期格式
         dateFormat = "yyyy-MM-dd HH:mm:ss"
-        // Create a time strategy
+        // 创建时间策略
         createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
-        // Update Time Strategy
+        // 更新时间策略
         updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
-        // Logical Deletion Strategy
+        // 逻辑删除策略
         logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
-        // Optimistic Lock Strategy
+        // 乐观锁策略
         optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
     }
 }
 ```
 
-When using other databases or using non-jvm platforms, you need to use the corresponding driver and configuration.
+当使用其他数据库或使用非jvm平台时，需要使用对应的驱动及配置。
 
-## 🎨 Writing entity classes
+## 🎨 编写实体类
 
-With Kronos, you can write entity classes in Kotlin, and Kronos will automatically generate database table structures based on the entity classes.
+通过Kronos，您可以使用Kotlin编写实体类，Kronos会自动根据实体类生成数据库表结构。
 
 ```kotlin group="KPojo" name="Director.kt"
 data class Director(
@@ -231,7 +232,7 @@ data class Movie(
     @Column("name")
     @ColumnType(CHAR)
     var name: String? = "",
-    var directorId: Long? = null,
+    var directorId: Long? = 0,
     @Reference(["directorId"], ["id"])
     var director: Director? = null,
     @LogicDelete
@@ -244,9 +245,9 @@ data class Movie(
 ) : KPojo
 ```
 
-## 🚀 Start using Kronos
+## 🚀 开始使用
 
-Congratulations, you have completed the basic configuration of Kronos and are now ready to start using Kronos.
+恭喜你，您已经完成了Kronos的基本配置，现在可以开始使用Kronos了。
 
 ```kotlin group="Kronos" name="Main.kt"
 fun main() {

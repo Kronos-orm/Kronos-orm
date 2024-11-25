@@ -4,135 +4,247 @@
 请确保您的KPojo具有正确的注解，以便Kronos能够正确识别表名、字段、索引等信息。
 
 > **Note**
-> 相关功能可可以通过`Kronos.dataSource(() -> KronosDataSourceWrapper)`或某个具体的数据源对象`KronosDataSourceWrapper`来调用。
+> 相关功能可可以通过`Kronos.dataSource(() -> KronosDataSourceWrapper)`或某个具体的数据源对象`KronosDataSourceWrapper`
+> 来调用。
 
-## 1. {{ $.title("table.exists") }} 表是否存在
+## 1. {{ $.title("exists(tableName)")}} 表是否存在
 
-- ### {{ $.title("table.exists(KPojo)") }}
+通过表名判断表是否存在
 
-  通过实体类判断表是否存在
+- **函数声明**
 
-  ```kotlin
-  dataSource.table.exists(user)
-  ```
+ ```kotlin
+ fun exists(tableName: String): Boolean
+ ```
 
-- ### {{ $.title("table.exists<KPojo>()") }}
+- **使用示例**
 
-  通过泛型判断表是否存在
+ ```kotlin
+ val exists = wrapper.table.exists("user")
+ ```
 
-   ```kotlin
-   dataSource.table.exists<User>()
-   ```
+- **接收参数**
 
-- ### {{ $.title("table.exists(vararg String)") }}
+{{ $.params([['tableName', '表名', 'String']]) }}
 
-  通过表名判断表是否存在
+- **返回值**
 
-   ```kotlin
-   dataSource.table.exists("user")
-   ```
+`Boolean` 表是否存在
 
-## 2. {{ $.title("table.createTable") }} 创建表
+{{ $.hr() }}
 
-- ### {{ $.title("table.createTable(KPojo)") }}
+## 2. {{ $.title("exists<T>(KPojo)")}} 表是否存在
 
-  通过实体类创建表
+- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
 
-   ```kotlin
-   dataSource.table.createTable(user)
-   ```
+{{ $.hr(50) }}
 
-- ### {{ $.title("table.createTable<KPojo>()") }}
+通过KPojo判断表是否存在
 
-  通过泛型创建表
+- **函数声明**
 
-   ```kotlin
-   dataSource.table.createTable<User>()
-   ```
+```kotlin
+fun <T : KPojo> exists(kPojo: T = new T()): Boolean
+```
 
-## 3. {{ $.title("table.truncateTable") }} 清空表
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
-- ### {{ $.title("table.truncateTable(KPojo)") }}
+- **使用示例**
 
-  通过实体类清空表
+```kotlin
+val exists = wrapper.table.exists(User())
+// 或
+val exists = wrapper.table.exists<User>()
+```
 
-   ```kotlin
-   dataSource.table.truncateTable(user)
-   ```
+- **接收参数**
 
-- ### {{ $.title("table.truncateTable<KPojo>()") }}
+{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
 
-  通过泛型清空表
+- **返回值**
 
-   ```kotlin
-   dataSource.table.truncateTable<User>()
-   ```
+`Boolean` - 表是否存在
 
-- ### {{ $.title("table.truncateTable(vararg String)") }}
+## 3. {{ $.title("createTable(KPojo)")}} 创建表
 
-  通过表名清空表
+- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
 
-   ```kotlin
-   dataSource.table.truncateTable("user")
-   ```
+{{ $.hr(50) }}
 
-## 4. {{ $.title("table.dropTable") }} 删除表
+通过实体类创建表
 
-- ### {{ $.title("table.dropTable(KPojo)") }}
+- **函数声明**
 
-  通过实体类删除表
+```kotlin
+fun createTable<T: KPojo>(kPojo: T = new T())
+```
 
-   ```kotlin
-   dataSource.table.dropTable(user)
-   ```
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
-- ### {{ $.title("table.dropTable<KPojo>()") }}
+- **使用示例**
 
-  通过泛型删除表
+```kotlin
+wrapper.table.createTable(User())
+// 或
+wrapper.table.createTable<User>()
+```
 
-    ```kotlin
-    dataSource.table.dropTable<User>()
-    ```
+- **接收参数**
 
-- ### {{ $.title("table.dropTable(vararg String)") }}
+{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
 
-  通过表名删除表
+{{ $.hr() }}
 
-    ```kotlin
-    dataSource.table.dropTable("user")
-    ```
+## 4. {{ $.title("truncateTable(tableName, restartIdentity)")}} 清空表
 
-## 5. {{ $.title("table.syncTable") }} 表结构同步和变更
+通过表名清空表
 
-- ### {{ $.title("table.syncTable(KPojo)") }}
+- **函数声明**
 
-  通过实体类同步表结构
+```kotlin
+fun truncateTable(tableName: String, restartIdentity: Boolean = true)
+```
 
-   ```kotlin
-   dataSource.table.syncTable(user)
-   ```
+- **使用示例**
 
-- ### {{ $.title("table.syncTable<KPojo>()") }}
+```kotlin
+wrapper.table.truncateTable("user")
+```
 
-  通过泛型同步表结构
+- **接收参数**
 
-     ```kotlin
-     dataSource.table.syncTable<User>()
-     ```
+{{ $.params([['tableName', '表名', 'String'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
 
-## 6. 动态建表
+{{ $.hr() }}
+
+## 5. {{ $.title("truncateTable(KPojo, restartIdentity)")}} 清空表
+
+- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+
+{{ $.hr(50) }}
+
+通过实体类清空表
+
+- **函数声明**
+
+```kotlin
+fun <T: KPojo> truncateTable(kPojo: T = new T(), restartIdentity: Boolean = true)
+```
+
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+
+- **使用示例**
+
+```kotlin
+wrapper.table.truncateTable(User())
+// 或
+wrapper.table.truncateTable<User>()
+```
+
+- **接收参数**
+
+{{ $.params([['kPojo', '实体对象', 'T', 'new T()'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
+
+{{ $.hr() }}
+
+## 6. {{ $.title("dropTable(tableName)")}} 删除表
+
+通过表名删除表
+
+- **函数声明**
+
+```kotlin
+fun dropTable(tableName: String)
+```
+
+- **使用示例**
+
+```kotlin
+wrapper.table.dropTable("user")
+```
+
+- **接收参数**
+
+{{ $.params([['tableName', '表名', 'String']]) }}
+
+{{ $.hr() }}
+
+## 7. {{ $.title("dropTable(KPojo)")}} 删除表
+
+- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+
+通过实体类删除表
+
+- **函数声明**
+
+```kotlin
+fun <T: KPojo> dropTable(kPojo: T = new T())
+```
+
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+
+- **使用示例**
+
+```kotlin
+wrapper.table.dropTable(User())
+// 或
+wrapper.table.dropTable<User>()
+```
+
+- **接收参数**
+
+{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+
+{{ $.hr() }}
+
+## 8. {{ $.title("syncTable(KPojo)")}} 表结构同步和变更
+
+- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+
+通过实体类同步表结构
+
+- **函数声明**
+
+```kotlin
+
+fun syncTable<T: KPojo>(kPojo: T = new T())
+```
+
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+
+- **使用示例**
+
+```kotlin
+wrapper.table.syncTable(User())
+// 或
+wrapper.table.syncTable<User>()
+```
+
+- **接收参数**
+
+{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+
+{{ $.hr() }}
+
+## 9. {{ $.title("getTableCreateSqlList")}} 动态建表
 
 部分情况下会存在动态建表的需求，此时可以通过`getTableCreateSqlList`方法动态获取建表语句并执行。
 
-**参数**：
-{{$.params([
-  ['dbType', '数据库类型', 'DBType'],
-  ['tableName', '表名', 'String'],
-  ['fields', '字段列表', 'List<Field>'],
-  ['indexes', '索引列表', 'List<KTableIndex>', '[]']
-])}}
+- **函数声明**
 
-```kotlin name="demo" icon="kotlin" {2,31}
+```kotlin
+fun getTableCreateSqlList(
+    dbType: DBType,
+    tableName: String,
+    fields: List<Field>,
+    indexes: List<KTableIndex> = emptyList()
+): List<String>
+```
+
+- **使用示例**
+
+```kotlin
+
 val listOfSql =
     getTableCreateSqlList(
         dbType = DBType.Mysql,
@@ -162,9 +274,20 @@ val listOfSql =
             )
         )
     )
-
+    
 listOfSql.forEach { db.execute(it) }
 ```
 
+- **接收参数**
+
+{{$.params([
+['dbType', '数据库类型', 'DBType'],
+['tableName', '表名', 'String'],
+['fields', '字段列表', 'List<Field>'],
+['indexes', '索引列表', 'List<KTableIndex>', '[]']
+])}}
+
+{{ $.hr() }}
+
 > **Warning**
-> 若需要对同一个实体对象连续执行多个数据库操作，建议不要使用泛型，以避免多次创建KPojo对象，产生不必要的开销。
+> 若需要对同一个实体对象连续执行多个数据库操作，建议不要使用`createTable<KPojo>()`的写法，而是使用`createTable(kPojo)`，以避免多次创建KPojo对象，产生不必要的开销。

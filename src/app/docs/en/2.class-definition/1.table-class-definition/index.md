@@ -1,9 +1,9 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Creating a Table Data Class
+## 创建数据表类
 
-Declaring a class as a datasheet class in Kronos is very simple, just make the class inherit from `KPojo`, here is a simple example:
+在Kronos中声明一个class为数据表类非常简单，只需要让该类继承`KPojo`即可，以下是一个简单示例：
 
 ```kotlin
 import com.kotlinorm.interface.KPojo
@@ -15,13 +15,40 @@ data class User(
 ) : KPojo
 ```
 
-In Kronos, we call such a class `KPojo`, which is a markup interface for marking a class as a Kronos data table class for generic operations. At the same time, kronos adds some properties and methods to the class at compile time to read data table information efficiently.
+在Kronos中，我们将这样的类称为`KPojo`，它是一个标记接口，用于标记一个类为Kronos数据表类进行泛型操作。同时，kronos会在编译期为类添加一些属性和方法，以便高效地读取数据表信息。
 
-We, recommend declaring the class as `data class` and adding **defaults** to it to make the data class more flexible for ORM operations.
+我们，推荐将类声明为`data class`并为其添加**默认值**，这样可以使数据类在ORM操作时更加灵活。
 
-Note that properties declared by the `var` keyword can only be modified in the `set` of **update** or **upsert**.
+注意，`var`关键词声明的的属性才能在**update**或**upsert**的`set`中修改。
 
-### Column annotations
+### 表注释
+
+Kronos支持为表添加注释，我们通过编译器插件读取您在类定义上的注释并在创建/同步表时添加到表的备注上，如：
+
+```kotlin
+// 添加表注释
+// 支持多行
+data class User
+
+data class User( // 添加表注释
+    val id: Int? = null,
+)
+
+/* 添加表注释 */
+data class User
+
+/*
+* 添加表注释
+* 支持多行
+前面可以不加“*”
+*/
+@Table("table_name")
+// 注解所在行将会被跳过
+data class User
+```
+类注释可以读取在类同一行的注释，如果没有定义在同一行的注释则会读取前面的注释（注解所在行不会被读取）。
+
+### 列注释
 
 Kronos支持为列添加注释，我们通过编译器插件读取您在属性定义上的注释并在创建/同步表时添加到列的备注上，如：
 
@@ -49,11 +76,11 @@ data class User(
 
 通常来说定义在属性同一行的注释会被优先读取，如果没有定义在同一行的注释则会读取前面的注释。
 
-### Using delegates to implement cascading many-to-many relationships across intermediate tables
+### 使用委托实现级联多对多跨中间表关系
 
 请参考 {{ $.keyword("advanced/cascade-definition", ["进阶用法", "使用委托实现级联多对多跨中间表关系"]) }}。
 
-### Using delegates to serialize and deserialize properties.
+### 使用委托代理序列化反序列化属性
 
 Kronos的序列化反序列化功能支持自动处理和委托处理两种方式，委托处理方式需要在class内声明，形如：
 
@@ -67,7 +94,7 @@ data class User(
     var list: List<String>? by serializable(::listStr)
 }
 ```
-### Creating objects for database operations using anonymous objects
+### 使用匿名类创建对象进行数据库操作
 
 在Kronos中，我们可以通过创建匿名类对象灵活地进行数据库操作，如：
 
@@ -81,7 +108,7 @@ if(!dataSource.table.exists(obj)) {
 obj.insert().execute()
 ```
 
-## Setting Table Properties with Annotations
+## 使用注解设置表属性
 
 在Kronos中，我们可以通过注解来设置表的属性，如：**表名**、**列名**、**列类型**、**列长度**、**主键**、**自增**、**唯一键**、**索引**、**默认值**、**非空**等。
 Kronos还提供了**级联**、**序列化/反序列化**、**日期格式化**、**逻辑删除**、**创建时间**、**更新时间**、**乐观锁等**功能。
@@ -214,4 +241,4 @@ CREATE UNIQUE INDEX idx_username ON "tb_user" ("name");
 CREATE UNIQUE INDEX idx_multi ON "tb_user" ("id", "name");
 ```
 
-Click {{ $.keyword("class-definition/annotation-config", ["annotation-config"]) }} to see more annotation settings.
+点击{{ $.keyword("class-definition/annotation-config", ["注解配置"]) }}查看更多注解设置。

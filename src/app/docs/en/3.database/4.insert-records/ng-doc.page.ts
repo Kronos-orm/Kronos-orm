@@ -3,7 +3,7 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * This chapter describes how to insert records into the database.
+ * 本章描述如何向数据库插入记录。
  * @status:info coming soon
  */
 const InsertRecordsPage: NgDocPage = {

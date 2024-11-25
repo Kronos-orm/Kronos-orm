@@ -2,7 +2,7 @@ import {NgDocPage} from '@ng-doc/core';
 import PluginCategory from "../ng-doc.category";
 
 /**
- * Kronos supports creating or importing plugins to add more database type support.
+ * Kronos支持创建或引入插件增加更多数据库类型支持。
  * @status:info coming soon
  */
 const DatabaseSupportPage: NgDocPage = {

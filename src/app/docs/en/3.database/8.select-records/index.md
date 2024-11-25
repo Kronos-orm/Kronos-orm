@@ -1,4 +1,4 @@
-{% import "../../../macros/macros-en.njk" as $ %}
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 ## 查询所有记录
@@ -245,7 +245,7 @@ WHERE "id" = :id and "name" = :name
 
 ## {{ $.title("where") }}设置查询条件
 
-`where`方法用于设置查询条件，此时Kronos会根据`where`方法设置的字段生成查询条件语句。
+`where`方法用于设置查询条件，此时Kronos会根据`where`方法设置的字段生成查询{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
 
 ```kotlin group="Case 4" name="kotlin" icon="kotlin" {7, 9-11}
 val user: User = User(
@@ -378,14 +378,13 @@ val user: User = User(
     name = "Kronos"
 )
 
-user.select().where { (it - it.status).eq && it.status == 1 }.queryOneOrNull()
+user.select().where { (it - it.name).eq && it.status == 1 }.queryOneOrNull()
 ```
 
 ```sql group="Case 4-3" name="Mysql" icon="mysql"
 SELECT `id`, `name`, `age`
 FROM `user`
 WHERE `id` = :id
-  and `name` = :name
   and `status` > :statusMin
 ```
 
@@ -393,7 +392,6 @@ WHERE `id` = :id
 SELECT "id", "name", "age"
 FROM "user"
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 
@@ -401,7 +399,6 @@ WHERE "id" = :id
 SELECT "id", "name", "age"
 FROM "user"
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 
@@ -409,7 +406,6 @@ WHERE "id" = :id
 SELECT [id], [name], [age]
 FROM [user]
 WHERE [id] = :id
-  and [name] = :name
   and [status] > :statusMin
 ```
 
@@ -417,7 +413,6 @@ WHERE [id] = :id
 SELECT "id", "name", "age"
 FROM "user"
 WHERE "id" = :id
-  and "name" = :name
   and "status" > :statusMin
 ```
 

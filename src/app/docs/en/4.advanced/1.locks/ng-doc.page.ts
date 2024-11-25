@@ -3,11 +3,11 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * This article will guide you on how to use the **LOCK** feature of Kronos.
+ * 本文将指导您如何使用Kronos的**锁**功能。
  * @status:info coming soon
  */
 const SomeLocksPage: NgDocPage = {
-  title: `Locking`,
+  title: `Locks`,
   mdFile: './index.md',
   route: "some-locks",
   order: 1,

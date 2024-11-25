@@ -1,14 +1,14 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Spring示例
+## Spring-data-jdbc集成示例
 
 以下是一个使用Springboot + Kronos + JDK 17 + Maven + Kotlin 2.0.0 的示例，演示了如何将Kronos与Spring框架结合使用。
 
 其中包含如何创建一个基于`spring-data-jdbc`的包装类，从而无需引入`kronos-jdbc-wrapper`等额外依赖，仅通过`kronos-core`
 即可实现数据库操作的功能。
 
-> [https://github.com/Kronos-orm/kronos-spring-demo](https://github.com/Kronos-orm/kronos-spring-demo)
+> [kronos-example-spring-boot/SpringDataWrapper](https://github.com/Kronos-orm/kronos-example-spring-boot/blob/main/src/main/kotlin/com/kotlinorm/example/springboot/common/SpringDataWrapper.kt)
 
 ### 1.依赖项
 

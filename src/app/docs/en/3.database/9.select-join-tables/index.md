@@ -1,8 +1,7 @@
-{% import "../../../macros/macros-en.njk" as $ %}
-
-This chapter describes how to query multiple tables for correlated data (perhaps you'd also like to take a look at {{ $.keyword("advanced/reference-select", ["cascade query"]) }}).
-
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
+本章将介绍如何查询多表关联数据（或许您也想看看{{ $.keyword("advanced/reference-select", ["级联查询"]) }}）。
 
 ## 查询多表关联数据
 
@@ -101,7 +100,7 @@ val users: List<User> =
 
 ## {{ $.title("where") }}指定查询条件
 
-在Kronos中，我们可以使用`where`方法指定查询条件。
+在Kronos中，我们可以使用`where`方法指定查询{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =

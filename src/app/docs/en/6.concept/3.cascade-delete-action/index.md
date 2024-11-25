@@ -19,3 +19,5 @@ The cascade delete operation supports the following strategies:
 ])
 
 }}
+
+For details on how to use cascade deletion, please refer to {{ $.keyword("advanced/cascade-delete", ["Cascade Deletion"]) }}。

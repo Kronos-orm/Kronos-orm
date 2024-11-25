@@ -1,4 +1,4 @@
-{% import "../../../macros/macros-en.njk" as $ %}
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 在Kronos中，我们可以使用`KPojo.upsert().execute()`方法用于向数据库中插入或更新记录。

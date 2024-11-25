@@ -2,11 +2,11 @@ import {NgDocPage} from '@ng-doc/core';
 import PluginCategory from "../ng-doc.category";
 
 /**
- * Kronos supports the creation or introduction of language pack plugins to define Kronos' built-in text prompts.
+ * Kronos支持创建或引入语言包插件定义Kronos内置的文字提示。
  * @status:info coming soon
  */
 const LanguagePage: NgDocPage = {
-	title: `Language pack plugin`,
+	title: `Language Plugin`,
 	mdFile: './index.md',
   category: PluginCategory
 };

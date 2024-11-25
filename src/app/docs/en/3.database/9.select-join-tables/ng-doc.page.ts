@@ -6,7 +6,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
  * @status:info coming soon
  */
 const SelectJoinTablesPage: NgDocPage = {
-    title: `Join Query`,
+    title: `Select Join Tables`,
     mdFile: './index.md',
     route: "select-join-tables",
     category: DatabaseCategory,

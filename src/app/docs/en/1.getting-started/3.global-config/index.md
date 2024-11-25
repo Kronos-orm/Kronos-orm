@@ -1,43 +1,43 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Default Data Source Settings
+## 默认数据源设置
 
-If you do not specify a data source during database operations, kronos automatically uses this default data source.
+在数据库操作时，若不指定数据源，kronos会自动使用该默认数据源。
 
-The data source type is `KronosDataSourceWrapper`, and the creation method can be found at {{ $.keyword("database/connect-to-db", ["Connect to database"]) }}.
+数据源类型为`KronosDataSourceWrapper`，创建方法可参考：{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
 
 ```kotlin
 Kronos.dataSource = { yourDataSourceWrapper }
 ```
 
 > **Warning**
-> The default data source defaults to `NoneDataSourceWrapper`, be sure to modify your configuration file before using it.
+> 默认数据源的默认值为`NoneDataSourceWrapper`，在使用前请务必修改您的配置文件。
 >
 
 > **Warning**
-> Kronos supports multiple data sources and dynamic data sources.
+> Kronos支持多数据源与动态数据源
 >
-> **Multiple data sources**: for specific operations, such as KPojo.update.execute(wrapper), other `KronosDataSourceWrapper` can be passed in the `execute` function.
-> instances in the `execute` function, thus using other data sources.
+> **多数据源**：在具体操作时，如KPojo.update.execute(wrapper)，可以在`execute`函数中传入其他`KronosDataSourceWrapper`
+> 实例，从而使用其他的数据源。
 >
-> **Dynamic data source**: `Kronos.dataSource` is a function where you can implement your logic to return different instances of the data source, implementing a dynamic data source.
+> **动态数据源**：`Kronos.dataSource`是一个函数，您可以在该函数中实现您的逻辑返回不同的数据源实例，实现动态数据源。
 
-## Global table name strategy
+## 全局表名策略
 
-The table name policy means that by default (no annotated configuration), kronos automatically generates a **table name** for the database based on the **Kotlin class name**, e.g. `User` -> `user`.
+表名策略指在默认情况下（无注解配置），kronos自动根据**Kotlin类名**生成数据库的**表名**，如：`User` -> `user`。
 
-**parameters**：
-{{$.params([['tableNamingStrategy', 'Global Table Name Strategy', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
+**参数**：
+{{$.params([['tableNamingStrategy', '全局表名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
 
-Creating a custom table naming strategy `KronosNamingStrategy` is detailed in: {{ $.keyword("concept/naming-strategy", ["concept", "naming-strategy"]) }}.
+创建来自定义表名策略`KronosNamingStrategy`详见：{{ $.keyword("concept/naming-strategy", ["概念","命名策略"]) }}。
 
-We **by default** provide both `LineHumpNamingStrategy` and `NoneNamingStrategy` **table name strategies**:
+我们**默认**提供了`LineHumpNamingStrategy`和`NoneNamingStrategy`**两种表名策略**：
 
-**1. {{ $.title("LineHumpNamingStrategy") }} underscore/hump naming strategy**
+ **1. {{ $.title("LineHumpNamingStrategy") }}下划线/驼峰命名策略**
 
-This policy converts kotlin class names to underscore-separated lowercase strings, e.g. `ADataClass` -> `a_data_class`
-This strategy converts database table/column names to camel names, e.g. `user_name` -> `userName`.
+该策略将kotlin类名转换为下划线分隔的小写字符串，如：`ADataClass` -> `a_data_class`
+，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
 
 ```kotlin
 Kronos.init {
@@ -45,20 +45,20 @@ Kronos.init {
 }
 ```
 
-**2. {{ $.title("NoneNamingStrategy") }} none naming strategy**
+ **2. {{ $.title("NoneNamingStrategy") }}无命名策略**
 
-This strategy leaves kotlin class names as they are, e.g. `ADataClass` -> `ADataClass`, and database table/column names as they are, e.g. `user_name` -> `user_name`.
+该策略将kotlin类名保持原样，如：`ADataClass` -> `ADataClass`，将数据库表/列名保持原样，如：`user_name` -> `user_name`。
 
-By default, kronos uses the `NoneNamingStrategy` table name strategy.
+默认情况下，kronos使用的就是`NoneNamingStrategy`表名策略。
 
-## Global column name strategy
+## 全局列名策略
 
-Similar to the global table name strategy, the column name strategy means that by default, kronos automatically generates **column names** based on the **property name** of the Kotlin class, e.g. `classId` -> `class_id`.
+同全局表名策略类似，列名策略指在默认情况下，kronos自动根据Kotlin类的**属性名**生成**列名**，如：`classId` -> `class_id`。
 
-**Parameters**:
-{{$.params([['fieldNamingStrategy', 'Global column name strategy', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
+**参数**：
+{{$.params([['fieldNamingStrategy', '全局列名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
 
-The column name strategy class is common to the table name strategy and is set up in the following way:
+列名策略类与表名策略通用，设置方式为：
 
 ```kotlin
 Kronos.init {
@@ -66,168 +66,239 @@ Kronos.init {
 }
 ```
 
-## Create time strategy
+## 创建时间策略
 
-Used to set the creation time field for all tables.
+用于设置所有表的创建时间字段。
 
-**Parameters**:
+**参数**：
 {{$.params([
-['createTimeStrategy',
-'Create time strategy with information on <b>whether to turn on</b>, <b>kotlin attribute names</b> and <b>database column names</b>',
-'KronosCommonStrategy',
-'KronosCommonStrategy(false, Field("createTime"))']
+    ['createTimeStrategy',
+    '创建时间策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+    'KronosCommonStrategy',
+    'KronosCommonStrategy(false, Field("createTime"))']
 ])}}
 
-Customize the creation of a time strategy by creating a `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "common strategy"]) }}).
+通过创建`KronosCommonStrategy`自定义创建时间策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
-The global **default** for creating time policies is turned off** and needs to be turned on manually.
+创建时间策略的全局**默认关闭**，需要手动开启。
 
 ```kotlin
-Kronos.createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
+Kronos.init {
+    createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
+}
 ```
 
 > **Note**
-> After setting the creation time strategy globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("class-definition/annotation-config", ["Annotation Settings","@CreateTime Create Time Column"]) }}.
+> 全局设置创建时间策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@CreateTime创建时间列"]) }}覆盖全局设置。
 
-## Update time strategy
+## 更新时间策略
 
-Used to set the update time field for all tables (**whether on**, **kotlin attribute name** and **database column name**).
+用于设置所有表的更新时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-**Parameters**:
+**参数**：
 {{$.params([
 ['updateTimeStrategy',
-'Update time strategy with information on <b>whether to turn on</b>, <b>kotlin attribute names</b> and <b>database column names</b>',
+'更新时间策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
 'KronosCommonStrategy',
 'KronosCommonStrategy(false, Field("updateTime"))']
 ])}}
 
-Customize the update time strategy by creating a `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "common strategy"]) }}).
+通过创建`KronosCommonStrategy`自定义更新时间策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
-The update time strategy is turned off by global default and needs to be turned on manually.
+更新时间策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
+Kronos.init {
+    updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
+}
 ```
 
 > **Note**
-> After setting the logic update time policy globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("class-definition/annotation-config", ["annotation-config", "@UpdateTime Update Time Column"]) }}.
+> 全局设置逻更新时间策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@UpdateTime更新时间列"]) }}覆盖全局设置。
 
-## Logical deletion policy
+## 逻辑删除策略
 
-Used to set logical delete fields for all tables (**whether on**, **kotlin attribute name** and **database column name**).
+用于设置所有表的逻辑删除字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-**Parameter**:
-{{$.params([['logicDeleteStrategy', 'KronosCommonStrategy', 'KronosCommonStrategy(false, "deleted")']]) }}
+**参数**：
+{{$.params([['logicDeleteStrategy', '逻辑删除策略', 'KronosCommonStrategy', 'KronosCommonStrategy(false, "deleted")']])}}
 
-Customize the logical deletion strategy by creating a `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "common strategy"]) }}).
+通过创建`KronosCommonStrategy`自定义逻辑删除策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
-The Logical Deletion Policy is turned off by global default and needs to be turned on manually.
+逻辑删除策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+Kronos.init {
+    logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+}
 ```
 
 > **Note**
-> After setting the logic deletion policy globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("class-definition/annotation-config", ["Annotation Settings","@LogicDelete Logic Delete Columns"]) }}.
+> 全局设置逻辑删除策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@LogicDelete逻辑删除列"]) }}覆盖全局设置。
 
-## Optimistic locking (versioning) strategy
+## 乐观锁（版本）策略
 
-Used to set the optimistic lock version field for all tables (**whether it is on**, **kotlin attribute name** and **database column name**).
+用于设置所有表的乐观锁版本字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
 
-**Parameters**:
+**参数**：
 {{$.params([
 ['optimisticLockStrategy',
-'Optimistic locking (versioning) policy with information on <b>whether to turn on</b>, <b>kotlin attribute name</b> and <b>database column name</b>',
+'乐观锁（版本）策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
 'KronosCommonStrategy',
 'KronosCommonStrategy(false, Field("version"))']
 ])}}
 
-Customize the optimistic locking (versioning) strategy by creating a `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concepts", "common strategy"]) }}).
+通过创建`KronosCommonStrategy`自定义乐观锁（版本）策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
 
-The optimistic locking strategy is turned off by global default and needs to be turned on manually.
+乐观锁策略的全局默认关闭，需要手动开启。
 
 ```kotlin
-Kronos.optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
+Kronos.init {
+    optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
+}
 ```
 
 > **Note**
-> After setting the optimistic locking policy globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("class-definition/annotation-config", ["Annotation Settings","@Version Optimistic Locking (Version) Column"]) }}.
+> 全局设置乐观锁策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@Version乐观锁（版本）列"]) }}覆盖全局设置。
 
-## Default datetime format
+## 默认日期时间格式
 
-Used to specify the default format for date formatting, following the `ISO 8601` specification, defaulting to `yyyy-MM-dd HH:mm:ss`.
+用于指定日期格式化的默认格式，遵循`ISO 8601`规范，默认为`yyyy-MM-dd HH:mm:ss`。
 
-**Parameters**:
-{{$.params([['defaultDateFormat', 'Default Date Time Format', 'String', 'yyyy-MM-dd HH:mm:ss']])}}
+**参数**：
+{{$.params([['defaultDateFormat', '默认日期时间格式', 'String', 'yyyy-MM-dd HH:mm:ss']])}}
 
-Kronos uses `yyyy-MM-dd HH:mm:ss` to format the date/time by default, you can change the default format by the following ways:
+Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
 
 ```kotlin
-Kronos.defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
+Kronos.init {
+    defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
+}
 ```
 
 > **Note**
-> After setting the default date format globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("class-definition/annotation-config", ["Annotation Settings", "@DateTimeFormat date time format"]) }}.
+> 全局设置默认日期格式后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置", "@DateTimeFormat日期时间格式"]) }}覆盖全局设置。
 
-## Default time zone
+## 默认时区
 
-Used to specify the default time zone, following the `ISO 8601` specification, when creating time, updating time and formatting date/time.
+用于指定默认时区，遵循`ISO 8601`规范，在创建时间、更新时间及格式化日期/时间时使用。
 
-**Parameters**:
-{{$.params([['timeZone', 'Default Time Zone', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
+**参数**：
+{{$.params([['timeZone', '默认时区', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
 
-Kronos uses the current system time zone by default. You can change the default time zone by doing the following:
+Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
 
 ```kotlin
-Kronos.timeZone = ZoneId.of("UTC")
-Kronos.timeZone = ZoneId.of("Asia/Shanghai")
-Kronos.timeZone = ZoneId.systemDefault()
-Kronos.timeZone = ZoneId.of("GMT+8")
+Kronos.init {
+    timeZone = ZoneId.of("UTC")
+    timeZone = ZoneId.of("Asia/Shanghai")
+    timeZone = ZoneId.systemDefault()
+    timeZone = ZoneId.of("GMT+8")
+}
 ```
 
-## No-value strategy
+## 无值策略
 
-Used to set the policy for generating SQL statements when the value in `where`/`having`/`on` etc. conditional statements is `null` by global default.
+用于设置全局默认条件下，当`where`/`having`/`on`等条件语句中的值为`null`时，生成SQL语句的策略。
 
 > **Note**
-> For example, in a query scenario where a condition has a value of null you may want to ignore the query condition or convert it to a condition such as `is null`, `is not null` etc.
-> `NoValueStrategy` strategy for handling `null` value conditions in different scenarios
+> 如在查询场景下，条件值为null时可能想要忽略该查询条件，或将其转为`is null`，`is not null`等条件。
+> `NoValueStrategy`策略用于处理在不同场景下的`null`值条件
 
 > **Alert**
-> Note that if you are customizing the no-value policy, use the `Ignore` policy with caution during `DELETE` and `UPDATE` operations to avoid full table deletions or full table updates.
+> 注意，如果您正在自定义无值策略，在`DELETE`和`UPDATE`操作中，请谨慎使用`Ignore`策略，以免造成全表删除或全表更新。
 
-**Parameters**:
-{{$.params([['noValueStrategy', 'strategy without value', 'NoValueStrategy', 'DefaultNoValueStrategy']])}}
+**参数**：
+{{$.params([['noValueStrategy', '无值策略', 'NoValueStrategy', 'DefaultNoValueStrategy']])}}
 
-The `NoValueStrategy` strategy accepts two parameters, the type of operation (`SELECT`/`UPDATE`/`DELETE`) and the statement condition, and returns the `NoValueStrategyType`, as detailed in:{{ $.keyword("concept/no-value-strategy", ["concept", "no-value-strategy"])}}.
+`NoValueStrategy`策略接受操作类型（`SELECT`/`UPDATE`/`DELETE`）和语句条件两个参数，返回`NoValueStrategyType`，详见：{{ $.keyword("concept/no-value-strategy", ["概念","无值策略"]) }}。
 
-## Serialization Deserialization Processor
+```kotlin
+Kronos.init {
+    noValueStrategy = YourCustomNoValueStrategy()
+}
+```
 
-Deserialize strings in the database to objects at query time, and automatically serialize objects when inserting into the database.
+## 序列化反序列化处理器
 
-**Parameters**:
-{{$.params([['serializeProcessor', 'Serialization Deserialization Processor', 'KronosSerializeProcessor', 'NoneSerializeProcessor']])}}
+将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
 
-By creating`KronosSerializeProcessor`Custom Serialization Parser，for further details, refer to：{{ $.keyword("concept/serialize-processor", ["Automatic Serialization and Deserialization"])}}。
+**参数**：
+{{$.params([['serializeResolver', '序列化反序列化处理器', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
 
-For example, a serialization parser can be implemented by introducing the `GSON` library:
+通过创建`KronosSerializeResolver`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"])}}。
 
-```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
-object GsonProcessor : KronosSerializeProcessor {
-    // Serializing Objects with GSON
+如可以通过引入`GSON`库来实现序列化解析器：
+
+```kotlin group="GsonResolver" name="Main.kt" icon="kotlin"
+Kronos.init {
+    serializeResolver = GsonResolver
+}
+```
+
+```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
+object GsonResolver : KronosSerializeResolver {
+    // 使用GSON序列化对象
     override fun serialize(obj: Any): String {
         return Gson().toJson(obj)
     }
     
-    // Deserializing Objects with GSON
+    // 使用GSON反序列化对象
     override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
         return Gson().fromJson(serializedStr, kClass.java)
     }
 }
 ```
 
-```kotlin group="GsonProcessor" name="KronosConfig.kt" icon="kotlin"
-Kronos.serializeProcessor = GsonProcessor
+这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
+
+## 日志输出路径及开关
+
+用于设置全局默认条件下，日志输出的路径及开关。
+
+- 当`logPath`为空时，关闭日志输出。
+- 当`logPath`不为空时，开启日志输出，日志输出路径为`logPath`内的所有路径，`console`为控制台输出。
+
+**参数**：
+{{$.params([['logPath', '日志输出路径', 'List<String>', 'emptyList()']])}}
+
+```kotlin
+Kronos.init {
+    logPath = listOf("your/log/path")
+}
 ```
 
-Here we are using `GSON` library to implement serialization deserialization parser, you can use any library you like like like `Kotlinx.serialization`, `Jackson`, `Moshi`, `FastJson` etc.
+Kronos默认开启日志输出，并输出到控制台。
+
+## 关闭智能值转换
+
+Kronos在进行数据操作时，会自动将预期值与实际值进行智能转换，如`Int`与`Long`、`String`等等，详见：{{ $.keyword("concept/value-transformer", ["概念", "值转换器"]) }}。
+
+以下是一个简单的例子，展示了智能值转换的功能：
+    
+```kotlin
+data class User(
+    var id: Int? = null,
+    var name: String? = "",
+    var createTime: kotlinx.datetime.LocalDateTime? = null
+)
+
+val mapOfUser = mapOf("id" to 1L, "name" to "Kronos", "createTime" to "2023-10-17T10:00:00")
+
+val user = mapOfUser.mapperTo<User>()
+// ❌ mapperTo函数默认不使用智能值转换，此时会抛出异常
+
+val user = mapOfUser.safeMapperTo<User>()
+// ✅ safeMapperTo函数默认使用智能值转换，此时会自动将1L转为Int，将"2023-10-17T10:00:00"转为LocalDateTime
+
+```
+
+Kronos默认开启`getTypeSafeValue`以及`safeMapperTo`函数进行智能值转换。
+
+Kronos的值转换功能**不使用反射**，而是通过编译器插件生成的代码来实现，这样可以避免反射带来的性能损耗，但是此功能仍然可能会带来一些性能损耗，如果不需要，您可以通过以下方式**关闭智能值转换**：
+
+```kotlin
+Kronos.init {
+    strictSetValue = true
+}
+```

@@ -3,11 +3,8 @@ import GettingStartedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 import {FeatureCardsComponent} from "../../../../components/feature-cards.component";
 
-/**
- * @status:success new
- */
 const WelcomePage: NgDocPage = {
-    title: `Welcome to Kronos`,
+    title: `Introduce`,
     mdFile: './index.md',
     route: "introduce",
     category: GettingStartedCategory,

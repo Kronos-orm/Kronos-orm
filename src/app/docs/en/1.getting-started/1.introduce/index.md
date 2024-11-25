@@ -1,11 +1,12 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-# What is Kronos
+# What is Kronos?
+Kronos is a modern ORM framework designed for Kotlin based on the compiler plugin, which is suitable for both backend and mobile applications, support multi-database. Powerful, high performance, easy to use.
 
-Kronos is an easy-to-use, high-performance, modern **ORM** framework for kotlin based on KCP (**Compiler Plugin**), which currently supports both **JVM** and **Android** platforms (please move to Github to see our support plans for KMM).
+We support both {{ $.noun("Code First") }} and {{ $.noun("Database First") }} schemas, which provide **auto-creation of database table structures, auto-synchronization, as well as support for table structures, indexes and code generation**.
 
-We support {{ $.noun("Code First") }} and {{ $.noun("Database First") }} modes, providing ** automatic creation and automatic synchronization of database table structure, and support for table structure, index ** and code generation.
+KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has powerful expressive power and concise , semantic writing to make the operation of the database has become more simple.
 
 ```mermaid
 graph LR
@@ -22,18 +23,19 @@ graph LR
     A --> K[Kronos-logging and Other Plugins]
 ```
 
-# Why use Kronos
+# Why Kronos?
 
-**Kronos** developed for Kotlin, with the expression tree parsing support implemented in KCP and kotlin's generics and
-higher-order functions, Kronos provides **super-expressive, concise, and semantic** writing that makes manipulating
-databases much easier.
-Based on the Code First philosophy, we provide **automatic creation of database table structures, automatic
-synchronization, and support for table structures, indexes** and other operations.
-At the same time through the compiler plug-in , we realized to provide a reflection-free Pojo and Map interconversion
-scheme.
-
-*Kronos* cascade operations , cross-table cross-library query greatly improves the development efficiency , and based on
-the kotlin co-processing mechanism greatly improves the high concurrency performance .
+* Utilizes the **entire ecosystem and resources** of the JVM platform, such as **database drivers and logging frameworks**, with potential future support for Kotlin Multiplatform.
+* **Powered by Kotlin compiler plugins and coroutines**, with **NO reflection** used, Kronos delivers unmatched **high-performance** database operations.
+* Supports most **mainstream databases** and allows **freely adding database extensions through plugins**.
+* **Concise and expressive writing, supporting Kotlin native syntax** `==`, `>`, `<`, `in`, etc., instead of .eq, .gt, .lt, etc.
+* Strong type checking.
+* Supports **transactions**, **complex cascading operations without foreign keys (one-to-one, one-to-many, many-to-many)**, **serialization and deserialization**, **cross-database queries**, and **database table/index/remarks creation and structure synchronization**, etc.
+* Supports **Logical Deletion**, **Optimistic Lock**, **Creation Time**, **Update Time**, and offers flexible customization settings.
+* **Easily integrate with any third-party framework** such as `Spring`, `Ktor`, `Vert.x`, `Solon`, etc. See more information in the sample projects plz.
+* **Native SQL database manipulation based on named parameters**.
+* Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **NO reflection, near-zero overhead**.
+* Data classes can be treated as database table models, **significantly reducing additional class definitions**.
 
 # Simple examples
 
@@ -53,7 +55,7 @@ val user: User = User(
 )
 
 // Create the table if it does not exist, otherwise synchronize the table structure, including table columns, indexes, notes, etc.
-dataSource.table.sync(user)
+dataSource.table.syncTable(user)
 
 // Insert data
 user.insert().execute()

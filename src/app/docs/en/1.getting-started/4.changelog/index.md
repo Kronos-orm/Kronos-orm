@@ -1,10 +1,11 @@
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-`Kronos` strictly follows the Semantic Versioning 2.0.0 semantic versioning specification.
+`Kronos` 严格遵循 Semantic Versioning 2.0.0 语义化版本规范。
 
-- **Current Version:** `0.0.1-SNAPSHOT`
+- **当前版本:** `0.0.1-SNAPSHOT`
 
 > **Note**
-> The version is for development and will not be released to the production environment.
+> 版本为开发阶段，不会发布到生产环境。
 >
-> If you wish, you can use the latest version for testing.
+> 若您有意愿，可以使用最新版本来测试。

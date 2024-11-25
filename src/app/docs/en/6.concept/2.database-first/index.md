@@ -27,11 +27,12 @@ developers to use the class in their code to manipulate the database.
 
 ```kotlin
 data class User(
-    val id: Int,
-    val name: String,
-    val email: String
+    val id: Int? = null,
+    val name: String? = null,
+    val email: String? = null
 ): KPojo
 ```
+[Code Generator (Home/Resource/Code Generator)](/)
 
 ### Scenarios
 

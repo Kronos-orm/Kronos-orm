@@ -11,7 +11,7 @@ const CascadeUpsertPage: NgDocPage = {
     mdFile: './index.md',
     route: 'cascade-upsert',
     category: AdvancedCategory,
-    order: 8,
+    order: 6,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

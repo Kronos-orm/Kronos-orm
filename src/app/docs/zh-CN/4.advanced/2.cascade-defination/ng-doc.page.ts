@@ -11,7 +11,7 @@ const CascadeDefinitionPage: NgDocPage = {
     mdFile: './index.md',
     route: 'cascade-definition',
     category: AdvancedCategory,
-    order: 3,
+    order: 2,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

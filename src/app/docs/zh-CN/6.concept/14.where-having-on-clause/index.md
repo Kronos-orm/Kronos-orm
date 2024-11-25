@@ -40,6 +40,9 @@ kronos支持以下kotlin操作符用于构建条件表达式：
 > kronos不限制表达式的左右操作数顺序, 如`it.age > 18`和`18 < it.age`是等价的。
 > 如果需要取对象的属性值，请使用{{ $.keyword("database/where-having-on-clause", ["KPojo.xxx.value 获取字段值"]) }}。
 
+> **Warning**
+> `?.`、`?:`等操作符在`xxx.value`或`xxx.asSql`以外的情况下使用会导致无法正确生成条件表达式，如`it.school?.name.eq`、`it.name ?: "Kronos".eq`等，您可以使用`!!.`来进行二级调用，如`it.school!!.name.eq`。
+> 
 ## 条件函数
 
 ### 相等判断

@@ -47,7 +47,7 @@
 fun <T : KPojo> exists(kPojo: T = new T()): Boolean
 ```
 
-<small>_{{ $.keyword("concept/kpojo-generic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
@@ -79,7 +79,7 @@ val exists = wrapper.table.exists<User>()
 fun createTable<T: KPojo>(kPojo: T = new T())
 ```
 
-<small>_{{ $.keyword("concept/kpojo-generic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
@@ -131,7 +131,7 @@ wrapper.table.truncateTable("user")
 fun <T: KPojo> truncateTable(kPojo: T = new T(), restartIdentity: Boolean = true)
 ```
 
-<small>_{{ $.keyword("concept/kpojo-generic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
@@ -181,7 +181,7 @@ wrapper.table.dropTable("user")
 fun <T: KPojo> dropTable(kPojo: T = new T())
 ```
 
-<small>_{{ $.keyword("concept/kpojo-generic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
@@ -210,7 +210,7 @@ wrapper.table.dropTable<User>()
 fun syncTable<T: KPojo>(kPojo: T = new T())
 ```
 
-<small>_{{ $.keyword("concept/kpojo-generic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 

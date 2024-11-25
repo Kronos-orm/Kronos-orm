@@ -272,7 +272,7 @@ Kronos默认开启日志输出，并输出到控制台。
 
 ## 关闭智能值转换
 
-Kronos在进行数据操作时，会自动将预期值与实际值进行智能转换，如`Int`与`Long`、`String`等等，详见：{{ $.keyword("concept/smart-value-conversion", ["概念", "类型处理器"]) }}。
+Kronos在进行数据操作时，会自动将预期值与实际值进行智能转换，如`Int`与`Long`、`String`等等，详见：{{ $.keyword("concept/value-transformer", ["概念", "值转换器"]) }}。
 
 以下是一个简单的例子，展示了智能值转换的功能：
     

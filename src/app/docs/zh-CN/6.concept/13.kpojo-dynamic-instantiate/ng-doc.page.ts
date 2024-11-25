@@ -6,9 +6,9 @@ import ConceptCategory from "../ng-doc.category";
  * @status:success 新
  */
 const KPojoGenericInstantiatePage: NgDocPage = {
-    title: `KPojo的泛型实例化`,
+    title: `KPojo的动态实例化`,
     mdFile: './index.md',
-    route: 'kpojo-generic-instantiate',
+    route: 'kpojo-dynamic-instantiate',
     order: 13,
     category: ConceptCategory
 };

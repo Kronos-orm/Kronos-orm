@@ -3,7 +3,7 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * @status:info 有更新
+ * @status:success 有更新
  */
 const SelectJoinTablesPage: NgDocPage = {
     title: `连表查询`,

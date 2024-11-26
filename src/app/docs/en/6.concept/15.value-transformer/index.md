@@ -1,17 +1,16 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 
-Kronos在将Map值转换为KPojo对象时，会根据Map的键值对自动填充KPojo对象的属性。
+Kronos automatically populates the properties of a KPojo object based on the Map's key-value pairs when converting Map values to KPojo objects.
 
-在没有开启`strictMode`的情况下（见：{{$.keyword("getting-started/global-config", ["全局配置", "关闭智能值转换"])
-}}），如果Map的键值对与KPojo对象的类型不匹配，Kronos会通过`ValueTransformer`实现类型转换。
+Without `strictMode` turned on (see: {{$.keyword("getting-started/global-config", ["Global Configuration", "Turn off Smart Value Transformations"])}}), if the Map's key-value pairs don't match the type of the KPojo object, Kronos will pass ` ValueTransformer` to implement the type conversion.
 
-## 默认转换器
+## Default Value Transformer
 
-Kronos提供了默认的值转换器，支持以下类型的转换：
+Kronos provides a default value transformer that supports basic type conversions and date conversions. You can also create and register custom value transformers.
 
-### 1. {{ $.title("BasicTypeTransformer") }} **基本类型转换器**
+### 1. {{ $.title("BasicTypeTransformer") }} **Basic Type Transformer**
 
-该转换器支持基本类型的相互转换，包括：
+This transformer supports the following basic types of mutual conversion and conversion with strings.
 
 - `kotlin.Int`
 - `kotlin.Long`
@@ -22,7 +21,7 @@ Kronos提供了默认的值转换器，支持以下类型的转换：
 - `kotlin.Byte`
 - `kotlin.Short`
 
-转换示例：
+Conversion Example:
 
 ```kotlin
 val res1: Int = getTypeSafeValue("kotlin.Int", "42")
@@ -34,9 +33,9 @@ val res6: Boolean = getTypeSafeValue("kotlin.Boolean", "true")
 val res7: Boolean = getTypeSafeValue("kotlin.Boolean", 0)
 ```
 
-### 2. {{ $.title("JvmDateTransformer") }} **JVM日期转换器**
+### 2. {{ $.title("JvmDateTransformer") }} **Jvm Date Transformer**
 
-该转换器支持以下日期类型的相互转换以及与字符串、Long等类型的转换。
+This transformer supports the following date types of mutual conversion and conversion with strings.
 
 - `java.time.LocalDateTime`
 - `java.time.LocalDate`
@@ -47,41 +46,43 @@ val res7: Boolean = getTypeSafeValue("kotlin.Boolean", 0)
 - `java.util.Date`
 - `java.sql.Date`
 
-转换示例：
+Conversion Example:
+
+(Datetime will be converted to the default format {{ $.keyword("getting-started/global-config", ["Global Configuration", "Default Date Time Format"]) }}))
 
 ```kotlin
 val res1: LocalDateTime = getTypeSafeValue("java.time.LocalDateTime", "2023-10-17T10:00:00")
 
-val res2: LocalDateTime = getTypeSafeValue("kotlin.String", res1) // 2023-10-17 10:00:00(根据全局设置-默认日期格式)
+val res2: LocalDateTime = getTypeSafeValue("kotlin.String", res1) // 2023-10-17 10:00:00
 ```
 
-### 3. {{ $.title("ToStringTransformer") }} **ToString转换器**
+### 3. {{ $.title("ToStringTransformer") }} **ToString Transformer**
 
-该转换器用于将任意类型转换为字符串。
+This transformer converts any type to a string.
 
-转换示例：
+Conversion Example:
 
 ```kotlin
 val res1: String = getTypeSafeValue("kotlin.String", someObject)
 ```
 
 > **Note**
-> 更多转换示例请参考：
-> [Kronos测试用例](https://github.com/Kronos-orm/Kronos-orm/blob/d42270658c589f86f39bb6a44e06905acfa79c48/kronos-testing/src/test/kotlin/com/kotlinorm/utils/CommonUtilTest.kt#L60)
+> For more conversion examples, please refer to：
+> [Kronos Test Cases](https://github.com/Kronos-orm/Kronos-orm/blob/d42270658c589f86f39bb6a44e06905acfa79c48/kronos-testing/src/test/kotlin/com/kotlinorm/utils/CommonUtilTest.kt#L60)
 
 {{ $.hr() }}
 
-## 创建、注册自定义值转换器
+## create, register custom value transformer
 
-您可以通过实现`ValueTransformer`接口来自定义值转换器，实现自定义类型的转换。
+You can customize the value transformer by implementing the `ValueTransformer` interface for custom types.
 
-### ValueTransformer接口
+### ValueTransformer Interface
 
-#### 1. {{ $.title("isMatch") }} **是否匹配**
+#### 1. {{ $.title("isMatch") }} **Match Type**
 
-该转换器是否可以用于转换指定的类型。
+Whether this converter can be used to convert the specified type.
 
-- **函数声明**
+- **Function Declaration**
 
   ```kotlin
   fun isMatch(
@@ -91,7 +92,7 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
   ): Boolean
   ```
 
-- **使用示例**
+- **Usage Example**
   
    ```kotlin
   class TestTransformer : ValueTransformer {
@@ -104,20 +105,19 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
   }
    ```
 
-- **参数**
+- **Parameters**
 
-{{
-$.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', '值的超类', 'List<String>'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
+  {{$.params([['targetKotlinType', 'Target type', 'String'], ['superTypesOfValue', 'Superclass of the value', 'List<String>'], ['kClassOfValue', 'KClass of the value', 'KClass<*>']])}}
 
-- **返回值**
+- **Return Value**
 
-`Boolean` - 是否匹配
+  `Boolean` - Whether the converter can be used to convert the specified type.
 
-#### 2. {{ $.title("transform") }} **转换值**
+#### 2. {{ $.title("transform") }} **Type Conversion**
 
-将值转换为目标类型。
+Convert the value to the specified type.
 
-- **函数声明**
+- **Function Declaration**
 
   ```kotlin
   fun transform(
@@ -129,7 +129,7 @@ $.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', 
   ): Any
   ```
 
-- **使用示例**
+- **Usage Example**
 
   ```kotlin
   class TestTransformer : ValueTransformer {
@@ -145,18 +145,17 @@ $.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', 
   }
   ```
 
-- **参数**
+- **Parameters**
 
-{{
-$.params([['targetKotlinType', '目标类型', 'String'], ['value', '值', 'Any'], ['superTypesOfValue', '值的超类', 'List<String>'], ['dateTimeFormat', '日期格式', 'String?'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
+  {{$.params([['targetKotlinType', 'Target type', 'String'], ['value', 'Value', 'Any'], ['superTypesOfValue', 'Superclass of the value', 'List<String>'], ['dateTimeFormat', 'Date format', 'String?'], ['kClassOfValue', 'KClass of the value', 'KClass<*>']])}}
 
 - **返回值**
 
-`Any` - 转换后的值
+  `Any` - Converted value
 
-### 注册自定义值转换器
+### Register Custom Value Transformer
 
-您可以通过以下方式注册自定义值转换器：
+You can register custom value transformers through the `registerValueTransformer` function.
 
 ```kotlin
 Kronos.init {
@@ -165,13 +164,13 @@ Kronos.init {
 ```
 {{ $.hr() }}
 
-## 自定义转换器示例
+## Example
 
-以下示例展示了如何实现自定义值转换器：
+The following example shows how to implement a custom value transformer.
 
-### 示例1：枚举类型转换器
+### Example 1: Enum Type Transformer
 
-数据库中字符串类型的枚举值转换为枚举类型。
+This transformer supports the mutual conversion of enum types and conversion with strings.
 
 ```kotlin
 enum class TestEnum {
@@ -185,14 +184,14 @@ data class TestPojo(
     val testEnum: TestEnum? = null
 ) : KPojo
 
-// 自定义枚举类型转换器
+// Custom value transformer
 class TestEnumTransformer : ValueTransformer {
     override fun isMatch(
         targetKotlinType: String,
         superTypesOfValue: List<String>,
         kClassOfValue: KClass<*>
     ): Boolean {
-        // 判断是否为TestEnum类型，且值类型为String
+        // Determine whether the target type is an enum type and the value type is a string
         return targetKotlinType == TestEnum::class.qualifiedName && kClassOfValue == String::class
     }
 
@@ -216,13 +215,13 @@ fun main(){
         "testEnum" to "A"
     )
 
-    // 请注意：仅`safeMapperTo`函数支持自定义值转换器，`mapperTo`函数不支持
+    // Only the `safeMapperTo` function supports custom value converters, while the `mapperTo` function does not support this.
     val pojo = map.safeMapperTo<TestPojo>()
 }
 ```
 
-### 示例2：kotlinx.datetime类型转换器
+### Example 2: kotlinx.datetime Type Transformer
 
-该转换器支持`kotlinx.datetime`日期类型的相互转换以及与字符串、Long等类型的转换。
+The converter supports conversion of `kotlinx.datetime` date types to each other and to strings, Long, etc.
 
-[参考示例](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt)
+[Reference Example](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt)

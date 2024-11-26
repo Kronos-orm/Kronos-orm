@@ -1,4 +1,4 @@
-各数据库类型与常用类型对应关系一览表：
+List of correspondences between each database type and common types:
 
 ## **BIT**
 

@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本文将指导您如何全局设置Kronos。
- * @status:info 有更新
+ * @status:success 有更新
  */
 const GlobalConfigPage: NgDocPage = {
 	title: `全局设置`,

@@ -1,293 +1,293 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-请确保您的KPojo具有正确的注解，以便Kronos能够正确识别表名、字段、索引等信息。
+Please make sure that your KPojo has the correct annotations so that Kronos recognizes table names, fields, indexes, etc. correctly.
 
 > **Note**
-> 相关功能可可以通过`Kronos.dataSource(() -> KronosDataSourceWrapper)`或某个具体的数据源对象`KronosDataSourceWrapper`
-> 来调用。
+> Functions can be invoked via `Kronos.dataSource(() -> KronosDataSourceWrapper)` or a specific data source object `KronosDataSourceWrapper`.
 
-## 1. {{ $.title("exists(tableName)")}} 表是否存在
+## 1. {{ $.title("exists(tableName)")}} whether the table exists
 
-通过表名判断表是否存在
+Check if the table exists by table name.
 
-- **函数声明**
+- **Function declaration**
 
- ```kotlin
- fun exists(tableName: String): Boolean
- ```
+    ```kotlin
+    fun exists(tableName: String): Boolean
+    ```
 
-- **使用示例**
+- **Usage Example**
 
- ```kotlin
- val exists = wrapper.table.exists("user")
- ```
+    ```kotlin
+    val exists = wrapper.table.exists("user")
+    ```
 
-- **接收参数**
+- **Parameters**
 
-{{ $.params([['tableName', '表名', 'String']]) }}
+  {{ $.params([['tableName', 'Table name', 'String']]) }}
 
-- **返回值**
+- **Return value**
 
-`Boolean` 表是否存在
+  `Boolean` - Whether the table exists
 
 {{ $.hr() }}
 
-## 2. {{ $.title("exists<T>(KPojo)")}} 表是否存在
+## 2. {{ $.title("exists<T>(KPojo)")}} whether the table exists
 
-- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+- **Generic parameters**： `<T>` Entity object type, inherited from `KPojo`
 
 {{ $.hr(50) }}
 
-通过KPojo判断表是否存在
+Check if the table exists by KPojo.
 
-- **函数声明**
+- **Function declaration**
+    
+    ```kotlin
+    fun <T : KPojo> exists(kPojo: T = new T()): Boolean
+    ```
 
-```kotlin
-fun <T : KPojo> exists(kPojo: T = new T()): Boolean
-```
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["How does Kronos implement instantiating KClass&lt;KPojo&gt; without relying on reflection?"])}} _</small
 
-<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+- **Usage Example**
 
-- **使用示例**
+    ```kotlin
+    val exists = wrapper.table.exists(User())
+    // or
+    val exists = wrapper.table.exists<User>()
+    ```
 
-```kotlin
-val exists = wrapper.table.exists(User())
-// 或
-val exists = wrapper.table.exists<User>()
-```
+- **Parameters**
 
-- **接收参数**
+  {{ $.params([['kPojo', 'Entity object', 'T', 'new T()']]) }}
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+- **Return value**
 
-- **返回值**
+  `Boolean` - Whether the table exists
 
-`Boolean` - 表是否存在
+{{ $.hr() }}
 
-## 3. {{ $.title("createTable(KPojo)")}} 创建表
+## 3. {{ $.title("createTable(KPojo)")}} Create a table
 
-- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+- **Generic parameters**： `<T>` Entity object type, inherited from `KPojo`
 
 {{ $.hr(50) }}
 
-通过实体类创建表
+Create a table by KPojo.
 
-- **函数声明**
+- **Function declaration**
+    
+    ```kotlin
+    fun createTable<T: KPojo>(kPojo: T = new T())
+    ```
 
-```kotlin
-fun createTable<T: KPojo>(kPojo: T = new T())
-```
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["How does Kronos implement instantiating KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
 
-<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+- **Usage Example**
 
-- **使用示例**
+    ```kotlin
+    wrapper.table.createTable(User())
+    // or
+    wrapper.table.createTable<User>()
+    ```
 
-```kotlin
-wrapper.table.createTable(User())
-// 或
-wrapper.table.createTable<User>()
-```
+- **Parameters**
 
-- **接收参数**
-
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
-
-{{ $.hr() }}
-
-## 4. {{ $.title("truncateTable(tableName, restartIdentity)")}} 清空表
-
-通过表名清空表
-
-- **函数声明**
-
-```kotlin
-fun truncateTable(tableName: String, restartIdentity: Boolean = true)
-```
-
-- **使用示例**
-
-```kotlin
-wrapper.table.truncateTable("user")
-```
-
-- **接收参数**
-
-{{ $.params([['tableName', '表名', 'String'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
+  {{ $.params([['kPojo', 'Entity object', 'T', 'new T()']]) }}
 
 {{ $.hr() }}
 
-## 5. {{ $.title("truncateTable(KPojo, restartIdentity)")}} 清空表
+## 4. {{ $.title("truncateTable(tableName, restartIdentity)")}} Clear the table
 
-- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+Clear the table by table name.
+
+- **Function declaration**
+
+    ```kotlin
+    fun truncateTable(tableName: String, restartIdentity: Boolean = true)
+    ```
+
+- **Usage Example**
+
+    ```kotlin
+    wrapper.table.truncateTable("user")
+    ```
+
+- **Parameters**
+
+  {{ $.params([['tableName', 'Table name', 'String'], ['restartIdentity', 'Whether to reset the auto-increment value, applicable to PostgreSQL and sqlite', 'Boolean', 'true']]) }}
+
+{{ $.hr() }}
+
+## 5. {{ $.title("truncateTable(KPojo, restartIdentity)")}} Clear the table
+
+- **Generic parameters**： `<T>` Entity object type, inherited from `KPojo`
 
 {{ $.hr(50) }}
 
-通过实体类清空表
+Clear the table by KPojo.
 
-- **函数声明**
+- **Function declaration**
 
-```kotlin
-fun <T: KPojo> truncateTable(kPojo: T = new T(), restartIdentity: Boolean = true)
-```
+    ```kotlin
+    fun <T: KPojo> truncateTable(kPojo: T = new T(), restartIdentity: Boolean = true)
+    ```
 
-<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos is how to instantiate KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
 
-- **使用示例**
+- **Usage Example**
 
-```kotlin
-wrapper.table.truncateTable(User())
-// 或
-wrapper.table.truncateTable<User>()
-```
+    ```kotlin
+    wrapper.table.truncateTable(User())
+    // or
+    wrapper.table.truncateTable<User>()
+    ```
 
-- **接收参数**
+- **Parameters**
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
-
-{{ $.hr() }}
-
-## 6. {{ $.title("dropTable(tableName)")}} 删除表
-
-通过表名删除表
-
-- **函数声明**
-
-```kotlin
-fun dropTable(tableName: String)
-```
-
-- **使用示例**
-
-```kotlin
-wrapper.table.dropTable("user")
-```
-
-- **接收参数**
-
-{{ $.params([['tableName', '表名', 'String']]) }}
+  {{ $.params([['kPojo', 'Entity object', 'T', 'new T()'], ['restartIdentity', 'Whether to reset the auto-increment value, applicable to PostgreSQL and sqlite', 'Boolean', 'true']]) }}
 
 {{ $.hr() }}
 
-## 7. {{ $.title("dropTable(KPojo)")}} 删除表
+## 6. {{ $.title("dropTable(tableName)")}} Delete the table
 
-- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+Delete the table by table name.
 
-通过实体类删除表
+- **Function declaration**
 
-- **函数声明**
+    ```kotlin
+    fun dropTable(tableName: String)
+    ```
 
-```kotlin
-fun <T: KPojo> dropTable(kPojo: T = new T())
-```
+- **Usage Example**
 
-<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+    ```kotlin
+    wrapper.table.dropTable("user")
+    ```
 
-- **使用示例**
+- **Parameters**
 
-```kotlin
-wrapper.table.dropTable(User())
-// 或
-wrapper.table.dropTable<User>()
-```
-
-- **接收参数**
-
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+  {{ $.params([['tableName', 'Table name', 'String']]) }}
 
 {{ $.hr() }}
 
-## 8. {{ $.title("syncTable(KPojo)")}} 表结构同步和变更
+## 7. {{ $.title("dropTable(KPojo)")}} Delete the table
 
-- **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
+- **Generic parameters**： `<T>` Entity object type, inherited from `KPojo`
 
-通过实体类同步表结构
+{{ $.hr(50) }}
 
-- **函数声明**
+- **Function declaration**
 
-```kotlin
+    ```kotlin
+    fun <T: KPojo> dropTable(kPojo: T = new T())
+    ```
 
-fun syncTable<T: KPojo>(kPojo: T = new T())
-```
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos is how to instantiate KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
 
-<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
+- **Usage Example**
 
-- **使用示例**
+    ```kotlin
+    wrapper.table.dropTable(User())
+    // or
+    wrapper.table.dropTable<User>()
+    ```
 
-```kotlin
-wrapper.table.syncTable(User())
-// 或
-wrapper.table.syncTable<User>()
-```
-
-- **接收参数**
-
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+- **Parameters**
+  
+  {{ $.params([['kPojo', 'Entity object', 'T', 'new T()']]) }}
 
 {{ $.hr() }}
 
-## 9. {{ $.title("getTableCreateSqlList")}} 动态建表
+## 8. {{ $.title("syncTable(KPojo)")}} Synchronize table structure
 
-部分情况下会存在动态建表的需求，此时可以通过`getTableCreateSqlList`方法动态获取建表语句并执行。
+- **Generic parameters**： `<T>` Entity object type, inherited from `KPojo`
 
-- **函数声明**
+{{ $.hr(50) }}
 
-```kotlin
-fun getTableCreateSqlList(
-    dbType: DBType,
-    tableName: String,
-    fields: List<Field>,
-    indexes: List<KTableIndex> = emptyList()
-): List<String>
-```
+- **Function declaration**
+    
+    ```kotlin
+    fun syncTable<T: KPojo>(kPojo: T = new T())
+    ```
 
-- **使用示例**
+<small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos is how to instantiate KClass&lt;KPojo&gt; without relying on reflection?"])}}_</small>
 
-```kotlin
+- **Usage Example**
 
-val listOfSql =
-    getTableCreateSqlList(
-        dbType = DBType.Mysql,
-        tableName = "user",
-        fields = listOf(
-            Field(
-                name = "id",
-                type = KColumnType.fromString("INT"),
-                primaryKey = true,
-                identity = true
+    ```kotlin
+    wrapper.table.syncTable(User())
+    // or
+    wrapper.table.syncTable<User>()
+    ```
+
+- **Parameters**
+
+  {{ $.params([['kPojo', 'Entity object', 'T', 'new T()']]) }}
+
+{{ $.hr() }}
+
+## 9. {{ $.title("getTableCreateSqlList")}} Dynamic table creation
+
+In some cases, there is a need for dynamic table creation, in which case you can dynamically get the table creation statement and execute it through the `getTableCreateSqlList` method.
+
+- **Function declaration**
+
+    ```kotlin
+    fun getTableCreateSqlList(
+        dbType: DBType,
+        tableName: String,
+        fields: List<Field>,
+        indexes: List<KTableIndex> = emptyList()
+    ): List<String>
+    ```
+
+- **Usage Example**
+    
+    ```kotlin
+    
+    val listOfSql =
+        getTableCreateSqlList(
+            dbType = DBType.Mysql,
+            tableName = "user",
+            fields = listOf(
+                Field(
+                    name = "id",
+                    type = KColumnType.fromString("INT"),
+                    primaryKey = true,
+                    identity = true
+                ),
+                Field(
+                    name = "name",
+                    type = KColumnType.fromString("VARCHAR"),
+                    length = 255
+                ),
+                Field(
+                    name = "age",
+                    type = KColumnType.fromString("INT"),
+                )
             ),
-            Field(
-                name = "name",
-                type = KColumnType.fromString("VARCHAR"),
-                length = 255
-            ),
-            Field(
-                name = "age",
-                type = KColumnType.fromString("INT"),
-            )
-        ),
-        indexes = listOf(
-            KTableIndex(
-                name = "idx_name",
-                columns = listOf("name"),
-                type = "UNIQUE"
+            indexes = listOf(
+                KTableIndex(
+                    name = "idx_name",
+                    columns = listOf("name"),
+                    type = "UNIQUE"
+                )
             )
         )
-    )
-    
-listOfSql.forEach { db.execute(it) }
-```
+        
+    listOfSql.forEach { db.execute(it) }
+    ```
 
-- **接收参数**
+- **Parameters**
 
-{{$.params([
-['dbType', '数据库类型', 'DBType'],
-['tableName', '表名', 'String'],
-['fields', '字段列表', 'List<Field>'],
-['indexes', '索引列表', 'List<KTableIndex>', '[]']
-])}}
+  {{$.params([
+      ['dbType', 'Database type', 'DBType'],
+      ['tableName', 'Table name', 'String'],
+      ['fields', 'Field list', 'List<Field>'],
+      ['indexes', 'Index list', 'List<KTableIndex>', '[]']
+  ])}}
 
 {{ $.hr() }}
 
 > **Warning**
-> 若需要对同一个实体对象连续执行多个数据库操作，建议不要使用`createTable<KPojo>()`的写法，而是使用`createTable(kPojo)`，以避免多次创建KPojo对象，产生不必要的开销。
+> If you need to perform multiple database operations on the same entity object consecutively, it is recommended that you do not use the `createTable<KPojo>()` writeup, but instead use `createTable(kPojo)` to avoid creating the KPojo object multiple times, which would incur unnecessary overhead.

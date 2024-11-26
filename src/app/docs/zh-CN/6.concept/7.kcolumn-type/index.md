@@ -2,7 +2,7 @@
 
 ## **BIT**
 
-store 0/1
+存储 0/1
 
 **KotlinType**: `Boolean`
 
@@ -12,7 +12,7 @@ store 0/1
 
 ## **TINYINT**
 
-store -128~127
+存储 -128~127
 
 **KotlinType**: `Byte`
 
@@ -22,7 +22,7 @@ store -128~127
 
 ## **SMALLINT**
 
-store -32768~32767
+存储 -32768~32767
 
 **KotlinType**: `Short`
 
@@ -32,7 +32,7 @@ store -32768~32767
 
 ## **MEDIUMINT**
 
-store -8388608~8388607
+存储 -8388608~8388607
 
 **KotlinType**: `Int`
 
@@ -42,7 +42,7 @@ store -8388608~8388607
 
 ## **INT**
 
-store -2147483648~2147483647
+存储 -2147483648~2147483647
 
 **KotlinType**: `Int`
 
@@ -52,7 +52,7 @@ store -2147483648~2147483647
 
 ## **BIGINT**
 
-store -9223372036854775808~9223372036854775807
+存储 -9223372036854775808~9223372036854775807
 
 **KotlinType**: `Long`
 
@@ -62,7 +62,7 @@ store -9223372036854775808~9223372036854775807
 
 ## **FLOAT**
 
-store -3.4028235E+38~3.4028235E+38
+存储 -3.4028235E+38~3.4028235E+38
 
 **KotlinType**: `Float`
 
@@ -72,7 +72,7 @@ store -3.4028235E+38~3.4028235E+38
 
 ## **DOUBLE**
 
-store -1.7976931348623157E+308~1.7976931348623157E+308
+存储 -1.7976931348623157E+308~1.7976931348623157E+308
 
 **KotlinType**: `Double`
 
@@ -82,7 +82,7 @@ store -1.7976931348623157E+308~1.7976931348623157E+308
 
 ## **DECIMAL**
 
-store -10^38+1~10^38-1
+存储 -10^38+1~10^38-1
 
 **KotlinType**: `BigDecimal`
 
@@ -92,7 +92,7 @@ store -10^38+1~10^38-1
 
 ## **SERIAL**
 
-store serial
+存储序列号
 
 **KotlinType**: `Int`
 
@@ -102,7 +102,7 @@ store serial
 
 ## **NUMERIC**
 
-store -10^38+1~10^38-1
+存储 -10^38+1~10^38-1
 
 **KotlinType**: `BigDecimal`
 
@@ -112,7 +112,7 @@ store -10^38+1~10^38-1
 
 ## **CHAR**
 
-store fixed length string
+存储固定长度字符串
 
 **KotlinType**: `String`
 
@@ -122,7 +122,7 @@ store fixed length string
 
 ## **VARCHAR**
 
-store variable length string
+存储可变长度字符串
 
 **KotlinType**: `String`
 
@@ -132,7 +132,7 @@ store variable length string
 
 ## **TEXT**
 
-store text
+存储文本
 
 **KotlinType**: `String`
 
@@ -142,7 +142,7 @@ store text
 
 ## **MEDIUMTEXT**
 
-store medium text
+存储中等文本
 
 **KotlinType**: `String`
 
@@ -152,7 +152,7 @@ store medium text
 
 ## **LONGTEXT**
 
-store long text
+存储长文本
 
 **KotlinType**: `String`
 
@@ -162,7 +162,7 @@ store long text
 
 ## **DATE**
 
-store date
+存储日期
 
 **KotlinType**: `LocalDate`
 
@@ -172,7 +172,7 @@ store date
 
 ## **TIME**
 
-store time
+存储时间
 
 **KotlinType**: `LocalTime`
 
@@ -182,7 +182,7 @@ store time
 
 ## **DATETIME**
 
-store date and time
+存储日期时间
 
 **KotlinType**: `LocalDateTime`
 
@@ -192,7 +192,7 @@ store date and time
 
 ## **TIMESTAMP**
 
-store timestamp
+存储时间戳（时间）
 
 **KotlinType**: `String`
 
@@ -202,7 +202,7 @@ store timestamp
 
 ## **Year**
 
-store year
+存储年份
 
 **KotlinType**: `Int`
 
@@ -212,7 +212,7 @@ store year
 
 ## **BINARY**
 
-store binary
+存储二进制
 
 **KotlinType**: `ByteArray`
 
@@ -222,7 +222,7 @@ store binary
 
 ## **VARBINARY**
 
-store variable length binary
+存储可变二进制
 
 **KotlinType**: `ByteArray`
 
@@ -232,7 +232,7 @@ store variable length binary
 
 ## **LONGVARBINARY**
 
-store long binary
+存储长二进制
 
 **KotlinType**: `ByteArray`
 
@@ -242,7 +242,7 @@ store long binary
 
 ## **BLOB**
 
-store blob
+存储二进制大对象
 
 **KotlinType**: `ByteArray`
 
@@ -252,7 +252,7 @@ store blob
 
 ## **MEDIUMBLOB**
 
-store medium blob
+存储中等二进制大对象
 
 **KotlinType**: `ByteArray`
 
@@ -262,7 +262,7 @@ store medium blob
 
 ## **LONGBLOB**
 
-store long blob
+存储长二进制大对象
 
 **KotlinType**: `ByteArray`
 
@@ -272,7 +272,7 @@ store long blob
 
 ## **CLOB**
 
-store clob
+存储字符大对象
 
 **KotlinType**: `String`
 
@@ -282,7 +282,7 @@ store clob
 
 ## **JSON**
 
-store json
+存储 JSON
 
 **KotlinType**: `String`
 
@@ -292,7 +292,7 @@ store json
 
 ## **ENUM**
 
-store enum
+存储枚举
 
 **KotlinType**: `String`
 
@@ -302,7 +302,7 @@ store enum
 
 ## **NVARCHAR**
 
-store nvarchar
+存储包含n个字符的可变长度Unicode字符数据
 
 **KotlinType**: `String`
 
@@ -312,7 +312,7 @@ store nvarchar
 
 ## **NCHAR**
 
-store nchar
+存储包含n个字符的固定长度Unicode字符数据
 
 **KotlinType**: `String`
 
@@ -322,7 +322,7 @@ store nchar
 
 ## **NCLOB**
 
-store nclob
+存储包含n个字符的Unicode字符数据
 
 **KotlinType**: `String`
 
@@ -332,7 +332,7 @@ store nclob
 
 ## **UUID**
 
-store uuid
+存储 UUID（通用唯一标识符）
 
 **KotlinType**: `String`
 
@@ -342,7 +342,7 @@ store uuid
 
 ## **SET**
 
-store set
+存储 SET
 
 **KotlinType**: `String`
 
@@ -352,7 +352,7 @@ store set
 
 ## **GEOMETRY**
 
-store geometry
+存储几何
 
 **KotlinType**: `String`
 
@@ -362,7 +362,7 @@ store geometry
 
 ## **POINT**
 
-store point
+存储点
 
 **KotlinType**: `String`
 
@@ -372,7 +372,7 @@ store point
 
 ## **LINESTRING**
 
-store linestring
+存储线
 
 **KotlinType**: `String`
 

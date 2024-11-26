@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * 本文将指导您如何配置忽略策略。
- * @status:success 新
+ * @status:info 新
  */
 const IgnoreActionPage: NgDocPage = {
     title: `查询忽略策略`,

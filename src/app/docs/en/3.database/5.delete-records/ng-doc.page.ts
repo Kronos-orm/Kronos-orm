@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将介绍如何删除数据库行记录。
- * @status:info coming soon
+ * @status:warning PREPARING
  */
 const DeleteRecordsPage: NgDocPage = {
     title: `Delete Records`,

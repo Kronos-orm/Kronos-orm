@@ -1,10 +1,10 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-在未使用{{ $.keyword("class-definition/annotation-config", ["注解设置","@ColumnType列类型及长度"]) }}的情况下，Kronos会根据Kotlin类型自动推测在数据库中持久化使用的列类型
+Without {{ $.keyword("class-definition/annotation-config", ["Annotation Settings","@ColumnType column type and length"]) }}, Kronos automatically infers the type of columns used for persistence in the database based on the Kotlin type
 
-您可以参考以下表格查看Kotlin数据类型与{{ $.keyword("concept/kcolumn-type", ["Kronos列类型"]) }}的映射关系：
+You can refer to the following table to see the mapping of Kotlin datatypes to {{ $.keyword("concept/kcolumn-type", ["Kronos Column Type"]) }}:
 
-**Kronos列类型**在不同数据库中的表现有所不同，具体请参考{{ $.keyword("concept/kcolumn-type", ["Kronos列类型"]) }}。
+**Kronos column type** behave differently in different databases, see {{ $.keyword("concept/kcolumn-type", ["Kronos Column Type"]) }}.
 
 | Kotlin类型                                                                               | Kronos列类型  |
 |----------------------------------------------------------------------------------------|------------|

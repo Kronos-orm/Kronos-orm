@@ -3,8 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * Kronos提供了一个基础的SQL构建器，它允许您使用命名参数来构建SQL操作，本章将介绍如何使用该构建器执行SQL查询等操作。
- * @status:info coming soon
+ * Kronos provides a basic SQL builder that allows you to build SQL operations using named parameters, and this chapter describes how to use this builder to perform operations such as SQL queries.
+ * @status:success UPDATED
  */
 const NamedArgumentsBaseSqlPage: NgDocPage = {
     title: `Named Arguments Base SQL`,

@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * 本章将介绍 Criteria 条件的写法和使用
- * @status:info 有更新
+ * @status:success 有更新
  */
 const WhereHavingOnClausePage: NgDocPage = {
     title: `Criteria 条件`,

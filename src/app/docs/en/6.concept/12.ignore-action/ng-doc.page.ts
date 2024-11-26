@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * This chapter will guide you on how to configure an ignore action in Kronos.
- * @status:success new
+ * @status:info NEW
  */
 const IgnoreActionPage: NgDocPage = {
     title: `Ignore Action`,

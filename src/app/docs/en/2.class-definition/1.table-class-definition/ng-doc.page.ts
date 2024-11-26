@@ -3,8 +3,8 @@ import ClassDefinitionCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将指导您如何定义一个Kronos表数据实体类。
- * @status:info coming soon
+ * This chapter will guide you on how to define a Kronos table data entity class.
+ * @status:info NEW
  */
 const TableClassDefinition: NgDocPage = {
     title: `Table Class Definition`,

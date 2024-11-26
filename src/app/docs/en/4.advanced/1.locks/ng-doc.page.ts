@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * This chapter will guide you on how to use the **LOCK** feature of Kronos.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const SomeLocksPage: NgDocPage = {
   title: `Locks`,

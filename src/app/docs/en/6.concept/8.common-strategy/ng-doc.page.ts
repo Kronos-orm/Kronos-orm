@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * `KronosCommonStrategy` is the common configuration strategy interface for update time/create time/logical delete configuration strategies.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const CommonStrategyPage: NgDocPage = {
     title: `Common Strategy`,

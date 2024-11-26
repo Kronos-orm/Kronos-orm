@@ -161,7 +161,7 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-序列化反序列化的功能使用请参考：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"]) }}。
+序列化反序列化的功能使用请参考：{{ $.keyword("concept/serialize-processor", ["自动序列化与反序列化"]) }}。
 
 ## {{ $.annotation("Cascade") }}级联关系声明
 
@@ -261,9 +261,9 @@ data class User(
 
 ## {{ $.annotation("ColumnType") }}列类型及长度
 
-对于不同的数据库类型，kronos会根据kotlin类型自动转换类型，您可以参考[Kotlin列类型推断](/documentation/class-definition/kotlin-type-to-kcolumn-type)
+对于不同的数据库类型，kronos会根据kotlin类型自动转换类型，您可以参考{{ $.keyword("class-definition/kotlin-type-to-kcolumn-type", ["Kotlin列类型推断"]) }}
 查看Kotlin数据类型在各个数据库中的映射关系。
-您可以通过此注解声明列类型及长度，如果不指定则使用默认的类型及长度，全部类型信息请参考：[Kronos列类型](/documentation/class-definition/kcolumn-type)
+您可以通过此注解声明列类型及长度，如果不指定则使用默认的类型及长度，全部类型信息请参考：{{ $.keyword("class-definition/kcolumn-type", ["Kronos列类型"]) }}。
 
 **参数**：
 
@@ -320,7 +320,7 @@ data class User(
 @Table("tb_user")
 data class User(
     @UpdateTime
-    val updated: String? = null
+    val UPDATED: String? = null
 ) : KPojo
 ```
 

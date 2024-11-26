@@ -39,4 +39,4 @@ Kronos provides an **optimistic lock** feature, which can be configured globally
 Columns set as **optimistic locks** (default is `version`, and this column will be used as an example here) are initialized to 0 when a record is created,
 and subsequent updates will increment the `version = version + 1`.
 
-When performing an **upsert** operation, the `version` field is included in the filter criteria, meaning that the record will only be updated if the `version` field in KPojo matches the modification count in the database; otherwise, an insert will be executed.
+When performing an **upsert** operation, the `version` field is included in the filter criteria, meaning that the record will only be UPDATED if the `version` field in KPojo matches the modification count in the database; otherwise, an insert will be executed.

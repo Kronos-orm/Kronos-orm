@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章描述如何创建、删除、清空和同步数据库表。
- * @status:info 有更新
+ * @status:success 有更新
  */
 const DatabaseOperationPage: NgDocPage = {
     title: `数据库操作`,

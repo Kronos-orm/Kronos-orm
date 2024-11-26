@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章描述如何向数据库插入记录。
- * @status:info coming soon
+ * @status:warning PREPARING
  */
 const InsertRecordsPage: NgDocPage = {
     title: `Insert Records`,

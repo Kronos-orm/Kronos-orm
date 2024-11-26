@@ -1,6 +1,9 @@
 import {NgDocPage} from '@ng-doc/core';
 import ConceptCategory from "../ng-doc.category";
 
+/**
+ * @status:stable
+ */
 const NoValueStrategyPage: NgDocPage = {
     title: `No Value Strategy`,
     mdFile: './index.md',

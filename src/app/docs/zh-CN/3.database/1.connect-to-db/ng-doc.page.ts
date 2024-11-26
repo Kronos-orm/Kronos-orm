@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将详细介绍如何创建数据库连接。
- * @status:info 有更新
+ * @status:success 有更新
  */
 const ConnectToDbPage: NgDocPage = {
     title: `连接到数据库`,

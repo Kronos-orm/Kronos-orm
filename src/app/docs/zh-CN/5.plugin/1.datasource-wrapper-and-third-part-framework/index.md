@@ -13,7 +13,7 @@
 ### 1.依赖项
 
 引入`spring`相关依赖项及`kronos-core`依赖项（`compiler-plugin`
-插件的引入方式见（[快速上手](/documentation/zh-CN/getting-started/quick-start)））
+插件的引入方式见（（{{ $.keyword("/getting-started/quick-start", ["快速上手"]) }}））
 
 ```xml
 

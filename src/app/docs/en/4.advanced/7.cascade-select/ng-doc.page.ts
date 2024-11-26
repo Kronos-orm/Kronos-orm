@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * This article will guide you on how to use the cascade query feature of Kronos.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const CascadeSelectPage: NgDocPage = {
     title: `Cascade Select`,

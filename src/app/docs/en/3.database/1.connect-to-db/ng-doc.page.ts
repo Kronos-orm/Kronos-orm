@@ -3,8 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本章将详细介绍如何创建数据库连接。
- * @status:info coming soon
+ * This chapter details how to create a database connection.
+ * @status:success UPDATED
  */
 const ConnectToDbPage: NgDocPage = {
     title: `Connect to DB`,

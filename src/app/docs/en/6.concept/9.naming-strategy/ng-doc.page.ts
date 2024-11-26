@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * `KronosNamingStrategy` is an interface used to define the conversion strategy for table names and column names.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const NamingStrategyPage: NgDocPage = {
     title: `Naming Strategy`,

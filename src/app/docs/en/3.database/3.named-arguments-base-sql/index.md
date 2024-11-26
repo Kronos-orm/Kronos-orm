@@ -1,247 +1,245 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 1. {{ $.title("query") }} 查询Map列表
+## 1. {{ $.title("query") }} Query Map List
 
-执行SQL语句，查询多行记录
+Execute SQL statements, query multiple records, and return a list of maps.
 
-- **函数声明**
+- **Function Declaration**
 
-```kotlin
-fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any>>
-```
+    ```kotlin
+    fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any>>
+    ```
 
-- **使用示例**
+- **Usage Example**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: List<Map<String, Any>> = wrapper.query(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: List<Map<String, Any>> = wrapper.query(sql, params)
+    ```
 
-- **接收参数**：
+- **Parameters**:
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
-- **返回值**：
+- **Return Value**:
 
-`List<Map<String, Any>>` 查询结果列表
+    `List<Map<String, Any>>` Query result list
 
 {{ $.hr() }}
 
-## 2. {{ $.title("queryList") }} 查询指定类型列表
+## 2. {{ $.title("queryList") }} Query Specified Type List
 
-- **泛型参数**： `<T>` 查询结果类型
+- **Generic Parameters**： `<T>` Query result type
 
 {{ $.hr(50) }}
 
-执行SQL语句，查询多行记录并返回指定类型列表
+Execute SQL statements, query multiple records, and return a list of specified types.
 
 > **Note**
-> 查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryList<Int>()`
+> When querying a single column, you can directly set the generic parameter to the type of the column, for example: `queryList<Int>()`
 >
-> 查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryList<User>()`
+> When querying multiple columns, you can set the generic parameter to a subclass of KPojo, for example: `queryList<User>()`
 
-- **函数声明**
+- **Function Declaration**
 
-```kotlin
-fun <T> queryList(sql: String, params: Map<String, Any?> = emptyMap()): List<T>
-```
+    ```kotlin
+    fun <T> queryList(sql: String, params: Map<String, Any?> = emptyMap()): List<T>
+    ```
 
-- **使用示例**
+- **Usage Example**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: List<YourType> = wrapper.queryList(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: List<YourType> = wrapper.queryList(sql, params)
+    ```
 
-- **接收参数**：
+- **Parameters**:
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
-- **返回值**：
+- **Return Value**:
 
-`List<T>` 查询结果列表
-
-{{ $.hr() }}
-
-## 3. {{ $.title("queryMap") }} 查询单行记录Map
-
-执行SQL语句，查询单行记录
-
-- **函数声明**
-
-```kotlin
-fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any>?
-```
-
-- **使用示例**
-
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: Map<String, Any>? = wrapper.queryMap(sql, params)
-```
-
-- **接收参数**：
-
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
-
-- **返回值**：
-
-`Map<String, Any>?` 查询结果Map
+    `List<T>` Query result list
 
 {{ $.hr() }}
 
-## 4. {{ $.title("queryOne") }} 查询指定类型单行记录
+## 3. {{ $.title("queryMap") }} Query Single Record Map
 
-- **泛型参数**： `<T>` 查询结果类型
+Execute SQL statements, query a single record, and return a map.
+
+- **Function Declaration**
+
+    ```kotlin
+    fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any>?
+    ```
+
+- **Usage Example**
+
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: Map<String, Any>? = wrapper.queryMap(sql, params)
+    ```
+
+- **Parameters**:
+
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
+
+- **Return Value**:
+
+    `Map<String, Any>?` Query result
+
+{{ $.hr() }}
+
+## 4. {{ $.title("queryOne") }} Query Specified Type Single Record
+
+- **Generic Parameters**： `<T>` Query result type
 
 {{ $.hr(50) }}
 
-执行SQL语句，查询单行记录返回指定类型，当查询结果为空时，抛出异常。
+Execute SQL statements, query a single record, and return a specified type.
 
 > **Note**
-> 查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOne<Int>()`
+> When querying a single column, you can directly set the generic parameter to the type of the column, for example: `queryOne<Int>()`
 >
-> 查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOne<User>()`
+> When querying multiple columns, you can set the generic parameter to a subclass of KPojo, for example: `queryOne<User>()`
 
-- **函数声明**
+- **Function Declaration**
 
-```kotlin
-fun <T> queryOne(sql: String, params: Map<String, Any?> = emptyMap()): T
-```
+    ```kotlin
+    fun <T> queryOne(sql: String, params: Map<String, Any?> = emptyMap()): T
+    ```
 
-- **使用示例**
+- **Usage Example**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: YourType = wrapper.queryOne(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: YourType = wrapper.queryOne(sql, params)
+    ```
 
-- **接收参数**：
+- **Parameters**:
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
-- **返回值**：
+- **Return Value**:
 
-`T` 查询结果
+    `T` Query result
 
 {{ $.hr() }}
 
-## 5. {{ $.title("queryOneOrNull") }} 查询指定类型单行记录（可空）
+## 5. {{ $.title("queryOneOrNull") }} Query Specified Type Single Record (Nullable)
 
-- **泛型参数**： `<T>` 查询结果类型
+- **Generic Parameters**： `<T>` Query result type
 
 {{ $.hr(50) }}
 
-执行SQL语句，查询单行记录返回指定类型。
+Execute SQL statements, query a single record, and return a specified type. When the query result is empty, return null.
 
 > **Note**
-> 查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOneOrNull<Int>()`
+> When querying a single column, you can directly set the generic parameter to the type of the column, for example: `queryOneOrNull<Int>()`
 >
-> 查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOneOrNull<User>()`
+> When querying multiple columns, you can set the generic parameter to a subclass of KPojo, for example: `queryOneOrNull<User>()`
 
-- **函数声明**
+- **Function Declaration**
 
-```kotlin
-fun <T> queryOneOrNull(sql: String, params: Map<String, Any?> = emptyMap()): T?
-```
+    ```kotlin
+    fun <T> queryOneOrNull(sql: String, params: Map<String, Any?> = emptyMap()): T?
+    ```
 
-- **使用示例**
+- **Usage Example**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: YourType? = wrapper.queryOneOrNull(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: YourType? = wrapper.queryOneOrNull(sql, params)
+    ```
 
-- **接收参数**：
+- **Parameters**:
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
-- **返回值**：
+- **Return Value**:
 
-`T?` 查询结果
-
-{{ $.hr() }}
-
-## 6. {{ $.title("execute") }} 执行SQL
-
-用于执行SQL语句，返回受影响的行数。
-
-- **函数声明**
-
-```kotlin
-fun execute(sql: String, params: Map<String, Any?> = emptyMap()): Int
-```
-
-- **使用示例**
-
-```kotlin
-val sql = "UPDATE table SET column = :value WHERE id = :id"
-val params = mapOf("value" to "some value", "id" to 1)
-val affectedRows: Int = wrapper.execute(sql, params)
-```
-
-- **接收参数**：
-
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
-
-- **返回值**：
-
-`Int` 受影响的行数
+    `T?` Query result
 
 {{ $.hr() }}
 
-## 7. {{ $.title("batchExecute") }} 批量执行SQL
+## 6. {{ $.title("execute") }} Execute SQL
 
-批量执行SQL语句，返回受影响的行数。
+Execute SQL statements and return the number of affected rows.
 
-- **函数声明**
+- **Function Declaration**
 
-```kotlin
-fun batchExecute(sql: String, params: Array<Map<String, Any?>>): Array<Int>
-```
+    ```kotlin
+    fun execute(sql: String, params: Map<String, Any?> = emptyMap()): Int
+    ```
 
-- **使用示例**
+- **Usage Example**
 
-```kotlin
-val sql = "UPDATE table SET column = :value WHERE id = :id"
-val params = arrayOf(
-    mapOf("value" to "some value", "id" to 1),
-    mapOf("value" to "another value", "id" to 2)
-)
-val result: Array<Int> = wrapper.batchExecute(sql, params)
-```
+    ```kotlin
+    val sql = "UPDATE table SET column = :value WHERE id = :id"
+    val params = mapOf("value" to "some value", "id" to 1)
+    val affectedRows: Int = wrapper.execute(sql, params)
+    ```
 
-- **接收参数**：
+- **Parameters**:
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数列表', 'Array<Map<String, Any?>>']
-])}}
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
-- **返回值**：
+- **Return Value**:
 
-`Array<Int>` 受影响的行数数组
+    `Int` Number of affected rows
+
+{{ $.hr() }}
+
+## 7. {{ $.title("batchExecute") }} Batch Execute SQL
+
+- **Function Declaration**
+
+    ```kotlin
+    fun batchExecute(sql: String, params: Array<Map<String, Any?>>): Array<Int>
+    ```
+
+- **Usage Example**
+
+    ```kotlin
+    val sql = "UPDATE table SET column = :value WHERE id = :id"
+    val params = arrayOf(
+        mapOf("value" to "some value", "id" to 1),
+        mapOf("value" to "another value", "id" to 2)
+    )
+    val result: Array<Int> = wrapper.batchExecute(sql, params)
+    ```
+
+- **Parameters**:
+
+    {{$.params([
+    ['sql', 'SQL query statement', 'String'],
+    ['params', 'Named parameters list', 'Array<Map<String, Any?>>']
+    ])}}
+
+- **Return Value**:
+
+    `Array<Int>` Number of affected rows

@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * This chapter will show you how Kronos enables dynamic conversion of KClass to KPojo instances with no reflection and zero overhead.
- * @status:success new
+ * @status:info NEW
  */
 const KPojoGenericInstantiatePage: NgDocPage = {
     title: `KPojo Dynamic Instantiate`,

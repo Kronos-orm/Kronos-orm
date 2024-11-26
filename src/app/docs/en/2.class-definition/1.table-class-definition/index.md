@@ -1,9 +1,9 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 创建数据表类
+## Declaring Data Table Classes
 
-在Kronos中声明一个class为数据表类非常简单，只需要让该类继承`KPojo`即可，以下是一个简单示例：
+Declaring a class as a datasheet class in Kronos is very simple, just make the class inherit from `KPojo`, here is a simple example:
 
 ```kotlin
 import com.kotlinorm.interface.KPojo
@@ -15,88 +15,86 @@ data class User(
 ) : KPojo
 ```
 
-在Kronos中，我们将这样的类称为`KPojo`，它是一个标记接口，用于标记一个类为Kronos数据表类进行泛型操作。同时，kronos会在编译期为类添加一些属性和方法，以便高效地读取数据表信息。
+In Kronos, we call such a class `KPojo`, which is a markup interface for marking a class as a Kronos data table class for generic operations. At the same time, kronos adds some properties and methods to the class at compile time to read data table information efficiently.
 
-我们，推荐将类声明为`data class`并为其添加**默认值**，这样可以使数据类在ORM操作时更加灵活。
+We, recommend declaring the class as `data class` and adding **defaults** to it to make the data class more flexible for ORM operations.
 
-注意，`var`关键词声明的的属性才能在**update**或**upsert**的`set`中修改。
+Only **the properties declared with the `var` keyword** can be modified in the `set` of **update** or **upsert**.
 
-### 表注释
+### Table Comments
 
-Kronos支持为表添加注释，我们通过编译器插件读取您在类定义上的注释并在创建/同步表时添加到表的备注上，如：
+Kronos supports adding comments to tables, we read your comments on class definitions via the compiler plugin and add them to the table notes when creating/synchronizing the table, for example:
 
 ```kotlin
-// 添加表注释
-// 支持多行
+// Adding Table Comments
+// Supports multiline
 data class User
 
-data class User( // 添加表注释
+data class User( // Adding Table Comments
     val id: Int? = null,
 )
 
-/* 添加表注释 */
+/* Adding Table Comments */
 data class User
 
 /*
-* 添加表注释
-* 支持多行
-前面可以不加“*”
+* Adding Table Comments
+* Supports multiline
+It is allowed not to add "*" at the front.
 */
 @Table("table_name")
-// 注解所在行将会被跳过
+// The line where the Annotation is located will be skipped
 data class User
 ```
-类注释可以读取在类同一行的注释，如果没有定义在同一行的注释则会读取前面的注释（注解所在行不会被读取）。
+Class annotations can read comments on the same line as the class; if there are no comments defined on the same line, it will read the comments from the preceding lines (the line where the annotation is located will not be read).
 
-### 列注释
+### Column Comments
 
-Kronos支持为列添加注释，我们通过编译器插件读取您在属性定义上的注释并在创建/同步表时添加到列的备注上，如：
-
-我们支持以下4种注释：
+Kronos supports adding comments to columns, we read your comments on attribute definitions via the compiler plugin and add them to the column notes when creating/synchronizing the table, for example:
 
 ```kotlin
 import com.kotlinorm.interface.KPojo
 
 data class User(
-    // 添加列注释
-    // 支持多行
+    // Adding Column Comments
+    // Supports multiline
     var property1: Int? = null,
-    var property2: String? = null, // 添加列注释
-    /* 添加列注释 */
+    var property2: String? = null, // Adding Column Comments
+    /* Adding Column Comments */
     var property3: Int? = null,
     /* 
-    * 添加列注释
-    * 支持多行
-    前面可以不加“*”
+    * Adding Column Comments
+    * Supports multiline
+    It is allowed not to add "*" at the front.
     */
     var property3: Int? = null,
-    var property4: String? = null /* 添加列注释 */
+    var property4: String? = null /* Adding Column Comments */
 ) : KPojo
 ```
 
-通常来说定义在属性同一行的注释会被优先读取，如果没有定义在同一行的注释则会读取前面的注释。
+Normally, comments defined on the same line of an attribute are read first, and if there are no comments defined on the same line, the previous comments are read.
 
-### 使用委托实现级联多对多跨中间表关系
+### Using Delegates to Implement Cascading Many-to-Many Relationships Across Intermediate Tables
 
-请参考 {{ $.keyword("advanced/cascade-definition", ["进阶用法", "使用委托实现级联多对多跨中间表关系"]) }}。
+Please refer to {{ $.keyword("advanced/cascade-definition", ["Advanced Usage", "Using Delegation to Achieve Cascading Many-to-Many Cross Intermediate Table Relationships"]) }}.
 
-### 使用委托代理序列化反序列化属性
+### Using delegate proxy for serialization and deserialization of properties.
 
-Kronos的序列化反序列化功能支持自动处理和委托处理两种方式，委托处理方式需要在class内声明，形如：
+Kronos' serialization and deserialization functions support both automatic processing and delegated processing methods. The delegated processing method needs to be declared within the class, in the following form:
 
 ```kotlin
 data class User(
     val id: Int? = null,
-    // 需要序列化反序列化的属性
+    // Properties that need to be serialized deserialized
     val listStr: String? = null
 ) : KPojo {
-    // 代理序列化反序列化属性
+    // Proxy Serialization Deserialization Properties
     var list: List<String>? by serializable(::listStr)
 }
 ```
-### 使用匿名类创建对象进行数据库操作
+### Creating objects for database operations using anonymous classes
 
-在Kronos中，我们可以通过创建匿名类对象灵活地进行数据库操作，如：
+In Kronos, we have the flexibility to perform database operations by creating anonymous class objects such as:
 
 ```kotlin
 val obj = @Table("tb_name") object : KPojo { @PrimaryKey(true) var id = 1 }
@@ -108,56 +106,56 @@ if(!dataSource.table.exists(obj)) {
 obj.insert().execute()
 ```
 
-## 使用注解设置表属性
+## Setting Table Properties with Annotations
 
-在Kronos中，我们可以通过注解来设置表的属性，如：**表名**、**列名**、**列类型**、**列长度**、**主键**、**自增**、**唯一键**、**索引**、**默认值**、**非空**等。
-Kronos还提供了**级联**、**序列化/反序列化**、**日期格式化**、**逻辑删除**、**创建时间**、**更新时间**、**乐观锁等**功能。
+In Kronos, we can set table attributes through annotations, such as **table name**, **column name**, **column type**, **column length**, **primary key**, **self-augmenting**, **unique key**, **index**, **default value**, **non-null**, and so on.
+Kronos also provides **Cascade**, **Serialization/Deserialization**, **Date Formatting**, **Logical Deletion**, **Creation Time**, **Update Time**, **Optimistic Locking, and other **functionalities.
 
-以下是一个示例，包含了一些常用的注解：
+The following is an example with some commonly used annotations:
 
 ```kotlin group="KPojo" name="User.kt" icon="kotlin"
-// 表名设置，如果不设置则将使用[表名策略]根据类名生成表名
+//Table name setting, if not set then [Table Name Policy] will be used to generate table name based on class name
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["name"], "UNIQUE") // 为name字段添加唯一键
-@TableIndex(name = "idx_multi", columns = ["id", "name"], "UNIQUE") // 为id和name字段添加唯一键
+@TableIndex("idx_username", ["name"], "UNIQUE") // Adding a unique key to the `name` field
+@TableIndex(name = "idx_multi", columns = ["id", "name"], "UNIQUE") // Adding a unique key to the `id` and `name` fields
 data class User(
-    // 设置id为主键，自增
+    // Setting the primary key, if not set, the primary key will be generated automatically
     @PrimaryKey(identity = true)
     var id: Int? = null,
 
-    // 设置列名为name，如果不设置则使用[列名策略]根据属性名生成列名
-    // 设置name字段为非空
-    // 设置列类型为VARCHAR，长度为128
+    // Set the column name to `name`, instead of using Column Naming Strategy
+    // Set the name field to non-null
+    // Set the column type to VARCHAR and the length to 128
     @Column("name")
     @NotNull
     @ColumnType(VARCHAR, 128)
     var username: String? = null,
 
-    // 设置列类型为TINYINT
-    // 设置默认值为0
+    // Set column type to TINYINT
+    // Set the default value to 0
     @ColumnType(TINYINT)
     @Default("0")
     var age: Int? = null,
 
-    // 设置companyId字段为非空
+    // Setting the companyId field to be non-null
     @NotNull
     var companyId: Int? = null,
 
-    // 级联设置，无需实体外键，通过companyId关联Company表的id
+    // Cascade setup, no need for entity foreign key, through companyId associated with the id of the Company table
     @Cascade(["companyId"], ["id"])
     var company: Company? = null,
 
-    // 设置createTime为创建时间字段
-    // 设置时间格式为字符串的格式
+    // Set `createTime` as the creation time field
+    // Set the time format to the format of a string
     @CreateTime
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     var createTime: String? = null,
 
-    // 设置updateTime为更新时间字段
+    // Set `updateTime` as the update time field
     @UpdateTime
     var updateTime: LocalDateTime? = null,
 
-    // 设置deleted为逻辑删除字段
+    // Set `deleted` as a logically deleted field
     @LogicDelete
     var deleted: Boolean? = null
 ) : KPojo
@@ -241,4 +239,4 @@ CREATE UNIQUE INDEX idx_username ON "tb_user" ("name");
 CREATE UNIQUE INDEX idx_multi ON "tb_user" ("id", "name");
 ```
 
-点击{{ $.keyword("class-definition/annotation-config", ["注解配置"]) }}查看更多注解设置。
+Click {{ $.keyword("class-definition/annotation-config", ["Annotation Config"]) }} to see more annotation settings.

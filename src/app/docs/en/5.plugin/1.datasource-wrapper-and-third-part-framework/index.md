@@ -1,19 +1,17 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Spring-data-jdbc集成示例
+## Spring-data-jdbc integration example
 
-以下是一个使用Springboot + Kronos + JDK 17 + Maven + Kotlin 2.0.0 的示例，演示了如何将Kronos与Spring框架结合使用。
+The following example using Springboot + Kronos + JDK 17 + Maven + Kotlin 2.0.0 demonstrates how to use Kronos in conjunction with the Spring Framework.
 
-其中包含如何创建一个基于`spring-data-jdbc`的包装类，从而无需引入`kronos-jdbc-wrapper`等额外依赖，仅通过`kronos-core`
-即可实现数据库操作的功能。
+This includes how to create a wrapper class based on `spring-data-jdbc`, so that database manipulation can be achieved with `kronos-core` alone, without having to introduce additional dependencies such as `kronos-jdbc-wrapper`.
 
 > [kronos-example-spring-boot/SpringDataWrapper](https://github.com/Kronos-orm/kronos-example-spring-boot/blob/main/src/main/kotlin/com/kotlinorm/example/springboot/common/SpringDataWrapper.kt)
 
-### 1.依赖项
+### 1.dependency
 
-引入`spring`相关依赖项及`kronos-core`依赖项（`compiler-plugin`
-插件的引入方式见（[快速上手](/documentation/zh-CN/getting-started/quick-start)））
+Introducing `spring` related dependencies and `kronos-core` dependencies (the `compiler-plugin` plugin is introduced as described in ({{ $.keyword("/getting-started/quick-start", ["Getting Started"]) }}))
 
 ```xml
 
@@ -34,12 +32,12 @@
 </dependencies>
 ```
 
-### 2.KronosDataSourceWrapper实现
+### 2.KronosDataSourceWrapper Implementation
 
-#### 1.初始化连接信息和JDBC模版
+#### 1.Initialize connection information and JDBC templates
 
 ```kotlin
-// 连接信息
+// Connection information
 init {
     val conn = dataSource.connection
     _metaUrl = conn.metaData.url
@@ -48,22 +46,22 @@ init {
     conn.close()
 }
 
-// NamedParameterJdbcTemplate是spring-data-jdbc提供的JdbcTemplate的支持命名参数的实现，用于执行JDBC命令
+// NamedParameterJdbcTemplate is an implementation of JdbcTemplate provided by spring-data-jdbc that supports named parameters for executing JDBC commands
 private val namedJdbc: NamedParameterJdbcTemplate by lazy {
     NamedParameterJdbcTemplate(dataSource)
 }
 
 ```
 
-#### 2.重载KronosDataSourceWrapper中的数据库操作
+#### 2.Override database operations in KronosDataSourceWrapper
 
 ```kotlin
-//1.查询Map<String, Any>列表
+//1.Querying a Map<String, Any> List
 override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
     return namedJdbc.queryForList(task.sql, task.paramMap)
 }
 
-//2.查询对象列表
+//2.Query object list
 override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
     return if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.query(
         task.sql,
@@ -73,7 +71,7 @@ override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
     else namedJdbc.queryForList(task.sql, task.paramMap, kClass.java)
 }
 
-//3.查询Map<String, Any>，如果查询结果为空则返回null
+//3.Query a Map<String, Any>, return null if the query result is empty
 override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
     return try {
         namedJdbc.queryForMap(task.sql, task.paramMap)
@@ -82,7 +80,7 @@ override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
     }
 }
 
-//4.查询对象，如果查询结果为空则返回null
+//4.Query object, return null if the query result is empty
 override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
     return try {
         if (KPojo::class.isSuperclassOf(kClass)) namedJdbc.queryForObject(
@@ -96,17 +94,17 @@ override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
     }
 }
 
-//5.执行更新，返回受影响的行数
+//5.Execute update, return the number of affected rows
 override fun update(task: KAtomicActionTask): Int {
     return namedJdbc.update(task.sql, task.paramMap)
 }
 
-//6.执行批量更新，返回受影响的行数
+//6.Execute batch update, return the number of affected rows
 override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
     return namedJdbc.batchUpdate(task.sql, task.paramMapArr ?: emptyArray())
 }
 
-//7.事务操作
+//7.Transaction
 override fun transact(block: (DataSource) -> Any?): Any? {
     val transactionManager = DataSourceTransactionManager(dataSource)
     val transactionTemplate = TransactionTemplate(transactionManager)
@@ -125,29 +123,29 @@ override fun transact(block: (DataSource) -> Any?): Any? {
 }
 ```
 
-#### 3.其他
+#### 3.Using KronosDataSourceWrapper
 
 ```kotlin
 companion object {
-    //将JdbcTemplate包装为SpringDataWrapper的扩展函数
+    //Wrap JdbcTemplate as an extension function of SpringDataWrapper
     fun JdbcTemplate.wrapper(): SpringDataWrapper {
         return SpringDataWrapper(this.dataSource!!)
     }
 
-    //将NamedParameterJdbcTemplate包装为SpringDataWrapper的扩展函数
+    //Wrap NamedParameterJdbcTemplate as an extension function of SpringDataWrapper
     fun NamedParameterJdbcTemplate.wrapper(): SpringDataWrapper {
         return SpringDataWrapper(this.jdbcTemplate.dataSource!!)
     }
 }
 ```
 
-全部代码可参考：
+All code can be referenced to:
 [SpringDataWrapper.kt](https://github.com/Kronos-orm/kronos-spring-demo/blob/main/src/main/kotlin/com/kotlinorm/kronosSpringDemo/controller/SpringDataWrapper.kt)
 
-## 其他框架
+## Other frameworks
 
-对于JDBI等支持命名参数的框架，写法与SpringDataWrapper几乎完全相同，只需根据不同框架的具体实现进行替换即可。
+For `JDBI` and other frameworks that support named parameters, the writing method is almost identical to SpringDataWrapper, and only needs to be replaced according to the specific implementation of different frameworks.
 
-对于其他仅支持顺序参数的框架，可以通过`KAtomicQueryTask.parsed()`或`KAtomicActionyTask.parsed()`或`KronosAtomicBatchTask.parsedArr()`获取解析后的SQL语句，这个属性中包含了参数名和参数值数组。
+For other frameworks that only support sequential parameters, the parsed SQL statement can be obtained via `KAtomicQueryTask.parsed()` or `KAtomicActionyTask.parsed()` or `KronosAtomicBatchTask.parsedArr()`, a property that contains an array of parameter names and parameter values.
 
-后续大致流程与SpringDataWrapper相同，可参考[KronosBasicWrapper.kt](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-jdbc-wrapper/src/main/kotlin/com/kotlinorm/KronosBasicWrapper.kt)。
+The subsequent process is similar to that of SpringDataWrapper. You can refer to [KronosBasicWrapper.kt](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-jdbc-wrapper/src/main/kotlin/com/kotlinorm/KronosBasicWrapper.kt) for guidance.

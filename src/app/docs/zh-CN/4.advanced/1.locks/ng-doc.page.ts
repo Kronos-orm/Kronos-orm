@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本文将指导您如何使用Kronos的**锁**功能。
- * @status:info 有更新
+ * @status:success 有更新
  */
 const SomeLocksPage: NgDocPage = {
   title: `加锁机制`,

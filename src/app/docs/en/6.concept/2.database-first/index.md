@@ -16,7 +16,7 @@ structure. The following are the key features of Database First:
 4. **Facilitate database maintenance**: In the process of database design and change, developers can update the
    generated code model through ORM tools to ensure the consistency of the data model and database structure.
 5. **Lower decoupling from code**: Since the data model is generated directly from the database, any changes to the
-   database structure need to be updated to the model code through the ORM tool. This lower decoupling is suitable for
+   database structure need to be UPDATED to the model code through the ORM tool. This lower decoupling is suitable for
    scenarios with strict database design and management.
 
 ### Example

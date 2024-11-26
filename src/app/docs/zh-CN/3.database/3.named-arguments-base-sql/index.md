@@ -6,29 +6,29 @@
 执行SQL语句，查询多行记录
 
 - **函数声明**
-
-```kotlin
-fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any>>
-```
+    
+    ```kotlin
+    fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any>>
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: List<Map<String, Any>> = wrapper.query(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: List<Map<String, Any>> = wrapper.query(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
 - **返回值**：
 
-`List<Map<String, Any>>` 查询结果列表
+    `List<Map<String, Any>>` 查询结果列表
 
 {{ $.hr() }}
 
@@ -46,29 +46,29 @@ val result: List<Map<String, Any>> = wrapper.query(sql, params)
 > 查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryList<User>()`
 
 - **函数声明**
-
-```kotlin
-fun <T> queryList(sql: String, params: Map<String, Any?> = emptyMap()): List<T>
-```
+    
+    ```kotlin
+    fun <T> queryList(sql: String, params: Map<String, Any?> = emptyMap()): List<T>
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: List<YourType> = wrapper.queryList(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: List<YourType> = wrapper.queryList(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
 - **返回值**：
 
-`List<T>` 查询结果列表
+    `List<T>` 查询结果列表
 
 {{ $.hr() }}
 
@@ -78,28 +78,28 @@ val result: List<YourType> = wrapper.queryList(sql, params)
 
 - **函数声明**
 
-```kotlin
-fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any>?
-```
+    ```kotlin
+    fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any>?
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: Map<String, Any>? = wrapper.queryMap(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: Map<String, Any>? = wrapper.queryMap(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
 - **返回值**：
 
-`Map<String, Any>?` 查询结果Map
+    `Map<String, Any>?` 查询结果Map
 
 {{ $.hr() }}
 
@@ -118,28 +118,28 @@ val result: Map<String, Any>? = wrapper.queryMap(sql, params)
 
 - **函数声明**
 
-```kotlin
-fun <T> queryOne(sql: String, params: Map<String, Any?> = emptyMap()): T
-```
+    ```kotlin
+    fun <T> queryOne(sql: String, params: Map<String, Any?> = emptyMap()): T
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: YourType = wrapper.queryOne(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: YourType = wrapper.queryOne(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
 - **返回值**：
 
-`T` 查询结果
+    `T` 查询结果
 
 {{ $.hr() }}
 
@@ -158,28 +158,28 @@ val result: YourType = wrapper.queryOne(sql, params)
 
 - **函数声明**
 
-```kotlin
-fun <T> queryOneOrNull(sql: String, params: Map<String, Any?> = emptyMap()): T?
-```
+    ```kotlin
+    fun <T> queryOneOrNull(sql: String, params: Map<String, Any?> = emptyMap()): T?
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "SELECT * FROM table WHERE column = :value"
-val params = mapOf("value" to "some value")
-val result: YourType? = wrapper.queryOneOrNull(sql, params)
-```
+    ```kotlin
+    val sql = "SELECT * FROM table WHERE column = :value"
+    val params = mapOf("value" to "some value")
+    val result: YourType? = wrapper.queryOneOrNull(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
 - **返回值**：
 
-`T?` 查询结果
+    `T?` 查询结果
 
 {{ $.hr() }}
 
@@ -189,28 +189,28 @@ val result: YourType? = wrapper.queryOneOrNull(sql, params)
 
 - **函数声明**
 
-```kotlin
-fun execute(sql: String, params: Map<String, Any?> = emptyMap()): Int
-```
+    ```kotlin
+    fun execute(sql: String, params: Map<String, Any?> = emptyMap()): Int
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "UPDATE table SET column = :value WHERE id = :id"
-val params = mapOf("value" to "some value", "id" to 1)
-val affectedRows: Int = wrapper.execute(sql, params)
-```
+    ```kotlin
+    val sql = "UPDATE table SET column = :value WHERE id = :id"
+    val params = mapOf("value" to "some value", "id" to 1)
+    val affectedRows: Int = wrapper.execute(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数', 'Map<String, Any?>', 'emptyMap()']
+    ])}}
 
 - **返回值**：
 
-`Int` 受影响的行数
+    `Int` 受影响的行数
 
 {{ $.hr() }}
 
@@ -220,28 +220,28 @@ val affectedRows: Int = wrapper.execute(sql, params)
 
 - **函数声明**
 
-```kotlin
-fun batchExecute(sql: String, params: Array<Map<String, Any?>>): Array<Int>
-```
+    ```kotlin
+    fun batchExecute(sql: String, params: Array<Map<String, Any?>>): Array<Int>
+    ```
 
 - **使用示例**
 
-```kotlin
-val sql = "UPDATE table SET column = :value WHERE id = :id"
-val params = arrayOf(
-    mapOf("value" to "some value", "id" to 1),
-    mapOf("value" to "another value", "id" to 2)
-)
-val result: Array<Int> = wrapper.batchExecute(sql, params)
-```
+    ```kotlin
+    val sql = "UPDATE table SET column = :value WHERE id = :id"
+    val params = arrayOf(
+        mapOf("value" to "some value", "id" to 1),
+        mapOf("value" to "another value", "id" to 2)
+    )
+    val result: Array<Int> = wrapper.batchExecute(sql, params)
+    ```
 
 - **接收参数**：
 
-{{$.params([
-['sql', 'SQL查询语句', 'String'],
-['params', '命名参数列表', 'Array<Map<String, Any?>>']
-])}}
+    {{$.params([
+    ['sql', 'SQL查询语句', 'String'],
+    ['params', '命名参数列表', 'Array<Map<String, Any?>>']
+    ])}}
 
 - **返回值**：
-
-`Array<Int>` 受影响的行数数组
+    
+    `Array<Int>` 受影响的行数数组

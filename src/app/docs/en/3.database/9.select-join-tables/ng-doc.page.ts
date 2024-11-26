@@ -3,7 +3,7 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * @status:info coming soon
+ * @status:warning PREPARING
  */
 const SelectJoinTablesPage: NgDocPage = {
     title: `Select Join Tables`,

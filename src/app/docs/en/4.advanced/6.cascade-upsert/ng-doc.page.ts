@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * This article will guide you on how to use the cascading insert or update feature of Kronos.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const CascadeUpsertPage: NgDocPage = {
     title: `Cascade Upsert`,

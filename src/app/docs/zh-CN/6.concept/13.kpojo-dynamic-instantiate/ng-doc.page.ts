@@ -3,7 +3,7 @@ import ConceptCategory from "../ng-doc.category";
 
 /**
  * 本文将为您介绍Kronos如何实现动态将KClass转换为KPojo实例，且不需要反射，零开销。
- * @status:success 新
+ * @status:info 新
  */
 const KPojoGenericInstantiatePage: NgDocPage = {
     title: `KPojo的动态实例化`,

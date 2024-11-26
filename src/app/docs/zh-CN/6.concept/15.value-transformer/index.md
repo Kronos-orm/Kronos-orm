@@ -106,8 +106,7 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
 
 - **参数**
 
-{{
-$.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', '值的超类', 'List<String>'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
+  {{$.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', '值的超类', 'List<String>'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
 
 - **返回值**
 
@@ -147,12 +146,11 @@ $.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', 
 
 - **参数**
 
-{{
-$.params([['targetKotlinType', '目标类型', 'String'], ['value', '值', 'Any'], ['superTypesOfValue', '值的超类', 'List<String>'], ['dateTimeFormat', '日期格式', 'String?'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
+  {{ $.params([['targetKotlinType', '目标类型', 'String'], ['value', '值', 'Any'], ['superTypesOfValue', '值的超类', 'List<String>'], ['dateTimeFormat', '日期格式', 'String?'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
 
 - **返回值**
 
-`Any` - 转换后的值
+  `Any` - 转换后的值
 
 ### 注册自定义值转换器
 

@@ -1,7 +1,11 @@
 import {NgDocPage} from '@ng-doc/core';
 import ConceptCategory from "../ng-doc.category";
 
-const SerializeResolverPage: NgDocPage = {
+/**
+ * `KronosSerializeProcessor` is a serialization processor interface defined by Kronos for serialization and deserialization conversions between strings and Kotlin entity classes.
+ * @status:info NEW
+ */
+const SerializeProcessorPage: NgDocPage = {
     title: `Serialization and Deserialization`,
     mdFile: './index.md',
     category: ConceptCategory,
@@ -9,4 +13,4 @@ const SerializeResolverPage: NgDocPage = {
     route: 'serialize-processor'
 };
 
-export default SerializeResolverPage;
+export default SerializeProcessorPage;

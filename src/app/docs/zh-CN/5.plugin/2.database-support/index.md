@@ -1,3 +1,6 @@
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
 ## 已经支持的数据库类型
 
 Kronos支持创建插件实现数据库类型的扩展，目前支持的数据库类型如下：
@@ -17,7 +20,9 @@ Kronos支持创建插件实现数据库类型的扩展，目前支持的数据�
 - [<span class="code-red">H2</span>](https://www.h2database.com/)
 - [<span class="code-red">OceanBase</span>](https://www.oceanbase.com/)
 - [<span class="code-red">DM8</span>](https://www.dameng.com/DM8.html)
-- [<span class="code-red">GaussDB</span>](https://www.huaweicloud.com/product/gaussdb.html)
+- [<span class="code-red">GaussDB</span>](https://www.huaweicloud.com/product/gaussdb.html)‘
+
+如果您有其他数据库类型的需求，可以向我们提出PR，我们会第一时间增加该数据库的枚举类型。
 
 ## 如何实现数据库支持
 
@@ -45,7 +50,7 @@ val oceanBase = DBType.OceanBase
 - [SqLiteSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/database/sqlite/SqliteSupport.kt)
 - [OracleSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/database/oracle/OracleSupport.kt)
 
-## 3. 注册数据库类型实现类
+### 3. 注册数据库类型实现类
 
 在`Kronos`初始化时，通过`SqlManagerCustom`类的`registerDBTypeSupport`方法注册数据库类型实现类。
 

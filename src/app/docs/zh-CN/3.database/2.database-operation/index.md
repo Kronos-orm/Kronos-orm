@@ -13,23 +13,23 @@
 
 - **函数声明**
 
- ```kotlin
- fun exists(tableName: String): Boolean
- ```
+    ```kotlin
+    fun exists(tableName: String): Boolean
+    ```
 
 - **使用示例**
 
- ```kotlin
- val exists = wrapper.table.exists("user")
- ```
+    ```kotlin
+    val exists = wrapper.table.exists("user")
+    ```
 
 - **接收参数**
 
-{{ $.params([['tableName', '表名', 'String']]) }}
+    {{ $.params([['tableName', '表名', 'String']]) }}
 
 - **返回值**
 
-`Boolean` 表是否存在
+    `Boolean` 表是否存在
 
 {{ $.hr() }}
 
@@ -42,28 +42,30 @@
 通过KPojo判断表是否存在
 
 - **函数声明**
-
-```kotlin
-fun <T : KPojo> exists(kPojo: T = new T()): Boolean
-```
+    
+    ```kotlin
+    fun <T : KPojo> exists(kPojo: T = new T()): Boolean
+    ```
 
 <small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
-```kotlin
-val exists = wrapper.table.exists(User())
-// 或
-val exists = wrapper.table.exists<User>()
-```
+    ```kotlin
+    val exists = wrapper.table.exists(User())
+    // 或
+    val exists = wrapper.table.exists<User>()
+    ```
 
 - **接收参数**
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+    {{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
 
 - **返回值**
 
-`Boolean` - 表是否存在
+    `Boolean` - 表是否存在
+
+{{ $.hr() }}
 
 ## 3. {{ $.title("createTable(KPojo)")}} 创建表
 
@@ -75,23 +77,23 @@ val exists = wrapper.table.exists<User>()
 
 - **函数声明**
 
-```kotlin
-fun createTable<T: KPojo>(kPojo: T = new T())
-```
+    ```kotlin
+    fun createTable<T: KPojo>(kPojo: T = new T())
+    ```
 
 <small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
-```kotlin
-wrapper.table.createTable(User())
-// 或
-wrapper.table.createTable<User>()
-```
+    ```kotlin
+    wrapper.table.createTable(User())
+    // 或
+    wrapper.table.createTable<User>()
+    ```
 
 - **接收参数**
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+    {{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
 
 {{ $.hr() }}
 
@@ -101,19 +103,19 @@ wrapper.table.createTable<User>()
 
 - **函数声明**
 
-```kotlin
-fun truncateTable(tableName: String, restartIdentity: Boolean = true)
-```
+    ```kotlin
+    fun truncateTable(tableName: String, restartIdentity: Boolean = true)
+    ```
 
 - **使用示例**
 
-```kotlin
-wrapper.table.truncateTable("user")
-```
+    ```kotlin
+    wrapper.table.truncateTable("user")
+    ```
 
 - **接收参数**
 
-{{ $.params([['tableName', '表名', 'String'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
+    {{ $.params([['tableName', '表名', 'String'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
 
 {{ $.hr() }}
 
@@ -127,23 +129,23 @@ wrapper.table.truncateTable("user")
 
 - **函数声明**
 
-```kotlin
-fun <T: KPojo> truncateTable(kPojo: T = new T(), restartIdentity: Boolean = true)
-```
+    ```kotlin
+    fun <T: KPojo> truncateTable(kPojo: T = new T(), restartIdentity: Boolean = true)
+    ```
 
 <small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
-```kotlin
-wrapper.table.truncateTable(User())
-// 或
-wrapper.table.truncateTable<User>()
-```
+    ```kotlin
+    wrapper.table.truncateTable(User())
+    // 或
+    wrapper.table.truncateTable<User>()
+    ```
 
 - **接收参数**
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
+    {{ $.params([['kPojo', '实体对象', 'T', 'new T()'], ['restartIdentity', '是否重置自动递增值，适用于 PostgreSQL 和 sqlite', 'Boolean', 'true']]) }}
 
 {{ $.hr() }}
 
@@ -153,19 +155,19 @@ wrapper.table.truncateTable<User>()
 
 - **函数声明**
 
-```kotlin
-fun dropTable(tableName: String)
-```
+    ```kotlin
+    fun dropTable(tableName: String)
+    ```
 
 - **使用示例**
 
-```kotlin
-wrapper.table.dropTable("user")
-```
+    ```kotlin
+    wrapper.table.dropTable("user")
+    ```
 
 - **接收参数**
 
-{{ $.params([['tableName', '表名', 'String']]) }}
+    {{ $.params([['tableName', '表名', 'String']]) }}
 
 {{ $.hr() }}
 
@@ -173,27 +175,29 @@ wrapper.table.dropTable("user")
 
 - **泛型参数**： `<T>` 实体对象类型，继承自`KPojo`
 
+{{ $.hr(50) }}
+
 通过实体类删除表
 
 - **函数声明**
 
-```kotlin
-fun <T: KPojo> dropTable(kPojo: T = new T())
-```
+    ```kotlin
+    fun <T: KPojo> dropTable(kPojo: T = new T())
+    ```
 
 <small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
 
-```kotlin
-wrapper.table.dropTable(User())
-// 或
-wrapper.table.dropTable<User>()
-```
+    ```kotlin
+    wrapper.table.dropTable(User())
+    // 或
+    wrapper.table.dropTable<User>()
+    ```
 
 - **接收参数**
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+    {{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
 
 {{ $.hr() }}
 
@@ -205,24 +209,24 @@ wrapper.table.dropTable<User>()
 
 - **函数声明**
 
-```kotlin
-
-fun syncTable<T: KPojo>(kPojo: T = new T())
-```
+    ```kotlin
+    
+    fun syncTable<T: KPojo>(kPojo: T = new T())
+    ```
 
 <small>_{{ $.keyword("concept/kpojo-dynamic-instantiate", ["Kronos是如何不依赖反射实现将KClass&lt;KPojo&gt;实例化的？"])}}_</small>
 
 - **使用示例**
-
-```kotlin
-wrapper.table.syncTable(User())
-// 或
-wrapper.table.syncTable<User>()
-```
+    
+    ```kotlin
+    wrapper.table.syncTable(User())
+    // 或
+    wrapper.table.syncTable<User>()
+    ```
 
 - **接收参数**
 
-{{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
+    {{ $.params([['kPojo', '实体对象', 'T', 'new T()']]) }}
 
 {{ $.hr() }}
 
@@ -232,60 +236,59 @@ wrapper.table.syncTable<User>()
 
 - **函数声明**
 
-```kotlin
-fun getTableCreateSqlList(
-    dbType: DBType,
-    tableName: String,
-    fields: List<Field>,
-    indexes: List<KTableIndex> = emptyList()
-): List<String>
-```
+    ```kotlin
+    fun getTableCreateSqlList(
+        dbType: DBType,
+        tableName: String,
+        fields: List<Field>,
+        indexes: List<KTableIndex> = emptyList()
+    ): List<String>
+    ```
 
 - **使用示例**
 
-```kotlin
-
-val listOfSql =
-    getTableCreateSqlList(
-        dbType = DBType.Mysql,
-        tableName = "user",
-        fields = listOf(
-            Field(
-                name = "id",
-                type = KColumnType.fromString("INT"),
-                primaryKey = true,
-                identity = true
+    ```kotlin
+    val listOfSql =
+        getTableCreateSqlList(
+            dbType = DBType.Mysql,
+            tableName = "user",
+            fields = listOf(
+                Field(
+                    name = "id",
+                    type = KColumnType.fromString("INT"),
+                    primaryKey = true,
+                    identity = true
+                ),
+                Field(
+                    name = "name",
+                    type = KColumnType.fromString("VARCHAR"),
+                    length = 255
+                ),
+                Field(
+                    name = "age",
+                    type = KColumnType.fromString("INT"),
+                )
             ),
-            Field(
-                name = "name",
-                type = KColumnType.fromString("VARCHAR"),
-                length = 255
-            ),
-            Field(
-                name = "age",
-                type = KColumnType.fromString("INT"),
-            )
-        ),
-        indexes = listOf(
-            KTableIndex(
-                name = "idx_name",
-                columns = listOf("name"),
-                type = "UNIQUE"
+            indexes = listOf(
+                KTableIndex(
+                    name = "idx_name",
+                    columns = listOf("name"),
+                    type = "UNIQUE"
+                )
             )
         )
-    )
-    
-listOfSql.forEach { db.execute(it) }
-```
+        
+    listOfSql.forEach { db.execute(it) }
+    ```
 
 - **接收参数**
 
-{{$.params([
-['dbType', '数据库类型', 'DBType'],
-['tableName', '表名', 'String'],
-['fields', '字段列表', 'List<Field>'],
-['indexes', '索引列表', 'List<KTableIndex>', '[]']
-])}}
+    {{$.params([
+    ['dbType', '数据库类型', 'DBType'],
+    ['tableName', '表名', 'String'],
+    ['fields', '字段列表', 'List<Field>'],
+    ['indexes', '索引列表', 'List<KTableIndex>', '[]']
+    ])}}
 
 {{ $.hr() }}
 

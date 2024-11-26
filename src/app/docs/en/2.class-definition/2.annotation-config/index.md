@@ -1,13 +1,12 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## {{ $.annotation("Table") }} 表名设置
+## {{ $.annotation("Table") }} Table Name
 
-用于指定数据类的表名，该注解的生效优先级高于{{ $.keyword("
-getting-started/global-config", ["全局设置", "全局表名策略"]) }}的优先级。
+Used to specify the table name of a data class, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Configuration", "Table Naming Strategy"]) }}.
 
 **参数**：
-{{$.params([['name', '表名', 'String']])}}
+{{$.params([['name', 'table name', 'String']])}}
 
 ```kotlin
 @Table("tb_user")
@@ -18,20 +17,21 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("TableIndex") }}表索引
+## {{ $.annotation("TableIndex") }} Table Index
 
-用于指定数据表的索引。
+Used to specify the index of a data table.
 
 > **Note**
 > 在使用`dataSource.table.createTable<KPojo>()`或`dataSource.table.syncTable<KPojo>()`时生效。
 
-**参数**：
+**Parameters**:
+
 {{$.params([
-  ['name', '索引名', 'String'],
-  ['columns', '索引列名', 'Array<String>'],
-  ['type', $.noun("table-index", "索引类型"), 'String', '数据库类型默认'],
-  ['method', $.noun("table-index", "索引方法"), 'String', '数据库类型默认'],
-  ['concurrently', '是否并发创建索引，<b>仅适用于 PostgreSQL</b>', 'Boolean', false]
+  ['name', 'index name', 'String'],
+  ['columns', 'index column name', 'Array<String>'],
+  ['type', $.noun("table-index", "index type"), 'String', 'default by database type'],
+  ['method', $.noun("table-index", "index method"), 'String', 'default by database type'],
+  ['concurrently', 'Whether to create the index concurrently, <b>only applicable to PostgreSQL</b>', 'Boolean', false]
 ])}}
 
 ```kotlin
@@ -45,23 +45,22 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("CreateTime") }}表创建时间
+## {{ $.annotation("CreateTime") }} Table Create Time
 
-用于指定数据表是否开启创建时间策略，该注解的生效优先级高于{{ $.keyword(
-"getting-started/global-config", ["全局设置", "创建时间策略"]) }}的优先级。
+Used to specify whether a data table is enabled for create time strategy, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Configuration", "Create Time Strategy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否开启', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
-// 在全局开启创建时间的情况下取消某张表的创建时间功能
+// Disabling the creation time function for a table with creation time turned on globally
 @CreateTime(enabled = false)
 data class User(
     val id: Int? = null
 ) : KPojo
 
-// 在全局关闭创建时间的情况下开启某张表的创建时间功能
+// Enabling creation time for a table with creation time turned off globally
 @CreateTime
 data class User(
   val id: Int? = null,
@@ -69,23 +68,22 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("UpdateTime") }}表更新时间
+## {{ $.annotation("UpdateTime") }} Table Update Time
 
-用于指定数据表是否开启更新时间策略，该注解的生效优先级高于{{
-$.keyword("getting-started/global-config", ["全局设置", "更新时间策略"]) }}的优先级。
+Used to specify whether a data table is enabled for update time strategy, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Configuration", "Update Time Strategy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否开启', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
-// 在全局开启更新时间的情况下取消某张表的更新时间功能
+// Disabling update time for a table with update time turned on globally
 @UpdateTime(enabled = false)
 data class User(
   val id: Int? = null
 ) : KPojo
 
-// 在全局关闭更新时间的情况下开启某张表的更新时间功能
+// Enabling update time for a table with update time turned off globally
 @UpdateTime
 data class User(
     val id: Int? = null,
@@ -93,23 +91,22 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("LogicDelete") }}表逻辑删除
+## {{ $.annotation("LogicDelete") }} Table Logic Delete
 
-用于指定数据表是否开启逻辑删除策略，该注解的生效优先级高于{{
-$.keyword("getting-started/global-config", ["全局设置", "逻辑删除策略"]) }}的优先级。
+Used to specify whether the logical deletion policy is turned on for a datasheet, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Settings", "Logical Deletion Policy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否开启', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
-// 在全局开启逻辑删除的情况下取消某张表的逻辑删除功能
+// Disabling logical deletion for a table with logical deletion turned on globally
 @LogicDelete(enabled = false)
 data class User(
     val id: Int? = null
 ) : KPojo
 
-// 在全局关闭逻辑删除的情况下开启某张表的逻辑删除功能
+// Enabling logical deletion for a table with logical deletion turned off globally
 @LogicDelete
 data class User(
   val id: Int? = null,
@@ -117,14 +114,13 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Column") }}列名
+## {{ $.annotation("Column") }} Column Name
 
-用于指定数据表的列名，该注解的生效优先级高于{{
-$.keyword("getting-started/global-config", ["全局设置", "全局列名策略"]) }}的优先级。
+Used to specify the column name of a data class, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Settings", "Field Naming Strategy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['name', 'String', '列名']])}}
+{{$.params([['name', 'column name', 'String']])}}
 
 ```kotlin
 data class User(
@@ -133,14 +129,13 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("DateTimeFormat") }}日期时间格式
+## {{ $.annotation("DateTimeFormat") }} Date/Time Format
 
-用于指定数据表的日期/时间格式，该注解的生效优先级高于{{
-$.keyword("getting-started/global-config", ["全局设置", "默认日期时间格式"]) }}的优先级。
+Used to specify the date/time format for the data table, the effectiveness of this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Settings", "Default Date Time Format"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['pattern', '日期/时间格式', 'String']])}}
+{{$.params([['pattern', 'Date/Time Format', 'String']])}}
 
 ```kotlin
 data class User(
@@ -149,11 +144,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serializable") }}列序列化反序列化设置
+## {{ $.annotation("Serializable") }} Serialization/Deserialization
 
-用于声明该列是否需要进行自动序列化、反序列化，使用该注解的字段Kronos将调用序列化反序列化处理器（见{{
-$.keyword("getting-started/global-config", ["全局设置", "序列化反序列化处理器"])
-}}）将该列的值在数据库存入和读取时进行序列化和反序列化操作。
+Used to declare whether the column needs to be automatically serialized or deserialized. The field using this annotation, Kronos, will call the serialization and deserialization processor (see {{ $.keyword("getting-started/global-config", ["Global Settings", "Serialization and Deserialization Processor"]) }}) to perform serialization and deserialization operations on the column's values when storing and reading from the database.
 
 ```kotlin
 data class User(
@@ -161,26 +154,28 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-序列化反序列化的功能使用请参考：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"]) }}。
+For the functionality of serialization and deserialization, please refer to: {{ $.keyword("concept/serialize-processor", ["automatic serialization and deserialization"]) }}.
 
-## {{ $.annotation("Cascade") }}级联关系声明
+## {{ $.annotation("Cascade") }} Cascade Relationship Declaration
 
-此注解用于声明列的级联关系，详细定义及用法请参考{{ $.keyword("advanced/cascade-definition", ["进阶用法","级联关系定义"]) }}。
+This annotation is used to declare the cascade relationship of columns, please refer to {{ $.keyword("advanced/cascade-definition", ["Advanced Usage", "Cascade Relationship Definition"]) }} for detailed definition and usage.
 
 > **Note**
-> 请将此注解加在类型为`KPojo`或`Collection<KPojo>`的属性上，确保当前定义的表内有关联字段（如以下例子中的companyId）。
+> Please add this annotation to properties of type `KPojo` or `Collection<KPojo>`, ensuring that there are related fields in the currently defined table (such as the companyId in the example below).
 
-**参数**：
+**Parameters**:
+
 {{ $.params([
-  ['properties', '本表的关联字段属性名', 'Array<String>'],
-  ['targetProperties', '关联目标表关联字段属性名', 'Array<String>'],
-  ['onDelete', $.keyword("concept/cascade-delete-action", ["关联删除策略"]), 'CascadeDeleteAction', 'NO_ACTION'],
-  ['defaultValue', '指定级联删除方式为"SET DEFAULT"时设置的默认值（可选）', 'Array<String>', '[]'],
-  ['usage', '用于声明本实体需要用到的关联操作', 'Array<KOperationType>', '[Insert, Update, Delete, Upsert, Select]']
+    ['properties', 'The associated field properties of the current table', 'Array<String>'],
+    ['targetProperties', 'The associated field properties of the target table', 'Array<String>'],
+    ['onDelete', $.keyword("concept/cascade-delete-action", ["Cascade Delete Action"]), 'CascadeDeleteAction', 'NO_ACTION'],
+    ['defaultValue', 'The default value set when the cascade delete method is set to "SET DEFAULT" (optional)', 'Array<String>', '[]'],
+    ['usage', 'Used to declare the associated operations required by this entity', 'Array<KOperationType>', '[Insert, Update, Delete, Upsert, Select]']
 ])}}
 
 ```kotlin
-// 一对多级联关系示例
+// Cascade setting, no need for entity foreign keys, associate with the id of the Company table through companyId
+// One-to-many relationship
 @Table("tb_user")
 data class Employee(
     val id: Int? = null,
@@ -196,14 +191,15 @@ data class Company(
 ) : KPojo
 ```
 
-## {{ $.annotation("Ignore") }} 查询时忽略属性
+## {{ $.annotation("Ignore") }} Ignore Property in Query
 
-此注解用于声明该列不需要在指定的查询条件中进行查询。
-需要传入忽略的查询类型 {{ $.keyword("concept/ignore-action", ["忽略查询策略"]) }}
+This annotation is used to declare that the column does not need to be queried in the specified query condition.
+You need to pass in the query type to ignore {{ $.keyword("concept/ignore-action", ["Ignore Query Action"]) }}.
 
-**参数**：
+**Parameters**:
+
 {{ $.params([
-['target', '忽略的查询类型(' + $.code('SELECT') + ', ' + $.code('CASCADE_SELECT') + ')', 'Array<IgnoreAction>']
+    ['target', 'Ignored query type (' + $.code('SELECT') + ', ' + $.code('CASCADE_SELECT') + ')', 'Array<IgnoreAction>']
 ])}}
 
 ```kotlin
@@ -224,19 +220,19 @@ data class Company(
 ```
 
 > **Note**
-> 请注意，在级联操作时，此注解是单向的，即给`employees`加上`@Ignore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
+> Please note that during cascade operations, this annotation is unidirectional; that is, adding the `@Ignore` annotation to `employees` will prevent `employees` from being query cascaded, but `company` will be query cascaded.
 
-## {{ $.annotation("PrimaryKey") }}列主键设置
+## {{ $.annotation("PrimaryKey") }} Primary Key And Primary Key Type
 
-此注解用于声明列为主键。
+This annotation is used to declare a column as a primary key.
 
-**参数**：
+**Parameters**:
 
 {{$.params([
-['identity', '是否自增', 'Boolean'],
-['uuid', '是否使用uuid作为主键', 'Boolean'],
-['snowflake', '是否使用雪花算法作为主键', 'Boolean'],
-['custom', '是否使用自定义主键生成器', 'Boolean']
+  ['identity', 'Whether it is self-incrementing', 'Boolean'],
+  ['uuid', 'Whether to use uuid as the primary key', 'Boolean'],
+  ['snowflake', 'Whether to use the snowflake algorithm as the primary key', 'Boolean'],
+  ['custom', 'Whether to use a custom primary key generator', 'Boolean']
 ])}}
 
 ```kotlin
@@ -248,28 +244,28 @@ data class User(
 ```
 
 > **Note**
-> 使用**自增主键**时，请保证`id`列的类型为`Int`或`Long`类型，否则无法正确生成主键。
+> When using a **self-augmenting primary key**, please make sure that the type of the `id` column is of type `Int` or `Long`, otherwise the primary key will not be generated correctly.
 
 > **Note**
-> 使用**uuid**作为主键时，请保证`id`列的类型为`String`类型，否则无法正确生成主键。
+> When using **uuid** as the primary key, please make sure that the type of the `id` column is of type `String`, otherwise the primary key will not be generated correctly.
 
 > **Note**
-> 使用**雪花算法**时，自增字段必须为`Long`类型，否则无法正确生成主键，请您在配置文件中配置`datacenterId`和`workerId`，参考：{{ $.keyword("getting-started/global-config", ["主键生成器", "雪花算法"]) }}。
+> When using the **Snowflake Algorithm**, the self-incremented field must be of type `Long`, otherwise the primary key will not be generated correctly, please configure `datacenterId` and `workerId` in your configuration file, refer to: {{ $.keyword("getting-started/global-config", ["Primary Key Generator" , "Snowflake Algorithm"]) }}.
 
 > **Note**
-> 使用**自定义主键**时，请提前设置配置自定义主键生成器`customIdGenerator`(`KIdGenerator<T>`)，参考：{{ $.keyword("getting-started/global-config", ["主键生成器", "自定义主键生成器"]) }}。
+> When using a **custom primary key**, please set up the configuration of the custom primary key generator `customIdGenerator` (`KIdGenerator<T>`) ahead of time, refer to: {{ $.keyword("getting-started/global-config", ["Primary Key Generator", "Custom Primary Key Generator"])}}.
 
-## {{ $.annotation("ColumnType") }}列类型及长度
+## {{ $.annotation("ColumnType") }} Column Type And Length
 
-对于不同的数据库类型，kronos会根据kotlin类型自动转换类型，您可以参考[Kotlin列类型推断](/documentation/class-definition/kotlin-type-to-kcolumn-type)
-查看Kotlin数据类型在各个数据库中的映射关系。
-您可以通过此注解声明列类型及长度，如果不指定则使用默认的类型及长度，全部类型信息请参考：[Kronos列类型](/documentation/class-definition/kcolumn-type)
+For different types of databases, Kronos will automatically convert types based on Kotlin types. You can refer to {{ $.keyword("class-definition/kotlin-type-to-kcolumn-type", ["Kotlin column type inference"]) }} to view the mapping of Kotlin data types in various databases.
 
-**参数**：
+You can declare the column type and length through this annotation; if not specified, the default type and length will be used. For all type information, please refer to: {{ $.keyword("class-definition/kcolumn-type", ["Kronos column types"]) }}.
+
+**Parameters**:
 
 {{$.params([
-  ['type', '类型', 'String'],
-  ['length', '长度', 'Int', '根据类型默认']
+  ['type', 'Type', 'String'],
+  ['length', 'Length', 'Int', 'default by type']
 ])}}
 
 ```kotlin
@@ -280,9 +276,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("NotNull") }}列非空约束
+## {{ $.annotation("NotNull") }} Non-Null Constraint
 
-此注解用于声明列为非空，如果不指定则使用默认的非空约束
+This annotation is used to declare a column as a non-null constraint.
 
 ```kotlin
 @Table("tb_user")
@@ -292,13 +288,13 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("CreateTime") }}创建时间列
+## {{ $.annotation("CreateTime") }} Creation Time Column
 
-此注解用于声明列为创建时间字段，如果不指定则使用{{ $.keyword("getting-started/global-config", ["全局设置","创建时间策略"])}}。
+This annotation is used to declare the column as a creation time field, or {{ $.keyword("getting-started/global-config", ["Global Configuration", "Creation Time Strategy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否启用', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")
@@ -308,29 +304,29 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("UpdateTime") }}更新时间列
+## {{ $.annotation("UpdateTime") }} Update Time Column
 
-此注解用于声明列为更新时间字段，如果不指定则使用{{ $.keyword("getting-started/global-config", ["全局设置","更新时间策略"])}}。
+This annotation is used to declare the column as an update time field, or {{ $.keyword("getting-started/global-config", ["Global Configuration", "Update Time Strategy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否启用', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")
 data class User(
     @UpdateTime
-    val updated: String? = null
+    val UPDATED: String? = null
 ) : KPojo
 ```
 
-## {{ $.annotation("LogicDelete") }}逻辑删除列
+## {{ $.annotation("LogicDelete") }} Logical Delete Column
 
-此注解用于声明列为逻辑删除字段，如果不指定则使用{{ $.keyword("getting-started/global-config", ["全局设置","逻辑删除策略"])}}。
+This annotation is used to declare the column as a logical delete field, or {{ $.keyword("getting-started/global-config", ["Global Configuration", "Logical Deletion Strategy"]) }}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否启用', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")
@@ -340,13 +336,13 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Version") }}乐观锁（版本）列
+## {{ $.annotation("Version") }} Optimistic Locking (Version) Column
 
-此注解用于声明列为乐观锁（版本）字段，如果不指定则使用{{ $.keyword("getting-started/global-config", ["全局设置","乐观锁（版本）策略"])}}。
+This annotation is used to declare a field as an optimistic lock (version) field. If not specified, it uses {{ $.keyword("getting-started/global-config", ["Global Settings", "Optimistic Lock (Version) Strategy"])}}.
 
-**参数**：
+**Parameters**:
 
-{{$.params([['enabled', '是否启用', 'Boolean', true]])}}
+{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")

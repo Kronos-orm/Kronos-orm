@@ -1,6 +1,9 @@
-## 已经支持的数据库类型
+{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos支持创建插件实现数据库类型的扩展，目前支持的数据库类型如下：
+## Types of databases already supported
+
+Kronos supports the creation of plug-ins to realize the expansion of database types, currently supported database types are as follows:
 
 - [MySQL](https://www.mysql.com/)
 - [PostgreSQL](https://www.postgresql.org/)
@@ -8,9 +11,9 @@ Kronos支持创建插件实现数据库类型的扩展，目前支持的数据�
 - [SQLite](https://www.sqlite.org/)
 - [Oracle](https://www.oracle.com/database/technologies/)
 
-## 支持扩展的数据库类型
+## Support for extended database types
 
-尚未提供官方支持，但可以通过创建插件实现数据库类型如下：
+No official support has been provided yet, but the database type can be implemented by creating a plugin as follows:
 
 - [<span class="code-red">DB2</span>](https://www.ibm.com/db2)
 - [<span class="code-red">Sybase</span>](https://www.sap.com/)
@@ -19,11 +22,13 @@ Kronos支持创建插件实现数据库类型的扩展，目前支持的数据�
 - [<span class="code-red">DM8</span>](https://www.dameng.com/DM8.html)
 - [<span class="code-red">GaussDB</span>](https://www.huaweicloud.com/product/gaussdb.html)
 
-## 如何实现数据库支持
+If you have other database type requirements, you can submit a PR to us, and we will add the enumeration class for that database as soon as possible.
 
-### 1. 获取数据库类型枚举类
+## How to implement database support
 
-通常情况下，数据库类型枚举类是由Kronos提供的，你可以通过`DBType`类获取到所有支持的数据库类型。
+### 1. Get database type enum class
+
+Typically, the database type enumeration class is provided by Kronos, and you can get all supported database types through the `DBType` class.
 
 ```kotlin
 val mysql = DBType.Mysql
@@ -31,13 +36,11 @@ val postgresql = DBType.Postgres
 val oceanBase = DBType.OceanBase
 ```
 
-### 2. 创建数据库类型实现类
+### 2. Creating Database Type Implementation Classes
 
-创建一个`object`或`class`，
-继承[DatabaseSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/interfaces/DatabasesSupport.kt)
-接口，并实现其中的方法，如：`getDBNameFromUrl`、`getColumnCreateSql`、`getIndexCreateSql`等。
+Create an `object` or `class` that inherits the [DatabaseSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/ kotlinorm/interfaces/DatabasesSupport.kt) interface and implement its methods, e.g. `getDBNameFromUrl`, `getColumnCreateSql`, `getIndexCreateSql`, etc.
 
-以下为官方支持的数据库类型实现类：
+The following are the officially supported database type implementation classes:
 
 - [MysqlSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/database/mysql/MysqlSupport.kt)
 - [PostgresqlSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/database/postgres/PostgresqlSupport.kt)
@@ -45,9 +48,9 @@ val oceanBase = DBType.OceanBase
 - [SqLiteSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/database/sqlite/SqliteSupport.kt)
 - [OracleSupport](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-core/src/main/kotlin/com/kotlinorm/database/oracle/OracleSupport.kt)
 
-## 3. 注册数据库类型实现类
+### 3. Registering Database Type Implementation Classes
 
-在`Kronos`初始化时，通过`SqlManagerCustom`类的`registerDBTypeSupport`方法注册数据库类型实现类。
+The database type implementation class is registered during `Kronos` initialization through the `registerDBTypeSupport` method of the `SqlManagerCustom` class.
 
 ```kotlin
 SqlManagerCustom.registerDBTypeSupport(DBType.Mysql, MysqlSupport)

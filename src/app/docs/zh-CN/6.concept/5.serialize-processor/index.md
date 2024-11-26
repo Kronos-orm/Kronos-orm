@@ -1,30 +1,58 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-`KronosSerializeResolver`是Kronos定义的序列化解析器接口，用于字符串和Kotlin实体类之间的序列化和反序列化转换。
+## 成员方法
 
-**成员函数：**
+### 1. {{ $.title("deserialize(serializedStr, kClass)") }} 反序列化
 
-## {{ $.title("deserialize") }} 将字符串反序列化为指定的KClass
+将字符串反序列化为指定的对象。
 
-参数：
-{{ $.params([
-['serializedStr', '要反序列化的字符串', 'String'],
-['kClass', '要反序列化的KClass', 'KClass<*>']
-])}}
+- **函数声明**
 
-返回：
+    ```kotlin
+    fun deserialize(serializedStr: String, kClass: KClass<*>): Any
+    ```
 
-{{ $.title("Any") }} 反序列化后的对象
+- **使用示例**
 
-## {{ $.title("serialize") }} 将对象序列化为字符串
+    ```kotlin
+    val user = processor.deserialize(serializedStr, User::class)
+    ```
 
-参数：
-{{ $.params([
-['obj', '要序列化的对象', 'Any']
-])}}
+- **参数**
 
-返回：
+  {{ $.params([
+  ['serializedStr', '要反序列化的字符串', 'String'],
+  ['kClass', '要反序列化的KClass', 'KClass<*>']
+  ]) }}
 
-{{ $.title("String") }} 序列化后的字符串
+- **返回值**
 
+  `Any` 反序列化后的对象
 
+{{ $.hr() }}
+
+### 2. {{ $.title("serialize(obj)") }} 序列化
+
+将对象序列化为字符串。
+
+- **函数声明**
+
+    ```kotlin
+    fun serialize(obj: Any): String
+    ```
+
+- **使用示例**
+
+    ```kotlin
+    val serializedStr = processor.serialize(user)
+    ```
+
+- **参数**
+
+  {{ $.params([
+  ['obj', 'Object to serialize', 'Any']
+  ]) }}
+
+- **返回值**
+
+  `String` 序列化后的字符串

@@ -1,14 +1,14 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos访问数据库通过{{ $.keyword("concept/kronos-data-source-wrapper", ["概念", "数据源包装器"]) }}实现，`KronosDataSourceWrapper`是一个接口，是对数据库操作的封装，它不关心具体的数据库连接细节，与平台无关，只关心数据库操作的逻辑。
+Kronos access to the database is achieved through {{ $.keyword("concept/kronos-data-source-wrapper", ["concept", "data-source-wrapper"]) }}, `KronosDataSourceWrapper` is an interface that is an encapsulation of the database operation, which does not care about the specific database connection details, independent of the platform, and only cares about the logic of database operations.
 
 > **Note**
-> 同一个项目中可以通过定义多个`KronosDataSourceWrapper`实例，实现多数据源、多数据库、动态数据源等功能。
+> Multiple data sources, multiple databases, dynamic data sources, etc. can be realized in the same project by defining multiple `KronosDataSourceWrapper` instances.
 
-## 使用示例
+## Usage Example
 
-官方提供了基于JDBC的数据库连接插件，可以通过以下方式引入：
+Official JDBC-based database connection plug-ins are provided and can be introduced in the following ways:
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -34,14 +34,14 @@ dependencies {
 </project>
 ```
 
-除此之外，可以通过如`kronos-spring-data-wrapper`、`kronos-jdbi-wrapper`、`kronos-mybatis-wrapper`等插件实现数据库连接，与Spring Data、JDBI、MyBatis等框架集成。
+In addition to this, database connectivity can be achieved through plugins such as `kronos-spring-data-wrapper`, `kronos-jdbi-wrapper`, `kronos-mybatis-wrapper`, etc. Integration with frameworks such as Spring Data, JDBI, and MyBatis.
 
-以下是使用`kronos-jdbc-wrapper`、`Apache Commons DBCP2`创建数据库连接的示例：
+The following is an example of creating a database connection using `kronos-jdbc-wrapper`, `Apache Commons DBCP2`:
 
 > **Note**
-> **BasicDataSource**是Apache Commons DBCP的一个简单的数据源实现，您可以更换为其他数据源实现。
+> **BasicDataSource** is a simple data source implementation of Apache Commons DBCP that you can replace with other data source implementations.
 
-### 1. Mysql数据库连接配置
+### 1. Mysql Database Connection Configuration
 
 ```kotlin group="Mysql" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -98,7 +98,7 @@ Kronos.init {
 }
 ```
 
-### 2. PostgreSQL数据库连接配置
+### 2. PostgreSQL Database Connection Configuration
 
 ```kotlin group="PostgreSQL" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -153,7 +153,7 @@ Kronos.init {
 }
 ```
 
-### 3. Oracle数据库连接配置
+### 3. Oracle Database Connection Configuration
 
 ```kotlin group="Oracle" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -208,7 +208,7 @@ Kronos.init {
 }
 ```
 
-### 4. SQL Server数据库连接配置
+### 4. SQL Server Database Connection Configuration
 
 ```kotlin group="SQL Server" name="gradle(kts)" icon="gradlekts"
 dependencies {
@@ -262,7 +262,7 @@ Kronos.init {
 }
 ```
 
-### 5. SQLite数据库连接配置
+### 5. SQLite Database Connection Configuration
 
 ```kotlin group="SQLite" name="gradle(kts)" icon="gradlekts"
 dependencies {

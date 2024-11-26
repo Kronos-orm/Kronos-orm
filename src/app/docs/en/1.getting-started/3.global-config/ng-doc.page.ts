@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * This chapter will guide you on how to set up Kronos globally.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const GlobalConfigPage: NgDocPage = {
 	title: `Global Config`,

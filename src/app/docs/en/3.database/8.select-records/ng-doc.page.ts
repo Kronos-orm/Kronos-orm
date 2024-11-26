@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将介绍如何查询数据库中的记录。
- * @status:info coming soon
+ * @status:warning PREPARING
  */
 const SelectRecordsPage: NgDocPage = {
     title: `Select Records`,

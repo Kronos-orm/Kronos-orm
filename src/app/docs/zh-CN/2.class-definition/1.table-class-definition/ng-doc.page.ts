@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本文将指导您如何定义一个Kronos表数据实体类。
- * @status:info 有更新
+ * @status:success 有更新
  */
 const TableClassDefinition: NgDocPage = {
     title: `数据表类定义`,

@@ -3,8 +3,8 @@ import ClassDefinitionCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将指导您如何配置注解。
- * @status:info coming soon
+ * This chapter will guide you on how to configure annotations.
+ * @status:info NEW
  */
 const AnnotationConfigPage: NgDocPage = {
 	title: `Annotation Config`,

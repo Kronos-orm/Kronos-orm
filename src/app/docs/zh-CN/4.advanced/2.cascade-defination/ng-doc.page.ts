@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将介绍如何在KPojo实体类中定义级联关系。
- * @status:success 新
+ * @status:info 新
  */
 const CascadeDefinitionPage: NgDocPage = {
     title: `级联关系定义`,

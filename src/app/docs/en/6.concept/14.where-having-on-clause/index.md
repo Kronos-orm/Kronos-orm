@@ -2,7 +2,7 @@
 
 ## Criteria Conditional Expression
 
-Kronos uses Criteria objects to build conditional expressions and supports complex combinations of conditions such as `&&`, `||`, `! `, `||`, `!', etc., which are used in conditions such as `where`, `having`, `on`, and so on.
+Kronos uses Criteria objects to build conditional expressions and supports complex combinations of conditions such as `&&`、`||`、`!`, etc., which are used in conditions such as `where`, `having`, `on`, and so on.
 
 You can use where condition objects to compose complex query conditions in methods that require conditions in `select`, `delete`, `update`, and `join` functions.
 
@@ -24,7 +24,7 @@ Using kronos is like writing native kotlin code, which will greatly **improve de
 kronos supports the following kotlin operators for constructing conditional expressions:
 
 - {{ $.title("==") }}: equal to
-- {{ $.title("! =") }}: not equal
+- {{ $.title("!=") }}: not equal
 - {{ $.title(">") }}: greater than
 - {{ $.title("<") }}: less than
 - {{ $.title("=") }}: greater than or equal to
@@ -158,7 +158,7 @@ where { it.age le 18 }
 User(age = 18).select().where { it.age.le }
 ```
 
-### In
+### Fuzzy Query
 
 #### {{ $.title("like") }} Fuzzy Query
 

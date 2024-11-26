@@ -41,7 +41,7 @@ Cascading updates will automatically modify the reference attributes of the enti
 ```kotlin
 User(
     id = 1,
-    name = "user" //Here the userName field of Profile will be cascaded and updated
+    name = "user" //Here the userName field of Profile will be cascaded and UPDATED
 ).update().by { it.id }.execute()
 ```
 
@@ -130,7 +130,7 @@ data class Student(
 ```kotlin
 School(
     id = 1,
-    name = "school" //Here, the schoolName fields of GroupClass and Student will be cascaded and updated
+    name = "school" //Here, the schoolName fields of GroupClass and Student will be cascaded and UPDATED
 ).update().by { it.id }.execute()
 ```
 
@@ -188,7 +188,7 @@ Updating the `User` or `Role` entity can perform cascading updates and automatic
 ```kotlin
 User(
     id = 1,
-    name = "user" //Here the userName field of the Relation will be cascaded and updated
+    name = "user" //Here the userName field of the Relation will be cascaded and UPDATED
 ).update().by { it.id }.execute()
 ```
 
@@ -197,6 +197,6 @@ Or：
 ```kotlin
 Role(
     id = 1,
-    name = "role" //Here the roleName field of Relation will be cascaded and updated
+    name = "role" //Here the roleName field of Relation will be cascaded and UPDATED
 ).update().by { it.id }.execute()
 ``` 

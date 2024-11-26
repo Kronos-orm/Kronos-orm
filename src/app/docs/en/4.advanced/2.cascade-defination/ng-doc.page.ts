@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * This chapter will describe how to define cascade relationships in KPojo entity classes.
- * @status:info updated recently
+ * @status:success UPDATED
  */
 const CascadeDefinitionPage: NgDocPage = {
     title: `Cascade Definition`,

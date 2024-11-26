@@ -3,8 +3,8 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本章将介绍如何在KPojo实体类中定义级联关系。
- * @status:info coming soon
+ * This chapter will describe how to define cascade relationships in KPojo entity classes.
+ * @status:info updated recently
  */
 const CascadeDefinitionPage: NgDocPage = {
     title: `Cascade Definition`,

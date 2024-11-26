@@ -3,8 +3,8 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将指导您如何使用Kronos的级联插入或更新功能。
- * @status:info coming soon
+ * This article will guide you on how to use the cascading insert or update feature of Kronos.
+ * @status:info updated recently
  */
 const CascadeUpsertPage: NgDocPage = {
     title: `Cascade Upsert`,

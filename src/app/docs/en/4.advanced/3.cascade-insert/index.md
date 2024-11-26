@@ -1,13 +1,13 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 1. 一对一级联关系
+## 1. One-to-one cascading relationship
 
-本节将介绍对于Kronos中定义的一对多级联关系的级联插入。
+This section describes the cascade insert for one-to-many cascade relationships defined in Kronos.
 
-### 数据类定义
+### Data class definition
 
-我们定义`User`和`Profile`两个实体类，`User`实体类中包含了一个`Profile`实体类的引用，`Profile`实体类中包含了一个`User`实体类的引用。
+We define two entity classes, `User` and `Profile`. The `User` entity class contains a reference to the `Profile` entity class, and the `Profile` entity class contains a reference to the `User` entity class.
 
 ```kotlin group="case3" name="User.kt" icon="kotlin"
 data class User(
@@ -31,9 +31,9 @@ data class Profile(
 )
 ```
 
-### 级联插入
+### Cascade Insert
 
-插入`User`或`Profile`实体都可以进行级联插入，级联插入会自动为级联创建的实体的引用属性赋值（支持自增主键和多层级级联关系）。
+Cascading inserts can be performed when inserting `User` or `Profile` entities. Cascading inserts will automatically assign values to the referenced attributes of the entities created in the cascade (supporting auto-incrementing primary keys and multi-level cascading relationships).
 
 ```kotlin
 User(
@@ -44,7 +44,7 @@ User(
 ).insert().execute()
 ```
 
-或者：
+Or：
 
 ```kotlin
 Profile(
@@ -55,12 +55,13 @@ Profile(
 ).insert().execute()
 ```
 
-## 2. 一对多级联关系
+## 2. One-to-many cascading relationship
 
-一对多关系和一对一关系的用法类似。
+The usage of one-to-many relationships is similar to that of one-to-one relationships.
 
-### 数据类定义
-首先，我们定义以下的`Parent`和`Child`两个实体类，`Parent`实体类中包含了一个`Child`实体类的集合，`Child`实体类中包含了一个`Parent`实体类的引用。
+### Data class definition
+
+First, we define the following `Parent` and `Child` two entity classes. The `Parent` entity class contains a collection of `Child` entity classes, and the `Child` entity class contains a reference to the `Parent` entity class.
 
 ```kotlin group="case1" name="Parent.kt" icon="kotlin"
 data class Parent(
@@ -81,12 +82,13 @@ data class Child(
 )
 ```
 
-### 级联插入
-使用`KPojo.insert()`方法，可以实现一对多级联关系的级联插入。
+### Cascade Insert
 
-在Kronos中的一对多插入时，仅支持`Parent -> Child`方向的级联插入。
+Use the `KPojo.insert()` method to implement cascade insertion of one-to-many cascade relationships.
 
-在级联插入时不需要指定`Child`实体的`parentId`，级联插入会自动为`Child`实体的`parentId`赋值（支持自增主键和多层级级联关系）。
+When inserting one-to-many in Kronos, only cascade inserts in the `Parent -> Child` direction are supported.
+
+There is no need to specify the `parentId` of the `Child` entity during cascading inserts. Cascading inserts will automatically assign a value to the `parentId` of the `Child` entity (supporting auto-incrementing primary keys and multi-level cascading relationships).
 
 ```kotlin
 Parent(
@@ -102,7 +104,7 @@ Parent(
 ).insert().execute()
 ```
 
-以下是一个更加复杂的、层级更深的例子：
+Here is a more complex example with more layers:
 
 ```kotlin group="case2" name="School.kt" icon="kotlin"
 data class School(
@@ -166,13 +168,13 @@ School(
 ).insert().execute()
 ```
 
-## 3. 多对多级联关系
+## 3. Many-to-many cascading relationships
 
-通过`manyToMany`委托，Kronos简化多对多关系为一对多关系，并为您自动创建关联表记录，详见：{{$.keyword("advanced/cascade-definition", ["级联关系定义", "使用委托实现级联多对多跨中间表关系"] )}}。
+Through the `manyToMany` delegation, Kronos simplifies many-to-many relationships into one-to-many relationships and automatically creates association table records for you. For details, see: {{$.keyword("advanced/cascade-definition", ["Cascade relationship definition", "Use delegation to implement cascading many-to-many cross-intermediate table relationships"] )}}.
 
-### 数据类定义
+### Data class definition
 
-首先我们定义`User`、`Role`、`Relation`三个实体类，其中`Relation`实体类中包含了`User`和`Role`两个实体类的引用，`User`和`Role`通过`manyToMany`委托关联。
+First, we define three entity classes: `User`, `Role`, and `Relation`. The `Relation` entity class contains references to the `User` and `Role` entity classes. `User` and `Role` are associated through the `manyToMany` delegation.
 
 ```kotlin group="case4" name="User.kt" icon="kotlin"
 data class User(
@@ -209,10 +211,9 @@ data class Relation(
 )
 ```
 
-### 级联插入
+### Cascade Insert
 
-插入`User`或`Role`实体都可以进行级联插入，级联插入会自动为级联创建的实体的引用属性赋值（支持自增主键和多层级级联关系）。
-
+Cascading inserts can be performed when inserting `User` or `Role` entities. Cascading inserts will automatically assign values to the referenced attributes of the entities created in the cascade (supporting auto-incrementing primary keys and multi-level cascading relationships).
 ```kotlin
 User(name = "user")
     .apply { roles = listOf(Role(name = "role")) }

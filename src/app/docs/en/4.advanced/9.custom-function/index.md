@@ -1,15 +1,15 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 自定义函数/方言
+## Custom functions/dialects
 
-Kronos支持自定义内置函数/方言，您可以参考下面的示例步骤，实现自定义功能：
+Kronos supports custom built-in functions/dialects. You can refer to the following example steps to implement custom functions:
 
-### 步骤一：创建自定义函数声明
+### Step 1: Create a custom function declaration
 
-通过对`FunctionHandler`添加扩展函数的形式，声明所要添加的内置函数，以便能在使用时通过句柄`f`快速调出
+By adding an extension function to `FunctionHandler`, declare the built-in function to be added so that it can be quickly called out through the handle `f` when used
 
-这里只需要定义函数名称、参数名称及类型、返回值类型即可，无需定义函数的具体逻辑
+Here you only need to define the function name, parameter name and type, and return value type. There is no need to define the specific logic of the function.
 
 ```kotlin
 import com.kotlinorm.functions.FunctionHandler
@@ -24,7 +24,7 @@ object CustomerFunctions {
 }
 ```
 
-### 步骤二：实现自定义函数具体逻辑
+### Step 2: Implement the specific logic of the custom function
 
 ```kotlin
 import com.kotlinorm.functions.FunctionHandler
@@ -35,7 +35,7 @@ object CustomerFunctionBuilder : FunctionBuilder {
         DBType.Mysql, DBType.Postgres, DBType.SQLite, DBType.Oracle, DBType.Mssql
     )
 
-    // 定义支持的函数名称及对应的数据库类型
+    // Define the supported function names and corresponding database types
     override val supportFunctionNames: (String) -> Array<DBType> = {
         when (it) {
             "curDate" -> all
@@ -44,7 +44,7 @@ object CustomerFunctionBuilder : FunctionBuilder {
         }
     }
 
-    // 定义函数的具体逻辑，返回最终的生成在SQL语句部分
+    // Define the specific logic of the function and return the final generated SQL statement part
     override fun transform(field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean): String {
         return when (field.functionName) {
             "curDate" -> {
@@ -53,7 +53,7 @@ object CustomerFunctionBuilder : FunctionBuilder {
                     else -> "CURDATE"
                 }
                 
-                //这个函数是Kronos用于生成带参函数sql语句的方法
+                // This function is the method used by Kronos to generate SQL statements with parameter functions.
                 buildFields(field.functionName, field.name.takeIf { showAlias } ?: "", field.fields, dataSource, showTable)
             }
             "showName" -> "'$field.fields.first().value'"
@@ -66,24 +66,24 @@ object CustomerFunctionBuilder : FunctionBuilder {
 
 #### {{ $.title("FunctionField") }}
 
-`FunctionField`是Kronos用于生成带参函数sql语句的数据结构，包含了函数名称、字段名称、字段值等信息
+`FunctionField` is a data structure used by Kronos to generate SQL statements with parameters, which contains information such as function name, field name, field value, etc.
 
-- **成员变量**
+- **Member variables**
 
-{{ $.params([['functionName', '函数名称', 'String'], ['fields', '字段名称及值', 'List<Pair<Field?, Any?>>', 'emptyList()']]) }}
+{{ $.params([['functionName', 'function name', 'String'], ['fields', 'field name and value', 'List<Pair<Field?, Any?>>', 'emptyList()']]) }}
 
 
-### 步骤三：注册自定义内置函数
+### Step 3: Register a custom built-in function
 
-将定义的内置函数Builder注册到`FunctionManager`中，以便在使用时能够调用
+Register the defined built-in function Builder to the `FunctionManager` so that it can be called when used
 
 ```kotlin
 FunctionManager.registerFunctionBuilder(CustomerFunctionBuilder())
 ```
 
-### 步骤四：使用自定义内置函数
+### Step 4: Use custom built-in functions
 
-在查询`select`和条件筛选`where`时，通过句柄`f`调用自定义内置函数
+When querying `select` and conditional filtering `where`, call the custom built-in function through the handle `f`
 
 ```kotlin
 KPojo.select { f.showName("user") }.where { f.curDate() == "2024-01-01" }.queryList()

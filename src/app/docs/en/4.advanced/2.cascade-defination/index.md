@@ -1,17 +1,17 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 级联关系注解
+## Cascading Relationship Annotation
 
-KPojo提供了`@Cascade`注解来定义级联关系，详见：{{ $.keyword("
-class-definition/annotation-config", ["注解配置", "@Cascade级联关系定义"]) }}。
+KPojo provides the `@Cascade` annotation to define the cascade relationship, see: {{ $.keyword("
+class-definition/annotation-config", ["annotation configuration", "@Cascade cascade relationship definition"]) }}.
 
-## 1. 一对多级联关系
+## 1. One-to-many cascading relationship
 
-本节将介绍如何在KPojo实体类中定义一对多级联关系。
+This section describes how to define a one-to-many cascade relationship in a KPojo entity class.
 
-首先，我们有`Parent`和`Child`两个实体类，`Parent`实体类中包含了一个`Child`实体类的集合, `Child`实体类中包含了一个`Parent`
-实体类的引用。
+First, we have two entity classes, `Parent` and `Child`. The `Parent` entity class contains a collection of `Child` entity classes, 
+and the `Child` entity class contains a reference to the `Parent` entity class.
 
 ```kotlin {5,13,14}
 data class Parent(
@@ -31,13 +31,13 @@ data class Child(
 ) : KPojo
 ```
 
-以上代码中，`Child`实体类中的`@Cascade`注解声明了最简单的一对多级联关系。
+In the above code, the `@Cascade` annotation in the `Child` entity class declares the simplest one-to-many cascade relationship.
 
-`@Cascade`注解的第一个参数是`Child`实体类中的级联字段`parentId`，第二个参数是`Parent`实体类中的主键字段`id`。
+The first parameter of the `@Cascade` annotation is the cascade field `parentId` in the `Child` entity class, and the second parameter is the primary key field `id` in the `Parent` entity class.
 
-至此，`Parent`和`Child`两个实体类之间的一对多级联关系定义完成。
+At this point, the one-to-many cascade relationship between the `Parent` and `Child` entity classes is defined.
 
-如果需要通过多个字段进行级联关系定义，可以在`@Cascade`注解的第一个参数中使用逗号分隔多个级联字段，如下所示：
+If you need to define a cascade relationship through multiple fields, you can use commas to separate multiple cascade fields in the first parameter of the `@Cascade` annotation, as shown below:
 
 ```kotlin {7,8}
 data class Child(
@@ -52,15 +52,15 @@ data class Child(
 ```
 
 > **Note**
-> 通常我们认为，没有注解定义的一端为维护端，也是级联关系中的父端，而注解声明的一端为被维护端，也是级联关系中的子端。
-> 在级联关系中，父端的变化会影响子端，而子端的变化不会影响父端。
+> Usually we think that the end without annotation definition is the maintenance end, which is also the parent end in the cascade relationship, and the end declared by annotation is the maintained end, which is also the child end in the cascade relationship.
+> In the cascade relationship, changes in the parent end will affect the child end, while changes in the child end will not affect the parent end.
 
-## 2.一对一级联关系
+## 2.One-to-one cascading relationship
 
-本节将介绍如何在KPojo实体类中定义一对一级联关系。
+This section will introduce how to define a pair of first-level cascade relationships in KPojo entity classes.
 
-首先，我们有`User`和`Profile`两个实体类，`User`实体类中包含了一个`Profile`实体类的引用, `Profile`实体类中包含了一个`User`
-实体类的引用。
+First, we have two entity classes, `User` and `Profile`. The `User` entity class contains a reference to the `Profile` entity class, and the `Profile` entity class contains a reference to the `User`
+entity class.
 
 ```kotlin {5,6,14}
 data class User(
@@ -80,13 +80,13 @@ data class Profile(
 ) : KPojo
 ```
 
-以上代码中，`User`实体类中的`@Cascade`注解声明了最简单的一对一级联关系。
+In the above code, the `@Cascade` annotation in the `User` entity class declares the simplest one-to-one cascade relationship.
 
-`@Cascade`注解的第一个参数是`User`实体类中的主键字段`id`，第二个参数是`Profile`实体类中的级联字段`userId`。
+The first parameter of the `@Cascade` annotation is the primary key field `id` in the `User` entity class, and the second parameter is the cascade field `userId` in the `Profile` entity class.
 
-至此，`User`和`Profile`两个实体类之间的一对一级联关系定义完成。
+At this point, the one-to-one cascade relationship between the `User` and `Profile` entity classes is defined.
 
-如果需要通过多个字段进行级联关系定义，可以在`@Cascade`注解的第一个参数中使用逗号分隔多个级联字段，如下所示：
+If you need to define a cascade relationship through multiple fields, you can use commas to separate multiple cascade fields in the first parameter of the `@Cascade` annotation, as shown below:
 
 ```kotlin {6,7}
 data class User(
@@ -100,15 +100,15 @@ data class User(
 ```
 
 > **Note**
-> 一对一级联关系中，注解可以只在一端声明，也可以在两端同时声明，但是只有一端声明时，没有注解定义的一端为维护端，也是级联关系中的父端。
+> In a one-to-one cascade relationship, annotations can be declared at only one end or at both ends. However, when only one end is declared, the end without annotation definition is the maintenance end, which is also the parent end in the cascade relationship.
 
-## 3.多对多级联关系
+## 3.Many-to-many cascading relationships
 
-本节将介绍如何在KPojo实体类中定义多对多级联关系。
+This section will introduce how to define many-to-many cascading relationships in KPojo entity classes.
 
-通常，多对多级联关系需要通过中间表来实现，中间表中包含了两个实体类的主键字段。
+Usually, many-to-many cascading relationships need to be implemented through an intermediate table, which contains the primary key fields of the two entity classes.
 
-首先，我们有`User`、`Role`以及`Relation`三个实体类，其中`Relation`实体类中包含了`User`和`Role`两个实体类的引用。
+First, we have three entity classes: `User`, `Role`, and `Relation`, where the `Relation` entity class contains references to the two entity classes `User` and `Role`.
 
 ```kotlin {5,6,7,8}
 data class User(
@@ -137,26 +137,26 @@ data class Relation(
 ) : KPojo
 ```
 
-以上代码中，`Relation`实体类中的`@Cascade`注解声明了最简单的多对多级联关系。
+In the above code, the `@Cascade` annotation in the `Relation` entity class declares the simplest many-to-many cascade relationship.
 
-`@Cascade`注解的第一个参数是`Relation`实体类中的级联字段`userId`，第二个参数是`User`实体类中的主键字段`id`。
+The first parameter of the `@Cascade` annotation is the cascade field `userId` in the `Relation` entity class, and the second parameter is the primary key field `id` in the `User` entity class.
 
-`@Cascade`注解的第一个参数是`Relation`实体类中的级联字段`roleId`，第二个参数是`Role`实体类中的主键字段`id`。
+The first parameter of the `@Cascade` annotation is the cascade field `roleId` in the `Relation` entity class, and the second parameter is the primary key field `id` in the `Role` entity class.
 
-至此，`User`、`Role`以及`Relation`三个实体类之间的多对多级联关系定义完成。
+At this point, the many-to-many cascade relationship between the three entity classes `User`, `Role`, and `Relation` is defined.
 
-### 使用委托实现级联多对多跨中间表关系
+### Using delegation to implement cascading many-to-many relationships across intermediate tables
 
-级联功能中多对多关系中的目标属性通过**委托**方式来定义，需要放在class内声明，形如：
+The target attribute in the many-to-many relationship in the cascade function is defined by **delegation** and needs to be declared in the class, such as:
 
 ```kotlin
 data class User(
     val id: Int? = null,
     val name: String? = null,
-    // 多对多关系的中间表
+    // Intermediate table for many-to-many relationships
     val relations: List<Relation>? = emptyList()
 ) : KPojo {
-    // 多对多关系的目标表
+    // Target table of many-to-many relationships
     var roles: List<Role>? by manyToMany(::UserRoleRelation)
 }
 ```

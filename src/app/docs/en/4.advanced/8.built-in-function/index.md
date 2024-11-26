@@ -1,31 +1,31 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 使用Kronos提供的内置函数
+## Using built-in functions provided by Kronos
 
-Kronos提供了一些内置函数，可以在查询`select`和条件筛选`where`时使用，如下：
+Kronos provides some built-in functions that can be used in query `select` and conditional filtering `where`, as follows:
 
 ```kotlin
 KPojo.select { f.count(1) }.where { it.username like f.concat("%", it.username, "%") }.queryList()
 ```
 
-## 内置函数列表
+## List of built-in functions
 
-Kronos提供了包括部分数学计算函数`MathFunction`、部分聚合函数`PolymerizationFunction`和部分字符串函数`StringFunction`作为支持的默认内置函数
+Kronos provides some mathematical functions `MathFunction`, some aggregation functions `PolymerizationFunction` and some string functions `StringFunction` as supported default built-in functions
 
-### 聚合函数
+### Aggregate functions
 
-#### 1. {{ $.title("count") }} 总数
+#### 1. {{ $.title("count") }} count
 
-返回指定列中非NULL值的个数
+Returns the number of non-NULL values in the specified column
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.count(x: Any?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin"
 user.select { f.count(1) }.queryList()
@@ -51,21 +51,21 @@ SELECT COUNT(1) FROM "user"
 SELECT COUNT(1) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列', 'Any?']]) }}
+{{ $.params([['x', 'target columns', 'Any?']]) }}
 
-#### 2. {{ $.title("sum") }} 求和
+#### 2. {{ $.title("sum") }} sum
 
-返回指定列的所有值之和
+Returns the sum of all values in the specified column
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.sum(x: Any?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin"
 user.select { f.sum(it.age) }.queryList()
@@ -91,21 +91,21 @@ SELECT SUM("age") FROM "user"
 SELECT SUM([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列', 'Any?']]) }}
+{{ $.params([['x', 'target columns', 'Any?']]) }}
 
-#### 3. {{ $.title("avg") }} 平均值
+#### 3. {{ $.title("avg") }} average value
 
-返回指定列的平均值
+Returns the average value of target columns
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.avg(x: Any?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 3" name="kotlin" icon="kotlin"
 user.select { f.avg(it.age) }.queryList()
@@ -131,21 +131,21 @@ SELECT AVG("age") FROM "user"
 SELECT AVG([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列', 'Any?']]) }}
+{{ $.params([['x', 'target columns', 'Any?']]) }}
 
-#### 4. {{ $.title("max") }} 最大值
+#### 4. {{ $.title("max") }} maximum
 
-返回指定列的最大值
+Returns the maximum value of target columns
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.max(x: Any?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 4" name="kotlin" icon="kotlin"
 user.select { f.max(it.age) }.queryList()
@@ -171,21 +171,21 @@ SELECT MAX("age") FROM "user"
 SELECT MAX([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列', 'Any?']]) }}
+{{ $.params([['x', 'target columns', 'Any?']]) }}
 
-#### 5. {{ $.title("min") }} 最小值
+#### 5. {{ $.title("min") }} minimum
 
-返回指定列的最小值
+Returns the minimum value of target columns
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.min(x: Any?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 5" name="kotlin" icon="kotlin"
 user.select { f.min(it.age) }.queryList()
@@ -211,21 +211,21 @@ SELECT MIN("age") FROM "user"
 SELECT MIN([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列', 'Any?']]) }}
+{{ $.params([['x', 'target columns', 'Any?']]) }}
 
-#### 6. {{ $.title("groupConcat") }} 字符串连接
+#### 6. {{ $.title("groupConcat") }} string concatenation
 
-返回由属于一组的列值连接组合而成的结果
+Returns a result that is a combination of column values that belong to a group.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.groupConcat(x: Any?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 6" name="kotlin" icon="kotlin"
 user.select { f.groupConcat(it.username) }.queryList()
@@ -251,23 +251,23 @@ SELECT LISTAGG("username", ',') WITHIN GROUP (ORDER BY "username") FROM "user"
 SELECT STRING_AGG([username], ',') FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列', 'Any?']]) }}
+{{ $.params([['x', 'target columns', 'Any?']]) }}
 
-### 数学计算函数
+### Mathematical calculation functions
 
-#### 1. {{ $.title("add") }} 加法
+#### 1. {{ $.title("add") }} addition
 
-返回x+y+...的和
+Returns the sum of x+y+...
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.add(vararg x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 7" name="kotlin" icon="kotlin"
 user.select { f.add(it.age, 1) }.queryList()
@@ -293,21 +293,21 @@ SELECT "age" + 1 FROM "user"
 SELECT [age] + 1 FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 2. {{ $.title("sub") }} 减法
+#### 2. {{ $.title("sub") }} subtraction
 
-返回x-y-...的差
+Returns the difference of x-y-...
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.sub(vararg x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 8" name="kotlin" icon="kotlin"
 user.select { f.sub(it.age, 1) }.queryList()
@@ -333,21 +333,21 @@ SELECT "age" - 1 FROM "user"
 SELECT [age] - 1 FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 3. {{ $.title("mul") }} 乘法
+#### 3. {{ $.title("mul") }} multiplication
 
-返回x*y*...的积
+Returns the product of x\*y\*...
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.mul(vararg x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 9" name="kotlin" icon="kotlin"
 user.select { f.mul(it.age, 2) }.queryList()
@@ -373,21 +373,21 @@ SELECT "age" * 2 FROM "user"
 SELECT [age] * 2 FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 4. {{ $.title("div") }} 除法
+#### 4. {{ $.title("div") }} division
 
-返回x/y/...的商
+Returns the quotient of x/y/...
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.div(vararg x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 10" name="kotlin" icon="kotlin"
 user.select { f.div(it.age, 2) }.queryList()
@@ -413,21 +413,21 @@ SELECT "age" / 2 FROM "user"
 SELECT [age] / 2 FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 5. {{ $.title("abs") }} 绝对值
+#### 5. {{ $.title("abs") }} absolute value
 
-返回x的绝对值
+returns the absolute value of x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.abs(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 11" name="kotlin" icon="kotlin"
 user.select { f.abs(it.age) }.queryList()
@@ -453,21 +453,21 @@ SELECT ABS("age") FROM "user"
 SELECT ABS([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 6. {{ $.title("bin") }} 二进制
+#### 6. {{ $.title("bin") }} binary
 
-返回x的二进制
+Returns the binary value of x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.bin(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 12" name="kotlin" icon="kotlin"
 user.select { f.bin(it.age) }.queryList()
@@ -493,21 +493,21 @@ SELECT BIN("age") FROM "user"
 SELECT BIN([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 7. {{ $.title("ceiling") }} 向上取整
+#### 7. {{ $.title("ceiling") }} round up
 
-返回大于x的最小整数值
+Returns the smallest integer value greater than x.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.ceiling(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 13" name="kotlin" icon="kotlin"
 user.select { f.ceiling(it.age) }.queryList()
@@ -533,21 +533,21 @@ SELECT CEIL("age") FROM "user"
 SELECT CEILING([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 8. {{ $.title("exp") }} 指数
+#### 8. {{ $.title("exp") }} exponent
 
-返回值e（自然对数的底）的x次方
+Returns the value e (the base of natural logarithms) raised to the power of x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.exp(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 14" name="kotlin" icon="kotlin"
 user.select { f.exp(it.age) }.queryList()
@@ -573,21 +573,21 @@ SELECT EXP("age") FROM "user"
 SELECT EXP([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 9. {{ $.title("floor") }} 向下取整
+#### 9. {{ $.title("floor") }} round down
 
-返回小于x的最大整数值
+Returns the largest integer value less than x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.floor(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 15" name="kotlin" icon="kotlin"
 user.select { f.floor(it.age) }.queryList()
@@ -613,21 +613,21 @@ SELECT FLOOR("age") FROM "user"
 SELECT FLOOR([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 10. {{ $.title("greatest") }} 最大值
+#### 10. {{ $.title("greatest") }} maximum
 
-返回集合中最大的值
+Returns the largest value in a collection
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.greatest(vararg x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 16" name="kotlin" icon="kotlin"
 user.select { f.greatest(it.age, 1) }.queryList()
@@ -653,21 +653,21 @@ SELECT GREATEST("age", 1) FROM "user"
 SELECT GREATEST([age], 1) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 11. {{ $.title("least") }} 最小值
+#### 11. {{ $.title("least") }} minimum
 
-返回集合中最小的值
+Returns the smallest value in a collection
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.least(vararg x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 17" name="kotlin" icon="kotlin"
 user.select { f.least(it.age, 1) }.queryList()
@@ -693,21 +693,21 @@ SELECT LEAST("age", 1) FROM "user"
 SELECT LEAST([age], 1) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 12. {{ $.title("ln") }} 自然对数
+#### 12. {{ $.title("ln") }} natural logarithm
 
-返回x的自然对数
+Returns the natural logarithm of x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.ln(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 18" name="kotlin" icon="kotlin"
 user.select { f.ln(it.age) }.queryList()
@@ -733,21 +733,21 @@ SELECT LN("age") FROM "user"
 SELECT LOG([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 13. {{ $.title("log") }} 对数
+#### 13. {{ $.title("log") }} logarithm
 
-返回x的以y为底的对数
+Returns the base y logarithm of x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.log(x: Number?, y: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 19" name="kotlin" icon="kotlin"
 user.select { f.log(it.age, 2) }.queryList()
@@ -773,21 +773,21 @@ SELECT LOG(2, "age") FROM "user"
 SELECT LOG(2, [age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?'], ['y', '指定底数', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?'], ['y', 'specify base', 'Number?']]) }}
 
-#### 14. {{ $.title("mod") }} 模
+#### 14. {{ $.title("mod") }} mod
 
-返回x/y的模（余数）
+Returns the modulus (remainder) of x/y
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.mod(x: Number?, y: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 20" name="kotlin" icon="kotlin"
 user.select { f.mod(it.age, 2) }.queryList()
@@ -813,21 +813,21 @@ SELECT MOD("age", 2) FROM "user"
 SELECT [age] % 2 FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?'], ['y', '指定除数', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?'], ['y', 'specify divisor', 'Number?']]) }}
 
-#### 15. {{ $.title("pi") }} 圆周率
+#### 15. {{ $.title("pi") }} circumference of circle
 
-返回pi的值（圆周率）
+Returns the value of pi (circumference of circle)
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.pi(): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 21" name="kotlin" icon="kotlin"
 user.select { f.pi() }.queryList()
@@ -853,17 +853,17 @@ SELECT PI() FROM "user"
 SELECT PI() FROM [user]
 ```
 
-#### 16. {{ $.title("rand") }} 随机值
+#### 16. {{ $.title("rand") }} random values
 
-返回０到１内的随机值
+Returns a random value between 0 and 1
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.rand(): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 22" name="kotlin" icon="kotlin"
 user.select { f.rand() }.queryList()
@@ -889,17 +889,17 @@ SELECT DBMS_RANDOM.VALUE FROM "user"
 SELECT RAND() FROM [user]
 ```
 
-#### 17. {{ $.title("round") }} 四舍五入
+#### 17. {{ $.title("round") }} rounding
 
-返回参数x的四舍五入的有y位小数的值
+Returns the value of parameter x rounded to y decimal places.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.round(x: Number?, y: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 23" name="kotlin" icon="kotlin"
 user.select { f.round(it.age, 2) }.queryList()
@@ -925,21 +925,21 @@ SELECT ROUND("age", 2) FROM "user"
 SELECT ROUND([age], 2) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?'], ['y', '指定小数位数', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?'], ['y', 'specify the number of decimal places', 'Number?']]) }}
 
-#### 18. {{ $.title("sign") }} 符号
+#### 18. {{ $.title("sign") }} symbol
 
-返回代表数字x的符号的值
+Returns the value representing the sign of the number x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.sign(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 24" name="kotlin" icon="kotlin"
 user.select { f.sign(it.age) }.queryList()
@@ -965,21 +965,21 @@ SELECT SIGN("age") FROM "user"
 SELECT SIGN([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 19. {{ $.title("sqrt") }} 平方根
+#### 19. {{ $.title("sqrt") }} square root
 
-返回一个数的平方根
+Returns the square root of a number
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.sqrt(x: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 25" name="kotlin" icon="kotlin"
 user.select { f.sqrt(it.age) }.queryList()
@@ -1005,21 +1005,21 @@ SELECT SQRT("age") FROM "user"
 SELECT SQRT([age]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?']]) }}
 
-#### 20. {{ $.title("truncate") }} 截断
+#### 20. {{ $.title("truncate") }} truncation
 
-返回数字x截短为y位小数的结果
+Returns the number x truncated to y decimal places.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.truncate(x: Number?, y: Number?): Number?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 26" name="kotlin" icon="kotlin"
 user.select { f.truncate(it.age, 2) }.queryList()
@@ -1045,23 +1045,23 @@ SELECT TRUNC("age", 2) FROM "user"
 SELECT ROUND([age], 2) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定列或数字', 'Number?'], ['y', '指定小数位数', 'Number?']]) }}
+{{ $.params([['x', 'target columns or number', 'Number?'], ['y', 'specify the number of decimal places', 'Number?']]) }}
 
-### 字符串函数
+### String functions
 
-#### 1. {{ $.title("length") }} 字符数
+#### 1. {{ $.title("length") }} number of characters
 
-返回字符串x中的字符数
+Returns the number of characters in string x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.length(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 27" name="kotlin" icon="kotlin"
 user.select { f.length(it.username) }.queryList()
@@ -1087,21 +1087,21 @@ SELECT LENGTH("username") FROM "user"
 SELECT LEN([username]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 2. {{ $.title("upper") }} 大写
+#### 2. {{ $.title("upper") }} uppercase
 
-返回将字符串x中所有字符转变为大写后的结果
+Returns the result of converting all characters in string x to uppercase.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.upper(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 28" name="kotlin" icon="kotlin"
 user.select { f.upper(it.username) }.queryList()
@@ -1127,21 +1127,21 @@ SELECT UPPER("username") FROM "user"
 SELECT UPPER([username]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 3. {{ $.title("lower") }} 小写
+#### 3. {{ $.title("lower") }} lowercase
 
-返回将字符串x中所有字符转变为小写后的结果
+Returns the result of converting all characters in string x to lowercase.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.lower(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 29" name="kotlin" icon="kotlin"
 user.select { f.lower(it.username) }.queryList()
@@ -1167,21 +1167,21 @@ SELECT LOWER("username") FROM "user"
 SELECT LOWER([username]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 4. {{ $.title("substr") }} 截取
+#### 4. {{ $.title("substr") }} interception
 
-返回字符串x从y位置开始的z个字符
+Returns the z characters from string x starting at position y
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.substr(x: String?, y: Int?, z: Int?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 30" name="kotlin" icon="kotlin"
 user.select { f.substr(it.username, 1, 2) }.queryList()
@@ -1207,21 +1207,21 @@ SELECT SUBSTR("username", 1, 2) FROM "user"
 SELECT SUBSTRING([username], 1, 2) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?'], ['y', '开始位置', 'Int?'], ['z', '字符数', 'Int?']]) }}
+{{ $.params([['x', 'target string', 'String?'], ['y', 'starting position', 'Int?'], ['z', 'number of characters', 'Int?']]) }}
 
-#### 5. {{ $.title("replace") }} 替换
+#### 5. {{ $.title("replace") }} replace
 
-返回字符串x中所有y替换为z后的结果
+Returns the result of replacing all y in string x with z
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.replace(x: String?, y: String?, z: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 31" name="kotlin" icon="kotlin"
 user.select { f.replace(it.username, "a", "b") }.queryList()
@@ -1247,21 +1247,21 @@ SELECT REPLACE("username", 'a', 'b') FROM "user"
 SELECT REPLACE([username], 'a', 'b') FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?'], ['y', '被替换字符', 'String?'], ['z', '替换字符', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?'], ['y', 'replaced characters', 'String?'], ['z', 'characters to replace', 'String?']]) }}
 
-#### 6. {{ $.title("left") }} 左截取
+#### 6. {{ $.title("left") }} left intercept
 
-返回字符串x中最左边的y个字符
+Returns the leftmost y characters from string x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.left(x: String?, y: Int?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 32" name="kotlin" icon="kotlin"
 user.select { f.left(it.username, 2) }.queryList()
@@ -1287,22 +1287,22 @@ SELECT SUBSTR("username", 1, 2) FROM "user"
 SELECT LEFT([username], 2) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?'], ['y', '字符数', 'Int?']]) }}
+{{ $.params([['x', 'target string', 'String?'], ['y', 'number of characters', 'Int?']]) }}
 
-#### 7. {{ $.title("right") }} 右截取
+#### 7. {{ $.title("right") }} right Intercept
 
-返回字符串x中最右边的y个字符
+Returns the rightmost y characters from string x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 
 fun FunctionHandler.right(x: String?, y: Int?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 33" name="kotlin" icon="kotlin"
 user.select { f.right(it.username, 2) }.queryList()
@@ -1328,21 +1328,21 @@ SELECT SUBSTR("username", -2) FROM "user"
 SELECT RIGHT([username], 2) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?'], ['y', '字符数', 'Int?']]) }}
+{{ $.params([['x', 'target string', 'String?'], ['y', 'number of characters', 'Int?']]) }}
 
-#### 8. {{ $.title("repeat") }} 重复
+#### 8. {{ $.title("repeat") }} repeat
 
-返回字符串x重复y次的结果
+Returns the string x repeated y times.
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.repeat(x: String?, y: Int?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 34" name="kotlin" icon="kotlin"
 
@@ -1369,21 +1369,21 @@ SELECT RPAD('x', 2, 'x') FROM "user"
 SELECT REPLICATE([username], 2) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?'], ['y', '重复次数', 'Int?']]) }}
+{{ $.params([['x', 'target string', 'String?'], ['y', 'repetitions', 'Int?']]) }}
 
-#### 9. {{ $.title("reverse") }} 颠倒
+#### 9. {{ $.title("reverse") }} reverse
 
-返回颠倒字符串x的结果
+Returns the result of reversing the string x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.reverse(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 35" name="kotlin" icon="kotlin"
 user.select { f.reverse(it.username) }.queryList()
@@ -1409,21 +1409,21 @@ SELECT REVERSE("username") FROM "user"
 SELECT REVERSE([username]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 10. {{ $.title("trim") }} 去除空格
+#### 10. {{ $.title("trim") }} remove spaces
 
-去除字符串首部和尾部的所有空格
+Remove all spaces from the beginning and end of a string
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.trim(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 36" name="kotlin" icon="kotlin"
 user.select { f.trim(it.username) }.queryList()
@@ -1449,21 +1449,21 @@ SELECT TRIM("username") FROM "user"
 SELECT LTRIM(RTRIM([username])) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 11. {{ $.title("ltrim") }} 去除左空格
+#### 11. {{ $.title("ltrim") }} remove left space
 
-去除字符串首部的所有空格
+Remove all leading spaces from a string
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.ltrim(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 37" name="kotlin" icon="kotlin"
 user.select { f.ltrim(it.username) }.queryList()
@@ -1489,21 +1489,21 @@ SELECT LTRIM("username") FROM "user"
 SELECT LTRIM([username]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 12. {{ $.title("rtrim") }} 去除右空格
+#### 12. {{ $.title("rtrim") }} remove right space
 
-去除字符串尾部的所有空格
+Remove all trailing spaces from a string
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.rtrim(x: String?): Any?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 38" name="kotlin" icon="kotlin"
 user.select { f.rtrim(it.username) }.queryList()
@@ -1529,21 +1529,21 @@ SELECT RTRIM("username") FROM "user"
 SELECT RTRIM([username]) FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 13. {{ $.title("concat") }} 连接
+#### 13. {{ $.title("concat") }} concat
 
-将x1,x2...,xn连接成字符串
+Concatenate x1, x2..., xn into a string
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.concat(vararg x: String?): String?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 39" name="kotlin" icon="kotlin"
 user.select { f.concat(it.username, it.age) }.queryList()
@@ -1569,21 +1569,21 @@ SELECT "username" || "age" FROM "user"
 SELECT [username] + [age] FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target string', 'String?']]) }}
 
-#### 14. {{ $.title("join") }} 连接
+#### 14. {{ $.title("join") }} connect
 
-将y1,y2...,yn用分隔符x连接成字符串
+Concatenate y1, y2..., yn into a string using separator x
 
-- **函数声明**
+- **Function Declaration**
 
 ```kotlin
 fun FunctionHandler.join(x: String?, vararg y: String?): String?
 ```
 
-- **使用示例**
+- **Usage Examples**
 
 ```kotlin group="Case 40" name="kotlin" icon="kotlin"
 user.select { f.join(",", it.username, it.age) }.queryList()
@@ -1609,6 +1609,6 @@ SELECT "username" || ',' || "age" FROM "user"
 SELECT [username] + ',' + [age] FROM [user]
 ```
 
-- **接收参数**
+- **Receiving Parameters**
 
-{{ $.params([['x', '指定分隔符', 'String?'], ['y', '指定字符串', 'String?']]) }}
+{{ $.params([['x', 'target delimiter', 'String?'], ['y', 'target string', 'String?']]) }}

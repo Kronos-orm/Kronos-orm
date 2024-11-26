@@ -1,26 +1,25 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 部分开启及关闭级联查询
+## Partially enable and disable cascade queries
 
-### 关闭级联查询
+### Disable cascading queries
 
-Kronos默认开启级联查询功能，需要在`select`函数中显式关闭：
+Kronos enables the cascading query function by default and needs to be explicitly disabled in the `select` function:
 
 ```kotlin
 KPojo.select().cascade(enable = false).queryList()
 ```
 
-### 部分开启级联查询
+### Partially enable cascading queries
 
-当KPojo中有多个级联声明，但只有部分需要级联查询时，可以将需要级联查询的属性传入`cascade`函数，其余的属性及子属性将不触发级联查询。
-
+When there are multiple cascade declarations in KPojo, but only some of them need cascade query, you can pass the attributes that need cascade query into the `cascade` function, and the remaining attributes and sub-attributes will not trigger cascade query.
 ```kotlin
-// 若KPojo中只有property1和property2需要级联删除，那么如下：
+// If only property1 and property2 in KPojo need to be cascaded deleted, then it is as follows:
 KPojo.select().cascade(KPojo::property1, KPojo::property2).queryList()
 ```
 
-可以限制其子属性级联查询，如下：
+You can limit the cascade query of its sub-attributes as follows:
 
 ```kotlin
 KPojo.select().cascade(
@@ -31,35 +30,35 @@ KPojo.select().cascade(
 ).queryList()
 ```
 
-### {{ $.annotation("CascadeSelectIgnore") }} 声明关闭级联查询
+### {{ $.annotation("CascadeSelectIgnore") }} Declare to turn off cascading queries
 
-在定义`KPojo`类时,通过添加`@CascadeSelectIgnore`注解声明某属性查询时不级联查询, 详见：
-{{ $.keyword("class-definition/annotation-config", ["注解配置", "CascadeSelectIgnore关闭属性级联查询"]) }}
+When defining the `KPojo` class, add the `@CascadeSelectIgnore` annotation to declare that a certain attribute query does not cascade query, see:
+{{ $.keyword("class-definition/annotation-config", ["annotation configuration", "CascadeSelectIgnore close attribute cascade query"]) }}
 
-## 级联查询
+## Cascading queries
 
-在级联关系被定义后，使用：
-1. {{$.keyword("database/select-records", ["queryList查询指定类型列表"])}}
-2. {{$.keyword("database/select-records", ["queryOne查询单条记录"])}}
-3. {{$.keyword("database/select-records", ["queryOneOrNull查询单条记录（可空）"])}} 
+After the cascade relationship is defined, use:
+1. {{$.keyword("database/select-records", ["queryList: query the specified type list"])}}
+2. {{$.keyword("database/select-records", ["queryOne: query a single record"])}}
+3. {{$.keyword("database/select-records", ["queryOneOrNull: query a single record (optional)"])}} 
 
-以上三种方法查询数据时，我们将自动为您根据级联关系进行逻辑查询，详见：{{ $.keyword("advanced/cascade-definition", ["级联关系定义"]) }}。
+When you use the above three methods to query data, we will automatically perform logical queries for you based on the cascade relationship. For details, see: {{ $.keyword("advanced/cascade-definition", ["cascade relationship definition"]) }}.
 
-级联查询默认不限制层级和级联关系方向，如果您的级联关系层数很深，在查询时请注意{{ $.keyword("advanced/cascade-select", ["关闭级联查询"]) }}，或仅{{ $
-.keyword("advanced/cascade-select", ["部分开启级联查询"]) }}以保证不会**查询到您不需要的数据**。
+Cascade query does not limit the level and direction of cascade relationship by default. If your cascade relationship is very deep, please pay attention to {{ $.keyword("advanced/cascade-select", ["turn off cascade query"]) }} when querying, or only {{ $
+.keyword("advanced/cascade-select", ["partially turn on cascade query"]) }} to ensure that you will not **query data you don't need**.
 
 > **Note**
-> **Q:** Kronos中如何处理级联关系中的循环引用？会无限循环查询吗？
+> **Q:** How to handle circular references in cascading relationships in Kronos? Will there be an infinite query loop?
 >
-> **A:** Kronos中会对循环引用进行处理，每个KPojo类的属性在不同层级仅会被查询一次，遇到重复引用时自动停止，避免无限循环查询。
+> **A:** Kronos handles circular references. The properties of each KPojo class will only be queried once at different levels. When a duplicate reference is encountered, the query will stop automatically to avoid infinite loop queries.
 >
 >```
 A-->B;
 B-->C;
 C-->A;
-A-->B; //将不会触发此查询
+A-->B; // This query will not be triggered again
 > ```
-> 如下是一个示例：
+> Here is an example:
 >```mermaid
 erDiagram
 A {
@@ -77,18 +76,18 @@ C {
     A a
     List[B] listOfB
 }
-A ||--o{ B : "关联"
-B ||--o{ C : "关联"
-C ||--o{ A : "关联"
+A ||--o{ B : "cascade"
+B ||--o{ C : "cascade"
+C ||--o{ A : "cascade"
 > ```
-> 若此时查询某个A实体，查询出的完整结构将是：(树状图表示)
+> If we query a certain A entity at this time, the complete structure of the query will be: (tree diagram representation)
 >```
 A1
-├── bId: <A1的bId>
+├── bId: <bId of A1>
 ├── b
-│ ├── cId: <B1的cId>
+│ ├── cId: <cId of B1>
 │ ├── c
-│ │ ├── aId: <C1的aId>
+│ │ ├── aId: <aId of C1>
 │ │ └── listOfB
 │ │ ├── B2
 │ │ ├── B3

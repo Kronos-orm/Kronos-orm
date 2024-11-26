@@ -3,8 +3,8 @@ import AdvancedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本文将指导您如何使用Kronos的内置函数功能及自定义函数功能。
- * @status:info coming soon
+ * This article will guide you on how to use Kronos' built-in functions and custom functions.
+ * @status:info updated recently
  */
 const BuiltInFunctionPage: NgDocPage = {
     title: `Built-in Function`,

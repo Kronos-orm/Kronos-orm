@@ -1,6 +1,6 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 级联插入或更新
+## Cascading insert or update
 
-**级联插入或更新**是**级联插入**和**级联更新**的合并，它的用法与{{ $.keyword("database/upsert-records", ["更新插入"]) }}保持一致。
+**Cascade insert or update** is a combination of **cascade insert** and **cascade update**. Its usage is consistent with {{ $.keyword("database/upsert-records", ["update insert"]) }}.

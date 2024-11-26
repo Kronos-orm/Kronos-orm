@@ -24,13 +24,13 @@ For JS, we plan to add support for indexedDB.
 
 We hope that our ORM can run on all platforms as soon as possible, and we hope to officially start migrating some of our functionalities after the stable version of the kotlinx-related libraries is released. The main tasks to be done include:
 
-- [ ] Replace Java's datetime with kotlinx.datetime (in fact, we have already implemented this support through value transformer in our test cases ([KotlinXDateTimeTransformer](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt))
+1. [ ] Replace Java's datetime with kotlinx.datetime (in fact, we have already implemented this support through value transformer in our test cases ([KotlinXDateTimeTransformer](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt))
 
 , related YouTrack issue: ([Promote kotlinx-datetime to Beta](https://youtrack.jetbrains.com/issue/KT-64578))
 
-- [ ] Use kotlinx.io to handle the default log file read and write, related YouTrack issue: ([Stabilize the kotlinx-io library](https://youtrack.jetbrains.com/issue/KT-71300))
+2. [ ] Use kotlinx.io to handle the default log file read and write, related YouTrack issue: ([Stabilize the kotlinx-io library](https://youtrack.jetbrains.com/issue/KT-71300))
 
-- [ ] Find alternatives for reflection that can only be used on the JVM platform (in fact, we have removed 99% of the reflection, but for some functionalities like `Class.forName().kotlin`
+3. [x] Looking for alternatives to reflection that can be used only on the JVM platform (we implemented the dynamic instantiation of `KClass<KPojo>` without relying on reflection using a compiler plugin, related commit: [Commit 2499037](https://github.com/Kronos-orm/Kronos-orm/commit/2499037008d6affe4495142f2a907be4a85f182b)), for more information, please refer to [Dynamic Instantiation of KPojo](/#/documentation/en/concept/kpojo-dynamic-instantiate).
 
 and `KClass<T>.newInstance()`, we have not yet found alternative solutions. If this cannot be achieved, we may have to give up features such as **chaining operations** and **automatic type conversion** for some platforms.
 

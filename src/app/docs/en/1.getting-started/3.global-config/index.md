@@ -113,18 +113,20 @@ Kronos.init {
 ```
 
 > **Note**
-> 全局设置逻更新时间策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@UpdateTime更新时间列"]) }}覆盖全局设置。
+> After setting the logic update time strategy globally, the global setting can still be overridden in the `KPojo` class via {{ $.keyword("class-definition/annotation-config", ["Annotation Settings", "@UpdateTime Update Time Column"]) }}.
 
-## 逻辑删除策略
+## Logical Deletion Strategy
 
-用于设置所有表的逻辑删除字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
+Used to set the logical deletion strategy for all tables (**whether to enable**, **Kotlin property name**, and **database column name**).
 
-**参数**：
-{{$.params([['logicDeleteStrategy', '逻辑删除策略', 'KronosCommonStrategy', 'KronosCommonStrategy(false, "deleted")']])}}
+**Parameters**:
+{{$.params([['logicDeleteStrategy', 
+'Logical Deletion Strategy, including <b>whether to enable</b>, <b>kotlin property name</b>, and <b>database column name information</b>',
+'KronosCommonStrategy', 'KronosCommonStrategy(false, "deleted")']])}}
 
-通过创建`KronosCommonStrategy`自定义逻辑删除策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
+By creating a custom logical deletion strategy `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "common strategy"]) }}.
 
-逻辑删除策略的全局默认关闭，需要手动开启。
+The global default for the logical delete strategy is turned off and needs to be manually enabled.
 
 ```kotlin
 Kronos.init {
@@ -133,23 +135,23 @@ Kronos.init {
 ```
 
 > **Note**
-> 全局设置逻辑删除策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@LogicDelete逻辑删除列"]) }}覆盖全局设置。
+> After setting the global logical deletion strategy, it can still be overridden in the `KPojo` class through {{ $.keyword("class-definition/annotation-config", ["Annotation Settings","@LogicDelete Logical Delete Column"]) }}.
 
-## 乐观锁（版本）策略
+## Optimistic Lock (Version) Strategy
 
-用于设置所有表的乐观锁版本字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
+Used to set the optimistic lock version field for all tables (**whether it is on**, **kotlin attribute name** and **database column name**).
 
-**参数**：
+**Parameters**:
 {{$.params([
 ['optimisticLockStrategy',
-'乐观锁（版本）策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+'Optimistic lock strategy, including <b>whether to enable</b>, <b>kotlin property name</b>, and <b>database column name information</b>',
 'KronosCommonStrategy',
 'KronosCommonStrategy(false, Field("version"))']
 ])}}
 
-通过创建`KronosCommonStrategy`自定义乐观锁（版本）策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
+By creating a custom optimistic lock strategy `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "Common Strategy"]) }}.
 
-乐观锁策略的全局默认关闭，需要手动开启。
+The global default for the optimistic lock strategy is turned off and needs to be manually enabled.
 
 ```kotlin
 Kronos.init {
@@ -158,16 +160,16 @@ Kronos.init {
 ```
 
 > **Note**
-> 全局设置乐观锁策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@Version乐观锁（版本）列"]) }}覆盖全局设置。
+> After setting the global optimistic lock strategy, it can still be overridden in the `KPojo` class through {{ $.keyword("class-definition/annotation-config", ["Annotation Settings", "@Version Optimistic Lock (Version) Column"]) }}.
 
-## 默认日期时间格式
+## Default Date Time Format
 
-用于指定日期格式化的默认格式，遵循`ISO 8601`规范，默认为`yyyy-MM-dd HH:mm:ss`。
+Used to specify the default format for date formatting, following the `ISO 8601` specification, defaulting to `yyyy-MM-dd HH:mm:ss`.
 
-**参数**：
-{{$.params([['defaultDateFormat', '默认日期时间格式', 'String', 'yyyy-MM-dd HH:mm:ss']])}}
+**Parameters**:
+{{$.params([['defaultDateFormat', 'Default Date Time Format', 'String', 'yyyy-MM-dd HH:mm:ss']])}}
 
-Kronos默认使用`yyyy-MM-dd HH:mm:ss`格式化日期/时间，你可以通过以下方式修改默认格式：
+Kronos uses `yyyy-MM-dd HH:mm:ss` to format the date/time by default, you can change the default format by the following ways:
 
 ```kotlin
 Kronos.init {
@@ -176,16 +178,16 @@ Kronos.init {
 ```
 
 > **Note**
-> 全局设置默认日期格式后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置", "@DateTimeFormat日期时间格式"]) }}覆盖全局设置。
+> After setting the default date format globally, it can still be overridden in the `KPojo` class through {{ $.keyword("class-definition/annotation-config", ["Annotation Settings", "@DateTimeFormat Date and Time Format"]) }}.
 
-## 默认时区
+## Default Time Zone
 
-用于指定默认时区，遵循`ISO 8601`规范，在创建时间、更新时间及格式化日期/时间时使用。
+Used to specify the default time zone, following the `ISO 8601` standard, for use when creating timestamps, updating timestamps, and formatting date/time.
 
-**参数**：
-{{$.params([['timeZone', '默认时区', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
+**Parameters**:
+{{$.params([['timeZone', 'Default Time Zone', 'java.time.ZoneId', 'ZoneId.systemDefault()']])}}
 
-Kronos默认使用当前系统时区，你可以通过以下方式修改默认时区：
+Kronos uses the current system time zone by default. You can change the default time zone by doing the following:
 
 ```kotlin
 Kronos.init {
@@ -196,21 +198,21 @@ Kronos.init {
 }
 ```
 
-## 无值策略
+## No-value strategy
 
-用于设置全局默认条件下，当`where`/`having`/`on`等条件语句中的值为`null`时，生成SQL语句的策略。
+Used to set the policy for generating SQL statements when the value in `where`/`having`/`on` etc. conditional statements is `null` by global default.
 
 > **Note**
-> 如在查询场景下，条件值为null时可能想要忽略该查询条件，或将其转为`is null`，`is not null`等条件。
-> `NoValueStrategy`策略用于处理在不同场景下的`null`值条件
+> For example, in a query scenario, a condition with a null value may want to ignore the query condition, or convert it to a condition such as `is null`, `is not null`, and so on.
+> The `NoValueStrategy` strategy is used to handle `null` value conditions in different scenarios.
 
 > **Alert**
-> 注意，如果您正在自定义无值策略，在`DELETE`和`UPDATE`操作中，请谨慎使用`Ignore`策略，以免造成全表删除或全表更新。
+> Note that if you are customizing the no-value policy, please use the `Ignore` strategy with caution in `DELETE` and `UPDATE` operations to avoid full table deletion or full table updates.
 
-**参数**：
-{{$.params([['noValueStrategy', '无值策略', 'NoValueStrategy', 'DefaultNoValueStrategy']])}}
+**Parameters**:
+{{$.params([['noValueStrategy', 'No Value Strategy', 'NoValueStrategy', 'DefaultNoValueStrategy']])}}
 
-`NoValueStrategy`策略接受操作类型（`SELECT`/`UPDATE`/`DELETE`）和语句条件两个参数，返回`NoValueStrategyType`，详见：{{ $.keyword("concept/no-value-strategy", ["概念","无值策略"]) }}。
+The `NoValueStrategy` strategy accepts two parameters: operation type (`SELECT`/`UPDATE`/`DELETE`) and statement conditions, returning `NoValueStrategyType`. For details, see: {{ $.keyword("concept/no-value-strategy", ["concept", "No Value Strategy"]) }}.
 
 ```kotlin
 Kronos.init {
@@ -218,16 +220,16 @@ Kronos.init {
 }
 ```
 
-## 序列化反序列化处理器
+## Serialization Deserialization Processor
 
-将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
+Deserialize strings in the database to objects at query time, and automatically serialize objects when inserting into the database.
 
-**参数**：
-{{$.params([['serializeResolver', '序列化反序列化处理器', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
+**Parameters**:
+{{$.params([['serializeResolver', 'Serialization Deserialization Processor', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
 
-通过创建`KronosSerializeResolver`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"])}}。
+By creating a `KronosSerializeResolver` custom serialization resolver, see: {{ $.keyword("concept/serialize-resolver", ["Automatic Serialization and Deserialization"])}}.
 
-如可以通过引入`GSON`库来实现序列化解析器：
+For example, serialization parsers can be implemented by introducing the `GSON` library:
 
 ```kotlin group="GsonResolver" name="Main.kt" icon="kotlin"
 Kronos.init {
@@ -237,29 +239,29 @@ Kronos.init {
 
 ```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
 object GsonResolver : KronosSerializeResolver {
-    // 使用GSON序列化对象
+    // Use GSON to serialize objects
     override fun serialize(obj: Any): String {
         return Gson().toJson(obj)
     }
     
-    // 使用GSON反序列化对象
+    // Use GSON to deserialize strings
     override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
         return Gson().fromJson(serializedStr, kClass.java)
     }
 }
 ```
 
-这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
+Here we are using `GSON` library to implement serialization deserialization parser, you can use any library you like like like `Kotlinx.serialization`, `Jackson`, `Moshi`, `FastJson` etc.
 
-## 日志输出路径及开关
+## Log output path and switch
 
-用于设置全局默认条件下，日志输出的路径及开关。
+Used to set the path and switch for log output under global default conditions.
 
-- 当`logPath`为空时，关闭日志输出。
-- 当`logPath`不为空时，开启日志输出，日志输出路径为`logPath`内的所有路径，`console`为控制台输出。
+- When `logPath` is empty, turn off log output.
+- When `logPath` is not empty, log output is enabled, and the log output path includes all paths within `logPath`, with `console` being the console output.
 
-**参数**：
-{{$.params([['logPath', '日志输出路径', 'List<String>', 'emptyList()']])}}
+**Parameters**:
+{{$.params([['logPath', 'Log Output Path', 'List<String>', 'emptyList()']])}}
 
 ```kotlin
 Kronos.init {
@@ -267,13 +269,13 @@ Kronos.init {
 }
 ```
 
-Kronos默认开启日志输出，并输出到控制台。
+Kronos enables log output by default and outputs it to the console.
 
-## 关闭智能值转换
+## Smart Value Conversion
 
-Kronos在进行数据操作时，会自动将预期值与实际值进行智能转换，如`Int`与`Long`、`String`等等，详见：{{ $.keyword("concept/value-transformer", ["概念", "值转换器"]) }}。
+Kronos automatically performs intelligent conversions of expected values to actual values when performing data manipulation, such as `Int` to `Long`, `String`, and so on, as detailed in: {{ $.keyword("concept/value-transformer", ["Concepts", "Value Transformer"]) }}.
 
-以下是一个简单的例子，展示了智能值转换的功能：
+The following is a simple example that demonstrates the functionality of smart value conversion:
     
 ```kotlin
 data class User(
@@ -285,16 +287,16 @@ data class User(
 val mapOfUser = mapOf("id" to 1L, "name" to "Kronos", "createTime" to "2023-10-17T10:00:00")
 
 val user = mapOfUser.mapperTo<User>()
-// ❌ mapperTo函数默认不使用智能值转换，此时会抛出异常
+// ❌ The `mapperTo` function does not use smart value conversions by default, in which case it will throw an exception
 
 val user = mapOfUser.safeMapperTo<User>()
-// ✅ safeMapperTo函数默认使用智能值转换，此时会自动将1L转为Int，将"2023-10-17T10:00:00"转为LocalDateTime
+// ✅ `safeMapperTo` function defaults to intelligent value conversion, at this time it will automatically convert 1L to Int, and "2023-10-17T10:00:00" to LocalDateTime.
 
 ```
 
-Kronos默认开启`getTypeSafeValue`以及`safeMapperTo`函数进行智能值转换。
+Kronos enables the `getTypeSafeValue` and `safeMapperTo` functions for smart value conversion by default.
 
-Kronos的值转换功能**不使用反射**，而是通过编译器插件生成的代码来实现，这样可以避免反射带来的性能损耗，但是此功能仍然可能会带来一些性能损耗，如果不需要，您可以通过以下方式**关闭智能值转换**：
+Kronos' value conversion feature **does not use reflection** but is implemented through code generated by the compiler plugin, which avoids the performance loss caused by reflection, but this feature may still cause some performance loss, and you can turn off smart value conversion** if you don't need it by doing the following**:
 
 ```kotlin
 Kronos.init {

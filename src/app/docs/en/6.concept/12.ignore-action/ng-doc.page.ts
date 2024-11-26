@@ -2,8 +2,8 @@ import {NgDocPage} from '@ng-doc/core';
 import ConceptCategory from "../ng-doc.category";
 
 /**
- * 本文将指导您如何配置忽略策略。
- * @status:info coming soon
+ * This chapter will guide you on how to configure an ignore action in Kronos.
+ * @status:success new
  */
 const IgnoreActionPage: NgDocPage = {
     title: `Ignore Action`,

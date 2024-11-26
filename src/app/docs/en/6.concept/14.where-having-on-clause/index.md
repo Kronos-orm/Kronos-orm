@@ -1,10 +1,10 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-## Criteria 条件对象
+## Criteria Conditional Expression
 
-Kronos使用Criteria对象构建条件表达式，并且支持复杂的条件组合，如`&&`、`||`、`!`等，用于`where`、`having`、`on`等条件中。
+Kronos uses Criteria objects to build conditional expressions and supports complex combinations of conditions such as `&&`, `||`, `! `, `||`, `!', etc., which are used in conditions such as `where`, `having`, `on`, and so on.
 
-你可以使用where条件对象组成复杂的查询条件在`select`、`delete`、`update`、`join`功能中需要条件的方法中。
+You can use where condition objects to compose complex query conditions in methods that require conditions in `select`, `delete`, `update`, and `join` functions.
 
 ```kotlin
 val list = user
@@ -13,265 +13,264 @@ val list = user
     .queryList<String>()
 ```
 
-基于KCP，Kronos允许你使用真实的kotlin操作符来构建`Criteria`查询条件，如`==`、`!=`、`>`、`<`、`>=`、`<=`、`in`、`||` 、`&&`
-等，提供了超级富有表现力、简洁而又语义化的写法。
+Based on KCP, Kronos allows you to build `Criteria` queries using real kotlin operators such as `==`, `! =`, `>`, `<`, `>=`, `<=`, `in`, `||`, `&&`, and so on, providing a super-expressive, concise and semantic way to write them.
 
-kronos表达式支持**动态构建条件**和根据对象的属性**自动生成条件**，并且支持传入**sql字符串**作为条件。
+kronos expressions support **dynamic construction of conditions** and automatic generation of conditions** based on properties** of objects, and support passing **sql strings** as conditions.
 
-使用kronos就像在写原生的kotlin代码一样，这将大大**提高开发效率**和**降低学习成本及心智负担**。
+Using kronos is like writing native kotlin code, which will greatly **improve development efficiency** and **reduce learning costs and mental load**.
 
-## 条件操作符
+## Conditional Operators
 
-kronos支持以下kotlin操作符用于构建条件表达式：
+kronos supports the following kotlin operators for constructing conditional expressions:
 
-- {{ $.title("==") }}：等于
-- {{ $.title("!=") }}：不等于
-- {{ $.title(">") }}：大于
-- {{ $.title("<") }}：小于
-- {{ $.title("=") }}：大于等于
-- {{ $.title("=") }}：小于等于
-- {{ $.title("in") }}：在范围内，也可以使用`contains`代替，如`a in b`可以写成`b.contains(a)`
-- {{ $.title("||") }}：或
-- {{ $.title("&&") }}：与
-- {{ $.title("!") }}：非，可以与其他函数和操作符一起使用，如`!(a == 1 || a == 2) && a !in listOf(3, 4)`
-- {{ $.title("()") }}：括号，用于改变优先级
+- {{ $.title("==") }}: equal to
+- {{ $.title("! =") }}: not equal
+- {{ $.title(">") }}: greater than
+- {{ $.title("<") }}: less than
+- {{ $.title("=") }}: greater than or equal to
+- {{ $.title("=") }}: less than or equal to
+- {{ $.title("in") }}: in range, can also use `contains` instead, e.g. `a in b` can be written as `b.contains(a)`
+- {{ $.title("||") }}: or
+- {{ $.title("&&") }}: with
+- {{ $.title("!") }}: not, can be used with other functions and operators such as `! (a == 1 || a == 2) && a !in listOf(3, 4)`
+- {{ $.title("()") }}: parentheses, used to change precedence
 
 > **Note**
-> kronos不限制表达式的左右操作数顺序, 如`it.age > 18`和`18 < it.age`是等价的。
-> 如果需要取对象的属性值，请使用{{ $.keyword("database/where-having-on-clause", ["KPojo.xxx.value 获取字段值"]) }}。
+> kronos does not restrict the order of the left and right operands of expressions, e.g. `it.age > 18` and `18 < it.age` are equivalent.
+> If you need to fetch the value of an object's property, use {{ $.keyword("database/where-having-on-clause", ["KPojo.xxx.value Get Object Value"]) }}.
 
 > **Warning**
-> `?.`、`?:`等操作符在`xxx.value`或`xxx.asSql`以外的情况下使用会导致无法正确生成条件表达式，如`it.school?.name.eq`、`it.name ?: "Kronos".eq`等，您可以使用`!!.`来进行二级调用，如`it.school!!.name.eq`。
+> Operators like `?.` and `?:` used outside of `xxx.value` or `xxx.asSql` will lead to incorrect condition expression generation, such as `it.school?.name.eq` and `it.name ?: "Kronos".eq`. You can use `!!.` for secondary calls, like `it.school!!.name.eq`.
 > 
-## 条件函数
+## Conditional Functions
 
-### 相等判断
+### Equal
 
-#### {{ $.title("eq") }}等于
+#### {{ $.title("eq") }} Equal
 
-等于，等同于`==`，可以不传入参数，如`it.age.eq()` 或 `it.age.eq`
+Equal to, equivalent to `==`, can be passed without parameters, e.g. `it.age.eq()` or `it.age.eq`
 
 ```kotlin {2,5,8}
-// 等同于 where { it.age == 18 }
+// Equivalent to where { it.age == 18 }
 where { it.age.eq(18) }
 
-//支持中缀调用
+// Supports infix calls
 where { it.age eq 18 }
 
-//可以不传入参数，等同于 where { it.age.eq(18) }
+// Can be passed without parameters, equivalent to where { it.age.eq(18) }
 User(age = 18).select().where { it.age.eq }
 ```
 
-#### {{ $.title("notEq") }}不等于
+#### {{ $.title("notEq") }} Not Equal
 
-不等于，等同于`!=`，可以不传入参数，如`it.age.notEq()` 或 `it.age.notEq`
+Not equal to, equivalent to `!=`, can be passed without parameters, e.g. `it.age.notEq()` or `it.age.notEq`
 
 ```kotlin {2,5,8}
-// 等同于 where { it.age != 18 }
+// Equivalent to where { it.age != 18 }
 where { it.age.notEq(18) }
 
-//支持中缀调用
+// Supports infix calls
 where { it.age notEq 18 }
 
-//可以不传入参数，等同于 where { it.age.notEq(18) }
+// Can be passed without parameters, equivalent to where { it.age.notEq(18) }
 User(age = 18).select().where { it.age.notEq }
 ```
 
-### 区间范围判断
+### Range
 
-#### {{ $.title("between") }}在区间范围内
+#### {{ $.title("between") }} In Range
 
-接收{{$.code("ClosedRange<*>")}}类型的参数
+Receive parameters of type {{$.code("ClosedRange<*>")}}
 
 ```kotlin
 where { it.age.between(1..10) }
-//支持中缀调用
+// Supports infix calls
 where { it.age between 1..10 }
 ```
 
-#### {{ $.title("notBetween") }}不在区间范围内
+#### {{ $.title("notBetween") }} Not In Range
 
-接收{{$.code("ClosedRange<*>")}}类型的参数
+Receive parameters of type {{$.code("ClosedRange<*>")}}
 
 ```kotlin
 where { it.age.notBetween(1..10) }
-//支持中缀调用
+// Supports infix calls
 where { it.age notBetween 1..10 }
 ```
 
-#### {{ $.title("gt") }}大于
+#### {{ $.title("gt") }} Greater Than
 
-大于，等同于`>`，可以不传入参数，如`it.age.gt()` 或 `it.age.gt`
+Greater than, equivalent to `>`, can be passed without parameters, e.g. `it.age.gt()` or `it.age.gt`
 
 ```kotlin {2,5,8}
- // 等同于 where { it.age > 18 }
+ // Equivalent to where { it.age > 18 }
 where { it.age.gt(18) }
 
-//支持中缀调用
+// Supports infix calls
 where { it.age gt 18 }
 
-//可以不传入参数，等同于 where { it.age.gt(18) }
+// Can be passed without parameters, equivalent to where { it.age.gt(18) }
 User(age = 18).select().where { it.age.gt }
 ```
 
-#### {{ $.title("lt") }}小于
+#### {{ $.title("lt") }} Less Than
 
-小于，等同于`<`，可以不传入参数，如`it.age.lt()` 或 `it.age.lt`
+Less than, equivalent to `<`, can be passed without parameters, e.g. `it.age.lt()` or `it.age.lt`
 
 ```kotlin {2,5,8}
-// 等同于 where { it.age < 18 }
+// Equivalent to where { it.age < 18 }
 where { it.age.lt(18) }
 
-//支持中缀调用
+// Supports infix calls
 where { it.age lt 18 }
 
-//可以不传入参数，等同于 where { it.age.lt(18) }
+// Can be passed without parameters, equivalent to where { it.age.lt(18) }
 User(age = 18).select().where { it.age.lt }
 ```
 
-#### {{ $.title("ge") }}大于等于
+#### {{ $.title("ge") }} Greater Than or Equal To
 
-大于等于，等同于`>=`，可以不传入参数，如`it.age.ge()` 或 `it.age.ge`
+Greater than or equal to, equivalent to `>=`, can be passed without parameters, e.g. `it.age.ge()` or `it.age.ge`
 
 ```kotlin {2,5,8}
-// 等同于 where { it.age >= 18 }
+// Equivalent to where { it.age >= 18 }
 where { it.age.ge(18) }
 
-//支持中缀调用
+// Supports infix calls
 where { it.age ge 18 }
 
-//可以不传入参数，等同于 where { it.age.ge(18) }
+// Can be passed without parameters, equivalent to where { it.age.ge(18) }
 User(age = 18).select().where { it.age.ge }
 ```
 
-#### {{ $.title("le") }}小于等于
+#### {{ $.title("le") }} Less Than or Equal To
 
-小于等于，等同于`<=`，可以不传入参数，如`it.age.le()` 或 `it.age.le`
+Less than or equal to, equivalent to `<=`, can be passed without parameters, e.g. `it.age.le()` or `it.age.le`
 
 ```kotlin {2,5,8}
-// 等同于 where { it.age <= 18 }
+// Equivalent to where { it.age <= 18 }
 where { it.age.le(18) }
 
-//支持中缀调用
+// Supports infix calls
 where { it.age le 18 }
 
-//可以不传入参数，等同于 where { it.age.le(18) }
+// Can be passed without parameters, equivalent to where { it.age.le(18) }
 User(age = 18).select().where { it.age.le }
 ```
 
-### 模糊查询
+### In
 
-#### {{ $.title("like") }}模糊查询
+#### {{ $.title("like") }} Fuzzy Query
 
-模糊查询，接收String类型的参数
+Fuzzy query, accepts a parameter of type `String`
 
 ```kotlin {1,3}
 where { it.name.like("Kronos%") }
-//支持中缀调用
+// Supports infix calls
 where { it.name like "Kronos%" }
 ```
 
-#### {{ $.title("notLike") }}不匹配
+#### {{ $.title("notLike") }} Not Fuzzy Query
 
-不匹配，接收String类型的参数
+Not fuzzy query, accepts a parameter of type `String`
 
 ```kotlin {1,3}
 where { it.name.notLike("Kronos%") }
-//支持中缀调用
+// Supports infix calls
 where { it.name notLike "Kronos%" }
 ```
 
-#### {{ $.title("startsWith") }}左模糊查询
+#### {{ $.title("startsWith") }} Left Fuzzy Query
 
-左模糊查询，接收String类型的参数，可以不传入参数，如`it.name.startsWith()` 或 `it.name.startsWith`
+Left fuzzy query, accepts String type parameters, can be passed without parameters, such as `it.name.startsWith()` or `it.name.startsWith`.
 
 ```kotlin {2,5,8}
-//等同于where { it.name like "Kronos%" }
+// Equivalent to where { it.name like "Kronos%" }
 where { it.name.startsWith("Kronos") }
 
-//支持中缀调用
+// Supports infix calls
 where { it.name startsWith "Kronos" }
 
-//支持不传入参数
+// Can be passed without parameters
 User(name = "Kronos").select().where { it.name.startsWith }
 ```
 
-#### {{ $.title("endsWith") }}右模糊查询
+#### {{ $.title("endsWith") }} Right Fuzzy Query
 
-右模糊查询，接收String类型的参数，可以不传入参数，如`it.name.endsWith()` 或 `it.name.endsWith`
+Right fuzzy query, accepts String type parameters, can be passed without parameters, such as `it.name.endsWith()` or `it.name.endsWith`.
 
 ```kotlin {2,5,8}
-//等同于where { it.name like "%Kronos" }
+// Equivalent to where { it.name like "%Kronos" }
 where { it.name.endsWith("Kronos") }
 
-//支持中缀调用
+// Supports infix calls
 where { it.name endsWith "Kronos" }
 
-//支持不传入参数
+// Can be passed without parameters
 User(name = "Kronos").select().where { it.name.endsWith }
 ```
 
-#### {{ $.title("contains") }}全模糊查询
+#### {{ $.title("contains") }} Full Fuzzy Query
 
-全模糊查询，接收String类型的参数，可以不传入参数，如`it.name.contains()` 或 `it.name.contains`
+Full fuzzy query, accepts String type parameters, can be passed without parameters, such as `it.name.contains()` or `it.name.contains`.
 
 ```kotlin {2,5,8}
-//等同于where { it.name like "%Kronos%" }
+// Equivalent to where { it.name like "%Kronos%" }
 where { it.name.contains("Kronos") }
 
-//支持中缀调用
+// Supports infix calls
+where { it.name contains "Kronos" }
 where { "Kronos" in it.name }
 
-//支持不传入参数
+// Can be passed without parameters
 User(name = "Kronos").select().where { it.name.contains }
 ```
 
-### 其他
+### Other
 
-#### {{ $.title("isNull") }}为空
+#### {{ $.title("isNull") }} Is Null
 
-判断是否为空
+Determine if it is null
 
 ```kotlin {1}
 where { it.name.isNull }
 ```
 
-#### {{ $.title("notNull") }}不为空
+#### {{ $.title("notNull") }} Is Not Null
 
-判断是否不为空
+Determine if it is not null
 
 ```kotlin {1}
 where { it.name.notNull }
 ```
 
-#### {{ $.title("regexp") }}正则表达式查询
+#### {{ $.title("regexp") }} Regular Expression Query
 
-正则表达式查询，接收String类型的参数
+Regular expression query, accepts a parameter of type `String`
 
 ```kotlin {1,3}
 where { it.name.regexp("Kronos.*") }
-// 支持中缀调用
+// Supports infix calls
 where { it.name regexp "Kronos.*" }
 ```
 
-## 特殊表达
+## Special Expressions
 
-### {{ $.title("KPojo.xxx.value") }} 获取字段值
+### {{ $.title("KPojo.xxx.value") }} Get Object Value
 
-在where表达式中，`user.name`表示字段`name`，`it.name.value`表示kotlin中`User`对象的`name`属性值
+In the where expression, `user.name` represents the field `name`, and `it.name.value` represents the `name` property value of the `User` object in Kotlin.
 
 ```kotlin {3,5}
 val user = User(username = "Kronos")
 
 User().select().where { it.username == user.username.value }.query()
-//等同于
+// Equivalent to where { it.username == "Kronos" }.query()
 User().select().where { it.username == "Kronos" }.query()
 ```
 
-### {{ $.title("KPojo.eq") }} 通过KPojo自动生成判等条件
+### {{ $.title("KPojo.eq") }} Automatically Generate Conditions
 
-`user.eq`表示通过`User`为对象内所有非空字段自动生成判等条件，如`it.eq`等同于
-`it.id == id && it.name == name && it.age == age`，他可以与`&&`、`||`、`!`等操作符组合使用。
+`user.eq` indicates that equality conditions for all non-empty fields within the object are automatically generated through `User`, such as `it.eq` being equivalent to `it.id == id && it.name == name && it.age == age`. It can be combined with operators such as `&&`, `||`, and `!`.
 
 ```kotlin {3}
 val user = User(id = 1, name = "Kronos", age = 18)
@@ -279,17 +278,17 @@ val user = User(id = 1, name = "Kronos", age = 18)
 User().select().where { it.eq || it.name like "Kronos%" }.query()
 ```
 
-使用`-`可以忽略某个字段的判等条件。
+Using `-` can ignore the equality condition of a certain field.
 
 ```kotlin {3}
 val user = User(id = 1, name = "Kronos", age = 18)
-// 将不会生成`it.id == 1`的判等条件
+// The equality condition `it.id == 1` will not be generated.
 User().select().where { (it - it.id).eq }.query()
 ```
 
-### {{ $.title("(String/Boolean).asSql") }} 自定义SQL查询条件
+### {{ $.title("(String/Boolean).asSql") }} SQL String Query
 
-可以将Kotlin的boolean表达式的结果或者字符串作为SQL查询条件，从而方便地定义复杂的查询条件。
+You can pass a string as a condition, such as `"name = 'Kronos' and age > 18"`, or a boolean value, such as `false`, as a condition.
 
 ```kotlin {3,5,7}
 val user = User(id = 1, name = "Kronos", age = 18)
@@ -301,29 +300,28 @@ where { (it.id == 1 || it.age > 18).asSql() } // where false
 where { (it.name == null).asSql() } // where false
 ```
 
-自定义字符串SQL查询条件中支持命名参数，如`"name = :name and age > :age"`，Kronos会自动将`name`和`age`替换为具体的值。
+Custom string SQL query conditions support named parameters, such as `"name = :name and age > :age"`, and Kronos will automatically replace `name` and `age` with specific values.
 
-如果外层的KPojo内没有该命名参数需要的值，可以使用`patch`方法传入参数，如：
+If the outer KPojo does not have the value required by the named parameter, you can use the `patch` method to pass in the parameter, such as:
 
 ```kotlin {1}
 where { "name = :name".asSql() }.patch("name" to "Kronos", ...)
 ```
 
-### {{ $.title("ifNoValue") }} 无值策略
+### {{ $.title("ifNoValue") }} No Value Strategy
 
-无值策略，接收参数`NoValueStrategy`，用于处理无值的情况，优先级高于Kronos默认的无值策略，详见：{{ $.keyword("
-concept/no-value-strategy", ["概念", "无值策略"]) }}
+NoValueStrategy, which receives the parameter `NoValueStrategy`, is used to handle cases with no value and has a higher priority than Kronos's default no-value strategy. For details, see: {{ $.keyword("concept/no-value-strategy", ["concept", "No Value Strategy"]) }}
 
 ```kotlin
 val age: Int? = null
 User()
     .select()
-    .where { (it.age == age).ifNoValue(ignore) } // 无值时忽略条件
+    .where { (it.age == age).ifNoValue(ignore) } // Ignore the condition when there is no value.
     .query()
 
 val username: String? = null
 User(username = username)
     .delete()
-    .where { it.username.eq.ifNoValue(alwaysFalse) } // 无值时返回false
+    .where { it.username.eq.ifNoValue(alwaysFalse) } // Always return false when there is no value.
     .execute()
 ```

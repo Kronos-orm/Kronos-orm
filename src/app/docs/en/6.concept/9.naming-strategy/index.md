@@ -1,9 +1,53 @@
-## 成员函数：
+{% import "../../../macros/macros-en.njk" as $ %}
 
-### `fun db2k(name: String): String`
+## Member Functions:
 
-将数据库表/列名转为kotlin类名/属性名。
+### 1. {{ $.title("db2k(name)")}} Database Name -> Kotlin Name
 
-### `fun k2db(name: String): String`
+Convert database table/column names to kotlin class/property names.
 
-将kotlin类名/属性名转为数据库表/列名。
+- **Function Declaration**
+
+   ```kotlin
+      fun db2k(name: String): String
+   ```
+
+- **Usage Example**
+  
+   ```kotlin
+      val kName = db2k("user_info")
+   ```
+
+- **Reception Parameters**
+
+{{ $.params([['name', 'Database table/column names', 'String']]) }}
+
+- **Return**
+
+  `String` - kotlin class name/property name
+
+{{ $.hr() }}
+
+### 2. {{ $.title("k2db(name)")}} Kotlin Name -> Database Name
+
+Convert Kotlin class names/property names to database table/column names.
+
+- **Function Declaration**
+
+  ```kotlin
+      fun k2db(name: String): String
+  ```
+
+- **Usage Example**
+
+  ```kotlin
+      val dbName = k2db("UserInfo")
+  ```
+
+- **Reception Parameters**
+
+{{ $.params([['name', 'Kotlin class name/property name', 'String']]) }}
+
+- **Return**
+
+  `String` - Database table/column names

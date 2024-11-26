@@ -9,14 +9,14 @@ import {
 import {provideNgDocContext} from "@ng-doc/generated";
 import {provideMermaid} from '@ng-doc/app';
 import {provideHttpClient, withInterceptorsFromDi, withFetch} from "@angular/common/http";
-import {ApplicationConfig, isDevMode} from '@angular/core';
+import {ApplicationConfig, isDevMode, SecurityContext} from '@angular/core';
 import {provideRouter, withHashLocation, withInMemoryScrolling} from '@angular/router';
 import {routes} from './app.routes';
 import {provideAnimationsAsync} from "@angular/platform-browser/animations/async";
 import {provideTransloco} from "@jsverse/transloco";
 import {TranslocoHttpLoader} from "./TranslocoHttpLoader";
 import {DocSearchEngine} from "./doc-search-engine";
-import {provideMarkdown} from "ngx-markdown";
+import {MARKED_OPTIONS, provideMarkdown} from "ngx-markdown";
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -43,6 +43,18 @@ export const appConfig: ApplicationConfig = {
             },
             loader: TranslocoHttpLoader
         }),
-        provideMarkdown()
+        provideMarkdown({
+            markedOptions: {
+                provide: MARKED_OPTIONS,
+                useValue: {
+                    gfm: true,
+                    breaks: false,
+                    pedantic: false,
+                    smartLists: true, // enable smartLists
+                    smartypants: false,
+                },
+            },
+            sanitize: SecurityContext.NONE // disable sanitization
+        })
     ]
 };

@@ -1,36 +1,36 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 
-**Kronos是如何不依赖反射实现将KPojo的泛型KClass实例化的？**
+**How does Kronos implement instantiating KPojo's generic KClass without relying on reflection? **
 
-Kronos通过编译器插件，在编译期检测并生成了一个由`KClass<KPojo>`到`KPojo`的映射表，通过这个映射表来实现。
+Kronos detects and generates a mapping table from `KClass<KPojo>` to `KPojo` by means of a compiler plugin at compile time.
 
-因此您可以写出如下代码：
+So you can write the following code:
 
 ```kotlin
 import com.kotlinorm.utils.createInstance
 
 data class User(val id: Int? = null, val name: String = ""): KPojo
 
-val instance = User::class.createInstance() // -> 等同于 User()
+val instance = User::class.createInstance() // -> Equivalent to User()
 
 inline fun <reified T: KPojo> createInstance(): T {
-    // 不会使用反射，而是直接调用映射表，等同于 T()
+    // Reflection will not be used, but the mapping table will be called directly, equivalent to T()
     return T::class.createInstance()
 }
 ```
 
-**这个映射表直接生成为when函数，既不会占用额外的内存，也不会影响性能**。
+**This mapping table is directly generated as a `when function`, which neither occupies additional memory nor affects performance.**
 
-我们检测的表达式包括：
-1. class声明 如 `class User: KPojo`
-2. class的构造函数 如 `val a = User()`
-3. class的引用 如 `User::class`
+The expressions we detect include:
+1. class declarations such as `class User: KPojo`
+2. class constructors such as `val a = User()`.
+3. class references such as `User::class`.
 
-**若您正在引用的类未被检测到**(如引用自一些第三方库或其他构建模块，且通过非构造函数实例化)，您可以通过`registerKPojo`或设置`kCreatorCustom`来自定义实例化逻辑。
+**If the class you are referencing is not detected** (e.g. referenced from some third-party library or other building block and instantiated via a non-constructor function), you can customize the instantiation logic by `registerKPojo` or setting `kCreatorCustom`.
 
 ```kotlin
 registerKPojo(User::class, Permissions::class, ...)
-//或
+// or
 kCreatorCustom = { kClass ->
     when (kClass) {
         User::class -> User()
@@ -39,7 +39,7 @@ kCreatorCustom = { kClass ->
     }
 }
 
-// 若大量类未被检测到，可考虑使用反射实例化：
+// If a large number of classes are undetected, consider using reflection instantiation:
 // import kotlin.reflect.full.createInstance
 // kCreatorCustom = { kClass -> kClass.createInstance() }
 ```

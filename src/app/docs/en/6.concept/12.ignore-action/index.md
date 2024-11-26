@@ -1,10 +1,10 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 
-查询忽略共支持以下几种策略：
+Query Ignore supports the following strategies in total:
 
 {{ $.members([
-["SELECT", "在所有查询时均忽略对该属性的查询和赋值", "IgnoreAction"],
-["CASCADE_SELECT", "在级联查询时忽略对该属性的查询和赋值", "IgnoreAction"]
+    ["SELECT", "Ignore queries and assignments to this attribute on all queries", "IgnoreAction" ], 
+    ["CASCADE_SELECT", "Ignore queries and assignments to this property on cascade queries", "IgnoreAction"]
 ])}}
 
-级联删除的使用方法详见 {{ $.keyword("class-definition/annotation-config", ["@Ignore 查询时忽略属性"]) }}。
+See {{ $.keyword("class-definition/annotation-config", ["@Ignore Ignore Property During Select"]) }} for details on how to use cascade deletion.

@@ -21,13 +21,8 @@ Kronos设计被用于后端和移动端开发，且支持多种数据库，截�
 
 我们希望我们的ORM能够尽快运行在所有平台上，但同时，我们希望能够等到kotlinx相关库的稳定版本发布后再正式开始我们的部分功能迁移，这其中需要做的主要工作如下：
 
-- [ ] 使用`kotlinx.datetime`替换java的datetime（实际上我们在测试用例中已经通过value
-  transformer实现了这一支持([KotlinXDateTimeTransformer](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt))
-  ，youtrack相关问题：([Promote kotlinx-datetime to Beta](https://youtrack.jetbrains.com/issue/KT-64578)）
-
-- [ ] 使用`kotlinx.io`处理默认的日志文件读写，youtrack相关问题：([Stabilize the kotlinx-io library](https://youtrack.jetbrains.com/issue/KT-71300))
-
-- [ ] 寻找仅在jvm平台可以使用的反射的替代方案（实际上我们已经删除了99%的反射，但是部分功能如`Class.forName().kotlin`
-  以及`KClass<T>.newInstance()`，我们还没有找到替代的解决方案，如果这一点不能实现，我们可能为部分平台舍弃**级联操作**、**自动类型转换**等功能。
+1. [ ] 使用`kotlinx.datetime`替换java的datetime（实际上我们在测试用例中已经通过valuetransformer实现了这一支持([KotlinXDateTimeTransformer](https://github.com/Kronos-orm/Kronos-orm/blob/main/kronos-testing/src/test/kotlin/com/kotlinorm/utils/KotlinXDateTimeTransformer.kt))，youtrack相关问题：([Promote kotlinx-datetime to Beta](https://youtrack.jetbrains.com/issue/KT-64578)）
+2. [ ] 使用`kotlinx.io`处理默认的日志文件读写，youtrack相关问题：([Stabilize the kotlinx-io library](https://youtrack.jetbrains.com/issue/KT-71300))
+3. [x] 寻找仅在jvm平台可以使用的反射的替代方案（我们使用编译器插件实现了动态实例化`KClass<KPojo>`且不依赖反射的功能，相关提交：[Commit 2499037](https://github.com/Kronos-orm/Kronos-orm/commit/2499037008d6affe4495142f2a907be4a85f182b))，更多信息请查看[KPojo的动态实例化](/#/documentation/zh-CN/concept/kpojo-dynamic-instantiate)
 
 您可以在[这里](https://github.com/Kronos-orm/Kronos-orm/issues/50)查看我们的最新进展，提供您宝贵的建议或PR贡献，我们期待与您沟通和交流。

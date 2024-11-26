@@ -3,7 +3,7 @@ import GettingStartedCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * This article will guide you on how to set up Kronos globally.
+ * This chapter will guide you on how to set up Kronos globally.
  * @status:info updated recently
  */
 const GlobalConfigPage: NgDocPage = {

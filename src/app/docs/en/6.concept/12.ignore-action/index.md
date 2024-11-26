@@ -1,4 +1,4 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 
 查询忽略共支持以下几种策略：
 

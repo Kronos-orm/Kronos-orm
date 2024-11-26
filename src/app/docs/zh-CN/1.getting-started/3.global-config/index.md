@@ -8,7 +8,9 @@
 数据源类型为`KronosDataSourceWrapper`，创建方法可参考：{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
 
 ```kotlin
-Kronos.dataSource = { yourDataSourceWrapper }
+Kronos.init{
+    dataSource = { yourDataSourceWrapper }
+}
 ```
 
 > **Warning**
@@ -25,7 +27,7 @@ Kronos.dataSource = { yourDataSourceWrapper }
 
 ## 全局表名策略
 
-表名策略指在默认情况下（无注解配置），kronos自动根据**Kotlin类名**生成数据库的**表名**，如：`User` -> `user`。
+表名策略指在默认情况下（无注解配置），kronos自动根据**Kotlin类名**生成数据库的**表名**，如：`TbUser` -> `tb_user`。
 
 **参数**：
 {{$.params([['tableNamingStrategy', '全局表名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
@@ -34,7 +36,7 @@ Kronos.dataSource = { yourDataSourceWrapper }
 
 我们**默认**提供了`LineHumpNamingStrategy`和`NoneNamingStrategy`**两种表名策略**：
 
- **1. {{ $.title("LineHumpNamingStrategy") }}下划线/驼峰命名策略**
+**1. {{ $.title("LineHumpNamingStrategy") }}下划线/驼峰命名策略**
 
 该策略将kotlin类名转换为下划线分隔的小写字符串，如：`ADataClass` -> `a_data_class`
 ，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。

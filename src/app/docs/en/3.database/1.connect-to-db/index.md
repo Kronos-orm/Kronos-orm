@@ -83,7 +83,7 @@ dependencies {
 
 ```kotlin group="Mysql" name="MysqlKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.apply {
+Kronos.init {
   dataSource = {
     BasicDataSource().apply {
         // if your database version is 8.0 or later, you need to add the following configuration
@@ -141,7 +141,7 @@ dependencies {
 
 ```kotlin group="PostgreSQL" name="PostgreSQLKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.apply {
+Kronos.init {
   dataSource = {
     BasicDataSource().apply {
         driverClassName = "org.postgresql.Driver"
@@ -195,7 +195,7 @@ dependencies {
 
 ```kotlin group="Oracle" name="OracleKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.apply {
+Kronos.init {
   dataSource = {
     BasicDataSource().apply {
         driverClassName = "oracle.jdbc.OracleDriver"
@@ -250,7 +250,7 @@ dependencies {
 
 ```kotlin group="SQL Server" name="SQLServerKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.apply {
+Kronos.init {
   dataSource = {
     BasicDataSource().apply {
         driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
@@ -305,7 +305,7 @@ dependencies {
 
 ```kotlin group="SQLite" name="SQLiteKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.apply {
+Kronos.init {
   dataSource = {
     BasicDataSource().apply {
         driverClassName = "org.sqlite.JDBC"

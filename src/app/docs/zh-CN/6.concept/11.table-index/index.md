@@ -1,5 +1,3 @@
-{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
-
 ## 索引类型
 
 ### MySQL
@@ -36,11 +34,7 @@
 
 ### SQLite
 
-- **NOCASE** `SQLite.KIndexType.NOCASE` 忽略大小写。
-
-- **RTRIM** `SQLite.KIndexType.RTRIM` 忽略尾部空格。
-
-- **BINARY** `SQLite.KIndexType.BINARY` 二进制比较。
+- **UNIQUE** `SQLite.KIndexType.UNIQUE` 唯一索引，用于保证数据唯一性。
 
 ## 索引方法
 
@@ -67,8 +61,3 @@
 ### SQL Server
 
 - **UNIQUE** `SqlServer.KIndexMethod.UNIQUE` 唯一索引，用于保证数据唯一性。
-
-### SQLite
-
-- **UNIQUE** `SQLite.KIndexMethod.UNIQUE` 唯一索引，用于保证数据唯一性。
-

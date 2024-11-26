@@ -1,43 +1,42 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 默认数据源设置
+## Default Data Source Settings
 
-在数据库操作时，若不指定数据源，kronos会自动使用该默认数据源。
+If you do not specify a data source during database operations, kronos automatically uses this default data source.
 
-数据源类型为`KronosDataSourceWrapper`，创建方法可参考：{{ $.keyword("database/connect-to-db", ["连接到数据库"]) }}。
+The data source type is `KronosDataSourceWrapper` and the creation method can be referred to:{{ $.keyword("database/connect-to-db", ["Connect to DB"]) }}。
 
 ```kotlin
-Kronos.dataSource = { yourDataSourceWrapper }
+Kronos.init {
+    dataSource = YourDataSourceWrapper()
+}
 ```
 
 > **Warning**
-> 默认数据源的默认值为`NoneDataSourceWrapper`，在使用前请务必修改您的配置文件。
+> The `Kronos.dataSource` defaults to `NoneDataSourceWrapper`, be sure to **modify your configuration file before using it**.
 >
 
 > **Warning**
-> Kronos支持多数据源与动态数据源
+> Kronos supports multiple data sources and dynamic data sources
 >
-> **多数据源**：在具体操作时，如KPojo.update.execute(wrapper)，可以在`execute`函数中传入其他`KronosDataSourceWrapper`
-> 实例，从而使用其他的数据源。
+> **Multiple data sources**: In specific operations, such as KPojo.update.execute(wrapper), other `KronosDataSourceWrapper` instances can be passed in the `execute` function to use other data sources.
 >
-> **动态数据源**：`Kronos.dataSource`是一个函数，您可以在该函数中实现您的逻辑返回不同的数据源实例，实现动态数据源。
+> **Dynamic Data Source**: `Kronos.dataSource` is a function where you can implement your logic to return different instances of the data source, implementing a dynamic data source.
 
-## 全局表名策略
+## Global Table Name Strategy
 
-表名策略指在默认情况下（无注解配置），kronos自动根据**Kotlin类名**生成数据库的**表名**，如：`User` -> `user`。
+The table name strategy means that by default (no annotated configuration), kronos automatically generates a **table name** for the database based on the **Kotlin class name**, e.g. `TbUser` -> `tb_user`.
 
-**参数**：
-{{$.params([['tableNamingStrategy', '全局表名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
+**Parameters**:
+{{$.params([['tableNamingStrategy', 'Global Table Naming Strategy', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
+Creating a custom table naming strategy `KronosNamingStrategy` is detailed in: {{ $.keyword("concept/naming-strategy", ["concept", "Naming Strategy"]) }}.
 
-创建来自定义表名策略`KronosNamingStrategy`详见：{{ $.keyword("concept/naming-strategy", ["概念","命名策略"]) }}。
+We **by default** provide both `LineHumpNamingStrategy` and `NoneNamingStrategy` **table name strategies**:
 
-我们**默认**提供了`LineHumpNamingStrategy`和`NoneNamingStrategy`**两种表名策略**：
+**1. {{ $.title("LineHumpNamingStrategy") }} Underscore/Camel Case Naming Strategy**
 
- **1. {{ $.title("LineHumpNamingStrategy") }}下划线/驼峰命名策略**
-
-该策略将kotlin类名转换为下划线分隔的小写字符串，如：`ADataClass` -> `a_data_class`
-，将数据库表/列名转为驼峰命名，如：`user_name` -> `userName`。
+This strategy converts kotlin class names to underscore-separated lowercase strings, e.g., `ADataClass` -> `a_data_class`, and database table/column names to camel names, e.g., `user_name` -> `userName`.
 
 ```kotlin
 Kronos.init {
@@ -45,20 +44,20 @@ Kronos.init {
 }
 ```
 
- **2. {{ $.title("NoneNamingStrategy") }}无命名策略**
+**2. {{ $.title("NoneNamingStrategy") }} none naming strategy**
 
-该策略将kotlin类名保持原样，如：`ADataClass` -> `ADataClass`，将数据库表/列名保持原样，如：`user_name` -> `user_name`。
+This strategy leaves the kotlin class names as they are, e.g. `ADataClass` -> `ADataClass`, and the database table/column names as they are, e.g. `user_name` -> `user_name`.
 
-默认情况下，kronos使用的就是`NoneNamingStrategy`表名策略。
+By default, kronos uses the `NoneNamingStrategy` table name strategy.
 
-## 全局列名策略
+## Global Column Naming Strategy
 
-同全局表名策略类似，列名策略指在默认情况下，kronos自动根据Kotlin类的**属性名**生成**列名**，如：`classId` -> `class_id`。
+Similar to the global table naming strategy, the column naming strategy refers to the default behavior where Kronos automatically generates **column names** based on the **property names** of Kotlin classes, for example: `classId` -> `class_id`.
 
-**参数**：
-{{$.params([['fieldNamingStrategy', '全局列名策略', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
+**Parameters**:
+{{$.params([['fieldNamingStrategy', 'Global Column Name Strategy', 'KronosNamingStrategy', 'NoneNamingStrategy']])}}
 
-列名策略类与表名策略通用，设置方式为：
+The column name strategy is common to the table name strategy, and the setting method is:
 
 ```kotlin
 Kronos.init {
@@ -66,21 +65,21 @@ Kronos.init {
 }
 ```
 
-## 创建时间策略
+## Creation Time Strategy
 
-用于设置所有表的创建时间字段。
+Used to set the creation time field for all tables.
 
-**参数**：
+**Parameters**:
 {{$.params([
     ['createTimeStrategy',
-    '创建时间策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+    'Create time strategy, including <b>whether to enable</b>, <b>kotlin property name</b> and <b>database column name information</b>',
     'KronosCommonStrategy',
     'KronosCommonStrategy(false, Field("createTime"))']
 ])}}
 
-通过创建`KronosCommonStrategy`自定义创建时间策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
+Customize the creation of a time strategy by creating a `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "Common Strategy"]) }}).
 
-创建时间策略的全局**默认关闭**，需要手动开启。
+The global settings for the creation time strategy are **enabled by default**, and need to be turned on manually.
 
 ```kotlin
 Kronos.init {
@@ -89,23 +88,23 @@ Kronos.init {
 ```
 
 > **Note**
-> 全局设置创建时间策略后，仍可在`KPojo`类中通过{{ $.keyword("class-definition/annotation-config", ["注解设置","@CreateTime创建时间列"]) }}覆盖全局设置。
+> After the global setting for the creation time strategy is established, it can still be overridden in the `KPojo` class through {{ $.keyword("class-definition/annotation-config", ["Annotation Settings", "@CreateTime Creation Time Column"]) }}.
 
-## 更新时间策略
+## Update Time Strategy
 
-用于设置所有表的更新时间字段（**是否开启**、**kotlin属性名**及**数据库列名**）。
+Used to set the update time field for all tables (**whether to enable**, **Kotlin property name**, and **database column name**).
 
-**参数**：
+**Parameters**:
 {{$.params([
 ['updateTimeStrategy',
-'更新时间策略，包含<b>是否开启</b>、<b>kotlin属性名</b>及<b>数据库列名等信息</b>',
+'Update timing strategy, including <b>whether to enable</b>, <b>kotlin property name</b>, and <b>database column name information</b>',
 'KronosCommonStrategy',
 'KronosCommonStrategy(false, Field("updateTime"))']
 ])}}
 
-通过创建`KronosCommonStrategy`自定义更新时间策略，详见：{{ $.keyword("concept/common-strategy", ["概念","通用策略"]) }}）。
+By creating a custom update strategy `KronosCommonStrategy`, see: {{ $.keyword("concept/common-strategy", ["concept", "Common Strategy"]) }}).
 
-更新时间策略的全局默认关闭，需要手动开启。
+The global default for update time strategy is turned off and needs to be manually enabled.
 
 ```kotlin
 Kronos.init {

@@ -1,37 +1,42 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 悲观锁
+## Pessimistic Lock
 
-Kronos共提供**共享锁**和**独占锁**两种悲观锁。
+Kronos provides two types of pessimistic locks: **shared locks** and **exclusive locks**.
 
-### {{$.title("PessimisticLock.S")}} 共享锁
+### {{$.title("PessimisticLock.S")}} Shared Lock
 
-Kronos提供**共享锁**，其锁等级为**行锁**。
+Kronos offers a **shared lock**,which is classified as a **row lock**.
 
-共享锁也叫读锁或 S 锁，共享锁锁定的资源可以被其他用户读取，但不能修改。在进行`SELECT`
-的时候，会将对象进行共享锁锁定，当数据读取完毕之后，就会释放共享锁，这样就可以保证数据在读取时不被修改。
+A shared lock, also known as a read lock or S lock, allows the locked resource to be read by other users but not modified. 
+When performing a `SELECT`, the object is locked with a shared lock, and once the data has been read, the shared lock is released. 
+This ensures that the data is not modified while being read.
 
-在Kronos中，**共享锁**可用于{{$.keyword("database/select-records", ["查询记录", "lock设置查询时行锁"])}}与{{
-$.keyword("database/upsert-records", ["更新插入", "lock设置查询时行锁"])}}功能。
+In Kronos, the **shared lock** can be used for {{$.keyword("database/select-records", ["query records", "lock settings for row locks during queries"])}} and 
+{{ $.keyword("database/upsert-records", ["update insert", "lock settings for row locks during queries"])}}functions.
 
-### {{$.title("PessimisticLock.X")}} 独占锁
+### {{$.title("PessimisticLock.X")}} Exclusive Lock
 
-Kronos提供**独占锁**，其锁等级为**表锁**。
+Kronos provides an **exclusive lock**, which is classified as a **table lock**.
 
-独占锁也叫写锁或 X 锁，独占锁锁定的资源只能被当前用户修改，不能被其他用户读取。在进行`SELECT`
-的时候，会将对象进行独占锁锁定，当数据读取完毕之后，就会释放独占锁，这样就可以保证数据在读取时不被修改。
+An exclusive lock, also known as a write lock or X lock, allows only the current user to modify the locked resource, preventing other users from reading it. 
+When performing a `SELECT`, the object is locked with an **exclusive lock**, and once the data has been read, the **exclusive lock** is released. 
+This ensures that the data is not modified while being read.
 
-在Kronos中，**独占锁**可用于{{$.keyword("database/select-records", ["查询记录", "lock设置查询时表锁"])}}与{{
-$.keyword("database/upsert-records", ["更新插入", "lock设置查询时表锁"])}}功能。
+In Kronos, the **exclusive lock** can be used for {{.keyword("database/select-records", 
+["query records", "lock settings for table locks during queries"])}} and {{.keyword("database/upsert-records", 
+["update insert", "lock settings for table locks during queries"])}} functions.
 
-## 乐观锁
+## Optimistic Lock
 
-Kronos提供**乐观锁**功能，可以在{{$.keyword("getting-started/global-config", ["全局配置", "乐观锁（版本）策略"])}}中设置全局乐观锁策略或通过{{
-$.keyword("class-definition/annotation-config", ["注解配置", "@Version乐观锁（版本）列"])}}注解使用乐观锁功能。
+Kronos provides an **optimistic lock** feature, which can be configured globally in {{.keyword("getting-started/global-config", 
+["global configuration", "optimistic lock (version) strategy"])}} or used through the {{.keyword("class-definition/annotation-config", 
+["annotation configuration", "@Version optimistic lock (version) column"])}} annotation.
 
-被设置为**乐观锁**的列（默认为`version`，接下来均以该列为例）在记录新建时会被设置成0，后续每次更新`version = version + 1`
+Columns set as **optimistic locks** (default is `version`, and this column will be used as an example here) are initialized to 0 when a record is created, 
+and subsequent updates will increment the `version = version + 1`.
 
-在执行**更新插入**(**upsert**)操作时，会将`version`字段添加进筛选项，意为仅当KPojo的该字段与数据库中修改次数一致时才会更新该条数据，否则则执行插入。
+When performing an **upsert** operation, the `version` field is included in the filter criteria, meaning that the record will only be updated if the `version` field in KPojo matches the modification count in the database; otherwise, an insert will be executed.
 
 

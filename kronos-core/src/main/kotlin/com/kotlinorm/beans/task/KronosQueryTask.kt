@@ -56,7 +56,7 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = true,
+        isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
     ): List<T> {
         beforeQuery?.invoke(this)

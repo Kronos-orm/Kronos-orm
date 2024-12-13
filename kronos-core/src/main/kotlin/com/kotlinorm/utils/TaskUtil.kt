@@ -58,6 +58,7 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.sun.org.apache.xpath.internal.operations.Bool
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
 fun lastInsertIdObtainSql(dbType: DBType): String {
@@ -91,30 +92,11 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
     var lastInsertId: Long? = null
     if (operationType == INSERT && useIdentity) {
         lastInsertId = wrapper.orDefault().forObject(
-            KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class
+            KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class, false, listOf()
         ) as Long
     }
     return logAndReturn(KronosOperationResult(affectRows, lastInsertId))
 }
-
-fun KAtomicQueryTask.query(wrapper: KronosDataSourceWrapper? = null) =
-    logAndReturn(wrapper.orDefault().forList(this), Query)
-
-@Suppress("UNCHECKED_CAST")
-inline fun <reified T> KAtomicQueryTask.queryList(wrapper: KronosDataSourceWrapper? = null) =
-    logAndReturn(wrapper.orDefault().forList(this, T::class) as List<T>, QueryList)
-
-fun KAtomicQueryTask.queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> =
-    logAndReturn(wrapper.orDefault().forMap(this)!!, QueryMap)
-
-fun KAtomicQueryTask.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? =
-    logAndReturn(wrapper.orDefault().forMap(this), QueryMapOrNull)
-
-inline fun <reified T> KAtomicQueryTask.queryOne(wrapper: KronosDataSourceWrapper? = null) =
-    logAndReturn(wrapper.orDefault().forObject(this, T::class) as T? ?: throw NullPointerException("No such record"))
-
-inline fun <reified T> KAtomicQueryTask.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null) =
-    logAndReturn(wrapper.orDefault().forObject(this, T::class) as T?, QueryOneOrNull)
 
 var kronosDoLog: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Unit = { task, result, queryType ->
     fun resultArr(): Array<KLogMessage> {

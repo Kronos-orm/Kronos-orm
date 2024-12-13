@@ -462,7 +462,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = true,
+        isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
     ): List<T> {
         return this.build().queryList(wrapper, isKPojo, superTypes)
@@ -493,7 +493,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = true,
+        isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
     ): T {
         return this.build().queryOne(wrapper, isKPojo, superTypes)
@@ -517,7 +517,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = true,
+        isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
     ): T? {
         return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)

@@ -99,6 +99,7 @@ interface KronosDataSourceWrapper {
     fun forList(
         task: KAtomicQueryTask,
         kClass: KClass<*>,
+        isKPojo: Boolean,
         superTypes: List<String>
     ): List<Any>
 
@@ -127,6 +128,7 @@ interface KronosDataSourceWrapper {
     fun forObject(
         task: KAtomicQueryTask,
         kClass: KClass<*>,
+        isKPojo: Boolean,
         superTypes: List<String>
     ): Any?
 

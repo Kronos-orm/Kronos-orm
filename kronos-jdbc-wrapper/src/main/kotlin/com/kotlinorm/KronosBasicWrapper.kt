@@ -109,8 +109,8 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @return a list of objects of the specified class
      * @throws [SQLException] if an error occurs while executing the query
      */
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, superTypes: List<String>): List<Any> {
-        return if ("com.kotlinorm.interfaces.KPojo" in superTypes) {
+    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
+        return if (isKPojo) {
             @Suppress("UNCHECKED_CAST") forList(task).map { it.safeMapperTo(kClass as KClass<KPojo>) }
         } else {
             val (sql, paramList) = task.parsed()
@@ -203,8 +203,8 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [UnsupportedTypeException] If the provided class is not supported.
      * @throws [SQLException] If an error occurs while executing the query.
      */
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, superTypes: List<String>): Any? {
-        return if ("com.kotlinorm.interfaces.KPojo" in superTypes) {
+    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+        return if (isKPojo) {
             @Suppress("UNCHECKED_CAST") forMap(task)?.safeMapperTo(kClass as KClass<KPojo>)
         } else {
             val (sql, paramList) = task.parsed()

@@ -74,6 +74,7 @@ class KronosParserTransformer(
     }
 
     override fun visitCall(expression: IrCall): IrExpression {
+        // SET PARAMETERS (IS_K_POJO AND SUPER_TYPES) FOR FOLLOWING CALLS:
         // com.kotlinorm.beans.task.KronosQueryTask.queryList
         // com.kotlinorm.beans.task.KronosQueryTask.queryOne
         // com.kotlinorm.beans.task.KronosQueryTask.queryOneOrNull

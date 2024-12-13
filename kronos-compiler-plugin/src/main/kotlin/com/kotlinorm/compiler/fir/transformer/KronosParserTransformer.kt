@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -70,6 +71,19 @@ class KronosParserTransformer(
             KTABLE_FOR_REFERENCE_CLASS -> declaration.body = transformKTableForReference(declaration)
         }
         return super.visitFunctionNew(declaration)
+    }
+
+    override fun visitCall(expression: IrCall): IrExpression {
+        // com.kotlinorm.beans.task.KronosQueryTask.queryList
+        // com.kotlinorm.beans.task.KronosQueryTask.queryOne
+        // com.kotlinorm.beans.task.KronosQueryTask.queryOneOrNull
+        // com.kotlinorm.orm.select.SelectClause.queryList
+        // com.kotlinorm.orm.select.SelectClause.queryOne
+        // com.kotlinorm.orm.select.SelectClause.queryOneOrNull
+        // com.kotlinorm.orm.join.SelectFrom.queryList
+        // com.kotlinorm.orm.join.SelectFrom.queryOne
+        // com.kotlinorm.orm.join.SelectFrom.queryOneOrNull
+        return super.visitCall(expression)
     }
 
     /**

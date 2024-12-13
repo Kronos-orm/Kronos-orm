@@ -17,6 +17,7 @@
 package com.kotlinorm
 
 import com.kotlinorm.Kronos.defaultLogger
+import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -34,7 +35,6 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import javax.sql.DataSource
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSuperclassOf
 
 /**
  * Kronos Basic Jdbc Wrapper
@@ -109,8 +109,8 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @return a list of objects of the specified class
      * @throws [SQLException] if an error occurs while executing the query
      */
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
-        return if (KPojo::class.isSuperclassOf(kClass)) {
+    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, superTypes: List<String>): List<Any> {
+        return if ("com.kotlinorm.interfaces.KPojo" in superTypes) {
             @Suppress("UNCHECKED_CAST") forList(task).map { it.safeMapperTo(kClass as KClass<KPojo>) }
         } else {
             val (sql, paramList) = task.parsed()
@@ -130,11 +130,15 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 val list = mutableListOf<Any>()
                 while (rs.next()) {
                     list.add(
-                        getTypeSafeValue(
-                            kClass.qualifiedName!!,
-                            rs.getObject(1),
-                            kClass.supertypes.map { kType -> kType.toString() }
-                        )
+                        if (strictSetValue) {
+                            rs.getObject(1, kClass.java)
+                        } else {
+                            getTypeSafeValue(
+                                kClass.qualifiedName!!,
+                                rs.getObject(1),
+                                superTypes
+                            )
+                        }
                     )
                 }
                 return list
@@ -199,8 +203,8 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [UnsupportedTypeException] If the provided class is not supported.
      * @throws [SQLException] If an error occurs while executing the query.
      */
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
-        return if (KPojo::class.isSuperclassOf(kClass)) {
+    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, superTypes: List<String>): Any? {
+        return if ("com.kotlinorm.interfaces.KPojo" in superTypes) {
             @Suppress("UNCHECKED_CAST") forMap(task)?.safeMapperTo(kClass as KClass<KPojo>)
         } else {
             val (sql, paramList) = task.parsed()
@@ -214,12 +218,13 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 }
                 rs = ps.executeQuery()
                 if (rs.next()) {
-                    val result = rs.getObject(1)
-                    result?.let {
+                    if(strictSetValue) {
+                        rs.getObject(1, kClass.java)
+                    } else {
                         getTypeSafeValue(
                             kClass.qualifiedName!!,
-                            it,
-                            kClass.supertypes.map { kType -> kType.toString() }
+                            rs.getObject(1),
+                            superTypes
                         )
                     }
                 } else {

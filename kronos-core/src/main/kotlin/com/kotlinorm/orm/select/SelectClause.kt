@@ -351,8 +351,9 @@ class SelectClause<T : KPojo>(
         return this.build().query(wrapper)
     }
 
-    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-        return this.build().queryList(wrapper)
+    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
+    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null, superTypes: List<String> = emptyList()): List<T> {
+        return this.build().queryList(wrapper, superTypes)
     }
 
     @JvmName("queryForList")
@@ -361,7 +362,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>, QueryList
+                wrapper.orDefault().forList(atomicTask, pojo::class, listOf("com.kotlinorm.interfaces.KPojo")) as List<T>, QueryList
             )
             afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
@@ -377,8 +378,9 @@ class SelectClause<T : KPojo>(
         return this.build().queryMapOrNull(wrapper)
     }
 
-    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
-        return this.build().queryOne(wrapper)
+    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
+    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null, superTypes: List<String> = emptyList()): T {
+        return this.build().queryOne(wrapper, superTypes)
     }
 
     @JvmName("queryForObject")
@@ -387,7 +389,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, pojo::class)
+                (wrapper.orDefault().forObject(atomicTask, pojo::class, listOf("com.kotlinorm.interfaces.KPojo"))
                     ?: throw NullPointerException("No such record")) as T, QueryOne
             )
             afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
@@ -395,8 +397,9 @@ class SelectClause<T : KPojo>(
         }
     }
 
-    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        return this.build().queryOneOrNull(wrapper)
+    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
+    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null, superTypes: List<String> = emptyList()): T? {
+        return this.build().queryOneOrNull(wrapper, superTypes)
     }
 
     @JvmName("queryForObjectOrNull")
@@ -405,7 +408,7 @@ class SelectClause<T : KPojo>(
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, pojo::class) as T?, QueryOneOrNull
+                wrapper.orDefault().forObject(atomicTask, pojo::class, listOf("com.kotlinorm.interfaces.KPojo")) as T?, QueryOneOrNull
             )
             afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
             return result

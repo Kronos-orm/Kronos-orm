@@ -53,10 +53,11 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     }
 
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
+    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null, superTypes: List<String>): List<T> {
         beforeQuery?.invoke(this)
         val result = atomicTask.logAndReturn(
-            wrapper.orDefault().forList(atomicTask, T::class) as List<T>, QueryList
+            wrapper.orDefault().forList(atomicTask, T::class, superTypes) as List<T>, QueryList
         )
         afterQuery?.invoke(result, QueryList, wrapper.orDefault())
         return result
@@ -76,21 +77,23 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         return result
     }
 
-    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
+    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
+    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null, superTypes: List<String>): T {
         beforeQuery?.invoke(this)
         val result = atomicTask.logAndReturn(
-            wrapper.orDefault().forObject(atomicTask, T::class) as T ?: throw NullPointerException("No such record"),
+            wrapper.orDefault().forObject(atomicTask, T::class, superTypes) as T ?: throw NullPointerException("No such record"),
             QueryOne
         )
         afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
         return result
     }
 
-    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
+    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null, superTypes: List<String>): T? {
         beforeQuery?.invoke(this)
         val result =
             atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, T::class) as T?,
+                wrapper.orDefault().forObject(atomicTask, T::class, superTypes) as T?,
                 QueryOneOrNull
             )
         afterQuery?.invoke(

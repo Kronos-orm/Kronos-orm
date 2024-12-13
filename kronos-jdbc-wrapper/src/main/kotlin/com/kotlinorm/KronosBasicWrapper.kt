@@ -17,9 +17,7 @@
 package com.kotlinorm
 
 import com.kotlinorm.Kronos.defaultLogger
-import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
@@ -27,6 +25,7 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.Oracle
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.Extensions.safeMapperTo
 import com.kotlinorm.utils.getTypeSafeValue
@@ -130,7 +129,13 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
                 rs = ps.executeQuery()
                 val list = mutableListOf<Any>()
                 while (rs.next()) {
-                    list.add(rs.getObject(1, kClass.java))
+                    list.add(
+                        getTypeSafeValue(
+                            kClass.qualifiedName!!,
+                            rs.getObject(1),
+                            kClass.supertypes.map { kType -> kType.toString() }
+                        )
+                    )
                 }
                 return list
             } catch (e: SQLException) {
@@ -195,20 +200,42 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @throws [SQLException] If an error occurs while executing the query.
      */
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
-        val map = forMap(task)
         return if (KPojo::class.isSuperclassOf(kClass)) {
-            @Suppress("UNCHECKED_CAST") map?.safeMapperTo(kClass as KClass<KPojo>)
-        } else if (map?.values?.firstOrNull() == null) {
-            null
+            @Suppress("UNCHECKED_CAST") forMap(task)?.safeMapperTo(kClass as KClass<KPojo>)
         } else {
-            if (strictSetValue) {
-                map.values.first()
-            } else {
-                getTypeSafeValue(
-                    kClass.qualifiedName!!,
-                    map.values.first(),
-                    kClass.supertypes.map { it.toString() }
+            val (sql, paramList) = task.parsed()
+            val conn = dataSource.connection
+            var ps: PreparedStatement? = null
+            var rs: ResultSet? = null
+            try {
+                ps = conn.prepareStatement(sql)
+                paramList.forEachIndexed { index, any ->
+                    ps.setObject(index + 1, any)
+                }
+                rs = ps.executeQuery()
+                if (rs.next()) {
+                    val result = rs.getObject(1)
+                    result?.let {
+                        getTypeSafeValue(
+                            kClass.qualifiedName!!,
+                            it,
+                            kClass.supertypes.map { kType -> kType.toString() }
+                        )
+                    }
+                } else {
+                    null
+                }
+            } catch (e: SQLException) {
+                defaultLogger(this).error(
+                    kMsgOf(
+                        "Failed to execute query，${e.message}.", Red
+                    ).endl().toArray()
                 )
+                throw e
+            } finally {
+                rs?.close()
+                ps?.close()
+                conn.close()
             }
         }
     }

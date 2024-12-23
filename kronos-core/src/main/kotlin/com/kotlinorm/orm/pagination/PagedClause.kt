@@ -52,7 +52,7 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
             beforeQuery?.invoke(this)
             val records =
                 atomicTask.logAndReturn(
-                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class), QueryList
+                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class, true, listOf()), QueryList
                 )
 
             afterQuery?.invoke(records, QueryList, wrapper.orDefault())

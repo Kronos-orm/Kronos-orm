@@ -28,7 +28,9 @@ fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper):
             "dbName" to getDBNameFrom(dataSource)
         )
     ),
-    Int::class
+    Int::class,
+    false,
+    listOf()
 ) as Int) > 0
 
 fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): String {
@@ -40,7 +42,9 @@ fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): S
                 "dbName" to getDBNameFrom(dataSource)
             )
         ),
-        String::class
+        String::class,
+        false,
+        listOf()
     ) as String? ?: ""
 }
 

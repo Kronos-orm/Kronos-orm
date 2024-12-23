@@ -290,6 +290,7 @@ class KTableParserForConditionTransformerTest {
                 )
     }
 
+    @Language("kotlin")
     private val mainKt = """
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.*
@@ -425,7 +426,7 @@ class KTableParserForConditionTransformerTest {
 
     @OptIn(ExperimentalCompilerApi::class)
     infix fun String.testCompile(@Language("kotlin") code: String) {
-        if (this.any { !it.isLetter() } && this.first().isLowerCase()) {
+        if (this.any { !it.isLetter() } || this.first().isLowerCase()) {
             throw IllegalArgumentException("测试名称必须全部都是字母，且首字母必须大写")
         }
         val result = compile(mainKt.replace("//inject", code), this@KTableParserForConditionTransformerTest.testBaseName + this)

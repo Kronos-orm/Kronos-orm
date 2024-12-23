@@ -23,12 +23,14 @@ import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSetTransform
 import com.kotlinorm.compiler.fir.transformer.kTable.KTableParserForSortReturnTransformer
 import com.kotlinorm.compiler.fir.utils.KClassCreatorUtil.kPojoClasses
 import com.kotlinorm.compiler.fir.utils.KPojoFqName
+import com.kotlinorm.compiler.fir.utils.fqNameOfSelectFromsRegexes
+import com.kotlinorm.compiler.fir.utils.fqNameOfTypedQuery
 import com.kotlinorm.compiler.fir.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForReference.KTABLE_FOR_REFERENCE_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSelect.KTABLE_FOR_SELECT_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSet.KTABLE_FOR_SET_CLASS
 import com.kotlinorm.compiler.fir.utils.kTableForSort.KTABLE_FOR_SORT_CLASS
-import com.kotlinorm.compiler.helpers.referenceFunctions
+import com.kotlinorm.compiler.fir.utils.updateTypedQueryParameters
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -38,13 +40,14 @@ import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
 
 /**
@@ -55,6 +58,11 @@ import org.jetbrains.kotlin.ir.util.statements
 class KronosParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
+    override fun visitCall(expression: IrCall): IrExpression {
+        return transformKQueryTask(expression) {
+            super.visitCall(expression)
+        }
+    }
     /**
      * Visits a new function and performs different actions based on the extension receiver's return type.
      *
@@ -193,5 +201,23 @@ class KronosParserTransformer(
             }
                 .transform(KTableParserForReferenceTransformer(pluginContext, irFunction), null)
         }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun transformKQueryTask(expression: IrCall, finally: () -> IrExpression): IrExpression {
+        val fqNameOfIrCall = expression.symbol.owner.kotlinFqName
+        if (
+            (fqNameOfIrCall in fqNameOfTypedQuery ||
+            fqNameOfSelectFromsRegexes.any { Regex(it).matches(fqNameOfIrCall.asString()) }) &&
+            expression.typeArgumentsCount == 1
+        ) {
+            return DeclarationIrBuilder(pluginContext, expression.symbol).irBlock {
+                with(pluginContext) {
+                    +updateTypedQueryParameters(expression)
+                }
+                finally()
+            }
+        }
+        return finally()
     }
 }

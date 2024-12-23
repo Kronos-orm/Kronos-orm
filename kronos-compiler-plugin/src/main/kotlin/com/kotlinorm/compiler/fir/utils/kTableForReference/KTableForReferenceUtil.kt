@@ -54,7 +54,6 @@ fun addReferenceList(irReturn: IrReturn): List<IrExpression> {
  * @return a mutable list of IR expressions representing the field names
  */
 context(IrBuilderWithScope, IrPluginContext, IrFunction)
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun collectReferences(
     element: IrElement
 ): MutableList<IrExpression> {

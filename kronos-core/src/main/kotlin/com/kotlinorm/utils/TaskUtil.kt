@@ -54,11 +54,9 @@ import com.kotlinorm.enums.QueryType.QueryOne
 import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KAtomicActionTask
-import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.sun.org.apache.xpath.internal.operations.Bool
 
 // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
 fun lastInsertIdObtainSql(dbType: DBType): String {

@@ -53,7 +53,6 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     }
 
     @Suppress("UNCHECKED_CAST")
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
@@ -81,7 +80,6 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         return result
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
@@ -98,7 +96,6 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         return result
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,

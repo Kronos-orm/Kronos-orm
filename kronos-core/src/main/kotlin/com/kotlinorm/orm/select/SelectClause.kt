@@ -351,7 +351,6 @@ class SelectClause<T : KPojo>(
         return this.build().query(wrapper)
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): List<T> {
         return this.build().queryList(wrapper, isKPojo, superTypes)
     }
@@ -378,7 +377,6 @@ class SelectClause<T : KPojo>(
         return this.build().queryMapOrNull(wrapper)
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): T {
         return this.build().queryOne(wrapper, isKPojo, superTypes)
     }
@@ -397,7 +395,6 @@ class SelectClause<T : KPojo>(
         }
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): T? {
         return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
     }

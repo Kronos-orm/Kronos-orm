@@ -459,7 +459,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return this.build().query(wrapper)
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
@@ -490,7 +489,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return this.build().queryMapOrNull(wrapper)
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
@@ -514,7 +512,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,

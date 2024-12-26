@@ -31,7 +31,6 @@ object SqlHandler {
     }
 
     @Suppress("UNCHECKED_CAST")
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> KronosDataSourceWrapper.queryList(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),
@@ -41,7 +40,6 @@ object SqlHandler {
         return this.forList(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as List<T>
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> KronosDataSourceWrapper.queryOne(
         sql: String, paramMap: Map<String, Any?> = emptyMap(),
         isKPojo: Boolean = false,
@@ -51,7 +49,6 @@ object SqlHandler {
             ?: throw Exception("No result found")
     }
 
-    // TODO: COMPILER SHOULD SUPPLY THE SUPER TYPES
     inline fun <reified T> KronosDataSourceWrapper.queryOneOrNull(
         sql: String,
         paramMap: Map<String, Any?> = emptyMap(),

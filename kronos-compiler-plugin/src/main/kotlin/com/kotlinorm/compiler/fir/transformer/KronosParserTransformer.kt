@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
+import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -47,8 +48,10 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
+import org.jetbrains.kotlin.ir.util.superTypes
 
 /**
  * Kronos Parser Transformer
@@ -59,6 +62,15 @@ class KronosParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
     override fun visitCall(expression: IrCall): IrExpression {
+        if (expression.typeArgumentsCount > 0) {
+            with(pluginContext) {
+                expression.typeArguments.forEach {
+                    if (it != null && it.superTypes().any { it.classFqName == KPojoFqName }) {
+                        kPojoClasses.add(it.getClass()!!)
+                    }
+                }
+            }
+        }
         return transformKQueryTask(expression) {
             super.visitCall(expression)
         }

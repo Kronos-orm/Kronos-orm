@@ -51,7 +51,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.allParameters
-import org.jetbrains.kotlin.ir.util.classId
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
@@ -111,7 +111,7 @@ object KClassCreatorUtil {
                         +irReturn(
                             irWhen(
                                 KPojoSymbol.nType,
-                                kPojoClasses.mapNotNull {
+                                kPojoClasses.distinctBy { it.fqNameWhenAvailable }.mapNotNull {
                                     createExprNew(it.symbol)?.let { new ->
                                         irBranch(
                                             irEquals(

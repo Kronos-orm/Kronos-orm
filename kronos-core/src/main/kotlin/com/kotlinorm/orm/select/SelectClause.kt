@@ -18,7 +18,6 @@ package com.kotlinorm.orm.select
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -37,6 +36,7 @@ import com.kotlinorm.enums.QueryType.QueryOne
 import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
 import com.kotlinorm.orm.pagination.PagedClause
@@ -351,8 +351,8 @@ class SelectClause<T : KPojo>(
         return this.build().query(wrapper)
     }
 
-    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-        return this.build().queryList(wrapper)
+    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): List<T> {
+        return this.build().queryList(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForList")
@@ -361,7 +361,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T>, QueryList
+                wrapper.orDefault().forList(atomicTask, pojo::class, true, listOf()) as List<T>, QueryList
             )
             afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
@@ -377,8 +377,8 @@ class SelectClause<T : KPojo>(
         return this.build().queryMapOrNull(wrapper)
     }
 
-    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
-        return this.build().queryOne(wrapper)
+    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): T {
+        return this.build().queryOne(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObject")
@@ -387,7 +387,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, pojo::class)
+                (wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf())
                     ?: throw NullPointerException("No such record")) as T, QueryOne
             )
             afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
@@ -395,8 +395,8 @@ class SelectClause<T : KPojo>(
         }
     }
 
-    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        return this.build().queryOneOrNull(wrapper)
+    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): T? {
+        return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObjectOrNull")
@@ -405,7 +405,7 @@ class SelectClause<T : KPojo>(
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, pojo::class) as T?, QueryOneOrNull
+                wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf()) as T?, QueryOneOrNull
             )
             afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
             return result

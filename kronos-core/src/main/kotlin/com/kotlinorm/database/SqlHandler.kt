@@ -33,21 +33,29 @@ object SqlHandler {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> KronosDataSourceWrapper.queryList(
         sql: String,
-        paramMap: Map<String, Any?> = emptyMap()
+        paramMap: Map<String, Any?> = emptyMap(),
+        isKPojo: Boolean = false,
+        superTypes: List<String> = emptyList()
     ): List<T> {
-        return this.forList(KronosAtomicQueryTask(sql, paramMap), T::class) as List<T>
+        return this.forList(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as List<T>
     }
 
-    inline fun <reified T> KronosDataSourceWrapper.queryOne(sql: String, paramMap: Map<String, Any?> = emptyMap()): T {
-        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class) as T?
+    inline fun <reified T> KronosDataSourceWrapper.queryOne(
+        sql: String, paramMap: Map<String, Any?> = emptyMap(),
+        isKPojo: Boolean = false,
+        superTypes: List<String> = emptyList()
+    ): T {
+        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?
             ?: throw Exception("No result found")
     }
 
     inline fun <reified T> KronosDataSourceWrapper.queryOneOrNull(
         sql: String,
-        paramMap: Map<String, Any?> = emptyMap()
+        paramMap: Map<String, Any?> = emptyMap(),
+        isKPojo: Boolean = false,
+        superTypes: List<String> = emptyList()
     ): T? {
-        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class) as T?
+        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?
     }
 
     fun KronosDataSourceWrapper.execute(sql: String, paramMap: Map<String, Any?> = emptyMap()): Int {

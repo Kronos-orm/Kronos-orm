@@ -21,9 +21,9 @@ import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
 import com.kotlinorm.beans.dsl.KSelectable
-import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
@@ -51,7 +51,7 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import java.util.Stack
+import java.util.*
 
 /**
  * Select From
@@ -459,8 +459,12 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return this.build().query(wrapper)
     }
 
-    inline fun <reified T> queryList(wrapper: KronosDataSourceWrapper? = null): List<T> {
-        return this.build().queryList(wrapper)
+    inline fun <reified T> queryList(
+        wrapper: KronosDataSourceWrapper? = null,
+        isKPojo: Boolean = false,
+        superTypes: List<String> = listOf()
+    ): List<T> {
+        return this.build().queryList(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForList")
@@ -469,7 +473,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, pojo::class) as List<T1>,
+                wrapper.orDefault().forList(atomicTask, pojo::class, true, listOf()) as List<T1>,
                 QueryType.QueryList
             )
             afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
@@ -485,8 +489,12 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         return this.build().queryMapOrNull(wrapper)
     }
 
-    inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null): T {
-        return this.build().queryOne(wrapper)
+    inline fun <reified T> queryOne(
+        wrapper: KronosDataSourceWrapper? = null,
+        isKPojo: Boolean = false,
+        superTypes: List<String> = listOf()
+    ): T {
+        return this.build().queryOne(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObject")
@@ -495,7 +503,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, pojo::class)
+                (wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf())
                     ?: throw NullPointerException("No such record")) as T1,
                 QueryType.QueryOne
             )
@@ -504,8 +512,12 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
-    inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
-        return this.build().queryOneOrNull(wrapper)
+    inline fun <reified T> queryOneOrNull(
+        wrapper: KronosDataSourceWrapper? = null,
+        isKPojo: Boolean = false,
+        superTypes: List<String> = listOf()
+    ): T? {
+        return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObjectOrNull")
@@ -514,7 +526,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, pojo::class) as T1?,
+                wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf()) as T1?,
                 QueryType.QueryOneOrNull
             )
             afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())

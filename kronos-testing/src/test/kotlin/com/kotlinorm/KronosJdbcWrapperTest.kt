@@ -108,7 +108,9 @@ class BasicWrapperTest {
         testUpdate()
         val result = wrapper.forList(
             KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"),
-            MysqlUser::class
+            MysqlUser::class,
+            true,
+            listOf()
         )
         assertEquals(
             listOf(
@@ -125,7 +127,7 @@ class BasicWrapperTest {
     @Test
     fun testQueryListTypePrimitive() {
         testUpdate()
-        val result = wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class)
+        val result = wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, listOf("Kotlin.Int"))
         assertEquals(
             listOf(1, 2, 3, 4, 5),
             result
@@ -136,14 +138,14 @@ class BasicWrapperTest {
     fun testQueryObject() {
         testUpdate()
         val result =
-            wrapper.forObject(KronosAtomicQueryTask("select * from tb_user where id = 1"), MysqlUser::class)
+            wrapper.forObject(KronosAtomicQueryTask("select * from tb_user where id = 1"), MysqlUser::class, true, listOf())
         assertEquals(MysqlUser(1, "test", 1, 1, deleted = false), result)
     }
 
     @Test
     fun testQueryObjectPrimitive() {
         testUpdate()
-        val result = wrapper.forObject(KronosAtomicQueryTask("select score from tb_user where id = 1"), Int::class)
+        val result = wrapper.forObject(KronosAtomicQueryTask("select score from tb_user where id = 1"), Int::class, false, listOf("Kotlin.Int"))
         assertEquals(1, result)
     }
 

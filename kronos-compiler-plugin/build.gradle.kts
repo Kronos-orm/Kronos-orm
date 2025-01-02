@@ -8,12 +8,6 @@ plugins {
 
 description = "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
-    }
-}
-
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs = listOf("-Xmx2048m")

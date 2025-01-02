@@ -16,7 +16,7 @@ gradlePlugin {
     plugins {
         create("kronosCompilerPlugin") {
             id = "com.kotlinorm.kronos-gradle-plugin"
-            implementationClass = "com.kotlinorm.compiler.fir.KronosGradlePlugin"
+            implementationClass = "com.kotlinorm.compiler.plugin.KronosGradlePlugin"
         }
     }
 }

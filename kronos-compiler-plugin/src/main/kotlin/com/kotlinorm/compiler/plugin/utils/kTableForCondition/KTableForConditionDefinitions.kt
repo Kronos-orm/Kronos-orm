@@ -20,10 +20,9 @@ import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.irEnum
 import com.kotlinorm.compiler.helpers.referenceClass
+import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
 import com.kotlinorm.compiler.plugin.utils.getColumnOrValue
-import com.kotlinorm.compiler.plugin.utils.isKronosColumn
-import com.kotlinorm.compiler.plugin.utils.isKronosFunction
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGet
@@ -125,9 +124,9 @@ fun KotlinBlockBuilderContext.createCriteria(
     noValueStrategyType: IrExpression? = null
 ): IrVariable {
     //创建Criteria
-    with(builder) {
-        with(pluginContext) {
-            val irVariable = irTemporary(
+    with(pluginContext) {
+        with(builder) {
+            val irVariable = builder.irTemporary(
                 applyIrCall(
                     criteriaClassSymbol.constructors.first(),
                     parameterName,
@@ -160,7 +159,7 @@ fun KotlinBlockBuilderContext.createCriteria(
  * @param right the right expression to analyze
  * @return a triple containing the analyzed left expression, reversed operator, and analyzed right expression
  */
-fun KotlinBlockBuilderContext.runExpressionAnalysis(
+fun KotlinBuilderContext.runExpressionAnalysis(
     left: IrExpression?,
     operator: String,
     right: IrExpression?

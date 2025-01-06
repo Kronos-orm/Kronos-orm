@@ -401,7 +401,7 @@ class KTableParserForConditionTransformerTest {
             }
             
             fun main() {
-                Kronos.apply {
+                Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
                 }

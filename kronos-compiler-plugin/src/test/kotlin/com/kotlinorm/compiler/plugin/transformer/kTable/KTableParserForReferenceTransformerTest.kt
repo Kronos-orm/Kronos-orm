@@ -73,7 +73,7 @@ class KTableParserForReferenceTransformerTest {
             
             
             fun main() {
-                Kronos.apply {
+                Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
                 }

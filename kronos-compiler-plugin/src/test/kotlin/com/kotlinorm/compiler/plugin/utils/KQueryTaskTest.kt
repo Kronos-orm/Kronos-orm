@@ -240,7 +240,7 @@ class KQueryTaskTest {
             ): KPojo
                 
             fun main() {
-                Kronos.apply {
+                Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
                     dataSource = { TestWrapper }

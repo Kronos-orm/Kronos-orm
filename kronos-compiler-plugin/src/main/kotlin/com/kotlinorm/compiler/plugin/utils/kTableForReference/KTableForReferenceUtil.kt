@@ -18,10 +18,10 @@ package com.kotlinorm.compiler.plugin.utils.kTableForReference
 
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
-import com.kotlinorm.compiler.plugin.utils.KotlinBlockBuilderContext
 import org.jetbrains.kotlin.ir.IrElement
 import com.kotlinorm.compiler.helpers.valueArguments
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
+import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
+import com.kotlinorm.compiler.plugin.utils.getColumnName
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -38,7 +38,7 @@ import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
  * @param irReturn the IrReturn to which the fields will be added
  * @return a list of IrExpressions representing the applied `addField` operations
  */
-fun KotlinBlockBuilderContext.addReferenceList(irFunction: IrFunction, irReturn: IrReturn): List<IrExpression> {
+fun KotlinBuilderContext.addReferenceList(irFunction: IrFunction, irReturn: IrReturn): List<IrExpression> {
     with(pluginContext) {
         with(builder) {
             return collectReferences(irFunction, irReturn).map {
@@ -57,7 +57,7 @@ fun KotlinBlockBuilderContext.addReferenceList(irFunction: IrFunction, irReturn:
  * @param element the [IrElement] to extract field names from
  * @return a mutable list of IR expressions representing the field names
  */
-fun KotlinBlockBuilderContext.collectReferences(
+fun KotlinBuilderContext.collectReferences(
     irFunction: IrFunction,
     element: IrElement
 ): MutableList<IrExpression> {

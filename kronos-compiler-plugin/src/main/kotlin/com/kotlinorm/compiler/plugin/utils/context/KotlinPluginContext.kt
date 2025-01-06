@@ -44,6 +44,6 @@ class KotlinPluginContext(
     }
 }
 
-fun <T> withContext(pluginContext: IrPluginContext, action: KotlinPluginContext.() -> T) = action(
-    KotlinPluginContext(pluginContext)
+fun <T> IrPluginContext.withContext(action: KotlinPluginContext.() -> T) = action(
+    KotlinPluginContext(this)
 )

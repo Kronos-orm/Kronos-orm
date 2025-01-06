@@ -1,0 +1,198 @@
+package com.kotlinorm.orm.cascade
+
+import com.kotlinorm.Kronos
+import com.kotlinorm.Kronos.dataSource
+import com.kotlinorm.KronosBasicWrapper
+import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.delete.delete
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.cascade.manyToMany.Permission
+import com.kotlinorm.orm.cascade.manyToMany.Role
+import com.kotlinorm.orm.cascade.manyToMany.RolePermissionRelation
+import com.kotlinorm.orm.cascade.oneToMany.GroupClass
+import com.kotlinorm.orm.cascade.oneToMany.School
+import com.kotlinorm.orm.cascade.oneToMany.Student
+import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.beans.GsonResolver
+import org.apache.commons.dbcp2.BasicDataSource
+import kotlin.test.Test
+
+class RelationQuery {
+    private val ds = BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver"
+        url = "jdbc:mysql://localhost:3306/test"
+        username = "root"
+        password = "******"
+    }
+
+    init {
+        Kronos.init {
+            fieldNamingStrategy = lineHumpNamingStrategy
+            tableNamingStrategy = lineHumpNamingStrategy
+            dataSource = { KronosBasicWrapper(ds) }
+            serializeResolver = GsonResolver
+        }
+    }
+
+    @Test
+    fun testCascadeInsert() {
+        dataSource.table.dropTable<School>()
+        dataSource.table.dropTable<GroupClass>()
+        dataSource.table.dropTable<Student>()
+        dataSource.table.createTable<School>()
+        dataSource.table.createTable<GroupClass>()
+        dataSource.table.createTable<Student>()
+
+        val school = School(
+            id = 1, name = "School", groupClass = listOf(
+                GroupClass(
+                    id = 11, name = "一年级", students = listOf(
+                        Student(name = "张三", studentNo = "2021001"),
+                        Student(
+                            name = "李四", studentNo = "2021002"
+                        )
+                    )
+                ),
+                GroupClass(
+                    name = "三年级", students = listOf(
+                        Student(
+                            name = "孙七", studentNo = "2023001"
+                        ), Student(
+                            name = "周八", studentNo = "2023002"
+                        )
+                    )
+                ),
+                GroupClass(
+                    id = 42, name = "二年级", students = listOf(
+                        Student(
+                            name = "王五", studentNo = "2022001"
+                        ), Student(
+                            name = "赵六", studentNo = "2022002"
+                        )
+                    )
+                ),
+            )
+        )
+
+        school.insert().execute()
+    }
+
+    @Test
+    fun testCascadeUpdate() {
+        testCascadeInsert()
+        val res = School(name = "School")
+            .update()
+            .set { it.name = "School2" }
+            .execute()
+        println(res)
+    }
+
+    @Test
+    fun testCascadeDelete() {
+        testCascadeInsert()
+        val result = School(name = "School").select().queryList()
+        println(result)
+        val res = School(name = "School").delete().execute()
+        println(res)
+    }
+
+    @Test
+    fun testReverseCascadeDelete() {
+        testCascadeInsert()
+        val result = School(name = "School").select().queryList()
+        println(result)
+        val student = School(name = "School").select().queryOne()
+        val res = student.delete().execute()
+        println(res)
+    }
+
+    @Test
+    fun testSelect() {
+        testCascadeInsert()
+        val result = School(name = "School").select().queryList()
+        println(result)
+    }
+
+    @Test
+    fun testRevertSelect() {
+        dataSource.table.dropTable<School>()
+        dataSource.table.dropTable<GroupClass>()
+        dataSource.table.dropTable<Student>()
+        dataSource.table.createTable<School>()
+        dataSource.table.createTable<GroupClass>()
+        dataSource.table.createTable<Student>()
+
+        val student = Student(name = "张三", studentNo = "2021001")
+        val groupClass = GroupClass(name = "一年级", students = listOf(student))
+        val school = School(name = "School", groupClass = listOf(groupClass))
+
+        school.insert().execute()
+
+        val groupClassQ = groupClass.select().queryOne()
+        val schoolQ = school.select().queryOne()
+
+        school.delete().execute()
+
+        print(groupClassQ)
+    }
+
+    @Test
+    fun testManyToMany() {
+        dataSource.table.dropTable<Role>()
+        dataSource.table.dropTable<RolePermissionRelation>()
+        dataSource.table.dropTable<Permission>()
+        dataSource.table.createTable<Role>()
+        dataSource.table.createTable<RolePermissionRelation>()
+        dataSource.table.createTable<Permission>()
+
+        val role = Role(
+            name = "admin"
+        ).apply {
+            permissions = listOf(
+                Permission(name = "test"),
+                Permission(name = "test2"),
+                Permission(name = "test3")
+            )
+        }
+
+        role.insert().execute()
+        val permissions = Role(name = "admin").select().queryOne().permissions
+
+        println(permissions)
+    }
+
+    @Test
+    fun testToMapUseDelegate() {
+        dataSource.table.dropTable<Role>()
+        dataSource.table.dropTable<RolePermissionRelation>()
+        dataSource.table.dropTable<Permission>()
+        dataSource.table.createTable<Role>()
+        dataSource.table.createTable<RolePermissionRelation>()
+        dataSource.table.createTable<Permission>()
+
+        val role = Role(
+            name = "admin",
+            rolePermissions = listOf(
+                RolePermissionRelation(
+                    permission = Permission(name = "test")
+                ),
+                RolePermissionRelation(
+                    permission = Permission(name = "test2")
+                ),
+                RolePermissionRelation(
+                    permission = Permission(name = "test3")
+                )
+            )
+        )
+
+        val a = role.toDataMap()
+        println(a)
+    }
+
+    @Test
+    fun testCascadeSetNull() {
+        testCascadeInsert()
+        School(1).delete().execute()
+    }
+}

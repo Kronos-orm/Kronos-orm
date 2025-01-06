@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     id("kronos.jvm")
     kotlin("kapt")
@@ -21,5 +19,5 @@ dependencies {
     kapt("com.google.auto.service:auto-service:1.1.1")
     testImplementation(kotlin("test"))
     testImplementation(project(":kronos-core"))
-    testImplementation("dev.zacsweers.kctfork:core:0.5.1")
+    testImplementation("dev.zacsweers.kctfork:core:0.7.0")
 }

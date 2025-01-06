@@ -72,14 +72,14 @@ class KTableParserForSetTransformer(
      * @return the transformed block expression
      */
     override fun visitBlock(expression: IrBlock): IrExpression {
-        if(expression.origin == null) {
-            return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+        return if(expression.origin == null) {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
                 +expression.statements
                 +withBlock(pluginContext) { putFieldParamMap(irFunction) }
                 super.visitBlock(expression)
             }
         } else {
-            return super.visitBlock(expression)
+            super.visitBlock(expression)
         }
     }
 }

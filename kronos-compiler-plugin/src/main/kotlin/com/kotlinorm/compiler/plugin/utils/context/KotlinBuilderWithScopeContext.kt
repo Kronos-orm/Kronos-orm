@@ -2,14 +2,18 @@ package com.kotlinorm.compiler.plugin.utils.context
 
 import com.kotlinorm.compiler.helpers.Receivers
 import com.kotlinorm.compiler.helpers.applyIrCall
+import com.kotlinorm.compiler.helpers.irEnum
 import com.kotlinorm.compiler.helpers.subType
 import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.beans.CriteriaIR
+import com.kotlinorm.compiler.plugin.beans.FieldIR
+import com.kotlinorm.compiler.plugin.beans.primaryKeyTypeSymbol
 import com.kotlinorm.compiler.plugin.utils.CascadeAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.KPojoFqName
 import com.kotlinorm.compiler.plugin.utils.KronosColumnValueType
 import com.kotlinorm.compiler.plugin.utils.SerializableAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.extractDeclarationComment
+import com.kotlinorm.compiler.plugin.utils.fieldSymbol
 import com.kotlinorm.compiler.plugin.utils.getColumnName
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.createCriteria
 import com.kotlinorm.compiler.plugin.utils.realStartOffset
@@ -17,7 +21,9 @@ import com.kotlinorm.compiler.plugin.utils.sourceFileCache
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGetField
+import org.jetbrains.kotlin.ir.builders.irInt
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irSetField
 import org.jetbrains.kotlin.ir.builders.irString
@@ -37,6 +43,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.file
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.properties
@@ -46,9 +53,9 @@ import org.jetbrains.kotlin.name.FqName
 import java.io.File
 import kotlin.text.Charsets.UTF_8
 
-open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
-    open var pluginContext: IrPluginContext,
-    open var builder: T
+open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
+    open val pluginContext: IrPluginContext,
+    open val builder: T
 ) {
     /**
      * Checks if the given IrExpression is a Kronos Column.
@@ -63,10 +70,8 @@ open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrExpression?.isKronosColumn(): Boolean {
         if (this == null) return false
-        return (this is IrCallImpl && this.origin in listOf(
-            IrStatementOrigin.GET_PROPERTY, IrStatementOrigin.EQ
-        ) && this.let {
-            val propertyName = withContext(pluginContext){ correspondingName!!.asString() }
+        return (this is IrCallImpl && this.symbol.owner.correspondingPropertySymbol?.owner is IrProperty && this.let {
+            val propertyName = pluginContext.withContext{ correspondingName!!.asString() }
             (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKronosColumn()
         }) || this is IrPropertyReference && this.symbol.owner.parent is IrClass && (this.symbol.owner.parent as IrClass).isKronosColumn()
     }
@@ -191,7 +196,7 @@ open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
         }
     }
 
-    fun IrExpression.funcName(setNot: Boolean = false) = withContext(pluginContext){
+    fun IrExpression.funcName(setNot: Boolean = false) = pluginContext.withContext{
         funcName(setNot = setNot)
     }
 
@@ -206,6 +211,7 @@ open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
      * @return An IR expression containing the KDoc string, or null if no KDoc comment is found.
      */
     fun IrDeclaration.getKDocString(): IrExpression {
+        val declaration = this
         with(pluginContext){
             with(builder){
                 val sourceOffsets = sourceElement()
@@ -219,8 +225,7 @@ open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
                     }
                     val realStartOffset = realStartOffset(source, sourceRange.startLineNumber)
 
-                    val comment =
-                        when (this) {
+                    val comment = when (this) {
                             is IrProperty -> extractDeclarationComment(
                                 source,
                                 realStartOffset..sourceRange.endLineNumber
@@ -233,6 +238,7 @@ open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
 
                             else -> null
                         }
+
                     if (comment != null) {
                         return irString(comment)
                     }
@@ -249,6 +255,42 @@ open class KotlinBuilderWithScopeContext<T : IrBuilderWithScope>(
     ): IrFunctionAccessExpression {
         return builder.applyIrCall(this, *values, typeArguments = typeArguments, setReceivers = setReceivers)
     }
+
+    fun IrExpression?.irFieldOrNull(): IrExpression {
+        return if (this != null && this.isKronosColumn()) getColumnName(this) else builder.irNull()
+    }
+
+    /**
+     * Converts the current object to an IrVariable by creating a criteria using the provided propertyeters.
+     *
+     * @return an IrVariable representing the created criteria
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun FieldIR.build(): IrExpression {
+        with(pluginContext){
+            with(builder){
+                return applyIrCall(
+                    fieldSymbol.constructors.first(),
+                    columnName,
+                    irString(name),
+                    type,
+                    irEnum(primaryKeyTypeSymbol, primaryKey),
+                    dateTimeFormat ?: irNull(),
+                    tableName,
+                    cascade,
+                    irBoolean(cascadeIsArrayOrCollection),
+                    kClass,
+                    ignore ?: irNull(),
+                    irBoolean(isColumn),
+                    columnTypeLength ?: irInt(0),
+                    columnDefaultValue ?: irNull(),
+                    irBoolean(nullable),
+                    irBoolean(serializable),
+                    kDoc
+                )
+            }
+        }
+    }
 }
 
 typealias KotlinBuilderContext = KotlinBuilderWithScopeContext<IrBuilderWithScope>
@@ -264,10 +306,6 @@ class KotlinBlockBuilderContext(
      */
     fun CriteriaIR.toIrVariable(): IrVariable {
         return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategyType)
-    }
-
-    fun IrExpression?.irFieldOrNull(): IrExpression {
-        return if (this != null && this.isKronosColumn()) getColumnName(this) else builder.irNull()
     }
 }
 

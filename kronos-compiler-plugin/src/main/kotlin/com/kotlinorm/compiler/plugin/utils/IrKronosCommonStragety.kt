@@ -21,25 +21,20 @@ import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.asIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
-import com.kotlinorm.compiler.helpers.subType
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertyGetter
 import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
@@ -74,21 +69,6 @@ val LogicDeleteFqName = FqName("com.kotlinorm.annotations.LogicDelete")
 val CreateTimeFqName = FqName("com.kotlinorm.annotations.CreateTime")
 
 val OptimisticLockFqName = FqName("com.kotlinorm.annotations.Version")
-
-/**
- * Returns the `num`-th subtype of the class represented by the given `IrCall`.
- *
- * @param depth the number of subtypes to traverse (default: 1)
- * @return the `IrClass` representing the `num`-th subtype of the class represented by the `IrCall`
- * @throws IllegalArgumentException if `num` is negative
- */
-internal fun IrCall.subTypeClass(depth: Int = 1): IrClass {
-    var type = this.type
-    for (i in 1..depth) {
-        type = type.subType()!!
-    }
-    return type.getClass()!!
-}
 
 /**
  * Retrieves a valid strategy for the given IrClass, global symbol, and FqName.

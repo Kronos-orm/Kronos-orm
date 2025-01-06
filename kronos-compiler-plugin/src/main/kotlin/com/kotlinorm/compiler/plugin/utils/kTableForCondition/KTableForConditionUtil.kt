@@ -21,16 +21,16 @@ import com.kotlinorm.compiler.helpers.asIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.extensionBy
 import com.kotlinorm.compiler.helpers.subType
+import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.beans.CriteriaIR
 import com.kotlinorm.compiler.plugin.utils.ARRAY_OR_COLLECTION_FQ_NAMES
 import com.kotlinorm.compiler.plugin.utils.KPojoFqName
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
+import com.kotlinorm.compiler.plugin.utils.context.withContext
 import com.kotlinorm.compiler.plugin.utils.getColumnOrValue
 import com.kotlinorm.compiler.plugin.utils.getTableName
-import com.kotlinorm.compiler.plugin.utils.context.withContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
-import com.kotlinorm.compiler.helpers.valueArguments
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -98,7 +98,6 @@ fun KotlinBlockBuilderContext.buildCriteria(
 ): IrVariable? {
     with(pluginContext) {
         with(builder) {
-            return withContext(pluginContext) {
                 var paramName: IrExpression? = null
                 var type = "ROOT"
                 var not = setNot
@@ -130,7 +129,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
                         }
 
                         if ("not" == funcName) {
-                            buildCriteria(irFunction, element.dispatchReceiver!!, !not)
+                            return buildCriteria(irFunction, element.dispatchReceiver!!, !not)
                         }
 
                         val (conditionType, isNot) = parseConditionType(funcName)
@@ -204,7 +203,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
                                     paramName = getColumnOrValue(extensionReceiver)
                                     value = applyIrCall(
                                         getValueByFieldNameSymbol,
-                                        irString(extensionReceiver.asIrCall().correspondingName!!.asString())
+                                        withContext{ irString(extensionReceiver.asIrCall().correspondingName!!.asString()) }
                                     ) {
                                         dispatchBy(irGet(irFunction.extensionReceiverParameter!!))
                                     }
@@ -254,7 +253,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
                                 value = if (args.isEmpty()) {
                                     applyIrCall(
                                         getValueByFieldNameSymbol,
-                                        irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                                        withContext{ irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString()) }
                                     ) {
                                         dispatchBy(irGet(irFunction.extensionReceiverParameter!!))
                                     }
@@ -268,7 +267,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
                                 val str = if (args.isEmpty()) {
                                     applyIrCall(
                                         getValueByFieldNameSymbol,
-                                        irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                                        withContext{ irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString()) }
                                     ) {
                                         dispatchBy(irGet(irFunction.extensionReceiverParameter!!))
                                     }
@@ -288,7 +287,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
                                 val str = if (args.isEmpty()) {
                                     applyIrCall(
                                         getValueByFieldNameSymbol,
-                                        irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString())
+                                        withContext{ irString(element.extensionReceiver!!.asIrCall().correspondingName!!.asString()) }
                                     ) {
                                         dispatchBy(irGet(irFunction.extensionReceiverParameter!!))
                                     }
@@ -322,7 +321,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
                                         // Write it as it.<property>.contains with no arguments after it
                                         applyIrCall(
                                             getValueByFieldNameSymbol,
-                                            irString(left.asIrCall().correspondingName!!.asString())
+                                            withContext{ irString(left.asIrCall().correspondingName!!.asString()) }
                                         ) {
                                             dispatchBy(irGet(irFunction.extensionReceiverParameter!!))
                                         }
@@ -351,13 +350,13 @@ fun KotlinBlockBuilderContext.buildCriteria(
 
                             "ifNoValue" -> {
                                 strategy = args.first()
-                                buildCriteria(irFunction, element.extensionReceiver!!, not, strategy)
+                                return buildCriteria(irFunction, element.extensionReceiver!!, not, strategy)
                             }
                         }
                     }
 
                     is IrReturn -> {
-                        buildCriteria(irFunction, element.value)
+                        return buildCriteria(irFunction, element.value)
                     }
 
                     is IrConstImpl -> {
@@ -371,10 +370,9 @@ fun KotlinBlockBuilderContext.buildCriteria(
 
                 }
 
-                CriteriaIR(
+                return CriteriaIR(
                     paramName, type, not, value, children.filterNotNull(), tableName, strategy
                 ).toIrVariable()
-            }
         }
     }
 }
@@ -389,7 +387,7 @@ fun IrPluginContext.analyzeMinusExpression(irCall: IrCall): Triple<IrClass, IrEx
 }
 
 fun IrPluginContext.getIrMinusParent(irCall: IrCall): Pair<IrExpression, List<String>> {
-    val property = withContext(this) {
+    val property = withContext {
         listOfNotNull(
             irCall.valueArguments.find { it is IrCallImpl && it.origin == IrStatementOrigin.GET_PROPERTY }?.funcName()
         )

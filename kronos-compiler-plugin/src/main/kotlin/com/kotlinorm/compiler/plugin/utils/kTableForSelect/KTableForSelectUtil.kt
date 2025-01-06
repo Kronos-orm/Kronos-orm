@@ -26,13 +26,10 @@ import com.kotlinorm.compiler.helpers.extensionBy
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.analyzeMinusExpression
 import com.kotlinorm.compiler.plugin.utils.kotlinTypeToKColumnType
 import com.kotlinorm.compiler.helpers.irEnum
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import com.kotlinorm.compiler.helpers.valueArguments
-import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.ir.builders.irGet
-import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -45,7 +42,7 @@ import org.jetbrains.kotlin.ir.util.properties
  * @param irReturn the IrReturn to which the fields will be added
  * @return a list of IrExpressions representing the applied `addField` operations
  */
-fun KotlinBlockBuilderContext.addFieldList(irFunction: IrFunction, irReturn: IrReturn): List<IrExpression> {
+fun KotlinBuilderContext.addFieldList(irFunction: IrFunction, irReturn: IrReturn): List<IrExpression> {
     with(pluginContext){
         with(builder){
             return collectFields(irFunction, irReturn).map {
@@ -62,7 +59,7 @@ fun KotlinBlockBuilderContext.addFieldList(irFunction: IrFunction, irReturn: IrR
  * @return a mutable list of IR expressions representing the field names
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBlockBuilderContext.collectFields(
+fun KotlinBuilderContext.collectFields(
     irFunction: IrFunction, element: IrElement
 ): MutableList<IrExpression> {
     with(pluginContext){
@@ -104,7 +101,7 @@ fun KotlinBlockBuilderContext.collectFields(
                                 (element.extensionReceiver ?: element.dispatchReceiver)!!
                             )
                             element.valueArguments.forEach {
-                                if (it != null) fields += collectFields(it)
+                                if (it != null) fields += collectFields(irFunction, it)
                             }
                         }
 

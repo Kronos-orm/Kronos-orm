@@ -18,10 +18,10 @@ package com.kotlinorm.compiler.plugin.utils.kTableForSet
 
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
+import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
 import com.kotlinorm.compiler.plugin.utils.getColumnName
 import org.jetbrains.kotlin.ir.IrElement
-import com.kotlinorm.compiler.helpers.valueArguments
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -104,10 +104,6 @@ fun KotlinBlockBuilderContext.putParamMapStatements(
                                 dispatchBy(receiver)
                             }
                         )
-
-
-                        else -> {
-                        }
                     }
                 }
             }

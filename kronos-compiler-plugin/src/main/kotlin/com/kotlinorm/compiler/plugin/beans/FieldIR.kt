@@ -16,19 +16,9 @@
 
 package com.kotlinorm.compiler.plugin.beans
 
-import com.kotlinorm.compiler.plugin.utils.fieldSymbol
-import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.irEnum
 import com.kotlinorm.compiler.helpers.referenceClass
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.builders.irBoolean
-import org.jetbrains.kotlin.ir.builders.irInt
-import org.jetbrains.kotlin.ir.builders.irNull
-import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.util.constructors
 
 internal val IrPluginContext.primaryKeyTypeSymbol
     get() = referenceClass("com.kotlinorm.enums.PrimaryKeyType")!!
@@ -59,49 +49,20 @@ internal val IrPluginContext.primaryKeyTypeSymbol
  *
  */
 class FieldIR(
-    private val columnName: IrExpression,
-    private val name: String,
-    private val type: IrExpression,
-    private val primaryKey: String,
-    private val dateTimeFormat: IrExpression?,
-    private val tableName: IrExpression,
-    private val cascade: IrExpression,
-    private val cascadeIsArrayOrCollection: Boolean,
-    private val kClass: IrExpression,
-    private val ignore: IrExpression?,
-    private val isColumn: Boolean,
-    private val columnTypeLength: IrExpression?,
-    private val columnDefaultValue: IrExpression?,
-    private val nullable: Boolean,
-    private val serializable: Boolean,
-    private val kDoc: IrExpression
-) {
-
-    /**
-     * Converts the current object to an IrVariable by creating a criteria using the provided propertyeters.
-     *
-     * @return an IrVariable representing the created criteria
-     */
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun KotlinBuilderContext.build(): IrExpression {
-        return builder.applyIrCall(
-            pluginContext.fieldSymbol.constructors.first(),
-            columnName,
-            builder.irString(name),
-            type,
-            builder.irEnum(pluginContext.primaryKeyTypeSymbol, primaryKey),
-            dateTimeFormat ?: builder.irNull(),
-            tableName,
-            cascade,
-            builder.irBoolean(cascadeIsArrayOrCollection),
-            kClass,
-            ignore ?: builder.irNull(),
-            builder.irBoolean(isColumn),
-            columnTypeLength ?: builder.irInt(0),
-            columnDefaultValue ?: builder.irNull(),
-            builder.irBoolean(nullable),
-            builder.irBoolean(serializable),
-            kDoc
-        )
-    }
-}
+    internal val columnName: IrExpression,
+    internal val name: String,
+    internal val type: IrExpression,
+    internal val primaryKey: String,
+    internal val dateTimeFormat: IrExpression?,
+    internal val tableName: IrExpression,
+    internal val cascade: IrExpression,
+    internal val cascadeIsArrayOrCollection: Boolean,
+    internal val kClass: IrExpression,
+    internal val ignore: IrExpression?,
+    internal val isColumn: Boolean,
+    internal val columnTypeLength: IrExpression?,
+    internal val columnDefaultValue: IrExpression?,
+    internal val nullable: Boolean,
+    internal val serializable: Boolean,
+    internal val kDoc: IrExpression
+)

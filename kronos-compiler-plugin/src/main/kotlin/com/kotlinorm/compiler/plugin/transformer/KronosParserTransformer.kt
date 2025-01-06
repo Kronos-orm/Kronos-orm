@@ -21,9 +21,11 @@ import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForReference
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSelectTransformer
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSetTransformer
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSortReturnTransformer
+import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.initFunctions
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.kPojoClasses
 import com.kotlinorm.compiler.plugin.utils.KPojoFqName
-import com.kotlinorm.compiler.plugin.utils.context.withBlock
+import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
+import com.kotlinorm.compiler.plugin.utils.context.withBuilder
 import com.kotlinorm.compiler.plugin.utils.fqNameOfSelectFromsRegexes
 import com.kotlinorm.compiler.plugin.utils.fqNameOfTypedQuery
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
@@ -37,6 +39,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -46,13 +49,16 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * Kronos Parser Transformer
@@ -62,18 +68,32 @@ import org.jetbrains.kotlin.ir.util.superTypes
 class KronosParserTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
+    private var initAnnotationFqName = FqName("com.kotlinorm.annotations.KronosInit")
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
-        if (expression.typeArgumentsCount > 0) {
-            with(pluginContext) {
+        with(pluginContext) {
+            if (expression.typeArgumentsCount > 0) {
                 expression.typeArguments.forEach {
                     if (it != null && it.superTypes().any { it.classFqName == KPojoFqName }) {
                         kPojoClasses.add(it.getClass()!!)
                     }
                 }
             }
-        }
-        return transformKQueryTask(expression) {
-            super.visitCall(expression)
+            if (expression.symbol.owner.hasAnnotation(initAnnotationFqName)) {
+                val initializer = (expression.getValueArgument(0) as IrFunctionExpressionImpl).function
+                with(DeclarationIrBuilder(pluginContext, initializer.symbol) as IrBuilderWithScope) {
+                    initFunctions.add(
+                        KotlinBuilderContext(
+                            pluginContext,
+                            this
+                        ) to initializer
+                    )
+                }
+            }
+            return transformKQueryTask(expression) {
+                super.visitCall(expression)
+            }
         }
     }
     /**
@@ -225,7 +245,7 @@ class KronosParserTransformer(
             expression.typeArgumentsCount == 1
         ) {
             return DeclarationIrBuilder(pluginContext, expression.symbol).irBlock {
-                withBlock(pluginContext) {
+                withBuilder(pluginContext) {
                     +updateTypedQueryParameters(expression)
                 }
                 finally()

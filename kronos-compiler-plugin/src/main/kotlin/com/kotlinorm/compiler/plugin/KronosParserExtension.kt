@@ -16,13 +16,19 @@
 
 package com.kotlinorm.compiler.plugin
 
-import com.kotlinorm.compiler.plugin.transformer.KronosKClassMapperTransformer
 import com.kotlinorm.compiler.plugin.transformer.KronosParserTransformer
+import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.buildKClassMapper
+import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.initFunctions
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.name
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
+import org.jetbrains.kotlin.ir.util.CustomKotlinLikeDumpStrategy
+import org.jetbrains.kotlin.ir.util.FakeOverridesStrategy
+import org.jetbrains.kotlin.ir.util.KotlinLikeDumpOptions
+import org.jetbrains.kotlin.ir.util.LabelPrintingStrategy
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import java.io.File
 
 open class KronosParserExtension(private val debug: Boolean, private val debugInfoPath: String) : IrGenerationExtension {
@@ -30,7 +36,12 @@ open class KronosParserExtension(private val debug: Boolean, private val debugIn
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment
             .transform(KronosParserTransformer(pluginContext), null)
-            .transform(KronosKClassMapperTransformer(pluginContext), null)
+
+        initFunctions.forEach { (context, function) ->
+            with(context) {
+                buildKClassMapper(function)
+            }
+        }
 
         if (debug) {
             moduleFragment.files.forEach {

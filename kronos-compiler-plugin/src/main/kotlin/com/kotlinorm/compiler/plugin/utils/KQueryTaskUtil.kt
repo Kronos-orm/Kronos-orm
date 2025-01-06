@@ -17,7 +17,6 @@
 package com.kotlinorm.compiler.plugin.utils
 
 import com.kotlinorm.compiler.helpers.irListOf
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.irBoolean
@@ -47,7 +46,7 @@ val fqNameOfSelectFromsRegexes =
         "com.kotlinorm.orm.join.SelectFrom\\d.queryOneOrNull"
     )
 
-fun KotlinBlockBuilderContext.updateTypedQueryParameters(irCall: IrCall): IrCall {
+fun KotlinBuilderContext.updateTypedQueryParameters(irCall: IrCall): IrCall {
     with(pluginContext){
         with(builder){
             val queryType = irCall.typeArguments.first()!!

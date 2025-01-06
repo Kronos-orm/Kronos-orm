@@ -14,8 +14,7 @@ import com.kotlinorm.compiler.helpers.subType
 import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.beans.FieldIR
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
-import com.kotlinorm.compiler.plugin.utils.kTableForSelect.irFieldOrNull
+import com.kotlinorm.compiler.plugin.utils.context.withContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irNull
@@ -25,7 +24,6 @@ import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-
 import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
@@ -85,7 +83,7 @@ val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
  * @return the `IrExpression` representing the column name
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBlockBuilderContext.getColumnName(expression: IrExpression): IrExpression {
+fun KotlinBuilderContext.getColumnName(expression: IrExpression): IrExpression {
     with(pluginContext){
         with(builder){
             if (!expression.isKronosColumn()) {
@@ -93,7 +91,7 @@ fun KotlinBlockBuilderContext.getColumnName(expression: IrExpression): IrExpress
             }
             return when (expression) {
                 is IrCall -> {
-                    val propertyName = expression.correspondingName!!.asString()
+                    val propertyName = withContext{ expression.correspondingName!!.asString() }
                     val irProperty =
                         expression.dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }
                     getColumnName(irProperty, propertyName)
@@ -236,7 +234,7 @@ fun KotlinBuilderContext.getColumnName(
 
             val kCascade = if (cascadeAnnotation != null) {
                 applyIrCall(
-                    kReferenceSymbol.constructors.first(), *cascadeAnnotation!!.valueArguments.toTypedArray()
+                    kReferenceSymbol.constructors.first(), *cascadeAnnotation.valueArguments.toTypedArray()
                 )
             } else {
                 irNull()
@@ -244,10 +242,10 @@ fun KotlinBuilderContext.getColumnName(
 
             val primaryKey = when {
                 primaryKeyAnnotation == null -> "not"
-                (primaryKeyAnnotation!!.getValueArgument(0) as? IrConstImpl)?.value == true -> "identity"
-                (primaryKeyAnnotation!!.getValueArgument(1) as? IrConstImpl)?.value == true -> "uuid"
-                (primaryKeyAnnotation!!.getValueArgument(2) as? IrConstImpl)?.value == true -> "snowflake"
-                (primaryKeyAnnotation!!.getValueArgument(3) as? IrConstImpl)?.value == true -> "custom"
+                (primaryKeyAnnotation.getValueArgument(0) as? IrConstImpl)?.value == true -> "identity"
+                (primaryKeyAnnotation.getValueArgument(1) as? IrConstImpl)?.value == true -> "uuid"
+                (primaryKeyAnnotation.getValueArgument(2) as? IrConstImpl)?.value == true -> "snowflake"
+                (primaryKeyAnnotation.getValueArgument(3) as? IrConstImpl)?.value == true -> "custom"
                 else -> "default"
             }
 
@@ -293,7 +291,7 @@ enum class KronosColumnValueType {
  * @param expression the IrExpression to retrieve the column or value from. It can be null.
  * @return returns the column or value from the `IrExpression`, or null if the IrExpression is null.
  */
-fun KotlinBlockBuilderContext.getColumnOrValue(expression: IrExpression?): IrExpression? {
+fun KotlinBuilderContext.getColumnOrValue(expression: IrExpression?): IrExpression? {
     if (expression == null) return null
     val (type, expr) = expression.columnValueGetter()
     return when (type) {
@@ -310,7 +308,7 @@ fun KotlinBlockBuilderContext.getColumnOrValue(expression: IrExpression?): IrExp
  * @return the `IrExpression` representing the table name
  * @throws IllegalStateException if the expression type is unexpected
  */
-fun KotlinBlockBuilderContext.getTableName(expression: IrExpression): IrExpression {
+fun KotlinBuilderContext.getTableName(expression: IrExpression): IrExpression {
     val irClass = when (expression) {
         is IrGetValue, is IrCall, is IrGetObjectValue -> expression.type.getClass()
         else -> throw IllegalStateException("Unexpected expression type: $expression")
@@ -325,7 +323,7 @@ fun KotlinBlockBuilderContext.getTableName(expression: IrExpression): IrExpressi
  * @return the `IrExpression` representing the table name
  * @throws IllegalStateException if the table annotation is not found
  */
-fun KotlinBlockBuilderContext.getTableName(irClass: IrClass): IrExpression {
+fun KotlinBuilderContext.getTableName(irClass: IrClass): IrExpression {
     with(pluginContext){
         with(builder){
             val tableAnnotation = irClass.annotations.findByFqName(TableAnnotationsFqName)

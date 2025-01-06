@@ -17,17 +17,17 @@
 package com.kotlinorm.compiler.plugin.transformer
 
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.buildKClassMapper
-import com.kotlinorm.compiler.plugin.utils.KronosSymbol
 import com.kotlinorm.compiler.plugin.utils.context.withBuilder
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
-import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * Kronos KClassMapper Transformer
@@ -37,26 +37,20 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 class KronosKClassMapperTransformer(
     private val pluginContext: IrPluginContext
 ) : IrElementTransformerVoidWithContext() {
-    private var transformed = false
+    private var initAnnotationFqName = FqName("com.kotlinorm.annotations.KronosInit")
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitFunctionNew(declaration: IrFunction): IrStatement {
-        if (!transformed) {
-            with(pluginContext) {
-                if (declaration.extensionReceiverParameter != null) {
-                    if (
-                        declaration.extensionReceiverParameter!!.type.classFqName == KronosSymbol.owner.fqNameWhenAvailable
-                    ) {
-                        transformed = true
-                        with(DeclarationIrBuilder(pluginContext, declaration.symbol) as IrBuilderWithScope) {
-                                withBuilder(pluginContext){
-                                    buildKClassMapper(declaration)
-                                }
-                        }
+    override fun visitCall(expression: IrCall): IrExpression {
+        with(pluginContext){
+            if (expression.symbol.owner.hasAnnotation(initAnnotationFqName)) {
+                val initializer = (expression.getValueArgument(0) as IrFunctionExpressionImpl).function
+                with(DeclarationIrBuilder(pluginContext, initializer.symbol) as IrBuilderWithScope) {
+                    withBuilder(pluginContext){
+                        buildKClassMapper(initializer)
                     }
                 }
             }
+            return super.visitCall(expression)
         }
-        return super.visitFunctionNew(declaration)
     }
 }

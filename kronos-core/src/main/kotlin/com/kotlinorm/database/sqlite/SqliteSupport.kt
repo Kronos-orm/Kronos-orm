@@ -133,7 +133,9 @@ object SqliteSupport : DatabasesSupport {
                     KronosAtomicQueryTask(
                         "SELECT sql FROM sqlite_master WHERE tbl_name=:tableName AND sql LIKE '%AUTOINCREMENT%'",
                         mapOf("tableName" to tableName)
-                    ), String::class
+                    ), String::class,
+                    false,
+                    listOf()
                 ) as String?
                 if(sql != null && Regex("""("?\w+"?)\sINTEGER\sNOT\sNULL\sPRIMARY\sKEY\sAUTOINCREMENT""").find(sql)?.groupValues?.get(
                         1

@@ -47,7 +47,7 @@ object NoneDataSourceWrapper : KronosDataSourceWrapper {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
+    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
@@ -55,7 +55,7 @@ object NoneDataSourceWrapper : KronosDataSourceWrapper {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
+    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 

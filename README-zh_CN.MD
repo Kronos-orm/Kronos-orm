@@ -28,7 +28,7 @@ KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、�
 [![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.kotoframework/koto-core.svg)](https://s01.oss.sonatype.org/content/repositories/snapshots/com/kotoframework/)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-[官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)
+[官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
 
 --------
@@ -397,5 +397,13 @@ Kronos-ORM 遵循 Apache 2.0 许可发布。
 </a>
 
 -------------------
+
+如果你对 Kronos-ORM 感兴趣，欢迎加入我们的社区！
+
+[![discord](https://img.shields.io/badge/Discord-Kronos_ORM-blue?logo=discord&logoColor=white)](https://discord.gg/Vn8EzxRX)
+
+[![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
+
+<img src="https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true" alt="qq group" height="256" width="256">
 
 **如果您喜欢 Kronos-ORM，请给我们一个Star ⭐️，谢谢！**

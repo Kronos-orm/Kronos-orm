@@ -1,4 +1,4 @@
-name: reviewdog
+name: detekt
 
 on:
   workflow_dispatch:

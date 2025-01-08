@@ -398,6 +398,6 @@ If you are interested in Kronos-ORM, please join our community and chat with us!
 
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
 
-<img src="https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true" alt="qq group" height="256" width="256">
+![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
 
 **If you like Kronos-ORM, please give us a star ⭐️, thank you!**

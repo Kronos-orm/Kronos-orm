@@ -404,6 +404,6 @@ Kronos-ORM 遵循 Apache 2.0 许可发布。
 
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
 
-<img src="https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true" alt="qq group" height="256" width="256">
+![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
 
 **如果您喜欢 Kronos-ORM，请给我们一个Star ⭐️，谢谢！**

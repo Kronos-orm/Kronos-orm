@@ -244,8 +244,7 @@ fun KotlinBuilderContext.getColumnName(
                 "identity",
                 "uuid",
                 "snowflake",
-                "custom",
-                "default"
+                "custom"
             )
 
             val primaryKeyAnnotationIndex =
@@ -254,7 +253,7 @@ fun KotlinBuilderContext.getColumnName(
             val primaryKey = when {
                 primaryKeyAnnotation == null -> "not"
                 primaryKeyAnnotationIndex == null -> "default"
-                else -> propsOfPrimaryKey[primaryKeyAnnotationIndex]
+                else -> propsOfPrimaryKey.getOrNull(primaryKeyAnnotationIndex) ?: "default"
             }
 
             return FieldIR(

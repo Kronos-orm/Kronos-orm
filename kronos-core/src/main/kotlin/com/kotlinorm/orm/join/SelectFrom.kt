@@ -48,10 +48,12 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.logAndReturn
+import com.kotlinorm.utils.pop
+import com.kotlinorm.utils.push
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import java.util.*
 
 /**
  * Select From
@@ -104,15 +106,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             on(t1)
             criteria
 
-            val stack = Stack<Criteria>()
+            val stack = KStack<Criteria>()
             var cur = criteria
             var prev = criteria
             while (null != cur || !stack.isEmpty()) {
                 while (null != cur) {
                     stack.push(cur)
-                    cur = if (cur.children.size > 0) cur.children[0] else null
+                    cur = if (cur.children.isNotEmpty()) cur.children.first() else null
                 }
-                val top = stack.peek()
+                val top = stack.pop()
                 if (top.children.size <= 1 || top.children[1] == prev) {
                     prev = top
                     val topTableName = top.tableName

@@ -35,7 +35,7 @@ class TableOperationMysql {
 
     init {
         // 配置Kronos ORM框架的基本设置
-        Kronos.apply {
+        Kronos.init {
             // 设置字段命名策略为驼峰命名
             fieldNamingStrategy = lineHumpNamingStrategy
             // 设置表命名策略为驼峰命名

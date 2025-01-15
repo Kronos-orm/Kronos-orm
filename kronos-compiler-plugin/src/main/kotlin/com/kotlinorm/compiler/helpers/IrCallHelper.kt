@@ -16,6 +16,7 @@
 
 package com.kotlinorm.compiler.helpers
 
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -72,8 +73,7 @@ internal fun Receivers.extensionBy(extensionReceiver: IrExpression?) {
  * @return The `IrFunctionAccessExpression` representing the applied IR function call.
  * @author OUSC
  */
-context(IrBuilderWithScope)
-internal fun applyIrCall(
+internal fun IrBuilderWithScope.applyIrCall(
     irCall: IrFunctionSymbol,
     vararg values: IrExpression?,
     typeArguments: Array<IrType> = emptyArray(),
@@ -92,15 +92,6 @@ internal fun applyIrCall(
             putTypeArgument(index, value)
         }
     }
-}
-
-context(IrBuilderWithScope)
-internal fun IrSimpleFunctionSymbol.invoke(
-    vararg values: IrExpression?,
-    typeArguments: Array<IrType> = emptyArray(),
-    setReceivers: Receivers.() -> Unit = { }
-): IrFunctionAccessExpression {
-    return applyIrCall(this, *values, typeArguments = typeArguments, setReceivers = setReceivers)
 }
 
 /**
@@ -129,3 +120,6 @@ internal fun <T : IrFunctionAccessExpression> Iterable<T>.findByFqName(fqName: F
  */
 internal fun <T : IrFunctionAccessExpression> Iterable<T>.filterByFqName(fqName: FqName): List<T> =
     filter { it.type.classFqName == fqName }
+
+val IrFunctionAccessExpression.valueArguments: List<IrExpression?>
+    get() = List(valueArgumentsCount) { getValueArgument(it) }

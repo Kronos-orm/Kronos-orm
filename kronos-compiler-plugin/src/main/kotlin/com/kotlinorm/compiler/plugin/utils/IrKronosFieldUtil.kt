@@ -240,13 +240,21 @@ fun KotlinBuilderContext.getColumnName(
                 irNull()
             }
 
+            val propsOfPrimaryKey = arrayOf(
+                "identity",
+                "uuid",
+                "snowflake",
+                "custom",
+                "default"
+            )
+
+            val primaryKeyAnnotationIndex =
+                primaryKeyAnnotation?.valueArguments?.indexOfFirst { it is IrConstImpl && it.value == true }
+
             val primaryKey = when {
                 primaryKeyAnnotation == null -> "not"
-                (primaryKeyAnnotation.getValueArgument(0) as? IrConstImpl)?.value == true -> "identity"
-                (primaryKeyAnnotation.getValueArgument(1) as? IrConstImpl)?.value == true -> "uuid"
-                (primaryKeyAnnotation.getValueArgument(2) as? IrConstImpl)?.value == true -> "snowflake"
-                (primaryKeyAnnotation.getValueArgument(3) as? IrConstImpl)?.value == true -> "custom"
-                else -> "default"
+                primaryKeyAnnotationIndex == null -> "default"
+                else -> propsOfPrimaryKey[primaryKeyAnnotationIndex]
             }
 
             return FieldIR(

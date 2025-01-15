@@ -16,22 +16,29 @@
 
 package com.kotlinorm.compiler.plugin.utils.kTableForSelect
 
+import com.kotlinorm.compiler.helpers.applyIrCall
+import com.kotlinorm.compiler.helpers.dispatchBy
+import com.kotlinorm.compiler.helpers.extensionBy
+import com.kotlinorm.compiler.helpers.irEnum
+import com.kotlinorm.compiler.helpers.valueArguments
+import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import com.kotlinorm.compiler.plugin.utils.fieldSymbol
 import com.kotlinorm.compiler.plugin.utils.getColumnName
 import com.kotlinorm.compiler.plugin.utils.getFunctionName
 import com.kotlinorm.compiler.plugin.utils.kColumnTypeSymbol
-import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.dispatchBy
-import com.kotlinorm.compiler.helpers.extensionBy
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.analyzeMinusExpression
 import com.kotlinorm.compiler.plugin.utils.kotlinTypeToKColumnType
-import com.kotlinorm.compiler.helpers.irEnum
 import org.jetbrains.kotlin.ir.IrElement
-import com.kotlinorm.compiler.helpers.valueArguments
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
+import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.properties

@@ -47,7 +47,8 @@ fun realStartOffset(source: List<String>, startOffset: Int): Int {
     return realStartOffset
 }
 
-internal val sourceFileCache: LRUCache<String, List<String>> = LRUCache(128)
+internal const val SOURCE_FILE_CACHE_SIZE = 128
+internal val sourceFileCache: LRUCache<String, List<String>> = LRUCache(SOURCE_FILE_CACHE_SIZE)
 
 /**
  * Extract the comment content within the specified range.

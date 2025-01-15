@@ -84,10 +84,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin 和构建工具
 
 - **JDK 8+**
-- **Kotlin 2.0.0+**
+- **Kotlin 2.1.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.0.0 或更高版本。
+> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.1.0 或更高版本。
 >
 > 如果您在 **Intellij IDEA** 中构建失败，并使用 **Maven** 构建、
 > 请尝试启用以下设置: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner /
@@ -200,7 +200,7 @@ Kronos.init {
 有关连接数据库和使用动态数据源或多个数据源的更多详情，请参阅
 文档](https://kotlinorm.com/#/documentation/zh-CN/database/connect-to-db)。
 
-### 🎨 Table Model Definition(Annotation Style)
+### 🎨 表模型定义（通过注解）
 
 ```kotlin
 @Table(name = "tb_movie")
@@ -227,9 +227,9 @@ data class Movie(
 }
 ```
 
-### 🎨 Table Model Definition(Dsl 风格)
+### 🎨 表模型定义(Dsl 风格)
 
-即将推出...
+即将推出...[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
 
 ------------
 

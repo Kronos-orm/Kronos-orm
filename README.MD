@@ -82,10 +82,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin and Build Tools
 
 - **JDK 8+**
-- **Kotlin 2.0.0+**
+- **Kotlin 2.1.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> Please make sure your kotlin plugin for ide supports kotlin 2.0.0 or higher.
+> Please make sure your kotlin plugin for ide supports kotlin 2.1.0 or higher.
 >
 > If you built failed in **Intellij IDEA** and build with **Maven**,
 > please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.
@@ -226,6 +226,7 @@ data class Movie(
 ### 🎨 Table Model Definition(Dsl Style)
 
 Coming soon...
+[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
 
 ------------
 

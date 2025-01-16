@@ -21,19 +21,16 @@ import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForReference
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSelectTransformer
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSetTransformer
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSortReturnTransformer
+import com.kotlinorm.compiler.plugin.utils.*
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.initFunctions
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.kPojoClasses
-import com.kotlinorm.compiler.plugin.utils.KPojoFqName
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import com.kotlinorm.compiler.plugin.utils.context.withBuilder
-import com.kotlinorm.compiler.plugin.utils.fqNameOfSelectFromsRegexes
-import com.kotlinorm.compiler.plugin.utils.fqNameOfTypedQuery
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
 import com.kotlinorm.compiler.plugin.utils.kTableForReference.KTABLE_FOR_REFERENCE_CLASS
 import com.kotlinorm.compiler.plugin.utils.kTableForSelect.KTABLE_FOR_SELECT_CLASS
 import com.kotlinorm.compiler.plugin.utils.kTableForSet.KTABLE_FOR_SET_CLASS
 import com.kotlinorm.compiler.plugin.utils.kTableForSort.KTABLE_FOR_SORT_CLASS
-import com.kotlinorm.compiler.plugin.utils.updateTypedQueryParameters
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -75,7 +72,7 @@ class KronosParserTransformer(
         with(pluginContext) {
             if (expression.typeArgumentsCount > 0) {
                 expression.typeArguments.forEach {
-                    if (it != null && it.superTypes().any { it.classFqName == KPojoFqName }) {
+                    if (it != null && it.getClass() != null && it.superTypes().any { superType -> superType.classFqName == KPojoFqName }) {
                         kPojoClasses.add(it.getClass()!!)
                     }
                 }

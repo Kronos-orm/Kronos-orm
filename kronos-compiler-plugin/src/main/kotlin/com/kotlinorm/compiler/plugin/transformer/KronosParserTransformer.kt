@@ -75,7 +75,7 @@ class KronosParserTransformer(
         with(pluginContext) {
             if (expression.typeArgumentsCount > 0) {
                 expression.typeArguments.forEach {
-                    if (it != null && it.superTypes().any { it.classFqName == KPojoFqName }) {
+                    if (it != null && it.getClass() != null && it.superTypes().any { it.classFqName == KPojoFqName }) {
                         kPojoClasses.add(it.getClass()!!)
                     }
                 }

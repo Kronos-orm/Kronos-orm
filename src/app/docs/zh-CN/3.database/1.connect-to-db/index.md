@@ -85,15 +85,17 @@ dependencies {
 import com.kotlinorm.Kronos
 Kronos.init {
   dataSource = {
-    BasicDataSource().apply {
-        // if your database version is 8.0 or later, you need to add the following configuration
-        driverClassName = "com.mysql.cj.jdbc.Driver"
-        // else you can use the following configuration
-        // driverClassName = "com.mysql.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
-        username = "root"
-        password = "******"
-    }
+    KronosBasicDataSourceWrapper(
+        BasicDataSource().apply {
+            // if your database version is 8.0 or later, you need to add the following configuration
+            driverClassName = "com.mysql.cj.jdbc.Driver"
+            // else you can use the following configuration
+            // driverClassName = "com.mysql.jdbc.Driver"
+            url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
+            username = "root"
+            password = "******"
+        }
+    )
   }
 }
 ```
@@ -143,12 +145,14 @@ dependencies {
 import com.kotlinorm.Kronos
 Kronos.init {
   dataSource = {
-    BasicDataSource().apply {
-        driverClassName = "org.postgresql.Driver"
-        url = "jdbc:postgresql://localhost:5432/kronos"
-        username = "postgres"
-        password = "******"
-    }
+    KronosBasicDataSourceWrapper(
+        BasicDataSource().apply {
+            driverClassName = "org.postgresql.Driver"
+            url = "jdbc:postgresql://localhost:5432/kronos"
+            username = "postgres"
+            password = "******"
+        }
+    )
   }
 }
 ```
@@ -197,13 +201,15 @@ dependencies {
 import com.kotlinorm.Kronos
 Kronos.init {
   dataSource = {
-    BasicDataSource().apply {
-        driverClassName = "oracle.jdbc.OracleDriver"
-        // replaece the following with your Oracle database connection information
-        url = "jdbc:oracle:thin:@localhost:1521:FREEPDB1"
-        username = "system"
-        password = "******"
-    }
+    KronosBasicDataSourceWrapper(
+        BasicDataSource().apply {
+            driverClassName = "oracle.jdbc.OracleDriver"
+            // replaece the following with your Oracle database connection information
+            url = "jdbc:oracle:thin:@localhost:1521:FREEPDB1"
+            username = "system"
+            password = "******"
+        }
+    )
   }
 }
 ```
@@ -252,12 +258,14 @@ dependencies {
 import com.kotlinorm.Kronos
 Kronos.init {
   dataSource = {
-    BasicDataSource().apply {
-        driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-        url = "jdbc:sqlserver://localhost:1433;databaseName=kronos;encrypt=true;trustServerCertificate=true"
-        username = "sa"
-        password = "******"
-    }
+    KronosBasicDataSourceWrapper(
+        BasicDataSource().apply {
+            driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+            url = "jdbc:sqlserver://localhost:1433;databaseName=kronos;encrypt=true;trustServerCertificate=true"
+            username = "sa"
+            password = "******"
+        }
+    )
   }
 }
 ```
@@ -307,10 +315,12 @@ dependencies {
 import com.kotlinorm.Kronos
 Kronos.init {
   dataSource = {
-    BasicDataSource().apply {
-        driverClassName = "org.sqlite.JDBC"
-        url = "jdbc:sqlite:/path/to/your/database.db"
-    }
+    KronosBasicDataSourceWrapper(
+        BasicDataSource().apply {
+            driverClassName = "org.sqlite.JDBC"
+            url = "jdbc:sqlite:/path/to/your/database.db"
+        }
+    )
   }
 }
 ```

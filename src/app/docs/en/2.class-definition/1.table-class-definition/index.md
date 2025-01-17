@@ -1,7 +1,7 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Declaring Data Table Classes
+## Creating a Table Data Class
 
 Declaring a class as a datasheet class in Kronos is very simple, just make the class inherit from `KPojo`, here is a simple example:
 
@@ -19,82 +19,57 @@ In Kronos, we call such a class `KPojo`, which is a markup interface for marking
 
 We, recommend declaring the class as `data class` and adding **defaults** to it to make the data class more flexible for ORM operations.
 
-Only **the properties declared with the `var` keyword** can be modified in the `set` of **update** or **upsert**.
+Note that properties declared by the `var` keyword can only be modified in the `set` of **update** or **upsert**.
 
-### Table Comments
+### Column annotations
 
-Kronos supports adding comments to tables, we read your comments on class definitions via the compiler plugin and add them to the table notes when creating/synchronizing the table, for example:
+Kronos supports adding comments to columns. We read the comments you make on attribute definitions through compiler plugins and add them to the column remarks when creating/synchronizing tables, such as:
 
-```kotlin
-// Adding Table Comments
-// Supports multiline
-data class User
-
-data class User( // Adding Table Comments
-    val id: Int? = null,
-)
-
-/* Adding Table Comments */
-data class User
-
-/*
-* Adding Table Comments
-* Supports multiline
-It is allowed not to add "*" at the front.
-*/
-@Table("table_name")
-// The line where the Annotation is located will be skipped
-data class User
-```
-Class annotations can read comments on the same line as the class; if there are no comments defined on the same line, it will read the comments from the preceding lines (the line where the annotation is located will not be read).
-
-### Column Comments
-
-Kronos supports adding comments to columns, we read your comments on attribute definitions via the compiler plugin and add them to the column notes when creating/synchronizing the table, for example:
+We support the following 4 types of comments:
 
 ```kotlin
 import com.kotlinorm.interface.KPojo
 
 data class User(
-    // Adding Column Comments
+    // Add column comments
     // Supports multiline
     var property1: Int? = null,
-    var property2: String? = null, // Adding Column Comments
-    /* Adding Column Comments */
+    var property2: String? = null, // Add column comments
+    /* Add column comments */
     var property3: Int? = null,
     /* 
-    * Adding Column Comments
+    * Add column comments
     * Supports multiline
-    It is allowed not to add "*" at the front.
+    The asterisk "*" can be omitted at the beginning.
     */
     var property3: Int? = null,
-    var property4: String? = null /* Adding Column Comments */
+    var property4: String? = null /* Add column comments */
 ) : KPojo
 ```
 
-Normally, comments defined on the same line of an attribute are read first, and if there are no comments defined on the same line, the previous comments are read.
+Generally speaking, comments defined on the same line as the attribute are read first, and if there are no comments defined on the same line, the preceding comments are read.
 
-### Using Delegates to Implement Cascading Many-to-Many Relationships Across Intermediate Tables
+### Using delegates to implement cascading many-to-many relationships across intermediate tables
 
-Please refer to {{ $.keyword("advanced/cascade-definition", ["Advanced Usage", "Using Delegation to Achieve Cascading Many-to-Many Cross Intermediate Table Relationships"]) }}.
+Please refer to {{ $.keyword("advanced/cascade-definition", ["Advanced Usage", "Implementing Cascade Many-to-Many Relationships Across Intermediate Tables Using Delegation"]) }}.
 
-### Using delegate proxy for serialization and deserialization of properties.
+### Using delegates to serialize and deserialize properties.
 
-Kronos' serialization and deserialization functions support both automatic processing and delegated processing methods. The delegated processing method needs to be declared within the class, in the following form:
+Kronos' serialization and deserialization function supports two modes: automatic processing and delegate processing. The delegate processing mode needs to be declared within the class, in the form of:
 
 ```kotlin
 data class User(
     val id: Int? = null,
-    // Properties that need to be serialized deserialized
+    // The propertie that require serialization and deserialization
     val listStr: String? = null
 ) : KPojo {
-    // Proxy Serialization Deserialization Properties
+    // Delegate serialization deserialization properties
     var list: List<String>? by serializable(::listStr)
 }
 ```
-### Creating objects for database operations using anonymous classes
+### Creating objects for database operations using anonymous objects
 
-In Kronos, we have the flexibility to perform database operations by creating anonymous class objects such as:
+In Kronos, we can flexibly perform database operations by creating anonymous class objects, such as:
 
 ```kotlin
 val obj = @Table("tb_name") object : KPojo { @PrimaryKey(true) var id = 1 }
@@ -108,54 +83,47 @@ obj.insert().execute()
 
 ## Setting Table Properties with Annotations
 
-In Kronos, we can set table attributes through annotations, such as **table name**, **column name**, **column type**, **column length**, **primary key**, **self-augmenting**, **unique key**, **index**, **default value**, **non-null**, and so on.
-Kronos also provides **Cascade**, **Serialization/Deserialization**, **Date Formatting**, **Logical Deletion**, **Creation Time**, **Update Time**, **Optimistic Locking, and other **functionalities.
+In Kronos, we can set table attributes through annotations, such as: **table name**, **column name**, **column type**, **column length**, **primary key**, **auto-increment**, **unique key**, **index**, **default value**, **not null**, and so on.
 
-The following is an example with some commonly used annotations:
+Kronos also provides features such as **cascading**, **serialization/deserialization**, **date formatting**, **logical deletion**, **creation time**, **update time**, **optimistic locking**, and so on.
+The following is an example that includes some commonly used annotations:
 
 ```kotlin group="KPojo" name="User.kt" icon="kotlin"
-//Table name setting, if not set then [Table Name Policy] will be used to generate table name based on class name
+// Table name settings. If not set, the table name will be generated based on the class name using [table name strategy].
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["name"], "UNIQUE") // Adding a unique key to the `name` field
-@TableIndex(name = "idx_multi", columns = ["id", "name"], "UNIQUE") // Adding a unique key to the `id` and `name` fields
+@TableIndex("idx_username", ["name"], "UNIQUE") // Add a unique key for the name field.
+@TableIndex(name = "idx_multi", columns = ["id", "name"], "UNIQUE") // Add a unique key for the id and name fields.
 data class User(
-    // Setting the primary key, if not set, the primary key will be generated automatically
+    // Set id as the primary key, auto-increment.
     @PrimaryKey(identity = true)
     var id: Int? = null,
-
-    // Set the column name to `name`, instead of using Column Naming Strategy
-    // Set the name field to non-null
-    // Set the column type to VARCHAR and the length to 128
+    // Set the column name as name. If not set, the column name will be generated based on the property name using [column name strategy].
+    // Set the name field as not null.
+    // Set the column type to VARCHAR, length 128.
     @Column("name")
     @NotNull
     @ColumnType(VARCHAR, 128)
     var username: String? = null,
-
-    // Set column type to TINYINT
-    // Set the default value to 0
+    // Set the column type to TINYINT.
+    // Set the default value to 0.
     @ColumnType(TINYINT)
     @Default("0")
     var age: Int? = null,
-
-    // Setting the companyId field to be non-null
+    // Set companyId field as not null.
     @NotNull
     var companyId: Int? = null,
-
-    // Cascade setup, no need for entity foreign key, through companyId associated with the id of the Company table
+    // Cascade settings, no need for entity foreign key, relate to the id of the Company table through companyId.
     @Cascade(["companyId"], ["id"])
     var company: Company? = null,
-
-    // Set `createTime` as the creation time field
-    // Set the time format to the format of a string
+    // Set createTime as the creation time field.
+    // Set the time format as a string format.
     @CreateTime
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     var createTime: String? = null,
-
-    // Set `updateTime` as the update time field
+    // Set updateTime as the update time field.
     @UpdateTime
     var updateTime: LocalDateTime? = null,
-
-    // Set `deleted` as a logically deleted field
+    // Set deleted as the logical delete field.
     @LogicDelete
     var deleted: Boolean? = null
 ) : KPojo
@@ -239,4 +207,4 @@ CREATE UNIQUE INDEX idx_username ON "tb_user" ("name");
 CREATE UNIQUE INDEX idx_multi ON "tb_user" ("id", "name");
 ```
 
-Click {{ $.keyword("class-definition/annotation-config", ["Annotation Config"]) }} to see more annotation settings.
+Click {{ $.keyword("class-definition/annotation-config", ["annotation-config"]) }} to see more annotation settings.

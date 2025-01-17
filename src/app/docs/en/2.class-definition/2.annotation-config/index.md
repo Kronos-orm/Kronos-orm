@@ -1,11 +1,12 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## {{ $.annotation("Table") }} Table Name
+## {{ $.annotation("Table") }} Table Name Setting
 
-Used to specify the table name of a data class, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Configuration", "Table Naming Strategy"]) }}.
+Used to specify the table name for the data class, the effective priority of this annotation is higher than the priority of {{ $.keyword("
+getting-started/global-config", ["Global Setting", "Global Table Naming Strategy"]) }}。
 
-**参数**：
+**Parameters**：
 {{$.params([['name', 'table name', 'String']])}}
 
 ```kotlin
@@ -17,21 +18,21 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("TableIndex") }} Table Index
+## {{ $.annotation("TableIndex") }}Table index
 
-Used to specify the index of a data table.
+Used to specify the index of the data table。
 
 > **Note**
-> 在使用`dataSource.table.createTable<KPojo>()`或`dataSource.table.syncTable<KPojo>()`时生效。
+This feature is effective when using `dataSource.table.createTable<KPojo>()` or `dataSource.table.syncTable<KPojo>()`.
 
 **Parameters**:
 
 {{$.params([
-  ['name', 'index name', 'String'],
-  ['columns', 'index column name', 'Array<String>'],
-  ['type', $.noun("table-index", "index type"), 'String', 'default by database type'],
-  ['method', $.noun("table-index", "index method"), 'String', 'default by database type'],
-  ['concurrently', 'Whether to create the index concurrently, <b>only applicable to PostgreSQL</b>', 'Boolean', false]
+['name', 'Index Name', 'String'],
+['columns', 'Index Column Names', 'Array<String>'],
+['type', $.noun("table-index", "Index Type"), 'String', 'Database Type Default'],
+['method', $.noun("table-index", "Index Method"), 'String', 'Database Type Default'],
+['concurrently', 'Whether to create index concurrently, <b>only applicable to PostgreSQL</b>', 'Boolean', false]
 ])}}
 
 ```kotlin
@@ -45,22 +46,22 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("CreateTime") }} Table Create Time
+## {{ $.annotation("CreateTime") }}Table creation time
 
-Used to specify whether a data table is enabled for create time strategy, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Configuration", "Create Time Strategy"]) }}.
+The annotation is used to specify whether the creation time strategy is enabled for the data table. The effective priority of this annotation is higher than that of {{ $.keyword("getting-started/global-config", ["Global Settings", "Creation Time Strategy"]) }}.
 
 **Parameters**:
 
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enable', 'Boolean', true]])}}
 
 ```kotlin
-// Disabling the creation time function for a table with creation time turned on globally
+// Disable the creation time feature for a specific table when the global creation time feature is enabled.
 @CreateTime(enabled = false)
 data class User(
     val id: Int? = null
 ) : KPojo
 
-// Enabling creation time for a table with creation time turned off globally
+// Enabling the creation time for a table with creation time turned off globally
 @CreateTime
 data class User(
   val id: Int? = null,
@@ -68,16 +69,16 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("UpdateTime") }} Table Update Time
+## {{ $.annotation("UpdateTime") }}Table update time
 
-Used to specify whether a data table is enabled for update time strategy, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Configuration", "Update Time Strategy"]) }}.
+Used to specify whether the data table is enabled for update time strategy, the priority of this annotation is higher than that of {{$.keyword("getting-started/global-config", ["Global Settings", "Update Time Strategy"])}}.
 
 **Parameters**:
 
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enable', 'Boolean', true]])}}
 
 ```kotlin
-// Disabling update time for a table with update time turned on globally
+// Disable the update time feature for a specific table when the global update time function is enabled.
 @UpdateTime(enabled = false)
 data class User(
   val id: Int? = null
@@ -91,22 +92,23 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("LogicDelete") }} Table Logic Delete
+## {{ $.annotation("LogicDelete") }}Table Logical Deletion
 
-Used to specify whether the logical deletion policy is turned on for a datasheet, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Settings", "Logical Deletion Policy"]) }}.
+Used to specify whether the logical deletion strategy is enabled for the data table, the priority of this annotation is higher than that of {{
+$.keyword("getting-started/global-config", ["Global Settings", "Logical Deletion Strategy"])}}.
 
 **Parameters**:
 
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enabled', 'Boolean', true]])}}
 
 ```kotlin
-// Disabling logical deletion for a table with logical deletion turned on globally
+// Disable the logical deletion for a table with logical deletion globally enabled
 @LogicDelete(enabled = false)
 data class User(
     val id: Int? = null
 ) : KPojo
 
-// Enabling logical deletion for a table with logical deletion turned off globally
+// Enabling the logical deletion for a table with logical deletion turned off globally
 @LogicDelete
 data class User(
   val id: Int? = null,
@@ -114,13 +116,14 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Column") }} Column Name
+## {{ $.annotation("Column") }}Column name
 
-Used to specify the column name of a data class, this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Settings", "Field Naming Strategy"]) }}.
+Used to specify the column names of a data table, this annotation takes precedence over the {{
+$.keyword("getting-started/global-config", ["global-set", "global-column-name-policy"]) }} priority.
 
 **Parameters**:
 
-{{$.params([['name', 'column name', 'String']])}}
+{{$.params([['name', 'String', 'Column name']])}}
 
 ```kotlin
 data class User(
@@ -129,11 +132,11 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("DateTimeFormat") }} Date/Time Format
+## {{ $.annotation("DateTimeFormat") }}Date and time format
 
-Used to specify the date/time format for the data table, the effectiveness of this annotation takes precedence over {{ $.keyword("getting-started/global-config", ["Global Settings", "Default Date Time Format"]) }}.
+The annotation is used to specify the date/time format for the data table, and its effective priority is higher than that of {{$.keyword("getting-started/global-config", ["Global Settings", "Default Date/Time Format"])}}.
 
-**Parameters**:
+**参数**：
 
 {{$.params([['pattern', 'Date/Time Format', 'String']])}}
 
@@ -144,9 +147,11 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serializable") }} Serialization/Deserialization
+## {{ $.annotation("Serializable") }}List Serialization/Deserialization Settings
 
-Used to declare whether the column needs to be automatically serialized or deserialized. The field using this annotation, Kronos, will call the serialization and deserialization processor (see {{ $.keyword("getting-started/global-config", ["Global Settings", "Serialization and Deserialization Processor"]) }}) to perform serialization and deserialization operations on the column's values when storing and reading from the database.
+Used to declare whether the column needs to be autoserialized, deserialized or not, fields using this annotation Kronos will invoke the serialization deserialization handler (see {{
+$.keyword("getting-started/global-config", ["Global Settings", "Serialization Deserialization Processor"])
+}}) to serialize and deserialize the value of the column as it is deposited into and read from the database.
 
 ```kotlin
 data class User(
@@ -154,28 +159,27 @@ data class User(
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
-For the functionality of serialization and deserialization, please refer to: {{ $.keyword("concept/serialize-processor", ["automatic serialization and deserialization"]) }}.
+Please refer to the documentation for the serialization and deserialization feature usage:{{ $.keyword("concept/serialize-processor", ["Automatic Serialization and Deserialization"]) }}。
 
-## {{ $.annotation("Cascade") }} Cascade Relationship Declaration
+## {{ $.annotation("Cascade") }}Cascading Relationship Declaration
 
 This annotation is used to declare the cascade relationship of columns, please refer to {{ $.keyword("advanced/cascade-definition", ["Advanced Usage", "Cascade Relationship Definition"]) }} for detailed definition and usage.
 
 > **Note**
-> Please add this annotation to properties of type `KPojo` or `Collection<KPojo>`, ensuring that there are related fields in the currently defined table (such as the companyId in the example below).
+> Please add this annotation to an attribute of type `KPojo` or `Collection<KPojo>` to ensure that there is an associated field within the currently defined table (e.g. companyId in the following example).
 
 **Parameters**:
 
 {{ $.params([
-    ['properties', 'The associated field properties of the current table', 'Array<String>'],
-    ['targetProperties', 'The associated field properties of the target table', 'Array<String>'],
-    ['onDelete', $.keyword("concept/cascade-delete-action", ["Cascade Delete Action"]), 'CascadeDeleteAction', 'NO_ACTION'],
-    ['defaultValue', 'The default value set when the cascade delete method is set to "SET DEFAULT" (optional)', 'Array<String>', '[]'],
-    ['usage', 'Used to declare the associated operations required by this entity', 'Array<KOperationType>', '[Insert, Update, Delete, Upsert, Select]']
+['properties', 'This table\'s associated field property name', 'Array<String>'],
+['targetProperties', 'Associated target table associated field property name', 'Array<String>'],
+['onDelete', $.keyword("concept/cascade-delete-action", ["associated delete strategy"]), 'CascadeDeleteAction', 'NO_ACTION'],
+['defaultValue', 'The default value set when the cascade delete method is specified as "SET DEFAULT" (optional)', 'Array<String>', '[]'],
+['usage', 'Used to declare the associated operations required by this entity', 'Array<KOperationType>', '[Insert, Update, Delete, Upsert, Select]']
 ])}}
 
 ```kotlin
-// Cascade setting, no need for entity foreign keys, associate with the id of the Company table through companyId
-// One-to-many relationship
+// A multi-level cascading relationship example
 @Table("tb_user")
 data class Employee(
     val id: Int? = null,
@@ -191,16 +195,50 @@ data class Company(
 ) : KPojo
 ```
 
-## {{ $.annotation("Ignore") }} Ignore Property in Query
+## {{ $.annotation("Ignore") }} Ignore Fields
 
-This annotation is used to declare that the column does not need to be queried in the specified query condition.
-You need to pass in the query type to ignore {{ $.keyword("concept/ignore-action", ["Ignore Query Action"]) }}.
+This annotation is used to ignore fields in partial operations.
 
 **Parameters**:
 
-{{ $.params([
-    ['target', 'Ignored query type (' + $.code('SELECT') + ', ' + $.code('CASCADE_SELECT') + ')', 'Array<IgnoreAction>']
-])}}
+{{$.params([['action', 'Ignore action', 'IgnoreAction', 'ALL']])}}
+
+1. `IgnoreAction.ALL`: The attribute is ignored, no database operation is performed, and the attribute is not recognized as a database field.
+2. `IgnoreAction.SELECT`: the attribute is ignored and no query operation is performed.
+3. `IgnoreAction.INSERT`: ignores the attribute and does not perform an insert operation (not yet implemented).
+4. `IgnoreAction.UPDATE`: ignore this attribute, no update operations (not yet implemented).
+5. `IgnoreAction.DELETE`: ignore this attribute and do not perform a delete operation (not yet implemented).
+6. `IgnoreAction.CASCADE_SELECT`: ignore this attribute, no cascade query operation.
+
+**Examples**:
+
+1. Exclude an attribute, which is not considered a database field:
+
+```kotlin
+@Table("tb_user")
+data class User(
+    var id: Int? = null,
+    @Ignore([IgnoreAction.ALL])
+    var name: String? = null,
+    @Ignore var age: Int? = null
+) : KPojo
+```
+In the above example, the `name` and `age` properties will not be treated as database fields.
+
+2. Exclude a certain attribute, which does not perform a query operation:
+
+```kotlin
+@Table("tb_user")
+data class User(
+    var id: Int? = null,
+    @Ignore([IgnoreAction.SELECT])
+    var name: String? = null
+) : KPojo
+```
+
+In the above example, when querying using the KPojo, the `name` property will not be queried.
+
+3. Exclude a certain attribute, which does not perform cascading query operations:
 
 ```kotlin
 @Table("tb_user")
@@ -214,25 +252,27 @@ data class Employee(
 @Table("tb_company")
 data class Company(
   val id: Int? = null,
-  @Ignore([CASCADE_SELECT])
+  @Ignore([IgnoreAction.CASCADE_SELECT])
   val employees: List<Employee>? = null
 ) : KPojo
 ```
 
+In the above example, when querying `Employee`, the `employees` attribute of `Company` will not be cascaded queried.
+
 > **Note**
-> Please note that during cascade operations, this annotation is unidirectional; that is, adding the `@Ignore` annotation to `employees` will prevent `employees` from being query cascaded, but `company` will be query cascaded.
+> Please notice that this annotation is unidirectional, meaning that adding the `@CascadeSelectIgnore` annotation to `employees` will prevent cascading queries on `employees`, but `company` will still be cascaded.
 
-## {{ $.annotation("PrimaryKey") }} Primary Key And Primary Key Type
+## {{ $.annotation("PrimaryKey") }}Column primary key setting
 
-This annotation is used to declare a column as a primary key.
+This annotation is used to declare a column as the primary key.
 
 **Parameters**:
 
 {{$.params([
-  ['identity', 'Whether it is self-incrementing', 'Boolean'],
-  ['uuid', 'Whether to use uuid as the primary key', 'Boolean'],
-  ['snowflake', 'Whether to use the snowflake algorithm as the primary key', 'Boolean'],
-  ['custom', 'Whether to use a custom primary key generator', 'Boolean']
+['identity', 'Whether to auto-increment', 'Boolean'],
+['uuid', 'Whether to use UUID as the primary key', 'Boolean'],
+['snowflake', 'Whether to use the Snowflake algorithm as the primary key', 'Boolean'],
+['custom', 'Whether to use a custom primary key generator', 'Boolean']
 ])}}
 
 ```kotlin
@@ -243,30 +283,19 @@ data class User(
 ) : KPojo
 ```
 
-> **Note**
-> When using a **self-augmenting primary key**, please make sure that the type of the `id` column is of type `Int` or `Long`, otherwise the primary key will not be generated correctly.
+## {{ $.annotation("ColumnType") }}Column Type and Length
 
-> **Note**
-> When using **uuid** as the primary key, please make sure that the type of the `id` column is of type `String`, otherwise the primary key will not be generated correctly.
-
-> **Note**
-> When using the **Snowflake Algorithm**, the self-incremented field must be of type `Long`, otherwise the primary key will not be generated correctly, please configure `datacenterId` and `workerId` in your configuration file, refer to: {{ $.keyword("getting-started/global-config", ["Primary Key Generator" , "Snowflake Algorithm"]) }}.
-
-> **Note**
-> When using a **custom primary key**, please set up the configuration of the custom primary key generator `customIdGenerator` (`KIdGenerator<T>`) ahead of time, refer to: {{ $.keyword("getting-started/global-config", ["Primary Key Generator", "Custom Primary Key Generator"])}}.
-
-## {{ $.annotation("ColumnType") }} Column Type And Length
-
-For different types of databases, Kronos will automatically convert types based on Kotlin types. You can refer to {{ $.keyword("class-definition/kotlin-type-to-kcolumn-type", ["Kotlin column type inference"]) }} to view the mapping of Kotlin data types in various databases.
-
-You can declare the column type and length through this annotation; if not specified, the default type and length will be used. For all type information, please refer to: {{ $.keyword("class-definition/kcolumn-type", ["Kronos column types"]) }}.
+For different database types, kronos will automatically convert types based on the kotlin type, you can refer to [Kotlin column type inference](/documentation/class-definition/kotlin-type-to-kcolumn-type)
+See how Kotlin data types are mapped across databases.
+You can declare the column type and length through this annotation, if not specified then use the default type and length, full type information please refer to: [Kronos column type](/documentation/class-definition/kcolumn-type)
 
 **Parameters**:
 
 {{$.params([
-  ['type', 'Type', 'String'],
-  ['length', 'Length', 'Int', 'default by type']
-])}}
+['type', 'Type', 'String'],
+['length', 'Length', 'Int', 'Default based on type']
+])
+}}
 
 ```kotlin
 @Table("tb_user")
@@ -276,9 +305,9 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("NotNull") }} Non-Null Constraint
+## {{ $.annotation("NotNull") }}Column non-null constraint
 
-This annotation is used to declare a column as a non-null constraint.
+This annotation is used to declare a column as non-null; if not specified, the default non-null constraint is used.
 
 ```kotlin
 @Table("tb_user")
@@ -288,13 +317,13 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("CreateTime") }} Creation Time Column
+## {{ $.annotation("CreateTime") }}Create Time Column
 
-This annotation is used to declare the column as a creation time field, or {{ $.keyword("getting-started/global-config", ["Global Configuration", "Creation Time Strategy"]) }}.
+This annotation is used to declare the field as the creation time field. If not specified, it uses {{ $.keyword("getting-started/global-config", ["Global Settings", "Creation Time Strategy"]) }}.
 
 **Parameters**:
 
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enabled', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")
@@ -304,29 +333,28 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("UpdateTime") }} Update Time Column
+## {{ $.annotation("UpdateTime") }}Update Time Column
 
-This annotation is used to declare the column as an update time field, or {{ $.keyword("getting-started/global-config", ["Global Configuration", "Update Time Strategy"]) }}.
+This annotation is used to declare the field as the update time field. If not specified, it uses {{ $.keyword("getting-started/global-config", ["Global Settings", "Update Time Strategy"]) }}.
 
-**Parameters**:
+**Parameters**：
 
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enabled', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")
 data class User(
     @UpdateTime
-    val UPDATED: String? = null
+    val updated: String? = null
 ) : KPojo
 ```
 
-## {{ $.annotation("LogicDelete") }} Logical Delete Column
+## {{ $.annotation("LogicDelete") }}Logical Deletion Column
 
-This annotation is used to declare the column as a logical delete field, or {{ $.keyword("getting-started/global-config", ["Global Configuration", "Logical Deletion Strategy"]) }}.
+This annotation is used to declare a field as logically deleted. If not specified, it uses {{ $.keyword("getting-started/global-config", ["Global Settings", "Logical Deletion Strategy"]) }}.
+**Parameters**：
 
-**Parameters**:
-
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enabled', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")
@@ -336,13 +364,12 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Version") }} Optimistic Locking (Version) Column
+## {{ $.annotation("Version") }}Optimistic Lock (Version) Column
 
-This annotation is used to declare a field as an optimistic lock (version) field. If not specified, it uses {{ $.keyword("getting-started/global-config", ["Global Settings", "Optimistic Lock (Version) Strategy"])}}.
+This annotation is used to declare the field as an optimistic lock (version), if not specified, it uses {{ $.keyword("getting-started/global-config", ["Global Settings", "Optimistic Lock (Version) Strategy"]) }}.
+**Parameters**：
 
-**Parameters**:
-
-{{$.params([['enabled', 'Whether to enable', 'Boolean', true]])}}
+{{$.params([['enabled', 'Enabled', 'Boolean', true]])}}
 
 ```kotlin
 @Table("tb_user")

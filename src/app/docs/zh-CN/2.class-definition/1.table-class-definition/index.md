@@ -90,7 +90,7 @@ data class User(
     // 需要序列化反序列化的属性
     val listStr: String? = null
 ) : KPojo {
-    // 代理序列化反序列化属性
+    // 委托序列化反序列化属性
     var list: List<String>? by serializable(::listStr)
 }
 ```

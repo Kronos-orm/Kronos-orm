@@ -196,15 +196,50 @@ data class Company(
 ) : KPojo
 ```
 
-## {{ $.annotation("Ignore") }} 查询时忽略属性
+## {{ $.annotation("Ignore") }} 忽略字段
 
-此注解用于声明该列不需要在指定的查询条件中进行查询。
-需要传入忽略的查询类型 {{ $.keyword("concept/ignore-action", ["忽略查询策略"]) }}
+此注解用于在部分操作中忽略字段。
 
 **参数**：
-{{ $.params([
-['target', '忽略的查询类型(' + $.code('SELECT') + ', ' + $.code('CASCADE_SELECT') + ')', 'Array<IgnoreAction>']
-])}}
+
+{{$.params([['action', '忽略操作', 'IgnoreAction', 'ALL']])}}
+
+1. `IgnoreAction.ALL`：忽略该属性，不进行任何数据库操作，也不认定该属性为数据库字段。
+2. `IgnoreAction.SELECT`：忽略该属性，不进行查询操作。
+3. `IgnoreAction.INSERT`：忽略该属性，不进行插入操作（尚未实现）。
+4. `IgnoreAction.UPDATE`：忽略该属性，不进行更新操作（尚未实现）。
+5. `IgnoreAction.DELETE`：忽略该属性，不进行删除操作（尚未实现）。
+6. `IgnoreAction.CASCADE_SELECT`：忽略该属性，不进行级联查询操作。
+
+**示例**：
+
+1. 排除某属性，该属性不视为数据库字段：
+
+```kotlin
+@Table("tb_user")
+data class User(
+    var id: Int? = null,
+    @Ignore([IgnoreAction.ALL])
+    var name: String? = null,
+    @Ignore var age: Int? = null
+) : KPojo
+```
+上述示例中，`name`和`age`属性不会被视为数据库字段。
+
+2. 排除某属性，该属性不进行查询操作：
+
+```kotlin
+@Table("tb_user")
+data class User(
+    var id: Int? = null,
+    @Ignore([IgnoreAction.SELECT])
+    var name: String? = null
+) : KPojo
+```
+
+上述示例中，使用该KPojo进行查询操作时，`name`属性不会被查询。
+
+3. 排除某属性，该属性不进行级联查询操作：
 
 ```kotlin
 @Table("tb_user")
@@ -218,13 +253,15 @@ data class Employee(
 @Table("tb_company")
 data class Company(
   val id: Int? = null,
-  @Ignore([CASCADE_SELECT])
+  @Ignore([IgnoreAction.CASCADE_SELECT])
   val employees: List<Employee>? = null
 ) : KPojo
 ```
 
+上述示例中，查询`Employee`时，`Company`的`employees`属性不会被级联查询。
+
 > **Note**
-> 请注意，在级联操作时，此注解是单向的，即给`employees`加上`@Ignore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
+> 请注意，此注解是单向的，即给`employees`加上`@CascadeSelectIgnore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
 
 ## {{ $.annotation("PrimaryKey") }}列主键设置
 

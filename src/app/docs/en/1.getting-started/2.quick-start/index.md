@@ -21,11 +21,11 @@ Simply introduce the `kronos-core` module and the `kronos-compiler-plugin` plugi
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-core:0.0.1") // Provides basic ORM functionality
+    implementation("com.kotlinorm:kronos-core:0.0.1") // Provides basic ORM functionality
 }
 
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1" // Compile-time support is provided
+    id("com.kotlinorm:kronos-gradle-plugin") version "0.0.1" // Compile-time support is provided
 }
 ```
 
@@ -35,7 +35,7 @@ dependencies {
 }
 
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1' // Compile-time support is provided
+    id 'com.kotlinorm:kronos-gradle-plugin' version '0.0.1' // Compile-time support is provided
 }
 ```
 
@@ -86,7 +86,7 @@ Introducing dependencies：
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jdbc-wrappere:0.0.1") // Provides basic functions for database operations
+    implementation("com.kotlinorm:kronos-jdbc-wrappere:0.0.1") // Provides basic functions for database operations
 }
 ```
 

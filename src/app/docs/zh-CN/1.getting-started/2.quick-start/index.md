@@ -21,11 +21,11 @@
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-core:0.0.1") // 供了基础的ORM功能
+    implementation("com.kotlinorm:kronos-core:0.0.1") // 供了基础的ORM功能
 }
 
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1" // 提供了编译时支持
+    id("com.kotlinorm:kronos-gradle-plugin") version "0.0.1" // 提供了编译时支持
 }
 ```
 
@@ -35,7 +35,7 @@ dependencies {
 }
 
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1' // 提供了编译时支持
+    id 'com.kotlinorm:kronos-gradle-plugin' version '0.0.1' // 提供了编译时支持
 }
 ```
 
@@ -86,7 +86,7 @@ plugins {
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jdbc-wrappere:0.0.1") // 提供了数据库操作的基础功能
+    implementation("com.kotlinorm:kronos-jdbc-wrappere:0.0.1") // 提供了数据库操作的基础功能
 }
 ```
 

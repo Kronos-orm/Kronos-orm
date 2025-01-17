@@ -9,6 +9,7 @@ import com.kotlinorm.compiler.plugin.beans.CriteriaIR
 import com.kotlinorm.compiler.plugin.beans.FieldIR
 import com.kotlinorm.compiler.plugin.beans.primaryKeyTypeSymbol
 import com.kotlinorm.compiler.plugin.utils.CascadeAnnotationsFqName
+import com.kotlinorm.compiler.plugin.utils.IgnoreAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.KPojoFqName
 import com.kotlinorm.compiler.plugin.utils.KronosColumnValueType
 import com.kotlinorm.compiler.plugin.utils.SerializableAnnotationsFqName
@@ -33,11 +34,14 @@ import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
@@ -45,6 +49,7 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.file
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.sourceElement
@@ -68,15 +73,15 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
      * @return returns true if the IrExpression is a Kronos Column, false otherwise.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrExpression?.isKronosColumn(): Boolean {
+    fun IrExpression?.isKPojo(): Boolean {
         if (this == null) return false
         return (this is IrCallImpl && this.symbol.owner.correspondingPropertySymbol?.owner is IrProperty && this.let {
             val propertyName = pluginContext.withContext{ correspondingName!!.asString() }
-            (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKronosColumn()
-        }) || this is IrPropertyReference && this.symbol.owner.parent is IrClass && (this.symbol.owner.parent as IrClass).isKronosColumn()
+            (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKPojo()
+        }) || this is IrPropertyReference && this.symbol.owner.parent is IrClass && (this.symbol.owner.parent as IrClass).isKPojo()
     }
 
-    fun IrType.isKronosColumn(): Boolean {
+    fun IrType.isKPojo(): Boolean {
         return superTypes().any { it.classFqName == pluginContext.KPojoFqName }
     }
 
@@ -96,7 +101,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
     fun IrExpression.findKronosColumn(): IrExpression? {
         if (this is IrBlock && origin == IrStatementOrigin.SAFE_CALL) return null
         if (this !is IrCall) return this
-        if (isKronosColumn()) {
+        if (isKPojo()) {
             return this
         } else if (extensionReceiver is IrCall) {
             return extensionReceiver!!.findKronosColumn()
@@ -125,7 +130,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
      * @throws IllegalStateException if no Kronos Column is found in the expression and the function name is not "value".
      */
     fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> {
-        return if (this.isKronosColumn()) {
+        return if (this.isKPojo()) {
             KronosColumnValueType.ColumnName to this
         } else if (this.funcName() == "value") {
             KronosColumnValueType.Value to this
@@ -176,19 +181,44 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
     }
 
     /**
-     * for custom serialization, the property is a column if it has a `@Serializable` annotation
-     * for properties that are not columns, we need to check if :
-     * 1. the type is a KPojo
-     * 2. has a KPojo in its super types
-     * 3. is a Collection of KPojo
+     * For properties that are not columns, we need to check if :
+     * 1. the field using @Ignore annotation
+     * 2. the type is a KPojo or its super types are KPojo
+     * 3. is a Collection of KPojo, such as List<KPojo>
      * 4. has Annotation `@Cascade`
+     *
+     * Specially, if the property is using `@Serializable` annotation, it will be treated as a column.
+     * but the priority of `@Serializable` is lower than `Ignore` annotation and `@Cascade` annotation.
      */
-    fun IrProperty.isColumn(irPropertyType: IrType = this.backingField?.type ?: pluginContext.irBuiltIns.anyNType): Boolean {
-        return hasAnnotation(SerializableAnnotationsFqName) || (!hasAnnotation(CascadeAnnotationsFqName) && !irPropertyType.isKronosColumn() && irPropertyType.subType()
-            ?.isKronosColumn() != true)
+    fun IrProperty.isColumn(
+        irPropertyType: IrType = this.backingField?.type ?: pluginContext.irBuiltIns.anyNType,
+        ignored: IrConstructorCall? = ignoreAnnotationValue()
+    ): Boolean {
+        if (ignored.ignoreAll()) return false
+        if (hasAnnotation(CascadeAnnotationsFqName)) return false
+        if (hasAnnotation(SerializableAnnotationsFqName)) return true
+        if (irPropertyType.isKPojo() || irPropertyType.subType()?.isKPojo() == true) return false
+        return true
     }
 
-    fun IrClass.isKronosColumn(): Boolean {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun IrProperty.ignoreAnnotationValue(): IrConstructorCall? {
+        return annotations.find { it.symbol.owner.returnType.getClass()!!.fqNameWhenAvailable == IgnoreAnnotationsFqName }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun IrConstructorCall?.ignoreAll(): Boolean {
+        if (this == null) return false
+        val action = this.getValueArgument(0)
+        if(action == null) return true
+        return (action is IrVarargImpl &&
+                action.elements.isNotEmpty() &&
+                (action.elements.first() is IrGetEnumValueImpl) &&
+                (action.elements.first() as IrGetEnumValueImpl).symbol.owner.name.asString() == "ALL"
+                )
+    }
+
+    fun IrClass.isKPojo(): Boolean {
         with(pluginContext) {
             with(builder) {
                 return superTypes.any { it.classFqName == KPojoFqName }
@@ -257,7 +287,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
     }
 
     fun IrExpression?.irFieldOrNull(): IrExpression {
-        return if (this != null && this.isKronosColumn()) getColumnName(this) else builder.irNull()
+        return if (this != null && this.isKPojo()) getColumnName(this) else builder.irNull()
     }
 
     /**

@@ -176,8 +176,8 @@ fun KotlinBlockBuilderContext.buildCriteria(
                             "equal" -> {
                                 not = not xor element.valueArguments.isEmpty()
                                 val index = when {
-                                    args[0].isKronosColumn() || args[0].isKronosFunction() -> 0
-                                    args[1].isKronosColumn() || args[0].isKronosFunction() -> 1
+                                    args[0].isKPojo() || args[0].isKronosFunction() -> 0
+                                    args[1].isKPojo() || args[0].isKronosFunction() -> 1
                                     else -> {
                                         type = "sql"
                                         value = element
@@ -199,7 +199,7 @@ fun KotlinBlockBuilderContext.buildCriteria(
 
                             "eq", "neq" -> {
                                 val extensionReceiver = element.extensionReceiver
-                                if (extensionReceiver != null && extensionReceiver.isKronosColumn()) {
+                                if (extensionReceiver != null && extensionReceiver.isKPojo()) {
                                     paramName = getColumnOrValue(extensionReceiver)
                                     value = applyIrCall(
                                         getValueByFieldNameSymbol,

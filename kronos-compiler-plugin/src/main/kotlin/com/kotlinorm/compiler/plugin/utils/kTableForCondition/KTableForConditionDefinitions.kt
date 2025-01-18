@@ -164,7 +164,7 @@ fun KotlinBuilderContext.runExpressionAnalysis(
     operator: String,
     right: IrExpression?
 ): Triple<IrExpression?, String, IrExpression?> {
-    if (!(left.isKronosColumn() && left.isKronosFunction()) && (right.isKronosColumn() || right.isKronosFunction())) {
+    if (!(left.isKPojo() && left.isKronosFunction()) && (right.isKPojo() || right.isKronosFunction())) {
         return Triple(getColumnOrValue(right), getOperatorRevered(operator), getColumnOrValue(left))
     }
 

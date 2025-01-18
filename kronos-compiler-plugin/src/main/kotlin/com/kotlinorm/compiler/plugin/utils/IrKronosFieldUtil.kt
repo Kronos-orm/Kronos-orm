@@ -86,7 +86,7 @@ val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
 fun KotlinBuilderContext.getColumnName(expression: IrExpression): IrExpression {
     with(pluginContext){
         with(builder){
-            if (!expression.isKronosColumn()) {
+            if (!expression.isKPojo()) {
                 return expression
             }
             return when (expression) {
@@ -267,7 +267,7 @@ fun KotlinBuilderContext.getColumnName(
                 cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
                 kClass = kClass,
                 ignore = ignoreAnnotation?.getValueArgument(0),
-                isColumn = irProperty.isColumn(irPropertyType),
+                isColumn = irProperty.isColumn(irPropertyType, ignoreAnnotation),
                 columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
                 columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),
                 nullable = notNullAnnotation == null && primaryKeyAnnotation == null,

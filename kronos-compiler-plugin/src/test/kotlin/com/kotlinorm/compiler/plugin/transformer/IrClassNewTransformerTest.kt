@@ -22,6 +22,7 @@ class IrClassNewTransformerTest {
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
             import kotlin.test.assertNotNull
+import com.kotlinorm.enums.IgnoreAction
             
             
             /**
@@ -44,8 +45,9 @@ class IrClassNewTransformerTest {
                 val birthday: String? = null,
                 @Serializable
                 val habits: List<String>? = null,
+                @Ignore([IgnoreAction.ALL])
                 val age: Int? = null,
-                val avatar: String? = null,
+                @Ignore val avatar: String? = null,
                 val friendId: Int? = null,
                 @Cascade(["friendId"], ["id"])
                 val friend: User? = null,

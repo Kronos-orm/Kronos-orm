@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.update
 
-import com.kotlinorm.Kronos.serializeResolver
+import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
@@ -282,7 +282,7 @@ class UpdateClause<T : KPojo>(
         paramMapNew.forEach { (key, value) ->
             val field = allFields.find { it.columnName == key.columnName }
             if (field != null && field.serializable && value != null) {
-                paramMap[key.name] = serializeResolver.serialize(value)
+                paramMap[key.name] = serializeProcessor.serialize(value)
             } else {
                 paramMap[key.name] = value
             }

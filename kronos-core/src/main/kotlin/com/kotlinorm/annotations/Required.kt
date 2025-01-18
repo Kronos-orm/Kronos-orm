@@ -17,14 +17,12 @@
 package com.kotlinorm.annotations
 
 /**
- * CreateTime
+ * Necessary(Not null)
  *
- * Annotation to specify the create_time format of a column in a database table.
+ * Annotation to specify that a property is NOT NULL in the database table.
  *
- * @property format The create_time format of the column in the database table.
- * @property enable Whether to enable the create_time format of the column in the database table.
  * @author OUSC
  */
-@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
+@Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Serializable
+annotation class Necessary

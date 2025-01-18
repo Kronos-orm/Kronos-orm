@@ -41,7 +41,7 @@ class KTableParserForSelectTransformerTest {
             data class User(
                 @PrimaryKey(identity = true)
                 var id: Int? = null,
-                @NotNull
+                @Necessary
                 var username: String? = null,
                 @ColumnType(TINYINT)
                 @Default("0")
@@ -49,7 +49,7 @@ class KTableParserForSelectTransformerTest {
                 @Column("phone_number") val telephone: String? = null,
                 @Column("email_address") val email: String? = null,
                 val birthday: String? = null,
-                @Serializable
+                @Serialize
                 val habits: List<String>? = null,
                 val age: Int? = null,
                 val avatar: String? = null,

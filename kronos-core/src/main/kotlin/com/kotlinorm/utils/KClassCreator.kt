@@ -26,7 +26,7 @@ fun registerKPojo(vararg kClass: KClass<out KPojo>) {}
 
 @Suppress("UNCHECKED_CAST")
 fun <T : KPojo> KClass<T>.createInstance(): T {
-    return kClassCreator(this) as T? ?: kClassCreatorCustom(this) as T? ?: throw NullPointerException(
+    return kClassCreatorCustom(this) as T? ?: kClassCreator(this) as T? ?: throw NullPointerException(
         "KClass ${this.simpleName} instantiation failed \n" +
                 "1.Please check if the data class has a no-argument constructor. \n" +
                 "2.if you did not add `Kronos.init{}` to your code, please add it  to the code, " +

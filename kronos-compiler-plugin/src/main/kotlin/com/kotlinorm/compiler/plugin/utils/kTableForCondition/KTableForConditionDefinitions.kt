@@ -20,8 +20,8 @@ import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.irEnum
 import com.kotlinorm.compiler.helpers.referenceClass
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
+import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import com.kotlinorm.compiler.plugin.utils.getColumnOrValue
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irBoolean

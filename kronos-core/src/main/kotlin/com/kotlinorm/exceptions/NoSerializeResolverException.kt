@@ -23,6 +23,6 @@ package com.kotlinorm.exceptions
  *
  * @author OUSC
  * @create 2022/11/30 00:21
- * @see [com.kotlinorm.interfaces.KronosSerializeResolver]
+ * @see [com.kotlinorm.interfaces.KronosSerializeProcessor]
  */
-class NoSerializeResolverException(message: String) : RuntimeException(message)
+class NoSerializeProcessorException(message: String) : RuntimeException(message)

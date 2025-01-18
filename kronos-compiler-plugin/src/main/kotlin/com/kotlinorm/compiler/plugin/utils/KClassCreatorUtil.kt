@@ -89,7 +89,6 @@ object KClassCreatorUtil {
         with(pluginContext){
             with(builder){
                 declaration.body = irBlockBody {
-                    declaration.body?.statements?.forEach { +it }
                     val lambda = irFactory.buildFun {
                         origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
                         name = SpecialNames.ANONYMOUS
@@ -131,6 +130,7 @@ object KClassCreatorUtil {
                         lambdaArgument(lambda),
                         operator = IrStatementOrigin.EQ
                     )
+                    declaration.body?.statements?.forEach { +it }
                 }
             }
         }

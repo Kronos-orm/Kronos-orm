@@ -1,10 +1,10 @@
 package com.kotlinorm.orm.beans
 
 import com.google.gson.Gson
-import com.kotlinorm.interfaces.KronosSerializeResolver
+import com.kotlinorm.interfaces.KronosSerializeProcessor
 import kotlin.reflect.KClass
 
-object GsonResolver : KronosSerializeResolver {
+object GsonProcessor : KronosSerializeProcessor {
     override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
         return Gson().fromJson(serializedStr, kClass.java)
     }

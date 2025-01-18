@@ -38,9 +38,7 @@ open class KronosParserExtension(private val debug: Boolean, private val debugIn
             .transform(KronosParserTransformer(pluginContext), null)
 
         initFunctions.forEach { (context, function) ->
-            with(context) {
-                buildKClassMapper(function)
-            }
+            context.buildKClassMapper(function)
         }
 
         if (debug) {

@@ -14,7 +14,7 @@ import com.kotlinorm.orm.cascade.oneToMany.School
 import com.kotlinorm.orm.cascade.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
-import com.kotlinorm.orm.beans.GsonResolver
+import com.kotlinorm.orm.beans.GsonProcessor
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 
@@ -31,7 +31,7 @@ class RelationQuery {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { KronosBasicWrapper(ds) }
-            serializeResolver = GsonResolver
+            serializeProcessor = GsonProcessor
         }
     }
 

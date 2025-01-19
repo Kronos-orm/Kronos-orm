@@ -16,10 +16,9 @@
 
 package com.kotlinorm.orm.upsert
 
-import com.kotlinorm.Kronos.serializeResolver
+import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
@@ -32,6 +31,7 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
@@ -163,7 +163,7 @@ class UpsertClause<T : KPojo>(
         paramMapNew.forEach { (key, value) ->
             val field = allFields.find { it.columnName == key.columnName }
             if (field != null && field.serializable && value != null) {
-                paramMap[key.name] = serializeResolver.serialize(value)
+                paramMap[key.name] = serializeProcessor.serialize(value)
             } else {
                 paramMap[key.name] = value
             }

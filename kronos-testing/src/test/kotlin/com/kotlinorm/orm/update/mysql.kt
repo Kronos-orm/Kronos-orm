@@ -2,7 +2,7 @@ package com.kotlinorm.orm.update
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.enums.NoValueStrategyType
-import com.kotlinorm.orm.beans.GsonResolver
+import com.kotlinorm.orm.beans.GsonProcessor
 import com.kotlinorm.orm.beans.sample.Movie
 import com.kotlinorm.orm.beans.sample.User
 import com.kotlinorm.orm.beans.wrappers.SampleMysqlJdbcWrapper
@@ -20,7 +20,7 @@ class Update {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { SampleMysqlJdbcWrapper }
-            serializeResolver = GsonResolver
+            serializeProcessor = GsonProcessor
         }
     }
 

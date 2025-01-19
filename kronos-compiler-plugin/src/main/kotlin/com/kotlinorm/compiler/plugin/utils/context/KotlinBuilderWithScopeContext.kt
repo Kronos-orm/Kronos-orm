@@ -12,7 +12,7 @@ import com.kotlinorm.compiler.plugin.utils.CascadeAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.IgnoreAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.KPojoFqName
 import com.kotlinorm.compiler.plugin.utils.KronosColumnValueType
-import com.kotlinorm.compiler.plugin.utils.SerializableAnnotationsFqName
+import com.kotlinorm.compiler.plugin.utils.SerializeAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.extractDeclarationComment
 import com.kotlinorm.compiler.plugin.utils.fieldSymbol
 import com.kotlinorm.compiler.plugin.utils.getColumnName
@@ -187,16 +187,16 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
      * 3. is a Collection of KPojo, such as List<KPojo>
      * 4. has Annotation `@Cascade`
      *
-     * Specially, if the property is using `@Serializable` annotation, it will be treated as a column.
-     * but the priority of `@Serializable` is lower than `Ignore` annotation and `@Cascade` annotation.
+     * Specially, if the property is using `@Serialize` annotation, it will be treated as a column.
+     * but the priority of `@Serialize` is lower than `Ignore` annotation and `@Cascade` annotation.
      */
     fun IrProperty.isColumn(
         irPropertyType: IrType = this.backingField?.type ?: pluginContext.irBuiltIns.anyNType,
         ignored: IrConstructorCall? = ignoreAnnotationValue()
     ): Boolean {
-        if (ignored.ignoreAll()) return false
+        if (ignored.ignore("all")) return false
         if (hasAnnotation(CascadeAnnotationsFqName)) return false
-        if (hasAnnotation(SerializableAnnotationsFqName)) return true
+        if (hasAnnotation(SerializeAnnotationsFqName)) return true
         if (irPropertyType.isKPojo() || irPropertyType.subType()?.isKPojo() == true) return false
         return true
     }
@@ -207,14 +207,14 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrConstructorCall?.ignoreAll(): Boolean {
+    fun IrConstructorCall?.ignore(name: String): Boolean {
         if (this == null) return false
         val action = this.getValueArgument(0)
         if(action == null) return true
         return (action is IrVarargImpl &&
                 action.elements.isNotEmpty() &&
                 (action.elements.first() is IrGetEnumValueImpl) &&
-                (action.elements.first() as IrGetEnumValueImpl).symbol.owner.name.asString() == "ALL"
+                (action.elements.first() as IrGetEnumValueImpl).symbol.owner.name.asString() == name.uppercase()
                 )
     }
 

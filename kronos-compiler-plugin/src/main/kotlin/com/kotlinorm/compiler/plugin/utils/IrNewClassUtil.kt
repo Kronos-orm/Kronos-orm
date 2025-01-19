@@ -26,9 +26,9 @@ import com.kotlinorm.compiler.helpers.irTry
 import com.kotlinorm.compiler.helpers.mapGetterSymbol
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.referenceFunctions
+import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import com.kotlinorm.compiler.helpers.valueArguments
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irBoolean
@@ -45,6 +45,8 @@ import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.isGetter
+import org.jetbrains.kotlin.ir.util.isSetter
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
@@ -87,14 +89,13 @@ fun KotlinBuilderContext.createToMapFunction(
                     irMutableMapOf(
                         irBuiltIns.stringType,
                         irBuiltIns.anyNType,
-                        if (ignoreDelegate) {
-                            declaration.properties.filter { !it.isDelegated }.associate {
-                                irString(it.name.asString()) to dispatcher.getValue(it)
+                        declaration.properties.filter {
+                            if (ignoreDelegate && it.isDelegated) {
+                                return@filter false
                             }
-                        } else {
-                            declaration.properties.associate {
-                                irString(it.name.asString()) to dispatcher.getValue(it)
-                            }
+                            return@filter !it.ignoreAnnotationValue().ignore("to_map") && !it.isSetter
+                        }.associate {
+                            irString(it.name.asString()) to dispatcher.getValue(it)
                         }
                     )
                 )
@@ -118,6 +119,12 @@ fun KotlinBuilderContext.createFromMapValueFunction(declaration: IrClass, irFunc
             return irBlockBody {
                 val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
                 +declaration.properties.toList().mapNotNull { property ->
+                    if (!property.isVar || property.isConst ||
+                        property.isDelegated || property.isGetter ||
+                        property.ignoreAnnotationValue().ignore("from_map")
+                    ) {
+                        return@mapNotNull null
+                    }
                     dispatcher.setValue(property, applyIrCall(
                         mapGetterSymbol, irString(property.name.asString())
                     ) {
@@ -149,6 +156,12 @@ fun KotlinBuilderContext.createSafeFromMapValueFunction(declaration: IrClass, ir
                 val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
                 +irBlock {
                     declaration.properties.toList().mapNotNull { property ->
+                        if (!property.isVar || property.isConst ||
+                            property.isDelegated || property.isGetter ||
+                            property.ignoreAnnotationValue().ignore("from_map")
+                        ) {
+                            return@mapNotNull null
+                        }
                         dispatcher.setValue(
                             property, applyIrCall(
                                 getSafeValueSymbol,
@@ -162,7 +175,7 @@ fun KotlinBuilderContext.createSafeFromMapValueFunction(declaration: IrClass, ir
                                 ),
                                 irGet(map),
                                 irString(property.name.asString()),
-                                irBoolean(property.hasAnnotation(SerializableAnnotationsFqName))
+                                irBoolean(property.hasAnnotation(SerializeAnnotationsFqName))
                             )
                         )?.let {
                             +irTry(

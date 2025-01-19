@@ -22,7 +22,7 @@ class IrClassNewTransformerTest {
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
             import kotlin.test.assertNotNull
-import com.kotlinorm.enums.IgnoreAction
+            import com.kotlinorm.enums.IgnoreAction
             
             
             /**
@@ -35,7 +35,7 @@ import com.kotlinorm.enums.IgnoreAction
             data class User(
                 @PrimaryKey(identity = true)
                 var id: Int? = null,
-                @NotNull
+                @Necessary
                 var username: String? = null,
                 @ColumnType(TINYINT)
                 @Default("0")
@@ -43,11 +43,17 @@ import com.kotlinorm.enums.IgnoreAction
                 @Column("phone_number") val telephone: String? = null,
                 @Column("email_address") val email: String? = null,
                 val birthday: String? = null,
-                @Serializable
+                @Serialize
                 val habits: List<String>? = null,
-                @Ignore([IgnoreAction.ALL])
                 val age: Int? = null,
-                @Ignore val avatar: String? = null,
+                val avatar: String? = null,
+                @Ignore var ignore: String? = null, // ignore
+                @Ignore([IgnoreAction.ALL])
+                var ignoreAll: String? = null, // ignore all, equals to @Ignore
+                @Ignore([IgnoreAction.FROM_MAP])
+                var ignoreFromMap: String? = null, // ignore from map
+                @Ignore([IgnoreAction.TO_MAP])
+                var ignoreToMap: String? = null, // ignore to map
                 val friendId: Int? = null,
                 @Cascade(["friendId"], ["id"])
                 val friend: User? = null,
@@ -89,7 +95,6 @@ import com.kotlinorm.enums.IgnoreAction
                 assertNotNull(user.kronosColumns().find { it.name == "updateTime" })
                 assertNotNull(user.kronosColumns().find { it.name == "version" })
                 assertNotNull(user.kronosColumns().find { it.name == "deleted" })
-
             }
         """.trimIndent(),
             testBaseName

@@ -208,12 +208,12 @@ Kronos.init {
 data class Movie(
     @PrimaryKey(identity = true)
     val id: Long? = null,// 主键和自动递增
-    val name: String? = null, // 电影名称
+    @Necessary val name: String? = null, // 电影名称
     val directorId: Long? = null, // 导演 ID
     @Cascade(["directorId"], ["id"])
     val director: Director? = null, // 级联关系：一对多
     val relations: List<MovieActorRelation>? = null, // 级联关系：多对多
-    @Serializable
+    @Serialize
     val type: List<String>? = null, // 从字符串反序列化
     @Column("movie_summary")
     val summary: String? = null, // 电影摘要，列别名

@@ -28,15 +28,15 @@ data class MysqlUser(
 //    var age: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
-    @NotNull
+    @Necessary
     var createTime: String? = null,
 
     @UpdateTime
-    @NotNull
+    @Necessary
     var updateTime: LocalDateTime? = null,
 
     @LogicDelete
-    @NotNull
+    @Necessary
     @Default("0")
     var deleted: Boolean? = null
 ) : KPojo

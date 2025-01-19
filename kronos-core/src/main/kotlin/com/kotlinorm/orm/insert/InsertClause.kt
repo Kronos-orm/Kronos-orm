@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.Kronos.serializeResolver
+import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.interfaces.KPojo
@@ -105,7 +105,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             val field = toInsertFields.find { it.name == key }
             if (field != null && value != null) {
                 if (field.serializable) {
-                    paramMapNew[key] = serializeResolver.serialize(value)
+                    paramMapNew[key] = serializeProcessor.serialize(value)
                 } else {
                     paramMapNew[key] = value
                 }

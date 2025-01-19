@@ -3,7 +3,7 @@ package com.kotlinorm.orm.join
 import com.kotlinorm.Kronos
 import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
-import com.kotlinorm.orm.beans.GsonResolver
+import com.kotlinorm.orm.beans.GsonProcessor
 import com.kotlinorm.orm.beans.sample.Address
 import com.kotlinorm.orm.beans.sample.Movie
 import com.kotlinorm.orm.beans.sample.UserRelation
@@ -19,7 +19,7 @@ class Join {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
             dataSource = { SampleMysqlJdbcWrapper }
-            serializeResolver = GsonResolver
+            serializeProcessor = GsonProcessor
         }
     }
 

@@ -204,12 +204,12 @@ More details about connecting to the database and use dynamic data source or mul
 data class Movie(
     @PrimaryKey(identity = true)
     val id: Long? = null, // primary key and auto increment
-    val name: String? = null, // movie name
+    @Necessary val name: String? = null, // movie name
     val directorId: Long? = null, // director id
     @Cascade(["directorId"], ["id"])
     val director: Director? = null, // cascade table & one-to-many
     val relations: List<MovieActorRelation>? = null, // reference list & many-to-many
-    @Serializable
+    @Serialize
     val type: List<String>? = null, // deserialize from string
     @Column("movie_summary")
     val summary: String? = null, // summary with column name

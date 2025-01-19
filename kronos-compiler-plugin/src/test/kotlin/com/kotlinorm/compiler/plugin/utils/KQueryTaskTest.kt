@@ -197,7 +197,7 @@ class KQueryTaskTest {
                     superTypes: List<String>
                 ): List<Any> {
                     assertEquals(isKPojo, false)
-                    assertEquals(superTypes, listOf("kotlin.Int", "kotlin.Number", "kotlin.Comparable", "java.io.Serializable"))
+                    assertEquals(superTypes, listOf("kotlin.Int", "kotlin.Number", "kotlin.Comparable", "java.io.Serialize"))
                     return listOf(1)
                 }
         
@@ -212,7 +212,7 @@ class KQueryTaskTest {
                     superTypes: List<String>
                 ): Any? {
                     assertEquals(isKPojo, false)
-                    assertEquals(superTypes, listOf("kotlin.Int", "kotlin.Number", "kotlin.Comparable", "java.io.Serializable"))
+                    assertEquals(superTypes, listOf("kotlin.Int", "kotlin.Number", "kotlin.Comparable", "java.io.Serialize"))
                     return 1
                 }
         

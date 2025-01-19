@@ -24,7 +24,7 @@ import kotlin.reflect.KClass
  * Serialize and deserialize object with specific class.
  * @author: OUSC
  */
-interface KronosSerializeResolver {
+interface KronosSerializeProcessor {
     /**
      * Deserializes a string into an object of type T.
      *

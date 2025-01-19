@@ -17,7 +17,7 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos.defaultDateFormat
-import com.kotlinorm.Kronos.serializeResolver
+import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
@@ -111,7 +111,7 @@ fun getSafeValue(
         val kClassOfVal = value::class
         if (kClass != kClassOfVal) {
             if (serializable) {
-                serializeResolver.deserialize(
+                serializeProcessor.deserialize(
                     value.toString(), kClass
                 )
             } else {

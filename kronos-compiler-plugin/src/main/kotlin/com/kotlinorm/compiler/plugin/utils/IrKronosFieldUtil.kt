@@ -71,9 +71,9 @@ val ColumnTypeAnnotationsFqName = FqName("com.kotlinorm.annotations.ColumnType")
 val DateTimeFormatAnnotationsFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val CascadeAnnotationsFqName = FqName("com.kotlinorm.annotations.Cascade")
 val IgnoreAnnotationsFqName = FqName("com.kotlinorm.annotations.Ignore")
-val SerializableAnnotationsFqName = FqName("com.kotlinorm.annotations.Serializable")
+val SerializeAnnotationsFqName = FqName("com.kotlinorm.annotations.Serialize")
 val DefaultValueAnnotationsFqName = FqName("com.kotlinorm.annotations.Default")
-val NotNullAnnotationsFqName = FqName("com.kotlinorm.annotations.NotNull")
+val NecessaryAnnotationsFqName = FqName("com.kotlinorm.annotations.Necessary")
 
 
 /**
@@ -191,8 +191,8 @@ fun KotlinBuilderContext.getColumnName(
             var defaultValueAnnotation: IrConstructorCall? = null // @DefaultValue
             var primaryKeyAnnotation: IrConstructorCall? = null // @PrimaryKey
             var dateTimeFormatAnnotation: IrConstructorCall? = null // @DateTimeFormat
-            var notNullAnnotation: IrConstructorCall? = null // @NotNull
-            var serializableAnnotation: IrConstructorCall? = null // @Serializable
+            var requiredAnnotation: IrConstructorCall? = null // @Necessary
+            var serializeAnnotation: IrConstructorCall? = null // @Serializable
 
             annotations.forEach {
                 when (it.symbol.owner.returnType.getClass()!!.fqNameWhenAvailable) {
@@ -203,8 +203,8 @@ fun KotlinBuilderContext.getColumnName(
                     DefaultValueAnnotationsFqName -> defaultValueAnnotation = it
                     PrimaryKeyAnnotationsFqName -> primaryKeyAnnotation = it
                     DateTimeFormatAnnotationsFqName -> dateTimeFormatAnnotation = it
-                    NotNullAnnotationsFqName -> notNullAnnotation = it
-                    SerializableAnnotationsFqName -> serializableAnnotation = it
+                    NecessaryAnnotationsFqName -> requiredAnnotation = it
+                    SerializeAnnotationsFqName -> serializeAnnotation = it
                 }
             }
 
@@ -270,8 +270,8 @@ fun KotlinBuilderContext.getColumnName(
                 isColumn = irProperty.isColumn(irPropertyType, ignoreAnnotation),
                 columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
                 columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),
-                nullable = notNullAnnotation == null && primaryKeyAnnotation == null,
-                serializable = serializableAnnotation != null,
+                nullable = requiredAnnotation == null && primaryKeyAnnotation == null,
+                serializable = serializeAnnotation != null,
                 kDoc = irProperty.getKDocString()
             ).build()
         }

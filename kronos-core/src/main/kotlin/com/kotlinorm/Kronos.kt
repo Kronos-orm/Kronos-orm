@@ -25,12 +25,12 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
-import com.kotlinorm.beans.serialize.NoneSerializeResolver
+import com.kotlinorm.beans.serialize.NoneSerializeProcessor
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
-import com.kotlinorm.interfaces.KronosSerializeResolver
+import com.kotlinorm.interfaces.KronosSerializeProcessor
 import com.kotlinorm.interfaces.NoValueStrategy
 import com.kotlinorm.types.KLoggerFactory
 import java.time.ZoneId
@@ -63,7 +63,7 @@ object Kronos {
     var timeZone: ZoneId = ZoneId.systemDefault()
 
     // 序列化
-    var serializeResolver: KronosSerializeResolver = NoneSerializeResolver
+    var serializeProcessor: KronosSerializeProcessor = NoneSerializeProcessor
 
     val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
 

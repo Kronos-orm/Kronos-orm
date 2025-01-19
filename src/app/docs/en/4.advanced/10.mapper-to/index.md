@@ -20,17 +20,15 @@ data class User {
     }
     
     fun fromMap(map: Map<String, Any?>): User{
-        return User(
-            id = try { map["id"] as Int? } catch (e: IllegalArgumentException) { throw CastException() },
-            name = try { map["name"] as String? } catch (e: IllegalArgumentException) { throw CastException() }
-        )
+        try { this.id = map["id"] }
+        // name is a val property and cannot be assigned directly, so skip it
+        return this
     }
     
     fun safeFromMap(map: Map<String, Any?>): User{
-        return User(
-            id = safeCast(map["id"] as Int?),
-            name = safeCast(map["name"] as String?)
-        )
+        this.id = safeCast(map["id"])
+        // name is a val property and cannot be assigned directly, so skip it
+        return this
     }
 }
 ```
@@ -65,7 +63,7 @@ MapperTo contains a total of 4 functions for type conversion, namely:
 
 ### 1. {{ $.title("Map<String, Any?>.mapperTo(KClass<KPojo>)")}}
 
-Converted to an entity object via Map, a type conversion exception is thrown when the value in the Map does not match the type of the entity object property.
+Converted to an entity object via Map. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
 
 The kClass can be a covariant KPojo type or a concrete entity object type.
 
@@ -93,7 +91,7 @@ The kClass can be a covariant KPojo type or a concrete entity object type.
 
 ### 2. {{ $.title("Map<String, Any?>.mapperTo<T: KPojo>()")}}
 
-When converting a Map to an entity object, a type conversion exception will be thrown if the value in the Map does not match the type of the entity object's properties.
+When converting a Map to an entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
 
 - **Declaration**
 
@@ -115,7 +113,7 @@ When converting a Map to an entity object, a type conversion exception will be t
 
 ### 3. {{ $.title("KPojo.mapperTo(KClass<KPojo>)")}}
 
-By converting an entity object to another entity object, a type conversion exception will be thrown when the type of the attribute of the entity object does not match the type of the attribute of the target entity object.
+By converting an entity object to another entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
 
 kClass can be a covariant KPojo type, or a specific entity object type.
 
@@ -143,7 +141,7 @@ kClass can be a covariant KPojo type, or a specific entity object type.
 
 ### 4. {{ $.title("KPojo.mapperTo<T: KPojo>()")}}
 
-By converting an entity object to another entity object, a type conversion exception will be thrown when the type of the property of the entity object does not match the type of the property of the target entity object.
+By converting an entity object to another entity object. When the value in the Map does not match the type of an entity object property, the property assignment will be skipped.
 
 - **Declaration**
 

@@ -203,16 +203,18 @@ This annotation is used to ignore fields in partial operations.
 
 {{$.params([['action', 'Ignore action', 'IgnoreAction', 'ALL']])}}
 
-1. `IgnoreAction.ALL`: The attribute is ignored, no database operation is performed, and the attribute is not recognized as a database field.
-2. `IgnoreAction.SELECT`: the attribute is ignored and no query operation is performed.
-3. `IgnoreAction.INSERT`: ignores the attribute and does not perform an insert operation (not yet implemented).
-4. `IgnoreAction.UPDATE`: ignore this attribute, no update operations (not yet implemented).
-5. `IgnoreAction.DELETE`: ignore this attribute and do not perform a delete operation (not yet implemented).
-6. `IgnoreAction.CASCADE_SELECT`: ignore this attribute, no cascade query operation.
+1. `IgnoreAction.ALL`: When `ALL` is specified, the property is ignored and no database operation is performed, and the property is not considered a database field.
+2. `IgnoreAction.TO_MAP`: When `TO_MAP` is specified, `KPojo.toDataMap()` will ignore this property.
+3. `IgnoreAction.FROM_MAP`: When `FROM_MAP` is specified, `KPojo.fromDataMap()` and `KPojo.safeFromDataMap()` will ignore this property.
+4. `IgnoreAction.SELECT`: When `SELECT` is specified, the property is ignored and no query operation is performed.
+5. `IgnoreAction.INSERT`: When `INSERT` is specified, the property is ignored and no insert operation is performed (not yet implemented).
+6. `IgnoreAction.UPDATE`: When `UPDATE` is specified, the property is ignored and no update operation is performed (not yet implemented).
+7. `IgnoreAction.DELETE`: When `DELETE` is specified, the property is ignored and no delete operation is performed (not yet implemented).
+8. `IgnoreAction.CASCADE_SELECT`: When `CASCADE_SELECT` is specified, the property is ignored and no cascading query operation is performed.
 
 **Examples**:
 
-1. Exclude an attribute, which is not considered a database field:
+1. Exclude a property, which is not considered a database field:
 
 ```kotlin
 @Table("tb_user")
@@ -225,7 +227,7 @@ data class User(
 ```
 In the above example, the `name` and `age` properties will not be treated as database fields.
 
-2. Exclude a certain attribute, which does not perform a query operation:
+2. Exclude a certain property, which does not perform a query operation:
 
 ```kotlin
 @Table("tb_user")
@@ -238,7 +240,7 @@ data class User(
 
 In the above example, when querying using the KPojo, the `name` property will not be queried.
 
-3. Exclude a certain attribute, which does not perform cascading query operations:
+3. Exclude a certain property, which does not perform cascading query operations:
 
 ```kotlin
 @Table("tb_user")
@@ -257,7 +259,7 @@ data class Company(
 ) : KPojo
 ```
 
-In the above example, when querying `Employee`, the `employees` attribute of `Company` will not be cascaded queried.
+In the above example, when querying `Employee`, the `employees` property of `Company` will not be cascaded queried.
 
 > **Note**
 > Please notice that this annotation is unidirectional, meaning that adding the `@CascadeSelectIgnore` annotation to `employees` will prevent cascading queries on `employees`, but `company` will still be cascaded.

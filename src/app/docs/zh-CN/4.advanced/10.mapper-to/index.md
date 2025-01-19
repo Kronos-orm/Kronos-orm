@@ -8,7 +8,7 @@ Kronos提供了一组函数，用于实体对象与Map之间的转换，这些�
 我们为KPojo生成了toMap()和fromMap()函数，用于实体对象与Map之间的转换:
 ```kotlin
 data class User(
-    val id: Int? = null,
+    var id: Int? = null,
     val name: String? = null
 ) : KPojo
 
@@ -19,20 +19,16 @@ data class User {
     }
     
     fun fromMap(map: Map<String, Any?>): User{
-        return User(
-            id = try { map["id"] as Int? } catch (e: IllegalArgumentException) { throw CastException() },
-            name = try { map["name"] as String? } catch (e: IllegalArgumentException) { throw CastException() }
-        )
+        try { this.id = map["id"] }
+        // name为val属性，无法直接赋值，因此跳过
+        return this
     }
     
     fun safeFromMap(map: Map<String, Any?>): User{
-        return User(
-            id = safe(map["id"] as Int?),
-            name = safe(map["name"] as String?)
-        )
+        this.id = safeCast(map["id"])
+        // name为val属性，无法直接赋值，因此跳过
+        return this
     }
-
-
 }
 ```
 
@@ -66,7 +62,7 @@ MapperTo共包含4个函数用于类型转换，分别是：
 
 ### 1. {{ $.title("Map<String, Any?>.mapperTo(KClass<KPojo>)")}}
 
-通过Map转换为实体对象，当Map中的值与实体对象属性的类型不匹配时，会抛出类型转换异常。
+通过Map转换为实体对象，当Map中的值与实体对象属性的类型不匹配时，则会跳过该属性。
 
 kClass可以是一个协变的KPojo类型，也可以是一个具体的实体对象类型。
 
@@ -94,7 +90,7 @@ kClass可以是一个协变的KPojo类型，也可以是一个具体的实体对
 
 ### 2. {{ $.title("Map<String, Any?>.mapperTo<T: KPojo>()")}}
 
-通过Map转换为实体对象，当Map中的值与实体对象属性的类型不匹配时，会抛出类型转换异常。
+通过Map转换为实体对象，当Map中的值与实体对象属性的类型不匹配时，则会跳过该属性。
 
 - **函数声明**
 
@@ -116,7 +112,7 @@ kClass可以是一个协变的KPojo类型，也可以是一个具体的实体对
 
 ### 3. {{ $.title("KPojo.mapperTo(KClass<KPojo>)")}}
 
-通过实体对象转换为另一个实体对象，当实体对象属性的类型与目标实体对象属性的类型不匹配时，会抛出类型转换异常。
+通过实体对象转换为另一个实体对象，当实体对象属性的类型与目标实体对象属性的类型不匹配时，则会跳过该属性。
 
 kClass可以是一个协变的KPojo类型，也可以是一个具体的实体对象类型。
 
@@ -144,7 +140,7 @@ kClass可以是一个协变的KPojo类型，也可以是一个具体的实体对
 
 ### 4. {{ $.title("KPojo.mapperTo<T: KPojo>()")}}
 
-通过实体对象转换为另一个实体对象，当实体对象属性的类型与目标实体对象属性的类型不匹配时，会抛出类型转换异常。
+通过实体对象转换为另一个实体对象，当实体对象属性的类型与目标实体对象属性的类型不匹配时，则会跳过该属性。
 
 - **函数声明**
 

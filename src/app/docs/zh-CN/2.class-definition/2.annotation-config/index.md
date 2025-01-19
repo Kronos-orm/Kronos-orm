@@ -205,11 +205,13 @@ data class Company(
 {{$.params([['action', '忽略操作', 'IgnoreAction', 'ALL']])}}
 
 1. `IgnoreAction.ALL`：忽略该属性，不进行任何数据库操作，也不认定该属性为数据库字段。
-2. `IgnoreAction.SELECT`：忽略该属性，不进行查询操作。
-3. `IgnoreAction.INSERT`：忽略该属性，不进行插入操作（尚未实现）。
-4. `IgnoreAction.UPDATE`：忽略该属性，不进行更新操作（尚未实现）。
-5. `IgnoreAction.DELETE`：忽略该属性，不进行删除操作（尚未实现）。
-6. `IgnoreAction.CASCADE_SELECT`：忽略该属性，不进行级联查询操作。
+2. `IgnoreAction.TO_MAP`：忽略该属性，`KPojo.toDataMap()`方法不会将该属性加入到Map中。
+3. `IgnoreAction.FROM_MAP`：忽略该属性，`KPojo.fromDataMap()`和`KPojo.safeFromDataMap()`方法不会将Map中的该属性赋值给实体对象。
+4. `IgnoreAction.SELECT`：忽略该属性，不进行查询操作。
+5. `IgnoreAction.INSERT`：忽略该属性，不进行插入操作（尚未实现）。
+6. `IgnoreAction.UPDATE`：忽略该属性，不进行更新操作（尚未实现）。
+7. `IgnoreAction.DELETE`：忽略该属性，不进行删除操作（尚未实现）。
+8. `IgnoreAction.CASCADE_SELECT`：忽略该属性，不进行级联查询操作。
 
 **示例**：
 

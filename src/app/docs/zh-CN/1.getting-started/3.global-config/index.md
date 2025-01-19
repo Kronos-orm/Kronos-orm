@@ -226,20 +226,20 @@ Kronos.init {
 将数据库中的字符串在查询时反序列化为对象，在插入数据库时自动序列化对象。
 
 **参数**：
-{{$.params([['serializeResolver', '序列化反序列化处理器', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
+{{$.params([['serializeProcessor', '序列化反序列化处理器', 'KronosSerializeProcessor', 'NoneSerializeProcessor']])}}
 
-通过创建`KronosSerializeResolver`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-resolver", ["自动序列化与反序列化"])}}。
+通过创建`KronosSerializeProcessor`自定义序列化解析器，详见：{{ $.keyword("concept/serialize-processor", ["自动序列化与反序列化"])}}。
 
 如可以通过引入`GSON`库来实现序列化解析器：
 
-```kotlin group="GsonResolver" name="Main.kt" icon="kotlin"
+```kotlin group="GsonProcessor" name="Main.kt" icon="kotlin"
 Kronos.init {
-    serializeResolver = GsonResolver
+    serializeProcessor = GsonProcessor
 }
 ```
 
-```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
-object GsonResolver : KronosSerializeResolver {
+```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
+object GsonProcessor : KronosSerializeProcessor {
     // 使用GSON序列化对象
     override fun serialize(obj: Any): String {
         return Gson().toJson(obj)

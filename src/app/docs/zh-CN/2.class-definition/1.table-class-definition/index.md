@@ -91,7 +91,7 @@ data class User(
     val listStr: String? = null
 ) : KPojo {
     // 委托序列化反序列化属性
-    var list: List<String>? by serializable(::listStr)
+    var list: List<String>? by serialize(::listStr)
 }
 ```
 ### 使用匿名类创建对象进行数据库操作
@@ -129,7 +129,7 @@ data class User(
     // 设置name字段为非空
     // 设置列类型为VARCHAR，长度为128
     @Column("name")
-    @NotNull
+    @Necessary
     @ColumnType(VARCHAR, 128)
     var username: String? = null,
 
@@ -140,7 +140,7 @@ data class User(
     var age: Int? = null,
 
     // 设置companyId字段为非空
-    @NotNull
+    @Necessary
     var companyId: Int? = null,
 
     // 级联设置，无需实体外键，通过companyId关联Company表的id

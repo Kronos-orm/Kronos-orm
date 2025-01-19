@@ -225,20 +225,20 @@ Kronos.init {
 Deserialize strings in the database to objects at query time, and automatically serialize objects when inserting into the database.
 
 **Parameters**:
-{{$.params([['serializeResolver', 'Serialization Deserialization Processor', 'KronosSerializeResolver', 'NoneSerializeResolver']])}}
+{{$.params([['serializeProcessor', 'Serialization Deserialization Processor', 'KronosSerializeProcessor', 'NoneSerializeProcessor']])}}
 
-By creating a `KronosSerializeResolver` custom serialization resolver, see: {{ $.keyword("concept/serialize-resolver", ["Automatic Serialization and Deserialization"])}}.
+By creating a `KronosSerializeProcessor` custom serialization processor, see: {{ $.keyword("concept/serialize-processor", ["Automatic Serialization and Deserialization"])}}.
 
 For example, serialization parsers can be implemented by introducing the `GSON` library:
 
-```kotlin group="GsonResolver" name="Main.kt" icon="kotlin"
+```kotlin group="GsonProcessor" name="Main.kt" icon="kotlin"
 Kronos.init {
-    serializeResolver = GsonResolver
+    serializeProcessor = GsonProcessor
 }
 ```
 
-```kotlin group="GsonResolver" name="GsonResolver.kt" icon="kotlin"
-object GsonResolver : KronosSerializeResolver {
+```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
+object GsonProcessor : KronosSerializeProcessor {
     // Use GSON to serialize objects
     override fun serialize(obj: Any): String {
         return Gson().toJson(obj)

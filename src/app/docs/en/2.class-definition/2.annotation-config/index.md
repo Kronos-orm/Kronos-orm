@@ -147,7 +147,7 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serializable") }}List Serialization/Deserialization Settings
+## {{ $.annotation("Serialize") }}List Serialization/Deserialization Settings
 
 Used to declare whether the column needs to be autoserialized, deserialized or not, fields using this annotation Kronos will invoke the serialization deserialization handler (see {{
 $.keyword("getting-started/global-config", ["Global Settings", "Serialization Deserialization Processor"])
@@ -155,7 +155,7 @@ $.keyword("getting-started/global-config", ["Global Settings", "Serialization De
 
 ```kotlin
 data class User(
-    @Serializable
+    @Serialize
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
@@ -305,14 +305,14 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("NotNull") }}Column non-null constraint
+## {{ $.annotation("Necessary") }}Column non-null constraint
 
 This annotation is used to declare a column as non-null; if not specified, the default non-null constraint is used.
 
 ```kotlin
 @Table("tb_user")
 data class User(
-    @NotNull
+    @Necessary
     val name: String? = null
 ) : KPojo
 ```

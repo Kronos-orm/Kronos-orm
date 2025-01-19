@@ -64,7 +64,7 @@ data class User(
     val listStr: String? = null
 ) : KPojo {
     // Delegate serialization deserialization properties
-    var list: List<String>? by serializable(::listStr)
+    var list: List<String>? by serialize(::listStr)
 }
 ```
 ### Creating objects for database operations using anonymous objects
@@ -101,7 +101,7 @@ data class User(
     // Set the name field as not null.
     // Set the column type to VARCHAR, length 128.
     @Column("name")
-    @NotNull
+    @Necessary
     @ColumnType(VARCHAR, 128)
     var username: String? = null,
     // Set the column type to TINYINT.
@@ -110,7 +110,7 @@ data class User(
     @Default("0")
     var age: Int? = null,
     // Set companyId field as not null.
-    @NotNull
+    @Necessary
     var companyId: Int? = null,
     // Cascade settings, no need for entity foreign key, relate to the id of the Company table through companyId.
     @Cascade(["companyId"], ["id"])

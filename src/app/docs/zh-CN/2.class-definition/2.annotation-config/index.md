@@ -149,7 +149,7 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Serializable") }}列序列化反序列化设置
+## {{ $.annotation("Serialize") }}列序列化反序列化设置
 
 用于声明该列是否需要进行自动序列化、反序列化，使用该注解的字段Kronos将调用序列化反序列化处理器（见{{
 $.keyword("getting-started/global-config", ["全局设置", "序列化反序列化处理器"])
@@ -157,7 +157,7 @@ $.keyword("getting-started/global-config", ["全局设置", "序列化反序列�
 
 ```kotlin
 data class User(
-    @Serializable
+    @Serialize
     val info: List<String>? = emptyList()
 ) : KPojo
 ```
@@ -317,14 +317,14 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("NotNull") }}列非空约束
+## {{ $.annotation("Necessary") }}列非空约束
 
 此注解用于声明列为非空，如果不指定则使用默认的非空约束
 
 ```kotlin
 @Table("tb_user")
 data class User(
-    @NotNull
+    @Necessary
     val name: String? = null
 ) : KPojo
 ```

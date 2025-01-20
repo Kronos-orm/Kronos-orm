@@ -17,11 +17,11 @@
 package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn
@@ -65,7 +65,8 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
         selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
         selectClause.selectAll = false
         val cntTask = selectClause.build(wrapper)
-        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS t"
+        val innerSql = recordsTask.atomicTask.sql.replace(Regex("LIMIT \\d+ OFFSET \\d+"), "")
+        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM ($innerSql) AS t"
         cntTask.beforeQuery = null
         cntTask.afterQuery = null
         return cntTask to recordsTask

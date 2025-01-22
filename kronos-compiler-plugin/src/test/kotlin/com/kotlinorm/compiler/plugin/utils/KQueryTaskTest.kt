@@ -155,7 +155,6 @@ class KQueryTaskTest {
             import com.kotlinorm.interfaces.KAtomicActionTask
             import com.kotlinorm.interfaces.KAtomicQueryTask
             import com.kotlinorm.interfaces.KronosDataSourceWrapper
-            import javax.sql.DataSource
             import kotlin.reflect.KClass
 
             import com.kotlinorm.Kronos
@@ -224,7 +223,7 @@ class KQueryTaskTest {
                     TODO("Not yet implemented")
                 }
         
-                override fun transact(block: (DataSource) -> Any?): Any? {
+                override fun transact(block: () -> Any?): Any? {
                     TODO("Not yet implemented")
                 }
         

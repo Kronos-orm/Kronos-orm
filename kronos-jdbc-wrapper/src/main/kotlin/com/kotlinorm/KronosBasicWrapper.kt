@@ -321,7 +321,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         val conn = dataSource.connection
         conn.autoCommit = false
         try {
-            res = block(dataSource)
+            res = block()
             conn.commit()
         } catch (e: Exception) {
             conn.rollback()

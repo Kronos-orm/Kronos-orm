@@ -62,11 +62,17 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
 
     fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
         val recordsTask = selectClause.build(wrapper)
-        selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
-        selectClause.selectAll = false
+        selectClause.pageEnabled = false
+        selectClause.limitCapacity = 0
+        if(selectClause.selectAll || selectClause.selectFields.none { it.type == CUSTOM_CRITERIA_SQL }) {
+            // 不能直接将 select字段变成1，因为查询的字段可能在where条件中使用
+            // 例如：select (select count(1) from table1) as count from table2 where count > 0
+            // 只有查询的字段为空或者没有自定义sql时才能将select字段变成1
+            selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
+            selectClause.selectAll = false
+        }
         val cntTask = selectClause.build(wrapper)
-        val innerSql = recordsTask.atomicTask.sql.replace(Regex("LIMIT \\d+ OFFSET \\d+"), "")
-        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM ($innerSql) AS t"
+        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS t"
         cntTask.beforeQuery = null
         cntTask.afterQuery = null
         return cntTask to recordsTask

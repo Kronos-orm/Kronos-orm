@@ -71,7 +71,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var allFields: LinkedHashSet<Field>
     open lateinit var listOfPojo: MutableList<KPojo>
     private var condition: Criteria? = null
-    private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     override var selectAll: Boolean = false
@@ -84,8 +83,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var groupEnabled = false
     private var havingEnabled = false
     private var orderEnabled = false
-    private var pageEnabled = false
-    private var limitCapacity = 0
+    override var pageEnabled = false
+    override var limitCapacity = 0
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
     private var cascadeSelectedProps: Set<Field>? = null
@@ -566,13 +565,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             buildCondition = listOfNotNull(
                 buildCondition,
                 "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, databaseOfTable)} = $value".asSql()
-            ).toCriteria()
-        }
-
-        // 如果存在额外的最后条件，则将其添加到查询条件中
-        if (lastCondition != null) {
-            buildCondition = listOfNotNull(
-                buildCondition, lastCondition
             ).toCriteria()
         }
 

@@ -61,14 +61,13 @@ class SelectClause<T : KPojo>(
     private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     internal var condition: Criteria? = null
-    private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
-    private var limitCapacity = 0
+    override var limitCapacity = 0
     private var distinctEnabled = false
-    private var pageEnabled = false
+    override var pageEnabled = false
     private var groupEnabled = false
     private var havingEnabled = false
     private var orderEnabled = false
@@ -315,13 +314,6 @@ class SelectClause<T : KPojo>(
         if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
-            ).toCriteria()
-        }
-
-        // 如果存在额外的最后条件，则将其添加到查询条件中
-        if (lastCondition != null) {
-            buildCondition = listOfNotNull(
-                buildCondition, lastCondition
             ).toCriteria()
         }
 

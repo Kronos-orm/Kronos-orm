@@ -22,13 +22,13 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，
 **使操作数据库变得更加简单**。
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
 [![Maven central](https://img.shields.io/maven-central/v/com.kotoframework/koto-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.kotoframework%22)
 [![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.kotoframework/koto-core.svg)](https://s01.oss.sonatype.org/content/repositories/snapshots/com/kotoframework/)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-[官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start)
+[官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
 
 --------
@@ -84,10 +84,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin 和构建工具
 
 - **JDK 8+**
-- **Kotlin 2.0.0+**
+- **Kotlin 2.1.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.0.0 或更高版本。
+> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.1.0 或更高版本。
 >
 > 如果您在 **Intellij IDEA** 中构建失败，并使用 **Maven** 构建、
 > 请尝试启用以下设置: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner /
@@ -200,7 +200,7 @@ Kronos.init {
 有关连接数据库和使用动态数据源或多个数据源的更多详情，请参阅
 文档](https://kotlinorm.com/#/documentation/zh-CN/database/connect-to-db)。
 
-### 🎨 Table Model Definition(Annotation Style)
+### 🎨 表模型定义（通过注解）
 
 ```kotlin
 @Table(name = "tb_movie")
@@ -208,12 +208,12 @@ Kronos.init {
 data class Movie(
     @PrimaryKey(identity = true)
     val id: Long? = null,// 主键和自动递增
-    val name: String? = null, // 电影名称
+    @Necessary val name: String? = null, // 电影名称
     val directorId: Long? = null, // 导演 ID
     @Cascade(["directorId"], ["id"])
     val director: Director? = null, // 级联关系：一对多
     val relations: List<MovieActorRelation>? = null, // 级联关系：多对多
-    @Serializable
+    @Serialize
     val type: List<String>? = null, // 从字符串反序列化
     @Column("movie_summary")
     val summary: String? = null, // 电影摘要，列别名
@@ -227,9 +227,9 @@ data class Movie(
 }
 ```
 
-### 🎨 Table Model Definition(Dsl 风格)
+### 🎨 表模型定义(Dsl 风格)
 
-即将推出...
+即将推出...[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
 
 ------------
 
@@ -397,5 +397,13 @@ Kronos-ORM 遵循 Apache 2.0 许可发布。
 </a>
 
 -------------------
+
+如果你对 Kronos-ORM 感兴趣，欢迎加入我们的社区！
+
+[![discord](https://img.shields.io/badge/Discord-Kronos_ORM-blue?logo=discord&logoColor=white)](https://discord.gg/Vn8EzxRX)
+
+[![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
+
+![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
 
 **如果您喜欢 Kronos-ORM，请给我们一个Star ⭐️，谢谢！**

@@ -16,17 +16,17 @@
 
 package com.kotlinorm.beans.serialize
 
-import com.kotlinorm.interfaces.KronosSerializeResolver
+import com.kotlinorm.interfaces.KronosSerializeProcessor
 import kotlin.reflect.KClass
 
 /**
  * None Serialize Resolver
  *
- * Default implement of [KronosSerializeResolver], throw [UnsupportedOperationException]
+ * Default implement of [KronosSerializeProcessor], throw [UnsupportedOperationException]
  *
  * @author OUSC
  */
-object NoneSerializeResolver : KronosSerializeResolver {
+object NoneSerializeProcessor : KronosSerializeProcessor {
     override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
         throw UnsupportedOperationException()
     }

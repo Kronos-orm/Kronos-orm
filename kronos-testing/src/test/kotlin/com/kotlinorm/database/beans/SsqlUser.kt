@@ -23,13 +23,13 @@ data class SsqlUser(
 //    var age: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
-    @NotNull
+    @Necessary
     var createTime: String? = null,
     @UpdateTime
-    @NotNull
+    @Necessary
     var updateTime: LocalDateTime? = null,
     @LogicDelete
-    @NotNull
+    @Necessary
     var deleted: Boolean? = null,
     @ColumnType(XML)
     var xml: String? = null

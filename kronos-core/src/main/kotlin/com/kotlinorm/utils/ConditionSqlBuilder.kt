@@ -17,7 +17,7 @@
 package com.kotlinorm.utils
 
 import com.kotlinorm.Kronos.noValueStrategy
-import com.kotlinorm.Kronos.serializeResolver
+import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.FunctionField
@@ -98,7 +98,7 @@ object ConditionSqlBuilder {
     ) {
         if (value != null && value !is FunctionField) {
             this[key] = when {
-                field.serializable -> serializeResolver.serialize(value)
+                field.serializable -> serializeProcessor.serialize(value)
                 else -> value
             }
         }

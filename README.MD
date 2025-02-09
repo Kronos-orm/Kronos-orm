@@ -21,13 +21,13 @@ Kronos is a modern ORM framework designed for Kotlin based on the compiler plugi
 
 KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has **powerful expressive power and concise , semantic writing to make the operation of the database has become more simple**.
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1839b25a691b49ee93a0ace2a6255cb0)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![build](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
 [![Maven central](https://img.shields.io/maven-central/v/com.kotoframework/koto-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.kotoframework%22)
 [![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.kotoframework/koto-core.svg)](https://s01.oss.sonatype.org/content/repositories/snapshots/com/kotoframework/)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-[Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start)
+[Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
 
 --------
@@ -82,10 +82,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin and Build Tools
 
 - **JDK 8+**
-- **Kotlin 2.0.0+**
+- **Kotlin 2.1.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> Please make sure your kotlin plugin for ide supports kotlin 2.0.0 or higher.
+> Please make sure your kotlin plugin for ide supports kotlin 2.1.0 or higher.
 >
 > If you built failed in **Intellij IDEA** and build with **Maven**,
 > please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.
@@ -204,12 +204,12 @@ More details about connecting to the database and use dynamic data source or mul
 data class Movie(
     @PrimaryKey(identity = true)
     val id: Long? = null, // primary key and auto increment
-    val name: String? = null, // movie name
+    @Necessary val name: String? = null, // movie name
     val directorId: Long? = null, // director id
     @Cascade(["directorId"], ["id"])
     val director: Director? = null, // cascade table & one-to-many
     val relations: List<MovieActorRelation>? = null, // reference list & many-to-many
-    @Serializable
+    @Serialize
     val type: List<String>? = null, // deserialize from string
     @Column("movie_summary")
     val summary: String? = null, // summary with column name
@@ -226,6 +226,7 @@ data class Movie(
 ### 🎨 Table Model Definition(Dsl Style)
 
 Coming soon...
+[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
 
 ------------
 
@@ -391,5 +392,13 @@ We would like to express our gratitude to all the individuals who have already c
 </a>
 
 -------------------
+
+If you are interested in Kronos-ORM, please join our community and chat with us!
+
+[![discord](https://img.shields.io/badge/Discord-Kronos_ORM-blue?logo=discord&logoColor=white)](https://discord.gg/Vn8EzxRX)
+
+[![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
+
+![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
 
 **If you like Kronos-ORM, please give us a star ⭐️, thank you!**

@@ -16,20 +16,21 @@
 
 package com.kotlinorm
 
+import com.kotlinorm.annotations.KronosInit
+import com.kotlinorm.beans.config.DefaultNoValueStrategy
 import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.config.LineHumpNamingStrategy
+import com.kotlinorm.beans.config.NoneNamingStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.beans.config.NoneNamingStrategy
-import com.kotlinorm.beans.serialize.NoneSerializeResolver
-import com.kotlinorm.beans.config.DefaultNoValueStrategy
-import com.kotlinorm.beans.config.LineHumpNamingStrategy
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper
+import com.kotlinorm.beans.serialize.NoneSerializeProcessor
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
-import com.kotlinorm.interfaces.KronosSerializeResolver
+import com.kotlinorm.interfaces.KronosSerializeProcessor
 import com.kotlinorm.interfaces.NoValueStrategy
 import com.kotlinorm.types.KLoggerFactory
 import java.time.ZoneId
@@ -39,11 +40,7 @@ object Kronos {
     var defaultLogger: KLoggerFactory =
         {
             BundledSimpleLoggerAdapter(
-                if (it is String) {
-                    it
-                } else {
-                    it::class.simpleName!!
-                }
+                it as? String ?: it::class.simpleName!!
             )
         }
 
@@ -66,7 +63,7 @@ object Kronos {
     var timeZone: ZoneId = ZoneId.systemDefault()
 
     // 序列化
-    var serializeResolver: KronosSerializeResolver = NoneSerializeResolver
+    var serializeProcessor: KronosSerializeProcessor = NoneSerializeProcessor
 
     val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
 
@@ -93,6 +90,7 @@ object Kronos {
     // 默认日期格式
     var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
+    @KronosInit
     fun init(action: Kronos.() -> Unit) {
         this.action()
         defaultLogger(this).info(

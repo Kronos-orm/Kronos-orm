@@ -21,23 +21,20 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-context(IrPluginContext)
-val JavaLangExceptionSymbol
+val IrPluginContext.JavaLangExceptionSymbol
     get() = referenceClass("java.lang.Exception")!!
 
-context(IrPluginContext)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-val printStackTraceSymbol
+val IrPluginContext.printStackTraceSymbol
     get() = referenceClass("java.lang.Throwable")!!.getSimpleFunction("printStackTrace")!!
 
-context(IrPluginContext)
 class IrTryBuilder(private val builder: IrBuilderWithScope) {
     private val catches = mutableListOf<IrCatch>()
     private val caughtTypes = mutableSetOf<IrType>()
     private var finallyExpression: IrExpression? = null
 
     @OptIn(ExperimentalContracts::class)
-    fun irCatch(
+    fun IrPluginContext.irCatch(
         throwableType: IrType = JavaLangExceptionSymbol.defaultType,
         body: IrBuilderWithScope.(IrVariable) -> IrExpression = {
             applyIrCall(printStackTraceSymbol) {
@@ -72,7 +69,6 @@ class IrTryBuilder(private val builder: IrBuilderWithScope) {
     fun build(result: IrExpression, type: IrType): IrTry = builder.irTry(type, result, catches, finallyExpression)
 }
 
-context(IrPluginContext)
 inline fun IrBuilderWithScope.irTry(
     result: IrExpression = irBlock {},
     type: IrType = result.type,

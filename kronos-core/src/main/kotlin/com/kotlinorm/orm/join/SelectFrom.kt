@@ -48,10 +48,12 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.logAndReturn
+import com.kotlinorm.utils.pop
+import com.kotlinorm.utils.push
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import java.util.*
 
 /**
  * Select From
@@ -69,7 +71,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var allFields: LinkedHashSet<Field>
     open lateinit var listOfPojo: MutableList<KPojo>
     private var condition: Criteria? = null
-    private var lastCondition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     override var selectAll: Boolean = false
@@ -82,8 +83,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     private var groupEnabled = false
     private var havingEnabled = false
     private var orderEnabled = false
-    private var pageEnabled = false
-    private var limitCapacity = 0
+    override var pageEnabled = false
+    override var limitCapacity = 0
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
     private var cascadeSelectedProps: Set<Field>? = null
@@ -104,15 +105,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             on(t1)
             criteria
 
-            val stack = Stack<Criteria>()
+            val stack = KStack<Criteria>()
             var cur = criteria
             var prev = criteria
             while (null != cur || !stack.isEmpty()) {
                 while (null != cur) {
                     stack.push(cur)
-                    cur = if (cur.children.size > 0) cur.children[0] else null
+                    cur = if (cur.children.isNotEmpty()) cur.children.first() else null
                 }
-                val top = stack.peek()
+                val top = stack.pop()
                 if (top.children.size <= 1 || top.children[1] == prev) {
                     prev = top
                     val topTableName = top.tableName
@@ -564,13 +565,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             buildCondition = listOfNotNull(
                 buildCondition,
                 "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, databaseOfTable)} = $value".asSql()
-            ).toCriteria()
-        }
-
-        // 如果存在额外的最后条件，则将其添加到查询条件中
-        if (lastCondition != null) {
-            buildCondition = listOfNotNull(
-                buildCondition, lastCondition
             ).toCriteria()
         }
 

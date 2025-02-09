@@ -31,4 +31,4 @@ import com.kotlinorm.enums.IgnoreAction
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Ignore(val targets: Array<IgnoreAction>)
+annotation class Ignore(val targets: Array<IgnoreAction> = [IgnoreAction.ALL])

@@ -25,5 +25,7 @@ abstract class KSelectable<T : KPojo>(
 ) {
     open var selectFields: LinkedHashSet<Field> = linkedSetOf()
     abstract var selectAll: Boolean
+    abstract var pageEnabled: Boolean
+    abstract var limitCapacity: Int
     abstract fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask
 }

@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 data class User(
     @PrimaryKey(identity = true)
     var id: Int? = null,
-    @NotNull
+    @Necessary
     var username: String? = null,
     @ColumnType(TINYINT)
     @Default("0")

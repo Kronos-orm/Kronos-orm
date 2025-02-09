@@ -42,7 +42,7 @@ import kotlin.reflect.KClass
  * A wrapper class for JDBC data sources that implements the `KronosDataSourceWrapper` interface.
  * @author: OUSC
  **/
-class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceWrapper {
+class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
     private var _metaUrl: String
     private var _userName: String
     private var _metaDbType: DBType
@@ -316,12 +316,12 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @param block the block of code to execute in the transaction
      * @return Any? the return value of block
      */
-    override fun transact(block: (DataSource) -> Any?): Any? {
+    override fun transact(block: () -> Any?): Any? {
         val res: Any?
         val conn = dataSource.connection
         conn.autoCommit = false
         try {
-            res = block(dataSource)
+            res = block()
             conn.commit()
         } catch (e: Exception) {
             conn.rollback()
@@ -340,7 +340,7 @@ class KronosBasicWrapper(private val dataSource: DataSource) : KronosDataSourceW
      * @return T the result of the block
      */
     @JvmName("transactT")
-    inline fun <reified T> transact(noinline block: (DataSource) -> T): T {
+    inline fun <reified T> transact(noinline block: () -> T): T {
         return transact(block) as T
     }
 

@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("kronos.jvm")
     id("com.kotlinorm.kronos-gradle-plugin")
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -39,11 +40,13 @@ dependencies {
     testImplementation("com.oracle.database.jdbc:ojdbc8:23.2.0.0")
     testImplementation("com.google.code.gson:gson:2.11.0")
 
-    //after additional testing, wrapper in spring-x 6.x also works, we will provide additional examples
-    testImplementation("org.springframework:spring-jdbc:5.3.37")
-    testImplementation("org.springframework:spring-tx:5.3.37")
-    testImplementation("org.springframework:spring-beans:5.3.37")
-    testImplementation("org.springframework:spring-core:5.3.37")
+//    //after additional testing, wrapper in spring-x 6.x also works, we will provide additional examples
+//    testImplementation("org.springframework:spring-jdbc:5.3.37")
+//    testImplementation("org.springframework:spring-tx:5.3.37")
+//    testImplementation("org.springframework:spring-beans:5.3.37")
+//    testImplementation("org.springframework:spring-core:5.3.37")
+
+    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }
 
 configurations.all {

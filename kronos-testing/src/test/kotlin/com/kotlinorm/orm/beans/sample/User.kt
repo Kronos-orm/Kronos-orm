@@ -6,8 +6,8 @@ import com.kotlinorm.enums.KColumnType.TINYINT
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
-@TableIndex("idx_username", ["name"], "UNIQUE")
-@TableIndex(name = "idx_multi", columns = ["id", "name"], "UNIQUE")
+@TableIndex("idx_username", ["username"], "UNIQUE")
+@TableIndex(name = "idx_multi", columns = ["id", "username"], "UNIQUE")
 data class User(
     @PrimaryKey(identity = true)
     var id: Int? = null,

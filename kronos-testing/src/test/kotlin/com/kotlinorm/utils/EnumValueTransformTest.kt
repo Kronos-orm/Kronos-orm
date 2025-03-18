@@ -5,7 +5,7 @@ import com.kotlinorm.beans.transformers.TransformerManager
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.ValueTransformer
 import com.kotlinorm.utils.Extensions.safeMapperTo
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 

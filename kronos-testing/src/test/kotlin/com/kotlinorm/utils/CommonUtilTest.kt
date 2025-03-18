@@ -5,17 +5,17 @@ import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransformer
+import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import org.junit.jupiter.api.assertThrows
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.streams.toList
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class CommonUtilTest {
@@ -164,7 +164,7 @@ class CommonUtilTest {
         assertEquals(instant.toEpochMilliseconds(), getTypeSafeValue("kotlin.Long", dateTime))
 
         // 测试无效输入
-        assertThrows<NumberFormatException> {
+        assertFailsWith<InvalidDataAccessApiUsageException> {
             getTypeSafeValue("kotlin.Int", "invalid")
         }
         assertEquals(false, getTypeSafeValue("kotlin.Boolean", "invalid"))

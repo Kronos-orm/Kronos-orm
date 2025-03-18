@@ -1,12 +1,11 @@
 plugins {
-    id("kronos.jvm")
-    id("kronos.publishing")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kronos.dokka)
 }
-
-description = "Kronos logging plugin, supports the most common log types."
 
 dependencies {
     compileOnly(project(":kronos-core"))
-    implementation(kotlin("reflect"))
-    testImplementation(kotlin("test"))
+    implementation(libs.kotlin.reflect)
+    testImplementation(libs.kotlin.test)
 }

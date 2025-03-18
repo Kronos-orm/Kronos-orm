@@ -1,0 +1,53 @@
+[versions]
+kotlin = "2.1.0"
+dsl = "5.2.0"
+datetime = "0.6.1"
+serialization = "1.8.0"
+dbcp2 = "2.12.0"
+mysql-jdbc-driver = "9.2.0"
+sqlite-jdbc-driver = "3.46.0.0"
+mssql-jdbc-driver = "12.7.0.jre8-preview"
+postgresql-jdbc-driver = "42.7.3"
+oracle-jdbc-driver = "23.2.0.0"
+gsonVer = "2.11.0"
+dokkaVer = "2.0.0"
+mavenCore = "3.9.9"
+autoService = "1.1.1"
+kotlinCompilerTest = "0.7.0"
+
+[libraries]
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-maven-plugin = { module = "org.jetbrains.kotlin:kotlin-maven-plugin", version.ref = "kotlin" }
+dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokkaVer" }
+ktx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+ktx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
+ktx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+dbcp2 = { module = "org.apache.commons:commons-dbcp2", version.ref = "dbcp2" }
+driver-jdbc-mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-jdbc-driver" }
+driver-jdbc-sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc-driver" }
+driver-jdbc-mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql-jdbc-driver" }
+driver-jdbc-postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql-jdbc-driver" }
+driver-jdbc-oracle = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc-driver" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gsonVer" }
+maven-core = { module = "org.apache.maven:maven-core", version.ref="mavenCore" }
+maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version = "0.31.0" }
+auto-service = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
+kct = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlinCompilerTest" }
+
+[bundles]
+ktx-serialization = ["ktx-serialization-core", "ktx-serialization-json"]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-dsl = { id = "org.gradle.kotlin.kotlin-dsl", version.ref = "dsl" }
+ktx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokkaVer" }
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kronos-gradle-plugin = { id = "com.kotlinorm.kronos-gradle-plugin" }
+kronos-publishing = { id = "kronos.publishing" }
+kronos-dokka = { id = "kronos.dokka-convention" }
+java-gradle-plugin = { id = "dev.gradleplugins.java-gradle-plugin", version = "1.9.0" }

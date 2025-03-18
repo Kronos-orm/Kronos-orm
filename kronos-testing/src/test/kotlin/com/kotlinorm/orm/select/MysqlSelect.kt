@@ -12,7 +12,7 @@ import com.kotlinorm.functions.bundled.exts.StringFunctions.concat
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.orm.beans.sample.User
 import com.kotlinorm.orm.beans.wrappers.SampleMysqlJdbcWrapper
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MysqlSelect {

@@ -3,7 +3,7 @@ package com.kotlinorm.orm.insert
 import com.kotlinorm.Kronos
 import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.orm.beans.wrappers.SampleMysqlJdbcWrapper
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Insert {

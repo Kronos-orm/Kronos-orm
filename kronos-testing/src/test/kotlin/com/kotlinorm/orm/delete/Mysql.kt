@@ -6,7 +6,7 @@ import com.kotlinorm.orm.beans.wrappers.SampleMysqlJdbcWrapper
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Delete {

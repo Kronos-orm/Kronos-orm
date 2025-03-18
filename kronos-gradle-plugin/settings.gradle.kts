@@ -1,8 +1,15 @@
 dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("../libs.versions.toml"))
+        }
+    }
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
+        mavenCentral()
         gradlePluginPortal()
         maven("https://dl.bintray.com/kotlin/kotlin-eap")
-        maven("https://kotlin.bintray.com/kotlinx")
+        maven("https://maven.aliyun.com/repository/public")
     }
 }
 
@@ -12,24 +19,7 @@ pluginManagement {
         gradlePluginPortal()
         maven("https://dl.bintray.com/kotlin/kotlin-eap")
         maven("https://maven.aliyun.com/repository/public")
-        if (providers.gradleProperty("aliyunMvnPackages").isPresent) {
-            maven {
-                url = uri(providers.gradleProperty("aliyunMvnPackages").get())
-                credentials {
-                    username = providers.gradleProperty("aliyunUsername").get()
-                    password = providers.gradleProperty("aliyunPassword").get()
-                }
-            }
-        }
     }
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.namespace == "org.jetbrains.kotlin") {
-                useVersion(file("../kotlin.version").readText().trim())
-            }
-        }
-    }
-
     includeBuild("../build-logic")
 }
 

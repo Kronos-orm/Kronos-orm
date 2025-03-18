@@ -17,7 +17,6 @@
 package com.kotlinorm.orm.join
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 
 /**
  *@program: kronos-orm

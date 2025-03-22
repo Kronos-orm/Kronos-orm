@@ -1,23 +1,20 @@
 plugins {
-    id("kronos.jvm")
-    kotlin("kapt")
-    id("kronos.publishing")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kapt)
+    alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kronos.dokka)
 }
-
-description = "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs = listOf("-Xmx2048m")
 }
 
-base.archivesName = "kronos-compiler-plugin"
-
 dependencies {
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable")
-    compileOnly("com.google.auto.service:auto-service:1.1.1")
-    kapt("com.google.auto.service:auto-service:1.1.1")
-    testImplementation(kotlin("test"))
+    compileOnly(libs.kotlin.compiler.embeddable)
+    compileOnly(libs.auto.service)
+    kapt(libs.auto.service)
+    testImplementation(libs.kotlin.test)
     testImplementation(project(":kronos-core"))
-    testImplementation("dev.zacsweers.kctfork:core:0.7.0")
+    testImplementation(libs.kct)
 }

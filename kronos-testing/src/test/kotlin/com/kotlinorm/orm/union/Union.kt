@@ -1,7 +1,6 @@
-package com.kotlinorm.orm
+package com.kotlinorm.orm.union
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.orm.beans.sample.Customer
 import com.kotlinorm.orm.beans.sample.User
@@ -9,7 +8,6 @@ import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.InsertClause.Companion.execute
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
-import com.kotlinorm.orm.union.union
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 
@@ -24,7 +22,7 @@ class Union {
     }
 
     private val wrapper by lazy {
-        dataSource()
+        Kronos.dataSource()
     }
 
     init {
@@ -37,10 +35,10 @@ class Union {
 
     @Test
     fun prepareTestData() {
-        dataSource.table.dropTable(User())
-        dataSource.table.dropTable(Customer())
-        dataSource.table.createTable(User())
-        dataSource.table.createTable(Customer())
+        Kronos.dataSource.table.dropTable(User())
+        Kronos.dataSource.table.dropTable(Customer())
+        Kronos.dataSource.table.createTable(User())
+        Kronos.dataSource.table.createTable(Customer())
 
         val userList = listOf(
             User(1, "user1", 1),

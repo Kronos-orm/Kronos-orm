@@ -4,11 +4,11 @@ import com.kotlinorm.beans.parser.NamedParameterUtils.buildValueArray
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.interfaces.KPojo
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 
 class NamedParameterUtilsTest {
@@ -58,7 +58,7 @@ class NamedParameterUtilsTest {
         assertEquals(5, parseSqlStatement("xxx :a :b :c xx :a :b", namedParams).jdbcParamList.size)
         assertEquals(5, parseSqlStatement("xxx :a :a :a xx :a :a", namedParams).jdbcParamList.size)
         assertEquals("b", parseSqlStatement("xxx :a :b :c xx :a :b", namedParams).jdbcParamList[4])
-        assertThrows<InvalidDataAccessApiUsageException> {
+        assertFailsWith<InvalidDataAccessApiUsageException> {
             buildValueArray(
                 parseSqlStatement("xxx :a :b ?"),
                 namedParams

@@ -1,10 +1,9 @@
 plugins {
-    id("kronos.jvm")
-    id("kronos.publishing")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kronos.dokka)
 }
 
-description = "An easy-to-use, flexible, lightweight ORM framework designed for kotlin."
-
 dependencies {
-    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlin.test)
 }

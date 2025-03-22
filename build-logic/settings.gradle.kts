@@ -1,3 +1,18 @@
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("../libs.versions.toml"))
+        }
+    }
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven("https://dl.bintray.com/kotlin/kotlin-eap")
+        maven("https://maven.aliyun.com/repository/public")
+    }
+}
+
 pluginManagement {
     repositories {
         mavenCentral()

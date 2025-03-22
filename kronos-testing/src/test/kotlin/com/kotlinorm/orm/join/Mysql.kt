@@ -9,7 +9,7 @@ import com.kotlinorm.orm.beans.sample.Movie
 import com.kotlinorm.orm.beans.sample.UserRelation
 import com.kotlinorm.orm.beans.wrappers.SampleMysqlJdbcWrapper
 import com.kotlinorm.utils.trimWhitespace
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Join {

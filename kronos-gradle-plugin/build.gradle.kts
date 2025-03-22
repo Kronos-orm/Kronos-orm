@@ -1,15 +1,11 @@
 plugins {
-    id("kronos.jvm")
-    id("java-gradle-plugin")
-    id("kronos.publishing")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.java.gradle.plugin)
+    alias(libs.plugins.kronos.publishing)
 }
 
-group = "com.kotlinorm"
-version = file("../kronos.version").readText().trim()
-description = "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
-
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api")
+    implementation(libs.kotlin.gradle.plugin.api)
 }
 
 gradlePlugin {

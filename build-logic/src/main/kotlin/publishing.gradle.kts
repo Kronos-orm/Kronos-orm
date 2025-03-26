@@ -94,12 +94,14 @@ mavenPublishing {
 
 publishing {
     repositories {
-        maven {
-            name = "aliyun"
-            url = uri(providers.gradleProperty("aliyunMvnPackages").get())
-            credentials {
-                username = providers.gradleProperty("aliyunUsername").get()
-                password = providers.gradleProperty("aliyunPassword").get()
+        if (providers.gradleProperty("aliyunMvnPackages").isPresent) {
+            maven {
+                name = "aliyun"
+                url = uri(providers.gradleProperty("aliyunMvnPackages").get())
+                credentials {
+                    username = providers.gradleProperty("aliyunUsername").get()
+                    password = providers.gradleProperty("aliyunPassword").get()
+                }
             }
         }
         mavenLocal()
@@ -127,7 +129,7 @@ if (project.name == "kronos-orm") {
     tasks.register("publishAllToAliyun") {
         group = "kronos publishing"
         project.subprojects.forEach {
-            if (it.plugins.hasPlugin("com.vanniktech.maven.publish")) {
+            if (it.plugins.hasPlugin("com.vanniktech.maven.publish") && it.providers.gradleProperty("aliyunMvnPackages").isPresent) {
                 dependsOn(it.tasks.named("publishMavenPublicationToAliyunRepository"))
             }
         }
@@ -136,6 +138,11 @@ if (project.name == "kronos-orm") {
 }
 if (project.name == "kronos-gradle-plugin") {
     afterEvaluate {
+        if (!project.providers.gradleProperty("aliyunMvnPackages").isPresent) {
+            tasks.register("publishAllPublicationsToAliyunRepository") {
+                group = "kronos publishing"
+            }
+        }
         tasks.forEach {
             if (it.name.startsWith("publish")) {
                 it.dependsOn(tasks.getByName("signMavenPublication"))

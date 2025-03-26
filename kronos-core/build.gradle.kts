@@ -5,5 +5,6 @@ plugins {
 }
 
 dependencies {
+    kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     testImplementation(libs.kotlin.test)
 }

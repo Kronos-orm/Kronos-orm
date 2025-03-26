@@ -20,22 +20,30 @@ plugins {
 if (project == project.rootProject) {
     tasks.register("dokkaGenerateAll") {
         group = "dokka"
+        val root = project.rootProject.layout.projectDirectory.dir("docs").asFile
         doFirst {
-            project.rootProject.layout.buildDirectory.dir("dokka").get().asFile.deleteRecursively()
+            root.deleteRecursively()
+            root.mkdirs()
         }
-        dependsOn(project.tasks.named("dokkaGeneratePublicationHtml"))
+        project.subprojects.forEach { subproject ->
+            if (subproject.plugins.hasPlugin("org.jetbrains.dokka")) {
+                dependsOn(subproject.tasks.named("dokkaGenerate"))
+            }
+        }
         doLast {
             project.subprojects.forEach { subproject ->
                 if (subproject.plugins.hasPlugin("org.jetbrains.dokka")) {
                     val dokkaDir = subproject.layout.buildDirectory.dir("dokka/html").get().asFile
                     if (dokkaDir.exists()) {
-                        val targetDir =
-                            project.rootProject.layout.buildDirectory.dir("dokka/${subproject.name}").get().asFile
+                        println("${subproject.name} build successful, copying documentation to ${root.resolve(subproject.name)}")
+                        val targetDir = root.resolve(subproject.name).also { it.mkdirs() }
                         dokkaDir.copyRecursively(targetDir, overwrite = true)
+                        dokkaDir.deleteRecursively()
+                    } else {
+                        println("${subproject.name} build failed, skipping documentation")
                     }
                 }
             }
-            project.rootProject.layout.buildDirectory.dir("dokka/html").get().asFile.deleteOnExit()
         }
     }
 } else {

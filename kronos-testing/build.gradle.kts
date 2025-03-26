@@ -1,10 +1,10 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kronos.gradle.plugin)
     alias(libs.plugins.ktx.serialization)
 }
 
 dependencies {
+    kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jdbc-wrapper"))
@@ -19,10 +19,4 @@ dependencies {
     testImplementation(libs.driver.jdbc.postgresql)
     testImplementation(libs.driver.jdbc.oracle)
     testImplementation(libs.gson)
-}
-
-configurations.all {
-    resolutionStrategy.dependencySubstitution {
-        substitute(module("com.kotlinorm:kronos-compiler-plugin")).using(project(":kronos-compiler-plugin"))
-    }
 }

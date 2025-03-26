@@ -47,7 +47,6 @@ kotlin-dsl = { id = "org.gradle.kotlin.kotlin-dsl", version.ref = "dsl" }
 ktx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokkaVer" }
 kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
-kronos-gradle-plugin = { id = "com.kotlinorm.kronos-gradle-plugin" }
 kronos-publishing = { id = "kronos.publishing" }
 kronos-dokka = { id = "kronos.dokka-convention" }
 java-gradle-plugin = { id = "dev.gradleplugins.java-gradle-plugin", version = "1.9.0" }

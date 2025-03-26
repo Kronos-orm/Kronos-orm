@@ -10,21 +10,25 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      - name: Set up JDK 21
+      - name: Set up JDK 21 ☕️
         uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: 'adopt'
 
-      - name: Build documentation
+      - name: Build Dokka Documentation 📖
         run: ./gradlew :dokkaGenerateAll
 
-      - name: Publish documentation
+      - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
           branch: api-docs
           folder: docs
+
+permissions:
+  contents: write

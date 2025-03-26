@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>NodeOfKPojo</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    kronos-core
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.0.2-SNAPSHOT        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":kronos-core/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":kronos-core/main"
+                                       data-filter=":kronos-core/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    kronos-core
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-core::com.kotlinorm.orm.cascade/NodeOfKPojo///PointingToDeclaration//1698863696">
+  <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.orm.cascade</a><span class="delimiter">/</span><span class="current">NodeOfKPojo</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Node</span><wbr></wbr><span>Of</span><wbr></wbr><span><span>KPojo</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">NodeOfKPojo</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>kPojo<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>data<span class="token operator">: </span><a href="../-node-info/index.html">NodeInfo</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>cascadeAllowed<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-field/index.html">Field</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>operationType<span class="token operator">: </span><a href="../../com.kotlinorm.enums/-k-operation-type/index.html">KOperationType</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>updateParams<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>mutableMapOf()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>children<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/index.html">MutableList</a><span class="token operator">&lt;</span><a href="index.html">NodeOfKPojo</a><span class="token operator">&gt;</span><span class="token operator"> = </span>mutableListOf()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>onInit<span class="token operator">: </span><a href="index.html">NodeOfKPojo</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><p class="paragraph">Represents a node within an ORM cascade operation tree, encapsulating the logic for managing a single entity and its relationships.</p><p class="paragraph">This data class is central to handling cascade operations within an ORM framework, allowing for the representation of an entity (KPojo) within a tree structure. It supports operations such as patching data from parent nodes, initializing custom logic, and dynamically building child nodes based on the operation type and depth constraints.</p><p class="paragraph">表示 ORM 级联操作树中的节点，封装用于管理单个实体及其关系的逻辑。</p><p class="paragraph">此数据类是处理 ORM 框架内的级联操作的核心，允许在树结构中表示实体 (KPojo)。它支持从父节点获取并更新关联的数据项、初始化自定义逻辑以及根据操作类型和深度约束动态构建子节点等操作。</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="">Constructors</h2>
+        <div class="table"><a data-name="858162002%2FConstructors%2F1698863696" anchor-label="NodeOfKPojo" id="858162002%2FConstructors%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-node-of-k-pojo.html"><span>Node</span><wbr></wbr><span>Of</span><wbr></wbr><span><span>KPojo</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="858162002%2FConstructors%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">kPojo<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="../-node-info/index.html">NodeInfo</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cascadeAllowed<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-field/index.html">Field</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">operationType<span class="token operator">: </span><a href="../../com.kotlinorm.enums/-k-operation-type/index.html">KOperationType</a><span class="token punctuation">, </span></span><span class="parameter ">updateParams<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>mutableMapOf()<span class="token punctuation">, </span></span><span class="parameter ">children<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/index.html">MutableList</a><span class="token operator">&lt;</span><a href="index.html">NodeOfKPojo</a><span class="token operator">&gt;</span><span class="token operator"> = </span>mutableListOf()<span class="token punctuation">, </span></span><span class="parameter ">onInit<span class="token operator">: </span><a href="index.html">NodeOfKPojo</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-1693731186%2FClasslikes%2F1698863696" anchor-label="Companion" id="-1693731186%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1693731186%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="623095455%2FProperties%2F1698863696" anchor-label="cascadeAllowed" id="623095455%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="cascade-allowed.html"><span>cascade</span><wbr></wbr><span><span>Allowed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="623095455%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="cascade-allowed.html">cascadeAllowed</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-field/index.html">Field</a><span class="token operator">&gt;</span><span class="token operator">?</span></div><div class="brief "><p class="paragraph">The maximum depth to which the tree should be built. A value of -1 indicates no limit.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="315561940%2FProperties%2F1698863696" anchor-label="children" id="315561940%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="children.html"><span><span>children</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="315561940%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="children.html">children</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/index.html">MutableList</a><span class="token operator">&lt;</span><a href="index.html">NodeOfKPojo</a><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-888588407%2FProperties%2F1698863696" anchor-label="data" id="-888588407%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="data.html"><span><span>data</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-888588407%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="data.html">data</a><span class="token operator">: </span><a href="../-node-info/index.html">NodeInfo</a><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">Additional contextual information about this node, such as its parent, the field linking to the parent, and depth in the tree.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1157075352%2FProperties%2F1698863696" anchor-label="insertIgnore" id="-1157075352%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="insert-ignore.html"><span>insert</span><wbr></wbr><span><span>Ignore</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1157075352%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="insert-ignore.html">insertIgnore</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2109568360%2FProperties%2F1698863696" anchor-label="kPojo" id="-2109568360%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="k-pojo.html"><span>k</span><wbr></wbr><span><span>Pojo</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2109568360%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="k-pojo.html">kPojo</a><span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a></div><div class="brief "><p class="paragraph">The entity (KPojo) this node represents.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-693875260%2FProperties%2F1698863696" anchor-label="onInit" id="-693875260%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-init.html"><span>on</span><wbr></wbr><span><span>Init</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-693875260%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="on-init.html">onInit</a><span class="token operator">: </span><a href="index.html">NodeOfKPojo</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">An optional initialization block that can be executed upon node creation, allowing for custom logic.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2059272666%2FProperties%2F1698863696" anchor-label="operationType" id="-2059272666%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="operation-type.html"><span>operation</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2059272666%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="operation-type.html">operationType</a><span class="token operator">: </span><a href="../../com.kotlinorm.enums/-k-operation-type/index.html">KOperationType</a></div><div class="brief "><p class="paragraph">The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1538524178%2FProperties%2F1698863696" anchor-label="tableName" id="-1538524178%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="table-name.html"><span>table</span><wbr></wbr><span><span>Name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1538524178%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="table-name.html">tableName</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1736569564%2FProperties%2F1698863696" anchor-label="updateParams" id="-1736569564%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="update-params.html"><span>update</span><wbr></wbr><span><span>Params</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1736569564%2FProperties%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="update-params.html">updateParams</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">A map of parameters to be updated in the entity, used when patching data from the parent.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

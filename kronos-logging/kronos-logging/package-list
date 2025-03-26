@@ -1,0 +1,61 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:com.kotlinorm.adapter////PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/index.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter///PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/index.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/AndroidUtilLoggerAdapter/#kotlin.String/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/-android-util-logger-adapter.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/debug/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/debug.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/error/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/error.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/info/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/info.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/isDebugEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/is-debug-enabled.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/isErrorEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/is-error-enabled.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/isInfoEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/is-info-enabled.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/isTraceEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/is-trace-enabled.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/isWarnEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/is-warn-enabled.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/trace/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/trace.html
+$dokka.location:com.kotlinorm.adapter/AndroidUtilLoggerAdapter/warn/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-android-util-logger-adapter/warn.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter///PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/index.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/ApacheCommonsLoggerAdapter/#kotlin.String/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/-apache-commons-logger-adapter.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/debug/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/debug.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/error/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/error.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/info/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/info.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/isDebugEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/is-debug-enabled.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/isErrorEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/is-error-enabled.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/isInfoEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/is-info-enabled.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/isTraceEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/is-trace-enabled.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/isWarnEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/is-warn-enabled.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/trace/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/trace.html
+$dokka.location:com.kotlinorm.adapter/ApacheCommonsLoggerAdapter/warn/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-apache-commons-logger-adapter/warn.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter///PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/index.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/JavaUtilLoggerAdapter/#kotlin.String/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/-java-util-logger-adapter.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/debug/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/debug.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/error/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/error.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/info/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/info.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/isDebugEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/is-debug-enabled.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/isErrorEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/is-error-enabled.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/isInfoEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/is-info-enabled.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/isTraceEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/is-trace-enabled.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/isWarnEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/is-warn-enabled.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/trace/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/trace.html
+$dokka.location:com.kotlinorm.adapter/JavaUtilLoggerAdapter/warn/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-java-util-logger-adapter/warn.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter///PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/index.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/Slf4jLoggerAdapter/#kotlin.String/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/-slf4j-logger-adapter.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/debug/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/debug.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/error/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/error.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/info/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/info.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/isDebugEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/is-debug-enabled.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/isErrorEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/is-error-enabled.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/isInfoEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/is-info-enabled.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/isTraceEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/is-trace-enabled.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/isWarnEnabled/#/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/is-warn-enabled.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/trace/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/trace.html
+$dokka.location:com.kotlinorm.adapter/Slf4jLoggerAdapter/warn/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-logging/com.kotlinorm.adapter/-slf4j-logger-adapter/warn.html
+$dokka.location:com.kotlinorm.exceptions////PointingToDeclaration/kronos-logging/com.kotlinorm.exceptions/index.html
+$dokka.location:com.kotlinorm.exceptions/KotoNoLoggerException///PointingToDeclaration/kronos-logging/com.kotlinorm.exceptions/-koto-no-logger-exception/index.html
+$dokka.location:com.kotlinorm.exceptions/KotoNoLoggerException/KotoNoLoggerException/#kotlin.String/PointingToDeclaration/kronos-logging/com.kotlinorm.exceptions/-koto-no-logger-exception/-koto-no-logger-exception.html
+$dokka.location:com.kotlinorm.exceptions/KotoNoLoggerException/message/#/PointingToDeclaration/kronos-logging/com.kotlinorm.exceptions/-koto-no-logger-exception/message.html
+$dokka.location:com.kotlinorm////PointingToDeclaration/kronos-logging/com.kotlinorm/index.html
+$dokka.location:com.kotlinorm/KronosLoggerApp///PointingToDeclaration/kronos-logging/com.kotlinorm/-kronos-logger-app/index.html
+$dokka.location:com.kotlinorm/KronosLoggerApp/detectLoggerImplementation/#/PointingToDeclaration/kronos-logging/com.kotlinorm/-kronos-logger-app/detect-logger-implementation.html
+com.kotlinorm
+com.kotlinorm.adapter
+com.kotlinorm.exceptions

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>KPojo</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    kronos-core
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.0.2-SNAPSHOT        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":kronos-core/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":kronos-core/main"
+                                       data-filter=":kronos-core/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    kronos-core
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-core::com.kotlinorm.interfaces/KPojo///PointingToDeclaration//1698863696">
+  <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.interfaces</a><span class="delimiter">/</span><span class="current">KPojo</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>KPojo</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">KPojo</a></div><p class="paragraph">Kronos Pojo Class</p><p class="paragraph">Interface for data class to be used in kronos after extending <a href="index.html">KPojo</a>, a data class can be recognized as a table class in Kronos-orm</p><span class="kdoc-tag"><h4 class="">Author</h4><p class="paragraph">OUSC</p></span></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION,EXTENSION_PROPERTY,EXTENSION_FUNCTION">Members &amp; Extensions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="761032679%2FFunctions%2F1698863696" anchor-label="$toDataMap" id="761032679%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="$to-data-map.html"><span>$to</span><wbr></wbr><span>Data</span><wbr></wbr><span><span>Map</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="761032679%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="$to-data-map.html"><span class="token function">$toDataMap</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">toDataMap</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1233486350%2FFunctions%2F1698863696" anchor-label="fromMapData" id="1233486350%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="from-map-data.html"><span>from</span><wbr></wbr><span>Map</span><wbr></wbr><span><span>Data</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1233486350%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="from-map-data.html">T</a><span class="token operator"> : </span><a href="index.html">KPojo</a><span class="token operator">&gt; </span><a href="from-map-data.html"><span class="token function">fromMapData</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">map<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="from-map-data.html">T</a></div><div class="brief "><p class="paragraph">fromMapData</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1248087021%2FFunctions%2F1698863696" anchor-label="kronosColumns" id="1248087021%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-columns.html"><span>kronos</span><wbr></wbr><span><span>Columns</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1248087021%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-columns.html"><span class="token function">kronosColumns</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/index.html">MutableList</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-field/index.html">Field</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">kronosColumns</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2138001049%2FFunctions%2F1698863696" anchor-label="kronosCreateTime" id="-2138001049%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-create-time.html"><span>kronos</span><wbr></wbr><span>Create</span><wbr></wbr><span><span>Time</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2138001049%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-create-time.html"><span class="token function">kronosCreateTime</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.kotlinorm.beans.config/-kronos-common-strategy/index.html">KronosCommonStrategy</a></div><div class="brief "><p class="paragraph">kronosCreateTime</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1089273823%2FFunctions%2F1698863696" anchor-label="kronosLogicDelete" id="-1089273823%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-logic-delete.html"><span>kronos</span><wbr></wbr><span>Logic</span><wbr></wbr><span><span>Delete</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1089273823%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-logic-delete.html"><span class="token function">kronosLogicDelete</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.kotlinorm.beans.config/-kronos-common-strategy/index.html">KronosCommonStrategy</a></div><div class="brief "><p class="paragraph">kronosLogicDelete</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="874803064%2FFunctions%2F1698863696" anchor-label="kronosOptimisticLock" id="874803064%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-optimistic-lock.html"><span>kronos</span><wbr></wbr><span>Optimistic</span><wbr></wbr><span><span>Lock</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="874803064%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-optimistic-lock.html"><span class="token function">kronosOptimisticLock</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.kotlinorm.beans.config/-kronos-common-strategy/index.html">KronosCommonStrategy</a></div><div class="brief "><p class="paragraph">kronosOptimisticLock</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-255093537%2FFunctions%2F1698863696" anchor-label="kronosTableComment" id="-255093537%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-table-comment.html"><span>kronos</span><wbr></wbr><span>Table</span><wbr></wbr><span><span>Comment</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-255093537%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-table-comment.html"><span class="token function">kronosTableComment</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">kronosTableComment</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="813639180%2FFunctions%2F1698863696" anchor-label="kronosTableIndex" id="813639180%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-table-index.html"><span>kronos</span><wbr></wbr><span>Table</span><wbr></wbr><span><span>Index</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="813639180%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-table-index.html"><span class="token function">kronosTableIndex</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/index.html">MutableList</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-k-table-index/index.html">KTableIndex</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">kronos TableName</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2101784721%2FFunctions%2F1698863696" anchor-label="kronosTableName" id="2101784721%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-table-name.html"><span>kronos</span><wbr></wbr><span>Table</span><wbr></wbr><span><span>Name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2101784721%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-table-name.html"><span class="token function">kronosTableName</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">kronos TableName</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1011423046%2FFunctions%2F1698863696" anchor-label="kronosUpdateTime" id="-1011423046%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="kronos-update-time.html"><span>kronos</span><wbr></wbr><span>Update</span><wbr></wbr><span><span>Time</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1011423046%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="kronos-update-time.html"><span class="token function">kronosUpdateTime</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.kotlinorm.beans.config/-kronos-common-strategy/index.html">KronosCommonStrategy</a></div><div class="brief "><p class="paragraph">kronosUpdateTime</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1436083608%2FFunctions%2F1698863696" anchor-label="mapperTo" id="-1436083608%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.kotlinorm.utils/-extensions/mapper-to.html"><span>mapper</span><wbr></wbr><span><span>To</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1436083608%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../../com.kotlinorm.utils/-extensions/mapper-to.html">K</a><span class="token operator"> : </span><a href="index.html">KPojo</a><span class="token operator">&gt; </span><a href="index.html">KPojo</a><span class="token punctuation">.</span><a href="../../com.kotlinorm.utils/-extensions/mapper-to.html"><span class="token function">mapperTo</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.kotlinorm.utils/-extensions/mapper-to.html">K</a></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">KPojo</a><span class="token punctuation">.</span><a href="../../com.kotlinorm.utils/-extensions/mapper-to.html"><span class="token function">mapperTo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">kClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><a href="index.html">KPojo</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-270727840%2FFunctions%2F1698863696" anchor-label="patchTo" id="-270727840%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.kotlinorm.utils/-extensions/patch-to.html"><span>patch</span><wbr></wbr><span><span>To</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-270727840%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">KPojo</a><span class="token punctuation">.</span><a href="../../com.kotlinorm.utils/-extensions/patch-to.html"><span class="token function">patchTo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">kClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><a href="index.html">KPojo</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">vararg </span>data<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-pair/index.html">Pair</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">KPojo</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-970473983%2FFunctions%2F1698863696" anchor-label="safeFromMapData" id="-970473983%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="safe-from-map-data.html"><span>safe</span><wbr></wbr><span>From</span><wbr></wbr><span>Map</span><wbr></wbr><span><span>Data</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-970473983%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="safe-from-map-data.html">T</a><span class="token operator"> : </span><a href="index.html">KPojo</a><span class="token operator">&gt; </span><a href="safe-from-map-data.html"><span class="token function">safeFromMapData</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">map<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="safe-from-map-data.html">T</a></div><div class="brief "><p class="paragraph">fromMapData</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1803335362%2FFunctions%2F1698863696" anchor-label="safeMapperTo" id="1803335362%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.kotlinorm.utils/-extensions/safe-mapper-to.html"><span>safe</span><wbr></wbr><span>Mapper</span><wbr></wbr><span><span>To</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1803335362%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../../com.kotlinorm.utils/-extensions/safe-mapper-to.html">K</a><span class="token operator"> : </span><a href="index.html">KPojo</a><span class="token operator">&gt; </span><a href="index.html">KPojo</a><span class="token punctuation">.</span><a href="../../com.kotlinorm.utils/-extensions/safe-mapper-to.html"><span class="token function">safeMapperTo</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.kotlinorm.utils/-extensions/safe-mapper-to.html">K</a></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html">KPojo</a><span class="token punctuation">.</span><a href="../../com.kotlinorm.utils/-extensions/safe-mapper-to.html"><span class="token function">safeMapperTo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">kClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><a href="index.html">KPojo</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="625733161%2FFunctions%2F1698863696" anchor-label="toDataMap" id="625733161%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="to-data-map.html"><span>to</span><wbr></wbr><span>Data</span><wbr></wbr><span><span>Map</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="625733161%2FFunctions%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="to-data-map.html"><span class="token function">toDataMap</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">toDataMap</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

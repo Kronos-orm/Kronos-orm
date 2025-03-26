@@ -1,0 +1,1 @@
+sourceset_dependencies='{":kronos-compiler-plugin/main":[]}'

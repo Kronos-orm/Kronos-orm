@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>com.kotlinorm.enums</title>
+    <link href="../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../index.html">
+                    kronos-core
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.0.2-SNAPSHOT        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":kronos-core/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":kronos-core/main"
+                                       data-filter=":kronos-core/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    kronos-core
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="package" id="content" pageIds="kronos-core::com.kotlinorm.enums////PointingToDeclaration//1698863696">
+  <div class="breadcrumbs"><a href="../../index.html">kronos-core</a><span class="delimiter">/</span><span class="current">com.kotlinorm.enums</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-1151069237%2FClasslikes%2F1698863696" anchor-label="CascadeDeleteAction" id="-1151069237%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-cascade-delete-action/index.html"><span>Cascade</span><wbr></wbr><span>Delete</span><wbr></wbr><span><span>Action</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1151069237%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-cascade-delete-action/index.html">CascadeDeleteAction</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-cascade-delete-action/index.html">CascadeDeleteAction</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Enum class for cascade actions</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="529554955%2FClasslikes%2F1698863696" anchor-label="ColorPrintCode" id="529554955%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-color-print-code/index.html"><span>Color</span><wbr></wbr><span>Print</span><wbr></wbr><span><span>Code</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="529554955%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-color-print-code/index.html">ColorPrintCode</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-color-print-code/index.html">ColorPrintCode</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Formatting parameters for console messages.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1254679381%2FClasslikes%2F1698863696" anchor-label="ConditionType" id="-1254679381%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-condition-type/index.html"><span>Condition</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1254679381%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-condition-type/index.html">ConditionType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-condition-type/index.html">ConditionType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Condition types.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1432951690%2FClasslikes%2F1698863696" anchor-label="DBType" id="1432951690%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-b-type/index.html"><span><span>DBType</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1432951690%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-d-b-type/index.html">DBType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-d-b-type/index.html">DBType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">DBType</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1111210278%2FClasslikes%2F1698863696" anchor-label="IgnoreAction" id="-1111210278%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-ignore-action/index.html"><span>Ignore</span><wbr></wbr><span><span>Action</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1111210278%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-ignore-action/index.html">IgnoreAction</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-ignore-action/index.html">IgnoreAction</a><span class="token operator">&gt; </span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="500207102%2FClasslikes%2F1698863696" anchor-label="JoinType" id="500207102%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-join-type/index.html"><span>Join</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="500207102%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-join-type/index.html">JoinType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-join-type/index.html">JoinType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Joint type</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1135066203%2FClasslikes%2F1698863696" anchor-label="KColumnType" id="-1135066203%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-column-type/index.html"><span>KColumn</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1135066203%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-k-column-type/index.html">KColumnType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-k-column-type/index.html">KColumnType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Column types.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-846642261%2FClasslikes%2F1698863696" anchor-label="KLoggerType" id="-846642261%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-logger-type/index.html"><span>KLogger</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-846642261%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-k-logger-type/index.html">KLoggerType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-k-logger-type/index.html">KLoggerType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Kronos Logger Type</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1759366219%2FClasslikes%2F1698863696" anchor-label="KLogLevel" id="-1759366219%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-log-level/index.html"><span>KLog</span><wbr></wbr><span><span>Level</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1759366219%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-k-log-level/index.html">KLogLevel</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-k-log-level/index.html">KLogLevel</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Kronos Log Level</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-212263316%2FClasslikes%2F1698863696" anchor-label="KOperationType" id="-212263316%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-operation-type/index.html"><span>KOperation</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-212263316%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-k-operation-type/index.html">KOperationType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-k-operation-type/index.html">KOperationType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Kronos Operation Type</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="265343646%2FClasslikes%2F1698863696" anchor-label="Mysql" id="265343646%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-mysql/index.html"><span><span>Mysql</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="265343646%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-mysql/index.html">Mysql</a></div><div class="brief "><p class="paragraph">This object represents the MySQL database type.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1829222339%2FClasslikes%2F1698863696" anchor-label="NoValueStrategyType" id="1829222339%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-no-value-strategy-type/index.html"><span>No</span><wbr></wbr><span>Value</span><wbr></wbr><span>Strategy</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1829222339%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-no-value-strategy-type/index.html">NoValueStrategyType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-no-value-strategy-type/index.html">NoValueStrategyType</a><span class="token operator">&gt; </span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-576874108%2FClasslikes%2F1698863696" anchor-label="Oracle" id="-576874108%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-oracle/index.html"><span><span>Oracle</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-576874108%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-oracle/index.html">Oracle</a></div><div class="brief "><p class="paragraph">This object represents the Oracle database type.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1056942954%2FClasslikes%2F1698863696" anchor-label="PessimisticLock" id="1056942954%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-pessimistic-lock/index.html"><span>Pessimistic</span><wbr></wbr><span><span>Lock</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1056942954%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-pessimistic-lock/index.html">PessimisticLock</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-pessimistic-lock/index.html">PessimisticLock</a><span class="token operator">&gt; </span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="77620137%2FClasslikes%2F1698863696" anchor-label="Postgres" id="77620137%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-postgres/index.html"><span><span>Postgres</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="77620137%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-postgres/index.html">Postgres</a></div><div class="brief "><p class="paragraph">This object represents the PostgreSQL database type.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="933649995%2FClasslikes%2F1698863696" anchor-label="PrimaryKeyType" id="933649995%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-primary-key-type/index.html"><span>Primary</span><wbr></wbr><span>Key</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="933649995%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-primary-key-type/index.html">PrimaryKeyType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-primary-key-type/index.html">PrimaryKeyType</a><span class="token operator">&gt; </span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1570081694%2FClasslikes%2F1698863696" anchor-label="QueryType" id="1570081694%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-query-type/index.html"><span>Query</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1570081694%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-query-type/index.html">QueryType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-query-type/index.html">QueryType</a><span class="token operator">&gt; </span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1252080138%2FClasslikes%2F1698863696" anchor-label="SortType" id="1252080138%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-sort-type/index.html"><span>Sort</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1252080138%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-sort-type/index.html">SortType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-sort-type/index.html">SortType</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Sort Type</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="652185270%2FClasslikes%2F1698863696" anchor-label="SQLite" id="652185270%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-q-lite/index.html"><span><span>SQLite</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="652185270%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-s-q-lite/index.html">SQLite</a></div><div class="brief "><p class="paragraph">This object represents the SQLite database type.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1433310225%2FClasslikes%2F1698863696" anchor-label="SqlServer" id="-1433310225%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-sql-server/index.html"><span>Sql</span><wbr></wbr><span><span>Server</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1433310225%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-sql-server/index.html">SqlServer</a></div><div class="brief "><p class="paragraph">This object represents the SQL Server database type.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="269194264%2FClasslikes%2F1698863696" anchor-label="SqlType" id="269194264%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-sql-type/index.html"><span>Sql</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="269194264%2FClasslikes%2F1698863696"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-sql-type/index.html">SqlType</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-sql-type/index.html">SqlType</a><span class="token operator">&gt; </span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

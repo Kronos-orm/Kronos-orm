@@ -1,0 +1,22 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:com.kotlinorm.beans////PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm.beans/index.html
+$dokka.location:com.kotlinorm.beans/UnsupportedTypeException///PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm.beans/-unsupported-type-exception/index.html
+$dokka.location:com.kotlinorm.beans/UnsupportedTypeException/UnsupportedTypeException/#kotlin.String/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm.beans/-unsupported-type-exception/-unsupported-type-exception.html
+$dokka.location:com.kotlinorm////PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/index.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper///PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/index.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/KronosBasicWrapper/#javax.sql.DataSource/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/-kronos-basic-wrapper.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/batchUpdate/#com.kotlinorm.beans.task.KronosAtomicBatchTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/batch-update.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/dataSource/#/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/data-source.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/dbType/#/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/db-type.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/forList/#com.kotlinorm.interfaces.KAtomicQueryTask#kotlin.reflect.KClass[*]#kotlin.Boolean#kotlin.collections.List[kotlin.String]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-list.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/forList/#com.kotlinorm.interfaces.KAtomicQueryTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-list.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/forMap/#com.kotlinorm.interfaces.KAtomicQueryTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-map.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/forObject/#com.kotlinorm.interfaces.KAtomicQueryTask#kotlin.reflect.KClass[*]#kotlin.Boolean#kotlin.collections.List[kotlin.String]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-object.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/transact/#kotlin.Function0[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/transact.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/transact/#kotlin.Function0[kotlin.Any?]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/transact.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/update/#com.kotlinorm.interfaces.KAtomicActionTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/update.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/url/#/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/url.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper/userName/#/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/user-name.html
+com.kotlinorm
+com.kotlinorm.beans

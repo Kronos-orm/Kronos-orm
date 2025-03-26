@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>KronosBasicWrapper</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    kronos-jdbc-wrapper
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.0.2-SNAPSHOT        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":kronos-jdbc-wrapper/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":kronos-jdbc-wrapper/main"
+                                       data-filter=":kronos-jdbc-wrapper/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    kronos-jdbc-wrapper
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-jdbc-wrapper::com.kotlinorm/KronosBasicWrapper///PointingToDeclaration//-780277646">
+  <div class="breadcrumbs"><a href="../../../index.html">kronos-jdbc-wrapper</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm</a><span class="delimiter">/</span><span class="current">KronosBasicWrapper</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Kronos</span><wbr></wbr><span>Basic</span><wbr></wbr><span><span>Wrapper</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">KronosBasicWrapper</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>dataSource<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/DataSource.html">DataSource</a></span></span><span class="token punctuation">)</span> : <span data-unresolved-link="com.kotlinorm.interfaces/KronosDataSourceWrapper///PointingToDeclaration/">KronosDataSourceWrapper</span></div><p class="paragraph">Kronos Basic Jdbc Wrapper</p><p class="paragraph">A wrapper class for JDBC data sources that implements the <code class="lang-kotlin">KronosDataSourceWrapper</code> interface.</p><span class="kdoc-tag"><h4 class="">Author</h4><p class="paragraph">: OUSC</p></span></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="">Constructors</h2>
+        <div class="table"><a data-name="-1003641020%2FConstructors%2F-780277646" anchor-label="KronosBasicWrapper" id="-1003641020%2FConstructors%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-kronos-basic-wrapper.html"><span>Kronos</span><wbr></wbr><span>Basic</span><wbr></wbr><span><span>Wrapper</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1003641020%2FConstructors%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">dataSource<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/DataSource.html">DataSource</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="-760290837%2FProperties%2F-780277646" anchor-label="dataSource" id="-760290837%2FProperties%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="data-source.html"><span>data</span><wbr></wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-760290837%2FProperties%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="data-source.html">dataSource</a><span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/DataSource.html">DataSource</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-508172712%2FProperties%2F-780277646" anchor-label="dbType" id="-508172712%2FProperties%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="db-type.html"><span>db</span><wbr></wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-508172712%2FProperties%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="db-type.html">dbType</a><span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.enums/DBType///PointingToDeclaration/">DBType</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1438067301%2FProperties%2F-780277646" anchor-label="url" id="-1438067301%2FProperties%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="url.html"><span><span>url</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1438067301%2FProperties%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="url.html">url</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="181761850%2FProperties%2F-780277646" anchor-label="userName" id="181761850%2FProperties%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="user-name.html"><span>user</span><wbr></wbr><span><span>Name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="181761850%2FProperties%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="user-name.html">userName</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="2003193129%2FFunctions%2F-780277646" anchor-label="batchUpdate" id="2003193129%2FFunctions%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="batch-update.html"><span>batch</span><wbr></wbr><span><span>Update</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2003193129%2FFunctions%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="batch-update.html"><span class="token function">batchUpdate</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">task<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.beans.task/KronosAtomicBatchTask///PointingToDeclaration/">KronosAtomicBatchTask</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int-array/index.html">IntArray</a></div><div class="brief "><p class="paragraph">Executes a batch update operation using the provided <span data-unresolved-link="com.kotlinorm.beans.task/KronosAtomicBatchTask///PointingToDeclaration/">KronosAtomicBatchTask</span>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-369010699%2FFunctions%2F-780277646" anchor-label="forList" id="-369010699%2FFunctions%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="for-list.html"><span>for</span><wbr></wbr><span><span>List</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-369010699%2FFunctions%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="for-list.html"><span class="token function">forList</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">task<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.interfaces/KAtomicQueryTask///PointingToDeclaration/">KAtomicQueryTask</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Retrieves a list of maps from the database based on the provided task.</p></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="for-list.html"><span class="token function">forList</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">task<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.interfaces/KAtomicQueryTask///PointingToDeclaration/">KAtomicQueryTask</span><span class="token punctuation">, </span></span><span class="parameter ">kClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Retrieves a list of objects of the specified class from the database based on the given task.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="941098188%2FFunctions%2F-780277646" anchor-label="forMap" id="941098188%2FFunctions%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="for-map.html"><span>for</span><wbr></wbr><span><span>Map</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="941098188%2FFunctions%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="for-map.html"><span class="token function">forMap</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">task<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.interfaces/KAtomicQueryTask///PointingToDeclaration/">KAtomicQueryTask</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Retrieves a single row from the database as a map of column names to values.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1412443718%2FFunctions%2F-780277646" anchor-label="forObject" id="-1412443718%2FFunctions%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="for-object.html"><span>for</span><wbr></wbr><span><span>Object</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1412443718%2FFunctions%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="for-object.html"><span class="token function">forObject</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">task<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.interfaces/KAtomicQueryTask///PointingToDeclaration/">KAtomicQueryTask</span><span class="token punctuation">, </span></span><span class="parameter ">kClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Retrieves an object from the database based on the provided task and class.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1082420504%2FFunctions%2F-780277646" anchor-label="transact" id="-1082420504%2FFunctions%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="transact.html"><span><span>transact</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1082420504%2FFunctions%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;transactT&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="transact.html">T</a><span class="token operator">&gt; </span><a href="transact.html"><span class="token function">transact</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">noinline </span>block<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="transact.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="transact.html">T</a></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="transact.html"><span class="token function">transact</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Perform database operations in a transaction</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1813316440%2FFunctions%2F-780277646" anchor-label="update" id="1813316440%2FFunctions%2F-780277646" data-filterable-set=":kronos-jdbc-wrapper/main"></a>
+          <div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="update.html"><span><span>update</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1813316440%2FFunctions%2F-780277646"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="update.html"><span class="token function">update</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">task<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.interfaces/KAtomicActionTask///PointingToDeclaration/">KAtomicActionTask</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Updates the database with the provided task.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

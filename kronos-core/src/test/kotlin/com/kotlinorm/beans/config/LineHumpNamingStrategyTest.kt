@@ -19,9 +19,9 @@ class LineHumpNamingStrategyTest {
         assertEquals("3", strategy.k2db("3"))
         assertEquals("3_hello", strategy.k2db("3Hello"))
         assertEquals("3_ab_hello", strategy.k2db("3AbHello"))
-        assertEquals("3abhello", strategy.k2db("3ABHello"))
-        assertEquals("q3ab_hello", strategy.k2db("Q3AbHello"))
-        assertEquals("q3abhello", strategy.k2db("Q3ABHello"))
+        assertEquals("3_a_b_hello", strategy.k2db("3ABHello"))
+        assertEquals("q3_ab_hello", strategy.k2db("Q3AbHello"))
+        assertEquals("q3_a_b_hello", strategy.k2db("Q3ABHello"))
         assertEquals("", strategy.k2db(""))
     }
 

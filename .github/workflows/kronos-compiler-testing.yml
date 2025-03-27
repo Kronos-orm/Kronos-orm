@@ -1,0 +1,25 @@
+name: Kronos-compiler-plugin unit testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unittests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21 ☕️
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'adopt'
+
+      - name: Run tests 🧪
+        run: ./gradlew :kronos-compiler:test

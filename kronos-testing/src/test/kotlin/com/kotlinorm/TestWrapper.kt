@@ -45,7 +45,9 @@ object TestWrapper : KronosDataSourceWrapper {
         )
     }
 
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>): List<Any> {
+    override fun forList(
+        task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>
+    ): List<Any> {
         return listOf()
     }
 
@@ -53,7 +55,9 @@ object TestWrapper : KronosDataSourceWrapper {
         return null
     }
 
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>): Any? {
+    override fun forObject(
+        task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>
+    ): Any? {
         return null
     }
 

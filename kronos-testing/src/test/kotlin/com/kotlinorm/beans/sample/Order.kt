@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.beans.sample
+package com.kotlinorm.beans.sample
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
@@ -25,13 +25,13 @@ import com.kotlinorm.annotations.Version
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_review")
-data class Review(
+@Table("tb_order")
+data class Order(
     val id: Int? = null,
-    val productId: Int? = null,
     val userId: Int? = null,
-    val rating: Int? = null,
-    val comment: String? = null,
+    val orderDate: LocalDateTime? = null,
+    val totalAmount: Double? = null,
+    val status: String? = null,
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updateTime: String? = null,

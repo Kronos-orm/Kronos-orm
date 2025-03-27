@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.beans.sample
+package com.kotlinorm.beans.sample.cascade.oneToMany
 
-import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.LogicDelete
@@ -26,18 +25,17 @@ import com.kotlinorm.annotations.Version
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_address")
-data class Address(
+@Table("tb_book")
+data class Book(
     val id: Int? = null,
-    val userId: Int? = null,
-    val street: String? = null,
-    val city: String? = null,
-    val state: String? = null,
-    @Column("zip") val zipCode: String? = null,
-    val country: String? = null,
+    val authorId: Int? = null, // 外键，关联到 Author
+    val title: String? = null, // 书名
+    val genre: String? = null, // 类型
+    val publishedYear: Int? = null, // 出版年份
+    val price: Double? = null, // 价格
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    val updateTime: String? = null,
+    val updateTime: LocalDateTime? = null,
     @CreateTime
     val createTime: LocalDateTime? = null,
     @Version

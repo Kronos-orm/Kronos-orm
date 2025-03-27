@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.beans.sample
+package com.kotlinorm.beans.sample.cascade.oneToOne
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
@@ -25,16 +25,18 @@ import com.kotlinorm.annotations.Version
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
-@Table("tb_order")
-data class Order(
+@Table("tb_car")
+data class Car(
     val id: Int? = null,
-    val userId: Int? = null,
-    val orderDate: LocalDateTime? = null,
-    val totalAmount: Double? = null,
-    val status: String? = null,
+    val ownerId: Int? = null,
+    val make: String? = null, // 汽车品牌
+    val model: String? = null, // 汽车型号
+    val year: Int? = null, // 生产年份
+    val color: String? = null, // 颜色
+    val details: CarDetails? = null, // 一对一级联
     @UpdateTime
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    val updateTime: String? = null,
+    val updateTime: LocalDateTime? = null,
     @CreateTime
     val createTime: LocalDateTime? = null,
     @Version

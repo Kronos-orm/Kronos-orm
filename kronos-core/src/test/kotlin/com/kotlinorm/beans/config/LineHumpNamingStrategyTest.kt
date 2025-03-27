@@ -1,7 +1,7 @@
 package com.kotlinorm.beans.config
 
 import com.kotlinorm.Kronos.lineHumpNamingStrategy
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class LineHumpNamingStrategyTest {

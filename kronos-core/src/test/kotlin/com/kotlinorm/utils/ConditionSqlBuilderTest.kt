@@ -1,15 +1,15 @@
 package com.kotlinorm.utils
 
-import com.kotlinorm.TestWrapper
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ConditionSqlBuilderTest {
-    private val wrapper = TestWrapper
+    private val wrapper = sampleMysqlJdbcWrapper
 
     @Test
     fun test() {

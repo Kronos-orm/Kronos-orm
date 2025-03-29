@@ -59,6 +59,10 @@ import org.jetbrains.kotlin.name.SpecialNames
 object KClassCreatorUtil {
     val kPojoClasses = mutableSetOf<IrClass>()
     val initFunctions = mutableSetOf<Pair<KotlinBuilderContext, IrFunction>>()
+    fun resetKClassCreator() {
+        kPojoClasses.clear()
+        initFunctions.clear()
+    }
 
     private val IrPluginContext.kClassCreatorSymbol
         get() = referenceProperties(

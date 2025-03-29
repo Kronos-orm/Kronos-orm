@@ -18,7 +18,6 @@ package com.kotlinorm.compiler.plugin.utils
 
 import com.kotlinorm.compiler.helpers.irListOf
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
-import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -49,7 +48,7 @@ val fqNameOfSelectFromsRegexes =
 fun KotlinBuilderContext.updateTypedQueryParameters(irCall: IrCall): IrCall {
     with(pluginContext){
         with(builder){
-            val queryType = irCall.typeArguments.first()!!
+            val queryType = irCall.getTypeArgument(0)!!
             val superTypes = (listOf(queryType) + queryType.superTypes()).map { it.classFqName!! }
             val irSuperTypes = irListOf(
                 irBuiltIns.stringType,

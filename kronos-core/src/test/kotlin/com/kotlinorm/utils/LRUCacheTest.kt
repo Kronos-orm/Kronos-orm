@@ -1,9 +1,8 @@
 package com.kotlinorm.utils
 
-import com.kotlinorm.utils.LRUCache
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class LRUCacheTest {
 

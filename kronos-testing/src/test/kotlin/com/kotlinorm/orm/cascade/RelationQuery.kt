@@ -3,19 +3,21 @@ package com.kotlinorm.orm.cascade
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
+import com.kotlinorm.beans.sample.manyToMany.Permission
+import com.kotlinorm.beans.sample.manyToMany.Role
+import com.kotlinorm.beans.sample.manyToMany.RolePermissionRelation
+import com.kotlinorm.beans.sample.oneToMany.GroupClass
+import com.kotlinorm.beans.sample.oneToMany.School
+import com.kotlinorm.beans.sample.oneToMany.Student
+import com.kotlinorm.orm.beans.GsonProcessor
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.cascade.manyToMany.Permission
-import com.kotlinorm.orm.cascade.manyToMany.Role
-import com.kotlinorm.orm.cascade.manyToMany.RolePermissionRelation
-import com.kotlinorm.orm.cascade.oneToMany.GroupClass
-import com.kotlinorm.orm.cascade.oneToMany.School
-import com.kotlinorm.orm.cascade.oneToMany.Student
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
-import com.kotlinorm.orm.beans.GsonProcessor
 import org.apache.commons.dbcp2.BasicDataSource
+import kotlin.io.print
+import kotlin.io.println
 import kotlin.test.Test
 
 class RelationQuery {

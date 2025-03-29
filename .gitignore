@@ -40,3 +40,9 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Gradle ###
+*.properties
+/keystore/*
+*.gpg
+*.key

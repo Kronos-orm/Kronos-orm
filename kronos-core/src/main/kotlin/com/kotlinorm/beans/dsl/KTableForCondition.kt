@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 
 package com.kotlinorm.beans.dsl
 
@@ -57,69 +58,47 @@ open class KTableForCondition<T : KPojo> {
      * @return `true`
      */
     operator fun <K> Iterable<K?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer K?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer K?
     ) = true
 
     operator fun Iterable<Number?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Number?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
     ) = true
 
     operator fun <K> Array<K?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer K?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer K?
     ) = true
 
     operator fun Array<Number?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Number?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
     ) = true
 
     operator fun IntArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Number?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
     ) = true
 
     operator fun LongArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Number?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
     ) = true
 
     operator fun FloatArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Number?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
     ) = true
 
     operator fun DoubleArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Number?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
     ) = true
 
     operator fun CharArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Char?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Char?
     ) = true
 
     operator fun BooleanArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Boolean?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Boolean?
     ) = true
 
     operator fun CharSequence?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @Suppress(
-            "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE"
-        ) @kotlin.internal.NoInfer Char?
+        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Char?
     ) = true
 
 

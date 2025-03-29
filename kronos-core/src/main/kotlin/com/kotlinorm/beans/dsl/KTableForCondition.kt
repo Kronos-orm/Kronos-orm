@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE", "UNUSED", "UnusedReceiverParameter")
 
 package com.kotlinorm.beans.dsl
 
@@ -40,7 +40,6 @@ open class KTableForCondition<T : KPojo> {
      * @param fieldName the name of the field to retrieve the value for
      * @return the value associated with the provided 'fieldName', or null if not found
      */
-    @Suppress("UNUSED")
     fun getValueByFieldName(fieldName: String): Any? {
         return criteriaParamMap[fieldName]
     }
@@ -57,59 +56,35 @@ open class KTableForCondition<T : KPojo> {
      * @param other the element to check
      * @return `true`
      */
-    operator fun <K> Iterable<K?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer K?
-    ) = true
+    operator fun <K> Iterable<K?>?.contains(other: @kotlin.internal.NoInfer K?) = true
 
-    operator fun Iterable<Number?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
-    ) = true
+    operator fun Iterable<Number?>?.contains(other: @kotlin.internal.NoInfer Number?) = true
 
-    operator fun <K> Array<K?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer K?
-    ) = true
+    operator fun <K> Array<K?>?.contains(other: @kotlin.internal.NoInfer K?) = true
 
-    operator fun Array<Number?>?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
-    ) = true
+    operator fun Array<Number?>?.contains(other: @kotlin.internal.NoInfer Number?) = true
 
-    operator fun IntArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
-    ) = true
+    operator fun IntArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
 
-    operator fun LongArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
-    ) = true
+    operator fun LongArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
 
-    operator fun FloatArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
-    ) = true
+    operator fun FloatArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
 
-    operator fun DoubleArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Number?
-    ) = true
+    operator fun DoubleArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
 
-    operator fun CharArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Char?
-    ) = true
+    operator fun CharArray?.contains(other: @kotlin.internal.NoInfer Char?) = true
 
-    operator fun BooleanArray?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Boolean?
-    ) = true
+    operator fun BooleanArray?.contains(other: @kotlin.internal.NoInfer Boolean?) = true
 
-    operator fun CharSequence?.contains(
-        @Suppress("UNUSED_PARAMETER") other: @kotlin.internal.NoInfer Char?
-    ) = true
-
-
-    operator fun CharSequence?.contains(@Suppress("UNUSED_PARAMETER") other: CharSequence): Boolean =
-        true
+    operator fun CharSequence?.contains(other: @kotlin.internal.NoInfer Char?) = true
+    
+    operator fun CharSequence?.contains(other: CharSequence): Boolean = true
 
     val CharSequence?.contains get() = true
 
     fun <T> T?.cast() = this as Any?
 
-    operator fun KPojo.minus(@Suppress("UNUSED_PARAMETER") field: Any?) = this
+    operator fun KPojo.minus(field: Any?) = this
 
     /**
      * Check if the Comparable<*> is greater than the specified
@@ -122,7 +97,7 @@ open class KTableForCondition<T : KPojo> {
      * @param T The type of the Comparable<*> to compare with.
      * @return `1`
      */
-    operator fun <T> Comparable<T>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Comparable<T>?) = 1
+    operator fun <T> Comparable<T>?.compareTo(other: Comparable<T>?) = 1
 
     /**
      * Check if the Comparable<*> is greater than the specified
@@ -138,7 +113,7 @@ open class KTableForCondition<T : KPojo> {
      */
     @JvmName("compareToDifferentType")
     @UnsafeCriteria("It's not safe to compare different Type, use `.cast()` to declare that the expression is safe.")
-    operator fun <T, R> Comparable<T>?.compareTo(@Suppress("UNUSED_PARAMETER") other: Comparable<R>?) = 1
+    operator fun <T, R> Comparable<T>?.compareTo(other: Comparable<R>?) = 1
 
     /**
      * Check if the Comparable<*> is greater than the specified
@@ -150,7 +125,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The Comparable<*> to compare with.
      * @return `1`
      */
-    operator fun Any?.compareTo(@Suppress("UNUSED_PARAMETER") other: Any?) = 1
+    operator fun Any?.compareTo(other: Any?) = 1
 
     /**
      * Set the no value strategy
@@ -162,8 +137,7 @@ open class KTableForCondition<T : KPojo> {
      * @param strategy The no value strategy
      * @return `1`
      */
-    @Suppress("UnusedReceiverParameter")
-    fun Boolean?.ifNoValue(@Suppress("UNUSED_PARAMETER") strategy: NoValueStrategyType) = true
+    fun Boolean?.ifNoValue(strategy: NoValueStrategyType) = true
 
     /**
      * Checks if the given value is like the specified string.
@@ -175,7 +149,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.like(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.like(other: String?) = true
 
     /**
      * Checks if the given value is not like the specified string.
@@ -187,7 +161,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.notLike(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.notLike(other: String?) = true
 
     /**
      * Checks if the given value is between the specified range.
@@ -199,7 +173,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The range to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.between(@Suppress("UNUSED_PARAMETER") other: ClosedRange<*>?) = true
+    infix fun Comparable<*>?.between(other: ClosedRange<*>?) = true
 
     /**
      * Checks if the given value is not between the specified range.
@@ -211,7 +185,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The range to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.notBetween(@Suppress("UNUSED_PARAMETER") other: ClosedRange<*>?) = true
+    infix fun Comparable<*>?.notBetween(other: ClosedRange<*>?) = true
 
     /**
      * Checks if the given value matches the specified string.
@@ -223,7 +197,7 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.startsWith(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.startsWith(other: String?) = true
 
     /**
      * Checks if the given value matches the specified string.
@@ -235,11 +209,11 @@ open class KTableForCondition<T : KPojo> {
      * @param other The string to compare with.
      * @return `true`
      */
-    infix fun Comparable<*>?.endsWith(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.endsWith(other: String?) = true
 
-    infix fun Comparable<*>?.regexp(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.regexp(other: String?) = true
 
-    infix fun Comparable<*>?.notRegexp(@Suppress("UNUSED_PARAMETER") other: String?) = true
+    infix fun Comparable<*>?.notRegexp(other: String?) = true
 
     /**
      * Checks if the given value is null.
@@ -250,7 +224,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     fun String?.asSql() = true
 
     /**
@@ -262,7 +235,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     fun Boolean?.asSql() = true
 
     /**
@@ -274,10 +246,8 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.eq get() = true
 
-    @Suppress("UnusedReceiverParameter")
     val KPojo.eq get() = true
 
     /**
@@ -289,7 +259,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.neq get() = true
 
     /**
@@ -301,7 +270,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.like get() = true
 
     /**
@@ -313,7 +281,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.notLike get() = true
 
     /**
@@ -325,7 +292,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.startsWith get() = true
 
     /**
@@ -337,7 +303,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.endsWith get() = true
 
     /**
@@ -349,7 +314,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Any?.isNull get() = true
 
     /**
@@ -361,7 +325,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Any?.notNull get() = true
 
     /**
@@ -373,7 +336,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.lt get() = true
 
     /**
@@ -385,7 +347,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.gt get() = true
 
     /**
@@ -397,7 +358,6 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.le get() = true
 
     /**
@@ -409,13 +369,10 @@ open class KTableForCondition<T : KPojo> {
      *
      * @return `true`
      */
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.ge get() = true
 
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.regexp get() = true
 
-    @Suppress("UnusedReceiverParameter")
     val Comparable<*>?.notRegexp get() = true
 
     fun buildContainsStr(str: String?): String? {

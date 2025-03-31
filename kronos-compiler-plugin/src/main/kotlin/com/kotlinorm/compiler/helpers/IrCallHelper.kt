@@ -16,20 +16,19 @@
 
 package com.kotlinorm.compiler.helpers
 
-import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 
 // A helpers class for specifying the receiver of an IR function call
 // applyIrCall的辅助类，用于指定IR函数调用的接收器
@@ -101,6 +100,10 @@ internal fun IrBuilderWithScope.applyIrCall(
  */
 internal fun IrExpression.asIrCall(): IrCall {
     return this as IrCall
+}
+
+internal fun IrExpression.asIrConstructorCall(): IrConstructorCall {
+    return this as IrConstructorCall
 }
 
 /**

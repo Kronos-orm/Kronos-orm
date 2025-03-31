@@ -254,8 +254,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
                         File(sourceRange.filePath).readLines(UTF_8)
                     }
                     val realStartOffset = realStartOffset(source, sourceRange.startLineNumber)
-
-                    val comment = when (this) {
+                    val comment = when (declaration) {
                             is IrProperty -> extractDeclarationComment(
                                 source,
                                 realStartOffset..sourceRange.endLineNumber
@@ -273,7 +272,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
                         return irString(comment)
                     }
                 }
-                return irNull()
+                return irString("")
             }
         }
     }

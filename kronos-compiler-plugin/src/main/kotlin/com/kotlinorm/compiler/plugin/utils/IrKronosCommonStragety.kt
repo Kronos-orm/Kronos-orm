@@ -16,15 +16,17 @@
 
 package com.kotlinorm.compiler.plugin.utils
 
-import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.asIrCall
+import com.kotlinorm.compiler.helpers.asIrConstructorCall
 import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
+import com.kotlinorm.compiler.helpers.referenceClass
+import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGetObject
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
@@ -82,9 +84,19 @@ val OptimisticLockFqName = FqName("com.kotlinorm.annotations.Version")
 internal fun KotlinBuilderContext.getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
     with(pluginContext){
         with(builder){
-            var strategy = applyIrCall(globalSymbol){ dispatchBy(irGetObject(KronosSymbol)) }
-            val tableSetting = irClass.annotations.findByFqName(fqName)?.asIrCall()?.getValueArgument(1)
-            if (tableSetting == null || (tableSetting is IrConst && tableSetting.value == true)) {
+            var strategy = applyIrCall(globalSymbol) { dispatchBy(irGetObject(KronosSymbol)) }
+            val tableAnno = irClass.annotations.findByFqName(fqName)?.asIrConstructorCall()
+            fun isAnnoDisabled() =
+               // 找到为IrBoolean且为false
+                tableAnno?.valueArguments?.any { arg -> arg is IrConst && arg.value == false } == true
+            if (isAnnoDisabled()) {
+                strategy = applyIrCall(
+                    commonStrategySymbol, irBoolean(false), applyIrCall(
+                        fieldSymbol.constructors.first(),
+                        irString("")
+                    )
+                )
+            } else {
                 var annotation: IrConstructorCall?
                 var enabled: IrConst?
                 val column = irClass.properties.find {

@@ -36,9 +36,11 @@ import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.getPropertyGetter
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
+import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 
 internal val IrPluginContext.fieldSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Field")!!
@@ -208,7 +210,7 @@ fun KotlinBuilderContext.getColumnName(
                 }
             }
 
-            val columnName = columnAnnotation?.getValueArgument(0) ?: applyIrCall(
+            val columnName = columnAnnotation?.getValueArgument(Name.identifier("name")) ?: applyIrCall(
                 k2dbSymbol, irString(propertyName)
             ) {
                 dispatchBy(applyIrCall(fieldNamingStrategySymbol) { dispatchBy(irGetObject(KronosSymbol)) })
@@ -216,7 +218,7 @@ fun KotlinBuilderContext.getColumnName(
             val irPropertyType = irProperty.backingField?.type ?: irBuiltIns.anyNType
             val propertyType = irPropertyType.classFqName!!.asString()
             val columnType =
-                columnTypeAnnotation?.getValueArgument(0) ?: irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType(propertyType))
+                columnTypeAnnotation?.getValueArgument(Name.identifier("type")) ?: irEnum(kColumnTypeSymbol, kotlinTypeToKColumnType(propertyType))
             val tableName = getTableName(parent)
             val propKClass = irPropertyType.getClass()
             val cascadeIsArrayOrCollection = irPropertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }

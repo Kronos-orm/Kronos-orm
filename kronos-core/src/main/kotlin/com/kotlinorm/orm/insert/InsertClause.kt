@@ -19,7 +19,9 @@ package com.kotlinorm.orm.insert
 import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.generator.SnowflakeIdGenerator
+import com.kotlinorm.beans.generator.UUIDGenerator
+import com.kotlinorm.beans.generator.customIdGenerator
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
@@ -28,13 +30,11 @@ import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.beans.generator.SnowflakeIdGenerator
-import com.kotlinorm.beans.generator.UUIDGenerator
-import com.kotlinorm.beans.generator.customIdGenerator
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
@@ -94,10 +94,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
         toInsertFields.addAll(allFields.filter { it.isColumn && paramMap[it.name] != null })
 
-        setCommonStrategy(createTimeStrategy, true, callBack = updateInsertFields)
-        setCommonStrategy(updateTimeStrategy, true, callBack = updateInsertFields)
-        setCommonStrategy(logicDeleteStrategy, false, callBack = updateInsertFields)
-        setCommonStrategy(optimisticStrategy, false, callBack = updateInsertFields)
+        setCommonStrategy(createTimeStrategy, allFields, true, callBack = updateInsertFields)
+        setCommonStrategy(updateTimeStrategy, allFields, true, callBack = updateInsertFields)
+        setCommonStrategy(logicDeleteStrategy, allFields, false, callBack = updateInsertFields)
+        setCommonStrategy(optimisticStrategy, allFields, false, callBack = updateInsertFields)
 
         val sql = getInsertSql(wrapper.orDefault(), tableName, toInsertFields.toList())
         val paramMapNew = mutableMapOf<String, Any?>()

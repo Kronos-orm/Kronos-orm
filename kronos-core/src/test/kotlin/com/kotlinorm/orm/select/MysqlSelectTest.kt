@@ -36,7 +36,7 @@ class MysqlSelectTest {
 
         assertEquals(mapOf("id" to 2), paramMap)
         assertEquals(
-            "SELECT `id`, `username`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
             sql
         )
     }
@@ -64,7 +64,7 @@ class MysqlSelectTest {
 
         assertEquals(mapOf("id" to 2), paramMap)
         assertEquals(
-            "SELECT `id`, `username`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1",
             sql
         )
     }
@@ -75,7 +75,7 @@ class MysqlSelectTest {
 
         assertEquals(mapOf("id" to 2), paramMap)
         assertEquals(
-            "SELECT `id`, `username`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10",
             sql
         )
     }
@@ -88,7 +88,7 @@ class MysqlSelectTest {
         val (sql2, paramMap2) = total
 
         assertEquals(
-            "SELECT `id`, `username`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0",
             sql
         )
         assertEquals(mapOf("id" to 2), paramMap)

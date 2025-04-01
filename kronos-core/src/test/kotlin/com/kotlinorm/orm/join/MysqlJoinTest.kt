@@ -65,10 +65,9 @@ class MysqlJoinTest {
         assertEquals(
             """
                 SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
-                LEFT JOIN `user_relation` 
-                ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
                 RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
-                FULL JOIN `product_log` ON `tb_user`.`id` = `product_log`.`id` 
+                FULL JOIN `tb_address` ON `tb_user`.`id` = `tb_address`.`user_id` AND `tb_address`.`deleted` = 0 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(),
@@ -79,10 +78,7 @@ class MysqlJoinTest {
                 "id" to 1,
                 "username" to "123",
                 "gender" to 1,
-                "deleted" to 0.toByte(),
-                "id2" to 1,
-                "status" to -1,
-                "remarkNum" to 0
+                "id2" to 1
             ), paramMap
         )
     }
@@ -104,10 +100,9 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
-                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
+                FROM `tb_user` LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` 
                 LEFT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
-                LEFT JOIN `product_log` ON `tb_user`.`id` = `product_log`.`id` 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(), sql
@@ -117,10 +112,7 @@ class MysqlJoinTest {
                 "id" to 1,
                 "username" to "123",
                 "gender" to 1,
-                "deleted" to 0.toByte(),
                 "id2" to 1,
-                "status" to -1,
-                "remarkNum" to 0
             ), paramMap
         )
     }
@@ -145,12 +137,14 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT COUNT(1) FROM (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
-                    LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
-                    RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
-                    FULL JOIN `product_log` ON `tb_user`.`id` = `product_log`.`id` 
-                    WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
-                    ORDER BY `tb_user`.`id` DESC LIMIT 10 OFFSET 0) AS t
+                SELECT COUNT(1) FROM 
+                (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
+                FROM `tb_user` 
+                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
+                FULL JOIN `tb_address` ON `tb_user`.`id` = `tb_address`.`user_id` AND `tb_address`.`deleted` = 0 
+                WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
+                ORDER BY `tb_user`.`id` DESC) AS t
             """.trimWhitespace(),
             sql
         )
@@ -159,10 +153,7 @@ class MysqlJoinTest {
                 "id" to 1,
                 "username" to "123",
                 "gender" to 1,
-                "deleted" to 0.toByte(),
-                "id2" to 1,
-                "status" to -1,
-                "remarkNum" to 0
+                 "id2" to 1
             ), paramMap
         )
     }

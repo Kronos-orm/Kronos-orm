@@ -170,7 +170,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
                     }
 
-                    stack.pop()
+                    if (stack.isNotEmpty()) stack.pop()
                 } else cur = top.children[1]
             }
 

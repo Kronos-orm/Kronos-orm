@@ -2,6 +2,7 @@ package com.kotlinorm.orm.update
 
 import com.kotlinorm.GsonProcessor
 import com.kotlinorm.Kronos
+import com.kotlinorm.beans.parser.NoneDataSourceWrapper.transact
 import com.kotlinorm.beans.sample.Movie
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.enums.NoValueStrategyType
@@ -118,7 +119,7 @@ class Update {
             .by { it.id }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -126,6 +127,7 @@ class Update {
                 "idNew" to 1,
                 "genderNew" to null,
                 "id" to 1,
+                "scoreNew" to null,
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -723,7 +725,7 @@ class Update {
             .by { it.id }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -731,6 +733,7 @@ class Update {
                 "idNew" to 1,
                 "genderNew" to null,
                 "id" to 1,
+                "scoreNew" to null,
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -755,10 +758,10 @@ class Update {
             .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `gender` = :gender AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0",
             sql
         )
-        assertEquals(mapOf("idNew" to 1, "gender" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
+        assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
         // Update tb_user set username = 'test' where id = 1
     }
 
@@ -785,7 +788,7 @@ class Update {
     fun testBatchUpdateExceptBy() {
         val (sql, _, list) = arrayOf(user, testUser).update { it - it.username }.by { it.id }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -793,12 +796,14 @@ class Update {
                 mapOf(
                     "id" to 1,
                     "idNew" to 1,
+                    "scoreNew" to null,
                     "genderNew" to null,
                     "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "id" to 1,
                     "idNew" to 1,
+                    "scoreNew" to null,
                     "genderNew" to null,
                     "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
@@ -831,7 +836,7 @@ class Update {
     fun testBatchUpdateIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.username }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -839,12 +844,14 @@ class Update {
                 mapOf(
                     "id" to 1,
                     "idNew" to 1,
+                    "scoreNew" to null,
                     "genderNew" to null,
                     "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "id" to 1,
                     "idNew" to 1,
+                    "scoreNew" to null,
                     "genderNew" to null,
                     "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
@@ -856,7 +863,7 @@ class Update {
     fun testBatchUpdateExceptIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.id }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
         )
         assertEquals(
@@ -864,16 +871,19 @@ class Update {
                 mapOf(
                     "genderNew" to null,
                     "id" to 1,
+                    "scoreNew" to null,
                     "usernameNew" to null,
                     "updateTimeNew" to (list[0].paramMap["updateTimeNew"] ?: "")
                 ),
                 mapOf(
                     "genderNew" to null,
                     "id" to 1,
+                    "scoreNew" to null,
                     "usernameNew" to "test",
                     "updateTimeNew" to (list[1].paramMap["updateTimeNew"] ?: "")
                 )
             ).toList(), list.map { it.paramMap }
         )
+
     }
 }

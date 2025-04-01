@@ -30,13 +30,12 @@ class KCascadeTest {
         }
 
         assertEquals(
-            course,
             Course().apply {
                 studentCourse = listOf(
                     StudentCourse(student = Student(name = "Alice")),
                     StudentCourse(student = Student(name = "Bob")),
                 )
-            }
+            }, course
         )
 
         assertEquals(

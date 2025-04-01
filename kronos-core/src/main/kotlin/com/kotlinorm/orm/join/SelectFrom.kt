@@ -624,7 +624,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         val joinSql = " " + joinables.joinToString(" ") {
             var joinCondition = it.condition
-            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy, allFields) { _, value ->
+            if (it.logicDeleteStrategy.enabled) setCommonStrategy(
+                it.logicDeleteStrategy,
+                (allFields + listOfPojo.find { k -> k.kronosTableName() == it.tableName }!!.kronosColumns()).toCollection(LinkedHashSet())
+            ) { _, value ->
                 joinCondition = listOfNotNull(
                     joinCondition,
                     "${

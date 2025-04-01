@@ -35,10 +35,8 @@ import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.getPropertyGetter
-import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val IrPluginContext.updateTimeStrategySymbol
@@ -101,7 +99,7 @@ internal fun KotlinBuilderContext.getValidStrategy(irClass: IrClass, globalSymbo
                 var enabled: IrConst?
                 val column = irClass.properties.find {
                     annotation = it.annotations.findByFqName(fqName)
-                    enabled = annotation?.getValueArgument(Name.identifier("enabled")) as IrConst?
+                    enabled = annotation?.getValueArgument(0) as IrConst?
                     annotation != null && enabled?.value != false
                 }
                 if (column != null) {

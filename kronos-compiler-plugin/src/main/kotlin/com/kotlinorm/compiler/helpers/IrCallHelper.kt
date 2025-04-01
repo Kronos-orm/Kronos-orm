@@ -26,9 +26,7 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.util.getValueArgument
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
 
 // A helpers class for specifying the receiver of an IR function call
 // applyIrCall的辅助类，用于指定IR函数调用的接收器

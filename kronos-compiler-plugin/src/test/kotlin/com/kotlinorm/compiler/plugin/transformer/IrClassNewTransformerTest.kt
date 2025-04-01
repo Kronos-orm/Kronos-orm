@@ -73,7 +73,11 @@ class IrClassNewTransformerTest {
             @CreateTime(enable = false)
             data class Customer(val id: Int? = null): KPojo
 
-            
+            data class Student(
+                val id: Int? = null,
+                @CreateTime(enable = false)
+                val createTime: String? = null
+            ): KPojo
             
             fun main() {
                 Kronos.init {
@@ -102,6 +106,9 @@ class IrClassNewTransformerTest {
                 
                 assertEquals(Customer().kronosCreateTime().enabled, false)
                 assertEquals(Customer().kronosCreateTime().field.name, "")
+                
+                assertEquals(Student().kronosCreateTime().enabled, false)
+                assertEquals(Student().kronosCreateTime().field.name, "createTime")
             }
         """.trimIndent(),
             testBaseName

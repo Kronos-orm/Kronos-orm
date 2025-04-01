@@ -182,13 +182,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             }
 
             criteriaMap.putAll(constMap)
-            criteriaMap.keys.forEach { key ->
+            criteriaMap.keys.forEach { tableName ->
                 joinables.add(
                     KJoinable(
-                        key,
+                        tableName,
                         JoinType.LEFT_JOIN,
-                        criteriaMap[key]!!.toCriteria(),
-                        listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()
+                        criteriaMap[tableName]!!.toCriteria(),
+                        listOfPojo.find { it.kronosTableName() == tableName }!!
                     )
                 )
             }
@@ -228,7 +228,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another))
         }
     }
 
@@ -245,7 +245,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another))
         }
     }
 
@@ -262,7 +262,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another))
         }
     }
 
@@ -279,7 +279,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another))
         }
     }
 
@@ -296,7 +296,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another))
         }
     }
 
@@ -624,16 +624,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         val joinSql = " " + joinables.joinToString(" ") {
             var joinCondition = it.condition
-            if (it.logicDeleteStrategy.enabled) setCommonStrategy(
-                it.logicDeleteStrategy,
-                (allFields + listOfPojo.find { k -> k.kronosTableName() == it.tableName }!!.kronosColumns()).toCollection(LinkedHashSet())
+            val logicDeleteStrategy = it.kPojo.kronosLogicDelete()
+            if (logicDeleteStrategy.enabled) setCommonStrategy(
+                logicDeleteStrategy,
+                it.kPojo.kronosColumns().toLinkedSet()
             ) { _, value ->
                 joinCondition = listOfNotNull(
                     joinCondition,
                     "${
                         quote(
                             wrapper.orDefault(),
-                            it.logicDeleteStrategy.field,
+                            logicDeleteStrategy.field,
                             true,
                             databaseOfTable
                         )

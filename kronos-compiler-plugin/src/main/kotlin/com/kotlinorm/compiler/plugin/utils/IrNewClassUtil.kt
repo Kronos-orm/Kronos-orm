@@ -119,8 +119,7 @@ fun KotlinBuilderContext.createFromMapValueFunction(declaration: IrClass, irFunc
             return irBlockBody {
                 val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
                 +declaration.properties.toList().mapNotNull { property ->
-                    if (!property.isVar || property.isConst ||
-                        property.isDelegated || property.isGetter ||
+                    if (property.isDelegated || property.isGetter ||
                         property.ignoreAnnotationValue().ignore("from_map")
                     ) {
                         return@mapNotNull null
@@ -156,8 +155,7 @@ fun KotlinBuilderContext.createSafeFromMapValueFunction(declaration: IrClass, ir
                 val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
                 +irBlock {
                     declaration.properties.toList().mapNotNull { property ->
-                        if (!property.isVar || property.isConst ||
-                            property.isDelegated || property.isGetter ||
+                        if (property.isDelegated || property.isGetter ||
                             property.ignoreAnnotationValue().ignore("from_map")
                         ) {
                             return@mapNotNull null

@@ -19,6 +19,7 @@ package com.kotlinorm.compiler.plugin
 import com.kotlinorm.compiler.plugin.transformer.KronosParserTransformer
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.buildKClassMapper
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.initFunctions
+import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.resetKClassCreator
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
@@ -34,6 +35,7 @@ import java.io.File
 open class KronosParserExtension(private val debug: Boolean, private val debugInfoPath: String) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+        resetKClassCreator()
         moduleFragment
             .transform(KronosParserTransformer(pluginContext), null)
 

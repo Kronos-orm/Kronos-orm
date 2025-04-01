@@ -16,6 +16,8 @@ class IrClassNewTransformerTest {
             import com.kotlinorm.Kronos
             import com.kotlinorm.Kronos.init
             import com.kotlinorm.annotations.*
+            import com.kotlinorm.beans.config.KronosCommonStrategy
+            import com.kotlinorm.beans.dsl.Field
             import com.kotlinorm.interfaces.KPojo
             import com.kotlinorm.enums.KColumnType.TINYINT
             import com.kotlinorm.utils.createInstance
@@ -68,6 +70,7 @@ class IrClassNewTransformerTest {
                 var deleted: Boolean? = null
             ) : KPojo
             
+            @CreateTime(enable = false)
             data class Customer(val id: Int? = null): KPojo
 
             
@@ -76,6 +79,7 @@ class IrClassNewTransformerTest {
                 Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
+                    createTimeStrategy = KronosCommonStrategy(false, Field("create_time"))
                 }
             
                 val user = User::class.createInstance()
@@ -95,6 +99,9 @@ class IrClassNewTransformerTest {
                 assertNotNull(user.kronosColumns().find { it.name == "updateTime" })
                 assertNotNull(user.kronosColumns().find { it.name == "version" })
                 assertNotNull(user.kronosColumns().find { it.name == "deleted" })
+                
+                assertEquals(Customer().kronosCreateTime().enabled, false)
+                assertEquals(Customer().kronosCreateTime().field.name, "")
             }
         """.trimIndent(),
             testBaseName

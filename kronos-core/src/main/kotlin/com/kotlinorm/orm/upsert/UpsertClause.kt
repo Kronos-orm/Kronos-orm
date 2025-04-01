@@ -41,6 +41,7 @@ import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -61,6 +62,9 @@ class UpsertClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
+    private var createTimeStrategy = pojo.kronosCreateTime()
+    private var updateTimeStrategy = pojo.kronosUpdateTime()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete()
     private var optimisticStrategy = pojo.kronosOptimisticLock()
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var onConflict = false
@@ -172,6 +176,26 @@ class UpsertClause<T : KPojo>(
         val paramMap = (paramMap.filter { it -> it.key in (toUpdateFields + toInsertFields + onFields).map { it.name } }).toMutableMap()
 
         if (onConflict) {
+            onFields += toUpdateFields
+            // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
+            setCommonStrategy(logicDeleteStrategy, allFields) { field, value ->
+                toInsertFields += field
+                paramMap[field.name] = value
+            }
+
+            setCommonStrategy(createTimeStrategy, allFields) { field, value ->
+                onFields -= field
+                toInsertFields += field
+                paramMap[field.name] = value
+            }
+
+            // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
+            setCommonStrategy(updateTimeStrategy, allFields, true) { field, value ->
+                onFields -= field
+                toInsertFields += field
+                toUpdateFields += field
+                paramMap[field.name] = value
+            }
             return KronosAtomicActionTask(
                 SqlManager.getOnConflictSql(
                     dataSource, ConflictResolver(

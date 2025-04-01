@@ -18,7 +18,6 @@ package com.kotlinorm.orm.delete
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -31,6 +30,7 @@ import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeDeleteClause
 import com.kotlinorm.types.ToFilter
@@ -150,7 +150,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
         // 设置逻辑删除的策略
         if (logic) {
-            setCommonStrategy(logicDeleteStrategy) { field, value ->
+            setCommonStrategy(logicDeleteStrategy, allFields) { field, value ->
                 condition = listOfNotNull(
                     condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
                 ).toCriteria()
@@ -169,11 +169,11 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 paramMap[field.name + "New"] = value
             }
             // 设置更新时间和逻辑删除字段的策略
-            setCommonStrategy(updateTimeStrategy, true, callBack = updateFields)
-            setCommonStrategy(logicDeleteStrategy, defaultValue = 1, callBack = updateFields)
+            setCommonStrategy(updateTimeStrategy, allFields, true, callBack = updateFields)
+            setCommonStrategy(logicDeleteStrategy, allFields, defaultValue = 1, callBack = updateFields)
 
             var plusAssign: Pair<Field, String>? = null
-            setCommonStrategy(optimisticStrategy) { field, _ ->
+            setCommonStrategy(optimisticStrategy, allFields) { field, _ ->
                 if (toUpdateFields.any { it.columnName == field.columnName }) {
                     throw IllegalArgumentException("The version field cannot be updated manually.")
                 }
@@ -189,7 +189,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                         tableName,
                         toUpdateFields,
                         toWhereSql(whereClauseSql),
-                        if (plusAssign != null) mutableListOf(plusAssign!!) else mutableListOf(),
+                        if (plusAssign != null) mutableListOf(plusAssign) else mutableListOf(),
                         mutableListOf()
                     ),
                     paramMap,

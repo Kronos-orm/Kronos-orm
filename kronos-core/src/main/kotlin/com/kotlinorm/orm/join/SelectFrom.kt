@@ -54,6 +54,34 @@ import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.collections.LinkedHashSet
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableList
+import kotlin.collections.MutableMap
+import kotlin.collections.Set
+import kotlin.collections.contains
+import kotlin.collections.filter
+import kotlin.collections.find
+import kotlin.collections.first
+import kotlin.collections.firstOrNull
+import kotlin.collections.forEach
+import kotlin.collections.isNotEmpty
+import kotlin.collections.joinToString
+import kotlin.collections.linkedSetOf
+import kotlin.collections.listOf
+import kotlin.collections.listOfNotNull
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.mutableSetOf
+import kotlin.collections.plusAssign
+import kotlin.collections.putAll
+import kotlin.collections.set
+import kotlin.collections.toList
+import kotlin.collections.toSet
+import kotlin.text.isNullOrEmpty
 
 /**
  * Select From
@@ -142,7 +170,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
                     }
 
-                    stack.pop()
+                    if (stack.isNotEmpty()) stack.pop()
                 } else cur = top.children[1]
             }
 
@@ -154,13 +182,13 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             }
 
             criteriaMap.putAll(constMap)
-            criteriaMap.keys.forEach { key ->
+            criteriaMap.keys.forEach { tableName ->
                 joinables.add(
                     KJoinable(
-                        key,
+                        tableName,
                         JoinType.LEFT_JOIN,
-                        criteriaMap[key]!!.toCriteria(),
-                        listOfPojo.find { it.kronosTableName() == key }!!.kronosLogicDelete()
+                        criteriaMap[tableName]!!.toCriteria(),
+                        listOfPojo.find { it.kronosTableName() == tableName }!!
                     )
                 )
             }
@@ -200,7 +228,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another))
         }
     }
 
@@ -217,7 +245,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another))
         }
     }
 
@@ -234,7 +262,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another))
         }
     }
 
@@ -251,7 +279,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another))
         }
     }
 
@@ -268,7 +296,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another.kronosLogicDelete()))
+            joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another))
         }
     }
 
@@ -561,7 +589,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
 
         // 设置逻辑删除的条件
-        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
+        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy, allFields) { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition,
                 "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, databaseOfTable)} = $value".asSql()
@@ -596,13 +624,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         val joinSql = " " + joinables.joinToString(" ") {
             var joinCondition = it.condition
-            if (it.logicDeleteStrategy.enabled) setCommonStrategy(it.logicDeleteStrategy) { _, value ->
+            val logicDeleteStrategy = it.kPojo.kronosLogicDelete()
+            if (logicDeleteStrategy.enabled) setCommonStrategy(
+                logicDeleteStrategy,
+                it.kPojo.kronosColumns().toLinkedSet()
+            ) { _, value ->
                 joinCondition = listOfNotNull(
                     joinCondition,
                     "${
                         quote(
                             wrapper.orDefault(),
-                            it.logicDeleteStrategy.field,
+                            logicDeleteStrategy.field,
                             true,
                             databaseOfTable
                         )

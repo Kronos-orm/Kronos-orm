@@ -1,15 +1,15 @@
 package com.kotlinorm.utils
 
-import com.kotlinorm.TestWrapper
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ConditionSqlBuilderTest {
-    private val wrapper = TestWrapper
+    private val wrapper = sampleMysqlJdbcWrapper
 
     @Test
     fun test() {
@@ -374,8 +374,8 @@ class ConditionSqlBuilderTest {
     fun test18() {
         val condition = "id".eq(1) or "id".eq(2)
 
-        val expect = "`id` = :id OR `id` = :id@2"
-        val paramMap = mapOf("id" to 1, "id@2" to 2)
+        val expect = "`id` = :id OR `id` = :id@1"
+        val paramMap = mapOf("id" to 1, "id@1" to 2)
         val (sql, paramMap2) = ConditionSqlBuilder.buildConditionSqlWithParams(
             KOperationType.SELECT,
             wrapper,

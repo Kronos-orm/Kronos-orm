@@ -2,6 +2,6 @@ package com.kotlinorm.utils
 
 typealias KStack<T> = ArrayDeque<T>
 
-fun <T> ArrayDeque<T>.push(element: T) = addLast(element)
+fun <T> KStack<T>.push(element: T) = addLast(element)
 
-fun <T> ArrayDeque<T>.pop() = removeLastOrNull() ?: throw NoSuchElementException("ArrayDeque is empty")
+fun <T> KStack<T>.pop() = removeLastOrNull() ?: throw NoSuchElementException("ArrayDeque is empty")

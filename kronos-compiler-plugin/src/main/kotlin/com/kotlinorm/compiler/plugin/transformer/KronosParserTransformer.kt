@@ -38,7 +38,6 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.backend.js.utils.typeArguments
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
@@ -73,11 +72,10 @@ class KronosParserTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         with(pluginContext) {
-            if (expression.typeArgumentsCount > 0) {
-                expression.typeArguments.forEach {
-                    if (it != null && it.getClass() != null && it.superTypes().any { it.classFqName == KPojoFqName }) {
-                        kPojoClasses.add(it.getClass()!!)
-                    }
+            for(i in 0 until expression.typeArgumentsCount) {
+                val typeArgument = expression.getTypeArgument(i)
+                if (typeArgument != null && typeArgument.getClass() != null && typeArgument.superTypes().any { it.classFqName == KPojoFqName }) {
+                    kPojoClasses.add(typeArgument.getClass()!!)
                 }
             }
             if (expression.symbol.owner.hasAnnotation(initAnnotationFqName)) {

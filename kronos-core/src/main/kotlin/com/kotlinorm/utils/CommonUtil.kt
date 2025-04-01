@@ -21,8 +21,8 @@ import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import kotlin.reflect.KClass
 
@@ -36,11 +36,12 @@ import kotlin.reflect.KClass
 
 fun setCommonStrategy(
     strategy: KronosCommonStrategy,
+    allFields: LinkedHashSet<Field>,
     timeStrategy: Boolean = false,
     defaultValue: Any = 0,
     callBack: (field: Field, value: Any?) -> Unit
 ) {
-    if (strategy.enabled) {
+    if (strategy.enabled && strategy.field in allFields) {
         if (timeStrategy) {
             val format = (strategy.field.dateFormat ?: defaultDateFormat).toString()
             callBack(strategy.field, currentDateTime(format))

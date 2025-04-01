@@ -5,7 +5,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.SelectClause
 import com.kotlinorm.utils.ConditionSqlBuilder
-import kotlin.collections.set
 
 open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
     private val tasks = tasks.toMutableList()
@@ -14,19 +13,18 @@ open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
     private val fieldNameMapping = mutableMapOf<String, MutableMap<String, String>>()
 
     fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
-        return executeQuery(wrapper) { it.query(wrapper) }
+        return executeQuery { it.query(wrapper) }
     }
 
     fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
-        return executeQuery(wrapper) { listOf(it.queryMap(wrapper)) }.first()
+        return executeQuery { listOf(it.queryMap(wrapper)) }.first()
     }
 
     fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
-        return executeQuery(wrapper) { listOfNotNull(it.queryMapOrNull(wrapper)) }.firstOrNull()
+        return executeQuery { listOfNotNull(it.queryMapOrNull(wrapper)) }.firstOrNull()
     }
 
     private fun executeQuery(
-        wrapper: KronosDataSourceWrapper?,
         queryFunction: (KronosQueryTask) -> List<Map<String, Any?>>
     ): List<Map<String, Any?>> {
         prepareTasks()
@@ -48,7 +46,7 @@ open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
         val fieldCountMap = mutableMapOf<String, Int>()
         safeKeyList = tasks.map { task ->
             val safeKey = ConditionSqlBuilder.getSafeKey(
-                task.pojo.javaClass.simpleName, keyCounters, mutableMapOf(), task
+                task.pojo::class.simpleName.toString(), keyCounters, mutableMapOf(), task
             )
             task.selectFields.forEach { field ->
                 fieldCountMap[field.name] = fieldCountMap.getOrDefault(field.name, 0) + 1

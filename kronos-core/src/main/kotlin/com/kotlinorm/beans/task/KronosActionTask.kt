@@ -148,14 +148,14 @@ class KronosActionTask {
         }
     }
 
-    private val firstTask by lazy { atomicTasks.first() }
+    private val firstTask by lazy { atomicTasks.firstOrNull() }
 
     operator fun component1(): String {
-        return firstTask.sql
+        return firstTask?.sql ?: ""
     }
 
     operator fun component2(): Map<String, Any?> {
-        return firstTask.paramMap
+        return firstTask?.paramMap ?: mapOf()
     }
 
     operator fun component3(): MutableList<KronosAtomicActionTask> {

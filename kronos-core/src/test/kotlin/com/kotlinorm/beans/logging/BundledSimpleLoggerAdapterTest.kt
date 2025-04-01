@@ -3,9 +3,8 @@ package com.kotlinorm.beans.logging
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter.Companion.logFileNameRule
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import org.junit.jupiter.api.Test
 import java.io.File
-import java.nio.charset.Charset
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class BundledSimpleLoggerAdapterTest {

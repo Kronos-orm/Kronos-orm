@@ -37,6 +37,8 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.properties
 
 /**
  * Kronos Parser Transformer
@@ -124,8 +126,13 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 class KronosIrClassNewTransformer(
     private val pluginContext: IrPluginContext, private val irClass: IrClass
 ) : IrElementTransformerVoidWithContext() {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
         if (declaration is IrSimpleFunction && declaration.isFakeOverride) {
+            irClass.properties.forEach {
+                it.isVar = true
+                it.isConst = false
+            }
             fun replaceFakeBody(functionBodyFactory: () -> IrBlockBody) {
                 declaration.isFakeOverride = false
                 declaration.dispatchReceiverParameter = irClass.thisReceiver

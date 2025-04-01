@@ -276,12 +276,12 @@ object MysqlSupport : DatabasesSupport {
     }
 
     override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
-        val (tableName, _, toUpdateFields, toInsertFields) = conflictResolver
+        val (tableName, onFields, _, toInsertFields) = conflictResolver
         return "INSERT INTO ${quote(tableName)} (${toInsertFields.joinToString { quote(it) }}) " + "VALUES (${
             toInsertFields.joinToString(
                 ", "
             ) { ":$it" }
-        }) " + "ON DUPLICATE KEY UPDATE ${toUpdateFields.joinToString(", ") { equation(it) }}"
+        }) " + "ON DUPLICATE KEY UPDATE ${onFields.joinToString(", ") { equation(it) }}"
     }
 
     override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =

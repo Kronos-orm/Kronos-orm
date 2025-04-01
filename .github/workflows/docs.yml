@@ -3,7 +3,7 @@ name: Docs
 on:
   push:
     branches: [ main ]
-  pull_request:
+  merge_group:
     branches: [ main ]
 
 jobs:

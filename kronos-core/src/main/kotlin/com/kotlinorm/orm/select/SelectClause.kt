@@ -311,7 +311,7 @@ class SelectClause<T : KPojo>(
         }
 
         // 设置逻辑删除的条件
-        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy) { _, value ->
+        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy, allFields) { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
             ).toCriteria()

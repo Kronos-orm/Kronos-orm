@@ -19,7 +19,6 @@ package com.kotlinorm.orm.update
 import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -32,6 +31,7 @@ import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeUpdateClause
 import com.kotlinorm.types.ToFilter
@@ -230,7 +230,7 @@ class UpdateClause<T : KPojo>(
         }
 
         // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-        setCommonStrategy(logicDeleteStrategy) { field, value ->
+        setCommonStrategy(logicDeleteStrategy, allFields) { field, value ->
             toUpdateFields -= field
             paramMapNew -= field + "New"
             // 构建逻辑删除的条件SQL
@@ -239,20 +239,20 @@ class UpdateClause<T : KPojo>(
             ).toCriteria()
         }
 
-        setCommonStrategy(createTimeStrategy) { field, _ ->
+        setCommonStrategy(createTimeStrategy, allFields) { field, _ ->
             toUpdateFields -= field
             paramMapNew -= field + "New"
         }
 
         // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
-        setCommonStrategy(updateTimeStrategy, true) { field, value ->
+        setCommonStrategy(updateTimeStrategy, allFields, true) { field, value ->
             toUpdateFields += field
             paramMapNew[field + "New"] = value
         }
 
         toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()
 
-        setCommonStrategy(optimisticStrategy) { field, _ ->
+        setCommonStrategy(optimisticStrategy, allFields) { field, _ ->
             if (toUpdateFields.any { it.columnName == field.columnName }) {
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }

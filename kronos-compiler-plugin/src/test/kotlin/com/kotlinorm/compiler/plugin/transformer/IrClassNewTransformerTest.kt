@@ -79,11 +79,16 @@ class IrClassNewTransformerTest {
                 val createTime: String? = null
             ): KPojo
             
+            data class Book(
+                val id: Int? = null,
+                val createTime: String? = null
+            ): KPojo
+            
             fun main() {
                 Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
-                    createTimeStrategy = KronosCommonStrategy(false, Field("create_time"))
+                    createTimeStrategy.enabled = true
                 }
             
                 val user = User::class.createInstance()
@@ -103,12 +108,24 @@ class IrClassNewTransformerTest {
                 assertNotNull(user.kronosColumns().find { it.name == "updateTime" })
                 assertNotNull(user.kronosColumns().find { it.name == "version" })
                 assertNotNull(user.kronosColumns().find { it.name == "deleted" })
+
+                assertEquals(true, Kronos.createTimeStrategy.enabled)
+                assertEquals("createTime", Kronos.createTimeStrategy.field.name)
                 
-                assertEquals(Customer().kronosCreateTime().enabled, false)
-                assertEquals(Customer().kronosCreateTime().field.name, "")
+                assertEquals(false, Customer().kronosCreateTime().enabled)
+                assertEquals("", Customer().kronosCreateTime().field.name)
                 
-                assertEquals(Student().kronosCreateTime().enabled, false)
-                assertEquals(Student().kronosCreateTime().field.name, "createTime")
+                assertEquals(false, Student().kronosCreateTime().enabled)
+                assertEquals("createTime", Student().kronosCreateTime().field.name)
+
+                assertEquals(true, Book().kronosCreateTime().enabled)
+                assertEquals("createTime", Book().kronosCreateTime().field.name)
+                
+                Kronos.init {
+                    createTimeStrategy.enabled = false
+                }
+                assertEquals(true, User().kronosCreateTime().enabled)
+                assertEquals("createTime", User().kronosCreateTime().field.name)
             }
         """.trimIndent(),
             testBaseName

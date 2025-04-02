@@ -27,7 +27,7 @@ class SelectFrom15<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo, T6: KP
 ) : SelectFrom<T1>(t1) {
     override var tableName = t1.kronosTableName()
     override var paramMap = (t1.toDataMap() + t2.toDataMap() + t3.toDataMap() + t4.toDataMap() + t5.toDataMap() + t6.toDataMap() + t7.toDataMap() + t8.toDataMap() + t9.toDataMap() + t10.toDataMap() + t11.toDataMap() + t12.toDataMap() + t13.toDataMap() + t14.toDataMap() + t15.toDataMap()).toMutableMap()
-    override var logicDeleteStrategy = t1.kronosLogicDelete()
+    override var logicDeleteStrategy = t1.kronosLogicDelete().bind(tableName)
     override var allFields = t1.kronosColumns().filter { it.isColumn }.toLinkedSet()
     override var listOfPojo: MutableList<KPojo> = mutableListOf(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)
     

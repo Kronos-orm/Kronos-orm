@@ -62,10 +62,10 @@ class UpsertClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime()
-    private var updateTimeStrategy = pojo.kronosUpdateTime()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var optimisticStrategy = pojo.kronosOptimisticLock()
+    private var createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
+    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
+    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
+    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private var onConflict = false
     private var toInsertFields = linkedSetOf<Field>()

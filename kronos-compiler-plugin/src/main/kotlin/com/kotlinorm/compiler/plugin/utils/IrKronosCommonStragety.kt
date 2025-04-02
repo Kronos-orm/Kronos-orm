@@ -29,7 +29,6 @@ import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.expressions.IrConst
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -95,15 +94,19 @@ internal fun KotlinBuilderContext.getValidStrategy(irClass: IrClass, globalSymbo
                     )
                 )
             } else {
-                var annotation: IrConstructorCall?
                 var enabled: IrConst?
-                val column = irClass.properties.find {
-                    annotation = it.annotations.findByFqName(fqName)
-                    enabled = annotation?.getValueArgument(0) as IrConst?
-                    annotation != null && enabled?.value != false
-                }
-                if (column != null) {
-                    strategy = applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(column))
+                val search = irClass.properties.map {
+                    it to it.annotations.findByFqName(fqName)
+                }.find { it.second != null }
+                if (search != null) {
+                    val (col, anno) = search
+                    if (anno != null) {
+                        enabled = anno.getValueArgument(0) as IrConst?
+                        strategy = when (enabled?.value) {
+                            true, null -> applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(col))
+                            else -> applyIrCall(commonStrategySymbol, irBoolean(false), getColumnName(col))
+                        }
+                    }
                 }
             }
             return strategy

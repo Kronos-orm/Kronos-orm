@@ -29,4 +29,9 @@ import com.kotlinorm.beans.dsl.Field
 class KronosCommonStrategy(
     var enabled: Boolean = false,
     var field: Field,
-)
+){
+    fun bind(tableName: String): KronosCommonStrategy {
+        field.tableName = tableName
+        return this
+    }
+}

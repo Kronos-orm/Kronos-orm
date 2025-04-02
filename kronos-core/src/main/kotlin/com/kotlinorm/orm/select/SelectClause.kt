@@ -58,7 +58,7 @@ class SelectClause<T : KPojo>(
 ) : KSelectable<T>(pojo) {
     private var tableName = pojo.kronosTableName()
     internal var paramMap = pojo.toDataMap()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
+    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
     private var allFields = pojo.kronosColumns().toLinkedSet()
     internal var condition: Criteria? = null
     private var havingCondition: Criteria? = null

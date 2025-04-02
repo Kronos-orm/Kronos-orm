@@ -41,10 +41,10 @@ import com.kotlinorm.utils.toLinkedSet
 class InsertClause<T : KPojo>(val pojo: T) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime()
-    private var updateTimeStrategy = pojo.kronosUpdateTime()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var optimisticStrategy = pojo.kronosOptimisticLock()
+    private var createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
+    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
+    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
+    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
     private var allFields = pojo.kronosColumns().toLinkedSet()
     private val toInsertFields = linkedSetOf<Field>()
     private var cascadeEnabled = true

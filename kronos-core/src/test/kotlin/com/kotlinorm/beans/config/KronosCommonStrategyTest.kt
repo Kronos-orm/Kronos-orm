@@ -55,11 +55,12 @@ class KronosCommonStrategyTest {
     @Test
     fun testCreateTimeStrategy() {
         val (sql, paramMap) = TestPojo(1).insert().build()
-        assertEquals("INSERT INTO `test_pojo` (`id`, `create_time`) VALUES (:id, :createTime)", sql)
+        assertEquals("INSERT INTO `test_pojo` (`id`, `create_time`, `update_time`) VALUES (:id, :createTime, :updateTime)", sql)
         assertEquals(
             mapOf(
                 "id" to 1,
                 "createTime" to paramMap["createTime"],
+                "updateTime" to paramMap["updateTime"],
             ),
             paramMap
         )

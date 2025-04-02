@@ -51,6 +51,7 @@ $dokka.location:com.kotlinorm.beans.config/DefaultNoValueStrategy///PointingToDe
 $dokka.location:com.kotlinorm.beans.config/DefaultNoValueStrategy/ifNoValue/#com.kotlinorm.enums.KOperationType#com.kotlinorm.beans.dsl.Criteria/PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-default-no-value-strategy/if-no-value.html
 $dokka.location:com.kotlinorm.beans.config/KronosCommonStrategy///PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-kronos-common-strategy/index.html
 $dokka.location:com.kotlinorm.beans.config/KronosCommonStrategy/KronosCommonStrategy/#kotlin.Boolean#com.kotlinorm.beans.dsl.Field/PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-kronos-common-strategy/-kronos-common-strategy.html
+$dokka.location:com.kotlinorm.beans.config/KronosCommonStrategy/bind/#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-kronos-common-strategy/bind.html
 $dokka.location:com.kotlinorm.beans.config/KronosCommonStrategy/enabled/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-kronos-common-strategy/enabled.html
 $dokka.location:com.kotlinorm.beans.config/KronosCommonStrategy/field/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-kronos-common-strategy/field.html
 $dokka.location:com.kotlinorm.beans.config/LineHumpNamingStrategy///PointingToDeclaration/kronos-core/com.kotlinorm.beans.config/-line-hump-naming-strategy/index.html

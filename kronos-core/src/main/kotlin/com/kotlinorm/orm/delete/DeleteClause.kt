@@ -48,9 +48,9 @@ import com.kotlinorm.utils.toLinkedSet
 class DeleteClause<T : KPojo>(private val pojo: T) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var updateTimeStrategy = pojo.kronosUpdateTime()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var optimisticStrategy = pojo.kronosOptimisticLock()
+    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
+    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
+    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
     private var logic = logicDeleteStrategy.enabled
     private var condition: Criteria? = null
     private var allFields = pojo.kronosColumns().toLinkedSet()

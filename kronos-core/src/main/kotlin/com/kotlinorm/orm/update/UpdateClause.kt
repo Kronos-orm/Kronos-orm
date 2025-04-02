@@ -64,10 +64,10 @@ class UpdateClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime()
-    private var updateTimeStrategy = pojo.kronosUpdateTime()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete()
-    private var optimisticStrategy = pojo.kronosOptimisticLock()
+    private var createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
+    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
+    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
+    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
     internal var allFields = pojo.kronosColumns().toLinkedSet()
     internal var toUpdateFields = linkedSetOf<Field>()
     internal var condition: Criteria? = null

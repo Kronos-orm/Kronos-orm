@@ -53,7 +53,7 @@ open class Field(
     val type: KColumnType = UNDEFINED,
     var primaryKey: PrimaryKeyType = PrimaryKeyType.NOT,
     val dateFormat: String? = null,
-    val tableName: String = "",
+    var tableName: String = "",
     val cascade: KCascade? = null,
     val cascadeIsCollectionOrArray: Boolean = false,
     val kClass: KClass<KPojo>? = null,

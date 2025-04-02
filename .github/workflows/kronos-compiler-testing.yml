@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  unittests:
+  kronos-compiler-plugin-unittests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️

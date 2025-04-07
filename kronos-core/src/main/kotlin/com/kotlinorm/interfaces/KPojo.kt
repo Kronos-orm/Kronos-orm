@@ -75,6 +75,10 @@ interface KPojo {
     @Suppress("UNCHECKED_CAST")
     fun <T : KPojo> fromMapData(map: Map<String, Any?>) = this as T
 
+    operator fun get(name: String): Any? = null
+
+    operator fun set(name: String, value: Any?){}
+
     /**
      * kronos TableName
      *

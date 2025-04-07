@@ -26,6 +26,8 @@ import com.kotlinorm.compiler.plugin.utils.createKronosOptimisticLock
 import com.kotlinorm.compiler.plugin.utils.createKronosTableIndex
 import com.kotlinorm.compiler.plugin.utils.createKronosTableName
 import com.kotlinorm.compiler.plugin.utils.createKronosUpdateTime
+import com.kotlinorm.compiler.plugin.utils.createPropertyGetter
+import com.kotlinorm.compiler.plugin.utils.createPropertySetter
 import com.kotlinorm.compiler.plugin.utils.createSafeFromMapValueFunction
 import com.kotlinorm.compiler.plugin.utils.createToMapFunction
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -142,7 +144,8 @@ class KronosIrClassNewTransformer(
                 withBuilder(pluginContext) {
                     when (declaration.name.asString()) {
                         "toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration) }
-                        "\$toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration, true) }
+                        "get" -> replaceFakeBody { createPropertyGetter(irClass) }
+                        "set" -> replaceFakeBody { createPropertySetter(irClass) }
                         "safeFromMapData" -> replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }
                         "fromMapData" -> replaceFakeBody { createFromMapValueFunction(irClass, declaration) }
                         "kronosTableName" -> replaceFakeBody { createKronosTableName(irClass) }

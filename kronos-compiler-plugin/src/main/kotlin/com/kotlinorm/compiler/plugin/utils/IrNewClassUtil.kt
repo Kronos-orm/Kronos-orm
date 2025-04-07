@@ -67,6 +67,14 @@ val IrPluginContext.KPojoFqName
 val IrPluginContext.KPojoSymbol
     get() = referenceClass("com.kotlinorm.interfaces.KPojo")!!
 
+fun KotlinBuilderContext.createPropertyGetter(
+    declaration: IrClass
+): IrBlockBody = TODO()
+
+fun KotlinBuilderContext.createPropertySetter(
+    declaration: IrClass
+): IrBlockBody = TODO()
+
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
  * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.
@@ -78,8 +86,7 @@ val IrPluginContext.KPojoSymbol
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun KotlinBuilderContext.createToMapFunction(
     declaration: IrClass,
-    irFunction: IrFunction,
-    ignoreDelegate: Boolean = false
+    irFunction: IrFunction
 ): IrBlockBody {
     with(pluginContext) {
         with(builder) {
@@ -90,9 +97,6 @@ fun KotlinBuilderContext.createToMapFunction(
                         irBuiltIns.stringType,
                         irBuiltIns.anyNType,
                         declaration.properties.filter {
-                            if (ignoreDelegate && it.isDelegated) {
-                                return@filter false
-                            }
                             return@filter !it.ignoreAnnotationValue().ignore("to_map") && !it.isSetter
                         }.associate {
                             irString(it.name.asString()) to dispatcher.getValue(it)
@@ -334,5 +338,5 @@ fun KotlinBuilderContext.createKronosOptimisticLock(declaration: IrClass): IrBlo
                 )
             }
         }
-        }
+    }
 }

@@ -14,7 +14,7 @@ class KTableParserForConditionTransformerTest {
         "Eq" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].eq("Alice")
+                    val expected = user.getColumn("username").eq("Alice")
                     assertEquals(expected, where { it.username == "Alice" })
                     assertEquals(expected, where { "Alice" == it.username })
 
@@ -31,7 +31,7 @@ class KTableParserForConditionTransformerTest {
                 """
                 fun test(){
                     user.username = "Alice"
-                    val expected = user["username"].eq("Alice", not = true)
+                    val expected = user.getColumn("username").eq("Alice", not = true)
                     assertEquals(expected, where { it.username.neq })
                 }
                 """
@@ -44,12 +44,12 @@ class KTableParserForConditionTransformerTest {
                 """
                 fun test(){
                     val ids = listOf<Int?>(1, 2, 3)
-                    val expected1 = user["id"].isIn(ids)
+                    val expected1 = user.getColumn("id").isIn(ids)
                     assertEquals(expected1, where { it.id in ids })
                     assertEquals(expected1, where { ids.contains(it.id) })
                     
                     val listOfNames = listOf("Alice", "Bob", "Cindy")
-                    val expected2 = user["username"].isIn(listOfNames)
+                    val expected2 = user.getColumn("username").isIn(listOfNames)
                     assertEquals(expected2, where { it.username in listOfNames })
                     assertEquals(expected2, where { listOfNames.contains(it.username) })
                 }
@@ -62,7 +62,7 @@ class KTableParserForConditionTransformerTest {
         "Like" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].like("%A")
+                    val expected = user.getColumn("username").like("%A")
                     assertEquals(expected, where { it.username like "%A" })
 
                     user.username = "%A"
@@ -77,7 +77,7 @@ class KTableParserForConditionTransformerTest {
         "NotLike" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].like("%A", not = true)
+                    val expected = user.getColumn("username").like("%A", not = true)
                     assertEquals(expected, where { it.username notLike "%A" })
 
                     user.username = "%A"
@@ -92,7 +92,7 @@ class KTableParserForConditionTransformerTest {
         "StartsWith" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].like("A%")
+                    val expected = user.getColumn("username").like("A%")
                     assertEquals(expected, where { it.username.startsWith("A") })
 
                     user.username = "A"
@@ -107,7 +107,7 @@ class KTableParserForConditionTransformerTest {
         "EndsWith" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].like("%A")
+                    val expected = user.getColumn("username").like("%A")
                     assertEquals(expected, where { it.username.endsWith("A") })
 
                     user.username = "A"
@@ -122,7 +122,7 @@ class KTableParserForConditionTransformerTest {
         "Contains" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].like("%A%")
+                    val expected = user.getColumn("username").like("%A%")
                     assertEquals(expected, where { it.username.contains("A") })
                     assertEquals(expected, where { "A" in it.username })
 
@@ -138,7 +138,7 @@ class KTableParserForConditionTransformerTest {
         "Lt" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].lt(18)
+                    val expected = user.getColumn("age").lt(18)
                     assertEquals(expected, where { it.age < 18 })
                     assertEquals(expected, where { 18 > it.age })
                     
@@ -154,7 +154,7 @@ class KTableParserForConditionTransformerTest {
         "Gt" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].gt(18)
+                    val expected = user.getColumn("age").gt(18)
                     assertEquals(expected, where { it.age > 18 })
                     assertEquals(expected, where { 18 < it.age })
                     
@@ -170,7 +170,7 @@ class KTableParserForConditionTransformerTest {
         "Le" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].le(18)
+                    val expected = user.getColumn("age").le(18)
                     assertEquals(expected, where { it.age <= 18 })
                     assertEquals(expected, where { 18 >= it.age })
                     
@@ -186,7 +186,7 @@ class KTableParserForConditionTransformerTest {
         "Ge" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].ge(18)
+                    val expected = user.getColumn("age").ge(18)
                     assertEquals(expected, where { it.age >= 18 })
                     assertEquals(expected, where { 18 <= it.age })
                     
@@ -202,7 +202,7 @@ class KTableParserForConditionTransformerTest {
         "Between" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].between(18..30)
+                    val expected = user.getColumn("age").between(18..30)
                     assertEquals(expected, where { it.age between 18..30 })
                 }
                 """
@@ -214,7 +214,7 @@ class KTableParserForConditionTransformerTest {
         "NotBetween" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].between(18..30, not = true)
+                    val expected = user.getColumn("age").between(18..30, not = true)
                     assertEquals(expected, where { it.age notBetween 18..30 })
                 }
                 """
@@ -226,7 +226,7 @@ class KTableParserForConditionTransformerTest {
         "IsNull" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].isNull()
+                    val expected = user.getColumn("age").isNull()
                     assertEquals(expected, where { it.age.isNull })
                 }
                 """
@@ -238,7 +238,7 @@ class KTableParserForConditionTransformerTest {
         "Necessary" testCompile (
                 """
                 fun test(){
-                    val expected = user["age"].isNull(not = true)
+                    val expected = user.getColumn("age").isNull(not = true)
                     assertEquals(expected, where { it.age.notNull })
                 }
                 """
@@ -250,7 +250,7 @@ class KTableParserForConditionTransformerTest {
         "Regexp" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].regexp("A.*")
+                    val expected = user.getColumn("username").regexp("A.*")
                     assertEquals(expected, where { it.username regexp "A.*" })
 
                     user.username = "A.*"
@@ -265,7 +265,7 @@ class KTableParserForConditionTransformerTest {
         "NotRegexp" testCompile (
                 """
                 fun test(){
-                    val expected = user["username"].regexp("A.*", not = true)
+                    val expected = user.getColumn("username").regexp("A.*", not = true)
                     assertEquals(expected, where { it.username notRegexp "A.*" })
 
                     user.username = "A.*"
@@ -339,7 +339,7 @@ class KTableParserForConditionTransformerTest {
                 @LogicDelete
                 var deleted: Boolean? = null
             ) : KPojo {
-                operator fun get(name: String): Field {
+                fun getColumn(name: String): Field {
                     return kronosColumns().find { it.name == name }!!
                 }
             }

@@ -32,9 +32,14 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irBranch
+import org.jetbrains.kotlin.ir.builders.irElseBranch
+import org.jetbrains.kotlin.ir.builders.irEquals
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.irWhen
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -67,13 +72,65 @@ val IrPluginContext.KPojoFqName
 val IrPluginContext.KPojoSymbol
     get() = referenceClass("com.kotlinorm.interfaces.KPojo")!!
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun KotlinBuilderContext.createPropertyGetter(
-    declaration: IrClass
-): IrBlockBody = TODO()
+    declaration: IrClass,
+    irFunction: IrFunction
+): IrBlockBody {
+    with(pluginContext) {
+        with(builder) {
+            val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+            return irBlockBody {
+                +irReturn(
+                    irWhen(
+                        irBuiltIns.anyNType,
+                        declaration.properties.map {
+                            irBranch(
+                                irEquals(
+                                    irString(it.name.asString()),
+                                    irGet(irFunction.valueParameters[0])
+                                ),
+                                dispatcher.getValue(it)
+                            )
+                        }.toList() + irElseBranch(
+                            irNull()
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun KotlinBuilderContext.createPropertySetter(
-    declaration: IrClass
-): IrBlockBody = TODO()
+    declaration: IrClass,
+    irFunction: IrFunction
+): IrBlockBody {
+    with(pluginContext) {
+        with(builder) {
+            val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+            return irBlockBody {
+                +irWhen(
+                    irBuiltIns.unitType,
+                    declaration.properties.map {
+                        irBranch(
+                            irEquals(
+                                irString(it.name.asString()),
+                                irGet(irFunction.valueParameters[0])
+                            ),
+                            irBlock {
+                                +(dispatcher.setValue(it, irGet(irFunction.valueParameters[1])) ?: irNull())
+                            }
+                        )
+                    }.toList() + irElseBranch(
+                        irNull()
+                    )
+                )
+            }
+        }
+    }
+}
 
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass

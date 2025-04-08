@@ -28,7 +28,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.Extensions.safeMapperTo
+import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -42,6 +42,7 @@ import kotlin.reflect.KClass
  * A wrapper class for JDBC data sources that implements the `KronosDataSourceWrapper` interface.
  * @author: OUSC
  **/
+@Suppress("UNCHECKED_CAST")
 class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
     private var _metaUrl: String
     private var _userName: String
@@ -86,7 +87,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                 ps.setObject(index + 1, any)
             }
             rs = ps.executeQuery()
-            return rs.toList()
+            return rs.toMapList()
         } catch (e: SQLException) {
             defaultLogger(this).error(
                 kMsgOf(
@@ -110,23 +111,23 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @throws [SQLException] if an error occurs while executing the query
      */
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
-        return if (isKPojo) {
-            @Suppress("UNCHECKED_CAST") forList(task).map { it.safeMapperTo(kClass as KClass<KPojo>) }
+        val (sql, paramList) = task.parsed()
+        val conn = dataSource.connection
+        var ps: PreparedStatement? = null
+        var rs: ResultSet? = null
+        ps = if (dbType == Oracle.type) {
+            conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
         } else {
-            val (sql, paramList) = task.parsed()
-            val conn = dataSource.connection
-            var ps: PreparedStatement? = null
-            var rs: ResultSet? = null
-            try {
-                ps = if (dbType == Oracle.type) {
-                    conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
-                } else {
-                    conn.prepareStatement(sql)
-                }
-                paramList.forEachIndexed { index, any ->
-                    ps.setObject(index + 1, any)
-                }
-                rs = ps.executeQuery()
+            conn.prepareStatement(sql)
+        }
+        paramList.forEachIndexed { index, any ->
+            ps.setObject(index + 1, any)
+        }
+        rs = ps.executeQuery()
+        return try {
+            if (isKPojo) {
+                rs.toKPojoList(kClass as KClass<KPojo>, superTypes)
+            } else {
                 val list = mutableListOf<Any>()
                 while (rs.next()) {
                     list.add(
@@ -141,19 +142,19 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                         }
                     )
                 }
-                return list
-            } catch (e: SQLException) {
-                defaultLogger(this).error(
-                    kMsgOf(
-                        "Failed to execute query，${e.message}.", Red
-                    ).endl().toArray()
-                )
-                throw e
-            } finally {
-                rs?.close()
-                ps?.close()
-                conn.close()
+                list
             }
+        } catch (e: SQLException) {
+            defaultLogger(this).error(
+                kMsgOf(
+                    "Failed to execute query，${e.message}.", Red
+                ).endl().toArray()
+            )
+            throw e
+        } finally {
+            rs?.close()
+            ps?.close()
+            conn.close()
         }
     }
 
@@ -179,7 +180,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                 ps.setObject(index + 1, any)
             }
             rs = ps.executeQuery()
-            return rs.toList().firstOrNull()
+            return rs.toMapList().firstOrNull()
         } catch (e: SQLException) {
             defaultLogger(this).error(
                 kMsgOf(
@@ -204,21 +205,26 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @throws [SQLException] If an error occurs while executing the query.
      */
     override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
-        return if (isKPojo) {
-            @Suppress("UNCHECKED_CAST") forMap(task)?.safeMapperTo(kClass as KClass<KPojo>)
+        val (sql, paramList) = task.parsed()
+        val conn = dataSource.connection
+        var ps: PreparedStatement? = null
+        var rs: ResultSet? = null
+        ps = if (dbType == Oracle.type) {
+            conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
         } else {
-            val (sql, paramList) = task.parsed()
-            val conn = dataSource.connection
-            var ps: PreparedStatement? = null
-            var rs: ResultSet? = null
-            try {
-                ps = conn.prepareStatement(sql)
-                paramList.forEachIndexed { index, any ->
-                    ps.setObject(index + 1, any)
-                }
-                rs = ps.executeQuery()
+            conn.prepareStatement(sql)
+        }
+        paramList.forEachIndexed { index, any ->
+            ps.setObject(index + 1, any)
+        }
+        rs = ps.executeQuery()
+
+        return try {
+            if (isKPojo) {
+                rs.toKPojoList(kClass as KClass<KPojo>, superTypes)
+            } else {
                 if (rs.next()) {
-                    if(strictSetValue) {
+                    if (strictSetValue) {
                         rs.getObject(1, kClass.java)
                     } else {
                         getTypeSafeValue(
@@ -230,18 +236,18 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                 } else {
                     null
                 }
-            } catch (e: SQLException) {
-                defaultLogger(this).error(
-                    kMsgOf(
-                        "Failed to execute query，${e.message}.", Red
-                    ).endl().toArray()
-                )
-                throw e
-            } finally {
-                rs?.close()
-                ps?.close()
-                conn.close()
             }
+        } catch (e: SQLException) {
+            defaultLogger(this).error(
+                kMsgOf(
+                    "Failed to execute query，${e.message}.", Red
+                ).endl().toArray()
+            )
+            throw e
+        } finally {
+            rs?.close()
+            ps?.close()
+            conn.close()
         }
     }
 
@@ -340,11 +346,86 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @return T the result of the block
      */
     @JvmName("transactT")
-    inline fun <reified T> transact(noinline block: () -> T): T {
+    inline fun <reified T, K> transact(noinline block: () -> T): T {
         return transact(block) as T
     }
 
-    private fun ResultSet.toList(): List<Map<String, Any>> {
+
+    private fun ResultSet.toKPojoList(kClass: KClass<KPojo>, superTypes: List<String>): List<KPojo> {
+        val meta = metaData
+        val columnCount = meta.columnCount
+        val list = mutableListOf<KPojo>()
+        if (dbType == Oracle.type) {
+            // fix for Oracle: ORA 17027 Stream has already been closed
+            val indexOfLong = mutableListOf<Int>()
+            for (i in 1..meta.columnCount) {
+                val columnTypeName = meta.getColumnTypeName(i)
+                if (columnTypeName.uppercase() == "LONG") {
+                    indexOfLong.add(i)
+                }
+            }
+            while (next()) {
+                val instance = kClass.createInstance()
+                for (i in 1..meta.columnCount) {
+                    if (indexOfLong.contains(i)) {
+                        getObject(i)?.let {
+                            if (strictSetValue) {
+                                instance[meta.getColumnLabel(i)] = it
+                            } else {
+                                instance[meta.getColumnLabel(i)] = getTypeSafeValue(
+                                    kClass.qualifiedName!!,
+                                    it,
+                                    superTypes
+                                )
+                            }
+                        }
+                    }
+                }
+                list.add(instance)
+            }
+            beforeFirst()
+            var idx = 0
+            while (next()) {
+                for (i in 1..meta.columnCount) {
+                    if (!indexOfLong.contains(i)) {
+                        getObject(i)?.let {
+                            if (strictSetValue) {
+                                list[idx][meta.getColumnLabel(i)] = it
+                            } else {
+                                list[idx][meta.getColumnLabel(i)] = getTypeSafeValue(
+                                    kClass.qualifiedName!!,
+                                    it,
+                                    superTypes
+                                )
+                            }
+                        }
+                    }
+                }
+                idx++
+            }
+        } else {
+            while (next()) {
+                val instance = kClass.createInstance()
+                for (i in 1..columnCount) {
+                    getObject(i)?.let {
+                        if (strictSetValue) {
+                            instance[meta.getColumnLabel(i)] = it
+                        } else {
+                            instance[meta.getColumnLabel(i)] = getTypeSafeValue(
+                                kClass.qualifiedName!!,
+                                it,
+                                superTypes
+                            )
+                        }
+                    }
+                }
+                list.add(instance)
+            }
+        }
+        return list
+    }
+
+    private fun ResultSet.toMapList(): List<Map<String, Any>> {
         val meta = metaData
         val columnCount = meta.columnCount
         val list = mutableListOf<MutableMap<String, Any>>()

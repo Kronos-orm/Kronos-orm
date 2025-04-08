@@ -144,8 +144,8 @@ class KronosIrClassNewTransformer(
                 withBuilder(pluginContext) {
                     when (declaration.name.asString()) {
                         "toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration) }
-                        "get" -> replaceFakeBody { createPropertyGetter(irClass) }
-                        "set" -> replaceFakeBody { createPropertySetter(irClass) }
+                        "get" -> replaceFakeBody { createPropertyGetter(irClass, declaration) }
+                        "set" -> replaceFakeBody { createPropertySetter(irClass, declaration) }
                         "safeFromMapData" -> replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }
                         "fromMapData" -> replaceFakeBody { createFromMapValueFunction(irClass, declaration) }
                         "kronosTableName" -> replaceFakeBody { createKronosTableName(irClass) }

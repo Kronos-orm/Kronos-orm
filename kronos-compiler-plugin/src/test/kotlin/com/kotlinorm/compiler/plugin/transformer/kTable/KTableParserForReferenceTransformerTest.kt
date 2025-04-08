@@ -66,8 +66,8 @@ class KTableParserForReferenceTransformerTest {
                 @LogicDelete
                 var deleted: Boolean? = null
             ) : KPojo {
-                operator fun get(name: String): Field {
-                    return kronosColumns().find { it.name == name } ?: throw IllegalArgumentException("Field ${'$'}name not found")
+                fun getColumn(name: String): Field {
+                    return kronosColumns().find { it.name == name }!!
                 }
             }
             
@@ -92,8 +92,8 @@ class KTableParserForReferenceTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"],
-                        user["username"],
+                        user.getColumn("id"),
+                        user.getColumn("username"),
                     ),
                     reference {
                         it::id + it::username
@@ -102,7 +102,7 @@ class KTableParserForReferenceTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"]
+                        user.getColumn("id")
                     ),
                     reference {
                         +it::id

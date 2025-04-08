@@ -62,7 +62,7 @@ class KTableParserForSortTransformerTest {
                 @LogicDelete
                 var deleted: Boolean? = null
             ) : KPojo {
-                operator fun get(name: String): Field {
+                fun getColumn(name: String): Field {
                     return kronosColumns().find { it.name == name }!!
                 }
             }
@@ -89,8 +89,8 @@ class KTableParserForSortTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"] to SortType.ASC,
-                        user["username"] to SortType.ASC,
+                        user.getColumn("id") to SortType.ASC,
+                        user.getColumn("username") to SortType.ASC,
                     ),
                     sort {
                         it.id + it.username
@@ -99,8 +99,8 @@ class KTableParserForSortTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"] to SortType.DESC,
-                        user["username"] to SortType.ASC,
+                        user.getColumn("id") to SortType.DESC,
+                        user.getColumn("username") to SortType.ASC,
                     ),
                     sort {
                         it.id.desc() + it.username

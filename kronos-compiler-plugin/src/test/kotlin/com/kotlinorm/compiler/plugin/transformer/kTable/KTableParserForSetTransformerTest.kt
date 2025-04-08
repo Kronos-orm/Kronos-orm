@@ -61,7 +61,7 @@ class KTableParserForSetTransformerTest {
                 @LogicDelete
                 var deleted: Boolean? = null
             ) : KPojo {
-                operator fun get(name: String): Field {
+                fun getColumn(name: String): Field {
                     return kronosColumns().find { it.name == name }!!
                 }
             }
@@ -98,20 +98,20 @@ class KTableParserForSetTransformerTest {
                     
                 val expected = SetResult(
                     fields = mutableListOf(
-                        user["id"],
-                        user["username"],
-                        user["age"],
-                        user["version"]
+                        user.getColumn("id"),
+                        user.getColumn("username"),
+                        user.getColumn("age"),
+                        user.getColumn("version")
                     ),
                     fieldParamMap = mutableMapOf(
-                        user["id"] to 1,
-                        user["username"] to "test",
+                        user.getColumn("id") to 1,
+                        user.getColumn("username") to "test",
                     ),
                     plusAssignFields = mutableListOf(
-                        user["version"] to 1
+                        user.getColumn("version") to 1
                     ),
                     minusAssignFields = mutableListOf(
-                        user["age"] to 10
+                        user.getColumn("age") to 10
                     )
                 )
 

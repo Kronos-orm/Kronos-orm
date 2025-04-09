@@ -18,8 +18,6 @@ package com.kotlinorm.beans.serialize
 
 import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.orm.cascade.get
-import com.kotlinorm.orm.cascade.set
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty

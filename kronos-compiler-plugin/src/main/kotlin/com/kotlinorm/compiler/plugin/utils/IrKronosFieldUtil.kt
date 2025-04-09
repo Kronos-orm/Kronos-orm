@@ -231,6 +231,9 @@ fun KotlinBuilderContext.getColumnName(
                     }!!).symbol
                 )
             }
+            val superTypes = propKClass?.superTypes?.mapNotNull {
+                it.classFqName?.asString()?.let { irString(it) }
+            } ?: emptyList()
 
             val kCascade = if (cascadeAnnotation != null) {
                 applyIrCall(
@@ -266,6 +269,7 @@ fun KotlinBuilderContext.getColumnName(
                 cascade = kCascade,
                 cascadeIsArrayOrCollection = cascadeIsArrayOrCollection,
                 kClass = kClass,
+                superTypes = superTypes,
                 ignore = ignoreAnnotation?.getValueArgument(0),
                 isColumn = irProperty.isColumn(irPropertyType, ignoreAnnotation),
                 columnTypeLength = columnTypeAnnotation?.getValueArgument(1),

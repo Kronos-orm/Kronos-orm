@@ -126,6 +126,13 @@ class IrClassNewTransformerTest {
                 }
                 assertEquals(true, User().kronosCreateTime().enabled)
                 assertEquals("createTime", User().kronosCreateTime().field.name)
+                
+                // test operator generate
+                val book = Book(1, "2023-10-01 12:00:00")
+                assertEquals(1, book["id"])
+                assertEquals("2023-10-01 12:00:00", book["createTime"])
+                book["createTime"] = "2023-10-02 12:00:00"
+                assertEquals("2023-10-02 12:00:00", book["createTime"])
             }
         """.trimIndent(),
             testBaseName

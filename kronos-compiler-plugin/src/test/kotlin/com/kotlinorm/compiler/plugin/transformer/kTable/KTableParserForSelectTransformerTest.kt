@@ -66,8 +66,8 @@ class KTableParserForSelectTransformerTest {
                 @LogicDelete
                 var deleted: Boolean? = null
             ) : KPojo {
-                operator fun get(name: String): Field {
-                    return kronosColumns().find { it.name == name } ?: throw IllegalArgumentException("Field ${'$'}name not found")
+                fun getColumn(name: String): Field {
+                    return kronosColumns().find { it.name == name }!!
                 }
             }
             
@@ -97,7 +97,7 @@ class KTableParserForSelectTransformerTest {
 
                 assertEquals(
                     listOf(
-                        user["id"],
+                        user.getColumn("id"),
                     ),
                     user.select {
                         it.id
@@ -107,7 +107,7 @@ class KTableParserForSelectTransformerTest {
 
                 assertEquals(
                     listOf(
-                        user["id"],
+                        user.getColumn("id"),
                     ),
                     user.select {
                         +it.id
@@ -116,8 +116,8 @@ class KTableParserForSelectTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"],
-                        user["username"],
+                        user.getColumn("id"),
+                        user.getColumn("username"),
                     ),
                     user.select {
                         it.id + it.username
@@ -126,8 +126,8 @@ class KTableParserForSelectTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"],
-                        user["username"].apply{ name = "name" },
+                        user.getColumn("id"),
+                        user.getColumn("username").apply{ name = "name" },
                     ),
                     user.select {
                         it::id + it.username.as_("name")
@@ -136,7 +136,7 @@ class KTableParserForSelectTransformerTest {
                 
                 assertEquals(
                     listOf(
-                        user["id"],
+                        user.getColumn("id"),
                         Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL),
                     ),
                     user.select {
@@ -149,7 +149,7 @@ class KTableParserForSelectTransformerTest {
                         FunctionField(
                             "count", 
                             listOf(
-                                Pair(user["id"], user.id)
+                                Pair(user.getColumn("id"), user.id)
                             )
                         ).apply{
                             name = "cnt"
@@ -161,7 +161,7 @@ class KTableParserForSelectTransformerTest {
                 )
                 
                 assertEquals(
-                    listOf(listOf(user["id"])),
+                    listOf(listOf(user.getColumn("id"))),
                     listOf(user).select {
                         it.id
                     }

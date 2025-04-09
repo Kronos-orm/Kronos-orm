@@ -32,9 +32,14 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irBranch
+import org.jetbrains.kotlin.ir.builders.irElseBranch
+import org.jetbrains.kotlin.ir.builders.irEquals
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.irWhen
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -67,6 +72,66 @@ val IrPluginContext.KPojoFqName
 val IrPluginContext.KPojoSymbol
     get() = referenceClass("com.kotlinorm.interfaces.KPojo")!!
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun KotlinBuilderContext.createPropertyGetter(
+    declaration: IrClass,
+    irFunction: IrFunction
+): IrBlockBody {
+    with(pluginContext) {
+        with(builder) {
+            val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+            return irBlockBody {
+                +irReturn(
+                    irWhen(
+                        irBuiltIns.anyNType,
+                        declaration.properties.map {
+                            irBranch(
+                                irEquals(
+                                    irString(it.name.asString()),
+                                    irGet(irFunction.valueParameters[0])
+                                ),
+                                dispatcher.getValue(it)
+                            )
+                        }.toList() + irElseBranch(
+                            irNull()
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun KotlinBuilderContext.createPropertySetter(
+    declaration: IrClass,
+    irFunction: IrFunction
+): IrBlockBody {
+    with(pluginContext) {
+        with(builder) {
+            val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+            return irBlockBody {
+                +irWhen(
+                    irBuiltIns.unitType,
+                    declaration.properties.map {
+                        irBranch(
+                            irEquals(
+                                irString(it.name.asString()),
+                                irGet(irFunction.valueParameters[0])
+                            ),
+                            irBlock {
+                                +(dispatcher.setValue(it, irGet(irFunction.valueParameters[1])) ?: irNull())
+                            }
+                        )
+                    }.toList() + irElseBranch(
+                        irNull()
+                    )
+                )
+            }
+        }
+    }
+}
+
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
  * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.
@@ -78,8 +143,7 @@ val IrPluginContext.KPojoSymbol
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun KotlinBuilderContext.createToMapFunction(
     declaration: IrClass,
-    irFunction: IrFunction,
-    ignoreDelegate: Boolean = false
+    irFunction: IrFunction
 ): IrBlockBody {
     with(pluginContext) {
         with(builder) {
@@ -90,9 +154,6 @@ fun KotlinBuilderContext.createToMapFunction(
                         irBuiltIns.stringType,
                         irBuiltIns.anyNType,
                         declaration.properties.filter {
-                            if (ignoreDelegate && it.isDelegated) {
-                                return@filter false
-                            }
                             return@filter !it.ignoreAnnotationValue().ignore("to_map") && !it.isSetter
                         }.associate {
                             irString(it.name.asString()) to dispatcher.getValue(it)
@@ -334,5 +395,5 @@ fun KotlinBuilderContext.createKronosOptimisticLock(declaration: IrClass): IrBlo
                 )
             }
         }
-        }
+    }
 }

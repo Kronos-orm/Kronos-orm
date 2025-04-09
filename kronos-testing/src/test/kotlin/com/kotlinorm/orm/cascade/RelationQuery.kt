@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.cascade
 
+import com.kotlinorm.GsonProcessor
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
@@ -9,7 +10,6 @@ import com.kotlinorm.beans.sample.manyToMany.RolePermissionRelation
 import com.kotlinorm.beans.sample.oneToMany.GroupClass
 import com.kotlinorm.beans.sample.oneToMany.School
 import com.kotlinorm.beans.sample.oneToMany.Student
-import com.kotlinorm.orm.beans.GsonProcessor
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
@@ -21,18 +21,23 @@ import kotlin.io.println
 import kotlin.test.Test
 
 class RelationQuery {
-    private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/test"
-        username = "root"
-        password = "******"
+    private val wrapper = BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
+        // 数据库URL
+        url =
+            "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false&rewriteBatchedStatements=true"
+        username = System.getenv("db.username") // 数据库用户名
+        password = System.getenv("db.password") // 数据库密码
+        maxIdle = 10 // 最大空闲连接数
+    }.let {
+        KronosBasicWrapper(it)
     }
 
     init {
         Kronos.init {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { wrapper }
             serializeProcessor = GsonProcessor
         }
     }

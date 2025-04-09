@@ -20,8 +20,6 @@ import com.kotlinorm.enums.CascadeDeleteAction
 import com.kotlinorm.enums.CascadeDeleteAction.NO_ACTION
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.orm.cascade.get
-import com.kotlinorm.orm.cascade.set
 import com.kotlinorm.utils.createInstance
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass

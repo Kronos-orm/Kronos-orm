@@ -19,6 +19,7 @@ package com.kotlinorm.compiler.plugin.beans
 import com.kotlinorm.compiler.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 
 internal val IrPluginContext.primaryKeyTypeSymbol
     get() = referenceClass("com.kotlinorm.enums.PrimaryKeyType")!!
@@ -58,6 +59,7 @@ class FieldIR(
     internal val cascade: IrExpression,
     internal val cascadeIsArrayOrCollection: Boolean,
     internal val kClass: IrExpression,
+    internal val superTypes: List<IrConstImpl>,
     internal val ignore: IrExpression?,
     internal val isColumn: Boolean,
     internal val columnTypeLength: IrExpression?,

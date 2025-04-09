@@ -65,7 +65,7 @@ class EnumValueTransformTest {
             superTypesOfValue: List<String>,
             kClassOfValue: KClass<*>
         ): Boolean {
-            return Class.forName(targetKotlinType).isEnum
+            return !targetKotlinType.startsWith("kotlin.") && Class.forName(targetKotlinType).isEnum
         }
 
         override fun transform(

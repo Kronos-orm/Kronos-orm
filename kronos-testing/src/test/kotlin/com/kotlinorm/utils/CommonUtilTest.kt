@@ -23,12 +23,15 @@ class CommonUtilTest {
     fun tesSetCommonStrategy() {
         val strategy = KronosCommonStrategy(false, Field("field"))
 
-        setCommonStrategy(strategy, false, 0) { field, value ->
+        val allFields = linkedSetOf(
+            strategy.field
+        )
+        setCommonStrategy(strategy, allFields, false, 0) { field, value ->
             assertEquals(field, Field("field"))
             assertTrue(value == 0)
         }
 
-        setCommonStrategy(strategy, true) { _, value ->
+        setCommonStrategy(strategy, allFields, true) { _, value ->
             assertTrue(value is String)
             assertTrue(
 
@@ -40,7 +43,7 @@ class CommonUtilTest {
 
         val pattern = "MMM dd, yyyy HH:mm:ss"
         val dateTimeStrategy = KronosCommonStrategy(false, Field("field", dateFormat = pattern))
-        setCommonStrategy(dateTimeStrategy, true) { _, value ->
+        setCommonStrategy(dateTimeStrategy, allFields, true) { _, value ->
             assertTrue(value is String)
             assertTrue(
                 LocalDateTime.now(Clock.system(timeZone)).isAfter(
@@ -164,7 +167,7 @@ class CommonUtilTest {
         assertEquals(instant.toEpochMilliseconds(), getTypeSafeValue("kotlin.Long", dateTime))
 
         // 测试无效输入
-        assertFailsWith<InvalidDataAccessApiUsageException> {
+        assertFailsWith<NumberFormatException> {
             getTypeSafeValue("kotlin.Int", "invalid")
         }
         assertEquals(false, getTypeSafeValue("kotlin.Boolean", "invalid"))

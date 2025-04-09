@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>transact</title>
+    <title>set</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
     <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
@@ -39,7 +39,7 @@
     <div class="root">
     <nav class="navigation theme-dark" id="navigation-wrapper">
             <a class="library-name--link" href="../../../index.html">
-                    kronos-jdbc-wrapper
+                    kronos-core
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
                 type="button">Toggle table of contents
@@ -50,7 +50,7 @@
         <div class="navigation-controls">
         <div class="filter-section filter-section_loading" id="filter-section">
                 <button class="platform-tag platform-selector jvm-like" data-active=""
-                        data-filter=":kronos-jdbc-wrapper/main">jvm</button>
+                        data-filter=":kronos-core/main">jvm</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
                         data-role="dropdown-toggle"
@@ -67,8 +67,8 @@
                     </div>
                         <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
                             <label class="checkbox">
-                                <input type="checkbox" class="checkbox--input" id=":kronos-jdbc-wrapper/main"
-                                       data-filter=":kronos-jdbc-wrapper/main"/>
+                                <input type="checkbox" class="checkbox--input" id=":kronos-core/main"
+                                       data-filter=":kronos-core/main"/>
                                 <span class="checkbox--icon"></span>
                                 jvm
                             </label>
@@ -92,7 +92,7 @@
                         data-role="dropdown-listbox">
                         <div class="dropdown--header">
                             <span>
-                                    kronos-jdbc-wrapper
+                                    kronos-core
                             </span>
                             <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
                                 <i class="ui-kit-icon ui-kit-icon_cross"></i>
@@ -104,12 +104,12 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="member" id="content" pageIds="kronos-jdbc-wrapper::com.kotlinorm/KronosBasicWrapper/transact/#kotlin.Function0[kotlin.Any?]/PointingToDeclaration//-780277646">
-  <div class="breadcrumbs"><a href="../../../index.html">kronos-jdbc-wrapper</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm</a><span class="delimiter">/</span><a href="index.html">KronosBasicWrapper</a><span class="delimiter">/</span><span class="current">transact</span></div>
+<div class="main-content" data-page-type="member" id="content" pageIds="kronos-core::com.kotlinorm.interfaces/KPojo/set/#kotlin.String#kotlin.Any?/PointingToDeclaration//1698863696">
+  <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.interfaces</a><span class="delimiter">/</span><a href="index.html">KPojo</a><span class="delimiter">/</span><span class="current">set</span></div>
   <div class="cover ">
-    <h1 class="cover"><span><span>transact</span></span></h1>
+    <h1 class="cover"><span><span>set</span></span></h1>
   </div>
-  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-jdbc-wrapper/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="transact.html"><span class="token function">transact</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></div><p class="paragraph">Perform database operations in a transaction</p><span class="kdoc-tag"><h4 class="">Return</h4><p class="paragraph">Any? the return value of block</p></span><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>block</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the block of code to execute in the transaction</p></div></div></div></div></div><hr><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;transactT&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="transact.html">T</a><span class="token punctuation">, </span><a href="transact.html">K</a><span class="token operator">&gt; </span><a href="transact.html"><span class="token function">transact</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">noinline </span>block<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="transact.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="transact.html">T</a></div><p class="paragraph">Perform database operations in a transaction</p><span class="kdoc-tag"><h4 class="">Return</h4><p class="paragraph">T the result of the block</p></span><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>T</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the return type</p></div></div></div></div><div class="table-row" data-filterable-current=":kronos-jdbc-wrapper/main" data-filterable-set=":kronos-jdbc-wrapper/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>block</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the block of code to execute in the transaction</p></div></div></div></div></div></div></div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">operator </span><span class="token keyword">fun </span><a href="set.html"><span class="token function">set</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">value<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><p class="paragraph">set</p><p class="paragraph">Set the value of the field by name</p><p class="paragraph"><strong>the body of this function will be generated by the compiler plugin</strong></p><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>name</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the name of the field</p></div></div></div></div><div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>value</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the value of the field</p></div></div></div></div></div></div></div>
 </div>
     <div class="footer">
         <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>

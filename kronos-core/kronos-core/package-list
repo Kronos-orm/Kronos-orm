@@ -74,11 +74,11 @@ $dokka.location:com.kotlinorm.beans.dsl/Criteria/tableName/#/PointingToDeclarati
 $dokka.location:com.kotlinorm.beans.dsl/Criteria/type/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-criteria/type.html
 $dokka.location:com.kotlinorm.beans.dsl/Criteria/value/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-criteria/value.html
 $dokka.location:com.kotlinorm.beans.dsl/Field///PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/index.html
-$dokka.location:com.kotlinorm.beans.dsl/Field/Field/#kotlin.String#kotlin.String#com.kotlinorm.enums.KColumnType#com.kotlinorm.enums.PrimaryKeyType#kotlin.String?#kotlin.String#com.kotlinorm.beans.dsl.KCascade?#kotlin.Boolean#kotlin.reflect.KClass[com.kotlinorm.interfaces.KPojo]?#kotlin.Array[com.kotlinorm.enums.IgnoreAction]?#kotlin.Boolean#kotlin.Int#kotlin.String?#kotlin.Boolean#kotlin.Boolean#kotlin.String?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/-field.html
+$dokka.location:com.kotlinorm.beans.dsl/Field/Field/#kotlin.String#kotlin.String#com.kotlinorm.enums.KColumnType#com.kotlinorm.enums.PrimaryKeyType#kotlin.String?#kotlin.String#com.kotlinorm.beans.dsl.KCascade?#kotlin.Boolean#kotlin.reflect.KClass[com.kotlinorm.interfaces.KPojo]?#kotlin.collections.List[kotlin.String]#kotlin.Array[com.kotlinorm.enums.IgnoreAction]?#kotlin.Boolean#kotlin.Int#kotlin.String?#kotlin.Boolean#kotlin.Boolean#kotlin.String?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/-field.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/cascade/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/cascade.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/cascadeIsCollectionOrArray/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/cascade-is-collection-or-array.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/columnName/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/column-name.html
-$dokka.location:com.kotlinorm.beans.dsl/Field/copy/#kotlin.String#kotlin.String#com.kotlinorm.enums.KColumnType#com.kotlinorm.enums.PrimaryKeyType#kotlin.String?#kotlin.String#com.kotlinorm.beans.dsl.KCascade?#kotlin.Boolean#kotlin.reflect.KClass[com.kotlinorm.interfaces.KPojo]?#kotlin.Array[com.kotlinorm.enums.IgnoreAction]?#kotlin.Boolean#kotlin.Int#kotlin.String?#kotlin.Boolean/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/copy.html
+$dokka.location:com.kotlinorm.beans.dsl/Field/copy/#kotlin.String#kotlin.String#com.kotlinorm.enums.KColumnType#com.kotlinorm.enums.PrimaryKeyType#kotlin.String?#kotlin.String#com.kotlinorm.beans.dsl.KCascade?#kotlin.Boolean#kotlin.reflect.KClass[com.kotlinorm.interfaces.KPojo]?#kotlin.collections.List[kotlin.String]#kotlin.Array[com.kotlinorm.enums.IgnoreAction]?#kotlin.Boolean#kotlin.Int#kotlin.String?#kotlin.Boolean/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/copy.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/dateFormat/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/date-format.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/defaultValue/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/default-value.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/equals/#kotlin.Any?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/equals.html
@@ -94,6 +94,7 @@ $dokka.location:com.kotlinorm.beans.dsl/Field/plus/#kotlin.String?/PointingToDec
 $dokka.location:com.kotlinorm.beans.dsl/Field/primaryKey/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/primary-key.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/refUseFor/#com.kotlinorm.enums.KOperationType/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/ref-use-for.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/serializable/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/serializable.html
+$dokka.location:com.kotlinorm.beans.dsl/Field/superTypes/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/super-types.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/tableName/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/table-name.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/toString/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/to-string.html
 $dokka.location:com.kotlinorm.beans.dsl/Field/type/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-field/type.html
@@ -974,9 +975,9 @@ $dokka.location:com.kotlinorm.interfaces/KLogger/isTraceEnabled/#/PointingToDecl
 $dokka.location:com.kotlinorm.interfaces/KLogger/isWarnEnabled/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-logger/is-warn-enabled.html
 $dokka.location:com.kotlinorm.interfaces/KLogger/trace/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-logger/trace.html
 $dokka.location:com.kotlinorm.interfaces/KLogger/warn/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-logger/warn.html
-$dokka.location:com.kotlinorm.interfaces/KPojo/$toDataMap/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/$to-data-map.html
 $dokka.location:com.kotlinorm.interfaces/KPojo///PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/index.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/fromMapData/#kotlin.collections.Map[kotlin.String,kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/from-map-data.html
+$dokka.location:com.kotlinorm.interfaces/KPojo/get/#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/get.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosColumns/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-columns.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosCreateTime/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-create-time.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosLogicDelete/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-logic-delete.html
@@ -986,6 +987,7 @@ $dokka.location:com.kotlinorm.interfaces/KPojo/kronosTableIndex/#/PointingToDecl
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosTableName/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-table-name.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosUpdateTime/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-update-time.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/safeFromMapData/#kotlin.collections.Map[kotlin.String,kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/safe-from-map-data.html
+$dokka.location:com.kotlinorm.interfaces/KPojo/set/#kotlin.String#kotlin.Any?/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/set.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/toDataMap/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/to-data-map.html
 $dokka.location:com.kotlinorm.interfaces/KronosDataSourceWrapper///PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html
 $dokka.location:com.kotlinorm.interfaces/KronosDataSourceWrapper/batchUpdate/#com.kotlinorm.beans.task.KronosAtomicBatchTask/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-kronos-data-source-wrapper/batch-update.html
@@ -1656,7 +1658,7 @@ $dokka.location:com.kotlinorm/Kronos/serializeProcessor/#/PointingToDeclaration/
 $dokka.location:com.kotlinorm/Kronos/strictSetValue/#/PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/strict-set-value.html
 $dokka.location:com.kotlinorm/Kronos/tableNamingStrategy/#/PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/table-naming-strategy.html
 $dokka.location:com.kotlinorm/Kronos/timeZone/#/PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/time-zone.html
-$dokka.location:com.kotlinorm/Kronos/transact/#kotlin.Function0[kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/transact.html
+$dokka.location:com.kotlinorm/Kronos/transact/#com.kotlinorm.interfaces.KronosDataSourceWrapper?#kotlin.Function0[kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/transact.html
 $dokka.location:com.kotlinorm/Kronos/updateTimeStrategy/#/PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/update-time-strategy.html
 com.kotlinorm
 com.kotlinorm.annotations

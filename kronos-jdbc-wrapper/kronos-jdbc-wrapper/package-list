@@ -4,6 +4,8 @@ $dokka.location:com.kotlinorm.beans////PointingToDeclaration/kronos-jdbc-wrappe
 $dokka.location:com.kotlinorm.beans/UnsupportedTypeException///PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm.beans/-unsupported-type-exception/index.html
 $dokka.location:com.kotlinorm.beans/UnsupportedTypeException/UnsupportedTypeException/#kotlin.String/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm.beans/-unsupported-type-exception/-unsupported-type-exception.html
 $dokka.location:com.kotlinorm////PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/index.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper.Companion///PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/-companion/index.html
+$dokka.location:com.kotlinorm/KronosBasicWrapper.Companion/fieldsCache/#/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/-companion/fields-cache.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper///PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/index.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/KronosBasicWrapper/#javax.sql.DataSource/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/-kronos-basic-wrapper.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/batchUpdate/#com.kotlinorm.beans.task.KronosAtomicBatchTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/batch-update.html

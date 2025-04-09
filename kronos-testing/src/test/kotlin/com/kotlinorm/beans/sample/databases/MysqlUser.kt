@@ -7,6 +7,9 @@ import com.kotlinorm.enums.KColumnType.VARCHAR
 import com.kotlinorm.enums.Mysql
 import java.time.LocalDateTime
 
+/*
+ * Kotlin Data Class for MysqlUser
+ */
 @Table(name = "tb_user")
 @TableIndex("idx_username", ["username"], Mysql.KIndexType.NORMAL, Mysql.KIndexMethod.BTREE)
 @TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
@@ -24,8 +27,6 @@ data class MysqlUser(
     @Default("0")
     var gender: Int? = null,
 
-//    @ColumnType(INT)
-//    var age: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
     @Necessary

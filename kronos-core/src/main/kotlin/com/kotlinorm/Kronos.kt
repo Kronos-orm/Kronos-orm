@@ -33,6 +33,7 @@ import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeProcessor
 import com.kotlinorm.interfaces.NoValueStrategy
 import com.kotlinorm.types.KLoggerFactory
+import com.kotlinorm.utils.DataSourceUtil.orDefault
 import java.time.ZoneId
 
 object Kronos {
@@ -56,7 +57,7 @@ object Kronos {
     // 数据源
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }
 
-    fun transact(block: () -> Any?) = dataSource().transact(block)
+    fun transact(wrapper: KronosDataSourceWrapper? = null, block: () -> Any?) = wrapper.orDefault().transact(block)
 
     // 严格模式（将提高性能，但当数据库类型与字段类型不匹配时会抛出异常，而不是尝试进行转换）
     var strictSetValue = false

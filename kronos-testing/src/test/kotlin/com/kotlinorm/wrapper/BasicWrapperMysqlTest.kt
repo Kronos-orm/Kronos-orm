@@ -1,34 +1,38 @@
-package com.kotlinorm
+package com.kotlinorm.wrapper
 
+import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
+import com.kotlinorm.KronosBasicWrapper
+import com.kotlinorm.beans.sample.databases.MysqlUser
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.database.beans.MysqlUser
 import com.kotlinorm.orm.database.table
 import org.apache.commons.dbcp2.BasicDataSource
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class BasicWrapperTest {
-    private val ds = BasicDataSource().apply {
-        driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/test"
-        username = "root"
-        password = "******"
-        maxIdle = 10
-    }
-
-    private val wrapper by lazy {
-        dataSource()
+    private val wrapper = BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
+        // 数据库URL
+        url =
+            "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false&rewriteBatchedStatements=true"
+        username = System.getenv("db.username") // 数据库用户名
+        password = System.getenv("db.password") // 数据库密码
+        maxIdle = 10 // 最大空闲连接数
+    }.let {
+        KronosBasicWrapper(it)
     }
 
     init {
         Kronos.init {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { KronosBasicWrapper(ds) }
+            dataSource = { wrapper }
+            strictSetValue = true
         }
     }
 
@@ -82,7 +86,8 @@ class BasicWrapperTest {
                 dataSet
             )
         )
-        assertEquals(listOf(1, 1, 1, 1, 1), result.toList())
+
+        assertEquals(List(dataSet.size) { -2 }, result.toList())
     }
 
     @Test
@@ -95,17 +100,32 @@ class BasicWrapperTest {
     @Test
     fun testQueryList() {
         testBatchInsert()
+        Kronos.init {
+            strictSetValue = true
+        }
         val result =
             wrapper.forList(KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"))
         assertEquals(
             dataSet.toList(),
             result
         )
+        Kronos.init {
+            strictSetValue = false
+        }
+        val result2 =
+            wrapper.forList(KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"))
+        assertEquals(
+            dataSet.toList(),
+            result2
+        )
     }
 
     @Test
     fun testQueryListType() {
         testUpdate()
+        Kronos.init {
+            strictSetValue = true
+        }
         val result = wrapper.forList(
             KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"),
             MysqlUser::class,
@@ -122,31 +142,94 @@ class BasicWrapperTest {
             ),
             result
         )
+        Kronos.init {
+            strictSetValue = false
+        }
+        val result2 = wrapper.forList(
+            KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"),
+            MysqlUser::class,
+            true,
+            listOf()
+        )
+        assertEquals(
+            listOf(
+                MysqlUser(null, "test", 1, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
+                MysqlUser(null, "test2", 2, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
+                MysqlUser(null, "test3", 3, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
+                MysqlUser(null, "test4", 4, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
+                MysqlUser(null, "test5", 5, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
+            ),
+            result2
+        )
     }
 
     @Test
     fun testQueryListTypePrimitive() {
         testUpdate()
+        Kronos.init {
+            strictSetValue = true
+        }
         val result = wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, listOf("Kotlin.Int"))
         assertEquals(
             listOf(1, 2, 3, 4, 5),
             result
+        )
+        Kronos.init {
+            strictSetValue = false
+        }
+        val result2 =
+            wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, listOf("Kotlin.Int"))
+        assertEquals(
+            listOf(1, 2, 3, 4, 5),
+            result2
         )
     }
 
     @Test
     fun testQueryObject() {
         testUpdate()
-        val result =
-            wrapper.forObject(KronosAtomicQueryTask("select * from tb_user where id = 1"), MysqlUser::class, true, listOf())
-        assertEquals(MysqlUser(1, "test", 1, 1, deleted = false), result)
+        Kronos.init {
+            strictSetValue = true
+        }
+        assertFailsWith<ClassCastException> {
+            wrapper.forObject(
+                KronosAtomicQueryTask("select * from tb_user where id = 1"),
+                MysqlUser::class,
+                true,
+                listOf()
+            )
+        }
+        Kronos.init {
+            strictSetValue = false
+        }
+        val result2 =
+            wrapper.forObject(
+                KronosAtomicQueryTask("select * from tb_user where id = 1"),
+                MysqlUser::class,
+                true,
+                listOf()
+            )
+        assertEquals(MysqlUser(1, "test", 1, 1, deleted = false), result2)
     }
 
     @Test
     fun testQueryObjectPrimitive() {
         testUpdate()
+        Kronos.init {
+            strictSetValue = true
+        }
         val result = wrapper.forObject(KronosAtomicQueryTask("select score from tb_user where id = 1"), Int::class, false, listOf("Kotlin.Int"))
         assertEquals(1, result)
+        Kronos.init {
+            strictSetValue = false
+        }
+        val result2 = wrapper.forObject(
+            KronosAtomicQueryTask("select score from tb_user where id = 1"),
+            Int::class,
+            false,
+            listOf("Kotlin.Int")
+        )
+        assertEquals(1, result2)
     }
 
     @Test

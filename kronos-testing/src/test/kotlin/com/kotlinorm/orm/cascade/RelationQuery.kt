@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.cascade
 
+import com.kotlinorm.GsonProcessor
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
@@ -9,7 +10,6 @@ import com.kotlinorm.beans.sample.manyToMany.RolePermissionRelation
 import com.kotlinorm.beans.sample.oneToMany.GroupClass
 import com.kotlinorm.beans.sample.oneToMany.School
 import com.kotlinorm.beans.sample.oneToMany.Student
-import com.kotlinorm.orm.beans.GsonProcessor
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
@@ -23,7 +23,7 @@ import kotlin.test.Test
 class RelationQuery {
     private val ds = BasicDataSource().apply {
         driverClassName = "com.mysql.cj.jdbc.Driver"
-        url = "jdbc:mysql://localhost:3306/test"
+        url = "jdbc:mysql://localhost:3306/kronos_testing"
         username = "root"
         password = "******"
     }

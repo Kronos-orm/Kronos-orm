@@ -19,6 +19,7 @@ package com.kotlinorm
 import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
+import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
@@ -28,6 +29,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.utils.LRUCache
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
 import java.sql.PreparedStatement
@@ -126,7 +128,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         rs = ps.executeQuery()
         return try {
             if (isKPojo) {
-                rs.toKPojoList(kClass as KClass<KPojo>, superTypes)
+                rs.toKPojoList(kClass as KClass<KPojo>)
             } else {
                 val list = mutableListOf<Any>()
                 while (rs.next()) {
@@ -221,7 +223,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
 
         return try {
             if (isKPojo) {
-                rs.toKPojoList(kClass as KClass<KPojo>, superTypes)
+                rs.toKPojoList(kClass as KClass<KPojo>).firstOrNull()
             } else {
                 if (rs.next()) {
                     if (strictSetValue) {
@@ -350,11 +352,23 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         return transact(block) as T
     }
 
+    companion object {
+        val fieldsCache = LRUCache<KClass<KPojo>, Map<String, Field>>(128)
+    }
 
-    private fun ResultSet.toKPojoList(kClass: KClass<KPojo>, superTypes: List<String>): List<KPojo> {
+    private fun ResultSet.toKPojoList(kClass: KClass<KPojo>): List<KPojo> {
         val meta = metaData
         val columnCount = meta.columnCount
         val list = mutableListOf<KPojo>()
+        val columns = fieldsCache.getOrPut(kClass) {
+            kClass.createInstance().kronosColumns().let { instance ->
+                instance.associate {
+                    it.name to it
+                } + instance.associate {
+                    it.columnName to it
+                }
+            }
+        }
         if (dbType == Oracle.type) {
             // fix for Oracle: ORA 17027 Stream has already been closed
             val indexOfLong = mutableListOf<Int>()
@@ -372,10 +386,11 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                             if (strictSetValue) {
                                 instance[meta.getColumnLabel(i)] = it
                             } else {
+                                val field = columns[meta.getColumnLabel(i)]!!
                                 instance[meta.getColumnLabel(i)] = getTypeSafeValue(
-                                    kClass.qualifiedName!!,
+                                    field.kClass!!.qualifiedName!!,
                                     it,
-                                    superTypes
+                                    field.superTypes
                                 )
                             }
                         }
@@ -392,10 +407,11 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                             if (strictSetValue) {
                                 list[idx][meta.getColumnLabel(i)] = it
                             } else {
+                                val field = columns[meta.getColumnLabel(i)]!!
                                 list[idx][meta.getColumnLabel(i)] = getTypeSafeValue(
-                                    kClass.qualifiedName!!,
+                                    field.kClass!!.qualifiedName!!,
                                     it,
-                                    superTypes
+                                    field.superTypes
                                 )
                             }
                         }
@@ -411,10 +427,13 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                         if (strictSetValue) {
                             instance[meta.getColumnLabel(i)] = it
                         } else {
+                            val field = columns[meta.getColumnLabel(i)] ?: throw UnsupportedTypeException(
+                                "Cannot find field ${meta.getColumnLabel(i)} in ${kClass.simpleName}"
+                            )
                             instance[meta.getColumnLabel(i)] = getTypeSafeValue(
-                                kClass.qualifiedName!!,
+                                field.kClass!!.qualifiedName!!,
                                 it,
-                                superTypes
+                                field.superTypes
                             )
                         }
                     }

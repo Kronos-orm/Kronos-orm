@@ -3,6 +3,7 @@ package com.kotlinorm.compiler.plugin.utils.context
 import com.kotlinorm.compiler.helpers.Receivers
 import com.kotlinorm.compiler.helpers.applyIrCall
 import com.kotlinorm.compiler.helpers.irEnum
+import com.kotlinorm.compiler.helpers.irListOf
 import com.kotlinorm.compiler.helpers.subType
 import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.beans.CriteriaIR
@@ -309,6 +310,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
                     cascade,
                     irBoolean(cascadeIsArrayOrCollection),
                     kClass,
+                    irListOf(irBuiltIns.stringType, superTypes),
                     ignore ?: irNull(),
                     irBoolean(isColumn),
                     columnTypeLength ?: irInt(0),

@@ -7,7 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  kronos-core-unittests:
+  high-level-tests:
+    name: Run integration tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -21,5 +22,13 @@ jobs:
           java-version: 21
           distribution: 'adopt'
 
+      - name: Set up MySQL 8.0 🐬
+        uses: ankane/setup-mysql@v1
+        with:
+          database: kronos_testing
+
+      - name: Test MySQL connection 🔗
+        run: mysql -D kronos_testing -e 'SELECT VERSION()'
+
       - name: Run tests 🧪
-        run: ./gradlew :kronos-core:test --info --stacktrace
+        run: ./gradlew :kronos-testing:test --info --stacktrace

@@ -1,4 +1,4 @@
-name: Kronos-core unit testing
+name: Kronos integration testing
 
 on:
   push:

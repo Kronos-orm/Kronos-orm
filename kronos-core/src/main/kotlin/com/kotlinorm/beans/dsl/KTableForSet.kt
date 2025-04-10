@@ -16,10 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.Kronos.fieldNamingStrategy
-import com.kotlinorm.annotations.Column
 import com.kotlinorm.interfaces.KPojo
-import kotlin.reflect.KProperty
 
 /**
  * KTable
@@ -46,13 +43,9 @@ open class KTableForSet<T : KPojo> {
     val plusAssignFields: MutableList<Pair<Field, Number>> = mutableListOf()
     val minusAssignFields: MutableList<Pair<Field, Number>> = mutableListOf()
 
-    operator fun Any?.plusAssign(other: Number) {}
+    operator fun Any?.plusAssign(@Suppress("UNUSED") other: Number) {}
 
-    operator fun Any?.minusAssign(other: Number) {}
-
-
-    operator fun KPojo.get(column: String) = this.kronosColumns().first { it.columnName == column }
-    operator fun KPojo.set(@Suppress("UNUSED_PARAMETER") column: String, @Suppress("UNUSED_PARAMETER") value: Any?): () -> Unit = {}
+    operator fun Any?.minusAssign(@Suppress("UNUSED") other: Number) {}
 
     /**
      * Sets the value of a Field with the given value.

@@ -22,8 +22,8 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 基于KCP实现的表达式树解析和协程，Kronos拥有**强大的性能、表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/badge/coverage-compiler-plugin.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/coverage.yml)
-[![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/badge/coverage-core.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/coverage.yml)
+[![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/badge/coverage-compiler-plugin.svg)](https://coverage.kotlinorm.com/kronos-compiler-plugin)
+[![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/badge/coverage-core.svg)](https://coverage.kotlinorm.com/kronos-core)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-testing.yml)

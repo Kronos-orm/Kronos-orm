@@ -3,7 +3,7 @@ name: Kronos Testing Coverage
 on:
   push:
     branches: [ main ]
-  pull_request:
+  merge_group:
     branches: [ main ]
 
 permissions:

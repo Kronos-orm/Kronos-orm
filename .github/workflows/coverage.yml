@@ -21,6 +21,9 @@ jobs:
           java-version: 21
           distribution: 'adopt'
 
+      - name: Create badges dir if not exists 📁
+        run: mkdir -p .github/badges
+
       - name: Run Core Test Coverage 🧪
         id: core-coverage
         run: |

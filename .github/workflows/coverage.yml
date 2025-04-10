@@ -66,7 +66,7 @@ jobs:
           color: 'blue,555,daf'
           path: 'coverage/coverage-compiler-plugin.svg'
 
-      - name: Deploy to badge branch 📦
+      - name: Deploy to coverage branch 📦
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: coverage

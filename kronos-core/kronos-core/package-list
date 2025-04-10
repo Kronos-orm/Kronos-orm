@@ -210,12 +210,10 @@ $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/KTableForSet/#/PointingToDe
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/addField/#com.kotlinorm.beans.dsl.Field/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/add-field.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/fieldParamMap/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/field-param-map.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/fields/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/fields.html
-$dokka.location:com.kotlinorm.beans.dsl/KTableForSet/get/com.kotlinorm.interfaces.KPojo#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/get.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/minusAssign/kotlin.Any?#kotlin.Number/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/minus-assign.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/minusAssignFields/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/minus-assign-fields.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/plusAssign/kotlin.Any?#kotlin.Number/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/plus-assign.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/plusAssignFields/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/plus-assign-fields.html
-$dokka.location:com.kotlinorm.beans.dsl/KTableForSet/set/com.kotlinorm.interfaces.KPojo#kotlin.String#kotlin.Any?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/set.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/setAssign/#kotlin.String#com.kotlinorm.beans.dsl.Field#kotlin.Number/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/set-assign.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/setValue/#com.kotlinorm.beans.dsl.Field#kotlin.Any?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/set-value.html
 $dokka.location:com.kotlinorm.beans.dsl/KTableForSet/setValue/com.kotlinorm.beans.dsl.Field#kotlin.Any?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.dsl/-k-table-for-set/set-value.html

@@ -31,21 +31,23 @@ jobs:
       - name: Run Core Test Coverage 🧪
         id: core-coverage
         run: |
-          ./gradlew :kronos-core:koverLog --info --stacktrace
-          COVERAGE="$(cat kronos-compiler-plugin/build/reports/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          ./gradlew :kronos-core:koverLog
+          cat kronos-core/build/kover/coverage.txt
+          COVERAGE="$(cat kronos-core/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
           echo "##[set-output name=lines;]${COVERAGE}%"
 
       - name: Run Compiler Plugin Test Coverage 🧪
         id: compiler-plugin-coverage
         run: |
-          ./gradlew :kronos-compiler-plugin:koverLog --info --stacktrace
-          COVERAGE="$(cat kronos-compiler-plugin/build/reports/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          ./gradlew :kronos-compiler-plugin:koverLog
+          cat kronos-compiler-plugin/build/kover/coverage.txt
+          COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
           echo "##[set-output name=lines;]${COVERAGE}%"
 
       - name: Generate the badge SVG image for Core
         uses: emibcn/badge-action@v2.0.2
         with:
-          label: 'Test coverage'
+          label: 'core coverage'
           status: ${{ steps.core-coverage.outputs.lines }}
           color: 'blue,555,daf'
           path: '.github/badges/coverage-core.svg'
@@ -53,7 +55,7 @@ jobs:
       - name: Generate the badge SVG image for Compiler Plugin
         uses: emibcn/badge-action@v2.0.2
         with:
-          label: 'Test coverage'
+          label: 'compiler plugin coverage'
           status: ${{ steps.compiler-plugin-coverage.outputs.lines }}
           color: 'blue,555,daf'
           path: '.github/badges/coverage-compiler-plugin.svg'

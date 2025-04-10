@@ -1,0 +1,75 @@
+name: Kronos Testing Coverage
+
+on:
+  push:
+    branches: [ main ]
+  merge_group:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  kronos-core-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21 ☕️
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'adopt'
+
+      - name: Create badges dir if not exists 📁
+        run: |
+          mkdir -p coverage/kronos-core
+          mkdir -p coverage/kronos-compiler-plugin
+
+      - name: Run Core Test Coverage 🧪
+        id: core-coverage
+        run: |
+          ./gradlew :kronos-core:koverLog
+          ./gradlew :kronos-core:koverHtmlReport
+          cat kronos-core/build/kover/coverage.txt
+          cp -rf kronos-core/build/reports/kover/html/* coverage/kronos-core
+          COVERAGE="$(cat kronos-core/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          echo "##[set-output name=lines;]${COVERAGE}%"
+
+      - name: Run Compiler Plugin Test Coverage 🧪
+        id: compiler-plugin-coverage
+        run: |
+          ./gradlew :kronos-compiler-plugin:koverLog
+          ./gradlew :kronos-compiler-plugin:koverHtmlReport
+          cat kronos-compiler-plugin/build/kover/coverage.txt
+          cp -rf kronos-compiler-plugin/build/reports/kover/html/* coverage/kronos-compiler-plugin
+          COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          echo "##[set-output name=lines;]${COVERAGE}%"
+
+      - name: Generate the badge SVG image for Core
+        uses: emibcn/badge-action@v2.0.2
+        with:
+          label: 'core coverage'
+          status: ${{ steps.core-coverage.outputs.lines }}
+          color: 'blue,555,daf'
+          path: 'coverage/coverage-core.svg'
+
+      - name: Generate the badge SVG image for Compiler Plugin
+        uses: emibcn/badge-action@v2.0.2
+        with:
+          label: 'compiler plugin coverage'
+          status: ${{ steps.compiler-plugin-coverage.outputs.lines }}
+          color: 'blue,555,daf'
+          path: 'coverage/coverage-compiler-plugin.svg'
+
+      - name: Deploy to coverage branch 📦
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: coverage
+          folder: coverage
+          clean: true
+          single-commit: true

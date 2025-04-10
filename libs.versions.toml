@@ -50,3 +50,4 @@ kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kronos-publishing = { id = "kronos.publishing" }
 kronos-dokka = { id = "kronos.dokka-convention" }
 java-gradle-plugin = { id = "dev.gradleplugins.java-gradle-plugin", version = "1.9.0" }
+kover = { id = "org.jetbrains.kotlinx.kover", version = "0.9.1" }

@@ -69,7 +69,7 @@ jobs:
       - name: Deploy to badge branch 📦
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: badge
+          branch: coverage
           folder: coverage
           clean: true
           single-commit: true

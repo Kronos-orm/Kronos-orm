@@ -26,13 +26,17 @@ jobs:
           distribution: 'adopt'
 
       - name: Create badges dir if not exists 📁
-        run: mkdir -p .github/badges
+        run: |
+          mkdir -p coverage/kronos-core
+          mkdir -p coverage/kronos-compiler-plugin
 
       - name: Run Core Test Coverage 🧪
         id: core-coverage
         run: |
           ./gradlew :kronos-core:koverLog
+          ./gradlew :kronos-core:koverHtmlReport
           cat kronos-core/build/kover/coverage.txt
+          cp -rf kronos-core/build/reports/kover/html/* coverage/kronos-core
           COVERAGE="$(cat kronos-core/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
           echo "##[set-output name=lines;]${COVERAGE}%"
 
@@ -40,7 +44,9 @@ jobs:
         id: compiler-plugin-coverage
         run: |
           ./gradlew :kronos-compiler-plugin:koverLog
+          ./gradlew :kronos-compiler-plugin:koverHtmlReport
           cat kronos-compiler-plugin/build/kover/coverage.txt
+          cp -rf kronos-compiler-plugin/build/reports/kover/html/* coverage/kronos-compiler-plugin
           COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
           echo "##[set-output name=lines;]${COVERAGE}%"
 
@@ -50,7 +56,7 @@ jobs:
           label: 'core coverage'
           status: ${{ steps.core-coverage.outputs.lines }}
           color: 'blue,555,daf'
-          path: '.github/badges/coverage-core.svg'
+          path: 'coverage/coverage-core.svg'
 
       - name: Generate the badge SVG image for Compiler Plugin
         uses: emibcn/badge-action@v2.0.2
@@ -58,12 +64,12 @@ jobs:
           label: 'compiler plugin coverage'
           status: ${{ steps.compiler-plugin-coverage.outputs.lines }}
           color: 'blue,555,daf'
-          path: '.github/badges/coverage-compiler-plugin.svg'
+          path: 'coverage/coverage-compiler-plugin.svg'
 
       - name: Deploy to badge branch 📦
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: badge
-          folder: .github/badges
+          folder: coverage
           clean: true
           single-commit: true

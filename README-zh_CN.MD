@@ -19,11 +19,13 @@
 
 Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
 
-KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，
-**使操作数据库变得更加简单**。
+基于KCP实现的表达式树解析和协程，Kronos拥有**强大的性能、表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-testing.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.kotlinorm%22)
 [![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.2--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
@@ -106,11 +108,11 @@ Delegate IDE build/run actions to Maven**.
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.2"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.1")
+    implementation("com.kotlinorm:kronos-core:0.0.2")
 }
 ```
 
@@ -126,11 +128,11 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.2'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.1'
+    implementation 'com.kotlinorm:kronos-core:0.0.2'
 }
 ```
 
@@ -151,7 +153,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
     </dependencies>
 
@@ -170,7 +172,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.0.1</version>
+                        <version>0.0.2</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -230,27 +232,6 @@ data class Movie(
 ### 🎨 表模型定义(Dsl 风格)
 
 即将推出...[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
-
-------------
-
-### 📝 动态创建`KPojo` & `KPojo` 与 Map互转 & 获取表名、列等信息
-
-- Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
-- Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
-- Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
-
-```kotlin
-val instance = Movie::class.newInstance() // -> Movie() ,通过引用动态创建 KPojo 实例，不使用反射
-fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // 通过引用动态创建 KPojo 实例，不使用反射
-
-val movie = Movie(1)
-val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), 不使用反射
-val movie2: Movie = dataMap.mapperTo<Movie>() // 或 dataMap.mapperTo(Movie::class), 不使用反射
-
-val tableName = movie.kronosTable() // "tb_movie", 不使用反射
-val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 不使用反射
-// 实际上，我们提供了更多的功能，如获取表的创建时间、更新时间、字段设置的逻辑删除等。
-```
 
 ------
 
@@ -361,6 +342,30 @@ user.upsert { it.username }
 user.delete()
     .where { it.id == 1 }
     .execute()
+```
+
+------
+
+### 📝 动态创建`KPojo` & `KPojo` 与 Map互转 & 获取表名、列等信息
+
+- Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
+- Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
+- Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
+
+```kotlin
+val instance = Movie::class.newInstance() // -> Movie() ,通过引用动态创建 KPojo 实例，不使用反射
+fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // 通过引用动态创建 KPojo 实例，不使用反射
+
+val movie = Movie(1)
+val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), 不使用反射
+val movie2: Movie = dataMap.mapperTo<Movie>() // 或 dataMap.mapperTo(Movie::class), 不使用反射
+
+val tableName = movie.kronosTable() // "tb_movie", 不使用反射
+val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 不使用反射
+// 实际上，我们提供了更多的功能，如获取表的创建时间、更新时间、字段设置的逻辑删除等。
+
+instance["fieldName"] // 通过字段名获取字段值, 不使用反射
+instance["fieldName"] = "value" // 通过字段名设置字段值, 不使用反射
 ```
 
 ------

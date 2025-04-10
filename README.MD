@@ -19,10 +19,13 @@ A modern ORM framework designed for Kotlin.
 
 Kronos is a modern ORM framework designed for Kotlin based on the compiler plugin, which is **suitable for both backend and mobile applications, support multi-database. Powerful, high performance, easy to use**.
 
-KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has **powerful expressive power and concise , semantic writing to make the operation of the database has become more simple**.
+Based on the KCP implementation of expression tree parsing and concatenation, Kronos has **powerful performance, expressiveness, and a concise, semantic writing style**, semantic writing to make the operation of the database has become more simple**.
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/reviewdog.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-testing.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.kotlinorm%22)
 [![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.2--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 [![License](https://img.shields.io/:license-apache-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
@@ -103,11 +106,11 @@ User(id = id).delete().execute()
 
 ```kotlin
 plugins {
-  id("com.kotlinorm.kronos-gradle-plugin") version "0.0.1"
+  id("com.kotlinorm.kronos-gradle-plugin") version "0.0.2"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.1")
+    implementation("com.kotlinorm:kronos-core:0.0.2")
 }
 ```
 
@@ -123,11 +126,11 @@ dependencies {
 
 ```groovy
 plugins {
-  id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.1'
+  id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.2'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.1'
+    implementation 'com.kotlinorm:kronos-core:0.0.2'
 }
 ```
 
@@ -148,7 +151,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
     </dependencies>
 
@@ -167,7 +170,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.0.1</version>
+                        <version>0.0.2</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -227,27 +230,6 @@ data class Movie(
 
 Coming soon...
 [#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
-
-------------
-
-### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map & Get Meta Information
-
-- Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
-- Kronos provides functions to easily convert between `KPojo` and `Map`.
-- Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
-
-```kotlin
-val instance = Movie::class.newInstance() // -> Movie() ,dynamic create KPojo instance by reference, NO REFLECTION used
-fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // dynamic create KPojo instance by reference, NO REFLECTION used
-
-val movie = Movie(1)
-val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), NO REFLECTION used
-val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class), NO REFLECTION used
-
-val tableName = movie.kronosTable() // "tb_movie", NO REFLECTION used
-val columns = movie.kronosColumns() // [Field(id), Field(name), ...], NO REFLECTION used
-// We actually provide more functions such as getting the table creation time, update time, logical deletion of field settings and so on
-```
 
 ------
 ### 🔨 Table Operation
@@ -359,6 +341,31 @@ user.delete()
 ```
 
 ------
+
+### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map & Get Meta Information
+
+- Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
+- Kronos provides functions to easily convert between `KPojo` and `Map`.
+- Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
+
+```kotlin
+val instance = Movie::class.newInstance() // -> Movie() ,dynamic create KPojo instance by reference, NO REFLECTION used
+fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // dynamic create KPojo instance by reference, NO REFLECTION used
+
+val movie = Movie(1)
+val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), NO REFLECTION used
+val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class), NO REFLECTION used
+
+val tableName = movie.kronosTable() // "tb_movie", NO REFLECTION used
+val columns = movie.kronosColumns() // [Field(id), Field(name), ...], NO REFLECTION used
+// We actually provide more functions such as getting the table creation time, update time, logical deletion of field settings and so on
+
+instance["fieldName"] // get field value by field name, NO REFLECTION used
+instance["fieldName"] = "value" // set field value by field name, NO REFLECTION used
+```
+
+------
+
 
 ## 🛠️ Working with Spring or Other Frameworks
 

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kapt)
     alias(libs.plugins.kronos.publishing)
     alias(libs.plugins.kronos.dokka)
+    alias(libs.plugins.kover)
 }
 
 tasks.withType<Test>().configureEach {

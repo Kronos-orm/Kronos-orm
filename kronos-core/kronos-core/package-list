@@ -392,6 +392,9 @@ $dokka.location:com.kotlinorm.beans.transformers/ToStringTransformer/transform/#
 $dokka.location:com.kotlinorm.beans.transformers/TransformerManager///PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/index.html
 $dokka.location:com.kotlinorm.beans.transformers/TransformerManager/getValueTransformed/#kotlin.String#kotlin.Any#kotlin.collections.List[kotlin.String]#kotlin.String?#kotlin.reflect.KClass[*]/PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/get-value-transformed.html
 $dokka.location:com.kotlinorm.beans.transformers/TransformerManager/registerValueTransformer/#com.kotlinorm.interfaces.ValueTransformer/PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/register-value-transformer.html
+$dokka.location:com.kotlinorm.cache////PointingToDeclaration/kronos-core/com.kotlinorm.cache/index.html
+$dokka.location:com.kotlinorm.cache//fieldsMapCache/#/PointingToDeclaration/kronos-core/com.kotlinorm.cache/fields-map-cache.html
+$dokka.location:com.kotlinorm.cache//insertSqlCache/#/PointingToDeclaration/kronos-core/com.kotlinorm.cache/insert-sql-cache.html
 $dokka.location:com.kotlinorm.database.mssql////PointingToDeclaration/kronos-core/com.kotlinorm.database.mssql/index.html
 $dokka.location:com.kotlinorm.database.mssql/MssqlSupport///PointingToDeclaration/kronos-core/com.kotlinorm.database.mssql/-mssql-support/index.html
 $dokka.location:com.kotlinorm.database.mssql/MssqlSupport/getColumnCreateSql/#com.kotlinorm.enums.DBType#com.kotlinorm.beans.dsl.Field/PointingToDeclaration/kronos-core/com.kotlinorm.database.mssql/-mssql-support/get-column-create-sql.html
@@ -976,6 +979,7 @@ $dokka.location:com.kotlinorm.interfaces/KLogger/warn/#kotlin.Array[com.kotlinor
 $dokka.location:com.kotlinorm.interfaces/KPojo///PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/index.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/fromMapData/#kotlin.collections.Map[kotlin.String,kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/from-map-data.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/get/#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/get.html
+$dokka.location:com.kotlinorm.interfaces/KPojo/kClass/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/k-class.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosColumns/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-columns.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosCreateTime/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-create-time.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosLogicDelete/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-logic-delete.html
@@ -1633,9 +1637,9 @@ $dokka.location:com.kotlinorm.utils/LRUCache.Node/next/#/PointingToDeclaration/
 $dokka.location:com.kotlinorm.utils/LRUCache.Node/prev/#/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/-node/prev.html
 $dokka.location:com.kotlinorm.utils/LRUCache.Node/value/#/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/-node/value.html
 $dokka.location:com.kotlinorm.utils/LRUCache///PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/index.html
-$dokka.location:com.kotlinorm.utils/LRUCache/LRUCache/#kotlin.Int/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/-l-r-u-cache.html
+$dokka.location:com.kotlinorm.utils/LRUCache/LRUCache/#kotlin.Int#kotlin.Function1[TypeParam(bounds=[kotlin.Any?]),TypeParam(bounds=[kotlin.Any?])?]/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/-l-r-u-cache.html
+$dokka.location:com.kotlinorm.utils/LRUCache/defaultValue/#/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/default-value.html
 $dokka.location:com.kotlinorm.utils/LRUCache/get/#TypeParam(bounds=[kotlin.Any?])/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/get.html
-$dokka.location:com.kotlinorm.utils/LRUCache/getOrPut/#TypeParam(bounds=[kotlin.Any?])#kotlin.Function0[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/get-or-put.html
 $dokka.location:com.kotlinorm.utils/LRUCache/set/#TypeParam(bounds=[kotlin.Any?])#TypeParam(bounds=[kotlin.Any?])/PointingToDeclaration/kronos-core/com.kotlinorm.utils/-l-r-u-cache/set.html
 $dokka.location:com.kotlinorm////PointingToDeclaration/kronos-core/com.kotlinorm/index.html
 $dokka.location:com.kotlinorm/Kronos///PointingToDeclaration/kronos-core/com.kotlinorm/-kronos/index.html
@@ -1668,6 +1672,7 @@ com.kotlinorm.beans.parser
 com.kotlinorm.beans.serialize
 com.kotlinorm.beans.task
 com.kotlinorm.beans.transformers
+com.kotlinorm.cache
 com.kotlinorm.database
 com.kotlinorm.database.mssql
 com.kotlinorm.database.mysql

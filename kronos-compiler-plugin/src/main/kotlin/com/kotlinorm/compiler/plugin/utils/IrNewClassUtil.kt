@@ -133,6 +133,27 @@ fun KotlinBuilderContext.createPropertySetter(
 }
 
 /**
+ * Creates a new IrBlockBody that represents a function that returns the KClass of the given
+ *
+ * @param declaration The IrClass to be converted to a KClass.
+ * @return the `IrBlockBody` that represents the function.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun KotlinBuilderContext.createKClassFunction(
+    declaration: IrClass
+): IrBlockBody {
+    with(pluginContext) {
+        with(builder) {
+            return irBlockBody {
+                +irReturn(
+                    createKClassExpr(declaration.symbol)
+                )
+            }
+        }
+    }
+}
+
+/**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
  * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.
  *

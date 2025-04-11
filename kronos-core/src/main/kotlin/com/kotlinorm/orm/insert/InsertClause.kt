@@ -26,6 +26,7 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.insertSqlCache
 import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
@@ -39,14 +40,13 @@ import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
 class InsertClause<T : KPojo>(val pojo: T) {
-    private var paramMap = pojo.toDataMap()
-    private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
-    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
-    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
-    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
-    private var allFields = pojo.kronosColumns().toLinkedSet()
-    private val toInsertFields = linkedSetOf<Field>()
+    private val paramMap = pojo.toDataMap()
+    private val tableName = pojo.kronosTableName()
+    private val createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
+    private val updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
+    private val logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
+    private val optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
+    private val allFields = pojo.kronosColumns().toLinkedSet()
     private var cascadeEnabled = true
 
     /**
@@ -57,13 +57,6 @@ class InsertClause<T : KPojo>(val pojo: T) {
      * 允许级联的字段，若为空则允许所有字段级联
      */
     internal var cascadeAllowed: Set<Field>? = null
-
-    private val updateInsertFields = { field: Field, value: Any? ->
-        if (field.isColumn && value != null) {
-            toInsertFields += field
-            paramMap[field.name] = value
-        }
-    }
 
     fun cascade(enabled: Boolean): InsertClause<T> {
         cascadeEnabled = enabled
@@ -82,27 +75,32 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        val pk = pojo.kronosColumns()
-            .find { it.primaryKey !in setOf(PrimaryKeyType.NOT, PrimaryKeyType.DEFAULT, PrimaryKeyType.IDENTITY) }
-        if (pk != null && paramMap[pk.name] == null) {
-            paramMap[pk.name] = when (pk.primaryKey) {
-                PrimaryKeyType.UUID -> UUIDGenerator.nextId()
-                PrimaryKeyType.SNOWFLAKE -> SnowflakeIdGenerator.nextId()
-                PrimaryKeyType.CUSTOM -> customIdGenerator?.nextId()
-                else -> throw IllegalArgumentException("Primary key type not supported")
+        var useIdentity = false
+        allFields.forEach {
+            when (it.primaryKey) {
+                PrimaryKeyType.UUID -> paramMap[it.name] = UUIDGenerator.nextId()
+                PrimaryKeyType.SNOWFLAKE -> paramMap[it.name] = SnowflakeIdGenerator.nextId()
+                PrimaryKeyType.CUSTOM -> paramMap[it.name] = customIdGenerator?.nextId()
+                PrimaryKeyType.IDENTITY -> useIdentity = true
+                else -> {}
+            }
+            if (it.defaultValue != null && paramMap[it.name] == null) {
+                paramMap[it.name] = it.defaultValue
             }
         }
-        toInsertFields.addAll(allFields.filter { it.isColumn && paramMap[it.name] != null })
-
-        setCommonStrategy(createTimeStrategy, allFields, true, callBack = updateInsertFields)
-        setCommonStrategy(updateTimeStrategy, allFields, true, callBack = updateInsertFields)
-        setCommonStrategy(logicDeleteStrategy, allFields, false, callBack = updateInsertFields)
-        setCommonStrategy(optimisticStrategy, allFields, false, callBack = updateInsertFields)
-
-        val sql = getInsertSql(wrapper.orDefault(), tableName, toInsertFields.toList())
+        arrayOf(
+            createTimeStrategy to true,
+            updateTimeStrategy to true,
+            logicDeleteStrategy to false,
+            optimisticStrategy to false
+        ).forEach {
+            setCommonStrategy(it.first, allFields, it.second) { field, value ->
+                paramMap[field.name] = value
+            }
+        }
         val paramMapNew = mutableMapOf<String, Any?>()
         paramMap.forEach { (key, value) ->
-            val field = toInsertFields.find { it.name == key }
+            val field = allFields.find { it.name == key }
             if (field != null && value != null) {
                 if (field.serializable) {
                     paramMapNew[key] = serializeProcessor.serialize(value)
@@ -112,6 +110,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
             }
         }
 
+        val sql = insertSqlCache[pojo.kClass()] ?: getInsertSql(
+            wrapper.orDefault(),
+            tableName,
+            allFields.filter { it.isColumn }.toList()
+        )
+
         return CascadeInsertClause.build(
             cascadeEnabled,
             cascadeAllowed,
@@ -120,7 +124,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
-                useIdentity = (allFields - toInsertFields).any { it.primaryKey == PrimaryKeyType.IDENTITY }
+                useIdentity = useIdentity
             )
         )
 

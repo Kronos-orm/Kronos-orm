@@ -1,6 +1,6 @@
 package com.kotlinorm.utils
 
-class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY) {
+class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY, val defaultValue: (T) -> R? = { null }) {
 
     private val map = hashMapOf<T, Node<T, R>>()
     private val head: Node<T, R> = Node()
@@ -18,7 +18,7 @@ class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY) {
             addAtEnd(node)
             return node.value
         }
-        return null
+        return defaultValue(key)?.also { set(key, it) }
     }
 
     operator fun set(key: T, value: R) {
@@ -33,10 +33,6 @@ class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY) {
             remove(first)
             map.remove(first.key)
         }
-    }
-
-    fun getOrPut(key: T, defaultValue: () -> R): R {
-        return get(key) ?: defaultValue().also { set(key, it) }
     }
 
     private fun remove(node: Node<T, R>) {

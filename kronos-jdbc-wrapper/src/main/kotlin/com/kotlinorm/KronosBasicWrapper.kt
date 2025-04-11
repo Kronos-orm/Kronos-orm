@@ -19,9 +19,9 @@ package com.kotlinorm
 import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
-import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.Oracle
@@ -29,7 +29,6 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.utils.LRUCache
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
 import java.sql.PreparedStatement
@@ -352,23 +351,13 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         return transact(block) as T
     }
 
-    companion object {
-        val fieldsCache = LRUCache<KClass<KPojo>, Map<String, Field>>(128)
-    }
-
     private fun ResultSet.toKPojoList(kClass: KClass<KPojo>): List<KPojo> {
         val meta = metaData
         val columnCount = meta.columnCount
         val list = mutableListOf<KPojo>()
-        val columns = fieldsCache.getOrPut(kClass) {
-            kClass.createInstance().kronosColumns().let { instance ->
-                instance.associate {
-                    it.name to it
-                } + instance.associate {
-                    it.columnName to it
-                }
-            }
-        }
+        val columns = fieldsMapCache[kClass] ?: throw UnsupportedTypeException(
+            "Cannot find fields in ${kClass.simpleName}"
+        )
         if (dbType == Oracle.type) {
             // fix for Oracle: ORA 17027 Stream has already been closed
             val indexOfLong = mutableListOf<Int>()

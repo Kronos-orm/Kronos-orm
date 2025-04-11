@@ -19,6 +19,7 @@ package com.kotlinorm.compiler.plugin.transformer
 import com.kotlinorm.compiler.plugin.utils.context.withBuilder
 import com.kotlinorm.compiler.plugin.utils.createFromMapValueFunction
 import com.kotlinorm.compiler.plugin.utils.createGetFieldsFunction
+import com.kotlinorm.compiler.plugin.utils.createKClassFunction
 import com.kotlinorm.compiler.plugin.utils.createKronosComment
 import com.kotlinorm.compiler.plugin.utils.createKronosCreateTime
 import com.kotlinorm.compiler.plugin.utils.createKronosLogicDelete
@@ -143,6 +144,7 @@ class KronosIrClassNewTransformer(
             with(DeclarationIrBuilder(pluginContext, declaration.symbol) as IrBuilderWithScope) {
                 withBuilder(pluginContext) {
                     when (declaration.name.asString()) {
+                        "kClass" -> replaceFakeBody { createKClassFunction(irClass) }
                         "toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration) }
                         "get" -> replaceFakeBody { createPropertyGetter(irClass, declaration) }
                         "set" -> replaceFakeBody { createPropertySetter(irClass, declaration) }

@@ -1,0 +1,264 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CommonUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: CommonUtilKt (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CommonUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (8/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25.7%
+  </span>
+  <span class="absValue">
+    (9/35)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    43%
+  </span>
+  <span class="absValue">
+    (68/158)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2024 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos.defaultDateFormat
+&nbsp;import com.kotlinorm.Kronos.serializeProcessor
+&nbsp;import com.kotlinorm.Kronos.strictSetValue
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; *@program: kronos-orm
+&nbsp; *@author: Jieyao Lu
+&nbsp; *@description:
+&nbsp; *@create: 2024/5/7 16:01
+&nbsp; **/
+&nbsp;
+&nbsp;fun setCommonStrategy(
+&nbsp;    strategy: KronosCommonStrategy,
+&nbsp;    allFields: LinkedHashSet&lt;Field&gt;,
+<b class="fc">&nbsp;    timeStrategy: Boolean = false,</b>
+<b class="fc">&nbsp;    defaultValue: Any = 0,</b>
+&nbsp;    callBack: (field: Field, value: Any?) -&gt; Unit
+&nbsp;) {
+<b class="fc">&nbsp;    if (strategy.enabled &amp;&amp; strategy.field in allFields) {</b>
+<b class="fc">&nbsp;        if (timeStrategy) {</b>
+<b class="fc">&nbsp;            val format = (strategy.field.dateFormat ?: defaultDateFormat).toString()</b>
+<b class="fc">&nbsp;            callBack(strategy.field, currentDateTime(format))</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            callBack(strategy.field, defaultValue)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;fun &lt;T&gt; Collection&lt;T&gt;.toLinkedSet(): LinkedHashSet&lt;T&gt; = linkedSetOf&lt;T&gt;().apply { addAll(this@toLinkedSet) }</b>
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Converts a given value to a type-safe value based on the provided Kotlin type.
+&nbsp; *
+&nbsp; * @param kotlinType The target Kotlin type to convert the value to.
+&nbsp; * @param value The value to be converted.
+&nbsp; * @param superTypes A list of super types for the value&#39;s class.
+&nbsp; * @param dateTimeFormat An optional date-time format to use for date-time conversions.
+&nbsp; * @param kClassOfVal The KClass of the value.
+&nbsp; * @return The converted value, or null if the conversion is not possible.
+&nbsp; */
+&nbsp;fun getTypeSafeValue(
+&nbsp;    kotlinType: String,
+&nbsp;    value: Any,
+<b class="nc">&nbsp;    superTypes: List&lt;String&gt; = listOf(),</b>
+<b class="nc">&nbsp;    dateTimeFormat: String? = null,</b>
+<b class="nc">&nbsp;    kClassOfVal: KClass&lt;*&gt; = value::class</b>
+<b class="nc">&nbsp;): Any = getValueTransformed(</b>
+<b class="nc">&nbsp;    kotlinType,</b>
+<b class="nc">&nbsp;    value,</b>
+<b class="nc">&nbsp;    superTypes,</b>
+<b class="nc">&nbsp;    dateTimeFormat,</b>
+<b class="nc">&nbsp;    kClassOfVal</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * getSafeValue
+&nbsp; * 1.类型转换 Any-&gt;String,Long-&gt;Int, Short-&gt;Int, Int-&gt;Short, Int-&gt;Boolean...
+&nbsp; *
+&nbsp; * 2.日期转换 String-&gt;Date, Long-&gt;Date, String-&gt; LocalDateTime, Long-&gt;LocalDateTime
+&nbsp; *
+&nbsp; * 3.将String使用serialize resolver转为指定类型
+&nbsp; *
+&nbsp; * 4.若columnLabel在map中的值为null，尝试查找columnName在map中的值存入KPojo
+&nbsp; *
+&nbsp; * @param kPojo
+&nbsp; * @param kClass
+&nbsp; * @param superTypes
+&nbsp; * @param map
+&nbsp; * @param key
+&nbsp; * @param serializable
+&nbsp; * @return
+&nbsp; */
+&nbsp;@Suppress(&quot;UNUSED&quot;)
+&nbsp;fun getSafeValue(
+&nbsp;    kPojo: KPojo,
+&nbsp;    kClass: KClass&lt;*&gt;,
+&nbsp;    superTypes: List&lt;String&gt;,
+&nbsp;    map: Map&lt;String, Any?&gt;,
+&nbsp;    key: String,
+&nbsp;    serializable: Boolean
+&nbsp;): Any? {
+<b class="nc">&nbsp;    if (strictSetValue) {</b>
+<b class="nc">&nbsp;        return map[key]</b>
+&nbsp;    }
+<b class="nc">&nbsp;    return map[key]?.let { value -&gt;</b>
+<b class="nc">&nbsp;        val kClassOfVal = value::class</b>
+<b class="nc">&nbsp;        if (kClass != kClassOfVal) {</b>
+<b class="nc">&nbsp;            if (serializable) {</b>
+<b class="nc">&nbsp;                serializeProcessor.deserialize(</b>
+<b class="nc">&nbsp;                    value.toString(), kClass</b>
+&nbsp;                )
+&nbsp;            } else {
+<b class="nc">&nbsp;                val column = kPojo.kronosColumns().find { it.name == key }!!</b>
+<b class="nc">&nbsp;                getTypeSafeValue(</b>
+<b class="nc">&nbsp;                    kClass.qualifiedName!!,</b>
+<b class="nc">&nbsp;                    value,</b>
+<b class="nc">&nbsp;                    superTypes,</b>
+<b class="nc">&nbsp;                    column.dateFormat,</b>
+<b class="nc">&nbsp;                    kClassOfVal</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        } else {
+<b class="nc">&nbsp;            value</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;fun String.trimWhitespace(): String {
+<b class="fc">&nbsp;    return replace(&quot;\\s+&quot;.toRegex(), &quot; &quot;).trim()</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-04-11 16:50</div>
+</div>
+</body>
+</html>

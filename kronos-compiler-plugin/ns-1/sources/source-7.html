@@ -1,0 +1,235 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrTryCatchHelperKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.helpers</a>
+</div>
+
+<h1>Coverage Summary for Class: IrTryCatchHelperKt (com.kotlinorm.compiler.helpers)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrTryCatchHelperKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    55.6%
+  </span>
+  <span class="absValue">
+    (5/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    53.3%
+  </span>
+  <span class="absValue">
+    (40/75)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">IrTryCatchHelperKt$irTry$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (5/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    53.3%
+  </span>
+  <span class="absValue">
+    (40/75)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.compiler.helpers
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.irCatch
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildVariable
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irTry
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrVariable
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCatch
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrTry
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.getSimpleFunction
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import kotlin.contracts.ExperimentalContracts
+&nbsp;import kotlin.contracts.InvocationKind
+&nbsp;import kotlin.contracts.contract
+&nbsp;
+&nbsp;val IrPluginContext.JavaLangExceptionSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;java.lang.Exception&quot;)!!</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;val IrPluginContext.printStackTraceSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;java.lang.Throwable&quot;)!!.getSimpleFunction(&quot;printStackTrace&quot;)!!</b>
+&nbsp;
+&nbsp;class IrTryBuilder(private val builder: IrBuilderWithScope) {
+&nbsp;    private val catches = mutableListOf&lt;IrCatch&gt;()
+&nbsp;    private val caughtTypes = mutableSetOf&lt;IrType&gt;()
+&nbsp;    private var finallyExpression: IrExpression? = null
+&nbsp;
+&nbsp;    @OptIn(ExperimentalContracts::class)
+&nbsp;    fun IrPluginContext.irCatch(
+&nbsp;        throwableType: IrType = JavaLangExceptionSymbol.defaultType,
+&nbsp;        body: IrBuilderWithScope.(IrVariable) -&gt; IrExpression = {
+&nbsp;            applyIrCall(printStackTraceSymbol) {
+&nbsp;                dispatchReceiver = irGet(it)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    ) {
+&nbsp;        contract { callsInPlace(body, InvocationKind.EXACTLY_ONCE) }
+&nbsp;        if (throwableType.subType() == builder.context.irBuiltIns.throwableType &amp;&amp; throwableType != builder.context.irBuiltIns.throwableType) error(
+&nbsp;            &quot;Can only catch types that inherit from kotlin.Throwable&quot;
+&nbsp;        )
+&nbsp;
+&nbsp;        if (!caughtTypes.add(throwableType)) error(&quot;Already caught type $throwableType&quot;)
+&nbsp;
+&nbsp;        val catchVariable = buildVariable(
+&nbsp;            builder.scope.getLocalDeclarationParent(),
+&nbsp;            builder.startOffset,
+&nbsp;            builder.endOffset,
+&nbsp;            IrDeclarationOrigin.CATCH_PARAMETER,
+&nbsp;            Name.identifier(&quot;e_${catches.size}&quot;),
+&nbsp;            throwableType
+&nbsp;        )
+&nbsp;
+&nbsp;        catches += builder.irCatch(catchVariable, builder.body(catchVariable))
+&nbsp;    }
+&nbsp;
+&nbsp;    fun irFinally(expression: IrExpression) {
+&nbsp;        if (finallyExpression != null) error(&quot;finally expression already set&quot;)
+&nbsp;        finallyExpression = expression
+&nbsp;    }
+&nbsp;
+&nbsp;    fun build(result: IrExpression, type: IrType): IrTry = builder.irTry(type, result, catches, finallyExpression)
+&nbsp;}
+&nbsp;
+<b class="nc">&nbsp;inline fun IrBuilderWithScope.irTry(</b>
+<b class="nc">&nbsp;    result: IrExpression = irBlock {},</b>
+<b class="nc">&nbsp;    type: IrType = result.type,</b>
+<b class="nc">&nbsp;    catches: IrTryBuilder.() -&gt; Unit = {},</b>
+<b class="fc">&nbsp;): IrTry = IrTryBuilder(</b>
+<b class="fc">&nbsp;    this</b>
+<b class="fc">&nbsp;).apply(catches).build(result, type)</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-04-11 16:50</div>
+</div>
+</body>
+</html>

@@ -55,7 +55,7 @@ class KronosCommonStrategyTest {
     @Test
     fun testCreateTimeStrategy() {
         val (sql, paramMap) = TestPojo(1).insert().build()
-        assertEquals("INSERT INTO `test_pojo` (`id`, `create_time`, `update_time`) VALUES (:id, :createTime, :updateTime)", sql)
+        assertEquals("INSERT INTO `test_pojo` (`id`, `name`, `create_time`, `update_time`) VALUES (:id, :name, :createTime, :updateTime)", sql)
         assertEquals(
             mapOf(
                 "id" to 1,
@@ -69,7 +69,7 @@ class KronosCommonStrategyTest {
     @Test
     fun testCreateTimeStrategy2() {
         val (sql, paramMap) = TestPojo2(1).insert().build()
-        assertEquals("INSERT INTO `test_pojo2` (`id`) VALUES (:id)", sql)
+        assertEquals("INSERT INTO `test_pojo2` (`id`, `name`, `create_time`, `update_time`) VALUES (:id, :name, :createTime, :updateTime)", sql)
         assertEquals(
             mapOf(
                 "id" to 1,

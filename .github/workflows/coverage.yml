@@ -38,7 +38,7 @@ jobs:
           cat kronos-core/build/kover/coverage.txt
           cp -rf kronos-core/build/reports/kover/html/* coverage/kronos-core
           COVERAGE="$(cat kronos-core/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
-          echo "##[set-output name=lines;]${COVERAGE}%"
+          echo "##[set-output name=lines;]${COVERAGE}"
 
       - name: Run Compiler Plugin Test Coverage 🧪
         id: compiler-plugin-coverage
@@ -48,7 +48,7 @@ jobs:
           cat kronos-compiler-plugin/build/kover/coverage.txt
           cp -rf kronos-compiler-plugin/build/reports/kover/html/* coverage/kronos-compiler-plugin
           COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
-          echo "##[set-output name=lines;]${COVERAGE}%"
+          echo "##[set-output name=lines;]${COVERAGE}"
 
       - name: Generate the badge SVG image for Core
         uses: emibcn/badge-action@v2.0.2

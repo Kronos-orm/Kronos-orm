@@ -3,9 +3,11 @@ package com.kotlinorm.orm.upsert
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.execute
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -19,12 +21,13 @@ class MysqlUpsertTest {
             when (paramMap["id"]) {
                 1 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `create_time`, `update_time`, `deleted`) VALUES (:id, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 1,
+                            "gender" to "0",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
                             "createTime" to paramMap["createTime"]
@@ -34,12 +37,13 @@ class MysqlUpsertTest {
 
                 2 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `create_time`, `update_time`, `deleted`) VALUES (:id, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 2,
+                            "gender" to "0",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
                             "createTime" to paramMap["createTime"]
@@ -49,12 +53,13 @@ class MysqlUpsertTest {
 
                 3 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 3,
+                            "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -97,12 +102,13 @@ class MysqlUpsertTest {
 
                 6 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 6,
+                            "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -112,12 +118,13 @@ class MysqlUpsertTest {
                 }
                 7 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 7,
+                            "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -127,12 +134,13 @@ class MysqlUpsertTest {
                 }
                 8 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 8,
+                            "gender" to "0",
                             "username" to "test2",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -142,12 +150,13 @@ class MysqlUpsertTest {
                 }
                 9 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 9,
+                            "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -157,12 +166,13 @@ class MysqlUpsertTest {
                 }
                 10 -> {
                     assertEquals(
-                        "INSERT INTO `tb_user` (`id`, `username`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :createTime, :updateTime, :deleted)",
+                        "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
                         sql
                     )
                     assertEquals(
                         mapOf(
                             "id" to 10,
+                            "gender" to "0",
                             "username" to "test2",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],

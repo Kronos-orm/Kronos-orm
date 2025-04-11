@@ -16,4 +16,4 @@ val fieldsMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> {
     }
 }
 
-val insertSqlCache = LRUCache<KClass<KPojo>, String>()
+val insertSqlCache = LRUCache<Pair<KClass<KPojo>, Boolean>, String>()

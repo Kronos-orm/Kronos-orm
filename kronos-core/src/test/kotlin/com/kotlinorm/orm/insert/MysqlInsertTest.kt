@@ -2,6 +2,7 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.database.MysqlUser
+import com.kotlinorm.orm.insert.InsertClause.Companion.build
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,6 +34,28 @@ class MysqlInsertTest {
                 "deleted" to 0
             ), paramMap
         )
+    }
+
+    @Test
+    fun testBatchInsert() {
+        val tasks = (1..100).toList().map {
+            MysqlUser(it)
+        }.insert().build().atomicTasks
+        tasks.forEachIndexed { id, (sql, paramMap) ->
+            assertEquals(
+                "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
+                sql
+            )
+            assertEquals(
+                mapOf(
+                    "id" to id + 1,
+                    "gender" to "0",
+                    "createTime" to paramMap["createTime"],
+                    "updateTime" to paramMap["updateTime"],
+                    "deleted" to 0
+                ), paramMap
+            )
+        }
     }
 
 }

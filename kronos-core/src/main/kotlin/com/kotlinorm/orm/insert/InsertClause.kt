@@ -76,6 +76,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         var useIdentity = false
+        val paramMapNew = mutableMapOf<String, Any?>()
+        val fieldsMap = mutableMapOf<String, Field>()
+        val toInsertFields = mutableListOf<Field>()
         allFields.forEach {
             when (it.primaryKey) {
                 PrimaryKeyType.UUID -> paramMap[it.name] = UUIDGenerator.nextId()
@@ -87,6 +90,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
             if (it.defaultValue != null && paramMap[it.name] == null) {
                 paramMap[it.name] = it.defaultValue
             }
+            fieldsMap[it.name] = it
+            if (it.isColumn) {
+                toInsertFields.add(it)
+            }
         }
         arrayOf(
             createTimeStrategy to true,
@@ -94,13 +101,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
             logicDeleteStrategy to false,
             optimisticStrategy to false
         ).forEach {
-            setCommonStrategy(it.first, allFields, it.second) { field, value ->
+            setCommonStrategy(it.first, linkedSetOf(it.first.field), it.second) { field, value ->
                 paramMap[field.name] = value
             }
         }
-        val paramMapNew = mutableMapOf<String, Any?>()
         paramMap.forEach { (key, value) ->
-            val field = allFields.find { it.name == key }
+            val field = fieldsMap[key]
             if (field != null && value != null) {
                 if (field.serializable) {
                     paramMapNew[key] = serializeProcessor.serialize(value)
@@ -110,11 +116,14 @@ class InsertClause<T : KPojo>(val pojo: T) {
             }
         }
 
-        val sql = insertSqlCache[pojo.kClass()] ?: getInsertSql(
+        val kClass = pojo.kClass()
+        val sql = insertSqlCache[kClass] ?: getInsertSql(
             wrapper.orDefault(),
             tableName,
-            allFields.filter { it.isColumn }.toList()
-        )
+            toInsertFields
+        ).also {
+            insertSqlCache[kClass] = it
+        }
 
         return CascadeInsertClause.build(
             cascadeEnabled,

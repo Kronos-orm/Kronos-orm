@@ -101,7 +101,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             logicDeleteStrategy to false,
             optimisticStrategy to false
         ).forEach {
-            setCommonStrategy(it.first, linkedSetOf(it.first.field), it.second) { field, value ->
+            setCommonStrategy(it.first, allFields, it.second) { field, value ->
                 paramMap[field.name] = value
             }
         }

@@ -91,7 +91,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 paramMap[it.name] = it.defaultValue
             }
             fieldsMap[it.name] = it
-            if (it.isColumn) {
+            if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
                 toInsertFields.add(it)
             }
         }
@@ -117,12 +117,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
 
         val kClass = pojo.kClass()
-        val sql = insertSqlCache[kClass] ?: getInsertSql(
+        val sql = insertSqlCache[kClass to useIdentity] ?: getInsertSql(
             wrapper.orDefault(),
             tableName,
             toInsertFields
         ).also {
-            insertSqlCache[kClass] = it
+            insertSqlCache[kClass to useIdentity] = it
         }
 
         return CascadeInsertClause.build(

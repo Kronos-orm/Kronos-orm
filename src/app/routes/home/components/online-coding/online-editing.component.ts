@@ -8,6 +8,7 @@ import {Terminal, TerminalService} from "primeng/terminal";
 import {CodemirrorComponent} from "../../../../components/codemirror.component";
 import {Table} from "primeng/table";
 import {TranslocoPipe} from "@jsverse/transloco";
+import {Tab, TabList, TabPanel, TabPanels, Tabs} from "primeng/tabs";
 
 interface Column {
   field: string;
@@ -19,24 +20,31 @@ interface Column {
   imports: [
     SharedModule,
     CodemirrorComponent,
-    TranslocoPipe
+    TranslocoPipe,
+    Tab,
+    Tabs,
+    TabList,
+    TabPanels,
+    TabPanel
   ],
   template: `
     <div class="card">
       <p-table
-        #tableInstance
-        styleClass="p-datatable-sm p-datatable-gridlines border border-gray-700"
-        [resizableColumns]="true"
-        dataKey="code"
-        [(selection)]="selectedProducts"
-        [columns]="cols"
-        [value]="products"
-        [scrollable]="true"
-        scrollHeight="300px"
-        [tableStyle]="{ 'min-width': '50rem' }">
+          #tableInstance
+          styleClass="p-datatable-sm p-datatable-gridlines border border-gray-700"
+          [resizableColumns]="true"
+          dataKey="code"
+          [(selection)]="selectedProducts"
+          [columns]="cols"
+          [value]="products"
+          [scrollable]="true"
+          scrollHeight="300px"
+          [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template pTemplate="header" let-columns>
           <tr>
-            <th style="width: 4rem"><p-tableHeaderCheckbox /></th>
+            <th style="width: 4rem">
+              <p-tableHeaderCheckbox/>
+            </th>
             <th pResizableColumn *ngFor="let col of columns">
               {{ col.header }}
             </th>
@@ -45,16 +53,16 @@ interface Column {
         <ng-template pTemplate="body" let-product let-rowIndex="rowIndex" let-columns="columns" let-editing="editing">
           <tr [pSelectableRow]="product" [pSelectableRowIndex]="rowIndex">
             <td>
-              <p-tableCheckbox [value]="product" />
+              <p-tableCheckbox [value]="product"/>
             </td>
             <td *ngFor="let col of columns" [pEditableColumn]="product[col.field]" [pEditableColumnField]="col.field">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input
-                    class="p-inputtext-sm"
-                    pInputText
-                    type="text"
-                    [(ngModel)]="product[col.field]" />
+                      class="p-inputtext-sm"
+                      pInputText
+                      type="text"
+                      [(ngModel)]="product[col.field]"/>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ product[col.field] }}
@@ -66,40 +74,49 @@ interface Column {
       </p-table>
     </div>
     <div class="card">
-      <p-tabView
-        [scrollable]="true"
-        styleClass="border border-gray-700 p-0 my-6"
-        [(activeIndex)]="index">
-        @for (command of commands; let i = $index; track i) {
-          <p-tabPanel>
-            <ng-template pTemplate="header">
+      <p-tabs
+          scrollable selectOnFocus showNavigators
+          class="border border-gray-700 p-0 my-6"
+          [(value)]="index">
+        <p-tablist>
+          @for (command of commands; let i = $index; track i) {
+            <p-tab [value]="i">
               <span class="p-menuitem-icon" [class]="command.icon"></span>
               <span class="ml-2 ng-star-inserted">
-                      {{ command.label }}
-                    </span>
-            </ng-template>
-            @if (i == index) {
-              <div class="flex w-full" style="height: 288px;overflow: auto">
-                <div class="run-column shrink-0" style="margin-top: 4px">
-                  @for (index of [].constructor(command.rowNum); let j = $index; track j) {
-                    <div class="w-8 text-center" style="height: 1.4rem; line-height: 1.6rem">
-                      @if (!!command.slice?.[j]) {
-                        <span style="transform: scaleX(1.5)" [pTooltip]="'RUN' | transloco" (click)="run(command, j)" showDelay="300"
-                              tooltipPosition="left" class="pi pi-play text-green-500 cursor-pointer"></span>
-                      }
-                      @if (command.tip[j]) {
-                        <span [pTooltip]="command.tip[j] | transloco" tooltipEvent="both" showDelay="20"
-                              class="pi pi-question-circle text-blue-500 cursor-pointer"></span>
-                      }
-                    </div>
-                  }
+                {{ command.label }}
+              </span>
+            </p-tab>
+          }
+        </p-tablist>
+        <p-tabpanels>
+          @for (command of commands; let i = $index; track i) {
+            <p-tabpanel [value]="i">
+              <ng-template pTemplate="header">
+              </ng-template>
+              @if (i == index) {
+                <div class="flex w-full" style="height: 288px;overflow: auto">
+                  <div class="run-column shrink-0" style="margin-top: 4px">
+                    @for (index of [].constructor(command.rowNum); let j = $index; track j) {
+                      <div class="w-8 text-center" style="height: 1.4rem; line-height: 1.6rem">
+                        @if (!!command.slice?.[j]) {
+                          <span style="transform: scaleX(1.5)" [pTooltip]="'RUN' | transloco" (click)="run(command, j)"
+                                showDelay="300"
+                                tooltipPosition="left" class="pi pi-play text-green-500 cursor-pointer"></span>
+                        }
+                        @if (command.tip[j]) {
+                          <span [pTooltip]="command.tip[j] | transloco" tooltipEvent="both" showDelay="20"
+                                class="pi pi-question-circle text-blue-500 cursor-pointer"></span>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <codemirror styleClass="grow max-w-[calc(100%-35px)]" [disabled]="true" [(ngModel)]="command.doc"/>
                 </div>
-                <codemirror styleClass="grow max-w-[calc(100%-35px)]" [disabled]="true" [(ngModel)]="command.doc"/>
-              </div>
-            }
-          </p-tabPanel>
-        }
-      </p-tabView>
+              }
+            </p-tabpanel>
+          }
+        </p-tabpanels>
+      </p-tabs>
       <p-terminal #terminalInstance [style]="{'white-space': 'pre-wrap', 'font-family': 'Hack'}"
                   [welcomeMessage]="'TERMINAL_WELCOME' | transloco" prompt="Kronos $"/>
     </div>

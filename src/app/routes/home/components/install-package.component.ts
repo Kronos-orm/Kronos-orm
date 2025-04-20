@@ -3,6 +3,7 @@ import {SharedModule} from "../../../shared.module";
 import {AvatarModule} from "primeng/avatar";
 import {CodemirrorComponent} from "../../../components/codemirror.component";
 import {TranslocoPipe} from "@jsverse/transloco";
+import {Tab, TabList, Tabs} from "primeng/tabs";
 
 @Component({
     selector: 'install-package',
@@ -10,13 +11,17 @@ import {TranslocoPipe} from "@jsverse/transloco";
         SharedModule,
         AvatarModule,
         CodemirrorComponent,
-        TranslocoPipe
+        TranslocoPipe,
+        Tabs,
+        TabList,
+        Tab
     ],
     template: `
         <p-card class="mt-4" [header]="'INSTALL_PACKAGES' | transloco">
-            <p-tabView (activeIndexChange)="selectedIndex = $event">
-                <p-tabPanel>
-                    <ng-template pTemplate="header">
+            <p-tabs [(value)]="selectedIndex"
+                    scrollable selectOnFocus showNavigators>
+                <p-tablist>
+                    <p-tab [value]="0">
                         <div class="flex items-center gap-2">
                             <p-avatar
                                     image="/assets/icons/gradlekts.svg"
@@ -25,10 +30,8 @@ import {TranslocoPipe} from "@jsverse/transloco";
                                 Gradle(kts)
                             </span>
                         </div>
-                    </ng-template>
-                </p-tabPanel>
-                <p-tabPanel>
-                    <ng-template pTemplate="header">
+                    </p-tab>
+                    <p-tab [value]="1">
                         <div class="flex items-center gap-2">
                             <p-avatar
                                     [style.filter]="'invert(1)'"
@@ -38,10 +41,8 @@ import {TranslocoPipe} from "@jsverse/transloco";
                                 Gradle
                             </span>
                         </div>
-                    </ng-template>
-                </p-tabPanel>
-                <p-tabPanel>
-                    <ng-template pTemplate="header">
+                    </p-tab>
+                    <p-tab [value]="2">
                         <div class="flex items-center gap-2">
                             <p-avatar
                                     image="/assets/icons/maven.svg"
@@ -50,10 +51,10 @@ import {TranslocoPipe} from "@jsverse/transloco";
                                 Maven
                             </span>
                         </div>
-                    </ng-template>
-                </p-tabPanel>
-            </p-tabView>
-                <codemirror [value]="codes[selectedIndex].code" [language]="codes[selectedIndex].language"/>
+                    </p-tab>
+                </p-tablist>
+            </p-tabs>
+            <codemirror [value]="codes[selectedIndex].code" [language]="codes[selectedIndex].language"/>
         </p-card>
     `,
     styles: `

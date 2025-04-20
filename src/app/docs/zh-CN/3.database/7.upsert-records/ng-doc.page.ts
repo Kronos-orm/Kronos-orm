@@ -4,7 +4,6 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将介绍如何向数据库中插入或更新记录。
- * @status:success 有更新
  */
 const UpsertRecordsPage: NgDocPage = {
     title: `更新插入`,

@@ -262,8 +262,26 @@ export class LayoutMenuBarComponent implements OnInit {
                     [{
                         items: [{
                             label: "BLOG",
-                            icon: 'pi pi-home',
+                            icon: 'pi pi-list',
                             routerLink: '/blog'
+                        }, {
+                            label: "KRONOS_CORE_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('https://api.kotlinorm.com/kronos-core');
+                            }
+                        }, {
+                            label: "KRONOS_COMPILER_PLUGIN_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('https://api.kotlinorm.com/kronos-compiler-plugin');
+                            }
+                        }, {
+                            label: "KRONOS_JDBC_WRAPPER_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('https://api.kotlinorm.com/kronos-jdbc-wrapper');
+                            }
                         }]
                     }],
                     [{
@@ -279,7 +297,9 @@ export class LayoutMenuBarComponent implements OnInit {
                 label: 'DISCUSSION',
                 icon: 'pi pi-comments',
                 root: true,
-                routerLink: 'https://github.com/Kronos-orm/Kronos-orm/discussions'
+                command: () => {
+                    window.open('https://github.com/Kronos-orm/Kronos-orm/discussions');
+                }
             }
         ];
         this.translocoService.selectTranslate(["DOCUMENTATION", "CODE_GENERATOR", "DISCUSSION", "BLOG"])
@@ -296,10 +316,14 @@ export class LayoutMenuBarComponent implements OnInit {
             })
     }
 
-    constructor(private appService: AppService, private translocoService: TranslocoService, private messageService: MessageService) {
+    constructor(private appService: AppService, private translocoService: TranslocoService, private messageService: MessageService
+    ) {
     }
 
-    setLang(lang: string) {
+    setLang(lang
+            :
+            string
+    ) {
         if (this.appService.language === lang) return;
         this.appService.language = lang; // update language
         this.translocoService.setActiveLang(lang);
@@ -312,7 +336,10 @@ export class LayoutMenuBarComponent implements OnInit {
 
     menus = [];
 
-    onSelect(item: ListItem) {
+    onSelect(item
+             :
+             ListItem
+    ) {
         if (item.href) {
             window.location.href = item.href;
         } else {

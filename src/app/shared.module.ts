@@ -10,7 +10,6 @@ import {FormsModule} from "@angular/forms";
 import {OverlayPanelModule} from "primeng/overlaypanel";
 import {TableModule} from "primeng/table";
 import {MenuModule} from "primeng/menu";
-import {TabViewModule} from "primeng/tabview";
 import {SkeletonModule} from "primeng/skeleton";
 import {TooltipModule} from "primeng/tooltip";
 import {TerminalModule} from "primeng/terminal";
@@ -25,7 +24,6 @@ const primengModules = [
   DropdownModule,
   OverlayPanelModule,
   TableModule,
-  TabViewModule,
   MenuModule,
   SkeletonModule,
   TooltipModule,

@@ -4,7 +4,6 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将介绍如何更新数据库行记录。
- * @status:success 有更新
  */
 const UpdateRecordsPage: NgDocPage = {
     title: `更新记录`,

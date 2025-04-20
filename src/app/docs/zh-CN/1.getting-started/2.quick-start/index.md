@@ -4,7 +4,7 @@
 ## 🖥 JDK、Kotlin 版本及构建工具
 
 - **JDK** 8+
-- **Kotlin** 2.0.0+
+- **Kotlin** 2.1.0+
 - **Maven** 3.6.3+ 或 **Gradle** 6.8.3+
 
 > **Warning**
@@ -155,18 +155,20 @@ dependencies {
 import com.kotlinorm.Kronos
 
 fun main() {
-    val ds by lazy {
+    val wrapper by lazy {
         BasicDataSource().apply {
             driverClassName = "com.mysql.cj.jdbc.Driver"
             url =
                 "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
             username = "user"
             password = "******"
+        }.let {
+            KronosBasicDataSourceWrapper(it)
         }
     }
     
     Kronos.init{
-        dataSource = { ds }
+        dataSource = { wrapper }
     }
 }
 ```

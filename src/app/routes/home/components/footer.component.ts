@@ -8,26 +8,26 @@ import {AppService} from "../../../app.service";
     SharedModule
   ],
   template: `
-      <footer class="flex flex-row justify-content-center align-items-center gap-3 bg-dark text-light p-5">
-          <div class="flex flex-column flex-wrap justify-content-center gap-4">
-              <div class="flex flex-wrap justify-content-center gap-4">
+      <footer class="flex flex-row justify-center items-center gap-4 bg-dark text-light p-8">
+          <div class="flex flex-col flex-wrap justify-center gap-6">
+              <div class="flex flex-wrap justify-center gap-6">
                   <a href="https://cloudflare.com" target="_blank">
                       <img src="/assets/icons/cloudflare.svg" alt="cloudflare" width="100"/>
                       <div>Cloudflare</div>
                   </a>
               </div>
-              <div class="mt-3">
+              <div class="mt-4">
                   <a href="https://primeng.org" target="_blank">
                       <img src="/assets/icons/primeng.svg" alt="angular" width="100"/>
                       <div>PrimeNG</div>
                   </a>
               </div>
           </div>
-          <div class="mt-3 flex flex-column">
+          <div class="mt-4 flex flex-col">
               <div class="flex">
                   <span>Kronos-ORM © 2024</span>
               </div>
-              <div class="flex mt-4">
+              <div class="flex mt-6">
                   <a href="https://www.apache.org/licenses/LICENSE-2.0">
                       Apache 2.0
                   </a>

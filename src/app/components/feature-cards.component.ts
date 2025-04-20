@@ -13,10 +13,10 @@ import {TranslocoPipe} from "@jsverse/transloco";
     TranslocoPipe
   ],
   template: `
-    <div pAnimateOnScroll enterClass="zoomin" class="card flex flex-row flex-wrap md:justify-content-between md:align-items-stretch gap-3 animation-duration-1000 animation-ease-in-out">
-      <p-card class="flex-1 flex align-items-center justify-content-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_1' | transloco"/>
-      <p-card class="flex-1 flex align-items-center justify-content-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_2' | transloco"/>
-      <p-card class="flex-1 flex align-items-center justify-content-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_3' | transloco"/>
+    <div pAnimateOnScroll enterClass="animate-zoomin" class="card flex flex-row flex-wrap md:justify-between md:items-stretch gap-4 animate-duration-1000 animate-ease-in-out">
+      <p-card class="flex-1 flex items-center justify-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_1' | transloco"/>
+      <p-card class="flex-1 flex items-center justify-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_2' | transloco"/>
+      <p-card class="flex-1 flex items-center justify-center min-w-full md:min-w-0" pRipple [header]="'FEATURE_3' | transloco"/>
     </div>
   `,
   standalone: true,

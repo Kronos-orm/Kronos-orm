@@ -1,0 +1,82 @@
+/* You can add global styles to this file, and also import other style files */
+@import url("primeicons/primeicons.css");
+@import url('@ng-doc/app/styles/themes/dark.css');
+
+@import "tailwindcss";
+
+@plugin "tailwindcss-primeui";
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 1.5rem 0 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--surface-900);
+}
+
+.p-megamenu-panel {
+    z-index: 3;
+}
+
+:root {
+    --ng-doc-primary: #7F52FF !important;
+    --ng-doc-link-color: #7F52FF !important;
+    --ng-doc-code-max-height: 1080px !important;
+    --ng-doc-icon-width: 24px !important;
+    --ng-doc-mermaid-viewer-background: aliceblue;
+    --ng-doc-app-horizontal-padding: 3rem !important;
+    --scrollbar-width: 10px !important;
+    --p-megamenu-item-focus-background: rgba(0, 0, 0, 0.3) !important;
+    --p-menu-border-color: var(--ng-doc-base-3) !important;
+    --p-menu-background: var(--ng-doc-sidebar-background) !important;
+    --p-menu-item-color: var(--ng-doc-text) !important;
+    --p-megamenu-item-active-background: var(--color-indigo-950) !important;
+}
+
+img {
+    user-drag: none;
+    -webkit-user-drag: none;
+}
+
+::-webkit-scrollbar {
+    background: var(--ng-doc-base-2);
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--ng-doc-base-10);
+    width: 10px;
+    border-radius: 5px;
+}
+
+.code-blue {
+    color: rgba(0, 55, 185, 0.8);
+}
+
+.code-green {
+    color: rgba(28, 99, 109, 0.8)
+}
+
+.code-black {
+    color: #000;
+}
+
+.code-white {
+    color: #FFF;
+}
+
+.code-red {
+    color: #FF0000;
+}
+
+.p-hidden {
+    display: none;
+}

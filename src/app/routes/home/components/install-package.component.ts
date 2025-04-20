@@ -13,15 +13,15 @@ import {TranslocoPipe} from "@jsverse/transloco";
         TranslocoPipe
     ],
     template: `
-        <p-card class="mt-3" [header]="'INSTALL_PACKAGES' | transloco">
+        <p-card class="mt-4" [header]="'INSTALL_PACKAGES' | transloco">
             <p-tabView (activeIndexChange)="selectedIndex = $event">
                 <p-tabPanel>
                     <ng-template pTemplate="header">
-                        <div class="flex align-items-center gap-2">
+                        <div class="flex items-center gap-2">
                             <p-avatar
                                     image="/assets/icons/gradlekts.svg"
                                     shape="circle"/>
-                            <span class="font-bold white-space-nowrap m-0">
+                            <span class="font-bold whitespace-nowrap m-0">
                                 Gradle(kts)
                             </span>
                         </div>
@@ -29,12 +29,12 @@ import {TranslocoPipe} from "@jsverse/transloco";
                 </p-tabPanel>
                 <p-tabPanel>
                     <ng-template pTemplate="header">
-                        <div class="flex align-items-center gap-2">
+                        <div class="flex items-center gap-2">
                             <p-avatar
                                     [style.filter]="'invert(1)'"
                                     image="/assets/icons/gradle.svg"
                                     shape="circle"/>
-                            <span class="font-bold white-space-nowrap m-0">
+                            <span class="font-bold whitespace-nowrap m-0">
                                 Gradle
                             </span>
                         </div>
@@ -42,11 +42,11 @@ import {TranslocoPipe} from "@jsverse/transloco";
                 </p-tabPanel>
                 <p-tabPanel>
                     <ng-template pTemplate="header">
-                        <div class="flex align-items-center gap-2">
+                        <div class="flex items-center gap-2">
                             <p-avatar
                                     image="/assets/icons/maven.svg"
                                     shape="circle"/>
-                            <span class="font-bold white-space-nowrap m-0">
+                            <span class="font-bold whitespace-nowrap m-0">
                                 Maven
                             </span>
                         </div>

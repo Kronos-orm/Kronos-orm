@@ -3,8 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本章将介绍如何更新数据库行记录。
- * @status:warning PREPARING
+ * This chapter describes how to update records in the database.
+ * @status:success UPDATED
  */
 const UpdateRecordsPage: NgDocPage = {
     title: `Update Records`,

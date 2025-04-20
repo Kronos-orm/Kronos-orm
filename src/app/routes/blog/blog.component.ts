@@ -20,7 +20,7 @@ import {FooterComponent} from "../home/components/footer.component";
     ],
     templateUrl: `./blog.component.html`,
     standalone: true,
-    styleUrl:"./blog.component.scss"
+    styleUrl:"./blog.component.css"
 })
 export class BlogComponent {
     blog: string;

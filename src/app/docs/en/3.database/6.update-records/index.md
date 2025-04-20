@@ -1,14 +1,14 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## {{ $.title("set") }} 设置更新的字段和值
+## {{ $.title("set") }} Fields and values to Update Configuration
 
-在Kronos中，我们可以使用`KPojo.update().set`方法设置需要更新的字段和值，然后使用`execute`方法执行更新操作。
+In Kronos, we can use the `KPojo.update().set` method to set the fields and values that need to be updated, and then use the `execute` method to perform the update operation.
 
-当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成更新条件语句。
+When the `by` or `where` methods are not used, Kronos generates update conditional statements based on the value of the KPojo object.
 
 > **Warning**
-> 当KPojo对象的字段值为`null`时，该字段不会生成更新条件，若需要更新字段值为`null`的记录，请使用`where`方法指定。
+> When the field value of a KPojo object is `null`, the field will not generate an update condition, if you need to update a record with a field value of `null`, please use the `where` method to specify it.
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
@@ -22,7 +22,7 @@ user
     .set { it.name = "Kronos ORM" }
     .execute()
 
-// 根据字符串动态设置赋值列：
+// Dynamically sets the assignment column based on the string:
 //    .set { it["name"] = "Kronos ORM" }
 ```
 
@@ -64,9 +64,9 @@ WHERE "id" = :id
   and "age" = :age
 ```
 
-### {{ $.title("+=") }} {{ $.title("-=") }} 复合赋值运算符
+### {{ $.title("+=") }} {{ $.title("-=") }} Compound assignment operator
 
-Kronos支持语义化的`+=`和`-=`加减法赋值运算来更新数据库中的数值列
+Kronos supports semantic `+=` and `-=` addition and subtraction assignment operations to update numeric columns in the database
 
 ```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-4}
 user
@@ -74,7 +74,7 @@ user
     .set { it.age += 2 }
     .execute()
 
-// 根据字符串动态设置赋值列：
+// Dynamically sets the assignment column based on the string:
 //    .set { it["age"] += 2 }
 ```
 
@@ -108,9 +108,9 @@ SET "age" = "age" + :age2PlusNew
 WHERE "id" = :id
 ```
 
-## {{ $.title("by") }} 设置更新条件
+## {{ $.title("by") }} Update Condition Configuration
 
-在Kronos中，我们可以使用`by`方法设置更新条件，此时Kronos会根据`by`方法设置的字段生成更新条件语句。
+In Kronos, we can use the `by` method to set an update condition, at which point Kronos generates an update condition statement based on the fields set by the `by` method.
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {7-11}
 val user: User = User(
@@ -156,9 +156,9 @@ SET "name" = :nameNew
 WHERE "id" = :id
 ```
 
-## {{ $.title("where") }} 设置更新条件
+## {{ $.title("where") }} Update Condition Configuration
 
-在Kronos中，我们可以使用`where`方法设置更新条件，此时Kronos会根据`where`方法设置的字段生成更新{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
+In Kronos, we can use the `where` method to set an update condition, at which point Kronos generates an update based on the field set by the `where` method {{ $.keyword("concept/where-having-on-clause", ["Criteria Conditional Statement"]) }}.
 
 ```kotlin group="Case 3" name="kotlin" icon="kotlin" {7-11}
 val user: User = User(
@@ -204,7 +204,7 @@ SET "name" = :nameNew
 WHERE "id" = :id
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件:
+You can execute the `.eq` function on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:.
 
 ```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -260,7 +260,7 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+Kronos provides the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -306,9 +306,9 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-## {{ $.title("patch") }}为自定义删除条件添加参数
+## {{ $.title("patch") }} Adding Parameters to Custom Deletion Condition
 
-在Kronos中，我们可以使用`patch`方法为自定义删除条件添加参数。
+In Kronos, we can use the `patch` method to add parameters to custom deletion condition.
 
 ```kotlin group="Case 3-3" name="kotlin" icon="kotlin" {7-12}
 val user: User = User(
@@ -355,9 +355,9 @@ SET "name" = :nameNew
 WHERE id = :id
 ```
 
-## {{ $.title("update") }} 设置需要更新的字段
+## {{ $.title("update") }} Fields to Update Configuration
 
-在Kronos中，我们在`update`方法中设置需要更新的字段，未在`update`方法中设置的字段将不会被更新。
+In Kronos, we set the fields that need to be updated in the `update` method, and fields not set in the `update` method will not be updated.
 
 ```kotlin group="Case 4" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
@@ -406,9 +406,9 @@ SET "name" = :nameNew,
 WHERE "id" = :id
 ```
 
-## {{ $.title("update") }} {{ $.title("-") }}设置排除的字段
+## {{ $.title("update") }} {{ $.title("-") }} Fields to Exclude Configuration
 
-在Kronos中，我们可以使用减号表达式`-`设置需要排除的字段。
+In Kronos, we can use the minus expression `-` to set the fields to be excluded.
 
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {7-10}
 val user: User = User(
@@ -457,9 +457,9 @@ SET "name" = :nameNew,
 WHERE "id" = :id
 ```
 
-## 影响行数
+## Affected Rows
 
-在Kronos中，我们可以使用`execute`方法执行更新操作，并获取更新操作的影响行数。
+In Kronos, we can use the `execute` method to perform an update operation and get the number of lines affected by the update operation.
 
 ```kotlin name="demo" icon="kotlin" {7-10}
 val user: User = User(
@@ -474,9 +474,9 @@ val (affectedRows) = user
     .execute()
 ```
 
-## 批量更新记录
+## Batch update records
 
-在Kronos中，我们可以使用`Iterable<KPojo>.update().execute()`或`Array<KPojo>.update().execute()`方法用于批量更新数据库中的记录。
+In Kronos, we can use `Iterable<KPojo>.update().execute()` or `Array<KPojo>.update().execute()` methods for bulk updating records in the database.
 
 ```kotlin name="demo" icon="kotlin" {14-17}
 val users: List<User> = listOf(
@@ -498,9 +498,9 @@ users
     .execute()
 ```
 
-## 指定使用的数据源
+## Specify the data source to be used
 
-在Kronos中，我们可以将`KronosDataSourceWrapper`传入`execute`方法，以实现自定义的数据库连接。
+In Kronos, we can pass `KronosDataSourceWrapper` into the `execute` method to implement a customized database connection.
 
 ```kotlin name="demo" icon="kotlin" {9-12}
 val customWrapper = CustomWrapper()

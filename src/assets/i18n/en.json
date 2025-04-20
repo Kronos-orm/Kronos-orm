@@ -5,7 +5,7 @@
   "DISCUSSION": "Discussion",
   "REDEFINE": "Redefine",
   "DESCRIPTION1": "Kronos is a modern ORM framework designed for Kotlin based on the compiler plugin, which is suitable for both backend and mobile applications, support multi-database. Powerful, high performance, easy to use.",
-  "DESCRIPTION2": "KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has powerful expressive power and concise , semantic writing to make the operation of the database has become more simple.",
+  "DESCRIPTION2": "Kronos uses expression tree analysis, combined with Kotlin's own generics, higher-order functions, extended functions and other syntactic features, so that the ORM has a powerful expressive and concise, semantic writing style, so that manipulation of databases has become much simpler.",
   "DESCRIPTION3": " ",
   "GET_START": "Get Started",
   "GIVE_A_STAR": "Give a Star",
@@ -49,7 +49,7 @@
   "LIST_OF_BLOGS": "List of Blogs",
   "BACK_TO_BLOGS": "Back to Blogs",
   "FEATURE_1": "Write Kotlin ORM in Simple and Type-safe Way",
-  "FEATURE_2": "Less runtime reflect, higher runtime efficiency",
+  "FEATURE_2": "NO runtime reflect, higher runtime efficiency",
   "FEATURE_3": "Multiple database dialect support",
   "FEATURE_BLOG_TITLE_1": "Kotlin multiplatform support",
   "FEATURE_BLOG_CONTENT_1": "Kronos' current kotlin multi-platform support and our kotlin multi-platform development and release plans."

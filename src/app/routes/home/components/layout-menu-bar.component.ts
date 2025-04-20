@@ -5,6 +5,8 @@ import {SharedModule} from "../../../shared.module";
 import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
 import {ListItem, UIListComponent} from "../../../components/ui-list.component";
 import {AnimateOnScrollModule} from "primeng/animateonscroll";
+import {RouterLink, RouterLinkActive} from "@angular/router";
+import {Popover} from "primeng/popover";
 
 @Component({
     selector: 'layout-menu-bar',
@@ -12,12 +14,16 @@ import {AnimateOnScrollModule} from "primeng/animateonscroll";
         SharedModule,
         TranslocoPipe,
         UIListComponent,
-        AnimateOnScrollModule
+        AnimateOnScrollModule,
+        RouterLink,
+        Popover,
+        RouterLinkActive
     ],
     template: `
-        <div class="container w-full" [class]="fixed ? ['fixed', 'top-0', 'fadeinup', 'opacity-90', 'shadow-8'] : ['fadeoutup']">
+        <div class="bar-container w-full"
+             [class]="fixed ? ['fixed', 'top-0', 'fadeinup', 'opacity-90', 'shadow-8', 'fadeinup'] : ['fadeoutup']">
             <p-toast/>
-            <p-megaMenu class="hidden md:block" [model]="items" [styleClass]="'border-none menu-bar p-0 pl-4'">
+            <p-megaMenu class="hidden! md:block!" [model]="items" [styleClass]="'border-none menu-bar p-0! pl-4!'">
                 <ng-template pTemplate="start">
                     <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
                          draggable="false"
@@ -26,43 +32,45 @@ import {AnimateOnScrollModule} from "primeng/animateonscroll";
                 </ng-template>
                 <ng-template pTemplate="item" let-item>
                     <a *ngIf="item.root" pRipple [routerLink]="item.routerLink" routerLinkActive="p-menuitem-active"
-                       class="flex align-items-center p-menuitem-link cursor-pointer px-3 py-2 overflow-hidden relative font-semibold text-lg">
+                       class="flex items-center p-menuitem-link cursor-pointer px-4 py-2 overflow-hidden relative font-semibold text-lg">
                         <i [ngClass]="item.icon"></i>
                         <span class="mx-2">{{ item.label | transloco }}</span>
                     </a>
-                    <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink" pRipple routerLinkActive="p-menuitem-active"
-                       class="flex align-items-center p-3 cursor-pointer mb-2 gap-2">
+                    <a *ngIf="!item.root && !item.image" [routerLink]="item.routerLink" pRipple
+                       routerLinkActive="p-menuitem-active"
+                       class="flex items-center p-4 cursor-pointer mb-2 gap-2">
                     <span
-                            class="inline-flex align-items-center justify-content-center border-circle bg-primary w-3rem h-3rem">
+                            class="inline-flex items-center justify-center rounded-full bg-primary text-primary-contrast w-12 h-12">
                         <i [ngClass]="item.icon + ' text-lg'"></i>
                     </span>
-                        <span class="inline-flex flex-column gap-1" style="width: calc(100% - 3.5rem)">
-                        <span class="font-medium text-lg text-900">{{ item.label | transloco }}</span>
-                        <span class="white-space-nowrap text-overflow-ellipsis overflow-hidden text-gray-200">{{ item.subtext | transloco }}</span>
+                        <span class="inline-flex flex-col gap-1" style="width: calc(100% - 3.5rem)">
+                        <span class="font-medium text-lg">{{ item.label | transloco }}</span>
+                        <span class="whitespace-nowrap text-ellipsis overflow-hidden text-gray-200">{{ item.subtext | transloco }}</span>
                     </span>
                     </a>
                     <a [routerLink]="item.routerLink" *ngIf="item.image" pRipple routerLinkActive="p-menuitem-active"
-                       class="flex flex-column align-items-start gap-3 p-2">
-                        <img [src]="item.image" alt="megamenu-demo" class="w-full"/>
-                        <span class="text-900 text-gray-200">{{ item.subtext | transloco }}</span>
+                       class="flex flex-col items-start gap-4 p-2">
+                        <img [src]="item.image" alt="megamenu-demo" class="w-48"/>
+                        <span class="text-gray-200">{{ item.subtext | transloco }}</span>
                         <p-button [label]="item.label | transloco" [outlined]="true"></p-button>
                     </a>
                 </ng-template>
                 <ng-template pTemplate="end">
                     <p-button
-                            class="mr-4"
+                            styleClass="text-white!"
+                            class="mr-6"
                             link
                             (click)="op.toggle($event)"
                             icon="pi pi-language"/>
                     <a href="https://github.com/Kronos-orm/Kronos-orm"
                        target="_blank"
                        [style.height.px]="42"
-                       class="mr-4 p-ripple p-element p-button p-component p-button-icon-only p-button-link">
+                       class="mr-6 p-ripple p-element p-button p-component p-button-icon-only p-button-link text-white!">
                         <i class="pi pi-github"></i>
                     </a>
                 </ng-template>
             </p-megaMenu>
-            <div class="block md:hidden flex align-items-center border-none menu-bar p-0 pl-4">
+            <div class="!block md:hidden! flex items-center border-0 menu-bar p-0 pl-6">
                 <div>
                     <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
                          draggable="false"
@@ -79,71 +87,69 @@ import {AnimateOnScrollModule} from "primeng/animateonscroll";
                        class="p-ripple p-element p-button p-component p-button-icon-only p-button-link">
                         <i class="pi pi-github"></i>
                     </a>
-                    <p-button class="mr-4" icon="pi pi-bars" link
+                    <p-button class="mr-6" icon="pi pi-bars" link
                               (click)="menu.toggle($event)"/>
                 </div>
             </div>
-            <p-overlayPanel #op styleClass="m-0 p-0">
+            <p-popover #op styleClass="m-0 p-0">
                 <ui-list [list]="languages" (onClick)="setLang($event.lang)"/>
-            </p-overlayPanel>
-            <p-overlayPanel #menu styleClass="m-0 p-0">
+            </p-popover>
+            <p-popover #menu styleClass="m-0 p-0">
                 <ui-list [list]="menus" (onClick)="onSelect($event)"/>
-            </p-overlayPanel>
+            </p-popover>
         </div>
     `,
     standalone: true,
     styles: [
         `
-          :host ::ng-deep {
-            .container {
-              z-index: 10;
+            .bar-container {
+                z-index: 51;
             }
 
-            .p-megamenu-start {
-              margin-right: 24px;
+            :host ::ng-deep .p-megamenu-start {
+                margin-right: 24px;
             }
 
-            .menu-bar {
-              display: flex;
-              background: linear-gradient(45deg, #832E3D 0%, #000 20%, #7F52FF 40%, #832E3D 60%, #000 80%, #7F52FF 100%);
-              background-size: 500% 500%;
-              animation: gradient 12s linear infinite;
+            :host ::ng-deep .p-menuitem-active {
+                color: rgba(255, 255, 255, 0.87);
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            :host ::ng-deep a {
+                text-decoration: none;
+            }
+
+            :host ::ng-deep .menu-bar {
+                display: flex;
+                background: linear-gradient(45deg, #832E3D 0%, #000 20%, #7F52FF 40%, #832E3D 60%, #000 80%, #7F52FF 100%);
+                background-size: 500% 500%;
+                animation: gradient 12s linear infinite;
             }
 
             @keyframes gradient {
-              0% {
-                background-position: 100% 0
-              }
-              100% {
-                background-position: 25% 100%
-              }
+                0% {
+                    background-position: 100% 0
+                }
+                100% {
+                    background-position: 25% 100%
+                }
             }
 
             .logo {
-              cursor: pointer;
-              mix-blend-mode: exclusion;
-              transform-origin: center;
-              vertical-align: middle;
-              font-family: "Poppins", sans-serif;
-              font-weight: bolder;
-              padding: 15px;
+                cursor: pointer;
+                mix-blend-mode: exclusion;
+                transform-origin: center;
+                vertical-align: middle;
+                font-family: "Poppins", sans-serif;
+                font-weight: bolder;
+                padding: 15px;
+            }
 
-              &:hover {
+            .logo:hover {
                 filter: grayscale(100%);
                 opacity: 0.8;
                 transition: .1s ease-in-out;
-              }
             }
-
-            .p-menuitem-active {
-              color: rgba(255, 255, 255, 0.87);
-              background: rgba(255, 255, 255, 0.2);
-            }
-          }
-
-          a {
-            text-decoration: none;
-          }
         `
     ],
     providers: [MessageService]
@@ -162,7 +168,6 @@ export class LayoutMenuBarComponent implements OnInit {
             {
                 label: 'DOCUMENTATION',
                 icon: 'pi pi-book',
-                routerLink: `/documentation/${this.appService.language}/getting-started/introduce`,
                 root: true,
                 items: [
                     [
@@ -255,16 +260,18 @@ export class LayoutMenuBarComponent implements OnInit {
                 root: true,
                 items: [
                     [{
-                        items: [
-                            {
-                                label: "BLOG",
-                                icon: 'pi pi-home',
-                                routerLink: '/blog'
-                            }, {
-                                image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
-                                label: 'COMING_SOON',
-                                subtext: 'CODE_GENERATOR',
-                            }]
+                        items: [{
+                            label: "BLOG",
+                            icon: 'pi pi-home',
+                            routerLink: '/blog'
+                        }]
+                    }],
+                    [{
+                        items: [{
+                            image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
+                            label: 'COMING_SOON',
+                            subtext: 'CODE_GENERATOR',
+                        }]
                     }],
                 ]
             },

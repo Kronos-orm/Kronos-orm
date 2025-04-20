@@ -27,6 +27,8 @@ import {SharedModule} from "../shared.module";
         background: linear-gradient(45deg, #832E3D 0%, #000 20%, #7F52FF 40%, #832E3D 60%, #000 80%, #7F52FF 100%);
         background-size: 500% 500%;
         animation: gradient 12s linear infinite;
+        display: flex;
+        justify-content: center;
       }
 
       @keyframes gradient {

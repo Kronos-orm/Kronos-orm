@@ -17,6 +17,8 @@ import {provideTransloco} from "@jsverse/transloco";
 import {TranslocoHttpLoader} from "./TranslocoHttpLoader";
 import {DocSearchEngine} from "./doc-search-engine";
 import {MARKED_OPTIONS, provideMarkdown} from "ngx-markdown";
+import Material from '@primeng/themes/material';
+import {providePrimeNG} from "primeng/config";
 
 export const appConfig: ApplicationConfig = {
     providers: [
@@ -30,6 +32,15 @@ export const appConfig: ApplicationConfig = {
         provideNgDocContext(),
         provideMermaid(),
         provideNgDocApp(),
+        provideAnimationsAsync(),
+        providePrimeNG({
+            theme: {
+                preset: Material,
+                options: {
+                    darkModeSelector: '.material-dark'
+                }
+            },
+        }),
         provideSearchEngine(DocSearchEngine),
         providePageSkeleton(NG_DOC_DEFAULT_PAGE_SKELETON),
         provideMainPageProcessor(NG_DOC_DEFAULT_PAGE_PROCESSORS),
@@ -50,8 +61,6 @@ export const appConfig: ApplicationConfig = {
                     gfm: true,
                     breaks: false,
                     pedantic: false,
-                    smartLists: true, // enable smartLists
-                    smartypants: false,
                 },
             },
             sanitize: SecurityContext.NONE // disable sanitization

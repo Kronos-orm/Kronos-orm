@@ -1,7 +1,7 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Declaring Data Table Classes
+## 声明数据表类
 
 在Kronos中声明一个class为数据表类非常简单，只需要让该类继承`KPojo`即可，以下是一个简单示例：
 

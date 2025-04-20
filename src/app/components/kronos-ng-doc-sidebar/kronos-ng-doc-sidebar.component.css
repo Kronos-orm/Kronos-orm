@@ -1,0 +1,98 @@
+:host ::ng-deep .p-menu {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: block;
+    border: none !important;
+}
+
+:host ::ng-deep .p-menu .p-menu-submenu-label {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+:host ::ng-deep .p-menu .p-submenu-header:hover .p-menu-header-content {
+    color: var(--ng-doc-link-color) !important;
+}
+
+:host ::ng-deep .p-menu .p-submenu-header:active .p-menu-header-content {
+    background-color: var(--ng-doc-text);
+}
+
+:host ::ng-deep .p-menu .p-submenu-header .p-menu-header-action {
+    color: var(--ng-doc-text);
+    padding: 0.6rem 1.0rem !important;
+}
+
+:host ::ng-deep .p-menu .p-submenu-header .p-menuitem-text {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+:host ::ng-deep .p-menu .p-submenu-header.p-highlight .p-menuitem-text,
+:host ::ng-deep .p-menu .p-submenu-header.p-highlight .p-menu-header-action {
+    color: var(--ng-doc-link-color);
+}
+
+:host ::ng-deep .p-menu .p-menuitem {
+    background-color: var(--ng-doc-sidebar-background);
+}
+
+:host ::ng-deep i.p-menuitem-icon.pi.pi-circle-on {
+    font-size: 5px;
+    margin-right: 1rem;
+    color: var(--ng-doc-base-3);
+}
+
+:host ::ng-deep .p-menu-item-content {
+    background: none !important
+}
+
+:host ::ng-deep a.p-menuitem-link.p-menuitem-link-active {
+    color: var(--ng-doc-text);
+}
+
+:host ::ng-deep a.p-menuitem-link {
+    padding: 0.2rem 2.0rem !important;
+    border-radius: 0.5rem !important;
+    display: block;
+    font-size: 14px;
+    width: 100%;
+}
+
+:host ::ng-deep a.p-menuitem-link:hover {
+    background-color: var(--ng-doc-base-2) !important;;
+    color: var(--ng-doc-text) !important;
+}
+
+:host ::ng-deep a.p-menuitem-link-active {
+    background-color: color-mix(in srgb, var(--ng-doc-code-highlight-color), transparent 90%) !important;
+}
+
+:host ::ng-deep a.p-menuitem-link-active .p-menuitem-icon {
+    visibility: visible;
+    color: var(--ng-doc-link-color) !important;
+    animation: scale .5s ease-out;
+}
+
+:host ::ng-deep a.p-menuitem-link-active .p-menuitem-text {
+    color: var(--ng-doc-link-color) !important;
+    font-weight: 400;
+}
+
+:host ::ng-deep .p-toggleable-content.p-menu-expanded {
+    height: auto !important;
+}
+
+
+@keyframes scale {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

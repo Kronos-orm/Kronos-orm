@@ -56,16 +56,25 @@ data class User(
 
 ```kotlin
 // 在全局开启创建时间的情况下取消某张表的创建时间功能
+Kronos.init {
+    createTimeStrategy = KronosCommonStrategy(true, Field("create_time"))
+}
+
 @CreateTime(enabled = false)
 data class User(
-    val id: Int? = null
+    val id: Int? = null,
+    val createTime: String? = null // 或者直接删除该字段，禁用创建时间功能
 ) : KPojo
 
 // 在全局关闭创建时间的情况下开启某张表的创建时间功能
+Kronos.init {
+    createTimeStrategy = KronosCommonStrategy(false, Field("create_time"))
+}
+
 @CreateTime
 data class User(
   val id: Int? = null,
-  val createTime: String? = null
+  val createTime: String? = null // 创建时间字段
 ) : KPojo
 ```
 
@@ -80,16 +89,25 @@ $.keyword("getting-started/global-config", ["全局设置", "更新时间策略"
 
 ```kotlin
 // 在全局开启更新时间的情况下取消某张表的更新时间功能
+Kronos.init {
+    updateTimeStrategy = KronosCommonStrategy(true, Field("update_time"))
+}
+
 @UpdateTime(enabled = false)
 data class User(
-  val id: Int? = null
+  val id: Int? = null,
+  val updateTime: String? = null // 或者直接删除该字段，禁用更新时间功能
 ) : KPojo
 
 // 在全局关闭更新时间的情况下开启某张表的更新时间功能
+Kronos.init {
+    updateTimeStrategy = KronosCommonStrategy(false, Field("update_time"))
+}
+
 @UpdateTime
 data class User(
     val id: Int? = null,
-    val updateTime: String? = null
+    val updateTime: String? = null // 更新时间字段
 ) : KPojo
 ```
 
@@ -104,18 +122,34 @@ $.keyword("getting-started/global-config", ["全局设置", "逻辑删除策略"
 
 ```kotlin
 // 在全局开启逻辑删除的情况下取消某张表的逻辑删除功能
+Kronos.init {
+    logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+}
+
 @LogicDelete(enabled = false)
 data class User(
-    val id: Int? = null
+    val id: Int? = null,
+    val deleted: Boolean? = null // 或者直接删除该字段，禁用逻辑删除功能
 ) : KPojo
 
+
 // 在全局关闭逻辑删除的情况下开启某张表的逻辑删除功能
+Kronos.init {
+    logicDeleteStrategy = KronosCommonStrategy(false, Field("deleted"))
+}
+
 @LogicDelete
 data class User(
   val id: Int? = null,
-  val deleted: Boolean? = null
+  val deleted: Boolean? = null // 逻辑删除字段
 ) : KPojo
 ```
+
+## {{ $.annotation("AutoSync") }}表结构自动同步
+
+用于指定数据表是否开启自动同步策略，若开启，则在每次`Kronos.init`时自动同步表结构。
+
+若同一张表的不同数据类同时使用了`@AutoSync`注解，Kronos不保证同步的顺序，请确保不同数据类的表结构一致。
 
 ## {{ $.annotation("Column") }}列名
 
@@ -263,7 +297,7 @@ data class Company(
 上述示例中，查询`Employee`时，`Company`的`employees`属性不会被级联查询。
 
 > **Note**
-> 请注意，此注解是单向的，即给`employees`加上`@CascadeSelectIgnore`注解，`employees`不会被级联查询，但是`company`会被级联查询。
+> 请注意，此注解是单向的，即给`employees`加上`@Ignore([CASCADE_SELECT])`注解，`employees`不会被级联查询，但是`company`会被级联查询。
 
 ## {{ $.annotation("PrimaryKey") }}列主键设置
 

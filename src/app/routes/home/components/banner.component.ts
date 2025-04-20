@@ -4,6 +4,7 @@ import {TranslocoPipe} from "@jsverse/transloco";
 import {AppService} from "../../../app.service";
 import {TypewriterComponent} from "./typewriter.component";
 import {BannerImgComponent} from "./banner-img.component";
+import {RouterLink} from "@angular/router";
 
 @Component({
   selector: 'banner',
@@ -11,33 +12,40 @@ import {BannerImgComponent} from "./banner-img.component";
     SharedModule,
     TranslocoPipe,
     TypewriterComponent,
-    BannerImgComponent
+    BannerImgComponent,
+    RouterLink
   ],
   template: `
-    <typewriter class="mt-8 hidden xl:block"/>
-    <banner-img class="mt-8 block xl:hidden" />
-    <h1 class="text-6xl font-bold text-center xl:text-left banner-text">
+    <typewriter class="mt-20 hidden! xl:!block"/>
+    <banner-img class="mt-20 !block xl:hidden!"/>
+    <h1 class="text-5xl font-bold text-center xl:text-left banner-text">
       <span class="mr-1">{{ "REDEFINE" | transloco }}</span>
       <span class="animated-text">
         <span class="font-bold">Kotlin ORM</span>
       </span>
     </h1>
-    <p class="section-detail xl:text-left text-center px-0 mt-0 mb-5">
+    <p class="section-detail xl:text-left text-center px-0 mt-0 mb-8">
       {{ ("DESCRIPTION1") | transloco }}
     </p>
-    <p class="section-detail xl:text-left text-center px-0 mt-0 mb-5">
+    <p class="section-detail xl:text-left text-center px-0 mt-0 mb-8">
       {{ ("DESCRIPTION2") | transloco }}
     </p>
-    <p class="section-detail xl:text-left text-center px-0 mt-0 mb-5">
+    <p class="section-detail xl:text-left text-center px-0 mt-0 mb-8">
       {{ ("DESCRIPTION3") | transloco }}
     </p>
-    <div class="flex align-items-center gap-3">
-      <p-button [routerLink]="['/documentation/' + appService.language +'/getting-started/introduce']" [label]="'GET_START' | transloco" icon="pi pi-arrow-right" severity="info" size="large"/>
-      <a href="https://github.com/Kronos-orm/Kronos-orm" target="_blank" 
-         class="p-ripple p-element p-button p-component font-bold p-button-lg p-button-warning">
-        <i class="pi pi-github mr-3"></i>
+    <div class="flex items-center justify-center gap-4">
+      <p-button
+          styleClass="pl-8! pr-8!"
+          [routerLink]="['/documentation/' + appService.language +'/getting-started/introduce']"
+          [label]="'GET_START' | transloco"
+          icon="pi pi-bookmark"
+          severity="contrast"
+          size="large"/>
+      <a href="https://github.com/Kronos-orm/Kronos-orm" target="_blank"
+         class="p-ripple p-element p-button p-component font-bold p-button-lg p-button-secondary p-button-raised">
+        <i class="pi pi-github mr-4"></i>
         <span>{{ "GIVE_A_STAR" | transloco }}</span>
-        <i class="pi pi-star-fill ml-3 text-yellow-500"></i>
+        <i class="pi pi-star-fill ml-4 text-yellow-500"></i>
       </a>
     </div>
   `,
@@ -53,7 +61,7 @@ import {BannerImgComponent} from "./banner-img.component";
 
     .animated-text {
       position: relative;
-      color: var(--home-text-color);
+      color: var(--color-white);
       padding: .25rem .5rem;
       border-radius: var(--border-radius);
       display: inline-block;
@@ -63,15 +71,13 @@ import {BannerImgComponent} from "./banner-img.component";
     .animated-text:before {
       border-radius: var(--border-radius);
       animation: color-animation 2s linear infinite;
-      background-size: auto auto;
       background-clip: border-box;
-      background-size: 200% auto;
       content: "";
       width: 17.5rem;
       height: 1.5rem;
       position: absolute;
       z-index: 0;
-      background-image: linear-gradient(-225deg,var(--blue-400) 30%,var(--cyan-400) 60%,var(--purple-400) 80%);
+      background-image: linear-gradient(-225deg,var(--color-blue-400) 30%,var(--color-cyan-400) 60%,var(--color-purple-400) 80%);
       filter: blur(24px);
       opacity: .6
     }
@@ -79,10 +85,8 @@ import {BannerImgComponent} from "./banner-img.component";
     .animated-text>span {
       position: relative;
       z-index: 3;
-      background-image: linear-gradient(-225deg,var(--blue-400) 30%,var(--cyan-400) 60%,var(--purple-400) 80%);
+      background-image: linear-gradient(-225deg,var(--color-blue-400) 30%,var(--color-cyan-400) 60%,var(--color-purple-400) 80%);
       animation: color-animation 2s linear infinite;
-      background-size: auto auto;
-      background-clip: border-box;
       background-size: 200% auto;
       background-clip: text;
       text-fill-color: transparent;

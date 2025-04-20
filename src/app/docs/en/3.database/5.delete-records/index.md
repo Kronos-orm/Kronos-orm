@@ -1,14 +1,14 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 根据KPojo对象值自动生成条件语句并删除记录
+## Automatically generate conditional statements and delete records based on KPojo instance values
 
-在Kronos中，我们可以使用`KPojo.delete().execute()`方法用于删除数据库中的记录
+In Kronos, we can use the `KPojo.delete().execute()` function to delete records in the database.
 
-**当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成删除条件语句。**
+When the `by` or `where` function is not used, Kronos will generate a delete condition statement based on the value of the KPojo object.
 
 > **Warning**
-> 当KPojo对象的字段值为`null`时，该字段不会生成删除条件，若需要删除字段值为`null`的记录，请使用`where`方法指定。
+> When the field value of a KPojo object is `null`, the field will not generate a deletion condition, if you need to delete a record with a field value of `null`, please use the `where` method to specify it.
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7}
 val user: User = User(
@@ -18,11 +18,11 @@ val user: User = User(
 )
 
 user.delete().execute()
-// 等同于
+// Equivalent to
 // user.delete().by { it.id  + it.name + it.age }.execute()
-// 或
+// or
 // user.delete().where { it.eq }.execute()
-// 或
+// or
 // user.delete().where { it.id.eq && it.name.eq && it.age.eq }.execute()
 ```
 
@@ -62,9 +62,9 @@ FROM "user"
 WHERE "id" = :id
 ```
 
-## {{ $.title("by") }} 设置删除条件
+## {{ $.title("by") }} Delete Condition Configuration
 
-在Kronos中，我们可以使用`by`方法设置删除条件，此时Kronos会根据`by`方法设置的字段生成删除条件语句。
+In Kronos, we can use the `by` function to set the deletion condition, at which point Kronos will generate the deletion condition statement based on the field set by the `by` method.
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {7}
 val user: User = User(
@@ -106,9 +106,9 @@ FROM "user"
 WHERE "id" = :id
 ```
 
-## {{ $.title("where") }} 设置删除条件
+## {{ $.title("where") }} Delete Condition Configuration
 
-在Kronos中，我们可以使用`where`方法设置删除条件，此时Kronos会根据`where`方法设置的条件生成删除{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
+In Kronos, we can use the `where` method to set the deletion condition, at which point Kronos generates the deletion {{ $.keyword("concept/where-having-on-clause", ["Criteria Conditional Statement"]) }} based on the condition set by the `where` method.
 
 ```kotlin group="Case 3" name="kotlin" icon="kotlin" {5}
 val user: User = User(
@@ -156,7 +156,7 @@ WHERE "id" = :id
   and "age" > :ageMin
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件:
+You can execute the `.eq` function on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:.
 
 ```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -212,7 +212,7 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+Kronos provides the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -258,9 +258,9 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-## {{ $.title("patch") }}为自定义删除条件添加参数
+## {{ $.title("patch") }}Add parameters for custom deletion conditions
 
-在Kronos中，我们可以使用`patch`方法为自定义删除条件添加参数。
+In Kronos, we can use the `patch` method to add parameters to a custom delete condition.
 
 ```kotlin group="Case 3-3" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -306,13 +306,13 @@ WHERE "id" = :id
   and status = :status
 ```
 
-## {{ $.title("logic") }} 逻辑删除
+## {{ $.title("logic") }} Logical deletion
 
-在Kronos中，我们可以使用`logic`方法设置逻辑删除，此时Kronos会生成逻辑删除的SQL语句。
+In Kronos, we can set up logical deletion using the `logic` method, at which point Kronos generates the SQL statement for logical deletion.
 
-逻辑删除的开启与字段设置设置请参考{{ $.keyword("getting-started/global-config", ["全局设置", "逻辑删除策略"]) }}、{{
-$.keyword("class-definition/annotation-config", ["注解设置", "表逻辑删除"]) }}、{{
-$.keyword("class-definition/annotation-config", ["注解设置", "逻辑删除列"]) }}。
+Please refer to Enabling Logical Deletion and Field Setting Settings for logical deletion: {{ $.keyword("getting-started/global-config", ["Global Config", "Logical Deletion Strategy"]) }}、{{
+$.keyword("class-definition/annotation-config", ["Annotation Config", "Table logical deletion"]) }}、{{
+$.keyword("class-definition/annotation-config", ["Annotation Config", "Column logical deletion"]) }}。
 
 ```kotlin group="Case 4" name="kotlin" icon="kotlin" {5}
 val user: User = User(
@@ -352,9 +352,9 @@ SET "deleted" = 1
 WHERE "id" = :id
 ```
 
-## 影响行数
+## Affected rows
 
-`execute`方法返回的`KronosOperationResult`对象中包含了影响行数。
+The `KronosOperationResult` object returned by the `execute` method contains the number of affected rows.
 
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {5}
 val user: User = User(
@@ -364,9 +364,9 @@ val user: User = User(
 val (affectedRows) = user.delete().execute()
 ```
 
-## 批量删除记录
+## Batch delete records
 
-在Kronos中，我们可以使用`Iterable<KPojo>.delete().execute()`或`Array<KPojo>.delete().execute()`方法删除数据库中的记录。
+In Kronos, we can use `Iterable<KPojo>.delete().execute()` or `Array<KPojo>.delete().execute()` methods to delete records from the database.
 
 ```kotlin group="Case 6" name="kotlin" icon="kotlin" {10}
 val users: List<User> = listOf(
@@ -381,9 +381,9 @@ val users: List<User> = listOf(
 users.delete().execute()
 ```
 
-## 指定使用的数据源
+## Specify the data source to be used
 
-在Kronos中，我们可以将`KronosDataSourceWrapper`传入`execute`方法，以实现自定义的数据库连接。
+In Kronos, we can pass `KronosDataSourceWrapper` into the `execute` method to implement a customized database connection.
 
 ```kotlin group="Case 7" name="kotlin" icon="kotlin" {7}
 val customWrapper = CustomWrapper()

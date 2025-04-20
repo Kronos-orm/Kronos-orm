@@ -25,7 +25,7 @@ interface Column {
     <div class="card">
       <p-table
         #tableInstance
-        styleClass="p-datatable-sm p-datatable-gridlines border-1 border-gray-700"
+        styleClass="p-datatable-sm p-datatable-gridlines border border-gray-700"
         [resizableColumns]="true"
         dataKey="code"
         [(selection)]="selectedProducts"
@@ -68,7 +68,7 @@ interface Column {
     <div class="card">
       <p-tabView
         [scrollable]="true"
-        styleClass="border-1 border-gray-700 p-0 my-4"
+        styleClass="border border-gray-700 p-0 my-6"
         [(activeIndex)]="index">
         @for (command of commands; let i = $index; track i) {
           <p-tabPanel>
@@ -80,9 +80,9 @@ interface Column {
             </ng-template>
             @if (i == index) {
               <div class="flex w-full" style="height: 288px;overflow: auto">
-                <div class="run-column flex-shrink-0" style="margin-top: 4px">
+                <div class="run-column shrink-0" style="margin-top: 4px">
                   @for (index of [].constructor(command.rowNum); let j = $index; track j) {
-                    <div class="w-2rem text-center" style="height: 1.4rem; line-height: 1.6rem">
+                    <div class="w-8 text-center" style="height: 1.4rem; line-height: 1.6rem">
                       @if (!!command.slice?.[j]) {
                         <span style="transform: scaleX(1.5)" [pTooltip]="'RUN' | transloco" (click)="run(command, j)" showDelay="300"
                               tooltipPosition="left" class="pi pi-play text-green-500 cursor-pointer"></span>
@@ -94,7 +94,7 @@ interface Column {
                     </div>
                   }
                 </div>
-                <codemirror styleClass="flex-grow-1 max-w-[calc(100%-35px)]" [disabled]="true" [(ngModel)]="command.doc"/>
+                <codemirror styleClass="grow max-w-[calc(100%-35px)]" [disabled]="true" [(ngModel)]="command.doc"/>
               </div>
             }
           </p-tabPanel>

@@ -1,34 +1,36 @@
 import { Component } from '@angular/core';
 import {SharedModule} from "../../../shared.module";
+import {AnimateOnScroll} from "primeng/animateonscroll";
 
 @Component({
   selector: 'banner-marquee',
   imports: [
-    SharedModule
+    SharedModule,
+    AnimateOnScroll
   ],
   template: `
     <section class="banner-marquee-section relative banner-section-border">
-      <div class="banner-marquee-container px-5 relative z-5 flex align-items-center p-overflow-hidden">
-        <div class="fade-left h-10rem w-6rem block absolute top-0 left-0 z-2"
+      <div class="banner-marquee-container px-8 relative z-50 flex items-center p-overflow-hidden">
+        <div class="fade-left h-40 w-24 block absolute top-0 left-0 z-20"
              style="background:linear-gradient(to right, #19191c, transparent)"></div>
         <div class="marquee-wrapper overflow-hidden flex">
           @for (i of [1,2,3];track i){
             <div class="marquee" pAnimateOnScroll>
               <div class="width: 200px"></div>
-              <div class="ktor"><img draggable="false" src="/assets/images/banner-marquee/ktor.svg" height="50" alt="ktor"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/springboot.svg" height="50" alt="spring"></div>
-              <div class="solon"><img draggable="false" src="/assets/images/banner-marquee/solon.png" height="80" alt="solon">Solon</div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/vertx.svg" height="50" alt="vertx"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/multiplatform.svg" height="60" alt="multiplatform"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/mysql.svg" height="60" alt="mysql"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/sqlite.svg" height="60" alt="sqlite"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/oracle.svg" height="60" alt="oracle"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/postgres.svg" height="60" alt="postgres"></div>
-              <div><img draggable="false" src="/assets/images/banner-marquee/mssql.svg" height="60" alt="mssql"></div>
+              <div class="ktor"><img draggable="false" src="/assets/images/banner-marquee/ktor.svg" [style.height.px]="50" alt="ktor"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/springboot.svg" [style.height.px]="50" alt="spring"></div>
+              <div class="solon"><img draggable="false" src="/assets/images/banner-marquee/solon.png" [style.height.px]="80" alt="solon">Solon</div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/vertx.svg" [style.height.px]="50" alt="vertx"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/multiplatform.svg" [style.height.px]="60" alt="multiplatform"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/mysql.svg" [style.height.px]="60" alt="mysql"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/sqlite.svg" [style.height.px]="60" alt="sqlite"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/oracle.svg" [style.height.px]="60" alt="oracle"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/postgres.svg" [style.height.px]="60" alt="postgres"></div>
+              <div><img draggable="false" src="/assets/images/banner-marquee/mssql.svg" [style.height.px]="60" alt="mssql"></div>
             </div>
           }
         </div>
-        <div class="fade-right h-10rem w-6rem block absolute top-0 right-0 z-2"
+        <div class="fade-right h-40 w-24 block absolute top-0 right-0 z-20"
              style="background:linear-gradient(to left, #19191c, transparent)"></div>
       </div>
     </section>

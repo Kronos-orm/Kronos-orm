@@ -3,8 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本章将介绍如何向数据库中插入或更新记录。
- * @status:warning PREPARING
+ * This chapter describes how to upsert records in the database.
+ * @status:success UPDATED
  */
 const UpsertRecordsPage: NgDocPage = {
     title: `Upsert Records`,

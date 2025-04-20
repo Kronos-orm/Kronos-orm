@@ -23,7 +23,7 @@ import {FooterComponent} from "./components/footer.component";
         FooterComponent
     ],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.scss',
+  styleUrl: './home.component.css',
   providers: [TerminalService]
 })
 export class HomeComponent {

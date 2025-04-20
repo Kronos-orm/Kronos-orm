@@ -1,7 +1,7 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-本章将介绍如何查询多表关联数据（或许您也想看看{{ $.keyword("advanced/reference-select", ["级联查询"]) }}）。
+This chapter describes how to query multiple tables for correlated data (perhaps you'd also like to take a look at {{ $.keyword("advanced/reference-select", ["cascade query"]) }}).
 
 ## 查询多表关联数据
 

@@ -84,10 +84,22 @@ Kronos.init {
 
 创建时间策略的全局**默认关闭**，需要手动开启。
 
-```kotlin
+> **Warning**
+> 全局设置创建时间后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
+
+```kotlin {10-11}
 Kronos.init {
     createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
+    // 若使用的列名为`createTime`,可直接将enable设置为true
+    // createTimeStrategy.enable = true
 }
+
+data class User(
+    @PrimaryKey(true)
+    var id: Int? = null,
+    var createTime: LocalDateTime? = null
+    // 若没有createTime属性，则创建时间策略不会对该表生效
+) : KPojo
 ```
 
 > **Note**
@@ -109,10 +121,22 @@ Kronos.init {
 
 更新时间策略的全局默认关闭，需要手动开启。
 
-```kotlin
+> **Warning**
+> 全局设置更新时间后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
+
+```kotlin {10-11}
 Kronos.init {
     updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
+    // 若使用的列名为`updateTime`,可直接将enable设置为true
+    // updateTimeStrategy.enable = true
 }
+
+data class User(
+    @PrimaryKey(true)
+    var id: Int? = null,
+    var updateTime: LocalDateTime? = null
+    // 若没有updateTime属性，则更新时间策略不会对该表生效
+) : KPojo
 ```
 
 > **Note**
@@ -129,10 +153,22 @@ Kronos.init {
 
 逻辑删除策略的全局默认关闭，需要手动开启。
 
-```kotlin
+> **Warning**
+> 全局设置逻辑删除后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
+
+```kotlin {10-11}
 Kronos.init {
     logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+    // 若使用的列名为`deleted`,可直接将enable设置为true
+    // logicDeleteStrategy.enable = true
 }
+
+data class User(
+    @PrimaryKey(true)
+    var id: Int? = null,
+    var deleted: Boolean? = null
+    // 若没有deleted属性，则逻辑删除策略不会对该表生效
+) : KPojo
 ```
 
 > **Note**
@@ -154,10 +190,22 @@ Kronos.init {
 
 乐观锁策略的全局默认关闭，需要手动开启。
 
-```kotlin
+> **Warning**
+> 全局设置乐观锁后，KPojo中必须拥有该成员属性，否则该策略不会对该表生效。
+
+```kotlin {10-11}
 Kronos.init {
     optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
+    // 若使用的列名为`version`,可直接将enable设置为true
+    // optimisticLockStrategy.enable = true
 }
+
+data class User(
+    @PrimaryKey(true)
+    var id: Int? = null,
+    var version: Int? = null
+    // 若没有version属性，则乐观锁策略不会对该表生效
+) : KPojo
 ```
 
 > **Note**

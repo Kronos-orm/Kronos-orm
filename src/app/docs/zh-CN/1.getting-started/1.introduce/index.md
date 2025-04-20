@@ -2,12 +2,11 @@
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 # 什么是Kronos
-Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
+Kronos 是为 Kotlin 设计的现代 ORM 框架，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
 
 我们支持{{ $.noun("Code First") }}和{{ $.noun("Database First") }}两种模式，提供了**数据库表结构的自动创建、自动同步，以及对表结构、索引**和代码生成的支持。
 
-KCP实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，
-**使操作数据库变得更加简单**。
+基于编译器插件实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
 
 ```mermaid
 graph LR
@@ -33,7 +32,7 @@ graph LR
 * 强类型检查
 * 支持**事务**、**无外键复杂级联操作（一对一，一对多，多对多）**、**序列化反序列化**、**跨数据库查询**、**数据库表/索引/备注创建和结构同步**等功能
 * 支持**逻辑删除**、**乐观锁**、**创建时间**、**更新时间**，且支持灵活的自定义设置
-* 轻松与任何第三方框架集成，如`Spring`、`Ktor`、`Vert.x`、`Solon`等，请查看我们的实力项目
+* 轻松与任何第三方框架集成，如`Spring`、`Ktor`、`Vert.x`、`Solon`等，请查看我们的示例项目
 * **基于命名参数的原生SQL数据库操作**
 * 通过编译期操作，支持轻松将**数据实体类转换为Map或从Map转换为数据实体类**，并且**无反射，近乎零开销**
 * 数据类就可以当作数据库表模型，**显著减少额外的类定义**
@@ -43,8 +42,12 @@ graph LR
 > 以下是一个简单的示例。
 
 ```kotlin name="demo" icon="kotlin"
+val wrapper = KronosBasicWrapper(
+    MysqlDataSource("jdbc:mysql://localhost:3306/test")
+)
+
 Kronos.init {
-    dataSource = { MysqlDataSource("jdbc:mysql://localhost:3306/test") }
+    dataSource = { wrapper }
 }
 
 // 创建一个User对象

@@ -6,7 +6,7 @@ import {PanelMenuModule} from "primeng/panelmenu";
 import {AppService} from "../../app.service";
 import {MenuItem} from "primeng/api";
 import {StyleClassModule} from "primeng/styleclass";
-import {NavigationEnd, Router} from "@angular/router";
+import {NavigationEnd, Router, RouterLink, RouterLinkActive} from "@angular/router";
 import {filter} from "rxjs";
 import {TagModule} from "primeng/tag";
 import {NgDocColor, NgDocTagComponent} from "@ng-doc/ui-kit";
@@ -19,10 +19,12 @@ const docSortFn = (a: NgDocNavigation, b: NgDocNavigation) => (a.order ?? 0) - (
         SharedModule,
         PanelMenuModule,
         StyleClassModule,
-        NgDocTagComponent
+        NgDocTagComponent,
+        RouterLink,
+        RouterLinkActive
     ],
     template: `
-        <p-menu [model]="items" styleClass="w-full md:w-20rem bg-black p-2">
+        <p-menu [model]="items" styleClass="w-full md:w-80 bg-black p-2">
             <ng-template pTemplate="item" let-item>
                 <div class="p-menuitem-content" data-pc-section="content">
                     <a [routerLink]="item.routerLink" routerLinkActive="p-menuitem-link-active" pRipple
@@ -40,7 +42,7 @@ const docSortFn = (a: NgDocNavigation, b: NgDocNavigation) => (a.order ?? 0) - (
             </ng-template>
         </p-menu>
     `,
-    styleUrl: './kronos-ng-doc-sidebar.component.scss',
+    styleUrl: './kronos-ng-doc-sidebar.component.css',
     standalone: true,
 })
 export class KronosNgDocSidebarComponent {

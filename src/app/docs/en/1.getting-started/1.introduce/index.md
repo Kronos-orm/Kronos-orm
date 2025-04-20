@@ -43,8 +43,12 @@ graph LR
 > Here is a simple example.
 
 ```kotlin name="demo" icon="kotlin"
+val wrapper = KronosBasicWrapper(
+    MysqlDataSource("jdbc:mysql://localhost:3306/test")
+)
+
 Kronos.init {
-    dataSource = { MysqlDataSource("jdbc:mysql://localhost:3306/test") }
+    dataSource = { wrapper }
 }
 
 // Create a User object

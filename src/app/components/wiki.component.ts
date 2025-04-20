@@ -28,11 +28,11 @@ import {MessageService} from "primeng/api";
                   [blockScroll]="false"
                   position="center"
                   [appendTo]="elementRef.nativeElement">
-            <div class="flex flex-column gap-3 w-full h-full">
+            <div class="flex flex-col gap-4 w-full h-full">
                 <iframe *ngIf="safeUrl" class="w-full h-full" [src]="safeUrl" frameborder="0"></iframe>
             </div>
             <ng-template pTemplate="header">
-                <div class="w-full flex justify-content-end pr-2">
+                <div class="w-full flex justify-end pr-2">
                     <p-button pRipple link styleClass="text-gray-500" tooltipPosition="top"
                               [style]="{transform: 'scaleX(-1)'}"
                               [pTooltip]="'JUMP_TO_WIKI' | transloco" (click)="expand()" icon="pi pi-clone"/>

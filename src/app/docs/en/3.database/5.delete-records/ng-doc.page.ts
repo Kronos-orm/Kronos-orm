@@ -3,8 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * 本章将介绍如何删除数据库行记录。
- * @status:warning PREPARING
+ * This chapter describes how to delete records from the database.
+ * @status:success UPDATED
  */
 const DeleteRecordsPage: NgDocPage = {
     title: `Delete Records`,

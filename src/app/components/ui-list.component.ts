@@ -16,15 +16,15 @@ export interface ListItem {
         AnimateOnScrollModule
     ],
     template: `
-        <ul class="list-none m-0 p-0 w-12rem">
+        <ul class="list-none m-0 p-0 w-48">
             @for (item of list; track $index) {
-                <a class="block p-2 border-round hover:surface-hover w-full cursor-pointer flex"
+                <a class="block p-2 rounded-border hover:bg-emphasis w-full cursor-pointer flex"
                    (click)="onClick.emit(item)">
-                    <div *ngIf="item.leftIcon" class="mr-2 text-700 flex-1 text-right inline-block">
+                    <div *ngIf="item.leftIcon" class="mr-2 text-white flex-1 text-right inline-block">
                         <span class="pi pi-globe"></span>
                     </div>
-                    <span class="font-bold text-900 flex-1">{{ item.label }}</span>
-                    <div *ngIf="item.rightIcon" class="ml-2 text-700 flex-1 text-right inline-block">
+                    <span class="font-bold text-white flex-1">{{ item.label }}</span>
+                    <div *ngIf="item.rightIcon" class="ml-2 text-white flex-1 text-right inline-block">
                         <span class="pi pi-globe"></span>
                     </div>
                 </a>

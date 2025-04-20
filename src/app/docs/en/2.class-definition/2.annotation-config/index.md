@@ -56,16 +56,25 @@ The annotation is used to specify whether the creation time strategy is enabled 
 
 ```kotlin
 // Disable the creation time feature for a specific table when the global creation time feature is enabled.
+Kronos.init {
+    createTimeStrategy = KronosCommonStrategy(true, Field("create_time"))
+}
+
 @CreateTime(enabled = false)
 data class User(
-    val id: Int? = null
+    val id: Int? = null,
+    val createTime: String? = null // or just remove this field to disable creation time
 ) : KPojo
 
 // Enabling the creation time for a table with creation time turned off globally
+Kronos.init {
+    createTimeStrategy = KronosCommonStrategy(false, Field("create_time"))
+}
+
 @CreateTime
 data class User(
   val id: Int? = null,
-  val createTime: String? = null
+  val createTime: String? = null // creation time field
 ) : KPojo
 ```
 
@@ -79,16 +88,25 @@ Used to specify whether the data table is enabled for update time strategy, the 
 
 ```kotlin
 // Disable the update time feature for a specific table when the global update time function is enabled.
+Kronos.init {
+    updateTimeStrategy = KronosCommonStrategy(true, Field("update_time"))
+}
+
 @UpdateTime(enabled = false)
 data class User(
-  val id: Int? = null
+    val id: Int? = null,
+    val updateTime: String? = null // or just remove this field to disable update time
 ) : KPojo
 
 // Enabling update time for a table with update time turned off globally
+Kronos.init {
+    updateTimeStrategy = KronosCommonStrategy(false, Field("update_time"))
+}
+
 @UpdateTime
 data class User(
     val id: Int? = null,
-    val updateTime: String? = null
+    val updateTime: String? = null // update time field
 ) : KPojo
 ```
 
@@ -103,18 +121,32 @@ $.keyword("getting-started/global-config", ["Global Settings", "Logical Deletion
 
 ```kotlin
 // Disable the logical deletion for a table with logical deletion globally enabled
+Kronos.init {
+    logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
+}
+
 @LogicDelete(enabled = false)
 data class User(
-    val id: Int? = null
+    val id: Int? = null,
+    val deleted: Boolean? = null // or just remove this field to disable logical deletion
 ) : KPojo
 
 // Enabling the logical deletion for a table with logical deletion turned off globally
+Kronos.init {
+    logicDeleteStrategy = KronosCommonStrategy(false, Field("deleted"))
+}
 @LogicDelete
 data class User(
   val id: Int? = null,
-  val deleted: Boolean? = null
+  val deleted: Boolean? = null // logical deletion field
 ) : KPojo
 ```
+
+## {{ $.annotation("AutoSync") }}Auto Sync the structure of tables
+
+Used to specify whether the data table has the auto-synchronization policy turned on, and if so, the table structure is automatically synchronized each time `Kronos.init` is used.
+
+If different data classes of the same table use the `@AutoSync` annotation at the same time, Kronos does not guarantee the order of synchronization, make sure that the table structure of the different data classes is consistent.
 
 ## {{ $.annotation("Column") }}Column name
 
@@ -262,7 +294,7 @@ data class Company(
 In the above example, when querying `Employee`, the `employees` property of `Company` will not be cascaded queried.
 
 > **Note**
-> Please notice that this annotation is unidirectional, meaning that adding the `@CascadeSelectIgnore` annotation to `employees` will prevent cascading queries on `employees`, but `company` will still be cascaded.
+> Please notice that this annotation is unidirectional, meaning that adding the `@Ignore([CASCADE_SELECT])` annotation to `employees` will prevent cascading queries on `employees`, but `company` will still be cascaded.
 
 ## {{ $.annotation("PrimaryKey") }}Column primary key setting
 

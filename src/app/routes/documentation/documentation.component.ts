@@ -1,9 +1,9 @@
-import {Component, EventEmitter, OnDestroy, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, OnDestroy, ViewChild} from '@angular/core';
 import {SharedModule} from "../../shared.module";
 import {KronosNgDocSidebarComponent} from "../../components/kronos-ng-doc-sidebar/kronos-ng-doc-sidebar.component";
 import {AppService} from "../../app.service";
 import {TranslocoService} from "@jsverse/transloco";
-import {ActivatedRoute, Router} from "@angular/router";
+import {ActivatedRoute, Router, RouterLink} from "@angular/router";
 import {NgDocThemeToggleComponent} from "@ng-doc/app";
 import {NgDocButtonIconComponent, NgDocIconComponent, NgDocTooltipDirective} from "@ng-doc/ui-kit";
 import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
@@ -11,6 +11,8 @@ import {OverlayPanel} from "primeng/overlaypanel";
 import {NG_DOC_ROUTING} from "@ng-doc/generated";
 import {WikiComponent} from "../../components/wiki.component";
 import {FooterComponent} from "../home/components/footer.component";
+import {Popover} from "primeng/popover";
+import {UIListComponent} from "../../components/ui-list.component";
 
 @Component({
     selector: 'app-documentation',
@@ -23,10 +25,12 @@ import {FooterComponent} from "../home/components/footer.component";
         NgDocButtonIconComponent,
         NgDocTooltipDirective,
         WikiComponent,
-        FooterComponent
+        FooterComponent,
+        RouterLink,
+        Popover
     ],
     templateUrl: './documentation.component.html',
-    styleUrl: './documentation.component.scss'
+    styleUrl: './documentation.component.css'
 })
 export class DocumentationComponent implements OnDestroy {
     wikiMode = false;
@@ -34,7 +38,8 @@ export class DocumentationComponent implements OnDestroy {
     constructor(
         private appService: AppService,
         private translocoService: TranslocoService,
-        private router: Router) {
+        private router: Router,
+        public elementRef: ElementRef) {
         this.wikiMode = window.frames.length !== parent.frames.length;
     }
 

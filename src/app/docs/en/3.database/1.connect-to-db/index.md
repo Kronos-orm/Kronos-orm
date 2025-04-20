@@ -12,13 +12,13 @@ Official JDBC-based database connection plug-ins are provided and can be introdu
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.1")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.2")
 }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.2'
 }
 ```
 
@@ -28,7 +28,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>
@@ -47,7 +47,7 @@ The following is an example of creating a database connection using `kronos-jdbc
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("com.mysql:mysql-connector-j:latest.release")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.1")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.2")
 }
 ```
 
@@ -55,7 +55,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'com.mysql:mysql-connector-j:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.2'
 }
 ```
 
@@ -75,7 +75,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>
@@ -106,7 +106,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("org.postgresql:postgresql:latest.release")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.1")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.2")
 }
 ```
 
@@ -114,7 +114,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'org.postgresql:postgresql:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.2'
 }
 ```
 
@@ -135,7 +135,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>
@@ -163,7 +163,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("com.oracle.database.jdbc:ojdbc8:latest.release")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.1")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.2")
 }
 ```
 
@@ -171,7 +171,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'com.oracle.database.jdbc:ojdbc8:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.2'
 }
 ```
 
@@ -191,7 +191,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>
@@ -220,7 +220,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.1")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.2")
 }
 ```
 
@@ -228,7 +228,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.2'
 }
 ```
 
@@ -248,7 +248,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>
@@ -276,7 +276,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("org.xerial:sqlite-jdbc:latest.release")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.1")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.2")
 }
 ```
 
@@ -284,7 +284,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'org.xerial:sqlite-jdbc:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.2'
 }
 ```
 
@@ -305,7 +305,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>

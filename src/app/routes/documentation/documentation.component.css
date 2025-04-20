@@ -1,0 +1,216 @@
+/* 头部控件 */
+.ng-doc-header-controls {
+  display: flex;
+}
+
+.ng-doc-header-controls a[ng-doc-button-icon],
+.ng-doc-header-controls button[ng-doc-button-icon],
+.ng-doc-header-controls ng-doc-theme-toggle {
+  margin-left: calc(var(--ng-doc-base-gutter) * 2);
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+  .ng-doc-header-controls a[ng-doc-button-icon],
+  .ng-doc-header-controls button[ng-doc-button-icon],
+  .ng-doc-header-controls ng-doc-theme-toggle {
+    margin-left: var(--ng-doc-base-gutter);
+  }
+}
+
+/* 深度样式穿透 */
+:host ::ng-deep .ng-doc-blockquote,
+:host ::ng-deep .ng-doc-code-wrapper {
+  overflow: auto;
+}
+
+:host ::ng-deep .ng-doc-code-body pre {
+  min-width: 100% !important;
+  width: fit-content;
+}
+
+:host ::ng-deep .ng-doc-code-body pre code .line.highlighted {
+  min-width: 100% !important;
+  width: max-content !important;
+}
+
+:host ::ng-deep li.ngde::marker {
+  color: deeppink;
+}
+
+/* ngde 相关样式 */
+:host ::ng-deep .ngde.title {
+  color: var(--ng-doc-primary);
+  font-size: inherit;
+  line-height: 1;
+  font-weight: 600;
+  vertical-align: baseline;
+}
+
+:host ::ng-deep .ngde.generic:hover,
+:host ::ng-deep .ngde.type:hover {
+  text-decoration: underline;
+  cursor: default;
+}
+
+:host ::ng-deep .ngde.noun {
+  color: var(--ng-doc-primary);
+  font-weight: bolder;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 5px 0;
+  border-radius: 4px;
+}
+
+:host ::ng-deep .ngde.noun:hover {
+  background-color: color-mix(in srgb, var(--ng-doc-code-highlight-color), transparent 90%) !important;
+  position: relative;
+}
+
+:host ::ng-deep .ngde.noun:hover::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 0.5px;
+  background: var(--ng-doc-primary);
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+}
+
+:host ::ng-deep .ngde.noun .icon {
+  fill: var(--ng-doc-primary);
+  vertical-align: top;
+  margin-right: 0.2rem;
+  width: 15px;
+  height: 15px;
+  display: inline;
+}
+
+:host ::ng-deep a img {
+  display: inline-flex;
+}
+
+  /* Wiki 模式 */
+:host ::ng-deep .wiki_mode .ng-doc-header,
+:host ::ng-deep .wiki_mode .ng-doc-sidenav,
+:host ::ng-deep .wiki_mode ng-doc-breadcrumb,
+:host ::ng-deep .wiki_mode ng-doc-page-navigation,
+:host ::ng-deep .wiki_mode footer {
+  display: none;
+}
+
+:host ::ng-deep .wiki_mode .ng-doc-sidenav-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+:host ::ng-deep .wiki_mode main {
+  padding-top: 0 !important;
+}
+
+:host ::ng-deep .wiki_mode .ng-doc-page-controls {
+  display: none !important;
+}
+
+/* 标题间距规则 */
+:host ::ng-deep h1.ngde + h1.ngde,
+:host ::ng-deep h1.ngde + h2.ngde,
+:host ::ng-deep h1.ngde + h3.ngde,
+:host ::ng-deep h1.ngde + h4.ngde,
+:host ::ng-deep h1.ngde + h5.ngde,
+:host ::ng-deep h1.ngde + h6.ngde,
+:host ::ng-deep h2.ngde + h1.ngde,
+:host ::ng-deep h2.ngde + h2.ngde,
+:host ::ng-deep h2.ngde + h3.ngde,
+:host ::ng-deep h2.ngde + h4.ngde,
+:host ::ng-deep h2.ngde + h5.ngde,
+:host ::ng-deep h2.ngde + h6.ngde,
+:host ::ng-deep h3.ngde + h1.ngde,
+:host ::ng-deep h3.ngde + h2.ngde,
+:host ::ng-deep h3.ngde + h3.ngde,
+:host ::ng-deep h3.ngde + h4.ngde,
+:host ::ng-deep h3.ngde + h5.ngde,
+:host ::ng-deep h3.ngde + h6.ngde,
+:host ::ng-deep h4.ngde + h1.ngde,
+:host ::ng-deep h4.ngde + h2.ngde,
+:host ::ng-deep h4.ngde + h3.ngde,
+:host ::ng-deep h4.ngde + h4.ngde,
+:host ::ng-deep h4.ngde + h5.ngde,
+:host ::ng-deep h4.ngde + h6.ngde,
+:host ::ng-deep h5.ngde + h1.ngde,
+:host ::ng-deep h5.ngde + h2.ngde,
+:host ::ng-deep h5.ngde + h3.ngde,
+:host ::ng-deep h5.ngde + h4.ngde,
+:host ::ng-deep h5.ngde + h5.ngde,
+:host ::ng-deep h5.ngde + h6.ngde,
+:host ::ng-deep h6.ngde + h1.ngde,
+:host ::ng-deep h6.ngde + h2.ngde,
+:host ::ng-deep h6.ngde + h3.ngde,
+:host ::ng-deep h6.ngde + h4.ngde,
+:host ::ng-deep h6.ngde + h5.ngde,
+:host ::ng-deep h6.ngde + h6.ngde {
+  margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
+}
+
+/* 对话框样式 */
+:host ::ng-deep .wiki.p-dialog {
+  color: var(--ng-doc-text) !important;
+  background-color: transparent !important;
+  border-radius: .5rem !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .wiki.p-dialog.p-dialog-maximized {
+  border-radius: 0 !important;
+}
+
+:host ::ng-deep .wiki.p-dialog .p-dialog-header {
+  padding: .5rem 0 0 0;
+  background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
+}
+
+:host ::ng-deep .wiki.p-dialog .p-dialog-content {
+  padding: 1rem;
+  background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
+}
+
+/* Logo 样式 */
+.logo {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.logo img {
+  width: 40px;
+  height: 40px;
+  margin-right: 0.5rem;
+}
+
+.logo span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ng-doc-text);
+}
+
+/* 页脚 */
+.ng-doc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--ng-doc-base-gutter) * 3);
+  color: var(--ng-doc-text-muted);
+  font-size: 12px;
+}
+
+.ng-doc-footer a {
+  padding: 0 6px;
+}
+
+:host ::ng-deep {
+  --p-popover-background: var(--ng-doc-navbar-background) !important;
+  --p-popover-border-color: var(--ng-doc-navbar-background) !important;
+}

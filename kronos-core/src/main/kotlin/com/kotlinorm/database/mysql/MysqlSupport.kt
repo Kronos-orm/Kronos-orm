@@ -79,6 +79,7 @@ import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace
+import java.math.BigInteger
 
 object MysqlSupport : DatabasesSupport {
     override var quotes = Pair("`", "`")
@@ -212,13 +213,15 @@ object MysqlSupport : DatabasesSupport {
             """.trimWhitespace(), mapOf("tableName" to tableName)
             )
         ).map {
+            val length = (it["LENGTH"] as Long?)?.toInt() ?: 0
+            val scale = (it["SCALE"] as BigInteger?)?.toInt() ?: 0
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
                 type = getKotlinColumnType(
-                    DBType.Mysql, it["DATA_TYPE"].toString(), (it["LENGTH"] as Long? ?: 0).toInt(), (it["SCALE"] as Long? ?: 0).toInt()
+                    DBType.Mysql, it["DATA_TYPE"].toString(), length, scale
                 ),
-                length = (it["LENGTH"] as Long? ?: 0).toInt(),
-                scale = (it["SCALE"] as Long? ?: 0).toInt(),
+                length = length,
+                scale = scale,
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = when {

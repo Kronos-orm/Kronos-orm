@@ -1,0 +1,86 @@
+name: Mark stale issues and pull requests
+
+on:
+  schedule:
+    # 每天UTC时间15:40运行（可根据你的时区调整）
+    - cron: '40 15 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/stale@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+        # 通用配置
+        days-before-stale: 60       # 60天无活动标记为stale
+        days-before-close: 14       # 标记后14天无活动则关闭
+        remove-stale-when-updated: true  # 当有新活动时自动移除stale标记
+        exempt-issue-labels: "pinned,confirmed,bug"  # 这些标签的issue不处理
+        
+        # Issue相关配置
+        stale-issue-label: "status/stale"
+        stale-issue-message: |
+          ⏰ This issue has been inactive for over 60 days. If it still needs to be addressed, please leave a message to inform of the latest progress.
+          If there is no response within 7 days, we will automatically close this issue.
+          
+          *Automated reminder from the kronos-orm maintenance team*
+          ------
+          ⏰ 该issue已超过60天无活动。如果仍然需要处理，请留言告知最新进展。
+          如果7天内没有收到回复，我们将自动关闭该issue。
+          
+          *来自kronos-orm维护团队的自动化提醒*
+        close-issue-message: |
+          🚨 Due to no new activity for over 14 days, this issue has been automatically closed. To reopen it, please:
+          1. Leave a message explaining the latest progress
+          2. Manually reopen it through the issue list
+          
+          Thank you for your contribution to the kronos-orm project!
+          ------
+          🚨 由于超过14天无新活动，该issue已被自动关闭。如需重新打开，请：
+          1. 留言说明最新进展
+          2. 通过issue列表手动重新打开
+          
+          感谢你对kronos-orm项目的贡献！
+        close-issue-label: "closed/stale"  # 关闭时添加的标签
+        
+        # PR相关配置
+        stale-pr-label: "status/stale"
+        stale-pr-message: |
+          ⏳ This PR has exceeded 60 days without updates. Please check if it is still necessary to merge:
+          - If it is still necessary to merge, please update the code or leave a message for confirmation
+          - If it is no longer needed, please proactively close it
+          
+          No response after 7 days will be automatically closed.
+          ------
+          ⏳ 该PR已超过60天无更新。请检查是否仍需合并：
+          - 如果仍需合并，请更新代码或留言确认
+          - 如果已不需要，请主动关闭
+          
+          7天后无响应将自动关闭。
+        days-before-pr-stale: 60    # PR单独配置天数（如果不同）
+        days-before-pr-close: 7
+        exempt-pr-labels: "dependencies,priority"
+        close-pr-message: |
+          🔒 Due to long-term inactivity with no updates, this PR has been automatically closed. You can:
+          1. Update the branch and resubmit
+          2. Use the /reopen command to reopen
+          
+          The kronos-orm project thanks you for your contribution!
+          ------
+          🔒 由于长期无更新，该PR已被自动关闭。你可以：
+          1. 通过分支更新后重新提交
+          2. 使用/reopen命令重新打开
+          
+          kronos-orm项目感谢你的贡献！
+        close-pr-label: "closed/stale-pr"
+        
+        # 可视化统计
+        log-level: debug    # 调试时查看详细日志
+        operations-per-run: 100  # 单次运行处理的最大数量

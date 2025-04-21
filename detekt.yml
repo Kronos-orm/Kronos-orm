@@ -81,7 +81,7 @@ comments:
     searchInInnerObject: true
     searchInInnerInterface: true
     searchInProtectedClass: false
-    ignoreDefaultCompanionObject: false
+#    ignoreDefaultCompanionObject: false
   UndocumentedPublicFunction:
     active: false
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
@@ -352,20 +352,19 @@ naming:
   MatchingDeclarationName:
     active: true
     mustBeFirst: true
-    multiplatformTargets:
-      - 'ios'
-      - 'android'
-      - 'js'
-      - 'jvm'
-      - 'native'
-      - 'iosArm64'
-      - 'iosX64'
-      - 'macosX64'
-      - 'mingwX64'
-      - 'linuxX64'
+#    multiplatformTargets:
+#      - 'ios'
+#      - 'android'
+#      - 'js'
+#      - 'jvm'
+#      - 'native'
+#      - 'iosArm64'
+#      - 'iosX64'
+#      - 'macosX64'
+#      - 'mingwX64'
+#      - 'linuxX64'
   MemberNameEqualsClassName:
     active: true
-    ignoreOverridden: true
   NoNameShadowing:
     active: true
   NonBooleanPropertyPrefixedWithIs:
@@ -394,7 +393,6 @@ naming:
     variablePattern: '[a-z][A-Za-z0-9]*'
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
-    ignoreOverridden: true
 
 performance:
   active: true
@@ -614,7 +612,6 @@ style:
     rules: []
   ForbiddenVoid:
     active: true
-    ignoreOverridden: false
     ignoreUsageInGenerics: false
   FunctionOnlyReturningConstant:
     active: true

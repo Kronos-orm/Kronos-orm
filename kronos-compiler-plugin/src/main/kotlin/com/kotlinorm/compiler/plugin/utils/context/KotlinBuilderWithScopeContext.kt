@@ -314,6 +314,7 @@ open class KotlinBuilderWithScopeContext<out T : IrBuilderWithScope>(
                     ignore ?: irNull(),
                     irBoolean(isColumn),
                     columnTypeLength ?: irInt(0),
+                    columnTypeScale ?: irInt(0),
                     columnDefaultValue ?: irNull(),
                     irBoolean(nullable),
                     irBoolean(serializable),

@@ -28,7 +28,47 @@ import com.kotlinorm.database.SqlManager.indexCreateDefSql
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
-import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.enums.KColumnType.BIGINT
+import com.kotlinorm.enums.KColumnType.BINARY
+import com.kotlinorm.enums.KColumnType.BIT
+import com.kotlinorm.enums.KColumnType.BLOB
+import com.kotlinorm.enums.KColumnType.CHAR
+import com.kotlinorm.enums.KColumnType.CLOB
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.enums.KColumnType.DATE
+import com.kotlinorm.enums.KColumnType.DATETIME
+import com.kotlinorm.enums.KColumnType.DECIMAL
+import com.kotlinorm.enums.KColumnType.DOUBLE
+import com.kotlinorm.enums.KColumnType.ENUM
+import com.kotlinorm.enums.KColumnType.FLOAT
+import com.kotlinorm.enums.KColumnType.GEOMETRY
+import com.kotlinorm.enums.KColumnType.INT
+import com.kotlinorm.enums.KColumnType.JSON
+import com.kotlinorm.enums.KColumnType.LINESTRING
+import com.kotlinorm.enums.KColumnType.LONGBLOB
+import com.kotlinorm.enums.KColumnType.LONGTEXT
+import com.kotlinorm.enums.KColumnType.LONGVARBINARY
+import com.kotlinorm.enums.KColumnType.MEDIUMBLOB
+import com.kotlinorm.enums.KColumnType.MEDIUMINT
+import com.kotlinorm.enums.KColumnType.MEDIUMTEXT
+import com.kotlinorm.enums.KColumnType.NCHAR
+import com.kotlinorm.enums.KColumnType.NCLOB
+import com.kotlinorm.enums.KColumnType.NUMERIC
+import com.kotlinorm.enums.KColumnType.NVARCHAR
+import com.kotlinorm.enums.KColumnType.POINT
+import com.kotlinorm.enums.KColumnType.REAL
+import com.kotlinorm.enums.KColumnType.SERIAL
+import com.kotlinorm.enums.KColumnType.SET
+import com.kotlinorm.enums.KColumnType.SMALLINT
+import com.kotlinorm.enums.KColumnType.TEXT
+import com.kotlinorm.enums.KColumnType.TIME
+import com.kotlinorm.enums.KColumnType.TIMESTAMP
+import com.kotlinorm.enums.KColumnType.TINYINT
+import com.kotlinorm.enums.KColumnType.UUID
+import com.kotlinorm.enums.KColumnType.VARBINARY
+import com.kotlinorm.enums.KColumnType.VARCHAR
+import com.kotlinorm.enums.KColumnType.XML
+import com.kotlinorm.enums.KColumnType.YEAR
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
@@ -46,21 +86,35 @@ object MysqlSupport : DatabasesSupport {
     override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) =
         wrapper.url.split("?").first().split("//")[1].split("/").last()
 
-    override fun getColumnType(type: KColumnType, length: Int): String {
+    override fun getColumnType(type: KColumnType, length: Int, scale: Int): String {
         return when (type) {
             BIT -> "TINYINT(1)"
-            TINYINT -> "TINYINT"
-            SMALLINT -> "SMALLINT"
-            INT, SERIAL -> "INT"
-            MEDIUMINT -> "MEDIUMINT"
-            BIGINT -> "BIGINT"
+            // 数值类型处理
+            TINYINT -> if (length > 0) "TINYINT($length)" else "TINYINT(4)"  // MySQL默认显示宽度为4
+            SMALLINT -> if (length > 0) "SMALLINT($length)" else "SMALLINT(6)" // 默认显示宽度6
+            INT, SERIAL -> if (length > 0) "INT($length)" else "INT(11)"      // 默认显示宽度11
+            MEDIUMINT -> if (length > 0) "MEDIUMINT($length)" else "MEDIUMINT(9)"
+            BIGINT -> if (length > 0) "BIGINT($length)" else "BIGINT(20)"     // 默认显示宽度20
+
+            // 浮点类型处理
+            FLOAT -> if (length > 0 && scale > 0) "FLOAT($length,$scale)" else "FLOAT"
+            DOUBLE -> if (length > 0 && scale > 0) "DOUBLE($length,$scale)" else "DOUBLE"
+
+            // 精确数值类型
+            DECIMAL -> when {
+                length > 0 && scale > 0 -> "DECIMAL($length,$scale)"
+                length > 0 -> "DECIMAL($length,0)"  // 默认scale=0
+                else -> "DECIMAL(10,0)"               // MySQL默认DECIMAL(10,0)
+            }
+
+            NUMERIC -> when {
+                length > 0 && scale > 0 -> "NUMERIC($length,$scale)"
+                length > 0 -> "NUMERIC($length,0)"
+                else -> "NUMERIC(10,0)"
+            }
             REAL -> "REAL"
-            FLOAT -> "FLOAT"
-            DOUBLE -> "DOUBLE"
-            DECIMAL -> "DECIMAL"
-            NUMERIC -> "NUMERIC"
-            CHAR, NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            VARCHAR, NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            CHAR, NCHAR -> if (length > 0) "CHAR($length)" else "CHAR(255)"
+            VARCHAR, NVARCHAR -> if (length > 0) "VARCHAR($length)" else "VARCHAR(255)"
             TEXT, XML -> "TEXT"
             MEDIUMTEXT -> "MEDIUMTEXT"
             LONGTEXT -> "LONGTEXT"
@@ -68,8 +122,8 @@ object MysqlSupport : DatabasesSupport {
             TIME -> "TIME"
             DATETIME -> "DATETIME"
             TIMESTAMP -> "TIMESTAMP"
-            BINARY -> "BINARY"
-            VARBINARY -> "VARBINARY"
+            BINARY -> "BINARY(${length.takeIf { it > 0 } ?: 255})"
+            VARBINARY -> "VARBINARY(${length.takeIf { it > 0 } ?: 255})"
             LONGVARBINARY, LONGBLOB -> "LONGBLOB"
             BLOB -> "BLOB"
             MEDIUMBLOB -> "MEDIUMBLOB"
@@ -91,7 +145,7 @@ object MysqlSupport : DatabasesSupport {
         "${
             quote(column.columnName)
         }${
-            " ${sqlColumnType(dbType, column.type, column.length)}"
+            " ${sqlColumnType(dbType, column.type, column.length, column.scale)}"
         }${
             if (column.nullable) "" else " NOT NULL"
         }${
@@ -143,6 +197,7 @@ object MysqlSupport : DatabasesSupport {
                     c.COLUMN_NAME, 
                     c.DATA_TYPE, 
                     c.CHARACTER_MAXIMUM_LENGTH LENGTH, 
+                    c.NUMERIC_PRECISION SCALE,
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
                     c.COLUMN_COMMENT,
@@ -160,9 +215,10 @@ object MysqlSupport : DatabasesSupport {
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
                 type = getKotlinColumnType(
-                    DBType.Mysql, it["DATA_TYPE"].toString(), (it["LENGTH"] as Long? ?: 0).toInt()
+                    DBType.Mysql, it["DATA_TYPE"].toString(), (it["LENGTH"] as Long? ?: 0).toInt(), (it["SCALE"] as Long? ?: 0).toInt()
                 ),
                 length = (it["LENGTH"] as Long? ?: 0).toInt(),
+                scale = (it["SCALE"] as Long? ?: 0).toInt(),
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = when {

@@ -46,41 +46,77 @@ object PostgresqlSupport : DatabasesSupport {
 
     override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("//").last().split("/").first()
 
-    override fun getColumnType(type: KColumnType, length: Int): String {
+    override fun getColumnType(type: KColumnType, length: Int, scale: Int): String {
         return when (type) {
+            // 布尔类型
             BIT -> "BOOLEAN"
-            TINYINT, SMALLINT, YEAR -> "SMALLINT"
+
+            // 整数类型（优化SERIAL处理）
+            TINYINT -> "SMALLINT"  // PostgreSQL无TINYINT，用SMALLINT(-32768 to 32767)
+            SMALLINT -> "SMALLINT"
             INT, MEDIUMINT -> "INTEGER"
             BIGINT -> "BIGINT"
-            REAL -> "REAL"
-            FLOAT -> "FLOAT"
-            DOUBLE -> "DOUBLE"
-            DECIMAL -> "DECIMAL"
-            NUMERIC -> "NUMERIC"
-            CHAR, NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            VARCHAR, NVARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            TEXT, CLOB, MEDIUMTEXT, LONGTEXT, ENUM, NCLOB, SET -> "TEXT"
+            SERIAL -> "SERIAL"      // 自动递增整数(INTEGER)
+            YEAR -> "INTEGER"       // 年份用整数存储
+
+            // 浮点类型（支持精度指定）
+            REAL -> "REAL"          // 4字节浮点
+            FLOAT -> if (length > 0) "FLOAT($length)" else "DOUBLE PRECISION"
+            DOUBLE -> "DOUBLE PRECISION"
+
+            // 精确数值（必须处理精度）
+            DECIMAL -> when {
+                length > 0 && scale > 0 -> "DECIMAL($length,$scale)"
+                length > 0 -> "DECIMAL($length,0)"
+                else -> "DECIMAL"   // 不指定精度时使用默认
+            }
+            NUMERIC -> when {
+                length > 0 && scale > 0 -> "NUMERIC($length,$scale)"
+                length > 0 -> "NUMERIC($length,0)"
+                else -> "NUMERIC"
+            }
+
+            // 字符类型（处理超长情况）
+            CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
+            NCHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
+            VARCHAR -> if (length > 0 && length <= 10485760) "VARCHAR($length)" else "TEXT"
+            NVARCHAR -> if (length > 0 && length <= 10485760) "VARCHAR($length)" else "TEXT"
+            TEXT, CLOB, MEDIUMTEXT, LONGTEXT -> "TEXT"
+
+            // 二进制类型
+            BINARY -> "BYTEA"
+            VARBINARY -> "BYTEA"
+            LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -> "BYTEA"
+
+            // 时间类型（支持精度）
             DATE -> "DATE"
-            TIME -> "TIME"
-            DATETIME, TIMESTAMP -> "TIMESTAMP"
-            BINARY, VARBINARY, LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -> "BYTEA"
-            JSON -> "JSON"
+            TIME -> "TIME(${scale.coerceIn(0, 6)})"  // 支持0-6位小数秒
+            DATETIME -> "TIMESTAMP(${scale.coerceIn(0, 6)})"
+            TIMESTAMP -> "TIMESTAMP(${scale.coerceIn(0, 6)})"
+
+            // 特殊类型
+            JSON -> "JSONB"         // 推荐使用JSONB（二进制存储）
+            XML -> "XML"
             UUID -> "UUID"
-            SERIAL -> "SERIAL"
-            GEOMETRY -> "GEOMETRY"
+            ENUM -> if (length > 0) "VARCHAR($length)" else "VARCHAR(255)"  // 或创建自定义ENUM类型
+            SET -> "TEXT"           // 集合类型用TEXT或数组类型
+
+            // 空间类型
+            GEOMETRY -> "GEOMETRY"  // PostGIS扩展
             POINT -> "POINT"
             LINESTRING -> "LINESTRING"
-            XML -> "XML"
-            else -> "VARCHAR(255)"
+
+            // 默认类型
+            else -> "TEXT"          // PostgreSQL更推荐TEXT而非VARCHAR
         }
     }
 
-    override fun getKColumnType(type: String, length: Int): KColumnType {
+    override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
         return when (type) {
             "INTEGER" -> INT
             "BYTEA" -> BLOB
             "BOOLEAN" -> BIT
-            else -> super.getKColumnType(type, length)
+            else -> super.getKColumnType(type, length, scale)
         }
     }
 
@@ -88,7 +124,7 @@ object PostgresqlSupport : DatabasesSupport {
         return "${
             quote(column.columnName)
         }${
-            if (column.primaryKey == PrimaryKeyType.IDENTITY) " SERIAL" else " ${getColumnType(column.type, column.length)}"
+            if (column.primaryKey == PrimaryKeyType.IDENTITY) " SERIAL" else " ${getColumnType(column.type, column.length, column.scale)}"
         }${
             if (column.nullable) "" else " NOT NULL"
         }${
@@ -157,7 +193,8 @@ object PostgresqlSupport : DatabasesSupport {
                         WHEN c.data_type LIKE 'date' THEN 'DATE'
                         ELSE c.data_type
                     END AS DATA_TYPE,
-                    COALESCE(c.character_maximum_length, c.numeric_precision) AS LENGTH,
+                    c.character_maximum_length AS LENGTH,
+                    c.numeric_precision AS SCALE,
                     c.is_nullable = 'YES' AS IS_NULLABLE,
                     c.column_default AS COLUMN_DEFAULT,
                     EXISTS (
@@ -182,8 +219,9 @@ object PostgresqlSupport : DatabasesSupport {
         ).map {
             Field(
                 columnName = it["column_name"].toString(),
-                type = getKotlinColumnType(DBType.Postgres, it["data_type"].toString(), it["length"] as Int? ?: 0),
+                type = getKotlinColumnType(DBType.Postgres, it["data_type"].toString(), it["length"] as Int? ?: 0, it["scale"] as Int? ?: 0),
                 length = it["length"] as Int? ?: 0,
+                scale = it["scale"] as Int? ?: 0,
                 tableName = tableName,
                 nullable = it["is_nullable"] == true,
                 primaryKey = when{
@@ -248,7 +286,7 @@ object PostgresqlSupport : DatabasesSupport {
                 }"
             } + columns.toModified.map {
                 "ALTER TABLE ${quote("public")}.${quote(tableName)} ALTER COLUMN ${it.first.columnName} TYPE ${
-                    getColumnType(it.first.type, it.first.length)
+                    getColumnType(it.first.type, it.first.length, it.first.scale)
                 } ${if (it.first.defaultValue != null) ",AlTER COLUMN ${it.first.columnName} SET DEFAULT ${it.first.defaultValue}" else ""} ${
                     if (it.first.nullable) ",ALTER COLUMN ${it.first.columnName} DROP NOT NULL" else ",ALTER COLUMN ${it.first.columnName} SET NOT NULL"
                 }"

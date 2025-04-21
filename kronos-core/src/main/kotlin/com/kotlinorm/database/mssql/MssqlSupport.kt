@@ -43,38 +43,68 @@ object MssqlSupport : DatabasesSupport {
 
     override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("//").last().split(";").first()
 
-    override fun getColumnType(type: KColumnType, length: Int): String {
+    override fun getColumnType(type: KColumnType, length: Int, scale: Int): String {
         return when (type) {
             KColumnType.BIT -> "BIT"
-            KColumnType.TINYINT -> "TINYINT"
-            KColumnType.SMALLINT -> "SMALLINT"
+            KColumnType.TINYINT -> "TINYINT"       // 固定长度（1字节）
+            KColumnType.SMALLINT -> "SMALLINT"     // 固定长度（2字节）
             KColumnType.INT, KColumnType.MEDIUMINT, KColumnType.SERIAL, KColumnType.YEAR -> "INT"
             KColumnType.BIGINT -> "BIGINT"
-            KColumnType.REAL -> "REAL"
-            KColumnType.FLOAT -> "FLOAT"
-            KColumnType.DOUBLE -> "DOUBLE"
-            KColumnType.DECIMAL -> "DECIMAL"
-            KColumnType.NUMERIC -> "NUMERIC"
+
+            // 浮点类型处理
+            KColumnType.REAL -> "REAL"            // 等价于 FLOAT(24)
+            KColumnType.FLOAT -> if (length > 0) "FLOAT($length)" else "FLOAT"  // 默认 FLOAT(53)
+            KColumnType.DOUBLE -> "FLOAT(53)"      // 明确双精度
+
+            // 精确数值类型（必须指定精度）
+            KColumnType.DECIMAL -> when {
+                length > 0 && scale > 0 -> "DECIMAL($length,$scale)"
+                length > 0 -> "DECIMAL($length,0)"
+                else -> "DECIMAL(18,0)"            // SQL Server 默认精度
+            }
+            KColumnType.NUMERIC -> when {
+                length > 0 && scale > 0 -> "NUMERIC($length,$scale)"
+                length > 0 -> "NUMERIC($length,0)"
+                else -> "NUMERIC(18,0)"
+            }
+
+            // 字符类型（已处理默认长度）
             KColumnType.CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.VARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            KColumnType.VARCHAR -> "VARCHAR(${
+                when {
+                    length <= 0 -> 255
+                    length > 8000 -> "MAX"
+                    else -> length
+                }
+            })"
+            KColumnType.NCHAR -> "NVARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            KColumnType.NVARCHAR -> "NVARCHAR(${
+                when {
+                    length <= 0 -> 255
+                    length > 4000 -> "MAX"
+                    else -> length
+                }
+            })"
+
+            // 二进制类型处理
+            KColumnType.BINARY -> "BINARY(${length.takeIf { it > 0 } ?: 255})"// 默认长度255
+            KColumnType.VARBINARY -> "VARBINARY(${length.takeIf { it > 0 } ?: 255})"// 默认长度255
+            KColumnType.LONGVARBINARY, KColumnType.BLOB, KColumnType.MEDIUMBLOB, KColumnType.LONGBLOB -> "VARBINARY(MAX)"
+
+            // 其他保持原样...
             KColumnType.TEXT, KColumnType.MEDIUMTEXT, KColumnType.LONGTEXT, KColumnType.CLOB -> "TEXT"
             KColumnType.DATE -> "DATE"
-            KColumnType.TIME -> "TIME"
-            KColumnType.DATETIME -> "DATETIME"
+            KColumnType.TIME -> if(scale > 0) "TIME($scale)" else "TIME"
+            KColumnType.DATETIME -> if (scale > 0) "DATETIME2($scale)" else "DATETIME"
             KColumnType.TIMESTAMP -> "TIMESTAMP"
-            KColumnType.BINARY -> "BINARY"
-            KColumnType.VARBINARY -> "VARBINARY"
-            KColumnType.LONGVARBINARY, KColumnType.BLOB, KColumnType.MEDIUMBLOB, KColumnType.LONGBLOB -> "IMAGE"
             KColumnType.JSON -> "JSON"
-            KColumnType.ENUM -> "ENUM"
-            KColumnType.NVARCHAR -> "NVARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCHAR -> "NCHAR(${length.takeIf { it > 0 } ?: 255})"
-            KColumnType.NCLOB -> "NTTEXT"
+            KColumnType.ENUM -> "NVARCHAR(255)"
+            KColumnType.NCLOB -> "NTEXT"
             KColumnType.UUID -> "CHAR(36)"
-            KColumnType.SET -> "SET"
+            KColumnType.SET -> "NVARCHAR(255)"
             KColumnType.GEOMETRY -> "GEOMETRY"
-            KColumnType.POINT -> "POINT"
-            KColumnType.LINESTRING -> "LINESTRING"
+            KColumnType.POINT -> "GEOMETRY"
+            KColumnType.LINESTRING -> "GEOMETRY"
             KColumnType.XML -> "XML"
             else -> "NVARCHAR(255)"
         }
@@ -83,7 +113,7 @@ object MssqlSupport : DatabasesSupport {
     override fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
         quote(column.columnName)
     }${
-        " ${sqlColumnType(dbType, column.type, column.length)}"
+        " ${sqlColumnType(dbType, column.type, column.length, column.scale)}"
     }${
         if (column.nullable) "" else " NOT NULL"
     }${
@@ -153,6 +183,10 @@ object MssqlSupport : DatabasesSupport {
                         WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar') THEN c.CHARACTER_MAXIMUM_LENGTH
                         ELSE NULL  
                     END AS CHARACTER_MAXIMUM_LENGTH,
+                    CASE 
+                        WHEN c.DATA_TYPE IN ('decimal', 'numeric') THEN c.NUMERIC_PRECISION
+                        ELSE NULL  
+                    END AS NUMERIC_PRECISION,
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
                     CASE 
@@ -189,10 +223,12 @@ object MssqlSupport : DatabasesSupport {
             )
         ).map {
             val length = it["CHARACTER_MAXIMUM_LENGTH"] as Int? ?: 0
+            val scale = it["NUMERIC_PRECISION"] as Int? ?: 0
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
-                type = getKotlinColumnType(DBType.Mssql, it["DATA_TYPE"].toString(), length),
+                type = getKotlinColumnType(DBType.Mssql, it["DATA_TYPE"].toString(), length, scale),
                 length = length,
+                scale = scale,
                 tableName = tableName,
                 nullable = it["IS_NULLABLE"] == "YES",
                 primaryKey = when {

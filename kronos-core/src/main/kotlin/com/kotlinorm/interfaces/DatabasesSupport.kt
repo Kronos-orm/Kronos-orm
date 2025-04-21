@@ -40,9 +40,9 @@ interface DatabasesSupport {
 
     fun equation(field: Field, showTable: Boolean = false): String = "${quote(field, showTable)} = :${field.name}"
 
-    fun getColumnType(type: KColumnType, length: Int): String
+    fun getColumnType(type: KColumnType, length: Int, scale: Int): String
 
-    fun getKColumnType(type: String, length: Int = 0): KColumnType = KColumnType.fromString(type)
+    fun getKColumnType(type: String, length: Int = 0, scale: Int = 0): KColumnType = KColumnType.fromString(type)
 
     fun getColumnCreateSql(dbType: DBType, column: Field): String
 

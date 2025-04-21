@@ -26,7 +26,47 @@ import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
-import com.kotlinorm.enums.KColumnType.*
+import com.kotlinorm.enums.KColumnType.BIGINT
+import com.kotlinorm.enums.KColumnType.BINARY
+import com.kotlinorm.enums.KColumnType.BIT
+import com.kotlinorm.enums.KColumnType.BLOB
+import com.kotlinorm.enums.KColumnType.CHAR
+import com.kotlinorm.enums.KColumnType.CLOB
+import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+import com.kotlinorm.enums.KColumnType.DATE
+import com.kotlinorm.enums.KColumnType.DATETIME
+import com.kotlinorm.enums.KColumnType.DECIMAL
+import com.kotlinorm.enums.KColumnType.DOUBLE
+import com.kotlinorm.enums.KColumnType.ENUM
+import com.kotlinorm.enums.KColumnType.FLOAT
+import com.kotlinorm.enums.KColumnType.GEOMETRY
+import com.kotlinorm.enums.KColumnType.INT
+import com.kotlinorm.enums.KColumnType.JSON
+import com.kotlinorm.enums.KColumnType.LINESTRING
+import com.kotlinorm.enums.KColumnType.LONGBLOB
+import com.kotlinorm.enums.KColumnType.LONGTEXT
+import com.kotlinorm.enums.KColumnType.LONGVARBINARY
+import com.kotlinorm.enums.KColumnType.MEDIUMBLOB
+import com.kotlinorm.enums.KColumnType.MEDIUMINT
+import com.kotlinorm.enums.KColumnType.MEDIUMTEXT
+import com.kotlinorm.enums.KColumnType.NCHAR
+import com.kotlinorm.enums.KColumnType.NCLOB
+import com.kotlinorm.enums.KColumnType.NUMERIC
+import com.kotlinorm.enums.KColumnType.NVARCHAR
+import com.kotlinorm.enums.KColumnType.POINT
+import com.kotlinorm.enums.KColumnType.REAL
+import com.kotlinorm.enums.KColumnType.SERIAL
+import com.kotlinorm.enums.KColumnType.SET
+import com.kotlinorm.enums.KColumnType.SMALLINT
+import com.kotlinorm.enums.KColumnType.TEXT
+import com.kotlinorm.enums.KColumnType.TIME
+import com.kotlinorm.enums.KColumnType.TIMESTAMP
+import com.kotlinorm.enums.KColumnType.TINYINT
+import com.kotlinorm.enums.KColumnType.UUID
+import com.kotlinorm.enums.KColumnType.VARBINARY
+import com.kotlinorm.enums.KColumnType.VARCHAR
+import com.kotlinorm.enums.KColumnType.XML
+import com.kotlinorm.enums.KColumnType.YEAR
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
@@ -38,50 +78,74 @@ import com.kotlinorm.orm.database.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace
-import java.math.BigDecimal
 
 object OracleSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
 
     override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.userName
 
-    override fun getColumnType(type: KColumnType, length: Int): String {
+    override fun getColumnType(type: KColumnType, length: Int, scale: Int): String {
         return when (type) {
+            // 数值类型处理（Oracle 主要使用 NUMBER）
             BIT -> "NUMBER(1)"
-            TINYINT -> "NUMBER(3)"
-            SMALLINT -> "NUMBER(5)"
-            MEDIUMINT -> "NUMBER(7)"
-            INT -> "NUMBER(${length.takeIf { it > 0 } ?: 11})"
-            BIGINT -> "NUMBER(19)"
-            REAL -> "REAL"
-            FLOAT -> "FLOAT"
-            DOUBLE -> "DOUBLE"
-            DECIMAL -> "DECIMAL"
-            NUMERIC -> "NUMERIC"
+            TINYINT -> "NUMBER(3)"       // -128 到 127
+            SMALLINT -> "NUMBER(5)"      // -32,768 到 32,767
+            MEDIUMINT -> "NUMBER(7)"     // -8,388,608 到 8,388,607
+            INT -> "NUMBER(${length.takeIf { it > 0 } ?: 10})"  // 默认 10 位精度
+            BIGINT -> "NUMBER(19)"       // -2^63 到 2^63-1
+            SERIAL -> "NUMBER GENERATED ALWAYS AS IDENTITY"  // Oracle 12c+ 自增方式
+
+            // 浮点类型
+            REAL -> "BINARY_FLOAT"       // Oracle 32位浮点
+            FLOAT -> if (length > 0) "FLOAT($length)" else "BINARY_DOUBLE"  // 默认 64位
+            DOUBLE -> "BINARY_DOUBLE"    // 明确双精度
+
+            // 精确数值（必须处理精度）
+            DECIMAL -> when {
+                length > 0 && scale > 0 -> "NUMBER($length,$scale)"
+                length > 0 -> "NUMBER($length,0)"
+                else -> "NUMBER(10,0)"   // Oracle 常用默认值
+            }
+
+            NUMERIC -> when {
+                length > 0 && scale > 0 -> "NUMERIC($length,$scale)"
+                else -> "NUMERIC(10,0)"
+            }
+
+            // 字符类型
             CHAR -> "CHAR(${length.takeIf { it > 0 } ?: 255})"
-            VARCHAR -> "VARCHAR(${length.takeIf { it > 0 } ?: 255})"
-            TEXT, MEDIUMTEXT, LONGTEXT, CLOB -> "CLOB"
-            DATE, TIME, DATETIME -> "DATE"
-            TIMESTAMP -> "TIMESTAMP"
-            BINARY, VARBINARY, LONGVARBINARY, BLOB, MEDIUMBLOB -> "BLOB"
-            LONGBLOB -> "LONGBLOB"
-            JSON -> "JSON"
-            ENUM -> "ENUM"
-            NVARCHAR -> "NVARCHAR(${length.takeIf { it > 0 } ?: 255})"
+            VARCHAR -> "VARCHAR2(${length.takeIf { it > 0 } ?: 255})"  // 推荐 VARCHAR2
+            NVARCHAR -> "NVARCHAR2(${length.takeIf { it > 0 } ?: 255})"
             NCHAR -> "NCHAR(${length.takeIf { it > 0 } ?: 255})"
+
+            // 大对象类型
+            TEXT, MEDIUMTEXT, LONGTEXT -> "CLOB"
+            CLOB -> "CLOB"
             NCLOB -> "NCLOB"
+            BINARY, VARBINARY -> "RAW(${length.takeIf { it > 0 } ?: 2000})"  // RAW 默认长度
+            BLOB, MEDIUMBLOB, LONGBLOB, LONGVARBINARY -> "BLOB"
+
+            // 时间类型
+            DATE -> "DATE"               // 包含日期和时间
+            TIME -> "TIMESTAMP(0)"       // 单独时间用 TIMESTAMP
+            DATETIME -> "TIMESTAMP(6)"   // 高精度时间戳
+            TIMESTAMP -> "TIMESTAMP(${scale.coerceIn(0, 9)})"  // 允许指定小数秒精度
+
+            // 其他类型
+            JSON -> "JSON"               // Oracle 12c+
+            XML -> "XMLType"            // Oracle 专用类型
             UUID -> "CHAR(36)"
-            SERIAL, YEAR -> "NUMBER"
-            SET -> "SET"
-            GEOMETRY -> "GEOMETRY"
-            POINT -> "POINT"
-            LINESTRING -> "LINESTRING"
-            XML -> "XML"
-            else -> "VARCHAR(255)"
+            ENUM -> "VARCHAR2(255)"      // Oracle 无 ENUM，用字符串替代
+            SET -> "VARCHAR2(1000)"     // 集合类型用长字符串
+            GEOMETRY -> "SDO_GEOMETRY"   // Oracle 空间类型
+            POINT -> "SDO_GEOMETRY"
+            LINESTRING -> "SDO_GEOMETRY"
+            YEAR -> "NUMBER(4)"          // 单独年份存储
+            else -> "VARCHAR2(255)"
         }
     }
 
-    override fun getKColumnType(type: String, length: Int): KColumnType {
+    override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
         return when (type) {
             "NUMBER" -> when (length) {
                 1 -> BIT
@@ -95,7 +159,7 @@ object OracleSupport : DatabasesSupport {
 
             "VARCHAR2" -> VARCHAR
 
-            else -> super.getKColumnType(type, length)
+            else -> super.getKColumnType(type, length, scale)
         }
     }
 
@@ -103,7 +167,7 @@ object OracleSupport : DatabasesSupport {
         return "${
             quote(column.columnName)
         }${
-            " ${getColumnType(column.type, column.length)}"
+            " ${getColumnType(column.type, column.length, column.scale)}"
         }${
             if (column.primaryKey == PrimaryKeyType.IDENTITY) " GENERATED ALWAYS AS IDENTITY" else ""
         }${
@@ -197,15 +261,13 @@ object OracleSupport : DatabasesSupport {
             )
         ).map {
             val dataType = it["DATE_TYPE"].toString()
-            val length = (if (dataType == "NUMBER") {
-                it["PRECISION"]
-            } else {
-                it["LENGTH"]
-            } as BigDecimal?)?.toInt() ?: 0
+            val length = it["LENGTH"]?.toString()?.toIntOrNull() ?: 0
+            val precision = it["PRECISION"]?.toString()?.toIntOrNull() ?: 0
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
-                type = getKotlinColumnType(DBType.Oracle, it["DATE_TYPE"].toString(), length),
+                type = getKotlinColumnType(DBType.Oracle, dataType, length, precision),
                 length = length,
+                scale = precision,
                 tableName = tableName.uppercase(),
                 nullable = it["IS_NULLABLE"] == "Y",
                 primaryKey = when{

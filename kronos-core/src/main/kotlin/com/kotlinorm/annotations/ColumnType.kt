@@ -25,8 +25,9 @@ import com.kotlinorm.enums.KColumnType
  *
  * @property type The type of the column, if empty, inferred by Kotlin Type
  * @property length The length of the column in the database table.
+ * @property scale The scale of the column in the database table.
  * @author OUSC
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ColumnType(val type: KColumnType, val length: Int = 0)
+annotation class ColumnType(val type: KColumnType, val length: Int = 0, val scale: Int = 0)

@@ -1,0 +1,81 @@
+name: Greetings
+
+on: 
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+    - uses: actions/first-interaction@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        # Issue欢迎消息
+        issue-message: |
+          🌟 Welcome to submit issues for kronos-orm! Please confirm:
+          1️⃣ Have reviewed [Documentation](https://kotlinorm.com/documentation) and [existing issues](https://github.com/krronos-orm/kronos-orm/issues)
+          2️⃣ Include the following information:
+          - [ ] Kotlin version: ______
+          - [ ] JVM version: _____ (e.g. JDK 17)
+          - [ ] Database type: ______
+          - [ ] Gradle build report (attach if there is a crash issue)
+          - [ ] Reproduction steps
+          - [ ] Expected vs. actual behavior
+          
+          The maintenance team will respond within 3 working days, and you can use the `/pin` command to mark important issues.
+          
+          *Thank you for your contribution to the open-source project! 💐*
+          -------
+          🌟 欢迎为 kronos-orm 提交issue！请确认：
+          1️⃣ 已查阅 [文档](https://kotlinorm.com/documentation) 和 [现有issue](https://github.com/krronos-orm/kronos-orm/issues)
+          2️⃣ 包含以下信息：
+          - [ ] Kotlin 版本：_____ 
+          - [ ] JVM 版本：_____ (e.g. JDK 17)
+          - [ ] 数据库类型：_____
+          - [ ] Gradle构建报告（如崩溃问题请附加）
+          - [ ] 复现步骤
+          - [ ] 预期与实际行为
+          
+          维护团队会在3个工作日内响应，您可以使用 `/pin` 命令标记重要issue。
+
+          *感谢您对开源项目的贡献！💐*
+
+        # PR欢迎消息  
+        pr-message: |
+          🎉 Thank you for submitting a Pull Request to kronos-orm! Please confirm:
+          - [ ] Follow the [Contribution Guidelines](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md)
+          - [ ] Follow the [Kotlin Coding Conventions](https://kotlinlang.org/docs/coding-conventions.html)
+          - [ ] All tests have passed
+          - [ ] All static scans (Detekt & Codacy) have passed
+          - [ ] Relevant documentation has been updated (please also submit a PR to update the docs branch and attach it in the PR comments)
+          
+          📝 The commit message must be in the format: `[Module Prefix] Description (e.g. [core] Fix N+1 query)`
+          
+          🔍 Code review will focus on:
+          - Coroutines correctness
+          - Null safety handling
+          - Extension functions compatibility
+          
+          Maintainers will review within 48 hours. For urgent matters, please @ousc/@foyuur.
+          -------
+          🎉 感谢为 kronos-orm 提交Pull Request！请确认：
+          - [ ] 遵循 [贡献指南](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md)
+          - [ ] 遵循 [Kotlin代码公约](https://kotlinlang.org/docs/coding-conventions.html)
+          - [ ] 已通过所有测试
+          - [ ] 已通过所有静态扫描（Detekt & Codacy）
+          - [ ] 更新了相关文档（请同时提交一个pr更新docs分支，并附在PR的评论中）
+          
+          📝 提交消息需符合格式：`[模块前缀] 描述 (e.g. [core] Fix N+1 query)`
+          
+          🔍 代码评审将重点关注：
+          - 协程正确性
+          - 空安全处理
+          - 扩展函数兼容性
+
+          维护者将在48小时内进行审查，如需紧急处理请@ousc/@foyuur。

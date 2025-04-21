@@ -273,6 +273,7 @@ fun KotlinBuilderContext.getColumnName(
                 ignore = ignoreAnnotation?.getValueArgument(0),
                 isColumn = irProperty.isColumn(irPropertyType, ignoreAnnotation),
                 columnTypeLength = columnTypeAnnotation?.getValueArgument(1),
+                columnTypeScale = columnTypeAnnotation?.getValueArgument(2),
                 columnDefaultValue = defaultValueAnnotation?.getValueArgument(0),
                 nullable = requiredAnnotation == null && primaryKeyAnnotation == null,
                 serializable = serializeAnnotation != null,

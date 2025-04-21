@@ -36,12 +36,12 @@ object SqlManager {
         wrapper.dbType.dbSupport?.getDBNameFromUrl(wrapper) ?: throw UnsupportedDatabaseTypeException(wrapper.dbType)
 
     fun sqlColumnType(
-        dbType: DBType, type: KColumnType, length: Int
-    ) = dbType.dbSupport?.getColumnType(type, length) ?: throw UnsupportedDatabaseTypeException(dbType)
+        dbType: DBType, type: KColumnType, length: Int, scale: Int
+    ) = dbType.dbSupport?.getColumnType(type, length, scale) ?: throw UnsupportedDatabaseTypeException(dbType)
 
     fun getKotlinColumnType(
-        dbType: DBType, sqlType: String, length: Int
-    ) = dbType.dbSupport?.getKColumnType(sqlType, length) ?: throw UnsupportedDatabaseTypeException(dbType)
+        dbType: DBType, sqlType: String, length: Int, scale: Int
+    ) = dbType.dbSupport?.getKColumnType(sqlType, length, scale) ?: throw UnsupportedDatabaseTypeException(dbType)
 
     fun columnCreateDefSql(
         dbType: DBType, column: Field

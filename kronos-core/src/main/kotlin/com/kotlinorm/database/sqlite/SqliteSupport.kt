@@ -43,7 +43,7 @@ object SqliteSupport : DatabasesSupport {
 
     override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("//").last()
 
-    override fun getColumnType(type: KColumnType, length: Int): String {
+    override fun getColumnType(type: KColumnType, length: Int, scale: Int): String {
         return when (type) {
             BIT, TINYINT, SMALLINT, INT, MEDIUMINT, BIGINT, SERIAL, YEAR, SET -> "INTEGER"
             REAL, FLOAT, DOUBLE -> "REAL"
@@ -54,17 +54,17 @@ object SqliteSupport : DatabasesSupport {
         }
     }
 
-    override fun getKColumnType(type: String, length: Int): KColumnType {
+    override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
         return when (type) {
             "INTEGER" -> INT
-            else -> super.getKColumnType(type, length)
+            else -> super.getKColumnType(type, length, scale)
         }
     }
 
     override fun getColumnCreateSql(dbType: DBType, column: Field): String = "${
         quote(column.columnName)
     }${
-        " ${sqlColumnType(dbType, column.type, column.length)}"
+        " ${sqlColumnType(dbType, column.type, column.length, column.scale)}"
     }${
         if (column.nullable) "" else " NOT NULL"
     }${
@@ -118,11 +118,15 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableComment(dbType: DBType) = ""
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
-        fun extractNumberInParentheses(input: String): Int {
-            val regex = Regex("""\((\d+)\)""") // 匹配括号内的数字部分
+        fun extractNumberInParentheses(input: String): Pair<Int, Int> {
+            val regex = Regex("""\((\d+)(?:,(\d+))?\)""")
             val matchResult = regex.find(input)
 
-            return matchResult?.groupValues?.get(1)?.toInt() ?: 0
+            if (matchResult != null) {
+                val (length, scale) = matchResult.destructured
+                return Pair(length.toInt(), scale.toIntOrNull() ?: 0)
+            }
+            return Pair(0, 0)
         }
         return dataSource.forList(
             KronosAtomicQueryTask("PRAGMA table_info($tableName)")
@@ -144,11 +148,12 @@ object SqliteSupport : DatabasesSupport {
                     identity = true
                 }
             }
-            val length = extractNumberInParentheses(it["type"].toString())
+            val (length, scale) = extractNumberInParentheses(it["type"].toString())
             Field(
                 columnName = it["name"].toString(),
                 type = getKColumnType(it["type"].toString().split('(').first(), length), // 处理类型
                 length = length, // 处理长度
+                scale = scale, // 处理精度
                 tableName = tableName,
                 nullable = it["notnull"] as Int == 0, // 直接使用notnull字段判断是否可空
                 primaryKey = when{

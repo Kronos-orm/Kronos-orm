@@ -43,6 +43,7 @@ internal val IrPluginContext.primaryKeyTypeSymbol
  * @property ignore operations should be ignored
  * @property isColumn Whether the field is a column
  * @property columnTypeLength The length of the column type
+ * @property columnTypeScale The scale of the column type
  * @property columnDefaultValue The default value of the column
  * @property nullable Whether the field is nullable
  * @property serializable Whether the field is serializable
@@ -63,6 +64,7 @@ class FieldIR(
     internal val ignore: IrExpression?,
     internal val isColumn: Boolean,
     internal val columnTypeLength: IrExpression?,
+    internal val columnTypeScale: IrExpression?,
     internal val columnDefaultValue: IrExpression?,
     internal val nullable: Boolean,
     internal val serializable: Boolean,

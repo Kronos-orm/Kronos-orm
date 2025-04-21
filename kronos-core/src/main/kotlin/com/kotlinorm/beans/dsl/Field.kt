@@ -61,6 +61,7 @@ open class Field(
     val ignore: Array<IgnoreAction>? = null,
     val isColumn: Boolean = true,
     val length: Int = 0,
+    val scale: Int = 0,
     val defaultValue: String? = null,
     val nullable: Boolean = true,
     val serializable: Boolean = false,
@@ -127,6 +128,7 @@ open class Field(
         ignore: Array<IgnoreAction>? = this.ignore,
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
+        scale: Int = this.scale,
         defaultValue: String? = this.defaultValue,
         nullable: Boolean = this.nullable
     ): Field {
@@ -144,6 +146,7 @@ open class Field(
             ignore,
             isColumn,
             length,
+            scale,
             defaultValue,
             nullable
         )

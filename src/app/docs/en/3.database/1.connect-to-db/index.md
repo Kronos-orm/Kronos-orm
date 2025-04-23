@@ -83,8 +83,7 @@ dependencies {
 
 ```kotlin group="Mysql" name="MysqlKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.init {
-  dataSource = {
+val wrapper by lazy  {
     KronosBasicDataSourceWrapper(
         BasicDataSource().apply {
             // if your database version is 8.0 or later, you need to add the following configuration
@@ -96,7 +95,9 @@ Kronos.init {
             password = "******"
         }
     )
-  }
+}
+Kronos.init {
+  dataSource = { wrapper }
 }
 ```
 
@@ -143,8 +144,7 @@ dependencies {
 
 ```kotlin group="PostgreSQL" name="PostgreSQLKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.init {
-  dataSource = {
+val wrapper by lazy  {
     KronosBasicDataSourceWrapper(
         BasicDataSource().apply {
             driverClassName = "org.postgresql.Driver"
@@ -153,7 +153,9 @@ Kronos.init {
             password = "******"
         }
     )
-  }
+}
+Kronos.init {
+  dataSource = { wrapper }
 }
 ```
 
@@ -199,8 +201,7 @@ dependencies {
 
 ```kotlin group="Oracle" name="OracleKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.init {
-  dataSource = {
+val wrapper by lazy  {
     KronosBasicDataSourceWrapper(
         BasicDataSource().apply {
             driverClassName = "oracle.jdbc.OracleDriver"
@@ -210,7 +211,10 @@ Kronos.init {
             password = "******"
         }
     )
-  }
+}
+
+Kronos.init {
+  dataSource = { wrapper }
 }
 ```
 
@@ -256,17 +260,19 @@ dependencies {
 
 ```kotlin group="SQL Server" name="SQLServerKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.init {
-  dataSource = {
+val wrapper by lazy  {
     KronosBasicDataSourceWrapper(
         BasicDataSource().apply {
             driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+            // replace the following with your SQL Server database connection information
             url = "jdbc:sqlserver://localhost:1433;databaseName=kronos;encrypt=true;trustServerCertificate=true"
             username = "sa"
             password = "******"
         }
     )
-  }
+}
+Kronos.init {
+  dataSource = { wrapper }
 }
 ```
 
@@ -313,14 +319,17 @@ dependencies {
 
 ```kotlin group="SQLite" name="SQLiteKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-Kronos.init {
-  dataSource = {
+val wrapper by lazy  {
     KronosBasicDataSourceWrapper(
         BasicDataSource().apply {
             driverClassName = "org.sqlite.JDBC"
+            // replace the following with your SQLite database connection information
             url = "jdbc:sqlite:/path/to/your/database.db"
         }
-    }
-  }
+    )
+}
+
+Kronos.init {
+  dataSource = { wrapper }
 }
 ```

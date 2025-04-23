@@ -145,12 +145,6 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("AutoSync") }}表结构自动同步
-
-用于指定数据表是否开启自动同步策略，若开启，则在每次`Kronos.init`时自动同步表结构。
-
-若同一张表的不同数据类同时使用了`@AutoSync`注解，Kronos不保证同步的顺序，请确保不同数据类的表结构一致。
-
 ## {{ $.annotation("Column") }}列名
 
 用于指定数据表的列名，该注解的生效优先级高于{{

@@ -95,9 +95,9 @@ interface Column {
               </ng-template>
               @if (i == index) {
                 <div class="flex w-full" style="height: 288px;overflow: auto">
-                  <div class="run-column shrink-0" style="margin-top: 4px">
+                  <div class="run-column shrink-0" style="padding-top: 4px">
                     @for (index of [].constructor(command.rowNum); let j = $index; track j) {
-                      <div class="w-8 text-center" style="height: 1.4rem; line-height: 1.6rem">
+                      <div class="w-8 text-center" style="height: 19.59px; line-height: 25px">
                         @if (!!command.slice?.[j]) {
                           <span style="transform: scaleX(1.5)" [pTooltip]="'RUN' | transloco" (click)="run(command, j)"
                                 showDelay="300"

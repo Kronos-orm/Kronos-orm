@@ -142,12 +142,6 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("AutoSync") }}Auto Sync the structure of tables
-
-Used to specify whether the data table has the auto-synchronization policy turned on, and if so, the table structure is automatically synchronized each time `Kronos.init` is used.
-
-If different data classes of the same table use the `@AutoSync` annotation at the same time, Kronos does not guarantee the order of synchronization, make sure that the table structure of the different data classes is consistent.
-
 ## {{ $.annotation("Column") }}Column name
 
 Used to specify the column names of a data table, this annotation takes precedence over the {{

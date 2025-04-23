@@ -24,6 +24,7 @@
   `fun transact(wrapper: KronosDataSourceWrapper? = null, block: () -> Any?)` ([#94](https://github.com/Kronos-orm/Kronos-orm/pull/95))
 - 💪Added cache support for insert statements, 20% performance improvement, see kronos-benchmark for detailed performance
   data ([#100](https://github.com/Kronos-orm/Kronos-orm/pull/100))
+- Add `scale` property for `Field`, which is used to specify the scale of the decimal type, and refactor default mapping from kotlin type to Column type, change `java.math.BigDecimal` -> `decimal`(from `NUMERIC`), `kotlin.ByteArray` -> `BLOB`(from `BINARY`) ([#106](https://github.com/Kronos-orm/Kronos-orm/pull/106))
 
 > **Note**
 > The current version is in the development stage and does not guarantee backward compatibility.

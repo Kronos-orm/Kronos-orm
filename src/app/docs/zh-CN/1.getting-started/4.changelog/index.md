@@ -20,8 +20,8 @@
 - 💪优化实例化性能，取消转换时使用`map`作为中间变量（[#94](https://github.com/Kronos-orm/Kronos-orm/pull/92)）。
 - 💪添加默认数据源的事务创建函数
   `fun transact(wrapper: KronosDataSourceWrapper? = null, block: () -> Any?)`（[#94](https://github.com/Kronos-orm/Kronos-orm/pull/95)）
--
-💪为insert语句添加缓存支持，性能提升20%，详细性能数据请查看kronos-benchmark（[#100](https://github.com/Kronos-orm/Kronos-orm/pull/100)）
+-💪为insert语句添加缓存支持，性能提升20%，详细性能数据请查看kronos-benchmark（[#100](https://github.com/Kronos-orm/Kronos-orm/pull/100)）
+- 为 `Field` 添加 `scale` 属性，用于指定小数类型的精度，并重构从 kotlin 类型到 Column 类型的默认映射，将 `java.math.BigDecimal` 更改为 `decimal`（原为 `NUMERIC`），将 `kotlin.ByteArray` 更改为 `BLOB`（原为`BINARY`） ([#106](https://github.com/Kronos-orm/Kronos-orm/pull/106))
 
 > **Note**
 > 当前版本为开发阶段，不保证向后兼容性。

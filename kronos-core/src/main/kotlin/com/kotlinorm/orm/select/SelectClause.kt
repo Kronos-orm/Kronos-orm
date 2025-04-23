@@ -362,20 +362,24 @@ class SelectClause<T : KPojo>(
 
 
     fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+        limit(1)
         return this.build().queryMap(wrapper)
     }
 
     fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+        limit(1)
         return this.build().queryMapOrNull(wrapper)
     }
 
     inline fun <reified T> queryOne(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): T {
+        limit(1)
         return this.build().queryOne(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObject")
     @Suppress("UNCHECKED_CAST")
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T {
+        limit(1)
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
@@ -388,12 +392,14 @@ class SelectClause<T : KPojo>(
     }
 
     inline fun <reified T> queryOneOrNull(wrapper: KronosDataSourceWrapper? = null, isKPojo: Boolean = false, superTypes: List<String> = listOf()): T? {
+        limit(1)
         return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObjectOrNull")
     @Suppress("UNCHECKED_CAST")
     fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        limit(1)
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(

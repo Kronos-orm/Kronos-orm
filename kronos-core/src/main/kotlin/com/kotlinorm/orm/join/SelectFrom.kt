@@ -511,10 +511,12 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     }
 
     fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+        limit(1)
         return this.build().queryMap(wrapper)
     }
 
     fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+        limit(1)
         return this.build().queryMapOrNull(wrapper)
     }
 
@@ -523,12 +525,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
     ): T {
+        limit(1)
         return this.build().queryOne(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObject")
     @Suppress("UNCHECKED_CAST")
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T1 {
+        limit(1)
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
@@ -546,12 +550,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
     ): T? {
+        limit(1)
         return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
     }
 
     @JvmName("queryForObjectOrNull")
     @Suppress("UNCHECKED_CAST")
     fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T1? {
+        limit(1)
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(

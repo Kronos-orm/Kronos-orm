@@ -350,7 +350,6 @@ object NamedParameterUtils {
                 actualSql.append('?')
             }
             lastIndex = endIndex
-            parsedSql.unnamedParameterCount --
         }
         actualSql.append(originalSql, lastIndex, originalSql.length)
         return actualSql.toString()

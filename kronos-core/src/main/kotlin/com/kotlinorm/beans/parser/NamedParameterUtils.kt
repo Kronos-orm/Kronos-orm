@@ -75,9 +75,19 @@ object NamedParameterUtils {
      * @return the parsed statement, represented as com.kotlinorm.beans.parser.ParsedSql instance
      */
     fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = mapOf()): ParsedSql {
-        if(namedSqlCache[sql] != null) {
-            return namedSqlCache[sql]!!.apply {
-                this.paramMap = paramMap
+        val original = namedSqlCache[sql]
+        if (original != null) {
+            return ParsedSql(
+                sql,
+                paramMap,
+                original.parameterNames,
+                original.parameterIndexes,
+                original.namedParameterCount,
+                original.unnamedParameterCount,
+                original.totalParameterCount,
+                original.jdbcSql
+            ).apply {
+                jdbcParamList = buildValueArray(this, paramMap)
             }
         }
         val namedParameters: MutableSet<String> = HashSet()
@@ -193,6 +203,8 @@ object NamedParameterUtils {
         parsedSql.namedParameterCount = namedParameterCount
         parsedSql.unnamedParameterCount = unnamedParameterCount
         parsedSql.totalParameterCount = totalParameterCount
+        parsedSql.jdbcSql = substituteNamedParameters(parsedSql)
+        parsedSql.jdbcParamList = buildValueArray(parsedSql, paramMap)
         namedSqlCache[sql] = parsedSql
 
         return parsedSql

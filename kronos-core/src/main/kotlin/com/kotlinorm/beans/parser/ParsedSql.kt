@@ -26,18 +26,18 @@ import com.kotlinorm.beans.parser.NamedParameterUtils.substituteNamedParameters
  *
  * All rights reserved.
  */
-class ParsedSql(var originalSql: String = "", var paramMap: Map<String, Any?> = mapOf()) {
-
-    val parameterNames: MutableList<String> = ArrayList()
-
-    val parameterIndexes: MutableList<IntArray> = ArrayList()
-
-    var namedParameterCount = 0
-
-    var unnamedParameterCount = 0
-
-    var totalParameterCount = 0
-
+class ParsedSql(
+    var originalSql: String = "", var paramMap: Map<String, Any?> = mapOf(),
+    var parameterNames: MutableList<String> = ArrayList(),
+    var parameterIndexes: MutableList<IntArray> = ArrayList(),
+    var namedParameterCount: Int = 0,
+    var unnamedParameterCount: Int = 0,
+    var totalParameterCount: Int = 0,
+    var jdbcSql: String = ""
+) {
+    val jdbcParamList by lazy {
+        buildValueArray(this, paramMap)
+    }
     /**
      * Add a named parameter parsed from this SQL statement.
      * @param parameterName the name of the parameter
@@ -55,9 +55,6 @@ class ParsedSql(var originalSql: String = "", var paramMap: Map<String, Any?> = 
     override fun toString(): String {
         return originalSql
     }
-
-    val jdbcSql by lazy { substituteNamedParameters(this) }
-    val jdbcParamList by lazy { buildValueArray(this, paramMap) }
 
     operator fun component1(): String {
         return jdbcSql

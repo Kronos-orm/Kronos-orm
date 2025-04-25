@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.parser
 
+import com.kotlinorm.cache.namedSqlCache
 import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.exceptions.InvalidParameterException
 import com.kotlinorm.interfaces.KPojo
@@ -74,6 +75,19 @@ object NamedParameterUtils {
      * @return the parsed statement, represented as com.kotlinorm.beans.parser.ParsedSql instance
      */
     fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = mapOf()): ParsedSql {
+        val original = namedSqlCache[sql]
+        if (original != null) {
+            return ParsedSql(
+                sql,
+                paramMap,
+                original.parameterNames,
+                original.parameterIndexes,
+                original.namedParameterCount,
+                original.unnamedParameterCount,
+                original.totalParameterCount,
+                original.jdbcSql
+            )
+        }
         val namedParameters: MutableSet<String> = HashSet()
         val sqlToUse = StringBuilder(sql)
         val parameterList: MutableList<ParameterHolder> = ArrayList()
@@ -187,6 +201,9 @@ object NamedParameterUtils {
         parsedSql.namedParameterCount = namedParameterCount
         parsedSql.unnamedParameterCount = unnamedParameterCount
         parsedSql.totalParameterCount = totalParameterCount
+        parsedSql.jdbcSql = substituteNamedParameters(parsedSql)
+        namedSqlCache[sql] = parsedSql
+
         return parsedSql
     }
 
@@ -270,7 +287,7 @@ object NamedParameterUtils {
     }
 
 
-    private class ParameterHolder(val parameterName: String, val startIndex: Int, val endIndex: Int)
+    internal class ParameterHolder(val parameterName: String, val startIndex: Int, val endIndex: Int)
 
     /**
      * Parse the SQL statement and locate any placeholders or named parameters. Named

@@ -107,6 +107,7 @@ class EnumValueTransformTest {
 
     @Test
     fun testEnumTransformGeneral() {
+        TransformerManager.unregisterValueTransformer(TestEnumTransformer())
         TransformerManager.registerValueTransformer(GeneralJvmEnumTransformer())
         val map = mapOf(
             "id" to 1,

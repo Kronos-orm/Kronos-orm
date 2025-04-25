@@ -34,6 +34,10 @@ object TransformerManager {
         registeredValueTransformers.add(0, transformer)
     }
 
+    fun unregisterValueTransformer(transformer: ValueTransformer) {
+        registeredValueTransformers.remove(transformer)
+    }
+
     fun getValueTransformed(
         targetKotlinType: String,
         value: Any,

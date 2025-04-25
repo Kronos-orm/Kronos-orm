@@ -1,7 +1,6 @@
 package com.kotlinorm.cache
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.parser.NamedParameterUtils.ParameterHolder
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.LRUCache

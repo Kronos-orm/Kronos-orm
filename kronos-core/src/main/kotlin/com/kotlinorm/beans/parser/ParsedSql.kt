@@ -35,7 +35,9 @@ class ParsedSql(
     var totalParameterCount: Int = 0,
     var jdbcSql: String = ""
 ) {
-    var jdbcParamList: Array<Any?> = arrayOf()
+    val jdbcParamList by lazy {
+        buildValueArray(this, paramMap)
+    }
     /**
      * Add a named parameter parsed from this SQL statement.
      * @param parameterName the name of the parameter

@@ -86,9 +86,7 @@ object NamedParameterUtils {
                 original.unnamedParameterCount,
                 original.totalParameterCount,
                 original.jdbcSql
-            ).apply {
-                jdbcParamList = buildValueArray(this, paramMap)
-            }
+            )
         }
         val namedParameters: MutableSet<String> = HashSet()
         val sqlToUse = StringBuilder(sql)
@@ -204,7 +202,6 @@ object NamedParameterUtils {
         parsedSql.unnamedParameterCount = unnamedParameterCount
         parsedSql.totalParameterCount = totalParameterCount
         parsedSql.jdbcSql = substituteNamedParameters(parsedSql)
-        parsedSql.jdbcParamList = buildValueArray(parsedSql, paramMap)
         namedSqlCache[sql] = parsedSql
 
         return parsedSql
@@ -353,7 +350,6 @@ object NamedParameterUtils {
                 actualSql.append('?')
             }
             lastIndex = endIndex
-            parsedSql.unnamedParameterCount --
         }
         actualSql.append(originalSql, lastIndex, originalSql.length)
         return actualSql.toString()

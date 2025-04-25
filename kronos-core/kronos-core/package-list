@@ -297,7 +297,7 @@ $dokka.location:com.kotlinorm.beans.parser/NoneDataSourceWrapper/update/#com.kot
 $dokka.location:com.kotlinorm.beans.parser/NoneDataSourceWrapper/url/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-none-data-source-wrapper/url.html
 $dokka.location:com.kotlinorm.beans.parser/NoneDataSourceWrapper/userName/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-none-data-source-wrapper/user-name.html
 $dokka.location:com.kotlinorm.beans.parser/ParsedSql///PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-parsed-sql/index.html
-$dokka.location:com.kotlinorm.beans.parser/ParsedSql/ParsedSql/#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-parsed-sql/-parsed-sql.html
+$dokka.location:com.kotlinorm.beans.parser/ParsedSql/ParsedSql/#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.Any?]#kotlin.collections.MutableList[kotlin.String]#kotlin.collections.MutableList[kotlin.IntArray]#kotlin.Int#kotlin.Int#kotlin.Int#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-parsed-sql/-parsed-sql.html
 $dokka.location:com.kotlinorm.beans.parser/ParsedSql/addNamedParameter/#kotlin.String#kotlin.Int#kotlin.Int/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-parsed-sql/add-named-parameter.html
 $dokka.location:com.kotlinorm.beans.parser/ParsedSql/component1/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-parsed-sql/component1.html
 $dokka.location:com.kotlinorm.beans.parser/ParsedSql/component2/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.parser/-parsed-sql/component2.html
@@ -394,9 +394,11 @@ $dokka.location:com.kotlinorm.beans.transformers/ToStringTransformer/transform/#
 $dokka.location:com.kotlinorm.beans.transformers/TransformerManager///PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/index.html
 $dokka.location:com.kotlinorm.beans.transformers/TransformerManager/getValueTransformed/#kotlin.String#kotlin.Any#kotlin.collections.List[kotlin.String]#kotlin.String?#kotlin.reflect.KClass[*]/PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/get-value-transformed.html
 $dokka.location:com.kotlinorm.beans.transformers/TransformerManager/registerValueTransformer/#com.kotlinorm.interfaces.ValueTransformer/PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/register-value-transformer.html
+$dokka.location:com.kotlinorm.beans.transformers/TransformerManager/unregisterValueTransformer/#com.kotlinorm.interfaces.ValueTransformer/PointingToDeclaration/kronos-core/com.kotlinorm.beans.transformers/-transformer-manager/unregister-value-transformer.html
 $dokka.location:com.kotlinorm.cache////PointingToDeclaration/kronos-core/com.kotlinorm.cache/index.html
 $dokka.location:com.kotlinorm.cache//fieldsMapCache/#/PointingToDeclaration/kronos-core/com.kotlinorm.cache/fields-map-cache.html
 $dokka.location:com.kotlinorm.cache//insertSqlCache/#/PointingToDeclaration/kronos-core/com.kotlinorm.cache/insert-sql-cache.html
+$dokka.location:com.kotlinorm.cache//namedSqlCache/#/PointingToDeclaration/kronos-core/com.kotlinorm.cache/named-sql-cache.html
 $dokka.location:com.kotlinorm.database.mssql////PointingToDeclaration/kronos-core/com.kotlinorm.database.mssql/index.html
 $dokka.location:com.kotlinorm.database.mssql/MssqlSupport///PointingToDeclaration/kronos-core/com.kotlinorm.database.mssql/-mssql-support/index.html
 $dokka.location:com.kotlinorm.database.mssql/MssqlSupport/getColumnCreateSql/#com.kotlinorm.enums.DBType#com.kotlinorm.beans.dsl.Field/PointingToDeclaration/kronos-core/com.kotlinorm.database.mssql/-mssql-support/get-column-create-sql.html

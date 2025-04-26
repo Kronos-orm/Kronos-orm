@@ -191,14 +191,15 @@ class BasicWrapperTest {
         Kronos.init {
             strictSetValue = true
         }
-        assertFailsWith<ClassCastException> {
+        val result1 =
             wrapper.forObject(
                 KronosAtomicQueryTask("select * from tb_user where id = 1"),
                 MysqlUser::class,
                 true,
                 listOf()
             )
-        }
+        assertEquals(MysqlUser(1, "test", 1, 1, deleted = false), result1)
+
         Kronos.init {
             strictSetValue = false
         }

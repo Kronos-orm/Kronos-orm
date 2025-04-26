@@ -82,6 +82,7 @@ class EnumValueTransformTest {
     @Test
     fun testEnumTransformSpecial() {
         TransformerManager.registerValueTransformer(TestEnumTransformer())
+        Kronos.strictSetValue = false
         val map = mapOf(
             "id" to 1,
             "name" to "test",
@@ -109,6 +110,7 @@ class EnumValueTransformTest {
     fun testEnumTransformGeneral() {
         TransformerManager.unregisterValueTransformer(TestEnumTransformer())
         TransformerManager.registerValueTransformer(GeneralJvmEnumTransformer())
+        Kronos.strictSetValue = false
         val map = mapOf(
             "id" to 1,
             "name" to "test",

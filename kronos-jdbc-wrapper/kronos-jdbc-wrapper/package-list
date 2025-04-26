@@ -13,7 +13,6 @@ $dokka.location:com.kotlinorm/KronosBasicWrapper/forList/#com.kotlinorm.interfac
 $dokka.location:com.kotlinorm/KronosBasicWrapper/forList/#com.kotlinorm.interfaces.KAtomicQueryTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-list.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/forMap/#com.kotlinorm.interfaces.KAtomicQueryTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-map.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/forObject/#com.kotlinorm.interfaces.KAtomicQueryTask#kotlin.reflect.KClass[*]#kotlin.Boolean#kotlin.collections.List[kotlin.String]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/for-object.html
-$dokka.location:com.kotlinorm/KronosBasicWrapper/transact/#kotlin.Function0[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/transact.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/transact/#kotlin.Function0[kotlin.Any?]/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/transact.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/update/#com.kotlinorm.interfaces.KAtomicActionTask/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/update.html
 $dokka.location:com.kotlinorm/KronosBasicWrapper/url/#/PointingToDeclaration/kronos-jdbc-wrapper/com.kotlinorm/-kronos-basic-wrapper/url.html

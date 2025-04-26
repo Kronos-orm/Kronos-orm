@@ -372,8 +372,16 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
             (1..metaData.columnCount).forEach { i ->
                 val label = metaData.getColumnLabel(i)
                 columns[label]?.let { field ->
-                    this[label] = if (strictSetValue) getObject(i)
-                    else getTypeSafeValue(field.kClass!!.qualifiedName!!, getObject(i), field.superTypes)
+                    try {
+                        this[label] = if (strictSetValue) getObject(i, field.kClass!!.java)
+                        else getTypeSafeValue(
+                            field.kClass!!.qualifiedName!!,
+                            getObject(i),
+                            field.superTypes
+                        )
+                    } catch (_: NullPointerException) {
+                        this[label] = null
+                    }
                 }
             }
         }

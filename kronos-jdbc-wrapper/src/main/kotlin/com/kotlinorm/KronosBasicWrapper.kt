@@ -41,19 +41,15 @@ import kotlin.reflect.KClass
  * @author: OUSC
  **/
 class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
-    private val _metaUrl: String
-    private val _userName: String
-    private val _metaDbType: DBType
-
-    override val url: String get() = _metaUrl
-    override val userName: String get() = _userName
-    override val dbType: DBType get() = _metaDbType
+    override val url: String
+    override val userName: String
+    override val dbType: DBType
 
     init {
         dataSource.connection.use { conn ->
-            _metaUrl = conn.metaData.url
-            _metaDbType = DBType.fromName(conn.metaData.databaseProductName)
-            _userName = conn.metaData.userName ?: ""
+            url = conn.metaData.url
+            dbType = DBType.fromName(conn.metaData.databaseProductName)
+            userName = conn.metaData.userName ?: ""
         }
     }
 

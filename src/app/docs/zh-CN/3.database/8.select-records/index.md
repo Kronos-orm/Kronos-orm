@@ -1,7 +1,7 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 查询所有记录
+## {{ $.title("select") }}查询记录
 
 在Kronos中，我们可以使用`KPojo.select()`方法用于查询数据库中的记录。
 
@@ -38,14 +38,14 @@ FROM "user"
 
 `select`方法用于指定查询字段，此时Kronos会根据`select`方法设置的字段生成查询字段语句。
 
-可以传入字符串作为查询字段，使用`+`连接多个字段，`as`方法用于设置字段别名。
+Kronos支持直接传入字符串作为查询字段。
 
-可以使用`+`连接多个查询字段。
+使用`+`连接多个字段，`as_`方法用于设置字段别名。
 
 ```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-5}
 val listOfUser: List<User> = User()
     .select {
-        it.id + it.name.`as`("username") + "count(*) as total" + "1"
+        it.id + it.name.as_("username") + "count(*) as total" + "1"
     }
     .queryList()
 ```
@@ -118,7 +118,7 @@ FROM "user"
 当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成查询条件语句。
 
 > **Warning**
-> 当KPojo对象的字段值为`null`时，该字段不会生成查询条件，若需要查询字段值为`null`的记录，请使用`where`方法指定。
+> 当KPojo对象的字段值为`null`时，该字段不会生成查询条件，若需要查询字段值为`null`的记录，请使用`where { it.prop.isNull }`方法指定。
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {1,3}
 val user: User = User(name = "Kronos")
@@ -469,7 +469,7 @@ WHERE id = :id
 
 使用`asc`方法设置升序排序，使用`desc`方法设置降序排序。
 
-当不设置排序方法时，默认为升序排序，如：`orderBy { it.id }`。
+当不设置排序方法时，默认为升序排序，如：`orderBy { it.id }`等同于`orderBy { it.id.asc() }`
 
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()
@@ -736,9 +736,12 @@ FROM [user_database].[user]
 #不支持Oracle跨库查询功能因为Oracle进行跨库查询需要配置dblink并以此为基础进行查询
 ```
 
-## {{ $.title("single") }}查询单条记录
+## {{ $.title("single") }}查询单条记录(已不推荐使用)
 
 `single`方法实际上是`limit(1)`的简写，用于查询单条记录。
+
+建议直接使用`queryOne`、`queryOneOrNull`、`queryMap`、`queryMapOrNull`等方法来查询单条记录，
+我们已经会自动为您添加`limit(1)`语句。
 
 ```kotlin group="Case 9" name="kotlin" icon="kotlin" {1}
 val user: User = User().select().single().queryOne()
@@ -790,7 +793,7 @@ val listOfUser: List<Map<String, Any>> = User().select().query()
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryList使用kronos-compiler-plugin实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryList使用kronos-compiler-plugin实现无反射泛型实例化，详见：KPojo的动态实例化、KPojo属性动态存取器(编译期生成)。
 
 ```kotlin group="Case 11" name="demo" icon="kotlin" {1,3,5}
 val listOfUser: List<User> = User().select().queryList()
@@ -827,7 +830,7 @@ val user: Map<String, Any>? = User().select().queryMapOrNull()
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryOne使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryOne使用kronos-compiler-plugin实现无反射泛型实例化，详见：KPojo的动态实例化、KPojo属性动态存取器(编译期生成)。
 
 ```kotlin group="Case 13" name="demo" icon="kotlin" {1}
 val user: User = User().select().queryOne()
@@ -844,13 +847,19 @@ val user: User = User().select().queryOne()
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryOneOrNull使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryOneOrNull使用kronos-compiler-plugin实现无反射泛型实例化，详见：KPojo的动态实例化、KPojo属性动态存取器(编译期生成)。
 
 ```kotlin group="Case 14" name="demo" icon="kotlin" {1}
 val user: User? = User().select().queryOneOrNull()
 ```
 
 ## 级联查询
+
+级联查询是通过分步骤、逐级关联的方式从多个数据源或表中获取关联数据的过程，通常需要多次查询，后续查询依赖前一次的结果。
+
+级联查询和连表查询是不同的：
+- 级联查询是分步执行多个独立查询（如先查主表数据，再用结果查关联子表），适合松散关联或跨数据源的场景；
+- 连表查询通过单次查询直接关联多表数据，依赖数据库的关联能力，效率更高，但需表结构紧密关联，适合严格关联的场景。
 
 请参考{{$.keyword("advanced/cascade-query", ["进阶用法","级联查询"])}}。
 

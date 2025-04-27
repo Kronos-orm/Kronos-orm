@@ -3,9 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * English Documentation is not available yet.
  * This chapter describes how to select records from the database.
- * @status:warning WIP
+ * @status:success UPDATED
  */
 const SelectRecordsPage: NgDocPage = {
     title: `Select Records`,

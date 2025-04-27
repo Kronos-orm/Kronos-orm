@@ -38,7 +38,7 @@ val users: List<User> =
     }.query()
 ```
 
-## 指定连接数据表的数据库（跨库连表查询）
+## {{ $.title("db") }}指定连接数据表的数据库（跨库连表查询）
 
 在Kronos中，我们可以使用`db`方法指定查询字段。
 
@@ -57,13 +57,13 @@ val users: List<User> =
 
 在Kronos中，我们可以使用`select`方法指定查询字段，多个字段之间使用`+`连接。
 
-可以使用``as``为字段指定别名，如```select { user.id + user.name.`as`("userName") + userInfo.age }```。
+可以使用`as_`为字段指定别名，如```select { user.id + user.name.as_("userName") + userInfo.age }```。
 
 如需要查询某张表的所有字段，可以使用`select { user }`、`select { user + userInfo + userTeam.teamId }`。
 
 不指定查询字段时，默认查询所有字段，我们会对不同表相同字段进行重新命名，以避免字段冲突。
 
-可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".as("count") }```。
+可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".as_("count") }```。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -209,7 +209,7 @@ val users: List<User> =
 `withTotal`方法用于查询带有总记录数的分页查询。
 
 > **Warning**
-> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请务必使用withTotal方法</a>。
+> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请务必使用`withTotal`方法。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val (total, list) =
@@ -243,7 +243,7 @@ val users: List<User> =
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryList使用kronos-compiler-plugin实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryList使用kronos-compiler-plugin实现无反射泛型实例化，详见：KPojo的动态实例化、KPojo属性动态存取器(编译期生成)。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -256,12 +256,6 @@ val users: List<User> =
 ## {{ $.title("queryMap") }}查询单条记录Map
 
 `queryMap`方法用于查询单条记录并返回Map，当查询结果为空时，抛出异常。
-
-当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOne<Int>()`。
-
-查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOne<User>()`。
-
-当未设置泛型参数时，Kronos会根据查询结果自动转换为主表的类型。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: Map<String, Any> =
@@ -296,7 +290,7 @@ val user: Map<String, Any>? =
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryOne使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryOne使用kronos-compiler-plugin实现无反射泛型实例化，详见：KPojo的动态实例化、KPojo属性动态存取器(编译期生成)。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: User =
@@ -318,7 +312,7 @@ val user: User =
 当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
 
 > **Note**
-> queryOneOrNull使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryOneOrNull使用kronos-compiler-plugin实现无反射泛型实例化，详见：KPojo的动态实例化、KPojo属性动态存取器(编译期生成)。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: User? =

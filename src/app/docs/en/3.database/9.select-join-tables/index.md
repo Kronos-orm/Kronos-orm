@@ -1,11 +1,9 @@
-{% import "../../../macros/macros-zh-CN.njk" as $ %}
+{% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-This chapter describes how to query multiple tables for correlated data (perhaps you'd also like to take a look at {{ $.keyword("advanced/reference-select", ["cascade query"]) }}).
+## Query from multiple tables
 
-## 查询多表关联数据
-
-在Kronos中，我们可以使用`KPojo.join(KPojo1, KPojo2, ...)`方法来查询多表关联数据。
+In Kronos, we can use `KPojo.join(KPojo1, KPojo2, ...) `The method is to query the associated data of multiple tables.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -15,9 +13,9 @@ val users: List<User> =
     }.query()
 ```
 
-## 指定连接条件及连接方式
+## Specify the join condition and join type
 
-在Kronos中，我们默认使用`left join`连接多表，如果不需要指定连接方式，可以使用`on`方法指定连接条件。
+In Kronos, we use `left join` to connect multiple tables by default. If you don't need to specify the connection method, you can use the `on` method to specify the connection conditions.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -27,7 +25,7 @@ val users: List<User> =
     }.query()
 ```
 
-可以通过`leftJoin`、`rightJoin`、`innerJoin`、`crossJoin`、`fullJoin`等函数同时指定连接方式和连接条件。
+You can specify both the join method and the join condition with the `leftJoin`, `rightJoin`, `innerJoin`, `crossJoin`, and `fullJoin` functions.
 
 ```kotlin name="demo" icon="kotlin" {2-6}
 val users: List<User> =
@@ -38,11 +36,11 @@ val users: List<User> =
     }.query()
 ```
 
-## 指定连接数据表的数据库（跨库连表查询）
+## {{ $.title("db") }}Specify the database name(cross-database join)
 
-在Kronos中，我们可以使用`db`方法指定查询字段。
+In Kronos, we can use the `db` method to specify the database name.
 
-将一张或多张表与其所处的数据库名组合通过一个或多个`Pair`类作为参数传入该方法进行跨库连表查询
+Combine one or more tables with their respective database names and pass them as parameters to the method using one or more `Pair` classes for cross-database joint queries.
 
 ```kotlin name="demo" icon="kotlin" {4}
 val users: List<User> =
@@ -53,17 +51,17 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("select") }}指定查询字段
+## {{ $.title("select") }}Specify the query fields
 
-在Kronos中，我们可以使用`select`方法指定查询字段，多个字段之间使用`+`连接。
+In Kronos, we can specify query fields using the `select` method, with `+` joins between multiple fields.
 
-可以使用``as``为字段指定别名，如```select { user.id + user.name.`as`("userName") + userInfo.age }```。
+You can use `as_` to specify aliases for the field, such as `select { user.id + user.name.as_("userName") + userInfo.age }`.
 
-如需要查询某张表的所有字段，可以使用`select { user }`、`select { user + userInfo + userTeam.teamId }`。
+If you need to query all fields of a table, you can use `select { user }`, `select { user + userInfo + userTeam.teamId }`.
 
-不指定查询字段时，默认查询所有字段，我们会对不同表相同字段进行重新命名，以避免字段冲突。
+When you don't specify query fields, all fields are queried by default. We will rename the same fields in different tables to avoid field conflicts.
 
-可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".as("count") }```。
+Strings can be used as custom query fields, such as `select { "count(`user.id`)".as_("count") }`.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -73,9 +71,9 @@ val users: List<User> =
     }.queryList()
 ```
 
-### 查询全部字段、排除部分列
+### Query all fields or exclude some columns
 
-可以传入`KPojo`查询全部列，并使用`+`、`-`在全部列基础上增加减去部分列。
+You can pass `KPojo` to query all columns, and use `+`, `-` to add and subtract some columns from all columns.
 
 ```kotlin name="kotlin" icon="kotlin" {6}
 val users: List<User> =
@@ -86,9 +84,9 @@ val users: List<User> =
         .query()
 ```
 
-## {{ $.title("by") }}指定查询条件
+## {{ $.title("by") }}Specifying Query Fields
 
-在Kronos中，我们可以使用`by`方法指定查询字段，多个字段之间使用`+`连接。
+In Kronos, we can use `by` method to specify the query fields, with `+` joins between multiple fields.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -98,9 +96,9 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("where") }}指定查询条件
+## {{ $.title("where") }}Specify the query conditions
 
-在Kronos中，我们可以使用`where`方法指定查询{{ $.keyword("concept/where-having-on-clause", ["Criteria条件语句"]) }}。
+In Kronos, we can use the `where` method to specify the query {{ $.keyword("concept/where-having-on-clause", ["Criteria conditional statement"]) }}.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -111,7 +109,7 @@ val users: List<User> =
     }.query()
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件：
+The `.eq` function can be executed on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:
 
 ```kotlin name="demo" name="kotlin" icon="kotlin" {6}
 val users: List<User> =
@@ -122,7 +120,7 @@ val users: List<User> =
     }.query()
 ```
 
-Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+Kronos supports the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
 
 ```kotlin name="demo" name="kotlin" icon="kotlin" {6}
 val users: List<User> =
@@ -133,9 +131,9 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("patch") }}为自定义查询条件添加参数
+## {{ $.title("patch") }}Add parameters to custom query conditions
 
-在Kronos中，我们可以使用`patch`方法为自定义查询条件添加参数。
+In Kronos, we can use the `patch` method to add parameters to a custom query condition.
 
 ```kotlin name="demo" icon="kotlin" {2-7}
 val users: List<User> =
@@ -147,9 +145,9 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("groupBy") }}、{{ $.title("having") }}设置分组和聚合条件
+## {{ $.title("groupBy") }}、{{ $.title("having") }}Set grouping and aggregation conditions
 
-在Kronos中，我们可以使用`groupBy`方法指定分组字段。
+In Kronos, we can specify grouping fields using the `groupBy` method and specify aggregation conditions using the `having` method.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -161,9 +159,9 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("orderBy") }}设置排序条件
+## {{ $.title("orderBy") }}Set sorting conditions
 
-在Kronos中，我们可以使用`orderBy`方法指定排序字段。
+In Kronos, we can specify sorting conditions using the `orderBy` method.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -174,9 +172,9 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("limit") }}指定查询数量
+## {{ $.title("limit") }}Specify the maximum number of records to query
 
-在Kronos中，我们可以使用`limit`方法指定查询数量。
+In Kronos, we can specify the maximum number of records to query using the `limit` method.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -187,9 +185,9 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("distinct") }}指定查询去重
+## {{ $.title("distinct") }}Specify query deduplication
 
-在Kronos中，我们可以使用`distinct`方法指定查询去重。
+In Kronos, we can specify query deduplication using the `distinct` method.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -200,16 +198,16 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("page") }}、{{ $.title("withTotal") }}指定分页查询
+## {{ $.title("page") }}、{{ $.title("withTotal") }}Query paging
 
-`page`方法用于设置分页查询，请注意，`page`方法的参数从1开始。
+The `page` method is used to specify paging queries, please note that the `page` method parameter starts from 1.
 
-在不同的数据库中，分页查询的语法有所不同，Kronos会根据不同的数据库生成相应的分页查询语句。
+In different databases, paging queries have different syntaxes, Kronos generates paging queries based on different databases.
 
-`withTotal`方法用于查询带有总记录数的分页查询。
+The `withTotal` method is used to query paging queries with total record counts.
 
 > **Warning**
-> 使用`page`方法后，查询的结果默认**不会**包含总记录数，若需要查询总记录数，请务必使用withTotal方法</a>。
+> After using the `page` method, the result of the query **will not** include the total number of records by default, if you need to query the total number of records, be sure to use the `withTotal` method.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val (total, list) =
@@ -220,9 +218,9 @@ val (total, list) =
     }.withTotal().query()
 ```
 
-## {{ $.title("query") }}查询Map列表
+## {{ $.title("query") }}Query map list
 
-`query`方法用于执行查询并返回Map列表。
+The `query` method is used to execute queries and return map list.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -232,18 +230,18 @@ val users: List<User> =
     }.query()
 ```
 
-## {{ $.title("queryList") }}查询指定类型列表
+## {{ $.title("queryList") }}Query specified type list
 
-`queryList`方法用于执行查询并返回指定类型列表，可以接收泛型参数。
+The `queryList` method is used to execute queries and return specified type list, can receive generic parameters.
 
-当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryList<Int>()`。
+When querying a single column, you can directly set the generic parameter to the column type, for example: `queryList<Int>()`.
 
-查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryList<User>()`。
+Query multiple columns, you can set the generic parameter to the KPojo subclass, for example: `queryList<User>()`.
 
-当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
+When the generic parameter is not set, Kronos will automatically convert the query result to the type of the main table.
 
 > **Note**
-> queryList使用kronos-compiler-plugin实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryList uses kronos-compiler-plugin for reflectionless generic instantiation, see: Dynamic Instantiation of KPojo, Dynamic Accessor for KPojo Properties (compile-time generation).
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -253,15 +251,9 @@ val users: List<User> =
     }.queryList()
 ```
 
-## {{ $.title("queryMap") }}查询单条记录Map
+## {{ $.title("queryMap") }}Query single record Map
 
-`queryMap`方法用于查询单条记录并返回Map，当查询结果为空时，抛出异常。
-
-当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOne<Int>()`。
-
-查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOne<User>()`。
-
-当未设置泛型参数时，Kronos会根据查询结果自动转换为主表的类型。
+The `queryMap` method is used to query a single record and return Map. When the query result is empty, it throws an exception.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: Map<String, Any> =
@@ -272,7 +264,7 @@ val user: Map<String, Any> =
         }.queryMap()
 ```
 
-## {{ $.title("queryMapOrNull") }}查询单条记录Map（可空）
+## {{ $.title("queryMapOrNull") }}Query single record Map (Nullable)
 
 `queryMapOrNull`方法用于查询单条记录并返回Map，当查询结果为空时，返回`null`。
 
@@ -285,18 +277,18 @@ val user: Map<String, Any>? =
         }.queryMapOrNull()
 ```
 
-## {{ $.title("queryOne") }}查询单条记录
+## {{ $.title("queryOne") }}Query single record specified type
 
-`queryOne`方法用于执行查询并返回单条记录，当查询结果为空时，抛出异常，可以接收泛型参数。
+The `queryOne` method is used to execute queries and return a single record, when the query result is empty, it throws an exception, can receive generic parameters.
 
-当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOne<Int>()`。
+When querying a single column, you can directly set the generic parameter to the column type, for example: `queryOne<Int>()`.
 
-查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOne<User>()`。
+Query multiple columns, you can set the generic parameter to the KPojo subclass, for example: `queryOne<User>()`.
 
-当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
+When the generic parameter is not set, Kronos will automatically convert the query result to the type of the main table.
 
 > **Note**
-> queryOne使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryOne uses kronos-compiler-plugin for reflectionless generic instantiation, see: Dynamic Instantiation of KPojo, Dynamic Accessor for KPojo Properties (compile-time generation).
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: User =
@@ -307,18 +299,18 @@ val user: User =
         }.queryOne()
 ```
 
-## {{ $.title("queryOneOrNull") }}查询单条记录（可空）
+## {{ $.title("queryOneOrNull") }}Query single record specified type (Nullable)
 
-和`queryOne`方法类似，`queryOneOrNull`方法用于执行查询并返回单条记录，当查询结果为空时，返回`null`，可以接收泛型参数。
+The `queryOneOrNull` method is used to execute queries and return a single record, when the query result is empty, it returns `null`, can receive generic parameters.
 
-当查询单列时，可以直接将泛型参数设置为列的类型，例如：`queryOneOrNull<Int>()`。
+When querying a single column, you can directly set the generic parameter to the column type, for example: `queryOneOrNull<Int>()`.
 
-查询多列时，可以将泛型参数设置为KPojo的子类，例如：`queryOneOrNull<User>()`。
+Query multiple columns, you can set the generic parameter to the KPojo subclass, for example: `queryOneOrNull<User>()`.
 
-当未设置泛型参数时，Kronos会根据查询结果自动转换为查询的KPojo类型。
+When the generic parameter is not set, Kronos will automatically convert the query result to the type of the main table.
 
 > **Note**
-> queryOneOrNull使用KCP实现Map转换为KPojo，详见：KPojo与Map互相转换
+> queryOneOrNull uses kronos-compiler-plugin for reflectionless generic instantiation, see: Dynamic Instantiation of KPojo, Dynamic Accessor for KPojo Properties (compile-time generation).
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val user: User? =
@@ -328,9 +320,9 @@ val user: User? =
     }.queryOneOrNull()
 ```
 
-## 使用指定的数据源
+## Specify the data source to use
 
-在Kronos中，我们可以使用指定的数据源查询数据库中的记录。
+In Kronos, we can pass `KronosDataSourceWrapper` into the `execute` method to implement a customized database connection.
 
 ```kotlin name="demo" icon="kotlin" {1}
 val customWrapper = CustomWrapper()

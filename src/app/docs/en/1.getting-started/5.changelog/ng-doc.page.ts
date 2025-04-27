@@ -10,7 +10,7 @@ const ChangeLogPage: NgDocPage = {
     mdFile: './index.md',
     route: "changelog",
     category: GettingStartedCategory,
-    order: 4,
+    order: 5,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent}
 };

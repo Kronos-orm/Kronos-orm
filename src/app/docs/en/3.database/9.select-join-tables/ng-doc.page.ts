@@ -3,8 +3,8 @@ import DatabaseCategory from "../ng-doc.category";
 import {AnimateLogoComponent} from "../../../../components/animate-logo.component";
 
 /**
- * English Documentation is not available yet.
- * @status:warning WIP
+ * This chapter describes how to query multiple tables for correlated data (perhaps you'd also like to take a look at {{ $.keyword("advanced/reference-select", ["cascade query"]) }}).
+ * @status:success UPDATED
  */
 const SelectJoinTablesPage: NgDocPage = {
     title: `Select Join Tables`,

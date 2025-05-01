@@ -64,10 +64,6 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var logic = logicDeleteStrategy?.enabled ?: false
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
-        if (this.logicDeleteStrategy?.field == null && enabled) {
-            // 如果逻辑删除字段为空且启用逻辑删除，则抛出异常
-            throw EmptyFieldsException("Logic delete field is not set.")
-        }
         this.logic = enabled
         return this
     }

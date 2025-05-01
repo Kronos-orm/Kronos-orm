@@ -260,7 +260,7 @@ class UpdateClause<T : KPojo>(
 
         toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()
 
-        optimisticStrategy.execute { field, _ ->
+        optimisticStrategy?.execute { field, _ ->
             if (toUpdateFields.any { it.columnName == field.columnName }) {
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }

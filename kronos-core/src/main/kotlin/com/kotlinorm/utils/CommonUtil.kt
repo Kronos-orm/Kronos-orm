@@ -34,20 +34,16 @@ import kotlin.reflect.KClass
  *@create: 2024/5/7 16:01
  **/
 
-fun setCommonStrategy(
-    strategy: KronosCommonStrategy,
-    allFields: LinkedHashSet<Field>,
+fun KronosCommonStrategy.execute(
     timeStrategy: Boolean = false,
     defaultValue: Any = 0,
-    callBack: (field: Field, value: Any?) -> Unit
+    afterExecute: KronosCommonStrategy.(field: Field, value: Any?) -> Unit
 ) {
-    if (strategy.enabled && strategy.field in allFields) {
-        if (timeStrategy) {
-            val format = (strategy.field.dateFormat ?: defaultDateFormat).toString()
-            callBack(strategy.field, currentDateTime(format))
-        } else {
-            callBack(strategy.field, defaultValue)
-        }
+    if (timeStrategy) {
+        val format = field.dateFormat ?: defaultDateFormat
+        afterExecute(field, currentDateTime(format))
+    } else {
+        afterExecute(field, defaultValue)
     }
 }
 

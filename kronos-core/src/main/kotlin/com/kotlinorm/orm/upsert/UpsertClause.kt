@@ -30,7 +30,7 @@ import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PessimisticLock
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
@@ -81,7 +81,7 @@ class UpsertClause<T : KPojo>(
             pojo.afterSelect {
                 setUpsertFields!!(it)
                 if (fields.isEmpty()) {
-                    throw NeedFieldsException()
+                    throw EmptyFieldsException()
                 }
                 toUpdateFields += fields
             }
@@ -92,15 +92,15 @@ class UpsertClause<T : KPojo>(
      * Set the fields on which the update clause will be applied.
      *
      * @param someFields on which the update clause will be applied
-     * @throws NeedFieldsException if the new value is null
+     * @throws EmptyFieldsException if the new value is null
      * @return the upsert UpdateClause object
      */
     fun on(someFields: ToSelect<T, Any?>): UpsertClause<T> {
-        if (null == someFields) throw NeedFieldsException()
+        if (null == someFields) throw EmptyFieldsException()
         pojo.afterSelect {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             onFields += fields.toSet()
         }
@@ -125,12 +125,12 @@ class UpsertClause<T : KPojo>(
     }
 
     fun cascade(someFields: ToReference<T, Any?>): UpsertClause<T> {
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             cascadeAllowed = fields.toSet()
         }

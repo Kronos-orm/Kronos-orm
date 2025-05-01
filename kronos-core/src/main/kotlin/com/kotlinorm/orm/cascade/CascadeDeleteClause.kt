@@ -31,6 +31,7 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
+import kotlin.reflect.KClass
 
 /**
  * Used to build a cascade delete clause.
@@ -64,6 +65,7 @@ object CascadeDeleteClause {
     fun <T : KPojo> build(
         cascade: Boolean,
         cascadeAllowed: Set<Field>?,
+        kClass: KClass<KPojo>,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
@@ -72,6 +74,7 @@ object CascadeDeleteClause {
     ) =
         if (cascade) generateTask(
             cascadeAllowed,
+            kClass,
             pojo,
             whereClauseSql,
             paramMap,
@@ -94,6 +97,7 @@ object CascadeDeleteClause {
      * **/
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>?,
+        kClass: KClass<KPojo>,
         pojo: T,
         whereClauseSql: String?,
         paramMap: Map<String, Any?>,
@@ -103,7 +107,7 @@ object CascadeDeleteClause {
     ): KronosActionTask {
         val tableName = pojo.kronosTableName()
         val validCascades = findValidRefs( // 获取有效的引用
-            pojo::class,
+            kClass,
             columns,
             KOperationType.DELETE,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性

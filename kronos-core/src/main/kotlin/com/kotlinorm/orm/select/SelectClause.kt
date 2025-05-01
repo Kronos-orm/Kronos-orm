@@ -26,6 +26,9 @@ import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.cache.kPojoAllColumnsCache
+import com.kotlinorm.cache.kPojoAllFieldsCache
+import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.database.SqlManager.getSelectSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
@@ -35,7 +38,7 @@ import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.enums.QueryType.QueryOne
 import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.enums.SortType
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
@@ -49,17 +52,19 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.logAndReturn
-import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
 
 class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: ToSelect<T, Any?> = null
 ) : KSelectable<T>(pojo) {
+    private var kClass = pojo.kClass()
     private var tableName = pojo.kronosTableName()
     internal var paramMap = pojo.toDataMap()
-    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
-    private var allFields = pojo.kronosColumns().toLinkedSet()
+    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    private var allFields = kPojoAllFieldsCache[kClass]
+    private var allColumns = kPojoAllColumnsCache[kClass]
     internal var condition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
@@ -96,7 +101,7 @@ class SelectClause<T : KPojo>(
             pojo.afterSelect {
                 setSelectFields(it) // 设置选择的字段
                 if (fields.isEmpty()) {
-                    throw NeedFieldsException()
+                    throw EmptyFieldsException()
                 }
                 selectFields = fields.toLinkedSet() // 将字段集合转换为不可变的链接集合并赋值给selectFields
                 if (selectFields.isNotEmpty()) {
@@ -129,7 +134,7 @@ class SelectClause<T : KPojo>(
      * @return 返回 [SelectClause] 对象，允许链式调用。
      */
     fun orderBy(someFields: ToSort<T, Any?>): SelectClause<T> {
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
 
         orderEnabled = true
         pojo.afterSort {
@@ -145,16 +150,16 @@ class SelectClause<T : KPojo>(
      *
      * @param someFields 要用于分组的字段，类型为 KTableField<T, Unit>。该字段不能为空。
      * @return 返回 SelectClause<T> 实例，允许链式调用。
-     * @throws NeedFieldsException 如果 someFields 为空，则抛出此异常。
+     * @throws EmptyFieldsException 如果 someFields 为空，则抛出此异常。
      */
     fun groupBy(someFields: ToSelect<T, Any?>): SelectClause<T> {
         groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
-        if (someFields == null) throw NeedFieldsException()
+        someFields ?: throw EmptyFieldsException()
         pojo.afterSelect {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
@@ -194,12 +199,12 @@ class SelectClause<T : KPojo>(
     }
 
     fun cascade(someFields: ToReference<T, Any?>): SelectClause<T> {
-        if(someFields == null) throw NeedFieldsException()
+        someFields ?: throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             cascadeAllowed = fields.toSet()
         }
@@ -210,17 +215,17 @@ class SelectClause<T : KPojo>(
      * 根据指定的字段构建查询条件，并返回SelectClause实例。
      *
      * @param someFields KTableField类型，表示要用来构建查询条件的字段。
-     *                   不能为空，否则会抛出NeedFieldsException异常。
+     *                   不能为空，否则会抛出EmptyFieldsException异常。
      * @return 返回当前SelectClause实例，允许链式调用。
      */
     fun by(someFields: ToSelect<T, Any?>): SelectClause<T> {
         // 检查someFields是否为空，为空则抛出异常
-        if (someFields == null) throw NeedFieldsException()
+        someFields ?: throw EmptyFieldsException()
         pojo.afterSelect { t ->
             // 执行someFields中定义的查询逻辑
             someFields(t)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
@@ -237,7 +242,7 @@ class SelectClause<T : KPojo>(
      * @return [SelectClause] 的实例，代表了一个查询的选择子句。
      */
     fun where(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T> {
-        if (selectCondition == null) return this
+        selectCondition ?: return this
         pojo.afterFilter {
             criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
@@ -252,12 +257,12 @@ class SelectClause<T : KPojo>(
      * @param selectCondition 一个KTableConditionalField类型的函数参数，表示筛选的条件。该条件是一个函数，
      *                        它接收当前的参数映射表和执行条件，并设置HAVING子句的条件。
      * @return 返回SelectClause类型的实例，允许链式调用。
-     * @throws NeedFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
+     * @throws EmptyFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
      */
     fun having(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T> {
         havingEnabled = true // 标记为HAVING条件
         // 检查是否提供了条件，未提供则抛出异常
-        if (selectCondition == null) throw NeedFieldsException()
+        selectCondition ?: throw EmptyFieldsException()
         pojo.afterFilter {
             criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
@@ -293,14 +298,11 @@ class SelectClause<T : KPojo>(
      */
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
         buildCondition = condition
-        // 初始化所有字段集合
-        allFields = pojo.kronosColumns().toLinkedSet()
-
         if (selectAll) {
-            selectFields += allFields.filter { it.isColumn }
+            selectFields += allColumns
         }
 
-        val columns = allFields.filter { it.isColumn }
+        val columns = allColumns
         // 如果条件为空，则根据paramMap构建查询条件
         if (buildCondition == null) {
             buildCondition = paramMap.keys.filter {
@@ -311,9 +313,10 @@ class SelectClause<T : KPojo>(
         }
 
         // 设置逻辑删除的条件
-        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy, allFields) { _, value ->
+        logicDeleteStrategy?.execute { _, value ->
             buildCondition = listOfNotNull(
-                buildCondition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
+                buildCondition,
+                "${field.quoted(wrapper.orDefault())} = $value".asSql()
             ).toCriteria()
         }
 
@@ -325,7 +328,7 @@ class SelectClause<T : KPojo>(
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
-            cascadeEnabled, cascadeAllowed, pojo, KronosAtomicQueryTask(
+            cascadeEnabled, cascadeAllowed, pojo, kClass, KronosAtomicQueryTask(
                 sql, paramMap, operationType = KOperationType.SELECT
             ), if (selectAll) allFields else selectFields,
             operationType, cascadeSelectedProps ?: mutableSetOf()
@@ -353,7 +356,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, pojo::class, true, listOf()) as List<T>, QueryList
+                wrapper.orDefault().forList(atomicTask, kClass, true, listOf()) as List<T>, QueryList
             )
             afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
@@ -383,7 +386,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf())
+                (wrapper.orDefault().forObject(atomicTask, kClass, true, listOf())
                     ?: throw NullPointerException("No such record")) as T, QueryOne
             )
             afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
@@ -403,7 +406,7 @@ class SelectClause<T : KPojo>(
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf()) as T?, QueryOneOrNull
+                wrapper.orDefault().forObject(atomicTask, kClass, true, listOf()) as T?, QueryOneOrNull
             )
             afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
             return result
@@ -447,8 +450,8 @@ class SelectClause<T : KPojo>(
         fun <T : KPojo> Iterable<SelectClause<T>>.build(): KronosAtomicBatchTask {
             val tasks = this.map { it.build() }
             return KronosAtomicBatchTask(
-                sql = tasks.first().component1(),
-                paramMapArr = tasks.map { it.component2() }.toTypedArray(),
+                sql = tasks.first().atomicTask.sql,
+                paramMapArr = tasks.map { it.atomicTask.paramMap }.toTypedArray(),
                 operationType = KOperationType.SELECT
             )
         }

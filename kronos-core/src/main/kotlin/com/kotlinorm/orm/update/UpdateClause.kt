@@ -27,10 +27,17 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.kPojoAllColumnsCache
+import com.kotlinorm.cache.kPojoAllFieldsCache
+import com.kotlinorm.cache.kPojoCreateTimeCache
+import com.kotlinorm.cache.kPojoFieldMapCache
+import com.kotlinorm.cache.kPojoLogicDeleteCache
+import com.kotlinorm.cache.kPojoOptimisticLockCache
+import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeUpdateClause
@@ -43,7 +50,7 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -64,11 +71,13 @@ class UpdateClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
-    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
-    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
-    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
-    internal var allFields = pojo.kronosColumns().toLinkedSet()
+    private var kClass = pojo.kClass()
+    private var createTimeStrategy = kPojoCreateTimeCache[kClass]
+    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
+    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
+    internal var allFields = kPojoAllFieldsCache[kClass]
+    internal var allColumns = kPojoAllColumnsCache[kClass]
     internal var toUpdateFields = linkedSetOf<Field>()
     internal var condition: Criteria? = null
     internal var paramMapNew = mutableMapOf<Field, Any?>()
@@ -102,11 +111,11 @@ class UpdateClause<T : KPojo>(
      * Sets the new value for the update clause.
      *
      * @param newValue the new value to be set
-     * @throws NeedFieldsException if the new value is null
+     * @throws EmptyFieldsException if the new value is null
      * @return the updated UpdateClause object
      */
     fun set(newValue: ToSet<T, Unit>): UpdateClause<T> {
-        if (newValue == null) throw NeedFieldsException()
+        newValue ?: throw EmptyFieldsException()
         pojo.afterSet {
             newValue(it)
             val plusAssign = plusAssignFields
@@ -138,12 +147,12 @@ class UpdateClause<T : KPojo>(
     }
 
     fun cascade(someFields: ToReference<T, Any?>): UpdateClause<T> {
-        if(someFields == null) throw NeedFieldsException()
+        someFields ?: throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             cascadeAllowed = fields.toSet()
         }
@@ -154,15 +163,15 @@ class UpdateClause<T : KPojo>(
      * Sets the condition for the update clause based on the provided fields.
      *
      * @param someFields the fields to set the condition for
-     * @throws NeedFieldsException if the provided fields are null
+     * @throws EmptyFieldsException if the provided fields are null
      * @return the updated UpdateClause object
      */
     fun by(someFields: ToSelect<T, Any?>): UpdateClause<T> {
-        if (someFields == null) throw NeedFieldsException()
+        someFields ?: throw EmptyFieldsException()
         pojo.afterSelect {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
         }
@@ -179,7 +188,7 @@ class UpdateClause<T : KPojo>(
         if (updateCondition == null) return this
             .apply {
                 // 获取所有字段 且去除null
-                condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+                condition = allColumns.mapNotNull { field ->
                     field.eq(paramMap[field.name]).takeIf { it.value != null }
                 }.toCriteria()
             }
@@ -212,12 +221,11 @@ class UpdateClause<T : KPojo>(
      * @return The constructed KronosAtomicTask.
      */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-
         if (condition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+            condition = allFields.asSequence().filter { it.isColumn }.mapNotNull { field ->
                 field.eq(paramMap[field.name]).takeIf { it.value != null }
-            }.toCriteria()
+            }.toList().toCriteria()
         }
 
         // 如果没有指定字段需要更新，则更新所有字段
@@ -230,29 +238,29 @@ class UpdateClause<T : KPojo>(
         }
 
         // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-        setCommonStrategy(logicDeleteStrategy, allFields) { field, value ->
+        logicDeleteStrategy?.execute { field, value ->
             toUpdateFields -= field
             paramMapNew -= field + "New"
             // 构建逻辑删除的条件SQL
             condition = listOfNotNull(
-                condition, "${logicDeleteStrategy.field.quoted(wrapper.orDefault())} = $value".asSql()
+                condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
             ).toCriteria()
         }
 
-        setCommonStrategy(createTimeStrategy, allFields) { field, _ ->
+        createTimeStrategy?.apply {
             toUpdateFields -= field
             paramMapNew -= field + "New"
         }
 
         // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
-        setCommonStrategy(updateTimeStrategy, allFields, true) { field, value ->
+        updateTimeStrategy?.execute(true) { field, value ->
             toUpdateFields += field
             paramMapNew[field + "New"] = value
         }
 
         toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()
 
-        setCommonStrategy(optimisticStrategy, allFields) { field, _ ->
+        optimisticStrategy.execute { field, _ ->
             if (toUpdateFields.any { it.columnName == field.columnName }) {
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }
@@ -279,13 +287,10 @@ class UpdateClause<T : KPojo>(
         )
 
         // 合并参数映射，准备执行SQL所需的参数
-        paramMapNew.forEach { (key, value) ->
-            val field = allFields.find { it.columnName == key.columnName }
-            if (field != null && field.serializable && value != null) {
-                paramMap[key.name] = serializeProcessor.serialize(value)
-            } else {
-                paramMap[key.name] = value
-            }
+        paramMapNew.forEach { (field, value) ->
+            paramMap[field.name] = kPojoFieldMapCache[kClass][field.name]
+                ?.takeIf { it.serializable && value != null }
+                ?.let { serializeProcessor.serialize(value!!) } ?: value
         }
 
         // 返回构建好的KronosAtomicTask实例
@@ -299,6 +304,7 @@ class UpdateClause<T : KPojo>(
             cascadeEnabled,
             cascadeAllowed,
             pojo,
+            kClass,
             paramMap.toMap(),
             toUpdateFields,
             whereClauseSql,

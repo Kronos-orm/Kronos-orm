@@ -28,9 +28,8 @@ import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.serialize.NoneSerializeProcessor
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.interfaces.KronosNamingStrategy
-import com.kotlinorm.interfaces.KronosSerializeProcessor
 import com.kotlinorm.interfaces.NoValueStrategy
 import com.kotlinorm.types.KLoggerFactory
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -63,10 +62,10 @@ object Kronos {
     var strictSetValue = false
 
     // 当前时区
-    var timeZone: ZoneId = ZoneId.systemDefault()
+    var timeZone = ZoneId.systemDefault()
 
     // 序列化
-    var serializeProcessor: KronosSerializeProcessor = NoneSerializeProcessor
+    var serializeProcessor = NoneSerializeProcessor
 
     val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
 
@@ -74,24 +73,27 @@ object Kronos {
     val noneNamingStrategy by lazy { NoneNamingStrategy() }
 
     // 列名策略
-    var fieldNamingStrategy: KronosNamingStrategy = noneNamingStrategy
+    var fieldNamingStrategy = noneNamingStrategy
 
     // 表名策略
-    var tableNamingStrategy: KronosNamingStrategy = noneNamingStrategy
+    var tableNamingStrategy = noneNamingStrategy
+
+    // 主键策略
+    var primaryKeyStrategy = KronosCommonStrategy(false, Field("id", "id", primaryKey = PrimaryKeyType.IDENTITY))
 
     // 更新时间策略
-    var updateTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))
+    var updateTimeStrategy = KronosCommonStrategy(false, Field("update_time", "updateTime"))
 
     // 创建时间策略
-    var createTimeStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("create_time", "createTime"))
+    var createTimeStrategy = KronosCommonStrategy(false, Field("create_time", "createTime"))
 
     // 逻辑删除策略
-    var logicDeleteStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("deleted"))
+    var logicDeleteStrategy = KronosCommonStrategy(false, Field("deleted"))
 
-    var optimisticLockStrategy: KronosCommonStrategy = KronosCommonStrategy(false, Field("version"))
+    var optimisticLockStrategy = KronosCommonStrategy(false, Field("version"))
 
     // 默认日期格式
-    var defaultDateFormat: String = "yyyy-MM-dd HH:mm:ss"
+    var defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 
     @KronosInit
     fun init(action: Kronos.() -> Unit) {

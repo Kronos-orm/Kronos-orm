@@ -30,6 +30,8 @@ import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KronosNamingStrategy
+import com.kotlinorm.interfaces.KronosSerializeProcessor
 import com.kotlinorm.interfaces.NoValueStrategy
 import com.kotlinorm.types.KLoggerFactory
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -62,10 +64,10 @@ object Kronos {
     var strictSetValue = false
 
     // 当前时区
-    var timeZone = ZoneId.systemDefault()
+    var timeZone: ZoneId = ZoneId.systemDefault()
 
     // 序列化
-    var serializeProcessor = NoneSerializeProcessor
+    var serializeProcessor: KronosSerializeProcessor = NoneSerializeProcessor
 
     val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }
 
@@ -73,10 +75,10 @@ object Kronos {
     val noneNamingStrategy by lazy { NoneNamingStrategy() }
 
     // 列名策略
-    var fieldNamingStrategy = noneNamingStrategy
+    var fieldNamingStrategy: KronosNamingStrategy = noneNamingStrategy
 
     // 表名策略
-    var tableNamingStrategy = noneNamingStrategy
+    var tableNamingStrategy: KronosNamingStrategy = noneNamingStrategy
 
     // 主键策略
     var primaryKeyStrategy = KronosCommonStrategy(false, Field("id", "id", primaryKey = PrimaryKeyType.IDENTITY))

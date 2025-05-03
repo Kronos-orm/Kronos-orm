@@ -16,7 +16,6 @@
 
 package com.kotlinorm.orm.join
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
@@ -72,7 +71,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var paramMap: MutableMap<String, Any?>
     private var kClass = pojo.kClass()
     open var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
-    open var allFields = kPojoAllColumnsCache[pojo.kClass()]
+    open var allFields = kPojoAllColumnsCache[kClass]!!
     open lateinit var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>>
     private var condition: Criteria? = null
     private var havingCondition: Criteria? = null
@@ -611,8 +610,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
         val joinSql = " " + listOfJoinable.joinToString(" ") {
             var joinCondition = it.condition
-            val logicDeleteStrategy = it.kPojo.kronosLogicDelete().bind(it.kPojo.kronosTableName())
-            logicDeleteStrategy.execute { _, value ->
+            val logicDeleteStrategy = kPojoLogicDeleteCache[it.kClass]
+            logicDeleteStrategy?.execute { _, value ->
                 joinCondition = listOfNotNull(
                     joinCondition,
                     "${

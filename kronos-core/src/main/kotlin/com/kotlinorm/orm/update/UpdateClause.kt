@@ -61,7 +61,6 @@ import com.kotlinorm.utils.toLinkedSet
  * @param T the type of the pojo
  *
  * @property pojo the pojo for the update
- * @property isExcept whether to exclude the fields from the update
  * @param setUpdateFields the fields to update
  * @author yf, OUSC
  */
@@ -76,8 +75,8 @@ class UpdateClause<T : KPojo>(
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
     private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
-    internal var allFields = kPojoAllFieldsCache[kClass]
-    internal var allColumns = kPojoAllColumnsCache[kClass]
+    internal var allFields = kPojoAllFieldsCache[kClass]!!
+    internal var allColumns = kPojoAllColumnsCache[kClass]!!
     internal var toUpdateFields = linkedSetOf<Field>()
     internal var condition: Criteria? = null
     internal var paramMapNew = mutableMapOf<Field, Any?>()
@@ -173,7 +172,7 @@ class UpdateClause<T : KPojo>(
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
             }
-            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
+            condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
         }
         return this
     }
@@ -287,8 +286,9 @@ class UpdateClause<T : KPojo>(
         )
 
         // 合并参数映射，准备执行SQL所需的参数
+        val fieldMap = kPojoFieldMapCache[kClass]!!
         paramMapNew.forEach { (field, value) ->
-            paramMap[field.name] = kPojoFieldMapCache[kClass][field.name]
+            paramMap[field.name] = fieldMap[field.name]
                 ?.takeIf { it.serializable && value != null }
                 ?.let { serializeProcessor.serialize(value!!) } ?: value
         }

@@ -29,7 +29,6 @@ import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.insertSqlCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
-import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.cache.kPojoCreateTimeCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
@@ -54,7 +53,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
     private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
-    internal var allColumns = kPojoAllColumnsCache[kClass]
+    internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
 
     /**
@@ -85,9 +84,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         var useIdentity = false
         val paramMapNew = mutableMapOf<String, Any?>()
-        val fieldsMap = fieldsMapCache[kClass]
+        val fieldsMap = fieldsMapCache[kClass]!!
         val toInsertFields = mutableListOf<Field>()
-        val primaryKeyField = kPojoPrimaryKeyCache[kClass]
+        val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
         when (primaryKeyField.primaryKey) {
             PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
             PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
@@ -99,11 +98,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
             if (it.defaultValue != null && paramMap[it.name] == null) {
                 paramMap[it.name] = it.defaultValue
             }
-        }
-        if(useIdentity){
-            if (paramMap.containsKey(primaryKeyField.name)) {
-                toInsertFields.add(primaryKeyField)
+            if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
+                toInsertFields.add(it)
             }
+        }
+        if(useIdentity && !paramMap.containsKey(primaryKeyField.name)){
+            toInsertFields.remove(primaryKeyField)
         }
         arrayOf(
             createTimeStrategy to true,

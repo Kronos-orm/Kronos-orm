@@ -63,8 +63,8 @@ class SelectClause<T : KPojo>(
     private var tableName = pojo.kronosTableName()
     internal var paramMap = pojo.toDataMap()
     private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
-    private var allFields = kPojoAllFieldsCache[kClass]
-    private var allColumns = kPojoAllColumnsCache[kClass]
+    private var allFields = kPojoAllFieldsCache[kClass]!!
+    private var allColumns = kPojoAllColumnsCache[kClass]!!
     internal var condition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()

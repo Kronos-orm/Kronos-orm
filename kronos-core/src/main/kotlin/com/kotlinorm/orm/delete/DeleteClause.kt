@@ -54,7 +54,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var condition: Criteria? = null
-    internal var allColumns = kPojoAllColumnsCache[kClass]
+    internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
     private var paramMapNew = mutableMapOf<String, Any?>()

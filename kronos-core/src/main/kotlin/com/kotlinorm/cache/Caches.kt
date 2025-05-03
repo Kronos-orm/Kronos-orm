@@ -19,9 +19,9 @@ val fieldsMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> { kClass->
 
 val insertSqlCache = LRUCache<Pair<KClass<KPojo>, Boolean>, String>()
 val namedSqlCache = LRUCache<String, ParsedSql>()
-
+val kPojoInstanceCache = LRUCache<KClass<KPojo>, KPojo> { it.createInstance() }
 val kPojoAllFieldsCache = LRUCache<KClass<KPojo>, LinkedHashSet<Field>> { kClass ->
-    kClass.createInstance().kronosColumns().toLinkedSet()
+    kPojoInstanceCache[kClass]!!.kronosColumns().toLinkedSet()
 }
 
 val kPojoAllColumnsCache = LRUCache<KClass<KPojo>, List<Field>> { kClass ->
@@ -33,41 +33,41 @@ val kPojoFieldMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> { kClass ->
 }
 
 val kPojoPrimaryKeyCache = LRUCache<KClass<KPojo>, Field> { kClass ->
-    kPojoAllColumnsCache[kClass].firstOrNull { it.primaryKey != PrimaryKeyType.NOT } ?: primaryKeyStrategy
+    kPojoAllColumnsCache[kClass]!!.firstOrNull { it.primaryKey != PrimaryKeyType.NOT } ?: primaryKeyStrategy
         .takeIf { it.enabled }?.field.takeIf { field ->
-            field in kPojoAllColumnsCache[kClass]
+            kPojoAllColumnsCache[kClass]!!.any { it.name == field?.name }
         }
     ?: error("No primary key found for ${kClass.simpleName}!")
 }
 
 val kPojoCreateTimeCache = LRUCache<KClass<KPojo>, KronosCommonStrategy?> { kClass ->
-    kClass.createInstance().let {
-        it.kronosCreateTime().takeIf { it.enabled }?.bind(it.kronosTableName())?.apply {
-            field in kPojoAllColumnsCache[kClass]
+    kClass.createInstance().let { kPojo ->
+        kPojo.kronosCreateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
+            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
 }
 
 val kPojoUpdateTimeCache = LRUCache<KClass<KPojo>, KronosCommonStrategy?> { kClass ->
     kClass.createInstance().let {
-        it.kronosUpdateTime().takeIf { it.enabled }?.bind(it.kronosTableName())?.apply {
-            field in kPojoAllColumnsCache[kClass]
+        it.kronosUpdateTime().takeIf { strategy -> strategy.enabled }?.bind(it.kronosTableName())?.apply {
+            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
 }
 
 val kPojoLogicDeleteCache = LRUCache<KClass<KPojo>, KronosCommonStrategy?> { kClass ->
     kClass.createInstance().let {
-        it.kronosLogicDelete().takeIf { it.enabled }?.bind(it.kronosTableName())?.apply {
-            field in kPojoAllColumnsCache[kClass]
+        it.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(it.kronosTableName())?.apply {
+            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
 }
 
 val kPojoOptimisticLockCache = LRUCache<KClass<KPojo>, KronosCommonStrategy?> { kClass ->
     kClass.createInstance().let {
-        it.kronosOptimisticLock().takeIf { it.enabled }?.bind(it.kronosTableName())?.apply {
-            field in kPojoAllColumnsCache[kClass]
+        it.kronosOptimisticLock().takeIf { strategy -> strategy.enabled }?.bind(it.kronosTableName())?.apply {
+            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
 }

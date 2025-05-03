@@ -1,9 +1,6 @@
 package com.kotlinorm.utils
 
-class LRUCache<T, R>(
-    private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY,
-    val defaultValue: (T) -> R = { error("default value not found") }
-) {
+class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY, val defaultValue: ((T) -> R?)? = null) {
 
     private val map = hashMapOf<T, Node<T, R>>()
     private val head: Node<T, R> = Node()
@@ -14,16 +11,35 @@ class LRUCache<T, R>(
         tail.prev = head
     }
 
-    operator fun get(key: T, ifNull: ((T) -> R)? = null): R {
+    operator fun get(key: T): R? {
         if (map.containsKey(key)) {
             val node = map[key]!!
             remove(node)
             addAtEnd(node)
-            if (node.value != null) {
+            if (node.value != null)
                 return node.value
-            }
         }
-        return ifNull?.invoke(key) ?: defaultValue(key).also { set(key, it) }
+        if (defaultValue != null) {
+            if (defaultValue(key) == null) {
+                return null
+            } else {
+                val node = Node(key, defaultValue(key))
+                addAtEnd(node)
+                map[key] = node
+                if (map.size > capacity) {
+                    val first = head.next!!
+                    remove(first)
+                    map.remove(first.key)
+                }
+                return node.value!!
+            }
+        } else {
+            return null
+        }
+    }
+
+    operator fun get(key: T, defaultValue: ((T) -> R?)): R {
+        return get(key) ?: defaultValue(key) ?: throw IllegalStateException("default value not found")
     }
 
     operator fun set(key: T, value: R) {

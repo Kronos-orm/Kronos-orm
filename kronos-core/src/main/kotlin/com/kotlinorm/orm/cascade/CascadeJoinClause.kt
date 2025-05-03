@@ -72,7 +72,7 @@ object CascadeJoinClause {
                 Triple(
                     it.first,
                     it.second,
-                    kPojoAllFieldsCache[it.first].filter { col -> selectFields.values.contains(col) }
+                    kPojoAllFieldsCache[it.first]!!.filter { col -> selectFields.values.contains(col) }
                 )
             },
             operationType,

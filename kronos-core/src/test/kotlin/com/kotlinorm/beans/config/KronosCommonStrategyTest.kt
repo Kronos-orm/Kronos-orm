@@ -19,6 +19,7 @@ class KronosCommonStrategyTest {
             fieldNamingStrategy = lineHumpNamingStrategy
             createTimeStrategy.enabled = true
             updateTimeStrategy.enabled = true
+            primaryKeyStrategy.enabled = true
         }
     }
 

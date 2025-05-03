@@ -59,7 +59,7 @@ object CascadeUpdateClause {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
         val validCascades = findValidRefs( // 获取有效的引用
             kClass,
-            kPojoAllFieldsCache[kClass],
+            kPojoAllFieldsCache[kClass]!!,
             KOperationType.UPDATE,
             cascadeAllowed?.filter { it.tableName == pojo.kronosTableName()}?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
             cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联

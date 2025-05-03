@@ -94,7 +94,7 @@ class MysqlSelectTest {
         assertEquals(mapOf("id" to 2), paramMap)
 
         assertEquals(
-            "SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0) AS t",
+            "SELECT COUNT(1) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0) AS total_count",
             sql2
         )
         assertEquals(mapOf("id" to 2), paramMap2)

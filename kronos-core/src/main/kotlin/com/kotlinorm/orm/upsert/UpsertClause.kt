@@ -26,7 +26,6 @@ import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.cache.fieldsMapCache
-import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.cache.kPojoCreateTimeCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
@@ -74,7 +73,7 @@ class UpsertClause<T : KPojo>(
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
     private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
-    internal var allFields = kPojoAllFieldsCache[kClass]
+    internal var allFields = kPojoAllFieldsCache[kClass]!!
     private var onConflict = false
     private var toInsertFields = linkedSetOf<Field>()
     private var toUpdateFields = linkedSetOf<Field>()
@@ -172,8 +171,9 @@ class UpsertClause<T : KPojo>(
         }
 
         // 合并参数映射，准备执行SQL所需的参数
+        val fieldMap = fieldsMapCache[kClass]!!
         paramMapNew.forEach { (field, value) ->
-            val field = fieldsMapCache[kClass][field.columnName]
+            val field = fieldMap[field.columnName]
             if(field != null) {
                 if (field.serializable && value != null) {
                     paramMap[field.name] = serializeProcessor.serialize(value)

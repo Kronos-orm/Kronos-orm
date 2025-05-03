@@ -2,6 +2,7 @@ package com.kotlinorm.utils
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class LRUCacheTest {
@@ -34,7 +35,7 @@ class LRUCacheTest {
 
     @Test
     fun testEvictLeastRecentlyUsed() {
-        val cache = LRUCache<String, String>(2)
+        val cache = LRUCache<String, String?>(2)
         cache["a"] = "1"
         cache["b"] = "2"
         cache["a"]  // 访问 "a"
@@ -46,7 +47,7 @@ class LRUCacheTest {
 
     @Test
     fun testCacheSizeLimit() {
-        val cache = LRUCache<String, String>(3)
+        val cache = LRUCache<String, String?>(3)
         cache["a"] = "1"
         cache["b"] = "2"
         cache["c"] = "3"
@@ -59,7 +60,7 @@ class LRUCacheTest {
 
     @Test
     fun testAccessOrder() {
-        val cache = LRUCache<String, String>(2)
+        val cache = LRUCache<String, String?>(2)
         cache["a"] = "1"
         cache["b"] = "2"
         cache["a"]  // 访问 "a"

@@ -68,7 +68,7 @@ object CascadeSelectClause {
         cascadeAllowed,
         pojo,
         kClass,
-        kPojoAllFieldsCache[kClass].filter { selectFields.contains(it) },
+        kPojoAllFieldsCache[kClass]!!.filter { selectFields.contains(it) },
         operationType,
         rootTask,
         cascadeSelectedProps

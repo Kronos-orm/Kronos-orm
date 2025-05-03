@@ -42,7 +42,19 @@ class SelectFrom11<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo, T6: KP
     private var kClass11 = t11.kClass()
     override var logicDeleteStrategy = kPojoLogicDeleteCache[kClass1]
     override var allFields = kPojoAllColumnsCache[kClass1]!!
-    override var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>> = mutableListOf(kClass1 to t1, kClass2 to t2, kClass3 to t3, kClass4 to t4, kClass5 to t5, kClass6 to t6, kClass7 to t7, kClass8 to t8, kClass9 to t9, kClass10 to t10, kClass11 to t11)
+    override var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>> = mutableListOf(
+        kClass1 to t1, 
+        kClass2 to t2, 
+        kClass3 to t3, 
+        kClass4 to t4, 
+        kClass5 to t5, 
+        kClass6 to t6, 
+        kClass7 to t7, 
+        kClass8 to t8, 
+        kClass9 to t9, 
+        kClass10 to t10, 
+        kClass11 to t11
+    )
     
     fun withTotal(): PagedClause<T1, SelectFrom11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> {
         return PagedClause(this)

@@ -120,7 +120,9 @@ tasks.register("generateJoinClause") {
                         |    ${ range.joinToString("\n    ") { "private var kClass$it = t$it.kClass()" } }
                         |    override var logicDeleteStrategy = kPojoLogicDeleteCache[kClass1]
                         |    override var allFields = kPojoAllColumnsCache[kClass1]!!
-                        |    override var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>> = mutableListOf(${range.joinToString(", ") { "kClass$it to t$it" }})
+                        |    override var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>> = mutableListOf(
+                        |        ${range.joinToString(", \n        ") { "kClass$it to t$it" }}
+                        |    )
                         |    
                         |    fun withTotal(): PagedClause<T1, SelectFrom$n<$nthOfType>> {
                         |        return PagedClause(this)

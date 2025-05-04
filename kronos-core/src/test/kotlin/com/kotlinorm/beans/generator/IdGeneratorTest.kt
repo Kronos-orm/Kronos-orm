@@ -48,6 +48,10 @@ class IdGeneratorTest {
                 }.getInt(generator)
             )) - 1L)
         }
+        generator::class.java.getDeclaredField("lastTimestamp").apply {
+            isAccessible = true
+            set(generator, System.currentTimeMillis())
+        }
         val id = generator.nextId()
         assertTrue(id > 0)
     }

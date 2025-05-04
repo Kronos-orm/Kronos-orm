@@ -95,6 +95,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             PrimaryKeyType.IDENTITY -> useIdentity = true
             else -> {}
         }
+        stash["useIdentity"] = true
         allColumns.forEach {
             if (it.defaultValue != null && paramMap[it.name] == null) {
                 paramMap[it.name] = it.defaultValue
@@ -145,7 +146,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
-                stash = mutableMapOf("useIdentity" to useIdentity)
+                stash = stash
             )
         )
 

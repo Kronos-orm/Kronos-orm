@@ -88,6 +88,7 @@ class KronosActionTask {
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         return KronosOperationResult(affectRows).apply {
             afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
+            stash.putAll(results.last().stash)
         }
     }
 
@@ -119,8 +120,9 @@ class KronosActionTask {
          * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
          */
         fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(trySplitOut())
+            return KronosActionTask().also {
+                it.atomicTasks.addAll(trySplitOut())
+                it.atomicTasks.forEach { task -> task.stash.putAll(stash) }
             }
         }
 

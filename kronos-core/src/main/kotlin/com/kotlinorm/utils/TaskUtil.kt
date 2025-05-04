@@ -74,7 +74,10 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
             }
         }
     }
-    return logAndReturn(KronosOperationResult(affectRows))
+    stash.putAll(task.stash)
+    return logAndReturn(KronosOperationResult(affectRows).apply {
+        stash.putAll(task.stash)
+    })
 }
 
 var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Unit = { task, result, queryType ->

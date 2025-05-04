@@ -5,14 +5,13 @@ import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransformer
-import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

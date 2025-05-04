@@ -10,4 +10,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.gson)
     testImplementation(libs.mockk)
+    testImplementation(libs.ktx.datetime)
+    testImplementation(libs.bundles.ktx.serialization)
+    testImplementation(libs.kotlin.reflect)
 }

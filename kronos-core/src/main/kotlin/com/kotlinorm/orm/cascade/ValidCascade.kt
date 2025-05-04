@@ -76,7 +76,7 @@ data class ValidCascade(
  * @return A list of [ValidCascade] objects representing valid cascades for the specified operation type.
  */
 fun findValidRefs(
-    kClass: KClass<KPojo>, columns: Collection<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
+    kClass: KClass<out KPojo>, columns: Collection<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
     return columns.asSequence().filter { !it.isColumn && (allowed == null || it.name in allowed || allowAll) && it.kClass != null }.map { col ->

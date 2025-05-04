@@ -20,9 +20,9 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
+import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
-import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.ColorPrintCode.Companion.Black
 import com.kotlinorm.enums.ColorPrintCode.Companion.Blue
@@ -30,21 +30,11 @@ import com.kotlinorm.enums.ColorPrintCode.Companion.Bold
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.ColorPrintCode.Companion.Magenta
 import com.kotlinorm.enums.ColorPrintCode.Companion.Red
-import com.kotlinorm.enums.DBType
-import com.kotlinorm.enums.DBType.Mysql
-import com.kotlinorm.enums.DBType.Oracle
-import com.kotlinorm.enums.DBType.Postgres
-import com.kotlinorm.enums.DBType.SQLite
-import com.kotlinorm.enums.DBType.H2
-import com.kotlinorm.enums.DBType.Mssql
-import com.kotlinorm.enums.DBType.DB2
-import com.kotlinorm.enums.DBType.OceanBase
-import com.kotlinorm.enums.DBType.Sybase
-import com.kotlinorm.enums.KOperationType.SELECT
+import com.kotlinorm.enums.KOperationType.DELETE
 import com.kotlinorm.enums.KOperationType.INSERT
+import com.kotlinorm.enums.KOperationType.SELECT
 import com.kotlinorm.enums.KOperationType.UPDATE
 import com.kotlinorm.enums.KOperationType.UPSERT
-import com.kotlinorm.enums.KOperationType.DELETE
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.QueryType.Query
 import com.kotlinorm.enums.QueryType.QueryList
@@ -52,25 +42,12 @@ import com.kotlinorm.enums.QueryType.QueryMap
 import com.kotlinorm.enums.QueryType.QueryMapOrNull
 import com.kotlinorm.enums.QueryType.QueryOne
 import com.kotlinorm.enums.QueryType.QueryOneOrNull
-import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-
-// Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
-fun lastInsertIdObtainSql(dbType: DBType): String {
-    return when (dbType) {
-        Mysql, H2, OceanBase -> "SELECT LAST_INSERT_ID()"
-        Oracle -> "SELECT * FROM DUAL"
-        Mssql -> "SELECT SCOPE_IDENTITY()"
-        Postgres -> "SELECT LASTVAL()"
-        DB2 -> "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1"
-        Sybase -> "SELECT @@IDENTITY"
-        SQLite -> "SELECT last_insert_rowid()"
-        else -> throw UnsupportedOperationException("Unsupported database type: $dbType")
-    }
-}
 
 /**
  * Executes the given atomic action task using the provided data source wrapper.
@@ -80,23 +57,27 @@ fun lastInsertIdObtainSql(dbType: DBType): String {
  *         If the ID of the operation is specified by the user, the ID after the previous auto-increment is returned
  */
 fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
-    val affectRows = if (this is KBatchTask) {
-        wrapper.orDefault().batchUpdate(this as KronosAtomicBatchTask).sum()
+    val task = this
+    var affectRows = 0
+    if (task is KBatchTask) {
+        wrapper.orDefault().apply {
+            ActionEvent.beforeActionEvents.forEach { e -> e.invoke(task, this) }
+            affectRows = batchUpdate(task as KronosAtomicBatchTask).sum()
+            ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, this) }
+        }
     } else {
-        (this as KronosAtomicActionTask).trySplitOut().sumOf {
-            wrapper.orDefault().update(it)
+        (task as KronosAtomicActionTask).trySplitOut().forEach { _ ->
+            wrapper.orDefault().apply {
+                ActionEvent.beforeActionEvents.forEach { e -> e.invoke(task, this) }
+                affectRows += update(task)
+                ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, this) }
+            }
         }
     }
-    var lastInsertId: Long? = null
-    if (operationType == INSERT && useIdentity) {
-        lastInsertId = (wrapper.orDefault().forObject(
-            KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.orDefault().dbType)), kClass = Long::class, false, listOf()
-        ) ?: 0L) as Long
-    }
-    return logAndReturn(KronosOperationResult(affectRows, lastInsertId))
+    return logAndReturn(KronosOperationResult(affectRows))
 }
 
-var kronosDoLog: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Unit = { task, result, queryType ->
+var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Unit = { task, result, queryType ->
     fun resultArr(): Array<KLogMessage> {
         return when (task.operationType) {
             SELECT -> when (queryType) {
@@ -122,8 +103,8 @@ var kronosDoLog: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Uni
             }
         }
     }
-    if (task is KronosAtomicBatchTask) {
-        defaultLogger(Kronos).info(
+    defaultLogger(Kronos).info(
+        if (task is KronosAtomicBatchTask) {
             arrayOf(
                 kMsgOf("Executing [", Green),
                 kMsgOf(task.operationType.name, Red, Bold),
@@ -137,9 +118,7 @@ var kronosDoLog: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Uni
                 *resultArr(),
                 kMsgOf("-----------------------", Black, Bold).endl(),
             )
-        )
-    } else {
-        defaultLogger(Kronos).info(
+        } else {
             arrayOf(
                 kMsgOf("Executing [", Green),
                 kMsgOf(task.operationType.name, Red, Bold),
@@ -151,11 +130,12 @@ var kronosDoLog: (task: KAtomicTask, result: Any?, queryType: QueryType?) -> Uni
                 *resultArr(),
                 kMsgOf("-----------------------", Black, Bold).endl(),
             )
-        )
-    }
+        }
+    )
 }
 
-fun <T : Any?> KAtomicTask.logAndReturn(result: T, queryType: QueryType? = null): T {
-    kronosDoLog(this, result, queryType)
-    return result
+fun <T : Any?> KAtomicTask.logAndReturn(
+    result: T, queryType: QueryType? = null
+) = result.also {
+    handleLogResult(this, it, queryType)
 }

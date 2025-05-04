@@ -26,6 +26,7 @@ import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.serialize.NoneSerializeProcessor
+import com.kotlinorm.beans.task.registerTaskEventPlugin
 import com.kotlinorm.enums.ColorPrintCode.Companion.Green
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.PrimaryKeyType
@@ -33,6 +34,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeProcessor
 import com.kotlinorm.interfaces.NoValueStrategy
+import com.kotlinorm.plugins.LastInsertIdPlugin
 import com.kotlinorm.types.KLoggerFactory
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import java.time.ZoneId
@@ -99,6 +101,7 @@ object Kronos {
 
     @KronosInit
     fun init(action: Kronos.() -> Unit) {
+        registerTaskEventPlugin(LastInsertIdPlugin)
         this.action()
         defaultLogger(this).info(
             kMsgOf("Kronos ORM Framework started.", Green).endl().toArray()

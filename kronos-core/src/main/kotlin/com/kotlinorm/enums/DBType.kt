@@ -67,7 +67,8 @@ enum class DBType {
     /**
      * [GaussDB](https://www.huawei.com/en/psirt/security-advisories/huawei-sa-20210811-01-database-en) Database
      */
-    GaussDB;
+    GaussDB,
+    Unknown;
 
     companion object {
         /**

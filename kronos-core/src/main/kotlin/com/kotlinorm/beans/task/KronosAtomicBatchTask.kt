@@ -32,7 +32,7 @@ data class KronosAtomicBatchTask(
     override val sql: String,
     override val paramMapArr: Array<Map<String, Any?>>? = null,
     override val operationType: KOperationType = KOperationType.UPDATE,
-    override val useIdentity: Boolean = false
+    override val stash: MutableMap<String, Any?> = mutableMapOf()
 ) : KAtomicActionTask, KBatchTask {
 
     @Deprecated("Please use 'paramMapArr' instead.")

@@ -86,8 +86,7 @@ class KronosActionTask {
             }
         } as List<KronosOperationResult>
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
-        val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull() //最后插入的id
-        return KronosOperationResult(affectRows, lastInsertId).apply {
+        return KronosOperationResult(affectRows).apply {
             afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
         }
     }

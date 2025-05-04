@@ -31,7 +31,7 @@ data class KronosAtomicActionTask(
     override var sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
     override val operationType: KOperationType = KOperationType.UPDATE,
-    override val useIdentity: Boolean = false
+    override val stash: MutableMap<String, Any?> = mutableMapOf()
 ) : KAtomicActionTask {
 
     /**
@@ -43,7 +43,7 @@ data class KronosAtomicActionTask(
 
     fun trySplitOut(): List<KronosAtomicActionTask> {
         return sql.split(";").map {
-            KronosAtomicActionTask(it.trim(), paramMap, operationType, useIdentity)
+            KronosAtomicActionTask(it.trim(), paramMap, operationType, stash)
         }
     }
 }

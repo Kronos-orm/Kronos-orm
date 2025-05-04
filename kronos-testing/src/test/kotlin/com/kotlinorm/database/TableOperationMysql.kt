@@ -11,6 +11,7 @@ import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.orm.database.table
 import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -172,7 +173,7 @@ class TableOperationMysql {
             username = "yf",
             gender = 93
         )
-        val (_, lastInsertId) = newUser.insert().execute()
+        val lastInsertId = newUser.insert().execute().lastInsertId
         assertEquals(528, lastInsertId, "自增主键值应为528")
     }
 

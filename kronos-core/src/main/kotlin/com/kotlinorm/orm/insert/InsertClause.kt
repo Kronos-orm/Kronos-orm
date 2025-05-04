@@ -55,6 +55,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
+    var stash = mutableMapOf<String, Any?>()
 
     /**
      * cascadeAllowed
@@ -144,7 +145,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
-                useIdentity = useIdentity
+                stash = mutableMapOf("useIdentity" to useIdentity)
             )
         )
 

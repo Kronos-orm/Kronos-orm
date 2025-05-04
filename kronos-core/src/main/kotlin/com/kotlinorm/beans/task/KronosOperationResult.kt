@@ -22,9 +22,9 @@ package com.kotlinorm.beans.task
  * the result of operation
  *
  * @property affectedRows the number of affected rows
- * @property lastInsertId the last insert id
  */
 data class KronosOperationResult(
-    val affectedRows: Int = 0,
-    val lastInsertId: Long? = 0
-)
+    val affectedRows: Int = 0
+) {
+    val stash = mutableMapOf<String, Any?>() // 存储临时数据的map
+}

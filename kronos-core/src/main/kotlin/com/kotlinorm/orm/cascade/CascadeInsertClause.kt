@@ -20,6 +20,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.cache.kPojoPrimaryKeyCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
@@ -76,7 +77,7 @@ object CascadeInsertClause {
         //因为子插入任务需要等待父插入任务执行完毕，才能获取到父插入任务的主键值（若使用了自增主键），因此级联操作放在doAfterExecute中执行：
         val operationResult = this //当前任务的执行结果, 用于获取自增主键值
         pojo.toTreeNode(NodeInfo(true), cascadeAllowed, KOperationType.INSERT) {
-            val identity = kPojo.kronosColumns().find { it.primaryKey == PrimaryKeyType.IDENTITY } ?: return@toTreeNode // 若没有自增主键，直接返回
+            val identity = kPojoPrimaryKeyCache[kPojo.kClass()].takeIf { it!!.primaryKey == PrimaryKeyType.IDENTITY } ?: return@toTreeNode // 若没有自增主键，直接返回
             if(insertIgnore) return@toTreeNode // 若有子节点提升到本节点的父节点，在此层级不需要执行插入操作，而是在insertIgnore为true的子节点的下一层级执行插入操作
             val (_, lastInsertId) = if (kPojo != pojo) { // 判断当前进行的插入操作是否为最外层的插入操作
                 kPojo.insert().cascade(enabled = false).execute(wrapper) // 若不是最外层的插入操作，执行当前任务，获取当前任务的执行结果

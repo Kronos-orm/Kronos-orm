@@ -25,4 +25,4 @@ import com.kotlinorm.i18n.Noun.needFieldsMessage
  * @param message the exception message
  * @author OUSC
  */
-class NeedFieldsException(message: String = needFieldsMessage) : RuntimeException(message)
+class EmptyFieldsException(message: String = needFieldsMessage) : RuntimeException(message)

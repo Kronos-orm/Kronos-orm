@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.delete
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
@@ -25,11 +26,15 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.kPojoAllColumnsCache
+import com.kotlinorm.cache.kPojoLogicDeleteCache
+import com.kotlinorm.cache.kPojoOptimisticLockCache
+import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.getDeleteSql
 import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeDeleteClause
@@ -42,28 +47,23 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.toLinkedSet
+import com.kotlinorm.utils.execute
 
 class DeleteClause<T : KPojo>(private val pojo: T) {
+    private var kClass = pojo.kClass()
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
-    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
-    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
-    private var logic = logicDeleteStrategy.enabled
     private var condition: Criteria? = null
-    private var allFields = pojo.kronosColumns().toLinkedSet()
+    internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
     private var paramMapNew = mutableMapOf<String, Any?>()
+    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
+    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
+    private var logic = logicDeleteStrategy?.enabled ?: false
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
-        // 若logicDeleteStrategy.enabled为false则抛出异常
-        // 若updateTimeStrategy.enabled为false则不更新updateTime
-        if (!this.logicDeleteStrategy.enabled && enabled) {
-            throw NeedFieldsException()
-        }
         this.logic = enabled
         return this
     }
@@ -73,16 +73,16 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      *
      * @param someFields KTableField类型，表示要用于删除条件的字段。不可为null。
      * @return DeleteClause类型，表示构建完成的删除语句实例。
-     * @throws NeedFieldsException 如果someFields为空或者最终没有有效的字段用于构建条件时抛出。
+     * @throws EmptyFieldsException 如果someFields为空或者最终没有有效的字段用于构建条件时抛出。
      */
     fun by(someFields: ToSelect<T, Any?>): DeleteClause<T> {
         // 检查传入的someFields是否为null，若为null则抛出异常
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
         pojo.afterSelect {
             someFields(it)
             // 若fields为空，则抛出异常，表示需要至少一个字段来构建删除条件
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
 
             // 根据fields中的字段及其值构建删除条件
@@ -97,12 +97,12 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     }
 
     fun cascade(someFields: ToReference<T, Any?>): DeleteClause<T> {
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             cascadeAllowed = fields.toSet()
         }
@@ -143,14 +143,14 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         if (condition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition = allFields.filter { it.isColumn }.mapNotNull { field ->
+            condition = allColumns.mapNotNull { field ->
                 field.eq(paramMap[field.name]).takeIf { it.value != null }
             }.toCriteria()
         }
 
         // 设置逻辑删除的策略
         if (logic) {
-            setCommonStrategy(logicDeleteStrategy, allFields) { field, value ->
+            logicDeleteStrategy?.execute { field, value ->
                 condition = listOfNotNull(
                     condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
                 ).toCriteria()
@@ -164,16 +164,16 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         // 处理逻辑删除时的更新字段逻辑
         if (logic) {
             val toUpdateFields = mutableListOf<Field>()
-            val updateFields = { field: Field, value: Any? ->
+            val updateFields = { strategy: KronosCommonStrategy, field: Field, value: Any? ->
                 toUpdateFields += field
                 paramMap[field.name + "New"] = value
             }
             // 设置更新时间和逻辑删除字段的策略
-            setCommonStrategy(updateTimeStrategy, allFields, true, callBack = updateFields)
-            setCommonStrategy(logicDeleteStrategy, allFields, defaultValue = 1, callBack = updateFields)
+            updateTimeStrategy?.execute(true, afterExecute = updateFields)
+            logicDeleteStrategy?.execute(defaultValue = 1, afterExecute = updateFields)
 
             var plusAssign: Pair<Field, String>? = null
-            setCommonStrategy(optimisticStrategy, allFields) { field, _ ->
+            optimisticStrategy?.execute { field, _ ->
                 if (toUpdateFields.any { it.columnName == field.columnName }) {
                     throw IllegalArgumentException("The version field cannot be updated manually.")
                 }
@@ -181,9 +181,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 plusAssign = field to field.name + "2PlusNew"
                 paramMapNew[field.name + "2PlusNew"] = 1
             }
-
             return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeAllowed, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
+                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
                     getUpdateSql(
                         wrapper.orDefault(),
                         tableName,
@@ -199,7 +198,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
             return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeAllowed, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
+                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
                     getDeleteSql(wrapper.orDefault(), tableName, toWhereSql(whereClauseSql)),
                     paramMap,
                     operationType = KOperationType.DELETE

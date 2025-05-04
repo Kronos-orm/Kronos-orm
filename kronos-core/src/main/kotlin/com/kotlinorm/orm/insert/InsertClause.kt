@@ -26,27 +26,34 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.insertSqlCache
+import com.kotlinorm.cache.kPojoAllColumnsCache
+import com.kotlinorm.cache.kPojoCreateTimeCache
+import com.kotlinorm.cache.kPojoLogicDeleteCache
+import com.kotlinorm.cache.kPojoOptimisticLockCache
+import com.kotlinorm.cache.kPojoPrimaryKeyCache
+import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.setCommonStrategy
-import com.kotlinorm.utils.toLinkedSet
+import com.kotlinorm.utils.execute
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private val paramMap = pojo.toDataMap()
     private val tableName = pojo.kronosTableName()
-    private val createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
-    private val updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
-    private val logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
-    private val optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
-    private val allFields = pojo.kronosColumns().toLinkedSet()
+    private var kClass = pojo.kClass()
+    private var createTimeStrategy = kPojoCreateTimeCache[kClass]
+    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
+    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
+    internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
 
     /**
@@ -64,11 +71,11 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun cascade(someFields: ToReference<T, Any?>): InsertClause<T> {
-        if (someFields == null) throw NeedFieldsException()
+        someFields ?: throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
-            if (fields.isEmpty()) throw NeedFieldsException()
+            if (fields.isEmpty()) throw EmptyFieldsException()
             cascadeAllowed = fields.toSet()
         }
         return this
@@ -77,23 +84,26 @@ class InsertClause<T : KPojo>(val pojo: T) {
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         var useIdentity = false
         val paramMapNew = mutableMapOf<String, Any?>()
-        val fieldsMap = mutableMapOf<String, Field>()
+        val fieldsMap = fieldsMapCache[kClass]!!
         val toInsertFields = mutableListOf<Field>()
-        allFields.forEach {
-            when (it.primaryKey) {
-                PrimaryKeyType.UUID -> paramMap[it.name] = UUIDGenerator.nextId()
-                PrimaryKeyType.SNOWFLAKE -> paramMap[it.name] = SnowflakeIdGenerator.nextId()
-                PrimaryKeyType.CUSTOM -> paramMap[it.name] = customIdGenerator?.nextId()
-                PrimaryKeyType.IDENTITY -> useIdentity = true
-                else -> {}
-            }
+        val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
+        when (primaryKeyField.primaryKey) {
+            PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
+            PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
+            PrimaryKeyType.CUSTOM -> paramMap[primaryKeyField.name] = customIdGenerator?.nextId()
+            PrimaryKeyType.IDENTITY -> useIdentity = true
+            else -> {}
+        }
+        allColumns.forEach {
             if (it.defaultValue != null && paramMap[it.name] == null) {
                 paramMap[it.name] = it.defaultValue
             }
-            fieldsMap[it.name] = it
             if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
                 toInsertFields.add(it)
             }
+        }
+        if(useIdentity && !paramMap.containsKey(primaryKeyField.name)){
+            toInsertFields.remove(primaryKeyField)
         }
         arrayOf(
             createTimeStrategy to true,
@@ -101,7 +111,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
             logicDeleteStrategy to false,
             optimisticStrategy to false
         ).forEach {
-            setCommonStrategy(it.first, allFields, it.second) { field, value ->
+            it.first?.execute(it.second) { field, value ->
                 paramMap[field.name] = value
             }
         }
@@ -116,14 +126,15 @@ class InsertClause<T : KPojo>(val pojo: T) {
             }
         }
 
-        val kClass = pojo.kClass()
-        val sql = insertSqlCache[kClass to useIdentity] ?: getInsertSql(
-            wrapper.orDefault(),
-            tableName,
-            toInsertFields
-        ).also {
-            insertSqlCache[kClass to useIdentity] = it
-        }
+        val sql = insertSqlCache[kClass to useIdentity, {
+            getInsertSql(
+                wrapper.orDefault(),
+                tableName,
+                toInsertFields
+            ).also {
+                insertSqlCache[kClass to useIdentity] = it
+            }
+        }]
 
         return CascadeInsertClause.build(
             cascadeEnabled,

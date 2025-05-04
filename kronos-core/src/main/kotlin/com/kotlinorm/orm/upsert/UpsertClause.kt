@@ -25,12 +25,18 @@ import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.fieldsMapCache
+import com.kotlinorm.cache.kPojoAllFieldsCache
+import com.kotlinorm.cache.kPojoCreateTimeCache
+import com.kotlinorm.cache.kPojoLogicDeleteCache
+import com.kotlinorm.cache.kPojoOptimisticLockCache
+import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PessimisticLock
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
@@ -41,7 +47,7 @@ import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
-import com.kotlinorm.utils.setCommonStrategy
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -62,11 +68,12 @@ class UpsertClause<T : KPojo>(
 ) {
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var createTimeStrategy = pojo.kronosCreateTime().bind(tableName)
-    private var updateTimeStrategy = pojo.kronosUpdateTime().bind(tableName)
-    private var logicDeleteStrategy = pojo.kronosLogicDelete().bind(tableName)
-    private var optimisticStrategy = pojo.kronosOptimisticLock().bind(tableName)
-    private var allFields = pojo.kronosColumns().toLinkedSet()
+    private var kClass = pojo.kClass()
+    private var createTimeStrategy = kPojoCreateTimeCache[kClass]
+    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
+    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
+    internal var allFields = kPojoAllFieldsCache[kClass]!!
     private var onConflict = false
     private var toInsertFields = linkedSetOf<Field>()
     private var toUpdateFields = linkedSetOf<Field>()
@@ -81,7 +88,7 @@ class UpsertClause<T : KPojo>(
             pojo.afterSelect {
                 setUpsertFields!!(it)
                 if (fields.isEmpty()) {
-                    throw NeedFieldsException()
+                    throw EmptyFieldsException()
                 }
                 toUpdateFields += fields
             }
@@ -92,15 +99,15 @@ class UpsertClause<T : KPojo>(
      * Set the fields on which the update clause will be applied.
      *
      * @param someFields on which the update clause will be applied
-     * @throws NeedFieldsException if the new value is null
+     * @throws EmptyFieldsException if the new value is null
      * @return the upsert UpdateClause object
      */
     fun on(someFields: ToSelect<T, Any?>): UpsertClause<T> {
-        if (null == someFields) throw NeedFieldsException()
+        if (null == someFields) throw EmptyFieldsException()
         pojo.afterSelect {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             onFields += fields.toSet()
         }
@@ -125,12 +132,12 @@ class UpsertClause<T : KPojo>(
     }
 
     fun cascade(someFields: ToReference<T, Any?>): UpsertClause<T> {
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(it)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             cascadeAllowed = fields.toSet()
         }
@@ -138,7 +145,7 @@ class UpsertClause<T : KPojo>(
     }
 
     fun lock(lock: PessimisticLock = PessimisticLock.X): UpsertClause<T> {
-        optimisticStrategy.enabled = false
+        optimisticStrategy?.enabled = false
         this.lock = lock
         return this
     }
@@ -160,16 +167,19 @@ class UpsertClause<T : KPojo>(
         }
 
         if (toUpdateFields.isEmpty()) {
-            toUpdateFields = allFields.toLinkedSet()
+            toUpdateFields = allFields
         }
 
         // 合并参数映射，准备执行SQL所需的参数
-        paramMapNew.forEach { (key, value) ->
-            val field = allFields.find { it.columnName == key.columnName }
-            if (field != null && field.serializable && value != null) {
-                paramMap[key.name] = serializeProcessor.serialize(value)
-            } else {
-                paramMap[key.name] = value
+        val fieldMap = fieldsMapCache[kClass]!!
+        paramMapNew.forEach { (field, value) ->
+            val field = fieldMap[field.columnName]
+            if(field != null) {
+                if (field.serializable && value != null) {
+                    paramMap[field.name] = serializeProcessor.serialize(value)
+                } else {
+                    paramMap[field.name] = value
+                }
             }
         }
 
@@ -178,19 +188,19 @@ class UpsertClause<T : KPojo>(
         if (onConflict) {
             onFields += toUpdateFields
             // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-            setCommonStrategy(logicDeleteStrategy, allFields) { field, value ->
+            logicDeleteStrategy?.execute { field, value ->
                 toInsertFields += field
                 paramMap[field.name] = value
             }
 
-            setCommonStrategy(createTimeStrategy, allFields) { field, value ->
+            createTimeStrategy?.execute{ field, value ->
                 onFields -= field
                 toInsertFields += field
                 paramMap[field.name] = value
             }
 
             // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
-            setCommonStrategy(updateTimeStrategy, allFields, true) { field, value ->
+            updateTimeStrategy?.execute(true) { field, value ->
                 onFields -= field
                 toInsertFields += field
                 toUpdateFields += field
@@ -211,7 +221,7 @@ class UpsertClause<T : KPojo>(
         } else {
             return listOf<KronosAtomicActionTask>().toKronosActionTask().doBeforeExecute {
 
-                lock = lock ?: PessimisticLock.X.takeIf { !optimisticStrategy.enabled }
+                lock = lock ?: PessimisticLock.X.takeIf { optimisticStrategy?.enabled != true }
 
                 if ((pojo.select()
                         .cascade(enabled = false)

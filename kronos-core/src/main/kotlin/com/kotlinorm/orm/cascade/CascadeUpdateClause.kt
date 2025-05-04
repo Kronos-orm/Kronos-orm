@@ -21,6 +21,7 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.select.select
@@ -28,6 +29,7 @@ import com.kotlinorm.orm.update.update
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
+import kotlin.reflect.KClass
 
 object CascadeUpdateClause {
 
@@ -35,18 +37,20 @@ object CascadeUpdateClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
+        kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         whereClauseSql: String?,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
-            cascadeAllowed, pojo, paramMap, toUpdateFields, whereClauseSql, rootTask
+            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, whereClauseSql, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
+        kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
         whereClauseSql: String?,
@@ -54,8 +58,8 @@ object CascadeUpdateClause {
     ): KronosActionTask {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
         val validCascades = findValidRefs( // 获取有效的引用
-            pojo::class,
-            pojo.kronosColumns(),
+            kClass,
+            kPojoAllFieldsCache[kClass]!!,
             KOperationType.UPDATE,
             cascadeAllowed?.filter { it.tableName == pojo.kronosTableName()}?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
             cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联

@@ -16,7 +16,6 @@
 
 package com.kotlinorm.orm.join
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
@@ -27,6 +26,8 @@ import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.cache.kPojoAllColumnsCache
+import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.database.SqlManager.getJoinSql
 import com.kotlinorm.database.SqlManager.quote
 import com.kotlinorm.enums.JoinType
@@ -34,7 +35,7 @@ import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
-import com.kotlinorm.exceptions.NeedFieldsException
+import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
@@ -49,39 +50,12 @@ import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
-import com.kotlinorm.utils.setCommonStrategy
 import com.kotlinorm.utils.toLinkedSet
-import kotlin.collections.LinkedHashSet
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.MutableList
-import kotlin.collections.MutableMap
-import kotlin.collections.Set
-import kotlin.collections.contains
-import kotlin.collections.filter
-import kotlin.collections.find
-import kotlin.collections.first
-import kotlin.collections.firstOrNull
-import kotlin.collections.forEach
-import kotlin.collections.isNotEmpty
-import kotlin.collections.joinToString
-import kotlin.collections.linkedSetOf
-import kotlin.collections.listOf
-import kotlin.collections.listOfNotNull
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.mutableSetOf
-import kotlin.collections.plusAssign
-import kotlin.collections.putAll
-import kotlin.collections.set
-import kotlin.collections.toList
-import kotlin.collections.toSet
-import kotlin.text.isNullOrEmpty
+import kotlin.reflect.KClass
 
 /**
  * Select From
@@ -95,16 +69,17 @@ import kotlin.text.isNullOrEmpty
 open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     open lateinit var tableName: String
     open lateinit var paramMap: MutableMap<String, Any?>
-    open lateinit var logicDeleteStrategy: KronosCommonStrategy
-    open lateinit var allFields: LinkedHashSet<Field>
-    open lateinit var listOfPojo: MutableList<KPojo>
+    private var kClass = pojo.kClass()
+    open var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    open var allFields = kPojoAllColumnsCache[kClass]!!
+    open lateinit var listOfPojo: MutableList<Pair<KClass<KPojo>, KPojo>>
     private var condition: Criteria? = null
     private var havingCondition: Criteria? = null
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     override var selectAll: Boolean = false
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
     private var keyCounters: ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()
-    val joinables: MutableList<KJoinable> = mutableListOf()
+    val listOfJoinable: MutableList<KJoinable> = mutableListOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
     private var distinctEnabled = false
@@ -122,16 +97,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     internal var operationType = KOperationType.SELECT
 
     fun on(on: ToFilter<T1, Boolean?>) {
-        if (null == on) throw NeedFieldsException()
+        if (null == on) throw EmptyFieldsException()
 
         val criteriaMap = mutableMapOf<String, MutableList<Criteria>>()
         val constMap = mutableMapOf<String, MutableList<Criteria>>()
-        val repeatlist = mutableListOf<Triple<Criteria, String, String>>()
+        val repeatList = mutableListOf<Triple<Criteria, String, String>>()
 
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            criteria
 
             val stack = KStack<Criteria>()
             var cur = criteria
@@ -165,7 +139,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                         else { // 条件两侧均未出现过，将条件放入两侧，后期再根据两端条件数量删除一侧
                             setInMap(top, valueTableName, criteriaMap)
                             setInMap(top, fieldTableName, criteriaMap)
-                            repeatlist.add(Triple(top, fieldTableName, valueTableName))
+                            repeatList.add(Triple(top, fieldTableName, valueTableName))
                         }
 
                     }
@@ -174,7 +148,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 } else cur = top.children[1]
             }
 
-            repeatlist.forEach {
+            repeatList.forEach {
                 val (repeatCriteria, fieldTableName, valueTableName) = it
                 if (null != criteriaMap[fieldTableName] && criteriaMap[fieldTableName]!!.size == 1)
                     removeInMap(repeatCriteria, valueTableName, criteriaMap)
@@ -183,12 +157,14 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
             criteriaMap.putAll(constMap)
             criteriaMap.keys.forEach { tableName ->
-                joinables.add(
+                val (kClass, kPojo) = listOfPojo.first { it.second.kronosTableName() == tableName }
+                listOfJoinable.add(
                     KJoinable(
                         tableName,
                         JoinType.LEFT_JOIN,
                         criteriaMap[tableName]!!.toCriteria(),
-                        listOfPojo.find { it.kronosTableName() == tableName }!!
+                        kClass,
+                        kPojo
                     )
                 )
             }
@@ -220,15 +196,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      *
      * @param another The table to join with.
      * @param on The condition for the join.
-     * @throws NeedFieldsException If the `on` parameter is null.
+     * @throws EmptyFieldsException If the `on` parameter is null.
      */
+    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> leftJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        if (null == on) throw NeedFieldsException()
+        if (null == on) throw EmptyFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, another))
+            listOfJoinable.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, T::class as KClass<KPojo>, another))
         }
     }
 
@@ -237,15 +214,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      *
      * @param another The table to join with.
      * @param on The condition for the join.
-     * @throws NeedFieldsException If the `on` parameter is null.
+     * @throws EmptyFieldsException If the `on` parameter is null.
      */
+    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> rightJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        if (null == on) throw NeedFieldsException()
+        if (null == on) throw EmptyFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, another))
+            listOfJoinable.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, T::class as KClass<KPojo>, another))
         }
     }
 
@@ -254,15 +232,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      *
      * @param another The table to join with.
      * @param on The condition for the join.
-     * @throws NeedFieldsException If the `on` parameter is null.
+     * @throws EmptyFieldsException If the `on` parameter is null.
      */
+    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> crossJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        if (null == on) throw NeedFieldsException()
+        if (null == on) throw EmptyFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, another))
+            listOfJoinable.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, T::class as KClass<KPojo>, another))
         }
     }
 
@@ -271,15 +250,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      *
      * @param another The table to join with.
      * @param on The condition for the join.
-     * @throws NeedFieldsException If the `on` parameter is null.
+     * @throws EmptyFieldsException If the `on` parameter is null.
      */
+    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> innerJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        if (null == on) throw NeedFieldsException()
+        if (null == on) throw EmptyFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, another))
+            listOfJoinable.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, T::class as KClass<KPojo>, another))
         }
     }
 
@@ -288,15 +268,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      *
      * @param another The table to join with.
      * @param on The condition for the join.
-     * @throws NeedFieldsException If the `on` parameter is null.
+     * @throws EmptyFieldsException If the `on` parameter is null.
      */
+    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> fullJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
-        if (null == on) throw NeedFieldsException()
+        if (null == on) throw EmptyFieldsException()
         val tableName = another.kronosTableName()
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            joinables.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, another))
+            listOfJoinable.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, T::class as KClass<KPojo>, another))
         }
     }
 
@@ -312,7 +293,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         pojo.afterSelect {
             someFields(t1)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             selectFields += fields
             fields.forEach { field ->
@@ -338,11 +319,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     }
 
     fun cascade(someFields: ToReference<T1, Any?>) {
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
             someFields(t1)
-            if (fields.isEmpty()) throw NeedFieldsException()
+            if (fields.isEmpty()) throw EmptyFieldsException()
             cascadeAllowed = fields.toSet()
         }
     }
@@ -351,10 +332,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * Orders the result set by the specified fields.
      *
      * @param someFields The fields to order the result set by.
-     * @throws NeedFieldsException If the `someFields` parameter is null.
+     * @throws EmptyFieldsException If the `someFields` parameter is null.
      */
     fun orderBy(someFields: ToSort<T1, Any?>) {
-        if (someFields == null) throw NeedFieldsException()
+        if (someFields == null) throw EmptyFieldsException()
 
         orderEnabled = true
         pojo.afterSort {
@@ -365,19 +346,19 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
     /**
      * Sets the groupBy flag to true and checks if the `someFields` parameter is null.
-     * If it is null, throws a NeedFieldsException.
+     * If it is null, throws a EmptyFieldsException.
      *
      * @param someFields The fields to group the result set by.
-     * @throws NeedFieldsException If the `someFields` parameter is null.
+     * @throws EmptyFieldsException If the `someFields` parameter is null.
      */
     fun groupBy(someFields: ToSelect<T1, Any?>) {
         groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
-        if (null == someFields) throw NeedFieldsException()
+        if (null == someFields) throw EmptyFieldsException()
         pojo.afterSelect {
             someFields(t1)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             // 设置分组字段
             groupByFields = fields.toLinkedSet()
@@ -416,16 +397,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * Executes the query logic defined in [someFields] and builds the query condition.
      *
      * @param someFields the fields to be queried
-     * @throws NeedFieldsException if [someFields] is null
+     * @throws EmptyFieldsException if [someFields] is null
      */
     fun by(someFields: ToSelect<T1, Any?>) {
         // 检查someFields是否为空，为空则抛出异常
-        if (null == someFields) throw NeedFieldsException()
+        if (null == someFields) throw EmptyFieldsException()
         pojo.afterSelect {
             // 执行someFields中定义的查询逻辑
             someFields(t1)
             if (fields.isEmpty()) {
-                throw NeedFieldsException()
+                throw EmptyFieldsException()
             }
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             havingCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
@@ -461,11 +442,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * If null, a condition is built to query all fields. Otherwise, the provided select condition is executed
      * and the resulting condition is set.
      *
-     * @throws NeedFieldsException if the selectCondition parameter is null.
+     * @throws EmptyFieldsException if the selectCondition parameter is null.
      */
     fun having(selectCondition: ToFilter<T1, Boolean?> = null) {
         // 检查是否提供了条件，未提供则抛出异常
-        if (selectCondition == null) throw NeedFieldsException()
+        if (selectCondition == null) throw EmptyFieldsException()
         havingEnabled = true // 标记为HAVING条件
         pojo.afterFilter {
             criteriaParamMap = paramMap // 设置属性参数映射
@@ -579,7 +560,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         var buildCondition = condition
 
         // 初始化所有字段集合
-        allFields = pojo.kronosColumns().filter { it.isColumn }.toLinkedSet()
 
         if (selectFields.isEmpty()) {
             selectFields += allFields
@@ -595,10 +575,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
 
         // 设置逻辑删除的条件
-        if (logicDeleteStrategy.enabled) setCommonStrategy(logicDeleteStrategy, allFields) { _, value ->
+        logicDeleteStrategy?.execute { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition,
-                "${quote(wrapper.orDefault(), logicDeleteStrategy.field, true, databaseOfTable)} = $value".asSql()
+                "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, true, databaseOfTable)} = $value".asSql()
             ).toCriteria()
         }
 
@@ -628,13 +608,10 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             databaseOfTable = databaseOfTable
         ).toWhereClause()
 
-        val joinSql = " " + joinables.joinToString(" ") {
+        val joinSql = " " + listOfJoinable.joinToString(" ") {
             var joinCondition = it.condition
-            val logicDeleteStrategy = it.kPojo.kronosLogicDelete().bind(it.kPojo.kronosTableName())
-            if (logicDeleteStrategy.enabled) setCommonStrategy(
-                logicDeleteStrategy,
-                it.kPojo.kronosColumns().toLinkedSet()
-            ) { _, value ->
+            val logicDeleteStrategy = kPojoLogicDeleteCache[it.kClass]
+            logicDeleteStrategy?.execute { _, value ->
                 joinCondition = listOfNotNull(
                     joinCondition,
                     "${

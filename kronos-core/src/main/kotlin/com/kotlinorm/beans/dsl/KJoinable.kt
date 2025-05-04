@@ -19,6 +19,7 @@ package com.kotlinorm.beans.dsl
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KClass
 
 /**
  * KJoinable
@@ -28,11 +29,13 @@ import com.kotlinorm.interfaces.KPojo
  * @property tableName The name of the table of the joint table
  * @property joinType The type of the table joint
  * @property condition Conditions for joining tables
- * @property logicDeleteStrategy the logic delete strategy of the joint table
+ * @property kClass The class of the POJO
+ * @property kPojo The POJO object
  */
 class KJoinable (
     val tableName: String,
     val joinType: JoinType,
     val condition: Criteria?,
+    val kClass: KClass<KPojo>,
     val kPojo: KPojo
 )

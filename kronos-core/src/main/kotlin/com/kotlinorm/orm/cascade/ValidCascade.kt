@@ -18,6 +18,7 @@ package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KCascade
+import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.enums.KOperationType
@@ -75,18 +76,18 @@ data class ValidCascade(
  * @return A list of [ValidCascade] objects representing valid cascades for the specified operation type.
  */
 fun findValidRefs(
-    kClass: KClass<*>, columns: List<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
+    kClass: KClass<KPojo>, columns: Collection<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
     return columns.asSequence().filter { !it.isColumn && (allowed == null || it.name in allowed || allowAll) && it.kClass != null }.map { col ->
         //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
         if (col.ignore?.contains(CASCADE_SELECT) == true && allowAll && operationType == KOperationType.SELECT) {
-            return@map listOf<ValidCascade>()
+            return@map listOf()
         }
 
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
         return@map if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
-            if (operationType == KOperationType.DELETE) return@map listOf<ValidCascade>() // 插入操作不允许子级向上级级联
+            if (operationType == KOperationType.DELETE) return@map listOf() // 插入操作不允许子级向上级级联
             val ref =
                 col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             listOf(
@@ -96,7 +97,7 @@ fun findValidRefs(
             val ref =
                 col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             val tableName = ref.kronosTableName() // 获取引用所在的表名
-            ref.kronosColumns().asSequence().filter {
+            kPojoAllFieldsCache[col.kClass]!!.asSequence().filter {
                 it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.kClass == kClass
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName, false)

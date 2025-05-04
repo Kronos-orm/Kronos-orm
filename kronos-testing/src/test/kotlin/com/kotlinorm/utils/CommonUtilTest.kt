@@ -23,15 +23,12 @@ class CommonUtilTest {
     fun tesSetCommonStrategy() {
         val strategy = KronosCommonStrategy(false, Field("field"))
 
-        val allFields = linkedSetOf(
-            strategy.field
-        )
-        setCommonStrategy(strategy, allFields, false, 0) { field, value ->
+        strategy.execute(defaultValue = 0) { field, value ->
             assertEquals(field, Field("field"))
             assertTrue(value == 0)
         }
 
-        setCommonStrategy(strategy, allFields, true) { _, value ->
+        strategy.execute(true) { _, value ->
             assertTrue(value is String)
             assertTrue(
 
@@ -43,7 +40,7 @@ class CommonUtilTest {
 
         val pattern = "MMM dd, yyyy HH:mm:ss"
         val dateTimeStrategy = KronosCommonStrategy(false, Field("field", dateFormat = pattern))
-        setCommonStrategy(dateTimeStrategy, allFields, true) { _, value ->
+        dateTimeStrategy.execute(true) { _, value ->
             assertTrue(value is String)
             assertTrue(
                 LocalDateTime.now(Clock.system(timeZone)).isAfter(

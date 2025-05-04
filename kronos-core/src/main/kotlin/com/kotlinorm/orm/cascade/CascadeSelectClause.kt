@@ -20,14 +20,16 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
+import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.enums.QueryType.QueryOne
 import com.kotlinorm.enums.QueryType.QueryOneOrNull
-import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
+import kotlin.reflect.KClass
 
 /**
  * Used to build a cascade select clause.
@@ -57,6 +59,7 @@ object CascadeSelectClause {
         cascade: Boolean,
         cascadeAllowed: Set<Field>? = null,
         pojo: T,
+        kClass: KClass<KPojo>,
         rootTask: KronosAtomicQueryTask,
         selectFields: LinkedHashSet<Field>,
         operationType: KOperationType,
@@ -64,7 +67,8 @@ object CascadeSelectClause {
     ) = if (cascade) generateTask(
         cascadeAllowed,
         pojo,
-        pojo.kronosColumns().filter { selectFields.contains(it) },
+        kClass,
+        kPojoAllFieldsCache[kClass]!!.filter { selectFields.contains(it) },
         operationType,
         rootTask,
         cascadeSelectedProps
@@ -87,6 +91,7 @@ object CascadeSelectClause {
     private fun generateTask(
         cascadeAllowed: Set<Field>?,
         pojo: KPojo,
+        kClass: KClass<KPojo>,
         columns: List<Field>,
         operationType: KOperationType,
         prevTask: KronosAtomicQueryTask,
@@ -94,7 +99,7 @@ object CascadeSelectClause {
     ): KronosQueryTask {
         val tableName = pojo.kronosTableName()
         val validCascades = findValidRefs(
-            pojo::class,
+            kClass,
             columns,
             operationType,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
@@ -103,58 +108,53 @@ object CascadeSelectClause {
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
-            if (validCascades.isNotEmpty()) {
-                doAfterQuery { queryType, wrapper ->
-                    validCascades.forEach { validRef ->
-                        when (queryType) {
-                            QueryList -> { // 若是查询KPojo列表
-                                val lastStepResult = this as List<KPojo> // this为主表查询的结果
-                                if (lastStepResult.isNotEmpty()) {
-                                    val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
-                                    if (!cascadeSelectedProps.contains(validRef.field)) {
-                                        if (cascadeAllowed.isNullOrEmpty() || prop in cascadeAllowed) lastStepResult.forEach rowMapper@{
-                                            setValues(
-                                                it,
-                                                prop.name,
-                                                validRef,
-                                                cascadeAllowed,
-                                                mutableSetOf(
-                                                    *cascadeSelectedProps.toTypedArray(),
-                                                    *validCascades.map { cascade -> cascade.field }.toTypedArray()
-                                                ),
-                                                operationType,
-                                                wrapper
-                                            )
-                                        }
-                                    }
-                                }
+            if (validCascades.isEmpty()) return@apply
+            doAfterQuery { queryType, wrapper ->
+                validCascades.forEach { validRef ->
+                    when (queryType) {
+                        QueryList -> { // 若是查询KPojo列表
+                            val lastStepResult = this as List<KPojo> // this为主表查询的结果
+                            if (lastStepResult.isEmpty()) return@forEach // 若该级联属性查询结果为空，不进行级联查询
+                            val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
+                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
+                            if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
+                            lastStepResult.forEach rowMapper@{
+                                setValues(
+                                    it,
+                                    prop.name,
+                                    validRef,
+                                    cascadeAllowed,
+                                    mutableSetOf(
+                                        *cascadeSelectedProps.toTypedArray(),
+                                        *validCascades.map { cascade -> cascade.field }.toTypedArray()
+                                    ),
+                                    operationType,
+                                    wrapper
+                                )
                             }
-
-                            QueryOne, QueryOneOrNull -> {
-                                val lastStepResult = this as KPojo? // this为主表查询的结果
-                                if (lastStepResult != null) {
-                                    val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
-                                    if (!cascadeSelectedProps.contains(validRef.field)) {
-                                        if (cascadeAllowed.isNullOrEmpty() || prop in cascadeAllowed) {
-                                            setValues(
-                                                lastStepResult,
-                                                prop.name,
-                                                validRef,
-                                                cascadeAllowed,
-                                                mutableSetOf(
-                                                    *cascadeSelectedProps.toTypedArray(),
-                                                    *validCascades.map { cascade -> cascade.field }.toTypedArray()
-                                                ),
-                                                operationType,
-                                                wrapper
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            else -> {}
                         }
+
+                        QueryOne, QueryOneOrNull -> {
+                            val lastStepResult = this as KPojo? // this为主表查询的结果
+                            if (lastStepResult == null) return@forEach // 若该级联属性查询结果为空，不进行级联查询
+                            val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
+                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
+                            if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
+                            setValues(
+                                lastStepResult,
+                                prop.name,
+                                validRef,
+                                cascadeAllowed,
+                                mutableSetOf(
+                                    *cascadeSelectedProps.toTypedArray(),
+                                    *validCascades.map { cascade -> cascade.field }.toTypedArray()
+                                ),
+                                operationType,
+                                wrapper
+                            )
+                        }
+
+                        else -> {}
                     }
                 }
             }
@@ -187,7 +187,8 @@ object CascadeSelectClause {
 
         // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
         val refPojo = validRef.refPojo.patchTo(
-            validRef.refPojo::class, *listOfPair.toTypedArray()
+            validRef.refPojo::class,
+            *listOfPair.toTypedArray()
         )
 
         pojo[prop] = if (pojo.kronosColumns().first { it.name == prop }.cascadeIsCollectionOrArray) { // 判断属性是否为集合

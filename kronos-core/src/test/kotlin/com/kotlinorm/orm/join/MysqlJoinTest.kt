@@ -144,7 +144,7 @@ class MysqlJoinTest {
                 RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
                 FULL JOIN `tb_address` ON `tb_user`.`id` = `tb_address`.`user_id` AND `tb_address`.`deleted` = 0 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
-                ORDER BY `tb_user`.`id` DESC) AS t
+                ORDER BY `tb_user`.`id` DESC) AS total_count
             """.trimWhitespace(),
             sql
         )

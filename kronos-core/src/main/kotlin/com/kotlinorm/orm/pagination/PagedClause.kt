@@ -72,7 +72,7 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
             selectClause.selectAll = false
         }
         val cntTask = selectClause.build(wrapper)
-        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS t"
+        cntTask.atomicTask.sql = "SELECT COUNT(1) FROM (${cntTask.atomicTask.sql}) AS total_count"
         cntTask.beforeQuery = null
         cntTask.afterQuery = null
         return cntTask to recordsTask

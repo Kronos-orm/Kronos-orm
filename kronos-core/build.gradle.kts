@@ -9,4 +9,5 @@ dependencies {
     kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     testImplementation(libs.kotlin.test)
     testImplementation(libs.gson)
+    testImplementation(libs.mockk)
 }

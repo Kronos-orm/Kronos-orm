@@ -69,4 +69,26 @@ class LRUCacheTest {
         assertEquals("1", cache["a"])
         assertEquals("3", cache["c"])
     }
+
+    @Test
+    fun getReturnsDefaultValueWhenKeyNotPresent() {
+        val cache = LRUCache<String, String?>(2)
+        val defaultValue = { key: String -> "default_$key" }
+        assertEquals("default_a", cache.get("a", defaultValue))
+    }
+
+    @Test
+    fun getThrowsExceptionWhenDefaultValueIsNull() {
+        val cache = LRUCache<String, String?>(2)
+        val defaultValue = { _: String -> null }
+        assertFailsWith<IllegalStateException> { cache.get("a", defaultValue) }
+    }
+
+    @Test
+    fun getReturnsExistingValueWhenKeyPresent() {
+        val cache = LRUCache<String, String?>(2)
+        cache["a"] = "1"
+        val defaultValue = { _: String -> "default" }
+        assertEquals("1", cache.get("a", defaultValue))
+    }
 }

@@ -91,4 +91,18 @@ class KronosCommonStrategyTest {
             paramMap
         )
     }
+
+    @Test
+    fun testPrimaryKeyStrategy() {
+        val (sql, paramMap) = TestPojo(1).insert().build()
+        assertEquals("INSERT INTO `test_pojo` (`id`, `name`, `create_time`, `update_time`) VALUES (:id, :name, :createTime, :updateTime)", sql)
+        assertEquals(
+            mapOf(
+                "id" to 1,
+                "createTime" to paramMap["createTime"],
+                "updateTime" to paramMap["updateTime"],
+            ),
+            paramMap
+        )
+    }
 }

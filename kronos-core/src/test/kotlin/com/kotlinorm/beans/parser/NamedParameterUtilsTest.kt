@@ -3,6 +3,7 @@ package com.kotlinorm.beans.parser
 import com.kotlinorm.beans.parser.NamedParameterUtils.buildValueArray
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
+import com.kotlinorm.exceptions.InvalidParameterException
 import com.kotlinorm.interfaces.KPojo
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -326,5 +327,62 @@ class NamedParameterUtilsTest {
         val parsedSql = parseSqlStatement(sql)
         assertContentEquals(listOf("id"), parsedSql.parameterNames)
         assertEquals("select * from `tb&user` where id = ?", parsedSql.jdbcSql)
+    }
+
+    @Test
+    fun parseSqlStatementHandlesEmptySql() {
+        val sql = ""
+        val parsedSql = parseSqlStatement(sql)
+        assertEquals("", parsedSql.jdbcSql)
+        assertEquals(0, parsedSql.namedParameterCount)
+        assertEquals(0, parsedSql.totalParameterCount)
+    }
+
+    @Test
+    fun parseSqlStatementHandlesSqlWithoutParameters() {
+        val sql = "SELECT * FROM users"
+        val parsedSql = parseSqlStatement(sql)
+        assertEquals("SELECT * FROM users", parsedSql.jdbcSql)
+        assertEquals(0, parsedSql.namedParameterCount)
+        assertEquals(0, parsedSql.totalParameterCount)
+    }
+
+    @Test
+    fun parseSqlStatementThrowsExceptionForUnclosedNamedParameter() {
+        val sql = "SELECT * FROM users WHERE id = :id AND name = :{name"
+        assertFailsWith<InvalidParameterException> { parseSqlStatement(sql) }
+    }
+
+    @Test
+    fun parseSqlStatementHandlesNestedParameters() {
+        val sql = "SELECT * FROM users WHERE data->'info'->>'name' = :name"
+        val parsedSql = parseSqlStatement(sql)
+        assertEquals("SELECT * FROM users WHERE data->'info'->>'name' = ?", parsedSql.jdbcSql)
+        assertContentEquals(listOf("name"), parsedSql.parameterNames)
+    }
+
+    @Test
+    fun parseSqlStatementHandlesEscapedParameters() {
+        val sql = "SELECT * FROM users WHERE id = \\:id AND name = :name"
+        val parsedSql = parseSqlStatement(sql)
+        assertEquals("SELECT * FROM users WHERE id = :id AND name = ?", parsedSql.jdbcSql)
+        assertContentEquals(listOf("name"), parsedSql.parameterNames)
+    }
+
+    @Test
+    fun buildValueArrayHandlesNullValues() {
+        val sql = "SELECT * FROM users WHERE id = :id AND name = :name"
+        val paramMap = mapOf("id" to null, "name" to "John")
+        val parsedSql = parseSqlStatement(sql, paramMap)
+        val valueArray = buildValueArray(parsedSql, paramMap)
+        assertContentEquals(arrayOf(null, "John"), valueArray)
+    }
+
+    @Test
+    fun buildValueArrayThrowsExceptionForMixedPlaceholders() {
+        val sql = "SELECT * FROM users WHERE id = :id AND name = ?"
+        val paramMap = mapOf("id" to 1)
+        val parsedSql = parseSqlStatement(sql, paramMap)
+        assertFailsWith<InvalidDataAccessApiUsageException> { buildValueArray(parsedSql, paramMap) }
     }
 }

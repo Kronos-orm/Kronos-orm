@@ -88,7 +88,9 @@ class KronosActionTask {
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         return KronosOperationResult(affectRows).apply {
             afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
-            stash.putAll(results.last().stash)
+            if(results.isNotEmpty()) {
+                stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
+            }
         }
     }
 

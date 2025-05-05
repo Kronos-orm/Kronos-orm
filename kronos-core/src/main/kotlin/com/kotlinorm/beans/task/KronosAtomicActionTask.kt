@@ -40,10 +40,4 @@ data class KronosAtomicActionTask(
      * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
      */
     override fun parsed() = parseSqlStatement(sql, paramMap)
-
-    fun trySplitOut(): List<KronosAtomicActionTask> {
-        return sql.split(";").map {
-            KronosAtomicActionTask(it.trim(), paramMap, operationType, stash)
-        }
-    }
 }

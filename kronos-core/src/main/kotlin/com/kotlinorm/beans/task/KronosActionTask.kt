@@ -95,35 +95,24 @@ class KronosActionTask {
     }
 
     companion object {
-        /**
-         * Converts a list of KronosAtomicActionTask to a single KronosActionTask.
-         *
-         * This function creates a new KronosActionTask and adds all the atomic tasks from the list to it.
-         * Each atomic task in the list is split out using the trySplitOut function, and the resulting tasks are flattened into a single list.
-         * The flattened list of tasks is then added to the atomic tasks of the new KronosActionTask.
-         *
-         * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
-         * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
-         */
         fun List<KronosAtomicActionTask>.toKronosActionTask(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(map { it.trySplitOut() }.flatten())
+            return KronosActionTask().also {
+                it.atomicTasks.addAll(this)
             }
         }
 
         /**
-         * Converts a list of KronosAtomicActionTask to a single KronosActionTask.
+         * Converts a KronosAtomicActionTask to a KronosActionTask.
          *
-         * This function creates a new KronosActionTask and adds all the atomic tasks from the list to it.
-         * Each atomic task in the list is split out using the trySplitOut function, and the resulting tasks are flattened into a single list.
-         * The flattened list of tasks is then added to the atomic tasks of the new KronosActionTask.
+         * This function creates a new KronosActionTask and adds the current KronosAtomicActionTask to it.
+         * It also copies the stash from the current task to the new task.
          *
-         * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
-         * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
+         * @receiver KronosAtomicActionTask the current KronosAtomicActionTask to convert.
+         * @return KronosActionTask returns a new KronosActionTask with the current task added to it.
          */
         fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
             return KronosActionTask().also {
-                it.atomicTasks.addAll(trySplitOut())
+                it.atomicTasks.add(this)
                 it.atomicTasks.forEach { task -> task.stash.putAll(stash) }
             }
         }

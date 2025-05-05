@@ -21,7 +21,6 @@ import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.logging.KLogMessage
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.ActionEvent
-import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.ColorPrintCode.Companion.Black
@@ -58,22 +57,15 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
  */
 fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
     val task = this
-    var affectRows = 0
-    if (task is KBatchTask) {
-        wrapper.orDefault().apply {
-            ActionEvent.beforeActionEvents.forEach { e -> e.invoke(task, this) }
-            affectRows = batchUpdate(task as KronosAtomicBatchTask).sum()
-            ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, this) }
-        }
+    var affectRows: Int
+    val dataSource = wrapper.orDefault()
+    ActionEvent.beforeActionEvents.forEach { e -> e.invoke(task, dataSource) }
+    affectRows = if (task is KBatchTask) {
+        dataSource.batchUpdate(task as KronosAtomicBatchTask).sum()
     } else {
-        (task as KronosAtomicActionTask).trySplitOut().forEach { _ ->
-            wrapper.orDefault().apply {
-                ActionEvent.beforeActionEvents.forEach { e -> e.invoke(task, this) }
-                affectRows += update(task)
-                ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, this) }
-            }
-        }
+        dataSource.update(task)
     }
+    ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, dataSource) }
     stash.putAll(task.stash)
     return logAndReturn(KronosOperationResult(affectRows).apply {
         stash.putAll(task.stash)

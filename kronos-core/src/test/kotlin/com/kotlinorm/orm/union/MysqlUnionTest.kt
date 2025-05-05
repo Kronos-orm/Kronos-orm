@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 
 class MysqlUnionTest {
     object UnionWrapper : SampleMysqlJdbcWrapper() {
-        var cursor = 0;
+        var cursor = 0
         override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
             return when (cursor++) {
                 0 -> listOf(

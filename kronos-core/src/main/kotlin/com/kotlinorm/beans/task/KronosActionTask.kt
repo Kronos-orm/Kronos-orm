@@ -86,42 +86,34 @@ class KronosActionTask {
             }
         } as List<KronosOperationResult>
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
-        val lastInsertId = results.mapNotNull { it.lastInsertId }.lastOrNull() //最后插入的id
-        return KronosOperationResult(affectRows, lastInsertId).apply {
+        return KronosOperationResult(affectRows).apply {
             afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
+            if(results.isNotEmpty()) {
+                stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
+            }
         }
     }
 
     companion object {
-        /**
-         * Converts a list of KronosAtomicActionTask to a single KronosActionTask.
-         *
-         * This function creates a new KronosActionTask and adds all the atomic tasks from the list to it.
-         * Each atomic task in the list is split out using the trySplitOut function, and the resulting tasks are flattened into a single list.
-         * The flattened list of tasks is then added to the atomic tasks of the new KronosActionTask.
-         *
-         * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
-         * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
-         */
         fun List<KronosAtomicActionTask>.toKronosActionTask(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(map { it.trySplitOut() }.flatten())
+            return KronosActionTask().also {
+                it.atomicTasks.addAll(this)
             }
         }
 
         /**
-         * Converts a list of KronosAtomicActionTask to a single KronosActionTask.
+         * Converts a KronosAtomicActionTask to a KronosActionTask.
          *
-         * This function creates a new KronosActionTask and adds all the atomic tasks from the list to it.
-         * Each atomic task in the list is split out using the trySplitOut function, and the resulting tasks are flattened into a single list.
-         * The flattened list of tasks is then added to the atomic tasks of the new KronosActionTask.
+         * This function creates a new KronosActionTask and adds the current KronosAtomicActionTask to it.
+         * It also copies the stash from the current task to the new task.
          *
-         * @receiver List<KronosAtomicActionTask> the list of KronosAtomicActionTask to convert.
-         * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from the list.
+         * @receiver KronosAtomicActionTask the current KronosAtomicActionTask to convert.
+         * @return KronosActionTask returns a new KronosActionTask with the current task added to it.
          */
         fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
-            return KronosActionTask().apply {
-                atomicTasks.addAll(trySplitOut())
+            return KronosActionTask().also {
+                it.atomicTasks.add(this)
+                it.atomicTasks.forEach { task -> task.stash.putAll(stash) }
             }
         }
 

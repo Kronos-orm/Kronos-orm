@@ -16,13 +16,19 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.types.ActionTaskEvent
+import com.kotlinorm.types.QueryTaskEvent
+
 /**
- * Kronos Atomic Task
+ * Task Event Plugin
  *
- * Interface for Atomic Task
+ * Interface for Task Event Plugin
  *
  * @author OUSC
  */
-interface KAtomicActionTask : KAtomicTask {
-    val stash: MutableMap<String, Any?>
+interface TaskEventPlugin {
+    val doBeforeQuery: QueryTaskEvent?
+    val doAfterQuery: QueryTaskEvent?
+    val doBeforeAction: ActionTaskEvent?
+    val doAfterAction: ActionTaskEvent?
 }

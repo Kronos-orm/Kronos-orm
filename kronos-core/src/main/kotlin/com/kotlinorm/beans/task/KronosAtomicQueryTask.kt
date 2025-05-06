@@ -31,7 +31,8 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 data class KronosAtomicQueryTask(
     override var sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
-    override val operationType: KOperationType = KOperationType.SELECT
+    override val operationType: KOperationType = KOperationType.SELECT,
+    val stash: MutableMap<String, Any?> = mutableMapOf()
 ) : KAtomicQueryTask {
 
     /**

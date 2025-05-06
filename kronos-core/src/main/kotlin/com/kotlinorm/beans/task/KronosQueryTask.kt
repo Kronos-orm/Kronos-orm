@@ -45,72 +45,62 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
         return this
     }
 
-    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+    inline fun <T> executeQuery(
+        wrapper: KronosDataSourceWrapper?,
+        queryType: QueryType,
+        crossinline queryAction: (KronosDataSourceWrapper) -> T
+    ): T {
+        val dataSource = wrapper.orDefault()
         beforeQuery?.invoke(this)
-        val result = atomicTask.logAndReturn(wrapper.orDefault().forList(atomicTask), Query)
-        afterQuery?.invoke(result, Query, wrapper.orDefault())
+        QueryEvent.beforeQueryEvents.forEach { it(atomicTask, dataSource) }
+
+        val result = atomicTask.logAndReturn(queryAction(dataSource), queryType)
+
+        QueryEvent.afterQueryEvents.forEach { it(atomicTask, dataSource) }
+        afterQuery?.invoke(result, queryType, dataSource)
         return result
+    }
+
+    fun query(wrapper: KronosDataSourceWrapper? = null) = executeQuery(wrapper, Query) {
+        it.forList(atomicTask)
     }
 
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
-    ): List<T> {
-        beforeQuery?.invoke(this)
-        val result = atomicTask.logAndReturn(
-            wrapper.orDefault().forList(atomicTask, T::class, isKPojo, superTypes) as List<T>, QueryList
-        )
-        afterQuery?.invoke(result, QueryList, wrapper.orDefault())
-        return result
+        superTypes: List<String> = emptyList()
+    ) = executeQuery(wrapper, QueryList) {
+        it.forList(atomicTask, T::class, isKPojo, superTypes) as List<T>
     }
 
-    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
-        beforeQuery?.invoke(this)
-        val result = atomicTask.logAndReturn(wrapper.orDefault().forMap(atomicTask)!!, QueryMap)
-        afterQuery?.invoke(result, QueryMap, wrapper.orDefault())
-        return result
+    fun queryMap(
+        wrapper: KronosDataSourceWrapper? = null
+    ) = executeQuery(wrapper, QueryMap) {
+        it.forMap(atomicTask) ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
     }
 
-    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
-        beforeQuery?.invoke(this)
-        val result = atomicTask.logAndReturn(wrapper.orDefault().forMap(atomicTask), QueryMapOrNull)
-        afterQuery?.invoke(result, QueryMapOrNull, wrapper.orDefault())
-        return result
+    fun queryMapOrNull(
+        wrapper: KronosDataSourceWrapper? = null
+    ) = executeQuery(wrapper, QueryMapOrNull) {
+        it.forMap(atomicTask)
     }
 
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
-    ): T {
-        beforeQuery?.invoke(this)
-        val result = atomicTask.logAndReturn(
-            wrapper.orDefault().forObject(atomicTask, T::class, isKPojo, superTypes) as T ?: throw NullPointerException(
-                "No such record"
-            ),
-            QueryOne
-        )
-        afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
-        return result
+    ) = executeQuery(wrapper, QueryOne) {
+        it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?
+            ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
     }
 
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
         superTypes: List<String> = listOf()
-    ): T? {
-        beforeQuery?.invoke(this)
-        val result =
-            atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, T::class, isKPojo, superTypes) as T?,
-                QueryOneOrNull
-            )
-        afterQuery?.invoke(
-            result, QueryOneOrNull, wrapper.orDefault()
-        )
-        return result
+    ) = executeQuery(wrapper, QueryOneOrNull) {
+        it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?
     }
 
     companion object {

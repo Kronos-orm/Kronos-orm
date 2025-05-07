@@ -61,3 +61,10 @@ fun registerTaskEventPlugin(plugin: TaskEventPlugin) {
     plugin.doBeforeAction?.let { beforeActionEvents.add(it) }
     plugin.doAfterAction?.let { afterActionEvents.add(it) }
 }
+
+fun unregisterTaskEventPlugin(plugin: TaskEventPlugin) {
+    plugin.doBeforeQuery?.let { beforeQueryEvents.remove(it) }
+    plugin.doAfterQuery?.let { afterQueryEvents.remove(it) }
+    plugin.doBeforeAction?.let { beforeActionEvents.remove(it) }
+    plugin.doAfterAction?.let { afterActionEvents.remove(it) }
+}

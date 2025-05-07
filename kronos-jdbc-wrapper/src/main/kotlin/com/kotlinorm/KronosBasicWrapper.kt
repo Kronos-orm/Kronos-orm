@@ -373,7 +373,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
                 val label = metaData.getColumnLabel(i)
                 columns[label]?.let { field ->
                     try {
-                        this[label] = if (strictSetValue) getObject(i, field.kClass!!.java)
+                        this[label] = if (strictSetValue) getObject(i)
                         else getTypeSafeValue(
                             field.kClass!!.qualifiedName!!,
                             getObject(i),
@@ -404,6 +404,6 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @return The value at the specified column position, converted to the specified type.
      */
     private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String>): Any =
-        if (strictSetValue) getObject(position, kClass.java)
+        if (strictSetValue) getObject(position)
         else getTypeSafeValue(kClass.qualifiedName!!, getObject(position), superTypes)
 }

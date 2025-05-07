@@ -3,21 +3,29 @@ package com.kotlinorm.plugins
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.beans.task.registerTaskEventPlugin
+import com.kotlinorm.beans.task.unregisterTaskEventPlugin
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.TaskEventPlugin
 import com.kotlinorm.orm.insert.InsertClause
 import com.kotlinorm.types.ActionTaskEvent
 import com.kotlinorm.types.QueryTaskEvent
-import com.kotlinorm.utils.DataSourceUtil.orDefault
 
 object LastInsertIdPlugin : TaskEventPlugin {
-    var enabled = false
-    var Kronos.lastInsertId
-        set(value) {
-            enabled = value
+    private var loaded = false
+    var enabled
+        get() = loaded
+        set(value){
+            if(value && !loaded){
+                registerTaskEventPlugin(LastInsertIdPlugin)
+                loaded = true
+            }
+            if(!value && loaded){
+                unregisterTaskEventPlugin(LastInsertIdPlugin)
+                loaded = false
+            }
         }
-        get() = enabled
 
     val KronosOperationResult.lastInsertId
         get() = this.stash["lastInsertId"] as? Long

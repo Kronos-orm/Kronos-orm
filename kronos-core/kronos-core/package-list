@@ -323,6 +323,7 @@ $dokka.location:com.kotlinorm.beans.serialize/Serialize/getValue/#kotlin.Any#kot
 $dokka.location:com.kotlinorm.beans.serialize/Serialize/setValue/#kotlin.Any#kotlin.reflect.KProperty[*]#TypeParam(bounds=[kotlin.Any?])?/PointingToDeclaration/kronos-core/com.kotlinorm.beans.serialize/-serialize/set-value.html
 $dokka.location:com.kotlinorm.beans.task////PointingToDeclaration/kronos-core/com.kotlinorm.beans.task/index.html
 $dokka.location:com.kotlinorm.beans.task//registerTaskEventPlugin/#com.kotlinorm.interfaces.TaskEventPlugin/PointingToDeclaration/kronos-core/com.kotlinorm.beans.task/register-task-event-plugin.html
+$dokka.location:com.kotlinorm.beans.task//unregisterTaskEventPlugin/#com.kotlinorm.interfaces.TaskEventPlugin/PointingToDeclaration/kronos-core/com.kotlinorm.beans.task/unregister-task-event-plugin.html
 $dokka.location:com.kotlinorm.beans.task/ActionEvent///PointingToDeclaration/kronos-core/com.kotlinorm.beans.task/-action-event/index.html
 $dokka.location:com.kotlinorm.beans.task/ActionEvent/afterActionEvents/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.task/-action-event/after-action-events.html
 $dokka.location:com.kotlinorm.beans.task/ActionEvent/beforeActionEvents/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.task/-action-event/before-action-events.html
@@ -1612,7 +1613,6 @@ $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/doAfterQuery/#/Pointing
 $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/doBeforeAction/#/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/do-before-action.html
 $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/doBeforeQuery/#/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/do-before-query.html
 $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/enabled/#/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/enabled.html
-$dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/lastInsertId/com.kotlinorm.Kronos#/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/last-insert-id.html
 $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/lastInsertId/com.kotlinorm.beans.task.KronosOperationResult#/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/last-insert-id.html
 $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/lastInsertIdObtainSql/#com.kotlinorm.enums.DBType/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/last-insert-id-obtain-sql.html
 $dokka.location:com.kotlinorm.plugins/LastInsertIdPlugin/withId/com.kotlinorm.orm.insert.InsertClause[*]#/PointingToDeclaration/kronos-core/com.kotlinorm.plugins/-last-insert-id-plugin/with-id.html

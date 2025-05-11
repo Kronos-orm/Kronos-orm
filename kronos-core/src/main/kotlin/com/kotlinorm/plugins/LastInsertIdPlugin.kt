@@ -1,6 +1,21 @@
+/**
+ * Copyright 2022-2024 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.kotlinorm.plugins
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.beans.task.registerTaskEventPlugin
@@ -16,12 +31,12 @@ object LastInsertIdPlugin : TaskEventPlugin {
     private var loaded = false
     var enabled
         get() = loaded
-        set(value){
-            if(value && !loaded){
+        set(value) {
+            if (value && !loaded) {
                 registerTaskEventPlugin(LastInsertIdPlugin)
                 loaded = true
             }
-            if(!value && loaded){
+            if (!value && loaded) {
                 unregisterTaskEventPlugin(LastInsertIdPlugin)
                 loaded = false
             }
@@ -48,7 +63,7 @@ object LastInsertIdPlugin : TaskEventPlugin {
     override val doAfterQuery: QueryTaskEvent? = null
     override val doBeforeAction: ActionTaskEvent? = null
 
-    override val doAfterAction: ActionTaskEvent? = { wrapper ->
+    override val doAfterAction: ActionTaskEvent = { wrapper ->
         if (operationType == KOperationType.INSERT &&
             (stash["queryId"] == true || (stash["queryId"] == null && enabled))
             && stash["useIdentity"] == true // 目前仅支持自增主键

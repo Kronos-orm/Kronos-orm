@@ -70,12 +70,16 @@ class KronosActionTask {
         beforeExecute?.invoke(this, dataSource) // 在执行之前执行的操作
 
         val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
+            val first = it.first()
             if (it.size > 1) { //如果有多个任务
                 KronosAtomicBatchTask( //创建一个批量任务
-                    it.first().sql, it.map { task -> task.paramMap }.toTypedArray(), it.first().operationType
+                    first.sql,
+                    it.map { task -> task.paramMap }.toTypedArray(),
+                    first.operationType,
+                    first.actionInfo
                 )
             } else { //如果只有一个任务
-                it.first()
+                first
             }
         }
 

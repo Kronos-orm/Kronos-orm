@@ -22,5 +22,13 @@ package com.kotlinorm.enums
  * @author OUSC
  */
 enum class KOperationType(val value: String) {
-    INSERT("insert"), UPDATE("update"), DELETE("delete"), UPSERT("upsert"), SELECT("select");
+    INSERT("insert"),
+    UPDATE("update"),
+    DELETE("delete"),
+    UPSERT("upsert"),
+    SELECT("select"),
+    CREATE("create"),
+    TRUNCATE("truncate"),
+    DROP("drop"),
+    ALTER("alter");
 }

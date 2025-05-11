@@ -1,4 +1,4 @@
-package com.kotlinorm.orm.database
+package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.dsl.Field

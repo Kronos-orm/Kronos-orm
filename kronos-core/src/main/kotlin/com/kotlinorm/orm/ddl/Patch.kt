@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.database
+package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 

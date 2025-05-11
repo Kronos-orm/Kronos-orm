@@ -11,8 +11,7 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
     companion object{
         val sampleMysqlJdbcWrapper = SampleMysqlJdbcWrapper()
     }
-    override val url: String
-        get() = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true"
+    override var url: String = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true"
     override val userName: String
         get() = "kronos"
     override val dbType: DBType

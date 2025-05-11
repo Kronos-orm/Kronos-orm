@@ -24,5 +24,6 @@ package com.kotlinorm.interfaces
  * @author OUSC
  */
 interface KAtomicActionTask : KAtomicTask {
+    val actionInfo: KActionInfo?
     val stash: MutableMap<String, Any?>
 }

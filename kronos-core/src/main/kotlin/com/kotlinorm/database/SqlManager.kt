@@ -23,8 +23,8 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.database.TableColumnDiff
-import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.ddl.TableColumnDiff
+import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 

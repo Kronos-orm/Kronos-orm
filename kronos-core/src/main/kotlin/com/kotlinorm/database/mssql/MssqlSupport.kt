@@ -32,8 +32,8 @@ import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.database.TableColumnDiff
-import com.kotlinorm.orm.database.TableIndexDiff
+import com.kotlinorm.orm.ddl.TableColumnDiff
+import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace

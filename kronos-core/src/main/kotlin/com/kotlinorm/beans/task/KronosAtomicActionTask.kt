@@ -18,6 +18,7 @@ package com.kotlinorm.beans.task
 
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.interfaces.KAtomicActionTask
 
 /**
@@ -31,6 +32,7 @@ data class KronosAtomicActionTask(
     override var sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
     override val operationType: KOperationType = KOperationType.UPDATE,
+    override val actionInfo: KActionInfo? = null,
     override val stash: MutableMap<String, Any?> = mutableMapOf()
 ) : KAtomicActionTask {
 

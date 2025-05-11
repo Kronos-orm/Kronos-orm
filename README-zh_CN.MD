@@ -73,7 +73,7 @@ dataSource.table.createTable<User>()
 
 // 向`user`表插入一条记录(username = "test", age = 18), 并获取插入的记录的id
 // 可以使用 List<User>.insert().execute() 来批量插入记录
-val (_, id) = User(username = "test", age = 18).insert().execute()
+val id = User(username = "test", age = 18).insert().execute().lastInsertId
 
 // 查询`user`表中`age`为18的记录
 val listOfUser = User(age = 18).select().queryList()

@@ -1,13 +1,6 @@
 package com.kotlinorm.plugins
 
-import com.kotlinorm.Kronos
-import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.insert.InsertClause
-import com.kotlinorm.plugins.LastInsertIdPlugin.withId
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import io.mockk.every
-import io.mockk.mockk
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

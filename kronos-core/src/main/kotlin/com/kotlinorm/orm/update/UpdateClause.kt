@@ -297,7 +297,11 @@ class UpdateClause<T : KPojo>(
         val rootTask = KronosAtomicActionTask(
             sql,
             paramMap,
-            operationType = KOperationType.UPDATE
+            operationType = KOperationType.UPDATE,
+            UpdateClauseInfo(
+                tableName,
+                whereClauseSql
+            )
         )
 
         return CascadeUpdateClause.build(

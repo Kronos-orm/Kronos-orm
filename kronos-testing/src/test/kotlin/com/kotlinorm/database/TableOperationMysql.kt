@@ -9,7 +9,7 @@ import com.kotlinorm.database.SqlHandler.queryOne
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import com.kotlinorm.plugins.LastInsertIdPlugin.withId

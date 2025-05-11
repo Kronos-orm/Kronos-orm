@@ -10,7 +10,7 @@ import com.kotlinorm.beans.sample.manyToMany.RolePermissionRelation
 import com.kotlinorm.beans.sample.oneToMany.GroupClass
 import com.kotlinorm.beans.sample.oneToMany.School
 import com.kotlinorm.beans.sample.oneToMany.Student
-import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select

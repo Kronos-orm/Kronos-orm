@@ -6,7 +6,7 @@
 //import com.kotlinorm.database.SqlManager.columnCreateDefSql
 //import com.kotlinorm.database.SqlManager.getTableColumns
 //import com.kotlinorm.enums.DBType
-//import com.kotlinorm.orm.database.table
+//import com.kotlinorm.orm.ddl.table
 //import com.kotlinorm.orm.insert.insert
 //import com.kotlinorm.database.beans.OracleUser
 //import org.apache.commons.dbcp2.BasicDataSource

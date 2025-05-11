@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.database
+package com.kotlinorm.orm.ddl
 
-import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
+import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.database.SqlHandler.execute
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.database.SqlManager.getTableCreateSqlList
@@ -25,6 +26,8 @@ import com.kotlinorm.database.SqlManager.getTableIndexes
 import com.kotlinorm.database.SqlManager.getTableSyncSqlList
 import com.kotlinorm.database.SqlManager.getTableTruncateSql
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.createInstance
@@ -60,32 +63,42 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         instance.kronosTableComment(),
         instance.kronosColumns().filter { it.isColumn },
         instance.kronosTableIndex()
-    ).forEach { dataSource.execute(it) }
-
+    ).map {
+        KronosAtomicActionTask(
+            it,
+            mapOf("tableName" to instance.kronosTableName()),
+            KOperationType.CREATE,
+            DDLInfo(instance.kronosTableName())
+        )
+    }.toKronosActionTask().execute(dataSource)
 
     /**
      * Drop table
      *
      * @param instance Table instance
      */
-    inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) {
-        dataSource.execute(
-            getTableDropSql(dataSource.dbType, instance.kronosTableName())
-        )
-    }
+    inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) =
+        KronosAtomicActionTask(
+            getTableDropSql(dataSource.dbType, instance.kronosTableName()),
+            mapOf("tableName" to instance.kronosTableName()),
+            KOperationType.DROP,
+            DDLInfo(instance.kronosTableName())
+        ).toKronosActionTask().execute(dataSource)
 
     /**
      * Drop table
      *
-     * @param tableName Table name
+     * @param tableNames Table names
      */
-    fun dropTable(vararg tableName: String) {
-        tableName.forEach {
-            dataSource.execute(
-                getTableDropSql(dataSource.dbType, it)
+    fun dropTable(vararg tableNames: String) =
+        tableNames.map { tableName ->
+            KronosAtomicActionTask(
+                getTableDropSql(dataSource.dbType, tableName),
+                mapOf("tableName" to tableName),
+                KOperationType.DROP,
+                DDLInfo(tableName)
             )
-        }
-    }
+        }.toKronosActionTask().execute(dataSource)
 
     /**
      * Truncate table
@@ -96,11 +109,16 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     inline fun <reified T : KPojo> truncateTable(
         instance: T = T::class.createInstance(),
         restartIdentity: Boolean = true
-    ) {
-        dataSource.execute(
-            getTableTruncateSql(dataSource.dbType, instance.kronosTableName(), restartIdentity)
-        )
-    }
+    ) = KronosAtomicActionTask(
+        getTableTruncateSql(
+            dataSource.dbType,
+            instance.kronosTableName(),
+            restartIdentity
+        ),
+        mapOf("tableName" to instance.kronosTableName()),
+        KOperationType.TRUNCATE,
+        DDLInfo(instance.kronosTableName())
+    ).toKronosActionTask().execute(dataSource)
 
     /**
      * Truncate table
@@ -108,13 +126,15 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      * @param tableName Table name
      * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
      */
-    fun truncateTable(vararg tableName: String, restartIdentity: Boolean = true) {
-        tableName.forEach {
-            dataSource.execute(
-                getTableTruncateSql(dataSource.dbType, it, restartIdentity)
+    fun truncateTable(vararg tableName: String, restartIdentity: Boolean = true) =
+        tableName.map { name ->
+            KronosAtomicActionTask(
+                getTableTruncateSql(dataSource.dbType, name, restartIdentity),
+                mapOf("tableName" to name),
+                KOperationType.TRUNCATE,
+                DDLInfo(name)
             )
-        }
-    }
+        }.toKronosActionTask().execute(dataSource)
 
     /**
      * Synchronize table structure

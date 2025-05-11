@@ -72,7 +72,7 @@ dataSource.table.createTable<User>()
 
 // Insert a record into table `user` (username = "test", age = 18), and get the id of the inserted record
 // we can use List<User>.insert().execute() to batch insert
-val (_, id) = User(username = "test", age = 18).insert().execute()
+val id = User(username = "test", age = 18).insert().execute().lastInsertId
 
 // Query records from table `user` where `age` is 18
 val listOfUser = User(age = 18).select().queryList()

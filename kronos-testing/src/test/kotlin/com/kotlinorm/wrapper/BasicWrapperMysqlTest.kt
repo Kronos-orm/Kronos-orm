@@ -7,12 +7,11 @@ import com.kotlinorm.beans.sample.databases.MysqlUser
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
-import com.kotlinorm.orm.database.table
+import com.kotlinorm.orm.ddl.table
 import org.apache.commons.dbcp2.BasicDataSource
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class BasicWrapperTest {
     private val wrapper = BasicDataSource().apply {

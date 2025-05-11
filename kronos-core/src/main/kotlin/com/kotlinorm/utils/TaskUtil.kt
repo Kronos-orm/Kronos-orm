@@ -87,7 +87,7 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
                 else -> arrayOf()
             }
 
-            UPDATE, UPSERT, INSERT, DELETE -> {
+            else -> {
                 result as KronosOperationResult
                 listOfNotNull(
                     kMsgOf("Affected rows: ${result.affectedRows}", Black, Bold).endl(),

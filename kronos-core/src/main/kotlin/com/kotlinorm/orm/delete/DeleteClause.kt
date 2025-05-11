@@ -160,6 +160,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         // 构建条件SQL语句及参数映射
         val (whereClauseSql, paramMap) = buildConditionSqlWithParams(KOperationType.DELETE, wrapper, condition)
         paramMap.putAll(paramMapNew)
+        val whereSql = toWhereSql(whereClauseSql)
 
         // 处理逻辑删除时的更新字段逻辑
         if (logic) {
@@ -187,21 +188,23 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                         wrapper.orDefault(),
                         tableName,
                         toUpdateFields,
-                        toWhereSql(whereClauseSql),
+                        whereSql,
                         if (plusAssign != null) mutableListOf(plusAssign) else mutableListOf(),
                         mutableListOf()
                     ),
                     paramMap,
-                    operationType = KOperationType.DELETE
+                    operationType = KOperationType.DELETE,
+                    DeleteClauseInfo(tableName, whereSql)
                 )
             )
         } else {
             // 组装UPDATE语句并返回KronosAtomicTask对象
             return CascadeDeleteClause.build(
                 cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
-                    getDeleteSql(wrapper.orDefault(), tableName, toWhereSql(whereClauseSql)),
+                    getDeleteSql(wrapper.orDefault(), tableName, whereSql),
                     paramMap,
-                    operationType = KOperationType.DELETE
+                    operationType = KOperationType.DELETE,
+                    DeleteClauseInfo(tableName, whereSql)
                 )
             )
         }

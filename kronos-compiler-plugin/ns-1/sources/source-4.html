@@ -1,0 +1,186 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrKClassHelperKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.helpers</a>
+</div>
+
+<h1>Coverage Summary for Class: IrKClassHelperKt (com.kotlinorm.compiler.helpers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrKClassHelperKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    37.5%
+  </span>
+  <span class="absValue">
+    (3/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.4%
+  </span>
+  <span class="absValue">
+    (14/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.4%
+  </span>
+  <span class="absValue">
+    (89/123)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.kotlinorm.compiler.helpers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.builtins.StandardNames
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.typeWith
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;
+&nbsp;fun IrPluginContext.kFunctionN(n: Int): IrClassSymbol {
+<b class="fc">&nbsp;    return referenceClass(StandardNames.getFunctionClassId(n))!!</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
+&nbsp; *
+&nbsp; * @return The symbol of the `println` function.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;val IrPluginContext.irPrintln
+<b class="nc">&nbsp;    get(): IrSimpleFunctionSymbol = referenceFunctions(&quot;kotlin.io&quot;, &quot;println&quot;).single {</b>
+<b class="nc">&nbsp;        val parameters = it.owner.valueParameters</b>
+<b class="nc">&nbsp;        parameters.size == 1 &amp;&amp; parameters[0].type == irBuiltIns.anyNType</b>
+&nbsp;    }
+&nbsp;
+&nbsp;fun KotlinBuilderContext.createKClassExpr(
+&nbsp;    klassSymbol: IrClassSymbol
+&nbsp;): IrExpression {
+<b class="fc">&nbsp;    with(pluginContext){</b>
+<b class="fc">&nbsp;        with(builder){</b>
+<b class="fc">&nbsp;            val classType = klassSymbol.defaultType</b>
+<b class="fc">&nbsp;            return IrClassReferenceImpl(</b>
+<b class="fc">&nbsp;                startOffset = startOffset,</b>
+<b class="fc">&nbsp;                endOffset = endOffset,</b>
+<b class="fc">&nbsp;                type = irBuiltIns.kClassClass.typeWith(classType),</b>
+<b class="fc">&nbsp;                symbol = klassSymbol,</b>
+<b class="fc">&nbsp;                classType = classType</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrBuilderWithScope.createExprNew(
+&nbsp;    klassSymbol: IrClassSymbol
+&nbsp;): IrExpression? {
+<b class="fc">&nbsp;    return klassSymbol.constructors.firstOrNull {</b>
+<b class="pc">&nbsp;        it.owner.valueParameters.isEmpty() || it.owner.valueParameters.all { v -&gt; v.defaultValue != null }</b>
+<b class="pc">&nbsp;    }?.let {</b>
+<b class="fc">&nbsp;        applyIrCall(it)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-18 15:06</div>
+</div>
+</body>
+</html>

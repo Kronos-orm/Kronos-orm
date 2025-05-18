@@ -115,7 +115,7 @@ object SqliteSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
-    override fun getTableComment(dbType: DBType) = ""
+    override fun getTableCommentSql(dbType: DBType) = ""
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
         fun extractNumberInParentheses(input: String): Pair<Int, Int> {

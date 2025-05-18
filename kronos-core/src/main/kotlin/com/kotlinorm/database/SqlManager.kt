@@ -71,9 +71,9 @@ object SqlManager {
         dbType: DBType, tableName: String
     ) = dbType.dbSupport?.getTableDropSql(dbType, tableName) ?: throw UnsupportedDatabaseTypeException(dbType)
 
-    fun getTableComment(
+    fun getTableCommentSql(
         dataSource: KronosDataSourceWrapper
-    ) = dataSource.dbType.dbSupport?.getTableComment(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(
+    ) = dataSource.dbType.dbSupport?.getTableCommentSql(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(
         dataSource.dbType
     )
 

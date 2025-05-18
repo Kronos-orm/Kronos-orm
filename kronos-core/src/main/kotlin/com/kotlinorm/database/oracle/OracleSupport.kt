@@ -218,7 +218,7 @@ object OracleSupport : DatabasesSupport {
             END;
         """.trimIndent()
 
-    override fun getTableComment(dbType: DBType): String =
+    override fun getTableCommentSql(dbType: DBType): String =
         "SELECT comments FROM all_tab_comments WHERE table_name = :tableName AND owner = :dbName"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
@@ -430,6 +430,8 @@ object OracleSupport : DatabasesSupport {
             orderByClauseSql.orEmpty()
         }${
             paginationSql ?: limitSql ?: ""
+        }${
+            lockSql.orEmpty()
         }"
     }
 

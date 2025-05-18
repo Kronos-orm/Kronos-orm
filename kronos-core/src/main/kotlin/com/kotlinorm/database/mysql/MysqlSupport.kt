@@ -187,7 +187,7 @@ object MysqlSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
-    override fun getTableComment(dbType: DBType) =
+    override fun getTableCommentSql(dbType: DBType) =
         "SELECT `TABLE_COMMENT` FROM information_schema.TABLES WHERE TABLE_NAME = :tableName AND TABLE_SCHEMA = :dbName"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {

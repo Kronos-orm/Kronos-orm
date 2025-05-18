@@ -186,7 +186,7 @@ class TableOperationMysql {
         val comment = user.kronosTableComment()
         assertEquals("Kotlin Data Class for MysqlUser", comment, "表注释不正确")
         val realComment = wrapper.queryOne<String>(
-            SqlManager.getTableComment(wrapper),
+            SqlManager.getTableCommentSql(wrapper),
             mapOf(
                 "tableName" to user.kronosTableName(),
                 "dbName" to "kronos_testing"

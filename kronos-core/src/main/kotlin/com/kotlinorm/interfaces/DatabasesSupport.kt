@@ -66,7 +66,7 @@ interface DatabasesSupport {
         tableName: String
     ): String
 
-    fun getTableComment(
+    fun getTableCommentSql(
         dbType: DBType
     ): String
 

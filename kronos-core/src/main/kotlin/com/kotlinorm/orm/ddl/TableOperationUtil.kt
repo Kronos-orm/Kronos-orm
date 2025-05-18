@@ -7,7 +7,7 @@ import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
-import com.kotlinorm.database.SqlManager.getTableComment
+import com.kotlinorm.database.SqlManager.getTableCommentSql
 import com.kotlinorm.database.SqlManager.getTableExistenceSql
 import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
@@ -36,7 +36,7 @@ fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper):
 fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): String {
     return dataSource.forObject(
         KronosAtomicQueryTask(
-            getTableComment(dataSource),
+            getTableCommentSql(dataSource),
             mapOf(
                 "tableName" to tableName,
                 "dbName" to getDBNameFrom(dataSource)
@@ -149,7 +149,7 @@ fun moveColumn(
     var l = 0
     var r = size - 1
 
-    for (i in 0 until size) {
+    repeat(size) {
         // 正向查找向前移动的字段
         processLeft(filteredExpect, filteredCurrent, lFields, l)
         if (l < size) l++

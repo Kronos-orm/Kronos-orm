@@ -159,7 +159,7 @@ object MssqlSupport : DatabasesSupport {
     override fun getTableDropSql(dbType: DBType, tableName: String) =
         "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'$tableName') AND type in (N'U')) BEGIN DROP TABLE $tableName END"
 
-    override fun getTableComment(dbType: DBType): String =
+    override fun getTableCommentSql(dbType: DBType): String =
         "SELECT ep.value AS TABLE_COMMENT FROM sys.extended_properties ep WHERE ep.major_id = OBJECT_ID(:tableName) AND ep.minor_id = 0 AND ep.name = 'MS_Description'"
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {

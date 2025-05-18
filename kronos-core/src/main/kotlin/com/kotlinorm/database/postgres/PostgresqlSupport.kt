@@ -142,7 +142,7 @@ object PostgresqlSupport : DatabasesSupport {
 
     override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
 
-    override fun getTableComment(dbType: DBType) =
+    override fun getTableCommentSql(dbType: DBType) =
         "select cast(obj_description(relfilenode, 'pg_class') as varchar) as comment  from pg_class c  where relname = :tableName"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =

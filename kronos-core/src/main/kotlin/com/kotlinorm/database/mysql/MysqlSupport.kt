@@ -78,6 +78,7 @@ import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.extractNumberInParentheses
 import com.kotlinorm.utils.trimWhitespace
 import java.math.BigInteger
 
@@ -143,7 +144,7 @@ object MysqlSupport : DatabasesSupport {
     }
 
     override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
-        if (type in listOf("int", "smallint", "tinyint", "bigint") && length == 1) {
+        if (type.lowercase() in listOf("int", "smallint", "tinyint", "bigint") && length == 1) {
             return BIT
         }
         return super.getKColumnType(type, length, scale)
@@ -206,6 +207,7 @@ object MysqlSupport : DatabasesSupport {
                     c.DATA_TYPE, 
                     c.CHARACTER_MAXIMUM_LENGTH LENGTH, 
                     c.NUMERIC_PRECISION SCALE,
+                    c.COLUMN_TYPE, 
                     c.IS_NULLABLE,
                     c.COLUMN_DEFAULT,
                     c.COLUMN_COMMENT,
@@ -220,8 +222,11 @@ object MysqlSupport : DatabasesSupport {
             """.trimWhitespace(), mapOf("tableName" to tableName)
             )
         ).map {
-            val length = (it["LENGTH"] as Long?)?.toInt() ?: 0
-            val scale = (it["SCALE"] as BigInteger?)?.toInt() ?: 0
+            val type = (it["COLUMN_TYPE"] as String?)?.let { type ->
+                extractNumberInParentheses(type)
+            }
+            val length = (it["LENGTH"] as Long?)?.toInt() ?: type?.first ?: 0
+            val scale = (it["SCALE"] as BigInteger?)?.toInt() ?: type?.second ?: 0
             Field(
                 columnName = it["COLUMN_NAME"].toString(),
                 type = getKotlinColumnType(

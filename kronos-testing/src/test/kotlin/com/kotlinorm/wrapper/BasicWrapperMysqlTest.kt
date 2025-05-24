@@ -244,7 +244,7 @@ class BasicWrapperTest {
                 "gender" to 1,
                 "create_time" to "2022-01-01T00:00",
                 "update_time" to LocalDateTime.parse("2022-01-01T00:00"),
-                "deleted" to 0
+                "deleted" to false
             ), result
         )
     }

@@ -130,3 +130,27 @@ fun getSafeValue(
 fun String.trimWhitespace(): String {
     return replace("\\s+".toRegex(), " ").trim()
 }
+
+/**
+ * Extracts numbers enclosed in parentheses from the input string.
+ *
+ * The function looks for patterns in the format `(number[,number])` where:
+ * - `number` is one or more digits.
+ * - The second number (after a comma) is optional.
+ *
+ * @param input The input string to search for the pattern.
+ * @return A `Pair` of integers:
+ * - The first integer corresponds to the first number inside the parentheses.
+ * - The second integer corresponds to the second number inside the parentheses, or 0 if it is not present.
+ * - If no match is found, returns `(0, 0)`.
+ */
+fun extractNumberInParentheses(input: String): Pair<Int, Int> {
+    val regex = Regex("""\s*\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)\s*""") // Regular expression to match the pattern.
+    val matchResult = regex.find(input) // Finds the first match in the input string.
+
+    if (matchResult != null) {
+        val (length, scale) = matchResult.destructured // Extracts matched groups.
+        return Pair(length.toInt(), scale.toIntOrNull() ?: 0) // Converts to integers and handles optional second number.
+    }
+    return Pair(0, 0) // Returns default values if no match is found.
+}

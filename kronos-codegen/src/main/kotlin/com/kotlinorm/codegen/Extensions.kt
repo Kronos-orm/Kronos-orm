@@ -21,10 +21,16 @@ import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.PrimaryKeyType
 
-val imports = linkedSetOf(
+var imports = linkedSetOf(
     "com.kotlinorm.annotations.Table",
     "com.kotlinorm.interfaces.KPojo"
 )
+
+/**
+ * The maximum number of words per line in generated Kotlin comments.
+ * 生成的 Kotlin 注释格式化时，每行最多的单词数。
+ */
+const val MAX_COMMENT_LINE_WORDS = 80
 
 val Field.kotlinType
     get(): String = when (type) {

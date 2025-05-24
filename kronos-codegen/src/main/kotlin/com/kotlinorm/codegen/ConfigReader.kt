@@ -21,6 +21,7 @@ import com.kotlinorm.Kronos.noneNamingStrategy
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
+import com.kotlinorm.codegen.createWrapper
 import com.kotlinorm.enums.ColorPrintCode
 import com.moandjiezana.toml.Toml
 import kotlin.io.path.Path
@@ -32,6 +33,7 @@ fun readConfig(path: String): TemplateConfig {
     val configMap = toml.read(Path(path).toFile()).toMap()
     val tableMap = configMap["table"] as Map<String, Any?>
     val outputMap = configMap["output"] as Map<String, Any?>
+    val dataSourceMap = configMap["dataSource"] as Map<String, Any?>
     return TemplateConfig(
         table = TableConfig(
             name = tableMap["name"] as String,
@@ -62,9 +64,12 @@ fun readConfig(path: String): TemplateConfig {
         output = OutputConfig(
             targetDir = outputMap["targetDir"] as String,
             packageName = outputMap["packageName"] as String?,
-            tableCommentLineWords = outputMap["tableCommentLineWords"] as Int?
+            tableCommentLineWords = (outputMap["tableCommentLineWords"] as? Number)?.toInt()
         ),
-        dataSource = initialDataSource(configMap["dataSource"] as Map<String, Any?>)
+        dataSource = createWrapper(
+            dataSourceMap["wrapperClassName"]?.toString(),
+            initialDataSource(dataSourceMap)
+        )
     ).also {
         Kronos.defaultLogger(toml).info(
             kMsgOf(

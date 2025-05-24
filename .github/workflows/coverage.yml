@@ -29,6 +29,7 @@ jobs:
         run: |
           mkdir -p coverage/kronos-core
           mkdir -p coverage/kronos-compiler-plugin
+          mkdir -p coverage/kronos-codegen
 
       - name: Run Core Test Coverage 🧪
         id: core-coverage
@@ -50,6 +51,16 @@ jobs:
           COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
           echo "##[set-output name=lines;]${COVERAGE}"
 
+      - name: Run Codegen Test Coverage 🧪
+        id: codegen-coverage
+        run: |
+          ./gradlew :kronos-codegen:koverLog
+          ./gradlew :kronos-codegen:koverHtmlReport
+          cat kronos-codegen/build/kover/coverage.txt
+          cp -rf kronos-codegen/build/reports/kover/html/* coverage/kronos-codegen
+          COVERAGE="$(cat kronos-codegen/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          echo "##[set-output name=lines;]${COVERAGE}"
+
       - name: Generate the badge SVG image for Core
         uses: emibcn/badge-action@v2.0.2
         with:
@@ -65,6 +76,13 @@ jobs:
           status: ${{ steps.compiler-plugin-coverage.outputs.lines }}
           color: 'blue,555,daf'
           path: 'coverage/coverage-compiler-plugin.svg'
+
+      - name: Generate the badge SVG image for Codegen
+        uses: emibcn/badge-action@v2.0.2
+        with:
+          label: 'codegen coverage'
+          status: ${{ steps.codegen-coverage.outputs.lines }}
+          color: 'blue,555,daf'
 
       - name: Deploy to coverage branch 📦
         uses: JamesIves/github-pages-deploy-action@v4

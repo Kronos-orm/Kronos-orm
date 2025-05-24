@@ -18,12 +18,27 @@ package com.kotlinorm.codegen
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import com.kotlinorm.enums.ColorPrintCode
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import java.lang.reflect.Method
 import java.util.*
 import javax.sql.DataSource
 
+fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceWrapper {
+    val className = className ?: {
+        Kronos.defaultLogger(dataSource).warn(
+            kMsgOf(
+                "wrapperClassName is not set, using default: com.kotlinorm.KronosBasicWrapper",
+                ColorPrintCode.YELLOW
+            ).endl().toArray()
+        )
+        "com.kotlinorm.KronosBasicWrapper"
+    }()
+    return Class.forName(className)
+        .getDeclaredConstructor(dataSource::class.java)
+        .newInstance(dataSource) as KronosDataSourceWrapper
+}
 
-val initialDataSource = { config: Map<String, Any?> ->
+fun initialDataSource(config: Map<String, Any?>): DataSource {
     val dataSource =
         Class.forName(
             config["dataSourceClassName"]?.toString() ?: {
@@ -41,7 +56,7 @@ val initialDataSource = { config: Map<String, Any?> ->
 
     dataSource.apply {
         config.entries.forEach { (key, value) ->
-            if (key in arrayOf("dataSourceClassName")) return@forEach
+            if (key in arrayOf("dataSourceClassName", "wrapperClassName")) return@forEach
             try {
                 // 生成可能的setter方法名（兼容不同命名风格）
                 val methodNames = listOf(
@@ -73,7 +88,7 @@ val initialDataSource = { config: Map<String, Any?> ->
             }
         }
     }
-    dataSource
+    return dataSource
 }
 
 private fun findCompatibleMethod(clazz: Class<*>, methodName: String, value: Any?): Method? {

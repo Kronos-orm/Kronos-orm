@@ -16,21 +16,20 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.KronosBasicWrapper
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.database.SqlManager.getTableIndexes
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.queryTableComment
-import javax.sql.DataSource
 
 class TemplateConfig(
     val table: TableConfig,
     val output: OutputConfig,
-    val dataSource: DataSource,
+    val dataSource: KronosDataSourceWrapper,
 ) {
 
-    val wrapper = KronosBasicWrapper(dataSource)
+    val wrapper = dataSource
     val tableComment: String
     val tableCommentLineWords: Int
     val fields: List<Field>
@@ -61,9 +60,12 @@ class TemplateConfig(
         }
     }
 
-
     init {
         Kronos.init {
+            imports = linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo"
+            )
             Kronos.tableNamingStrategy = table.tableNamingStrategy ?: lineHumpNamingStrategy
             Kronos.fieldNamingStrategy = table.fieldNamingStrategy ?: lineHumpNamingStrategy
             Kronos.createTimeStrategy = table.createTimeStrategy ?: Kronos.createTimeStrategy
@@ -77,8 +79,9 @@ class TemplateConfig(
         fields = getTableColumns(wrapper, tableName)
         indexes = getTableIndexes(wrapper, tableName)
         targetDir = output.targetDir
-        tableCommentLineWords = output.tableCommentLineWords ?: 100
-        packageName = output.packageName ?: targetDir.split("/").drop(4).joinToString(".")
+        tableCommentLineWords = output.tableCommentLineWords ?: MAX_COMMENT_LINE_WORDS
+        packageName = output.packageName ?: targetDir.split("main/kotlin/").lastOrNull()?.replace('/', '.')
+                ?: "com.kotlinorm.orm.table"
         className = table.className ?: Kronos.tableNamingStrategy.db2k(tableName).replaceFirstChar(Char::titlecase)
     }
 }

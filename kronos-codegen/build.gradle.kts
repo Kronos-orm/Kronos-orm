@@ -6,7 +6,8 @@ plugins {
 
 dependencies {
     implementation(project(":kronos-core"))
-    implementation(project(":kronos-jdbc-wrapper"))
     implementation(libs.toml4j)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.dbcp2)
+    testImplementation(libs.driver.jdbc.mysql)
 }

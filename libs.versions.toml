@@ -38,6 +38,7 @@ maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.pu
 auto-service = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
 kct = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlinCompilerTest" }
 mockk = { module = "io.mockk:mockk", version = "1.14.2" }
+toml4j = { module = "com.moandjiezana.toml:toml4j", version = "0.7.2" }
 
 [bundles]
 ktx-serialization = ["ktx-serialization-core", "ktx-serialization-json"]

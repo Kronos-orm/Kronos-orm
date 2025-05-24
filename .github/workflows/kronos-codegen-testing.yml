@@ -1,4 +1,4 @@
-name: Kronos-core unit testing
+name: Kronos-codegen unit testing
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  kronos-core-unittests:
+  kronos-codegen-unittests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️

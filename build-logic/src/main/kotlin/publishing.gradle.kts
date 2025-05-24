@@ -33,6 +33,7 @@ value class PublishConfiguration(val project: Project) {
             "kronos-compiler-plugin" -> "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-maven-plugin" -> "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-gradle-plugin" -> "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
+            "kronos-codegen" -> "Kronos code generation library, used to read user database and table configurations, and convert them into Kotlin business code, such as KPojo Class."
             else -> "Kronos core"
         }
     }

@@ -1,28 +1,37 @@
-package com.kotlinorm.wrappers
+package com.kotlinorm.codegen
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+import javax.sql.DataSource
 import kotlin.reflect.KClass
 
-open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
-    companion object{
-        val sampleMysqlJdbcWrapper = SampleMysqlJdbcWrapper()
-    }
-    override var url: String = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true"
-    override val userName: String
-        get() = "kronos"
+open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataSourceWrapper {
+    override val url: String = dataSource.url
+    override val userName: String = dataSource.userName
     override val dbType: DBType
         get() = DBType.Mysql
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+        if (task.sql.startsWith("SELECT DISTINCT INDEX_NAME")) {
+            return listOf(
+                mapOf(
+                    "tableName" to "tb_user",
+                    "indexName" to "PRIMARY",
+                    "columnName" to "id",
+                    "nonUnique" to 0,
+                    "indexType" to "BTREE"
+                )
+            )
+        }
         return listOf(
             mapOf(
                 "COLUMN_NAME" to "id",
                 "DATA_TYPE" to "Int",
-                "PRIMARY_KEY" to "YES"
+                "PRIMARY_KEY" to "PRI"
             ),
             mapOf(
                 "COLUMN_NAME" to "username",
@@ -30,7 +39,7 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
             ),
             mapOf(
                 "COLUMN_NAME" to "gender",
-                "Type" to "Int"
+                "DATA_TYPE" to "Int"
             ),
             mapOf(
                 "COLUMN_NAME" to "create_time",
@@ -47,7 +56,12 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
         )
     }
 
-    override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
+    override fun forList(
+        task: KAtomicQueryTask,
+        kClass: KClass<*>,
+        isKPojo: Boolean,
+        superTypes: List<String>
+    ): List<Any> {
         return listOf()
     }
 
@@ -55,7 +69,15 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
         return null
     }
 
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+    override fun forObject(
+        task: KAtomicQueryTask,
+        kClass: KClass<*>,
+        isKPojo: Boolean,
+        superTypes: List<String>
+    ): Any? {
+        if (task.sql.startsWith("SELECT `TABLE_COMMENT`")) {
+            return "Sample Table Comment"
+        }
         return null
     }
 

@@ -33,6 +33,7 @@ plugins {
 
 rootProject.name = "kronos-orm"
 
+include("kronos-codegen")
 include("kronos-compiler-plugin")
 include("kronos-core")
 include("kronos-jdbc-wrapper")

@@ -142,6 +142,13 @@ object MysqlSupport : DatabasesSupport {
         }
     }
 
+    override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
+        if (type in listOf("int", "smallint", "tinyint", "bigint") && length == 1) {
+            return BIT
+        }
+        return super.getKColumnType(type, length, scale)
+    }
+
     override fun getColumnCreateSql(dbType: DBType, column: Field): String =
         "${
             quote(column.columnName)

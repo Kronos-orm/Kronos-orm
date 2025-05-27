@@ -21,5 +21,13 @@ jobs:
           java-version: 21
           distribution: 'adopt'
 
+      - name: Set up MySQL 8.0 🐬
+        uses: ankane/setup-mysql@v1
+        with:
+          database: kronos_testing
+
+      - name: Test MySQL connection 🔗
+        run: mysql -D kronos_testing -e 'SELECT VERSION()'
+
       - name: Run tests 🧪
         run: ./gradlew :kronos-codegen:test --info --stacktrace

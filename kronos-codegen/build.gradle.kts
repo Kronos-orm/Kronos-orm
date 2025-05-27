@@ -6,9 +6,10 @@ plugins {
 
 dependencies {
     implementation(project(":kronos-core"))
-    implementation(project(":kronos-jdbc-wrapper"))
     implementation(libs.jackson.dataformat.toml)
+    kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     testImplementation(libs.kotlin.test)
+    testImplementation(project(":kronos-jdbc-wrapper"))
     testImplementation(libs.dbcp2)
     testImplementation(libs.driver.jdbc.mysql)
 }

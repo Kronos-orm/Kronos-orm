@@ -1,9 +1,10 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
-import com.kotlinorm.database.SqlHandler.execute
+import com.kotlinorm.orm.ddl.table
 import org.intellij.lang.annotations.Language
 import java.io.File
 import kotlin.io.path.createTempDirectory
@@ -74,33 +75,8 @@ class CodeGenerateTest {
     fun testCodegen() {
         val now = java.time.LocalDateTime.now()
         init(configPath)
-        Kronos.dataSource().execute(
-            """
-            CREATE TABLE `tb_user` (
-            `id` int NOT NULL AUTO_INCREMENT,
-            `username` varchar(254) DEFAULT NULL,
-            `score` int DEFAULT NULL,
-            `gender` tinyint(1) DEFAULT '0',
-            `create_time` varchar(255) NOT NULL,
-            `update_time` datetime NOT NULL,
-            `deleted` tinyint(1) NOT NULL DEFAULT '0',
-            PRIMARY KEY (`id`),
-            UNIQUE KEY `idx_multi` (`id`,`username`) USING BTREE,
-            KEY `idx_username` (`username`) USING BTREE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Kotlin Data Class for MysqlUser';
-        """.trimIndent())
-        Kronos.dataSource().execute(
-            """
-            CREATE TABLE `student` (
-            `id` int NOT NULL AUTO_INCREMENT,
-            `name` varchar(255) DEFAULT NULL,
-            `student_no` varchar(255) DEFAULT NULL,
-            `school_name` varchar(255) DEFAULT NULL,
-            `group_class_name` varchar(255) DEFAULT NULL,
-            `create_time` varchar(255) DEFAULT NULL,
-            PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-        """.trimIndent())
+        dataSource.table.syncTable(Student())
+        dataSource.table.syncTable(User())
 
         template {
             +"package $packageName"
@@ -168,7 +144,6 @@ class CodeGenerateTest {
 
         val student = codeGenConfig?.table[1]!!
         lines = File(tempDir, "${student.className}.kt").readLines()
-        print(lines)
 
         assertEquals("package com.kotlinorm.orm.table", lines[0])
         assertEquals("", lines[1])

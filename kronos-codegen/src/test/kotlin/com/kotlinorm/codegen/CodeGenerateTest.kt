@@ -1,6 +1,5 @@
 package com.kotlinorm.codegen
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
@@ -75,14 +74,8 @@ class CodeGenerateTest {
     fun testCodegen() {
         val now = java.time.LocalDateTime.now()
         init(configPath)
-        if(dataSource.table.exists(Student())) {
-            dataSource.table.dropTable(Student())
-        }
-        dataSource.table.createTable(Student())
-        if(dataSource.table.exists(User())) {
-            dataSource.table.dropTable(User())
-        }
-        dataSource.table.createTable(User())
+        dataSource.table.syncTable(Student())
+        dataSource.table.syncTable(User())
 
         template {
             +"package $packageName"
@@ -107,6 +100,7 @@ class CodeGenerateTest {
 
         val tbUser = codeGenConfig?.table[0]!!
         var lines = File(tempDir, "${tbUser.className}.kt").readLines()
+        print(lines)
         assertEquals("package com.kotlinorm.orm.table", lines[0])
         assertEquals("", lines[1])
         assertEquals("import com.kotlinorm.annotations.Table", lines[2])
@@ -150,6 +144,7 @@ class CodeGenerateTest {
 
         val student = codeGenConfig?.table[1]!!
         lines = File(tempDir, "${student.className}.kt").readLines()
+        print(lines)
 
         assertEquals("package com.kotlinorm.orm.table", lines[0])
         assertEquals("", lines[1])

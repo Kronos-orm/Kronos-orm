@@ -67,7 +67,7 @@ class CodeGenerateTest {
 
                 [dataSource]
                 dataSourceClassName = "org.apache.commons.dbcp2.BasicDataSource"
-                wrapperClassName = "org.kotlinorm.KronosBasicWrapper"
+                wrapperClassName = "com.kotlinorm.KronosBasicWrapper"
                 url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
                 username = "root"
                 password = "******"

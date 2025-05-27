@@ -75,8 +75,14 @@ class CodeGenerateTest {
     fun testCodegen() {
         val now = java.time.LocalDateTime.now()
         init(configPath)
-        dataSource.table.syncTable(Student())
-        dataSource.table.syncTable(User())
+        if(dataSource.table.exists(Student())) {
+            dataSource.table.dropTable(Student())
+        }
+        dataSource.table.createTable(Student())
+        if(dataSource.table.exists(User())) {
+            dataSource.table.dropTable(User())
+        }
+        dataSource.table.createTable(User())
 
         template {
             +"package $packageName"

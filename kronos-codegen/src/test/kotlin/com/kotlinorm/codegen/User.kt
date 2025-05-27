@@ -20,10 +20,11 @@ import java.time.LocalDateTime
 data class User(
     @PrimaryKey(identity = true)
     var id: Int? = null,
-    @ColumnType(type = KColumnType.VARCHAR, length = 254) var username: String? = null,
+    @ColumnType(type = KColumnType.VARCHAR, length = 254)
+    var username: String? = null,
     var score: Int? = null,
     @Default("0")
-    var gender: Byte? = null,
+    var gender: Boolean? = null,
     @Necessary
     @CreateTime
     var createTime: String? = null,

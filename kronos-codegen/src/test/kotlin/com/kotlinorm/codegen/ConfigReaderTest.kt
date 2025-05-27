@@ -62,8 +62,8 @@ class ConfigReaderTest {
                 dataSourceClassName = "org.apache.commons.dbcp2.BasicDataSource"
                 wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
                 url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
-                username = "${System.getenv("db.username")}"
-                password = "${System.getenv("db.password")}"
+                username = "root"
+                password = ""
                 driverClassName = "com.mysql.cj.jdbc.Driver"
                 initialSize = 5
                 maxActive = 10

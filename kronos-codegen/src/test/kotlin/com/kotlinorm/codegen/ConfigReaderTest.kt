@@ -8,6 +8,8 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 
 class ConfigReaderTest {
 
@@ -187,5 +189,134 @@ class ConfigReaderTest {
             tbUserConfig.indexes[0].type, "UNIQUE",
             "Expected index type to be 'BTREE', but got '${tbUserConfig.indexes[0].type}'"
         )
+    }
+
+    @Test
+    fun noTableConfig() {
+        val configPath = File(tempDir, "noTableConfig.toml").apply {
+            parentFile.mkdirs()
+            writeTomlContent(
+                """
+                [strategy]
+                [output]
+                [dataSource]
+                """.trimIndent()
+            )
+        }.path
+
+        assertFailsWith<IllegalArgumentException>("Table configuration is required in config: $configPath") {
+            init(configPath)
+        }
+    }
+
+    @Test
+    fun noTableListConfig() {
+        val configPath = File(tempDir, "noTableListConfig.toml").apply {
+            parentFile.mkdirs()
+            writeTomlContent(
+                """
+                [table]
+                name = "tb_user"
+                className = "User"
+
+                [strategy]
+                [output]
+                [dataSource]
+                """.trimIndent()
+            )
+        }.path
+
+        assertFailsWith<IllegalArgumentException>("Table configuration must be a list of table definitions in config: $configPath") {
+            init(configPath)
+        }
+    }
+
+    @Test
+    fun noOutputConfig() {
+        val configPath = File(tempDir, "noOutputConfig.toml").apply {
+            parentFile.mkdirs()
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_user"
+                className = "User"
+
+                [strategy]
+                [dataSource]
+                """.trimIndent()
+            )
+        }.path
+
+        assertFailsWith<IllegalArgumentException>("Output configuration is required in config: $configPath") {
+            init(configPath)
+        }
+    }
+
+    @Test
+    fun noDataSourceConfig() {
+        val configPath = File(tempDir, "noDataSourceConfig.toml").apply {
+            parentFile.mkdirs()
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_user"
+                className = "User"
+
+                [strategy]
+                [output]
+                """.trimIndent()
+            )
+        }.path
+
+        assertFailsWith<IllegalArgumentException>("DataSource configuration is required in config: $configPath") {
+            init(configPath)
+        }
+    }
+
+    @Test
+    fun noOutputDir(){
+        val configPath = File(tempDir, "noOutputDir.toml").apply {
+            parentFile.mkdirs()
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_user"
+                className = "User"
+
+                [strategy]
+                [output]
+                packageName = "com.kotlinorm.orm.table"
+                """.trimIndent()
+            )
+        }.path
+
+        assertFailsWith<IllegalArgumentException>("Target directory is required in output config: $configPath") {
+            init(configPath)
+        }
+    }
+
+    @Test
+    fun noStrategyConfig() {
+        val configPath = File(tempDir, "noStrategyConfig.toml").apply {
+            parentFile.mkdirs()
+            writeTomlContent(
+                """
+                [[table]]
+                name = "tb_user"
+                className = "User"
+
+                [output]
+                targetDir = "./src/main/kotlin/com/kotlinorm/orm/table/"
+                [dataSource]
+                wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
+                username = "root"
+                url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                """.trimIndent()
+            )
+        }.path
+
+        init(configPath)
+        assertNotNull(codeGenConfig!!.strategy)
     }
 }

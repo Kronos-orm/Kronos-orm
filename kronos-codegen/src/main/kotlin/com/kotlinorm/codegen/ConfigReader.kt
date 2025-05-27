@@ -34,10 +34,17 @@ var codeGenConfig: TemplateConfig? = null
 @Suppress("UNCHECKED_CAST")
 fun init(path: String) {
     val config = readConfig(path)
-    val tables = config["table"] as List<Map<String, String?>>
-    val output = config["output"] as Map<String, Any?>
-    val dataSource = config["dataSource"] as Map<String, Any?>
-    val strategies = config["strategy"] as Map<String, Any?>
+    val tables = try {
+        config["table"] as? List<Map<String, String?>>
+            ?: throw IllegalArgumentException("Table configuration is required in config: $path")
+    } catch (_: TypeCastException) {
+        throw IllegalArgumentException("Table configuration must be a list of table definitions in config: $path")
+    }
+    val output = config["output"] as? Map<String, Any?>
+        ?: throw IllegalArgumentException("Output configuration is required in config: $path")
+    val dataSource = config["dataSource"] as? Map<String, Any?>
+        ?: throw IllegalArgumentException("DataSource configuration is required in config: $path")
+    val strategies = config["strategy"] as? Map<String, Any?> ?: mapOf()
     codeGenConfig = TemplateConfig(
         table = tables.map {
             TableConfig(
@@ -70,7 +77,8 @@ fun init(path: String) {
             }
         ),
         output = OutputConfig(
-            targetDir = output["targetDir"] as String,
+            targetDir = output["targetDir"] as? String
+                ?: throw IllegalArgumentException("Target directory is required in output config: $path"),
             packageName = output["packageName"] as String?,
             tableCommentLineWords = (output["tableCommentLineWords"] as? Number)?.toInt()
         ),

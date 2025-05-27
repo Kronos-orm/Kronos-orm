@@ -50,7 +50,7 @@ class KronosConfig(
                     kMsgOf(
                         "File generated successfully: ${it.outputPath}",
                         ColorPrintCode.GREEN
-                    ).toArray()
+                    ).endl().toArray()
                 )
             }
         }

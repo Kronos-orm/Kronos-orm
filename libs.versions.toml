@@ -14,6 +14,7 @@ dokkaVer = "2.0.0"
 mavenCore = "3.9.9"
 autoService = "1.1.1"
 kotlinCompilerTest = "0.7.0"
+jackson = "2.19.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -38,7 +39,7 @@ maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.pu
 auto-service = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
 kct = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlinCompilerTest" }
 mockk = { module = "io.mockk:mockk", version = "1.14.2" }
-toml4j = { module = "com.moandjiezana.toml:toml4j", version = "0.7.2" }
+jackson-dataformat-toml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
 
 [bundles]
 ktx-serialization = ["ktx-serialization-core", "ktx-serialization-json"]

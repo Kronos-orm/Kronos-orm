@@ -15,16 +15,8 @@
  */
 package com.kotlinorm.codegen
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.enums.KColumnType
-import com.kotlinorm.enums.PrimaryKeyType
-
-var imports = linkedSetOf(
-    "com.kotlinorm.annotations.Table",
-    "com.kotlinorm.interfaces.KPojo"
-)
 
 /**
  * The maximum number of words per line in generated Kotlin comments.
@@ -69,87 +61,3 @@ val Field.kotlinType
         // 默认兜底
         else -> "String"
     }
-
-fun Field.annotations(): List<String> {
-    val annotations = mutableListOf<String>()
-    when (primaryKey) {
-        PrimaryKeyType.IDENTITY -> {
-            annotations.add("@PrimaryKey(identity = true)")
-            imports.add("com.kotlinorm.annotations.PrimaryKey")
-        }
-
-        PrimaryKeyType.DEFAULT -> {
-            annotations.add("@PrimaryKey")
-            imports.add("com.kotlinorm.annotations.PrimaryKey")
-        }
-
-        else -> {}
-    }
-    if (!nullable) {
-        annotations.add("@Necessary")
-        imports.add("com.kotlinorm.annotations.Necessary")
-    }
-    if (defaultValue != null) {
-        annotations.add("@Default(\"$defaultValue\")")
-        imports.add("com.kotlinorm.annotations.Default")
-    }
-
-    if (length != 0 || scale != 0) {
-        val params = mutableListOf<String>()
-        if (length != 0) {
-            params.add("length = $length")
-        }
-        if (scale != 0) {
-            params.add("scale = $scale")
-        }
-        annotations.add(
-            "@ColumnType(type = KColumnType.${type}, ${params.joinToString(", ")})"
-        )
-        imports.add("com.kotlinorm.annotations.ColumnType")
-        imports.add("com.kotlinorm.enums.KColumnType")
-    }
-    if (Kronos.createTimeStrategy.field.columnName == columnName) {
-        annotations.add("@CreateTime")
-        imports.add("com.kotlinorm.annotations.CreateTime")
-    }
-    if (Kronos.updateTimeStrategy.field.columnName == columnName) {
-        annotations.add("@UpdateTime")
-        imports.add("com.kotlinorm.annotations.UpdateTime")
-    }
-    if (Kronos.logicDeleteStrategy.field.columnName == columnName) {
-        annotations.add("@LogicDelete")
-        imports.add("com.kotlinorm.annotations.LogicDelete")
-    }
-    if (Kronos.optimisticLockStrategy.field.columnName == columnName) {
-        annotations.add("@Version")
-        imports.add("com.kotlinorm.annotations.Version")
-    }
-    return annotations
-}
-
-fun KTableIndex.toAnnotations(): String {
-    val params = mutableListOf<String>()
-    if (name.isNotEmpty()) {
-        params.add("name = \"$name\"")
-    }
-    if (columns.isNotEmpty()) {
-        params.add("columns = [${columns.joinToString(", ") { "\"$it\"" }}]")
-    }
-    if (type.isNotEmpty()) {
-        params.add("type = \"$type\"")
-    }
-    if (method.isNotEmpty()) {
-        params.add("method = \"$method\"")
-    }
-    if (concurrently) {
-        params.add("concurrently = $concurrently")
-    }
-    return "@TableIndex(${params.joinToString(", ")})"
-}
-
-fun List<KTableIndex>.toAnnotations(): String {
-    if (isNotEmpty()) {
-        imports.add("com.kotlinorm.annotations.TableIndex")
-    }
-    return joinToString("\n") { it.toAnnotations() }
-}

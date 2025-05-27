@@ -36,14 +36,20 @@ class ConfigReaderTest {
             parentFile.mkdirs()
             writeTomlContent(
                 """
-                [table]
+                [[table]]
                 name = "tb_user"
+                className = "User"
+
+                [[table]]
+                name = "student"
+                className = "Student"
+
+                [strategy]
                 tableNamingStrategy = "lineHumpNamingStrategy"
                 fieldNamingStrategy = "lineHumpNamingStrategy"
                 createTimeStrategy = "createTime"
                 updateTimeStrategy = "updateTime"
                 logicDeleteStrategy = "deleted"
-                className = "User"
 
                 [output]
                 targetDir = "./src/main/kotlin/com/kotlinorm/orm/table/"
@@ -55,7 +61,7 @@ class ConfigReaderTest {
                 wrapperClassName = "com.kotlinorm.codegen.SampleMysqlJdbcWrapper"
                 url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
                 username = "root"
-                password = "password"
+                password = "******"
                 driverClassName = "com.mysql.cj.jdbc.Driver"
                 initialSize = 5
                 maxActive = 10
@@ -98,17 +104,20 @@ class ConfigReaderTest {
 //            "nonUnique" to 0,
 //            "indexType" to "BTREE"
 //        )
-        val config = readConfig(configPath)
+        init(configPath)
+        val config = codeGenConfig!!
 
-        assertEquals("tb_user", config.table.name)
+        assertEquals("tb_user", config.table[0].name)
+        assertEquals("student", config.table[1].name)
+        assertEquals("User", config.table[0].className)
+        assertEquals("Student", config.table[1].className)
         assertEquals("./src/main/kotlin/com/kotlinorm/orm/table/", config.output.targetDir)
         assertEquals("com.kotlinorm.orm.table", config.output.packageName)
-        assertEquals("User", config.table.className)
-        assertEquals(Kronos.lineHumpNamingStrategy, config.table.tableNamingStrategy)
-        assertEquals(Kronos.lineHumpNamingStrategy, config.table.fieldNamingStrategy)
-        assertEquals("createTime", config.table.createTimeStrategy?.field?.name)
-        assertEquals("updateTime", config.table.updateTimeStrategy?.field?.name)
-        assertEquals("deleted", config.table.logicDeleteStrategy?.field?.name)
+        assertEquals(Kronos.lineHumpNamingStrategy, config.strategy.tableNamingStrategy)
+        assertEquals(Kronos.lineHumpNamingStrategy, config.strategy.fieldNamingStrategy)
+        assertEquals("createTime", config.strategy.createTimeStrategy?.field?.name)
+        assertEquals("updateTime", config.strategy.updateTimeStrategy?.field?.name)
+        assertEquals("deleted", config.strategy.logicDeleteStrategy?.field?.name)
         assertEquals("com.kotlinorm.codegen.SampleMysqlJdbcWrapper", config.dataSource::class.java.name)
         assertEquals(
             "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true",
@@ -120,62 +129,63 @@ class ConfigReaderTest {
         val dataSource = config.dataSource as SampleMysqlJdbcWrapper
         assertEquals("org.apache.commons.dbcp2.BasicDataSource", dataSource.dataSource::class.java.name)
 
+        val kronosConfig = config.toKronosConfigs()
+        val tbUserConfig = kronosConfig[0]
         assertEquals(
-            config.formatedKotlinComment, "// Sample Table Comment",
-            "Expected comment to contain 'Sample Table Comment', but got '${config.formatedKotlinComment}'"
+            tbUserConfig.formatedComment, "// Sample Table Comment",
+            "Expected comment to contain 'Sample Table Comment', but got '${tbUserConfig.formatedComment}'"
         )
 
         //fields:
         assertEquals(
-            config.fields.size, 6,
-            "Expected 6 fields, but got ${config.fields.size}"
+            tbUserConfig.fields.size, 6,
+            "Expected 6 fields, but got ${tbUserConfig.fields.size}"
         )
         assertEquals(
-            config.fields[0].name, "id",
-            "Expected first field name to be 'id', but got '${config.fields[0].name}'"
+            tbUserConfig.fields[0].name, "id",
+            "Expected first field name to be 'id', but got '${tbUserConfig.fields[0].name}'"
         )
         assertEquals(
-            config.fields[1].name, "username",
-            "Expected second field name to be 'username', but got '${config.fields[1].name}'"
+            tbUserConfig.fields[1].name, "username",
+            "Expected second field name to be 'username', but got '${tbUserConfig.fields[1].name}'"
         )
         assertEquals(
-            config.fields[2].name, "gender",
-            "Expected third field name to be 'gender', but got '${config.fields[2].name}'"
+            tbUserConfig.fields[2].name, "gender",
+            "Expected third field name to be 'gender', but got '${tbUserConfig.fields[2].name}'"
         )
         assertEquals(
-            config.fields[3].name, "createTime",
-            "Expected fourth field name to be 'createTime', but got '${config.fields[3].name}'"
+            tbUserConfig.fields[3].name, "createTime",
+            "Expected fourth field name to be 'createTime', but got '${tbUserConfig.fields[3].name}'"
         )
         assertEquals(
-            config.fields[4].name, "updateTime",
-            "Expected fifth field name to be 'updateTime', but got '${config.fields[4].name}'"
+            tbUserConfig.fields[4].name, "updateTime",
+            "Expected fifth field name to be 'updateTime', but got '${tbUserConfig.fields[4].name}'"
         )
         assertEquals(
-            config.fields[5].name, "deleted",
-            "Expected sixth field name to be 'deleted', but got '${config.fields[5].name}'"
+            tbUserConfig.fields[5].name, "deleted",
+            "Expected sixth field name to be 'deleted', but got '${tbUserConfig.fields[5].name}'"
         )
 
         //indexes:
         assertEquals(
-            config.indexes.size, 1,
-            "Expected 1 index, but got ${config.indexes.size}"
+            tbUserConfig.indexes.size, 1,
+            "Expected 1 index, but got ${tbUserConfig.indexes.size}"
         )
         assertEquals(
-            config.indexes[0].name, "PRIMARY",
-            "Expected index name to be 'PRIMARY', but got '${config.indexes[0].name}'"
+            tbUserConfig.indexes[0].name, "PRIMARY",
+            "Expected index name to be 'PRIMARY', but got '${tbUserConfig.indexes[0].name}'"
         )
         assertEquals(
-            config.indexes[0].columns.size, 1,
-            "Expected index to have 1 column, but got ${config.indexes[0].columns.size}"
+            tbUserConfig.indexes[0].columns.size, 1,
+            "Expected index to have 1 column, but got ${tbUserConfig.indexes[0].columns.size}"
         )
         assertEquals(
-            config.indexes[0].columns[0], "id",
-            "Expected index column name to be 'id', but got '${config.indexes[0].columns[0]}'"
+            tbUserConfig.indexes[0].columns[0], "id",
+            "Expected index column name to be 'id', but got '${tbUserConfig.indexes[0].columns[0]}'"
         )
         assertEquals(
-            config.indexes[0].type, "UNIQUE",
-            "Expected index type to be 'BTREE', but got '${config.indexes[0].type}'"
+            tbUserConfig.indexes[0].type, "UNIQUE",
+            "Expected index type to be 'BTREE', but got '${tbUserConfig.indexes[0].type}'"
         )
-
     }
 }

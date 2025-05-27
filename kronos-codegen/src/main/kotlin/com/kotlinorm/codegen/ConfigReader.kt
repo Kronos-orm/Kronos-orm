@@ -15,67 +15,95 @@
  */
 package com.kotlinorm.codegen
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.toml.TomlFactory
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.lineHumpNamingStrategy
 import com.kotlinorm.Kronos.noneNamingStrategy
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.codegen.createWrapper
 import com.kotlinorm.enums.ColorPrintCode
-import com.moandjiezana.toml.Toml
-import kotlin.io.path.Path
+import java.io.File
 
+
+var mapper = ObjectMapper(TomlFactory())
+var codeGenConfig: TemplateConfig? = null
 
 @Suppress("UNCHECKED_CAST")
-fun readConfig(path: String): TemplateConfig {
-    val toml = Toml()
-    val configMap = toml.read(Path(path).toFile()).toMap()
-    val tableMap = configMap["table"] as Map<String, Any?>
-    val outputMap = configMap["output"] as Map<String, Any?>
-    val dataSourceMap = configMap["dataSource"] as Map<String, Any?>
-    return TemplateConfig(
-        table = TableConfig(
-            name = tableMap["name"] as String,
-            tableNamingStrategy = when (tableMap["tableNamingStrategy"]) {
+fun init(path: String) {
+    val config = readConfig(path)
+    val tables = config["table"] as List<Map<String, String?>>
+    val output = config["output"] as Map<String, Any?>
+    val dataSource = config["dataSource"] as Map<String, Any?>
+    val strategies = config["strategy"] as Map<String, Any?>
+    codeGenConfig = TemplateConfig(
+        table = tables.map {
+            TableConfig(
+                name = it["name"] ?: throw IllegalArgumentException("Table name is required in config: $path"),
+                className = it["className"]
+            )
+        },
+        strategy = StrategyConfig(
+            tableNamingStrategy = when (strategies["tableNamingStrategy"]) {
                 "lineHumpNamingStrategy" -> lineHumpNamingStrategy
                 "noneNamingStrategy" -> noneNamingStrategy
                 else -> null
             },
-            fieldNamingStrategy = when (tableMap["fieldNamingStrategy"]) {
+            fieldNamingStrategy = when (strategies["fieldNamingStrategy"]) {
                 "lineHumpNamingStrategy" -> lineHumpNamingStrategy
                 "noneNamingStrategy" -> noneNamingStrategy
                 else -> null
             },
-            createTimeStrategy = tableMap["createTimeStrategy"]?.let {
+            createTimeStrategy = strategies["createTimeStrategy"]?.let {
                 KronosCommonStrategy(true, Field(it as String))
             },
-            updateTimeStrategy = tableMap["updateTimeStrategy"]?.let {
+            updateTimeStrategy = strategies["updateTimeStrategy"]?.let {
                 KronosCommonStrategy(true, Field(it as String))
             },
-            logicDeleteStrategy = tableMap["logicDeleteStrategy"]?.let {
+            logicDeleteStrategy = strategies["logicDeleteStrategy"]?.let {
                 KronosCommonStrategy(true, Field(it as String))
             },
-            optimisticLockStrategy = tableMap["optimisticLockStrategy"]?.let {
+            optimisticLockStrategy = strategies["optimisticLockStrategy"]?.let {
                 KronosCommonStrategy(true, Field(it as String))
-            },
-            className = tableMap["className"] as String?
+            }
         ),
         output = OutputConfig(
-            targetDir = outputMap["targetDir"] as String,
-            packageName = outputMap["packageName"] as String?,
-            tableCommentLineWords = (outputMap["tableCommentLineWords"] as? Number)?.toInt()
+            targetDir = output["targetDir"] as String,
+            packageName = output["packageName"] as String?,
+            tableCommentLineWords = (output["tableCommentLineWords"] as? Number)?.toInt()
         ),
         dataSource = createWrapper(
-            dataSourceMap["wrapperClassName"]?.toString(),
-            initialDataSource(dataSourceMap)
+            dataSource["wrapperClassName"]?.toString(),
+            initialDataSource(dataSource)
         )
-    ).also {
-        Kronos.defaultLogger(toml).info(
+    ).apply {
+        Kronos.defaultLogger(this).info(
             kMsgOf(
                 "Reading config file successfully: $path",
                 ColorPrintCode.GREEN
             ).endl().toArray()
         )
     }
+}
+
+fun readConfig(path: String): Map<String, Any?> {
+    var config = mapper.readValue(
+        File(path),
+        object : TypeReference<Map<String, Any?>?>() {}
+    ) ?: throw IllegalArgumentException("Config file not found or is empty")
+    while (config["extend"] != null) {
+        val extendPath = config["extend"] as String
+        Kronos.defaultLogger(extendPath).info(
+            kMsgOf("Extending config from: $extendPath", ColorPrintCode.YELLOW).endl().toArray()
+        )
+        val extendConfig = mapper.readValue(
+            File(extendPath),
+            object : TypeReference<Map<String, Any?>?>() {}
+        ) ?: throw IllegalArgumentException("Extend config file not found or is empty: $extendPath"
+        )
+        config = extendConfig + config
+    }
+    return config
 }

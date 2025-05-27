@@ -22,66 +22,79 @@ import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.database.SqlManager.getTableIndexes
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.queryTableComment
+import java.io.File.separator
 
 class TemplateConfig(
-    val table: TableConfig,
+    val table: List<TableConfig>,
+    val strategy: StrategyConfig,
     val output: OutputConfig,
     val dataSource: KronosDataSourceWrapper,
 ) {
 
     val wrapper = dataSource
-    val tableComment: String
     val tableCommentLineWords: Int
-    val fields: List<Field>
-    val indexes: List<KTableIndex>
     val packageName: String
     val targetDir: String
-    val tableName: String
-    val className: String
-
-    val formatedKotlinComment by lazy {
-        if (tableComment.isEmpty()) {
-            ""
-        } else {
-            val words = tableComment.split(" ")
-            val lines = mutableListOf<String>()
-            var currentLine = ""
-            for (word in words) {
-                if (currentLine.length + word.length + 1 > tableCommentLineWords) {
-                    lines.add(currentLine.trim())
-                    currentLine = ""
-                }
-                currentLine += "$word "
-            }
-            if (currentLine.isNotEmpty()) {
-                lines.add(currentLine.trim())
-            }
-            lines.joinToString("\n") { "// $it" }
-        }
-    }
+    val tableNames: List<String>
+    val classNames: List<String>
+    val tableComments: List<String>
+    val fields: List<List<Field>>
+    val indexes: List<List<KTableIndex>>
 
     init {
         Kronos.init {
-            imports = linkedSetOf(
-                "com.kotlinorm.annotations.Table",
-                "com.kotlinorm.interfaces.KPojo"
-            )
-            Kronos.tableNamingStrategy = table.tableNamingStrategy ?: lineHumpNamingStrategy
-            Kronos.fieldNamingStrategy = table.fieldNamingStrategy ?: lineHumpNamingStrategy
-            Kronos.createTimeStrategy = table.createTimeStrategy ?: Kronos.createTimeStrategy
-            Kronos.updateTimeStrategy = table.updateTimeStrategy ?: Kronos.updateTimeStrategy
-            Kronos.logicDeleteStrategy = table.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
-            Kronos.optimisticLockStrategy = table.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
+            Kronos.tableNamingStrategy = strategy.tableNamingStrategy ?: lineHumpNamingStrategy
+            Kronos.fieldNamingStrategy = strategy.fieldNamingStrategy ?: lineHumpNamingStrategy
+            Kronos.createTimeStrategy = strategy.createTimeStrategy ?: Kronos.createTimeStrategy
+            Kronos.updateTimeStrategy = strategy.updateTimeStrategy ?: Kronos.updateTimeStrategy
+            Kronos.logicDeleteStrategy = strategy.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
+            Kronos.optimisticLockStrategy = strategy.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
             Kronos.dataSource = { wrapper }
         }
-        tableName = table.name
-        tableComment = queryTableComment(tableName, wrapper)
-        fields = getTableColumns(wrapper, tableName)
-        indexes = getTableIndexes(wrapper, tableName)
+
+        tableNames = table.map { it.name }
+        classNames = table.map {
+            it.className ?: Kronos.tableNamingStrategy.db2k(it.name).replaceFirstChar(Char::titlecase)
+        }
+
+        tableComments = table.map {
+            queryTableComment(it.name, wrapper)
+        }
+        fields = table.map {
+            getTableColumns(wrapper, it.name)
+        }
+        indexes = table.map {
+            getTableIndexes(wrapper, it.name)
+        }
         targetDir = output.targetDir
         tableCommentLineWords = output.tableCommentLineWords ?: MAX_COMMENT_LINE_WORDS
         packageName = output.packageName ?: targetDir.split("main/kotlin/").lastOrNull()?.replace('/', '.')
                 ?: "com.kotlinorm.orm.table"
-        className = table.className ?: Kronos.tableNamingStrategy.db2k(tableName).replaceFirstChar(Char::titlecase)
+    }
+
+    fun toKronosConfigs() = table.mapIndexed { index, tableConfig ->
+        KronosTemplate(
+            packageName = packageName,
+            tableName = tableConfig.name,
+            className = classNames[index],
+            tableComment = tableComments[index],
+            fields = fields[index],
+            indexes = indexes[index],
+            tableCommentLineWords = tableCommentLineWords
+        )
+    }
+
+    companion object {
+        fun template(render: KronosTemplate.() -> Unit): List<KronosConfig> {
+            codeGenConfig
+                ?: throw IllegalStateException("TemplateConfig is not initialized. Please call init(path: String) first.")
+            return codeGenConfig!!.toKronosConfigs().map {
+                it.render()
+                KronosConfig(
+                    it.content,
+                    codeGenConfig!!.output.targetDir + separator + it.className + ".kt",
+                )
+            }
+        }
     }
 }

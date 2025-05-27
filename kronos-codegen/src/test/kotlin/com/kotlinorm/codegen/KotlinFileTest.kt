@@ -1,5 +1,6 @@
 package com.kotlinorm.codegen
 
+import com.kotlinorm.codegen.KronosConfig.Companion.write
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
@@ -25,10 +26,8 @@ class KotlinFileTest {
     @Test
     fun writesFileSuccessfullyWhenDirectoryExists() {
         val content = "Hello, World!"
-        val kotlinFile = KotlinFile(content)
         val filePath = File(tempDir, "existingDir/testFile.kt").apply { parentFile.mkdirs() }.path
-
-        kotlinFile.write(filePath)
+        listOf(KronosConfig(content, filePath)).write()
 
         val writtenFile = File(filePath)
         assertTrue(writtenFile.exists())
@@ -38,10 +37,8 @@ class KotlinFileTest {
     @Test
     fun createsParentDirectoriesIfNotExist() {
         val content = "Hello, Kotlin!"
-        val kotlinFile = KotlinFile(content)
         val filePath = File(tempDir, "nonExistingDir/testFile.kt").path
-
-        kotlinFile.write(filePath)
+        listOf(KronosConfig(content, filePath)).write()
 
         val writtenFile = File(filePath)
         assertTrue(writtenFile.exists())
@@ -56,8 +53,7 @@ class KotlinFileTest {
             parentFile.mkdirs()
             writeText(initialContent)
         }.path
-
-        KotlinFile(updatedContent).write(filePath)
+        listOf(KronosConfig(updatedContent, filePath)).write()
 
         val writtenFile = File(filePath)
         assertTrue(writtenFile.exists())
@@ -67,10 +63,8 @@ class KotlinFileTest {
     @Test
     fun handlesEmptyContentGracefully() {
         val content = ""
-        val kotlinFile = KotlinFile(content)
         val filePath = File(tempDir, "emptyContentDir/testFile.kt").path
-
-        kotlinFile.write(filePath)
+        listOf(KronosConfig(content, filePath)).write()
 
         val writtenFile = File(filePath)
         assertTrue(writtenFile.exists())

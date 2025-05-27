@@ -33,9 +33,17 @@ fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceW
         )
         "com.kotlinorm.KronosBasicWrapper"
     }()
-    return Class.forName(className)
-        .getDeclaredConstructor(dataSource::class.java)
-        .newInstance(dataSource) as KronosDataSourceWrapper
+    return try {
+        Class.forName(className)
+            .getDeclaredConstructor(dataSource::class.java)
+            .newInstance(dataSource) as KronosDataSourceWrapper
+    } catch (_: NoSuchMethodException) {
+        Class.forName(className)
+            .getDeclaredConstructor(DataSource::class.java)
+            .newInstance(dataSource) as KronosDataSourceWrapper
+    } catch (e: Exception) {
+        throw RuntimeException("Failed to create wrapper for $className", e)
+    }
 }
 
 fun initialDataSource(config: Map<String, Any?>): DataSource {

@@ -20,11 +20,5 @@ import com.kotlinorm.interfaces.KronosNamingStrategy
 
 class TableConfig(
     val name: String,
-    var tableNamingStrategy: KronosNamingStrategy?,
-    var fieldNamingStrategy: KronosNamingStrategy?,
-    var createTimeStrategy: KronosCommonStrategy?,
-    var updateTimeStrategy: KronosCommonStrategy?,
-    var logicDeleteStrategy: KronosCommonStrategy?,
-    var optimisticLockStrategy: KronosCommonStrategy?,
     val className: String?
 )

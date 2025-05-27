@@ -14,10 +14,10 @@ import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
 // Kotlin Data Class for MysqlUser
-@Table(name = "tb_user")
+@Table(name = "cg_user")
 @TableIndex(name = "idx_multi", columns = ["id", "username"], type = "UNIQUE", method = "BTREE")
 @TableIndex(name = "idx_username", columns = ["username"], type = "NORMAL", method = "BTREE")
-data class User(
+data class CgUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     @ColumnType(type = KColumnType.VARCHAR, length = 254)

@@ -1,8 +1,8 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.sample.codegen.Student
-import com.kotlinorm.beans.sample.codegen.User
+import com.kotlinorm.beans.sample.codegen.CgStudent
+import com.kotlinorm.beans.sample.codegen.CgUser
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
 import com.kotlinorm.orm.ddl.table
@@ -28,12 +28,12 @@ class CodeGenerateTest {
             writeTomlContent(
                 """
                 [[table]]
-                name = "tb_user"
-                className = "User"
+                name = "cg_user"
+                className = "CgUser"
                 
                 [[table]]
-                name = "student"
-                className = "Student"
+                name = "cg_student"
+                className = "CgStudent"
                 
                 [strategy]
                 tableNamingStrategy = "lineHumpNamingStrategy"
@@ -77,8 +77,8 @@ class CodeGenerateTest {
     fun testCodegen() {
         val now = LocalDateTime.now()
         init(configPath)
-        Kronos.dataSource.table.syncTable(Student())
-        Kronos.dataSource.table.syncTable(User())
+        Kronos.dataSource.table.syncTable(CgStudent())
+        Kronos.dataSource.table.syncTable(CgUser())
 
         template {
             +"package $packageName"
@@ -122,7 +122,7 @@ class CodeGenerateTest {
         assertEquals("// @author: Kronos-Codegen", lines[15])
         assertEquals("// @date: $now", lines[16])
         assertEquals("", lines[17])
-        assertEquals("@Table(name = \"tb_user\")", lines[18])
+        assertEquals("@Table(name = \"cg_user\")", lines[18])
         assertEquals(
             "@TableIndex(name = \"idx_multi\", columns = [\"id\", \"username\"], type = \"UNIQUE\", method = \"BTREE\")",
             lines[19]
@@ -131,7 +131,7 @@ class CodeGenerateTest {
             "@TableIndex(name = \"idx_username\", columns = [\"username\"], type = \"NORMAL\", method = \"BTREE\")",
             lines[20]
         )
-        assertEquals("data class User(", lines[21])
+        assertEquals("data class CgUser(", lines[21])
         assertEquals("    @PrimaryKey(identity = true)", lines[22])
         assertEquals("    var id: Int? = null,", lines[23])
         assertEquals("    @ColumnType(type = KColumnType.VARCHAR, length = 254)", lines[24])
@@ -166,8 +166,8 @@ class CodeGenerateTest {
         assertEquals("// @author: Kronos-Codegen", lines[8])
         assertEquals("// @date: $now", lines[9])
         assertEquals("", lines[10])
-        assertEquals("@Table(name = \"student\")", lines[11])
-        assertEquals("data class Student(", lines[12])
+        assertEquals("@Table(name = \"cg_student\")", lines[11])
+        assertEquals("data class CgStudent(", lines[12])
         assertEquals("    @PrimaryKey(identity = true)", lines[13])
         assertEquals("    var id: Int? = null,", lines[14])
         assertEquals("    var name: String? = null,", lines[15])

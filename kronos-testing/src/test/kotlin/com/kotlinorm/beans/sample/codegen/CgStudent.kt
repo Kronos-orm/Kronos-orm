@@ -5,9 +5,9 @@ import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.interfaces.KPojo
 
-@Table(name = "student")
+@Table(name = "cg_student")
 
-data class Student(
+data class CgStudent(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     var name: String? = null,

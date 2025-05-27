@@ -1,4 +1,4 @@
-package com.kotlinorm.codegen
+package com.kotlinorm.beans.sample.codegen
 
 import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.CreateTime

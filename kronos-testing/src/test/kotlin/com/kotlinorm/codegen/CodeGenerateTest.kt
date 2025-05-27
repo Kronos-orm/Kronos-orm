@@ -1,11 +1,14 @@
 package com.kotlinorm.codegen
 
-import com.kotlinorm.Kronos.dataSource
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.sample.codegen.Student
+import com.kotlinorm.beans.sample.codegen.User
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
 import com.kotlinorm.orm.ddl.table
 import org.intellij.lang.annotations.Language
 import java.io.File
+import java.time.LocalDateTime
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -72,10 +75,10 @@ class CodeGenerateTest {
 
     @Test
     fun testCodegen() {
-        val now = java.time.LocalDateTime.now()
+        val now = LocalDateTime.now()
         init(configPath)
-        dataSource.table.syncTable(Student())
-        dataSource.table.syncTable(User())
+        Kronos.dataSource.table.syncTable(Student())
+        Kronos.dataSource.table.syncTable(User())
 
         template {
             +"package $packageName"
@@ -120,8 +123,14 @@ class CodeGenerateTest {
         assertEquals("// @date: $now", lines[16])
         assertEquals("", lines[17])
         assertEquals("@Table(name = \"tb_user\")", lines[18])
-        assertEquals("@TableIndex(name = \"idx_multi\", columns = [\"id\", \"username\"], type = \"UNIQUE\", method = \"BTREE\")", lines[19])
-        assertEquals("@TableIndex(name = \"idx_username\", columns = [\"username\"], type = \"NORMAL\", method = \"BTREE\")", lines[20])
+        assertEquals(
+            "@TableIndex(name = \"idx_multi\", columns = [\"id\", \"username\"], type = \"UNIQUE\", method = \"BTREE\")",
+            lines[19]
+        )
+        assertEquals(
+            "@TableIndex(name = \"idx_username\", columns = [\"username\"], type = \"NORMAL\", method = \"BTREE\")",
+            lines[20]
+        )
         assertEquals("data class User(", lines[21])
         assertEquals("    @PrimaryKey(identity = true)", lines[22])
         assertEquals("    var id: Int? = null,", lines[23])

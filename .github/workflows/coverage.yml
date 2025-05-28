@@ -62,7 +62,7 @@ jobs:
           echo "##[set-output name=lines;]${COVERAGE}"
 
       - name: Generate the badge SVG image for Core
-        uses: emibcn/badge-action@v2.0.2
+        uses: emibcn/badge-action@v2.0.3
         with:
           label: 'core coverage'
           status: ${{ steps.core-coverage.outputs.lines }}
@@ -70,7 +70,7 @@ jobs:
           path: 'coverage/coverage-core.svg'
 
       - name: Generate the badge SVG image for Compiler Plugin
-        uses: emibcn/badge-action@v2.0.2
+        uses: emibcn/badge-action@v2.0.3
         with:
           label: 'compiler plugin coverage'
           status: ${{ steps.compiler-plugin-coverage.outputs.lines }}
@@ -78,7 +78,7 @@ jobs:
           path: 'coverage/coverage-compiler-plugin.svg'
 
       - name: Generate the badge SVG image for Codegen
-        uses: emibcn/badge-action@v2.0.2
+        uses: emibcn/badge-action@v2.0.3
         with:
           label: 'codegen coverage'
           status: ${{ steps.codegen-coverage.outputs.lines }}

@@ -6,7 +6,6 @@ import com.kotlinorm.annotations.Table
 import com.kotlinorm.interfaces.KPojo
 
 @Table(name = "cg_student")
-
 data class CgStudent(
     @PrimaryKey(identity = true)
     var id: Int? = null,

@@ -1,19 +1,19 @@
 [versions]
-kotlin = "2.1.0"
+kotlin = "2.1.21"
 dsl = "5.2.0"
-datetime = "0.6.1"
-serialization = "1.8.0"
-dbcp2 = "2.12.0"
-mysql-jdbc-driver = "9.2.0"
-sqlite-jdbc-driver = "3.46.0.0"
-mssql-jdbc-driver = "12.7.0.jre8-preview"
-postgresql-jdbc-driver = "42.7.3"
-oracle-jdbc-driver = "23.2.0.0"
-gsonVer = "2.11.0"
+datetime = "0.6.2"
+serialization = "1.8.1"
+dbcp2 = "2.13.0"
+mysql-jdbc-driver = "9.3.0"
+sqlite-jdbc-driver = "3.49.1.0"
+mssql-jdbc-driver = "12.10.0.jre8"
+postgresql-jdbc-driver = "42.7.6"
+oracle-jdbc-driver = "23.8.0.25.04"
+gsonVer = "2.13.1"
 dokkaVer = "2.0.0"
 mavenCore = "3.9.9"
 autoService = "1.1.1"
-kotlinCompilerTest = "0.7.0"
+kotlinCompilerTest = "0.7.1"
 jackson = "2.19.0"
 
 [libraries]
@@ -35,7 +35,7 @@ driver-jdbc-postgresql = { module = "org.postgresql:postgresql", version.ref = "
 driver-jdbc-oracle = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc-driver" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gsonVer" }
 maven-core = { module = "org.apache.maven:maven-core", version.ref="mavenCore" }
-maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version = "0.31.0" }
+maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version = "0.32.0" }
 auto-service = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
 kct = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlinCompilerTest" }
 mockk = { module = "io.mockk:mockk", version = "1.14.2" }

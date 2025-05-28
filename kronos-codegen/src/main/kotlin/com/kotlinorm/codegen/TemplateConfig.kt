@@ -35,11 +35,29 @@ class TemplateConfig(
     val tableCommentLineWords: Int
     val packageName: String
     val targetDir: String
-    val tableNames: List<String>
-    val classNames: List<String>
-    val tableComments: List<String>
-    val fields: List<List<Field>>
-    val indexes: List<List<KTableIndex>>
+    val tableNames: List<String> by lazy {
+        table.map { it.name }
+    }
+    val classNames: List<String> by lazy {
+        table.map {
+            it.className ?: Kronos.tableNamingStrategy.db2k(it.name).replaceFirstChar(Char::titlecase)
+        }
+    }
+    val tableComments: List<String> by lazy {
+        table.map {
+            queryTableComment(it.name, wrapper)
+        }
+    }
+    val fields: List<List<Field>> by lazy {
+        table.map {
+            getTableColumns(wrapper, it.name)
+        }
+    }
+    val indexes: List<List<KTableIndex>> by lazy {
+        table.map {
+            getTableIndexes(wrapper, it.name)
+        }
+    }
 
     init {
         Kronos.init {
@@ -50,21 +68,6 @@ class TemplateConfig(
             Kronos.logicDeleteStrategy = strategy.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
             Kronos.optimisticLockStrategy = strategy.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
             Kronos.dataSource = { wrapper }
-        }
-
-        tableNames = table.map { it.name }
-        classNames = table.map {
-            it.className ?: Kronos.tableNamingStrategy.db2k(it.name).replaceFirstChar(Char::titlecase)
-        }
-
-        tableComments = table.map {
-            queryTableComment(it.name, wrapper)
-        }
-        fields = table.map {
-            getTableColumns(wrapper, it.name)
-        }
-        indexes = table.map {
-            getTableIndexes(wrapper, it.name)
         }
         targetDir = output.targetDir
         tableCommentLineWords = output.tableCommentLineWords ?: MAX_COMMENT_LINE_WORDS

@@ -37,6 +37,10 @@ class RelationQuery {
         Kronos.init {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
+            createTimeStrategy.enabled = false
+            updateTimeStrategy.enabled = false
+            logicDeleteStrategy.enabled = false
+            optimisticLockStrategy.enabled = false
             dataSource = { wrapper }
             serializeProcessor = GsonProcessor
         }

@@ -168,4 +168,46 @@ class CommonUtilTest {
         }
         assertEquals(false, getTypeSafeValue("kotlin.Boolean", "invalid"))
     }
+
+    @Test
+    fun returnsPairOfNumbersWhenBothArePresent() {
+        val result = extractNumberInParentheses("(123,456)")
+        assertEquals(Pair(123, 456), result)
+    }
+
+    @Test
+    fun returnsPairWithSecondNumberAsZeroWhenOnlyOneNumberIsPresent() {
+        val result = extractNumberInParentheses("(123)")
+        assertEquals(Pair(123, 0), result)
+    }
+
+    @Test
+    fun returnsDefaultPairWhenNoParenthesesArePresent() {
+        val result = extractNumberInParentheses("No numbers here")
+        assertEquals(Pair(0, 0), result)
+    }
+
+    @Test
+    fun returnsDefaultPairWhenInputIsEmpty() {
+        val result = extractNumberInParentheses("")
+        assertEquals(Pair(0, 0), result)
+    }
+
+    @Test
+    fun handlesExtraWhitespaceAroundParentheses() {
+        val result = extractNumberInParentheses("  (123, 456)  ")
+        assertEquals(Pair(123, 456), result)
+    }
+
+    @Test
+    fun handlesNestedParenthesesByExtractingFirstMatch() {
+        val result = extractNumberInParentheses("(123,456)(789,101)")
+        assertEquals(Pair(123, 456), result)
+    }
+
+    @Test
+    fun ignoresInvalidFormatsAndReturnsDefaultPair() {
+        val result = extractNumberInParentheses("(abc,def)")
+        assertEquals(Pair(0, 0), result)
+    }
 }

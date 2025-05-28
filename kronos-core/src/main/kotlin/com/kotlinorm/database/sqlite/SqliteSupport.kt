@@ -37,6 +37,7 @@ import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.utils.extractNumberInParentheses
 
 object SqliteSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
@@ -118,16 +119,6 @@ object SqliteSupport : DatabasesSupport {
     override fun getTableCommentSql(dbType: DBType) = ""
 
     override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List<Field> {
-        fun extractNumberInParentheses(input: String): Pair<Int, Int> {
-            val regex = Regex("""\((\d+)(?:,(\d+))?\)""")
-            val matchResult = regex.find(input)
-
-            if (matchResult != null) {
-                val (length, scale) = matchResult.destructured
-                return Pair(length.toInt(), scale.toIntOrNull() ?: 0)
-            }
-            return Pair(0, 0)
-        }
         return dataSource.forList(
             KronosAtomicQueryTask("PRAGMA table_info($tableName)")
         ).map {

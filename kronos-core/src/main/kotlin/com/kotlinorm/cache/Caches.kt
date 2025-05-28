@@ -49,25 +49,25 @@ val kPojoCreateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { 
 }
 
 val kPojoUpdateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
-    kClass.createInstance().let {
-        it.kronosUpdateTime().takeIf { strategy -> strategy.enabled }?.bind(it.kronosTableName())?.apply {
+    kClass.createInstance().let { kPojo ->
+        kPojo.kronosUpdateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
             kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
 }
 
 val kPojoLogicDeleteCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
-    kClass.createInstance().let {
-        it.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(it.kronosTableName())?.apply {
+    kClass.createInstance().let { kPojo ->
+        kPojo.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
             kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
 }
 
 val kPojoOptimisticLockCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
-    kClass.createInstance().let {
-        it.kronosOptimisticLock().takeIf { strategy -> strategy.enabled }?.bind(it.kronosTableName())?.apply {
-            kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
+    kClass.createInstance().let { kPojo ->
+        kPojo.kronosOptimisticLock().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
+            kPojoAllColumnsCache[kClass]!!.any { col-> col.name == field.name }
         }
     }
 }

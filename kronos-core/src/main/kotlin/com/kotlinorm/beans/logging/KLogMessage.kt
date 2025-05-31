@@ -17,11 +17,11 @@
 package com.kotlinorm.beans.logging
 
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter.Companion.format
-import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.KLogLevel
-import kotlin.io.path.writeText
+import com.kotlinorm.interfaces.PrintCode
 import java.nio.file.Path
 import kotlin.io.path.exists
+import kotlin.io.path.writeText
 
 /**
  * Log line
@@ -30,26 +30,16 @@ import kotlin.io.path.exists
  *
  * @property text the log message
  * @property codes the style codes
- * @property endLine whether to end the line
+ * @property newLine whether to end the line
  *
  * @author OUSC
  * @create 2022/11/12 14:21
  */
 class KLogMessage(
-    val text: String,
-    internal var codes: Array<ColorPrintCode> = arrayOf(),
-    private var endLine: Boolean = false,
+    var text: String,
+    internal var codes: Array<PrintCode> = arrayOf(),
+    var newLine: Boolean = false
 ) {
-    /**
-     * End log line
-     *
-     * @return Log line
-     */
-    fun endl(): KLogMessage {
-        endLine = true
-        return this
-    }
-
     /**
      * Print
      *
@@ -57,7 +47,7 @@ class KLogMessage(
      */
     fun print(level: KLogLevel) {
         val out = if (level > KLogLevel.WARN) System.out else System.err
-        if (endLine) {
+        if (newLine) {
             out.println(format(text, codes))
         } else {
             out.print(format(text, codes))
@@ -71,41 +61,22 @@ class KLogMessage(
      */
     fun write(path: Path) {
         if (path.exists()) {
-            path.writeText(text + ("\r\n".takeIf { endLine } ?: ""),
+            path.writeText(text + ("\r\n".takeIf { newLine } ?: ""),
                 Charsets.UTF_8,
                 java.nio.file.StandardOpenOption.APPEND)
         } else {
-            path.writeText(text + ("\r\n".takeIf { endLine } ?: ""), Charsets.UTF_8)
+            path.writeText(text + ("\r\n".takeIf { newLine } ?: ""), Charsets.UTF_8)
         }
-    }
-
-    /**
-     * Convert the current KLogMessage object to an array of KLogMessage objects.
-     */
-    fun toArray(): Array<KLogMessage> {
-        return arrayOf(this)
     }
 
     companion object {
-        /**
-         * Creates a new instance of KLogMessage with the given text and optional color print codes.
-         *
-         * @param text the log message text
-         * @param codes an optional array of color print codes to apply to the log message
-         * @return a new instance of KLogMessage
-         */
-        @Suppress("UNCHECKED_CAST")
-        fun kMsgOf(text: String, vararg codes: ColorPrintCode): KLogMessage {
-            return KLogMessage(text, codes as Array<ColorPrintCode>)
-        }
-
         /**
          * Formats an array of KLogMessage objects into a single string.
          *
          * @return The formatted string containing the text of each KLogMessage object, with an optional newline character after each message.
          */
         fun Array<KLogMessage>.formatted() = this.joinToString("") {
-            it.text + (if (it.endLine) "\r\n" else "")
+            it.text + (if (it.newLine) "\r\n" else "")
         }
     }
 }

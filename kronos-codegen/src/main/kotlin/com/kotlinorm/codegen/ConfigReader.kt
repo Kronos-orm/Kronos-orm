@@ -23,8 +23,7 @@ import com.kotlinorm.Kronos.lineHumpNamingStrategy
 import com.kotlinorm.Kronos.noneNamingStrategy
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.enums.ColorPrintCode
+import com.kotlinorm.beans.logging.log
 import java.io.File
 
 
@@ -88,10 +87,9 @@ fun init(path: String) {
         )
     ).apply {
         Kronos.defaultLogger(this).info(
-            kMsgOf(
-                "Reading config file successfully: $path",
-                ColorPrintCode.GREEN
-            ).endl().toArray()
+            log {
+                +"Reading config file successfully: $path"[green]
+            }
         )
     }
 }
@@ -104,7 +102,9 @@ fun readConfig(path: String): Map<String, Any?> {
     while (config["extend"] != null) {
         val extendPath = config["extend"] as String
         Kronos.defaultLogger(extendPath).info(
-            kMsgOf("Extending config from: $extendPath", ColorPrintCode.YELLOW).endl().toArray()
+            log {
+                +"Config extension found: $extendPath"[blue, bold]
+            }
         )
         val extendConfig = mapper.readValue(
             File(extendPath),

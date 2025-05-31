@@ -16,8 +16,7 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.enums.ColorPrintCode
+import com.kotlinorm.beans.logging.log
 import java.io.File
 
 /**
@@ -47,10 +46,9 @@ class KronosConfig(
                     writeText(it.str)
                 }
                 Kronos.defaultLogger(this).info(
-                    kMsgOf(
-                        "File generated successfully: ${it.outputPath}",
-                        ColorPrintCode.GREEN
-                    ).endl().toArray()
+                    log {
+                        +"File generated successfully: ${it.outputPath}"[green]
+                    }
                 )
             }
         }

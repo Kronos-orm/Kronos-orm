@@ -622,7 +622,7 @@ style:
     excludes: [ '**/NamedParameterUtils.kt' ]
   MagicNumber:
     active: true
-    excludes: ["**/com/kotlinorm/database/**/**Support.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
+    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/enums/**.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
     ignoreNumbers:
       - '-1'
       - '0'

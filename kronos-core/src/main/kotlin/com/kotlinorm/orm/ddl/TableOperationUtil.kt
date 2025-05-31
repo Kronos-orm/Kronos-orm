@@ -3,13 +3,12 @@ package com.kotlinorm.orm.ddl
 import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
+import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getTableCommentSql
 import com.kotlinorm.database.SqlManager.getTableExistenceSql
-import com.kotlinorm.enums.ColorPrintCode
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
@@ -198,31 +197,12 @@ private fun processRight(
 
 fun TableColumnDiff.doLog(tableName: String) {
     defaultLogger("tableSync").info(
-        arrayOf(
-            kMsgOf(
-                "start sync table $tableName:"
-            ).endl(),
-            kMsgOf(
-                "Add fields\t"
-            ),
-            kMsgOf(
-                toAdd.joinToString(", ") { it.first.columnName }.ifEmpty { "None" },
-                ColorPrintCode.GREEN
-            ).endl(),
-            kMsgOf(
-                "Modify fields\t"
-            ),
-            kMsgOf(
-                toModified.joinToString(", ") { it.first.columnName }.ifEmpty { "None" },
-                ColorPrintCode.YELLOW
-            ).endl(),
-            kMsgOf(
-                "Delete fields\t"
-            ),
-            kMsgOf(
-                toDelete.joinToString(", ") { it.columnName }.ifEmpty { "None" },
-                ColorPrintCode.RED
-            ).endl()
-        )
+        log {
+            +"Start sync table $tableName:"
+            +"Add fields\t"[black, bold] + toAdd.joinToString(", ") { it.first.columnName }.ifEmpty { "None" }[green]
+            +"Modify fields\t"[black, bold] + toModified.joinToString(", ") { it.first.columnName }
+                .ifEmpty { "None" }[yellow]
+            +"Delete fields\t"[black, bold] + toDelete.joinToString(", ") { it.columnName }.ifEmpty { "None" }[red]
+        }
     )
 }

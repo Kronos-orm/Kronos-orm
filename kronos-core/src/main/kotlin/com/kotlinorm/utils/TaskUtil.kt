@@ -19,21 +19,11 @@ package com.kotlinorm.utils
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.defaultLogger
 import com.kotlinorm.beans.logging.KLogMessage
-import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
+import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
-import com.kotlinorm.enums.ColorPrintCode.Companion.Black
-import com.kotlinorm.enums.ColorPrintCode.Companion.Blue
-import com.kotlinorm.enums.ColorPrintCode.Companion.Bold
-import com.kotlinorm.enums.ColorPrintCode.Companion.Green
-import com.kotlinorm.enums.ColorPrintCode.Companion.Magenta
-import com.kotlinorm.enums.ColorPrintCode.Companion.Red
-import com.kotlinorm.enums.KOperationType.DELETE
-import com.kotlinorm.enums.KOperationType.INSERT
 import com.kotlinorm.enums.KOperationType.SELECT
-import com.kotlinorm.enums.KOperationType.UPDATE
-import com.kotlinorm.enums.KOperationType.UPSERT
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.QueryType.Query
 import com.kotlinorm.enums.QueryType.QueryList
@@ -76,55 +66,59 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
     fun resultArr(): Array<KLogMessage> {
         return when (task.operationType) {
             SELECT -> when (queryType) {
-                QueryList, Query -> arrayOf(
-                    kMsgOf("Found rows: ${(result as List<*>?)!!.size}", Black, Bold).endl(),
-                )
+                QueryList, Query -> log {
+                    -"Found rows: ${(result as List<*>?)!!.size}"[black, bold]
+                }
 
-                QueryMap, QueryMapOrNull, QueryOne, QueryOneOrNull -> arrayOf(
-                    kMsgOf("Found rows: 1", Black, Bold).endl(),
-                )
+                QueryMap, QueryMapOrNull, QueryOne, QueryOneOrNull -> log {
+                    -"Found rows: 1"[black, bold]
+                }
 
                 else -> arrayOf()
             }
 
             else -> {
                 result as KronosOperationResult
-                listOfNotNull(
-                    kMsgOf("Affected rows: ${result.affectedRows}", Black, Bold).endl(),
-                    kMsgOf(
-                        "Last insert ID: ${result.lastInsertId}", Black, Bold
-                    ).takeIf { result.lastInsertId != null && result.lastInsertId != 0L }?.endl(),
-                ).toTypedArray()
+                log {
+                    -"Affected rows: ${result.affectedRows}"[black, bold]
+                    if (result.lastInsertId != null && result.lastInsertId != 0L) {
+                        +"Last insert ID: ${result.lastInsertId}"[black, bold]
+                    }
+                }
             }
         }
     }
     defaultLogger(Kronos).info(
         if (task is KronosAtomicBatchTask) {
-            arrayOf(
-                kMsgOf("Executing [", Green),
-                kMsgOf(task.operationType.name, Red, Bold),
-                kMsgOf("] task:", Green).endl(),
-                kMsgOf("SQL:\t", Black, Bold),
-                kMsgOf(task.sql, Blue).endl(),
-                kMsgOf("PARAM:\t", Black, Bold),
-                *(task.paramMapArr ?: arrayOf()).map { map ->
-                    kMsgOf(map.filterNot { it.value == null }.toString(), Magenta).endl()
-                }.toTypedArray(),
-                *resultArr(),
-                kMsgOf("-----------------------", Black, Bold).endl(),
-            )
+            log {
+                -"Executing ["[green] + task.operationType.name[red, bold]
+                +"] task:"[green]
+                -" ♦ "[cyan]
+                +"SQL:\t\t"[black, bold]
+                +task.sql[blue]
+                -" ♦ "[cyan]
+                +"PARAMS:\t"[black, bold]
+                task.paramMapArr
+                    ?.map { it.filterValues { v -> v != null }.toString() }
+                    ?.forEach {
+                        +it[magenta]
+                    }
+                +resultArr()
+                +"-----------------------"[black, bold]
+            }
         } else {
-            arrayOf(
-                kMsgOf("Executing [", Green),
-                kMsgOf(task.operationType.name, Red, Bold),
-                kMsgOf("] task:", Green).endl(),
-                kMsgOf("SQL:\t", Black, Bold),
-                kMsgOf(task.sql, Blue).endl(),
-                kMsgOf("PARAM:\t", Black, Bold),
-                kMsgOf(task.paramMap.filterNot { it.value == null }.toString(), Magenta).endl(),
-                *resultArr(),
-                kMsgOf("-----------------------", Black, Bold).endl(),
-            )
+            log {
+                -"Executing ["[green] + task.operationType.name[red, bold]
+                +"] task:"[green]
+                -" ♦ "[cyan]
+                +"SQL:\t"[black, bold]
+                +task.sql[blue]
+                -" ♦ "[cyan]
+                +"PARAMS:\t"[black, bold]
+                +task.paramMap.filterNot { it.value == null }.toString()[magenta]
+                +resultArr()
+                +"-----------------------"[black, bold]
+            }
         }
     )
 }

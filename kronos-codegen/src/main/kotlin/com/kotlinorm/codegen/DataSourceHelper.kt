@@ -16,8 +16,7 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
-import com.kotlinorm.enums.ColorPrintCode
+import com.kotlinorm.beans.logging.log
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import java.lang.reflect.Method
 import java.util.*
@@ -26,10 +25,7 @@ import javax.sql.DataSource
 fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceWrapper {
     val className = className ?: {
         Kronos.defaultLogger(dataSource).warn(
-            kMsgOf(
-                "wrapperClassName is not set, using default: com.kotlinorm.KronosBasicWrapper",
-                ColorPrintCode.YELLOW
-            ).endl().toArray()
+            log { +"wrapperClassName is not set, using default: com.kotlinorm.KronosBasicWrapper" }
         )
         "com.kotlinorm.KronosBasicWrapper"
     }()
@@ -51,10 +47,7 @@ fun initialDataSource(config: Map<String, Any?>): DataSource {
         Class.forName(
             config["dataSourceClassName"]?.toString() ?: {
                 Kronos.defaultLogger(config).warn(
-                    kMsgOf(
-                        "dataSourceClassName is not set, using default: org.apache.commons.dbcp2.BasicDataSource",
-                        ColorPrintCode.YELLOW
-                    ).endl().toArray()
+                    log { +"dataSourceClassName is not set, using default: org.apache.commons.dbcp2.BasicDataSource" }
                 )
                 "org.apache.commons.dbcp2.BasicDataSource"
             }()
@@ -81,17 +74,15 @@ fun initialDataSource(config: Map<String, Any?>): DataSource {
                     invoke(dataSource, convertValue(value, targetMethod.parameterTypes[0]))
                 }
                     ?: Kronos.defaultLogger(this).warn(
-                        kMsgOf(
-                            "Setter for '$key' not found in ${this::class.java.name}",
-                            ColorPrintCode.YELLOW
-                        ).endl().toArray()
+                        log {
+                            "Setter for '$key' not found in ${this::class.java.name}"
+                        }
                     )
             } catch (e: Exception) {
                 Kronos.defaultLogger(this).warn(
-                    kMsgOf(
-                        "Error setting property '$key': ${e.message?.replace('\n', ' ')}",
-                        ColorPrintCode.YELLOW
-                    ).endl().toArray()
+                    log {
+                        "Error setting property '$key': ${e.message?.replace('\n', ' ')}"
+                    }
                 )
             }
         }

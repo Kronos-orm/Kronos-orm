@@ -2,20 +2,29 @@ package com.kotlinorm.beans.logging
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter.Companion.logFileNameRule
-import com.kotlinorm.beans.logging.KLogMessage.Companion.kMsgOf
 import java.io.File
+import kotlin.io.path.createTempDirectory
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class BundledSimpleLoggerAdapterTest {
-    private val logger = BundledSimpleLoggerAdapter(BundledSimpleLoggerAdapterTest::class.java.simpleName)
-    private val logFile = File("build/tmp/logs/${logFileNameRule()}")
-    private val logPath = File("build/tmp/logs")
+    private val logger = BundledSimpleLoggerAdapter(BundledSimpleLoggerAdapterTest::class.simpleName!!)
+    lateinit var logPath: File
+    lateinit var logFile: File
 
-    init {
+    @BeforeTest
+    fun createTempDir() {
+        logPath = createTempDirectory("bundledSimpleLoggerTest").toFile()
+        logFile = File(logPath, logFileNameRule())
         Kronos.logPath = listOf(
             logPath.path
         )
+    }
+
+    @AfterTest
+    fun deleteTempDir() {
         logPath.deleteRecursively()
     }
 
@@ -35,17 +44,16 @@ class BundledSimpleLoggerAdapterTest {
     @Test
     fun testInfo() {
         val expected = "Hello, World!"
-        logger.info(kMsgOf(expected).toArray())
+        logger.info(log { -expected })
         assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
     fun testInfoMultiple() {
-        val expected =
-            arrayOf(
-                kMsgOf("Hello, World!").endl(),
-                kMsgOf("Hello, World!")
-            )
+        val expected = log {
+            +"Hello, World!"
+            +"Hello, World!"
+        }
         logger.info(expected)
         val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
@@ -54,17 +62,16 @@ class BundledSimpleLoggerAdapterTest {
     @Test
     fun testWarn() {
         val expected = "Hello, World!"
-        logger.warn(kMsgOf(expected).toArray())
+        logger.warn(log { -expected })
         assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
     fun testWarnMultiple() {
-        val expected =
-            arrayOf(
-                kMsgOf("Hello, World!").endl(),
-                kMsgOf("Hello, World!")
-            )
+        val expected = log {
+            +"Hello, World!"
+            +"Hello, World!"
+        }
         logger.warn(expected)
         val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
@@ -73,17 +80,16 @@ class BundledSimpleLoggerAdapterTest {
     @Test
     fun testError() {
         val expected = "Hello, World!"
-        logger.error(kMsgOf(expected).toArray())
+        logger.error(log { -expected })
         assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
     fun testErrorMultiple() {
-        val expected =
-            arrayOf(
-                kMsgOf("Hello, World!").endl(),
-                kMsgOf("Hello, World!")
-            )
+        val expected = log {
+            +"Hello, World!"
+            +"Hello, World!"
+        }
         logger.error(expected)
         val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
@@ -92,17 +98,18 @@ class BundledSimpleLoggerAdapterTest {
     @Test
     fun testDebug() {
         val expected = "Hello, World!"
-        logger.debug(kMsgOf(expected).toArray())
+        logger.debug(log {
+            -expected
+        })
         assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
     fun testDebugMultiple() {
-        val expected =
-            arrayOf(
-                kMsgOf("Hello, World!").endl(),
-                kMsgOf("Hello, World!")
-            )
+        val expected = log {
+            +"Hello, World!"
+            +"Hello, World!"
+        }
         logger.debug(expected)
         val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)
@@ -111,17 +118,18 @@ class BundledSimpleLoggerAdapterTest {
     @Test
     fun testTrace() {
         val expected = "Hello, World!"
-        logger.trace(kMsgOf(expected).toArray())
+        logger.trace(log {
+            -expected
+        })
         assertLogLineEquals(expected, logFile.readText())
     }
 
     @Test
     fun testTraceMultiple() {
-        val expected =
-            arrayOf(
-                kMsgOf("Hello, World!").endl(),
-                kMsgOf("Hello, World!")
-            )
+        val expected = log {
+            +"Hello, World!"
+            +"Hello, World!"
+        }
         logger.trace(expected)
         val actual = logFile.readLines()
         assertLogLineEquals(expected.map { it.text }, actual)

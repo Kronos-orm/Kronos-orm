@@ -117,11 +117,11 @@ Delegate IDE build/run actions to Maven**.
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.2"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.3"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.2")
+    implementation("com.kotlinorm:kronos-core:0.0.3")
 }
 ```
 
@@ -137,11 +137,11 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.2'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.3'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.2'
+    implementation 'com.kotlinorm:kronos-core:0.0.3'
 }
 ```
 
@@ -162,7 +162,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.3</version>
         </dependency>
     </dependencies>
 
@@ -181,7 +181,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.0.2</version>
+                        <version>0.0.3</version>
                     </dependency>
                 </dependencies>
             </plugin>

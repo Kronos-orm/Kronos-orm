@@ -301,9 +301,6 @@ $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/hidden/#/Pointing
 $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/italic/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/italic.html
 $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/lines/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/lines.html
 $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/magenta/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/magenta.html
-$dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/plus/com.kotlinorm.beans.logging.KLogMessageBuilder#com.kotlinorm.beans.logging.KLogMessage/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/plus.html
-$dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/plus/com.kotlinorm.beans.logging.KLogMessageBuilder#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/plus.html
-$dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/plus/com.kotlinorm.beans.logging.KLogMessageBuilder#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/plus.html
 $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/red/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/red.html
 $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/reverse/#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/reverse.html
 $dokka.location:com.kotlinorm.beans.logging/KLogMessageBuilder/unaryMinus/com.kotlinorm.beans.logging.KLogMessage#/PointingToDeclaration/kronos-core/com.kotlinorm.beans.logging/-k-log-message-builder/unary-minus.html

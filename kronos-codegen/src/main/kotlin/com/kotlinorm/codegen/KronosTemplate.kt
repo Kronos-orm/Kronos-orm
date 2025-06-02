@@ -1,6 +1,7 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.Kronos
+import com.kotlinorm.Kronos.primaryKeyStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.enums.KColumnType
@@ -25,6 +26,9 @@ class KronosTemplate(
 
     fun Field.annotations(): List<String> {
         val annotations = mutableListOf<String>()
+        if(primaryKeyStrategy.field.columnName == columnName) {
+            primaryKey = PrimaryKeyType.IDENTITY
+        }
         when (primaryKey) {
             PrimaryKeyType.IDENTITY -> {
                 annotations.add("@PrimaryKey(identity = true)")

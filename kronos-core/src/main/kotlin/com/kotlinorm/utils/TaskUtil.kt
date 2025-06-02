@@ -91,7 +91,8 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
     defaultLogger(Kronos).info(
         if (task is KronosAtomicBatchTask) {
             log {
-                -"Executing ["[green] + task.operationType.name[red, bold]
+                -"Executing ["[green]
+                -task.operationType.name[red, bold]
                 +"] task:"[green]
                 -" ♦ "[cyan]
                 +"SQL:\t\t"[black, bold]
@@ -108,7 +109,8 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
             }
         } else {
             log {
-                -"Executing ["[green] + task.operationType.name[red, bold]
+                -"Executing ["[green]
+                -task.operationType.name[red, bold]
                 +"] task:"[green]
                 -" ♦ "[cyan]
                 +"SQL:\t"[black, bold]

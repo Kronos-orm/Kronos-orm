@@ -140,14 +140,14 @@ object PostgresqlSupport : DatabasesSupport {
     override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
         "TRUNCATE ${quote(tableName)} ${if (restartIdentity) "RESTART IDENTITY" else ""}"
 
-    override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS $tableName"
+    override fun getTableDropSql(dbType: DBType, tableName: String) = "DROP TABLE IF EXISTS ${quote(tableName)}"
 
     override fun getTableCommentSql(dbType: DBType) =
         "select cast(obj_description(relfilenode, 'pg_class') as varchar) as comment  from pg_class c  where relname = :tableName"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
         "CREATE${if (index.type.isNotEmpty()) " ${index.type} " else " "}INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
-            tableName
+            quote(tableName)
         }${if (index.method.isNotEmpty()) " USING ${index.method}" else ""} (${
             index.columns.joinToString(
                 ", "

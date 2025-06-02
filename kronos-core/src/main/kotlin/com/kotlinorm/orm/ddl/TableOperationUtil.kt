@@ -199,10 +199,13 @@ fun TableColumnDiff.doLog(tableName: String) {
     defaultLogger("tableSync").info(
         log {
             +"Start sync table $tableName:"
-            +"Add fields\t"[black, bold] + toAdd.joinToString(", ") { it.first.columnName }.ifEmpty { "None" }[green]
-            +"Modify fields\t"[black, bold] + toModified.joinToString(", ") { it.first.columnName }
+            -"Add fields\t"[black, bold]
+            +toAdd.joinToString(", ") { it.first.columnName }.ifEmpty { "None" }[green]
+            -"Modify fields\t"[black, bold]
+            +toModified.joinToString(", ") { it.first.columnName }
                 .ifEmpty { "None" }[yellow]
-            +"Delete fields\t"[black, bold] + toDelete.joinToString(", ") { it.columnName }.ifEmpty { "None" }[red]
+            -"Delete fields\t"[black, bold]
+            +toDelete.joinToString(", ") { it.columnName }.ifEmpty { "None" }[red]
         }
     )
 }

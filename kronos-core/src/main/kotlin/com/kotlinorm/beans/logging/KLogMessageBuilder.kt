@@ -64,62 +64,47 @@ class KLogMessageBuilder {
             is List<*> -> element.forEach {
                 if (it is KLogMessage) _lines.add(it)
             }
+            else -> throw IllegalArgumentException("Unsupported type: ${element::class.java}")
         }
     }
 
     // 字符串消息
-    operator fun String.unaryPlus(): KLogMessageBuilder {
-        addElement(KLogMessage(this, newLine = true))
-        return this@KLogMessageBuilder
-    }
-
     operator fun String.unaryMinus(): KLogMessageBuilder {
         addElement(KLogMessage(this))
         return this@KLogMessageBuilder
     }
 
-    // 日志消息对象
-    operator fun KLogMessage.unaryPlus(): KLogMessageBuilder {
-        addElement(this.apply { newLine = true })
+    operator fun String.unaryPlus(): KLogMessageBuilder {
+        addElement(KLogMessage(this, newLine = true))
         return this@KLogMessageBuilder
     }
 
+    // 日志消息对象
     operator fun KLogMessage.unaryMinus(): KLogMessageBuilder {
         addElement(this)
         return this@KLogMessageBuilder
     }
 
-    // 数组消息
-    operator fun Array<KLogMessage>.unaryPlus(): KLogMessageBuilder {
-        addElement(map { it.newLine = true })
+    operator fun KLogMessage.unaryPlus(): KLogMessageBuilder {
+        addElement(apply { newLine = true })
         return this@KLogMessageBuilder
     }
 
+    // 数组消息
     operator fun Array<KLogMessage>.unaryMinus(): KLogMessageBuilder {
         addElement(this)
         return this@KLogMessageBuilder
     }
 
-    // 组合操作
-    operator fun KLogMessageBuilder.plus(other: String): KLogMessageBuilder {
-        addElement(other)
-        return this@KLogMessageBuilder
-    }
-
-    operator fun KLogMessageBuilder.plus(other: KLogMessage): KLogMessageBuilder {
-        addElement(other)
-        return this@KLogMessageBuilder
-    }
-
-    operator fun KLogMessageBuilder.plus(other: Array<KLogMessage>): KLogMessageBuilder {
-        addElement(other)
+    operator fun Array<KLogMessage>.unaryPlus(): KLogMessageBuilder {
+        addElement(onEach { it.newLine = true })
         return this@KLogMessageBuilder
     }
 
     // 样式应用
     operator fun String.get(vararg codes: PrintCode) = KLogMessage(this, codes.toList().toTypedArray())
     operator fun KLogMessage.get(vararg codes: PrintCode) =
-        KLogMessage(this.text, codes.toList().toTypedArray(), newLine = newLine)
+        KLogMessage(text, codes.toList().toTypedArray(), newLine = newLine)
 
     operator fun Array<KLogMessage>.get(vararg codes: PrintCode) = map {
         KLogMessage(it.text, codes.toList().toTypedArray(), newLine = it.newLine)

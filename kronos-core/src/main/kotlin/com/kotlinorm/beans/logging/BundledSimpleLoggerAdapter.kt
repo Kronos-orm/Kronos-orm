@@ -71,7 +71,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.TRACE,
                 log {
-                    -"[$current] [trace] [$tagName] "[blue] + messages
+                    -"[$current] [trace] [$tagName] "[blue]
+                    -messages
                 }
             )
         )
@@ -87,7 +88,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.DEBUG,
                 log {
-                    -"[$current] [debug] [$tagName] "[magenta] + messages
+                    -"[$current] [debug] [$tagName] "[magenta]
+                    -messages
                 }
             )
         )
@@ -103,7 +105,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.INFO,
                 log {
-                    -"[$current] [info] [$tagName] "[cyan] + messages
+                    -"[$current] [info] [$tagName] "[cyan]
+                    -messages
                 }
             )
         )
@@ -119,7 +122,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.WARN,
                 log {
-                    -"[$current] [warn] [$tagName] "[yellow] + messages
+                    -"[$current] [warn] [$tagName] "[yellow]
+                    -messages
                 }
             )
         )
@@ -135,7 +139,8 @@ class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {
             LogTask(
                 KLogLevel.ERROR,
                 log {
-                    -"[$current] [error] [$tagName] "[red] + messages
+                    -"[$current] [error] [$tagName] "[red]
+                    -messages
                 }
             )
         )

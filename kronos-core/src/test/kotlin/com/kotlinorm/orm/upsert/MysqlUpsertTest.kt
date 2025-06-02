@@ -27,6 +27,8 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 1,
+                            "username" to null,
+                            "score" to null,
                             "gender" to "0",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -43,6 +45,8 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 2,
+                            "username" to null,
+                            "score" to null,
                             "gender" to "0",
                             "deleted" to 0,
                             "updateTime" to paramMap["updateTime"],
@@ -59,6 +63,8 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 3,
+                            "username" to null,
+                            "score" to null,
                             "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
@@ -108,6 +114,7 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 6,
+                            "score" to null,
                             "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
@@ -124,6 +131,7 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 7,
+                            "score" to null,
                             "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
@@ -140,6 +148,7 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 8,
+                            "score" to null,
                             "gender" to "0",
                             "username" to "test2",
                             "deleted" to 0,
@@ -156,6 +165,7 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 9,
+                            "score" to null,
                             "gender" to "0",
                             "username" to "test",
                             "deleted" to 0,
@@ -172,6 +182,7 @@ class MysqlUpsertTest {
                     assertEquals(
                         mapOf(
                             "id" to 10,
+                            "score" to null,
                             "gender" to "0",
                             "username" to "test2",
                             "deleted" to 0,

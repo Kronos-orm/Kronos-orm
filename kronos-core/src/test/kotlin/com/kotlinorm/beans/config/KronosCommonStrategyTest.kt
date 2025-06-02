@@ -60,6 +60,7 @@ class KronosCommonStrategyTest {
         assertEquals(
             mapOf(
                 "id" to 1,
+                "name" to null,
                 "createTime" to paramMap["createTime"],
                 "updateTime" to paramMap["updateTime"],
             ),
@@ -74,6 +75,9 @@ class KronosCommonStrategyTest {
         assertEquals(
             mapOf(
                 "id" to 1,
+                "name" to null,
+                "createTime" to null,
+                "updateTime" to null,
             ),
             paramMap
         )
@@ -99,6 +103,7 @@ class KronosCommonStrategyTest {
         assertEquals(
             mapOf(
                 "id" to 1,
+                "name" to null,
                 "createTime" to paramMap["createTime"],
                 "updateTime" to paramMap["updateTime"],
             ),

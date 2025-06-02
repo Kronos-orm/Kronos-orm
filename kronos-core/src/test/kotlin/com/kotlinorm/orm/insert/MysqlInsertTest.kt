@@ -28,6 +28,8 @@ class MysqlInsertTest {
         assertEquals(
             mapOf(
                 "id" to 1,
+                "username" to null,
+                "score" to null,
                 "gender" to "0",
                 "createTime" to paramMap["createTime"],
                 "updateTime" to paramMap["updateTime"],
@@ -49,6 +51,8 @@ class MysqlInsertTest {
             assertEquals(
                 mapOf(
                     "id" to id + 1,
+                    "username" to null,
+                    "score" to null,
                     "gender" to "0",
                     "createTime" to paramMap["createTime"],
                     "updateTime" to paramMap["updateTime"],

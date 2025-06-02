@@ -125,6 +125,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 } else {
                     paramMapNew[key] = value
                 }
+            } else {
+                paramMapNew[key] = value
             }
         }
 

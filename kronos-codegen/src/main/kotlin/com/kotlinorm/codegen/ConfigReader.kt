@@ -24,6 +24,7 @@ import com.kotlinorm.Kronos.noneNamingStrategy
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.log
+import com.kotlinorm.enums.PrimaryKeyType
 import java.io.File
 
 
@@ -73,6 +74,9 @@ fun init(path: String) {
             },
             optimisticLockStrategy = strategies["optimisticLockStrategy"]?.let {
                 KronosCommonStrategy(true, Field(it as String))
+            },
+            primaryKeyStrategy = strategies["primaryKeyStrategy"]?.let {
+                KronosCommonStrategy(true, Field(it as String, primaryKey = PrimaryKeyType.IDENTITY))
             }
         ),
         output = OutputConfig(

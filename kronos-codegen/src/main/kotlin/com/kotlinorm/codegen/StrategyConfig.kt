@@ -10,4 +10,5 @@ class StrategyConfig(
     var updateTimeStrategy: KronosCommonStrategy?,
     var logicDeleteStrategy: KronosCommonStrategy?,
     var optimisticLockStrategy: KronosCommonStrategy?,
+    var primaryKeyStrategy: KronosCommonStrategy?
 )

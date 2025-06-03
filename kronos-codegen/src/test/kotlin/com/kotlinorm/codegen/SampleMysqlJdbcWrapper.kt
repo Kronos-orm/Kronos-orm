@@ -6,7 +6,6 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import org.apache.commons.dbcp2.BasicDataSource
-import javax.sql.DataSource
 import kotlin.reflect.KClass
 
 open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataSourceWrapper {

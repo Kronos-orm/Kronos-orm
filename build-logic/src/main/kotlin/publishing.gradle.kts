@@ -25,7 +25,7 @@ plugins {
 value class PublishConfiguration(val project: Project) {
     init {
         project.group = "com.kotlinorm"
-        project.version = "0.0.4-SNAPSHOT"
+        project.version = "0.0.4"
         project.description = when (project.name) {
             "kronos-core" -> "Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of Kronos, which provides basic ORM functions."
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."

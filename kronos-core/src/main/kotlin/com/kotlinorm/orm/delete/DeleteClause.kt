@@ -26,6 +26,7 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
@@ -48,6 +49,8 @@ import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.getDefaultBoolean
+import com.kotlinorm.utils.processParams
 
 class DeleteClause<T : KPojo>(private val pojo: T) {
     private var kClass = pojo.kClass()
@@ -150,7 +153,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
         // 设置逻辑删除的策略
         if (logic) {
-            logicDeleteStrategy?.execute { field, value ->
+            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
                 condition = listOfNotNull(
                     condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
                 ).toCriteria()
@@ -159,6 +162,17 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
 
         // 构建条件SQL语句及参数映射
         val (whereClauseSql, paramMap) = buildConditionSqlWithParams(KOperationType.DELETE, wrapper, condition)
+
+        val fieldMap = fieldsMapCache[kClass]!!
+        paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key]
+            if (field != null && value != null) {
+                paramMap[key] = processParams(wrapper.orDefault(), field, value)
+            } else {
+                paramMap[key] = value
+            }
+        }
+
         paramMap.putAll(paramMapNew)
         val whereSql = toWhereSql(whereClauseSql)
 
@@ -171,7 +185,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
             // 设置更新时间和逻辑删除字段的策略
             updateTimeStrategy?.execute(true, afterExecute = updateFields)
-            logicDeleteStrategy?.execute(defaultValue = 1, afterExecute = updateFields)
+            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), true), afterExecute = updateFields)
 
             var plusAssign: Pair<Field, String>? = null
             optimisticStrategy?.execute { field, _ ->
@@ -180,7 +194,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                 }
 
                 plusAssign = field to field.name + "2PlusNew"
-                paramMapNew[field.name + "2PlusNew"] = 1
+                paramMap[field.name + "2PlusNew"] = 1
             }
             return CascadeDeleteClause.build(
                 cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(

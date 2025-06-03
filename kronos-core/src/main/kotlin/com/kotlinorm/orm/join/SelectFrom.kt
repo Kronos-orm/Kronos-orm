@@ -51,6 +51,7 @@ import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.KStack
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
@@ -575,7 +576,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         }
 
         // 设置逻辑删除的条件
-        logicDeleteStrategy?.execute { _, value ->
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition,
                 "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, true, databaseOfTable)} = $value".asSql()
@@ -611,7 +612,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         val joinSql = " " + listOfJoinable.joinToString(" ") {
             var joinCondition = it.condition
             val logicDeleteStrategy = kPojoLogicDeleteCache[it.kClass]
-            logicDeleteStrategy?.execute { _, value ->
+            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { _, value ->
                 joinCondition = listOfNotNull(
                     joinCondition,
                     "${

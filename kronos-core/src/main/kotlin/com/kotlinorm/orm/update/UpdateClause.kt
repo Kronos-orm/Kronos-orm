@@ -16,7 +16,6 @@
 
 package com.kotlinorm.orm.update
 
-import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
@@ -27,10 +26,10 @@ import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.cache.kPojoCreateTimeCache
-import com.kotlinorm.cache.kPojoFieldMapCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
@@ -51,6 +50,8 @@ import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.getDefaultBoolean
+import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -237,7 +238,7 @@ class UpdateClause<T : KPojo>(
         }
 
         // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-        logicDeleteStrategy?.execute { field, value ->
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
             toUpdateFields -= field
             paramMapNew -= field + "New"
             // 构建逻辑删除的条件SQL
@@ -286,11 +287,14 @@ class UpdateClause<T : KPojo>(
         )
 
         // 合并参数映射，准备执行SQL所需的参数
-        val fieldMap = kPojoFieldMapCache[kClass]!!
-        paramMapNew.forEach { (field, value) ->
-            paramMap[field.name] = fieldMap[field.name]
-                ?.takeIf { it.serializable && value != null }
-                ?.let { serializeProcessor.serialize(value!!) } ?: value
+        val fieldMap = fieldsMapCache[kClass]!!
+        paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key.name]
+            if (field != null && value != null) {
+                paramMap[key.name] = processParams(wrapper.orDefault(), field, value)
+            } else {
+                paramMap[key.name] = value
+            }
         }
 
         // 返回构建好的KronosAtomicTask实例

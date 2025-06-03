@@ -1,10 +1,11 @@
 package com.kotlinorm.beans.sample.databases
 
 import com.kotlinorm.annotations.*
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.enums.KColumnType.TINYINT
 import com.kotlinorm.enums.KColumnType.VARCHAR
 import com.kotlinorm.enums.Postgres
+import java.time.Instant
 import java.time.LocalDateTime
 
 @Table(name = "tb_user")
@@ -21,13 +22,13 @@ data class PgUser(
     @ColumnType(VARCHAR, 254)
     var username: String? = null,
     @Column("gender1")
-    @ColumnType(TINYINT)
-    @Default("0")
+    @ColumnType(KColumnType.BIT)
+    @Default("true")
     @Necessary
     var gender: Int? = null,
     var age: Int? = 0,
-//    @ColumnType(INT)
-//    var age: Int? = null,
+    @ColumnType(type = KColumnType.TIMESTAMP)
+    var regTime: Instant? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
     @Necessary

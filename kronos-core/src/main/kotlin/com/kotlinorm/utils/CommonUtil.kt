@@ -22,7 +22,10 @@ import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import kotlin.reflect.KClass
 
@@ -153,4 +156,49 @@ fun extractNumberInParentheses(input: String): Pair<Int, Int> {
         return Pair(length.toInt(), scale.toIntOrNull() ?: 0) // Converts to integers and handles optional second number.
     }
     return Pair(0, 0) // Returns default values if no match is found.
+}
+
+fun processParams(
+    wrapper: KronosDataSourceWrapper,
+    field: Field,
+    value: Any
+): Any? {
+    return if (field.serializable) {
+        serializeProcessor.serialize(value)
+    } else {
+        if (
+            field.type == KColumnType.TIMESTAMP ||
+            (wrapper.dbType == DBType.Postgres && field.type == KColumnType.DATETIME)
+        ) {
+            getTypeSafeValue(
+                "java.sql.Timestamp",
+                value,
+                field.superTypes,
+                field.dateFormat,
+                value::class
+            )
+        } else if (wrapper.dbType == DBType.Postgres && field.type == KColumnType.BIT) {
+            getTypeSafeValue(
+                "kotlin.Boolean",
+                value,
+                field.superTypes,
+                field.dateFormat,
+                value::class
+            )
+        } else {
+            value
+        }
+    }
+}
+
+fun getDefaultBoolean(
+    wrapper: KronosDataSourceWrapper,
+    boolean: Boolean
+): Any {
+    return when (wrapper.dbType) {
+        DBType.Postgres -> false
+        else -> {
+            if (boolean) 1 else 0
+        }
+    }
 }

@@ -26,6 +26,7 @@ import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
@@ -53,7 +54,9 @@ import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.logAndReturn
+import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.toLinkedSet
 
 class SelectClause<T : KPojo>(
@@ -313,23 +316,34 @@ class SelectClause<T : KPojo>(
         }
 
         // 设置逻辑删除的条件
-        logicDeleteStrategy?.execute { _, value ->
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { _, value ->
             buildCondition = listOfNotNull(
                 buildCondition,
                 "${field.quoted(wrapper.orDefault())} = $value".asSql()
             ).toCriteria()
         }
 
-        val paramMap = mutableMapOf<String, Any?>()
+        val paramMapNew = mutableMapOf<String, Any?>()
+
+        val fieldMap = fieldsMapCache[kClass]!!
+        paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key]
+            if (field != null && value != null) {
+                paramMap[key] = processParams(wrapper.orDefault(), field, value)
+            } else {
+                paramMap[key] = value
+            }
+        }
+
         // 构建查询条件SQL
         val sql = getSelectSql(wrapper.orDefault(), toSelectClauseInfo(wrapper) {
-            paramMap.putAll(it)
+            paramMapNew.putAll(it)
         })
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
             cascadeEnabled, cascadeAllowed, pojo, kClass, KronosAtomicQueryTask(
-                sql, paramMap, operationType = KOperationType.SELECT
+                sql, paramMapNew, operationType = KOperationType.SELECT
             ), if (selectAll) allFields else selectFields,
             operationType, cascadeSelectedProps ?: mutableSetOf()
         )

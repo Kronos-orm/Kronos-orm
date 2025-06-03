@@ -16,7 +16,6 @@
 
 package com.kotlinorm.orm.upsert
 
-import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -48,6 +47,8 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.getDefaultBoolean
+import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -172,14 +173,12 @@ class UpsertClause<T : KPojo>(
 
         // 合并参数映射，准备执行SQL所需的参数
         val fieldMap = fieldsMapCache[kClass]!!
-        paramMapNew.forEach { (field, value) ->
-            val field = fieldMap[field.columnName]
-            if(field != null) {
-                if (field.serializable && value != null) {
-                    paramMap[field.name] = serializeProcessor.serialize(value)
-                } else {
-                    paramMap[field.name] = value
-                }
+        paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key.name]
+            if (field != null && value != null) {
+                paramMap[key.name] = processParams(wrapper.orDefault(), field, value)
+            } else {
+                paramMap[key.name] = value
             }
         }
 
@@ -188,7 +187,7 @@ class UpsertClause<T : KPojo>(
         if (onConflict) {
             onFields += toUpdateFields
             // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-            logicDeleteStrategy?.execute { field, value ->
+            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
                 toInsertFields += field
                 paramMap[field.name] = value
             }

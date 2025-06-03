@@ -16,7 +16,6 @@
 
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.generator.SnowflakeIdGenerator
@@ -44,6 +43,7 @@ import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.processParams
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private val paramMap = pojo.toDataMap()
@@ -95,7 +95,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
             PrimaryKeyType.IDENTITY -> useIdentity = true
             else -> {}
         }
-        stash["useIdentity"] = true
+        if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
+            useIdentity = false
+        }
+        stash["useIdentity"] = useIdentity
         allColumns.forEach {
             if (it.defaultValue != null && paramMap[it.name] == null) {
                 paramMap[it.name] = it.defaultValue
@@ -120,11 +123,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         paramMap.forEach { (key, value) ->
             val field = fieldsMap[key]
             if (field != null && value != null) {
-                if (field.serializable) {
-                    paramMapNew[key] = serializeProcessor.serialize(value)
-                } else {
-                    paramMapNew[key] = value
-                }
+                paramMapNew[key] = processParams(wrapper.orDefault(), field, value)
             } else {
                 paramMapNew[key] = value
             }

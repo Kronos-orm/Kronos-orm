@@ -147,7 +147,7 @@ object PostgresqlSupport : DatabasesSupport {
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
         "CREATE${if (index.type.isNotEmpty()) " ${index.type} " else " "}INDEX${(if (index.concurrently) " CONCURRENTLY" else "")} ${index.name} ON ${
-            quote(tableName)
+            tableName
         }${if (index.method.isNotEmpty()) " USING ${index.method}" else ""} (${
             index.columns.joinToString(
                 ", "
@@ -279,7 +279,7 @@ object PostgresqlSupport : DatabasesSupport {
             indexes.toDelete.map {
                 "DROP INDEX ${quote("public")}.${it.name};"
             } + columns.toAdd.map {
-                "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${it.first.columnName} ${
+                "ALTER TABLE ${quote("public")}.${quote(tableName)} ADD COLUMN ${
                     columnCreateDefSql(
                         DBType.Postgres, it.first
                     )

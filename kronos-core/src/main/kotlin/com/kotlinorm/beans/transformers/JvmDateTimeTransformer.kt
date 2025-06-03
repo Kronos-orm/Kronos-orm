@@ -19,6 +19,7 @@ package com.kotlinorm.beans.transformers
 import com.kotlinorm.Kronos.defaultDateFormat
 import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.interfaces.ValueTransformer
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -33,6 +34,7 @@ import kotlin.reflect.KClass
 object JvmDateTimeTransformer : ValueTransformer {
     private val dateTimeTypes = listOf(
         "java.sql.Date",
+        "java.sql.Timestamp",
         "java.util.Date",
         "java.time.LocalDateTime",
         "java.time.LocalDate",
@@ -58,13 +60,19 @@ object JvmDateTimeTransformer : ValueTransformer {
         val pattern = dateTimeFormat ?: defaultDateFormat
         val localDateTime = if (value is Number) {
             if (targetKotlinType == "java.time.Instant") {
-                return java.time.Instant.ofEpochMilli(value.toLong())
+                Instant.ofEpochMilli(value.toLong())
             }
-            LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(value.toLong()), timeZone)
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(value.toLong()), timeZone)
+        } else if (value is Instant) {
+            LocalDateTime.ofInstant(value, timeZone)
+        } else if (value is java.sql.Date) {
+            LocalDateTime.ofInstant(value.toInstant(), timeZone)
+        } else if (value is java.sql.Timestamp) {
+            LocalDateTime.ofInstant(value.toInstant(), timeZone)
         } else {
             try {
                 LocalDateTime.parse(value.toString(), DateTimeFormatter.ofPattern(pattern))
-            } catch (e: DateTimeParseException) {
+            } catch (_: DateTimeParseException) {
                 LocalDateTime.parse(value.toString())
             } catch (e: Exception) {
                 throw e
@@ -81,6 +89,7 @@ object JvmDateTimeTransformer : ValueTransformer {
             "java.time.OffsetDateTime" -> localDateTime.atZone(timeZone).toOffsetDateTime()
             "java.util.Date" -> Date.from(localDateTime.atZone(timeZone).toInstant())
             "java.sql.Date" -> java.sql.Date.valueOf(localDateTime.toLocalDate())
+            "java.sql.Timestamp" -> java.sql.Timestamp.valueOf(localDateTime)
             else -> null
         } ?: throw IllegalArgumentException("Unsupported target type: $targetKotlinType")
     }

@@ -403,7 +403,11 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @param superTypes A list of super types for the target object type.
      * @return The value at the specified column position, converted to the specified type.
      */
-    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String>): Any =
-        if (strictSetValue) getObject(position, kClass.java)
-        else getTypeSafeValue(kClass.qualifiedName!!, getObject(position), superTypes)
+    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String>): Any? =
+        try{
+            if (strictSetValue) getObject(position, kClass.java)
+            else getTypeSafeValue(kClass.qualifiedName!!, getObject(position), superTypes)
+        } catch (e: NullPointerException) {
+            null
+        }
 }

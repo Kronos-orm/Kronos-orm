@@ -28,7 +28,7 @@ import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KClass
 
 val fieldsMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> { kClass->
-    kClass.createInstance().kronosColumns().let { instance ->
+    kPojoAllFieldsCache[kClass]!!.let { instance ->
         instance.associateBy { it.name } + instance.associateBy { it.columnName }
     }
 }

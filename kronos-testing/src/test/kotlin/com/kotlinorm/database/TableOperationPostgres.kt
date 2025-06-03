@@ -3,14 +3,15 @@
 //import com.kotlinorm.Kronos
 //import com.kotlinorm.Kronos.dataSource
 //import com.kotlinorm.KronosBasicWrapper
+//import com.kotlinorm.beans.sample.databases.PgUser
 //import com.kotlinorm.database.SqlManager.columnCreateDefSql
 //import com.kotlinorm.database.SqlManager.getTableColumns
 //import com.kotlinorm.enums.DBType
 //import com.kotlinorm.orm.ddl.table
 //import com.kotlinorm.orm.insert.insert
-//import com.kotlinorm.database.beans.OracleUser
-//import com.kotlinorm.database.beans.PgUser
+//import com.kotlinorm.orm.select.select
 //import org.apache.commons.dbcp2.BasicDataSource
+//import java.time.Instant
 //import kotlin.test.Test
 //import kotlin.test.assertEquals
 //import kotlin.test.assertTrue
@@ -25,9 +26,11 @@
 //    private val ds = BasicDataSource().apply {
 //        driverClassName = "org.postgresql.Driver" // Postgres驱动类名
 //        url = "jdbc:postgresql://localhost:5432/postgres" // Postgres数据库URL
-//        username = "postgres" // Postgres用户名
+//        username = "sundaiyue" // Postgres用户名
 //        password = "******" // Postgres密码
 //        maxIdle = 10 // 最大空闲连接数
+//    }.let {
+//        KronosBasicWrapper(it)
 //    }
 //    val user = PgUser()
 //
@@ -39,7 +42,7 @@
 //            // 设置表命名策略为驼峰命名
 //            tableNamingStrategy = lineHumpNamingStrategy
 //            // 设置数据源提供器
-//            dataSource = { KronosBasicWrapper(ds) }
+//            dataSource = { ds }
 //        }
 //    }
 //
@@ -121,6 +124,7 @@
 //    @Test
 //    fun testSyncScheme_postgresql() {
 //        // 同步user表结构
+//        dataSource.table.truncateTable(user)
 //        val tableSync = dataSource.table.syncTable(user)
 //        if (!tableSync) {
 //            println("表结构相同无需同步")
@@ -151,20 +155,19 @@
 //        println("表结构同步测试成功")
 //    }
 //
-//    /**
-//     * 测试获取自增主键
-//     */
 //    @Test
-//    fun testLastInsertId() {
-//        val newUser = OracleUser(
-//            username = "yf",
-//            gender = 93
+//    fun testInsertTimeStamp() {
+//        dataSource.table.dropTable(user)
+//        dataSource.table.syncTable(user)
+//        val user = PgUser(id = 8, regTime = Instant.ofEpochMilli(160000000000L))
+//        user.insert().execute()
+//        val selected = PgUser().select { it.id + it.regTime }.where { it.id == 8 }.queryOne()
+//        assertEquals(
+//            8, selected.id, "插入的用户ID应该为8"
 //        )
-//        val (_, lastInsertId) = newUser.insert().execute()
-//        if (lastInsertId != null) {
-//            println("插入成功，新记录的ID为：$lastInsertId")
-//        } else {
-//            println("插入失败")
-//        }
+//        assertEquals(
+//            Instant.ofEpochMilli(160000000000L), selected.regTime,
+//            "插入的用户创建时间应该为160000000000L对应的时间戳"
+//        )
 //    }
 //}

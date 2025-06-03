@@ -7,7 +7,7 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import kotlin.reflect.KClass
 
-object SamplePostgresJdbcWrapper : KronosDataSourceWrapper {
+open class SamplePostgresJdbcWrapper : KronosDataSourceWrapper {
     override val url: String
         get() = "jdbc:postgresql://localhost:5432/kronos"
     override val userName: String

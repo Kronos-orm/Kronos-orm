@@ -233,7 +233,7 @@ class UpdateClause<T : KPojo>(
             toUpdateFields = allFields
             // 为所有字段生成新的参数映射
             toUpdateFields.forEach {
-                paramMapNew[it + "New"] = paramMap[it.name]
+                paramMapNew[it + "New"] = processParams(wrapper.orDefault(), it, paramMap[it.name])
             }
         }
 
@@ -255,7 +255,7 @@ class UpdateClause<T : KPojo>(
         // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
         updateTimeStrategy?.execute(true) { field, value ->
             toUpdateFields += field
-            paramMapNew[field + "New"] = value
+            paramMapNew[field + "New"] = processParams(wrapper.orDefault(), field, value)
         }
 
         toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()

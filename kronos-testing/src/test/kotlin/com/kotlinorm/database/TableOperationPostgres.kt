@@ -7,9 +7,12 @@ import com.kotlinorm.beans.sample.databases.PgUser
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.orm.ddl.table
+import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.update.update
 import org.apache.commons.dbcp2.BasicDataSource
 import java.time.Instant
 import kotlin.test.Test
@@ -155,21 +158,44 @@ class TableOperationPostgres {
         println("表结构同步测试成功")
     }
 
+    /**
+     * 基础用例看护
+     */
+
     @Test
-    fun testInsertTimeStamp() {
+    fun testBasic() {
         dataSource.table.dropTable(user)
         dataSource.table.syncTable(user)
         val user = PgUser(id = 8, regTime = Instant.ofEpochMilli(160000000000L))
         user.insert().execute()
         val selected = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }.queryOne()
-        val exist = PgUser().select().page(1,1).queryList()
-        print(exist.size)
         assertEquals(
             8, selected.id, "插入的用户ID应该为8"
         )
         assertEquals(
             Instant.ofEpochMilli(160000000000L), selected.regTime,
             "插入的用户创建时间应该为160000000000L对应的时间戳"
+        )
+        val list = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
+            .queryList()
+        assertEquals(
+            1, list.size, "查询到的用户数量应该为1"
+        )
+        selected.update().set { it.id = 9 }.where { it.id == 8 }.execute()
+
+        val updated = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
+            .queryOne()
+
+        assertEquals(
+            9, updated.id, "更新后的用户ID应该为9"
+        )
+
+        selected.delete().by { it.id }.execute()
+        val total = PgUser().select { f.count(it.id) }
+            .where { it.regTime == Instant.ofEpochMilli(160000000000L) }
+            .queryOne<Int>()
+        assertEquals(
+            0, total, "删除后查询到的用户数量应该为0"
         )
     }
 }

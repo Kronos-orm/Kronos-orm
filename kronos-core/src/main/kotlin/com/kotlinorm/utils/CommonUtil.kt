@@ -158,36 +158,27 @@ fun extractNumberInParentheses(input: String): Pair<Int, Int> {
     return Pair(0, 0) // Returns default values if no match is found.
 }
 
+private fun Field.isTimestampOrPostgresDatetime(wrapper: KronosDataSourceWrapper): Boolean {
+    return type == KColumnType.TIMESTAMP ||
+            (wrapper.dbType == DBType.Postgres && type == KColumnType.DATETIME)
+}
+
 fun processParams(
     wrapper: KronosDataSourceWrapper,
     field: Field,
-    value: Any
+    value: Any?
 ): Any? {
-    return if (field.serializable) {
-        serializeProcessor.serialize(value)
-    } else {
-        if (
-            field.type == KColumnType.TIMESTAMP ||
-            (wrapper.dbType == DBType.Postgres && field.type == KColumnType.DATETIME)
-        ) {
-            getTypeSafeValue(
-                "java.sql.Timestamp",
-                value,
-                field.superTypes,
-                field.dateFormat,
-                value::class
-            )
-        } else if (wrapper.dbType == DBType.Postgres && field.type == KColumnType.BIT) {
-            getTypeSafeValue(
-                "kotlin.Boolean",
-                value,
-                field.superTypes,
-                field.dateFormat,
-                value::class
-            )
-        } else {
-            value
-        }
+    if (value == null) return null
+    if (field.serializable) return serializeProcessor.serialize(value)
+
+    return when {
+        field.isTimestampOrPostgresDatetime(wrapper) ->
+            getTypeSafeValue("java.sql.Timestamp", value, field.superTypes, field.dateFormat)
+
+        wrapper.dbType == DBType.Postgres && field.type == KColumnType.BIT ->
+            getTypeSafeValue("kotlin.Boolean", value, field.superTypes, field.dateFormat)
+
+        else -> value
     }
 }
 

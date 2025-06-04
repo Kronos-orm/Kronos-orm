@@ -82,7 +82,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         superTypes: List<String>
     ): List<Any> = executeQuery(task) {
         if (isKPojo) toKPojoList(kClass as KClass<KPojo>)
-        else toObjectList(kClass, superTypes)
+        else toObjectList(kClass)
     }
 
     /**
@@ -116,7 +116,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         superTypes: List<String>
     ): Any? = executeQuery(task) {
         if (isKPojo) toKPojoList(kClass as KClass<KPojo>).firstOrNull()
-        else singleObject(kClass, superTypes)
+        else singleObject(kClass)
     }
 
     /**
@@ -288,11 +288,10 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * using the `getObjectValue` method. Each object corresponds to a row in the result set.
      *
      * @param kClass The Kotlin class of the target object type.
-     * @param superTypes A list of super types for the target object type.
      * @return A list of objects of the specified type, where each object represents a row in the result set.
      */
-    private fun ResultSet.toObjectList(kClass: KClass<*>, superTypes: List<String>): List<Any> =
-        generateSequence { if (next()) getObjectValue(1, kClass, superTypes) else null }.toList()
+    private fun ResultSet.toObjectList(kClass: KClass<*>): List<Any> =
+        generateSequence { if (next()) getObjectValue(1, kClass) else null }.toList()
 
     /**
      * Retrieves a single object from the current `ResultSet`.
@@ -301,11 +300,10 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * the value of the first column, converting it into an object of the specified class.
      *
      * @param kClass The Kotlin class of the target object type.
-     * @param superTypes A list of super types for the target object type.
      * @return An object of the specified type if the `ResultSet` has a next row, or `null` if the `ResultSet` is empty.
      */
-    private fun ResultSet.singleObject(kClass: KClass<*>, superTypes: List<String>): Any? =
-        if (next()) getObjectValue(1, kClass, superTypes) else null
+    private fun ResultSet.singleObject(kClass: KClass<*>): Any? =
+        if (next()) getObjectValue(1, kClass) else null
 
     /**
      * Processes an Oracle-specific `ResultSet` to handle `LONG` column types and returns a list of items.
@@ -400,14 +398,13 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      *
      * @param position The 1-based column index in the `ResultSet` to retrieve the value from.
      * @param kClass The Kotlin class of the target object type.
-     * @param superTypes A list of super types for the target object type.
      * @return The value at the specified column position, converted to the specified type.
      */
-    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String>): Any? =
+    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>): Any? =
         try{
             if (strictSetValue) getObject(position, kClass.java)
-            else getTypeSafeValue(kClass.qualifiedName!!, getObject(position), superTypes)
-        } catch (e: NullPointerException) {
+            else getTypeSafeValue(kClass.qualifiedName!!, getObject(position))
+        } catch (_: NullPointerException) {
             null
         }
 }

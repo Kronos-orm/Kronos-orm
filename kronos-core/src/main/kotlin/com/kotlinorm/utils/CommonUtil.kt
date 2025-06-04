@@ -196,7 +196,7 @@ fun getDefaultBoolean(
     boolean: Boolean
 ): Any {
     return when (wrapper.dbType) {
-        DBType.Postgres -> false
+        DBType.Postgres -> true
         else -> {
             if (boolean) 1 else 0
         }

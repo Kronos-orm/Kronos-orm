@@ -35,8 +35,5 @@ jobs:
         with:
           postgresql-version: 17
 
-      - name: Test PostgreSQL connection
-        run: psql -c "SELECT version();"
-
       - name: Run tests 🧪
         run: ./gradlew :kronos-testing:test

@@ -325,20 +325,20 @@ class SelectClause<T : KPojo>(
 
         val paramMapNew = mutableMapOf<String, Any?>()
 
-        val fieldMap = fieldsMapCache[kClass]!!
-        paramMapNew.forEach { (key, value) ->
-            val field = fieldMap[key]
-            if (field != null && value != null) {
-                paramMap[key] = processParams(wrapper.orDefault(), field, value)
-            } else {
-                paramMap[key] = value
-            }
-        }
-
         // 构建查询条件SQL
         val sql = getSelectSql(wrapper.orDefault(), toSelectClauseInfo(wrapper) {
             paramMapNew.putAll(it)
         })
+
+        val fieldMap = fieldsMapCache[kClass]!!
+        paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key]
+            if (field != null && value != null) {
+                paramMapNew[key] = processParams(wrapper.orDefault(), field, value)
+            } else {
+                paramMapNew[key] = value
+            }
+        }
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeSelectClause.build(
@@ -397,7 +397,7 @@ class SelectClause<T : KPojo>(
     @Suppress("UNCHECKED_CAST")
     fun queryOne(wrapper: KronosDataSourceWrapper? = null): T {
         limit(1)
-        with(this.build()) {
+        with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
                 (wrapper.orDefault().forObject(atomicTask, kClass, true, listOf())

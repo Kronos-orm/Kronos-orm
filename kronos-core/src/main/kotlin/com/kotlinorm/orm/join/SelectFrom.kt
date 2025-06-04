@@ -26,6 +26,7 @@ import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
+import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.database.SqlManager.getJoinSql
@@ -54,6 +55,7 @@ import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.pop
+import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.push
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KClass
@@ -587,6 +589,16 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper, buildCondition) {
             paramMapNew.putAll(it.filter { entry -> null != entry.value })
         })
+
+        val fieldMap = fieldsMapCache[kClass]!!
+        paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key]
+            if (field != null && value != null) {
+                paramMapNew[key] = processParams(wrapper.orDefault(), field, value)
+            } else {
+                paramMapNew[key] = value
+            }
+        }
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeJoinClause.build(

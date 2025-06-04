@@ -181,7 +181,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             val toUpdateFields = mutableListOf<Field>()
             val updateFields = { strategy: KronosCommonStrategy, field: Field, value: Any? ->
                 toUpdateFields += field
-                paramMap[field.name + "New"] = value
+                paramMap[field.name + "New"] = processParams(wrapper.orDefault(), field, value)
             }
             // 设置更新时间和逻辑删除字段的策略
             updateTimeStrategy?.execute(true, afterExecute = updateFields)

@@ -25,7 +25,7 @@ data class PgUser(
     @ColumnType(KColumnType.BIT)
     @Default("true")
     @Necessary
-    var gender: Int? = null,
+    var gender: Boolean? = null,
     var age: Int? = 0,
     @ColumnType(type = KColumnType.TIMESTAMP)
     var regTime: Instant? = null,

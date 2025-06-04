@@ -161,7 +161,9 @@
 //        dataSource.table.syncTable(user)
 //        val user = PgUser(id = 8, regTime = Instant.ofEpochMilli(160000000000L))
 //        user.insert().execute()
-//        val selected = PgUser().select { it.id + it.regTime }.where { it.id == 8 }.queryOne()
+//        val selected = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }.queryOne()
+//        val exist = PgUser().select().page(1,1).queryList()
+//        print(exist.size)
 //        assertEquals(
 //            8, selected.id, "插入的用户ID应该为8"
 //        )

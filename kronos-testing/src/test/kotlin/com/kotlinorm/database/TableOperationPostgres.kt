@@ -25,9 +25,9 @@ class TableOperationPostgres {
     // 初始化Postgres数据库连接池
     private val ds = BasicDataSource().apply {
         driverClassName = "org.postgresql.Driver" // Postgres驱动类名
-        url = "jdbc:postgresql://localhost:5432/postgres" // Postgres数据库URL
-        username = "postgres" // Postgres用户名
-        password = "******" // Postgres密码
+        url = "jdbc:postgresql://localhost:5432/kronos_testing" // Postgres数据库URL
+        username = "kronos" // Postgres用户名
+        password = "kronos" // Postgres密码
         maxIdle = 10 // 最大空闲连接数
     }.let {
         KronosBasicWrapper(it)

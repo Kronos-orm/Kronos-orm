@@ -31,9 +31,18 @@ jobs:
         run: mysql -D kronos_testing -e 'SELECT VERSION()'
 
       - name: Setup PostgreSQL 17 🐘
-        uses: tj-actions/install-postgresql@v3
+        uses: ikalnytskyi/action-setup-postgres@v7
         with:
-          postgresql-version: 17
+            username: kronos
+            password: kronos
+            database: kronos_testing
+            port: 5432
+            postgres-version: "17"
+            ssl: true
+            id: postgres
+
+      - name: Test PostgreSQL connection 🔗
+        run: psql ${{ steps.postgres.outputs.connection-uri }} -c "SELECT 1"
 
       - name: Run tests 🧪
         run: ./gradlew :kronos-testing:test

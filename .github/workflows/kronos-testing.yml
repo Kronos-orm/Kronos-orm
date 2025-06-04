@@ -42,7 +42,7 @@ jobs:
         id: postgres
 
       - name: Test PostgreSQL connection 🔗
-        run: psql ${{ steps.postgres.outputs.connection-uri }} -c "SELECT 1"
+        run: psql service=${{ steps.postgres.outputs.service-name }} -c "SELECT 1"
 
       - name: Run tests 🧪
         run: ./gradlew :kronos-testing:test

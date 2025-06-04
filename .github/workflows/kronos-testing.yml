@@ -30,5 +30,13 @@ jobs:
       - name: Test MySQL connection 🔗
         run: mysql -D kronos_testing -e 'SELECT VERSION()'
 
+      - name: Setup PostgreSQL 17 🐘
+        uses: tj-actions/install-postgresql@v3
+        with:
+          postgresql-version: 17
+
+      - name: Test PostgreSQL connection
+        run: psql -U postgres -c 'SELECT version();'
+
       - name: Run tests 🧪
-        run: ./gradlew :kronos-testing:test --info --stacktrace
+        run: ./gradlew :kronos-testing:test

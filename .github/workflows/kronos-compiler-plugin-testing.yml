@@ -22,4 +22,4 @@ jobs:
           distribution: 'adopt'
 
       - name: Run tests 🧪
-        run: ./gradlew :kronos-compiler-plugin:test --info --stacktrace
+        run: ./gradlew :kronos-compiler-plugin:test

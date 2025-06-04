@@ -28,8 +28,8 @@ class TableOperationPostgres {
     // 初始化Postgres数据库连接池
     private val ds = BasicDataSource().apply {
         driverClassName = "org.postgresql.Driver" // Postgres驱动类名
-        url = "jdbc:postgresql://localhost:5432/kronos_testing" // Postgres数据库URL
-        username = "kronos" // Postgres用户名
+        url = "jdbc:postgresql://localhost:5432/postgres" // Postgres数据库URL
+        username = "sundaiyue" // Postgres用户名
         password = "kronos" // Postgres密码
         maxIdle = 10 // 最大空闲连接数
     }.let {
@@ -190,7 +190,7 @@ class TableOperationPostgres {
             9, updated.id, "更新后的用户ID应该为9"
         )
 
-        selected.delete().by { it.id }.execute()
+        updated.delete().by { it.id }.execute()
         val total = PgUser().select { f.count(it.id) }
             .where { it.regTime == Instant.ofEpochMilli(160000000000L) }
             .queryOne<Int>()

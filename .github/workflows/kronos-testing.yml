@@ -39,7 +39,7 @@ jobs:
             port: 5432
             postgres-version: "17"
             ssl: true
-            id: postgres
+        id: postgres
 
       - name: Test PostgreSQL connection 🔗
         run: psql ${{ steps.postgres.outputs.connection-uri }} -c "SELECT 1"

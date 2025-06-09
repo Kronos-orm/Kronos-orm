@@ -176,7 +176,7 @@ class TableOperationPostgres {
             Instant.ofEpochMilli(160000000000L), selected.regTime,
             "插入的用户创建时间应该为160000000000L对应的时间戳"
         )
-        val list = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
+        val list = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) && it.id in listOf(8) }
             .queryList()
         assertEquals(
             1, list.size, "查询到的用户数量应该为1"

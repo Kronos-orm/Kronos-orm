@@ -39,6 +39,7 @@ import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
@@ -305,7 +306,9 @@ fun KotlinBlockBuilderContext.buildCriteria(
 
                             "contains" -> {
                                 val left = element.extensionReceiver ?: element.dispatchReceiver
-                                if (left!!.type.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }) {
+                                if (left!!.type.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES || left.type.superTypes()
+                                        .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
+                                ) {
                                     tableName =
                                         getTableName(args.first()!!.asIrCall().dispatchReceiver!!.type.getClass()!!)
                                     // 形如 it.<property> in [1, 2, 3]的写法

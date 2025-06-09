@@ -44,6 +44,7 @@ import com.kotlinorm.enums.ConditionType.Companion.Root
 import com.kotlinorm.enums.ConditionType.Companion.Sql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.NoValueStrategyType
+import com.kotlinorm.enums.Postgres
 import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -201,8 +202,16 @@ object ConditionSqlBuilder {
                 listOfNotNull(
                     getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),
                     "NOT".takeIf { condition.not },
-                    "IN",
-                    "(:${safeKey})"
+                    if(wrapper.orDefault().dbType == Postgres.type){
+                        "="
+                    } else {
+                        "in"
+                    },
+                    if(wrapper.orDefault().dbType == Postgres.type){
+                        "ANY(:${safeKey})"
+                    } else {
+                        "(:${safeKey})"
+                    }
                 )
             }
 

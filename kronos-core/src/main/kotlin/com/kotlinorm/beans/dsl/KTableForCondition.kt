@@ -56,13 +56,16 @@ open class KTableForCondition<T : KPojo> {
      * @param other the element to check
      * @return `true`
      */
+
     operator fun <K> Iterable<K?>?.contains(other: @kotlin.internal.NoInfer K?) = true
 
-    operator fun Iterable<Number?>?.contains(other: @kotlin.internal.NoInfer Number?) = true
+    @JvmName("containsOutK")
+    operator fun <K> Collection<K?>?.contains(other: @kotlin.internal.NoInfer K?) = true
 
     operator fun <K> Array<K?>?.contains(other: @kotlin.internal.NoInfer K?) = true
 
-    operator fun Array<Number?>?.contains(other: @kotlin.internal.NoInfer Number?) = true
+    @JvmName("containsOutK")
+    operator fun <K> Array<out K?>?.contains(other: @kotlin.internal.NoInfer K?) = true
 
     operator fun IntArray?.contains(other: @kotlin.internal.NoInfer Number?) = true
 

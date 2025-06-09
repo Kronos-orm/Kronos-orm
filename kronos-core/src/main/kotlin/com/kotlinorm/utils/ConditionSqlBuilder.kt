@@ -205,7 +205,7 @@ object ConditionSqlBuilder {
                     if(wrapper.orDefault().dbType == Postgres.type){
                         "="
                     } else {
-                        "in"
+                        "IN"
                     },
                     if(wrapper.orDefault().dbType == Postgres.type){
                         "ANY(:${safeKey})"

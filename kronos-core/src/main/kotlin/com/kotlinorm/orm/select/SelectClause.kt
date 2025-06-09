@@ -231,7 +231,12 @@ class SelectClause<T : KPojo>(
                 throw EmptyFieldsException()
             }
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
-            condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
+            if (condition == null) {
+                condition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
+            } else {
+                // 如果已有条件，则将新条件添加到现有条件中
+                condition!!.children.add(fields.map { it.eq(paramMap[it.name]) }.toCriteria())
+            }
         }
         return this // 返回当前SelectClause实例，允许链式调用
     }
@@ -249,7 +254,12 @@ class SelectClause<T : KPojo>(
         pojo.afterFilter {
             criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
-            condition = criteria // 设置查询条件
+            if (criteria == null) return@afterFilter
+            if (condition == null) {
+                condition = criteria // 设置查询条件
+            } else {
+                condition!!.children.addAll(criteria!!.children) // 将新条件添加到现有条件中
+            }
         }
         return this
     }
@@ -269,7 +279,12 @@ class SelectClause<T : KPojo>(
         pojo.afterFilter {
             criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
-            havingCondition = criteria // 设置HAVING条件
+            if (criteria == null) return@afterFilter
+            if (havingCondition == null) {
+                havingCondition = criteria // 如果HAVING条件为空，则直接赋值
+            } else {
+                havingCondition!!.children.addAll(criteria!!.children) // 否则将新条件添加到现有HAVING条件中
+            }
         }
         return this // 允许链式调用
     }

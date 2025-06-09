@@ -36,17 +36,20 @@ class DataGuardPluginTest {
     ): KronosAtomicActionTask {
         val actionInfo = when (operation) {
             KOperationType.DELETE -> DeleteClauseInfo(
+                null,
                 tableName = tableName ?: parseTableName(sql),
                 whereClause = whereClause
             )
 
             KOperationType.UPDATE -> UpdateClauseInfo(
+                null,
                 tableName = tableName ?: parseTableName(sql),
                 whereClause = whereClause
             )
 
             KOperationType.TRUNCATE, KOperationType.DROP, KOperationType.ALTER ->
                 DDLInfo(
+                    null,
                     tableName = tableName ?: parseTableName(sql),
                 )
 

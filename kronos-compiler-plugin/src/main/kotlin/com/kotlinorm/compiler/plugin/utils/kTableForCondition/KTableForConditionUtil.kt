@@ -305,7 +305,9 @@ fun KotlinBlockBuilderContext.buildCriteria(
 
                             "contains" -> {
                                 val left = element.extensionReceiver ?: element.dispatchReceiver
-                                if (left!!.type.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }) {
+                                if (left!!.type.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES || left.type.superTypes()
+                                        .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
+                                ) {
                                     tableName =
                                         getTableName(args.first()!!.asIrCall().dispatchReceiver!!.type.getClass()!!)
                                     // 形如 it.<property> in [1, 2, 3]的写法

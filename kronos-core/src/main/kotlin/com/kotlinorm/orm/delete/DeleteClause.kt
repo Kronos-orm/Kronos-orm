@@ -89,7 +89,13 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
 
             // 根据fields中的字段及其值构建删除条件
-            condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+            if (condition == null) {
+                condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+            } else {
+                condition!!.children.add(
+                    fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+                )
+            }
         }
         return this
     }
@@ -127,7 +133,13 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         pojo.afterFilter {
             criteriaParamMap = paramMap
             deleteCondition(it)
-            condition = criteria
+            if (criteria == null) return@afterFilter
+            if (condition == null) {
+                condition = criteria
+            } else {
+                // 如果已经有条件，则将新条件添加到现有条件中
+                condition!!.children.addAll(criteria!!.children)
+            }
         }
         return this
     }
@@ -208,7 +220,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                     ),
                     paramMap,
                     operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(tableName, whereSql)
+                    DeleteClauseInfo(kClass, tableName, whereSql)
                 )
             )
         } else {
@@ -218,7 +230,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                     getDeleteSql(wrapper.orDefault(), tableName, whereSql),
                     paramMap,
                     operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(tableName, whereSql)
+                    DeleteClauseInfo(kClass, tableName, whereSql)
                 )
             )
         }

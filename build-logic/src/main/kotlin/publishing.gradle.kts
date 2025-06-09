@@ -177,11 +177,11 @@ if (project.name == "kronos-orm") {
             group = "kronos publishing"
             project.subprojects.forEach {
                 if (it.plugins.hasPlugin("com.vanniktech.maven.publish")) {
-                    dependsOn(it.tasks.named("publishMavenPublicationToCentralSnapshotsRepository"))
+                    dependsOn(it.tasks.named("publishAllPublicationsToCentralPortalSnapshotsRepository"))
                 }
             }
             dependsOn(
-                gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToCentralSnapshotsRepository")
+                gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToCentralPortalSnapshotsRepository")
             )
         }
     }

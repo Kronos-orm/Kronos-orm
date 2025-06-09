@@ -173,7 +173,15 @@ class UpdateClause<T : KPojo>(
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
             }
-            condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+
+            // 根据fields中的字段及其值构建删除条件
+            if (condition == null) {
+                condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+            } else {
+                condition!!.children.add(
+                    fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+                )
+            }
         }
         return this
     }
@@ -186,16 +194,16 @@ class UpdateClause<T : KPojo>(
      */
     fun where(updateCondition: ToFilter<T, Boolean?> = null): UpdateClause<T> {
         if (updateCondition == null) return this
-            .apply {
-                // 获取所有字段 且去除null
-                condition = allColumns.mapNotNull { field ->
-                    field.eq(paramMap[field.name]).takeIf { it.value != null }
-                }.toCriteria()
-            }
         pojo.afterFilter {
             criteriaParamMap = paramMap // 更新 propParamMap
             updateCondition(it)
-            condition = criteria
+            if (criteria == null) return@afterFilter
+            if (condition == null) {
+                condition = criteria
+            } else {
+                // 如果已经有条件，则将新条件添加到现有条件中
+                condition!!.children.addAll(criteria!!.children)
+            }
         }
         return this
     }
@@ -303,6 +311,7 @@ class UpdateClause<T : KPojo>(
             paramMap,
             operationType = KOperationType.UPDATE,
             UpdateClauseInfo(
+                kClass,
                 tableName,
                 whereClauseSql
             )

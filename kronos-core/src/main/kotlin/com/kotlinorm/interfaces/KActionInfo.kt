@@ -16,7 +16,10 @@
 
 package com.kotlinorm.interfaces
 
+import kotlin.reflect.KClass
+
 interface KActionInfo {
+    val kClass: KClass<out KPojo>?
     val tableName: String
     val whereClause: String?
 }

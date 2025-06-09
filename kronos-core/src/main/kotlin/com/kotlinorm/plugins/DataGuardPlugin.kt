@@ -195,12 +195,12 @@ object DataGuardPlugin : TaskEventPlugin {
     override val doBeforeQuery: QueryTaskEvent? = null
     override val doAfterQuery: QueryTaskEvent? = null
 
-    override val doBeforeAction: ActionTaskEvent = {
-        val dbName = getDBNameFrom(it)
-        val tableName = actionInfo?.tableName
-        val whereClause = actionInfo?.whereClause
+    override val doBeforeAction: ActionTaskEvent = { task, wrapper ->
+        val dbName = getDBNameFrom(wrapper)
+        val tableName = task.actionInfo?.tableName
+        val whereClause = task.actionInfo?.whereClause
 
-        when (operationType) {
+        when (task.operationType) {
             KOperationType.TRUNCATE -> {
                 if (!pluginConfig.truncate.isAllowed(dbName, tableName)) {
                     throw UnsupportedOperationException("Truncate operation is not allowed.")

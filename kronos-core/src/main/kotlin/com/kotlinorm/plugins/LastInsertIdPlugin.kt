@@ -63,12 +63,12 @@ object LastInsertIdPlugin : TaskEventPlugin {
     override val doAfterQuery: QueryTaskEvent? = null
     override val doBeforeAction: ActionTaskEvent? = null
 
-    override val doAfterAction: ActionTaskEvent = { wrapper ->
-        if (operationType == KOperationType.INSERT &&
-            (stash["queryId"] == true || (stash["queryId"] == null && enabled))
-            && stash["useIdentity"] == true // 目前仅支持自增主键
+    override val doAfterAction: ActionTaskEvent = { task, wrapper ->
+        if (task.operationType == KOperationType.INSERT &&
+            (task.stash["queryId"] == true || (task.stash["queryId"] == null && enabled))
+            && task.stash["useIdentity"] == true // 目前仅支持自增主键
         ) {
-            stash["lastInsertId"] = (wrapper.forObject(
+            task.stash["lastInsertId"] = (wrapper.forObject(
                 KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.dbType)),
                 kClass = Long::class,
                 false,

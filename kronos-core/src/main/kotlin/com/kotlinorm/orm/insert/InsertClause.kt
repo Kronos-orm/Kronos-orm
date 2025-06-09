@@ -147,6 +147,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
+                actionInfo = InsertClauseInfo(
+                    kClass,
+                    tableName
+                ),
                 stash = stash
             )
         )

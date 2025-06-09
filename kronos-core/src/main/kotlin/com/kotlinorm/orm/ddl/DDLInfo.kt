@@ -17,5 +17,11 @@
 package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.interfaces.KActionInfo
+import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KClass
 
-class DDLInfo(override val tableName: String, override val whereClause: String? = null) : KActionInfo
+class DDLInfo(
+    override val kClass: KClass<out KPojo>?,
+    override val tableName: String,
+    override val whereClause: String? = null
+) : KActionInfo

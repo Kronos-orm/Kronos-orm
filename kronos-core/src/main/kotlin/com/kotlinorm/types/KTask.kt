@@ -20,13 +20,15 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
-typealias ActionTaskEvent = (KAtomicActionTask.(
+typealias ActionTaskEvent = ((
+    task: KAtomicActionTask,
     wrapper: KronosDataSourceWrapper
 ) -> Unit)
 
 typealias ActionTaskEventList = MutableList<ActionTaskEvent>
 
-typealias QueryTaskEvent = (KAtomicQueryTask.(
+typealias QueryTaskEvent = ((
+    task: KAtomicQueryTask,
     wrapper: KronosDataSourceWrapper
 ) -> Unit)
 

@@ -68,7 +68,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             it,
             mapOf("tableName" to instance.kronosTableName()),
             KOperationType.CREATE,
-            DDLInfo(instance.kronosTableName())
+            DDLInfo(T::class, instance.kronosTableName())
         )
     }.toKronosActionTask().execute(dataSource)
 
@@ -82,7 +82,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             getTableDropSql(dataSource.dbType, instance.kronosTableName()),
             mapOf("tableName" to instance.kronosTableName()),
             KOperationType.DROP,
-            DDLInfo(instance.kronosTableName())
+            DDLInfo(T::class, instance.kronosTableName())
         ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -96,7 +96,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 getTableDropSql(dataSource.dbType, tableName),
                 mapOf("tableName" to tableName),
                 KOperationType.DROP,
-                DDLInfo(tableName)
+                DDLInfo(null, tableName)
             )
         }.toKronosActionTask().execute(dataSource)
 
@@ -117,7 +117,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         ),
         mapOf("tableName" to instance.kronosTableName()),
         KOperationType.TRUNCATE,
-        DDLInfo(instance.kronosTableName())
+        DDLInfo(T::class, instance.kronosTableName())
     ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -132,7 +132,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 getTableTruncateSql(dataSource.dbType, name, restartIdentity),
                 mapOf("tableName" to name),
                 KOperationType.TRUNCATE,
-                DDLInfo(name)
+                DDLInfo(null, name)
             )
         }.toKronosActionTask().execute(dataSource)
 

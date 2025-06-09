@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.orm.update
+package com.kotlinorm.orm.insert
 
 import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KClass
 
-class UpdateClauseInfo(
+class InsertClauseInfo(
     override val kClass: KClass<out KPojo>?,
     override val tableName: String,
-    override val whereClause: String?
+    override val whereClause: String? = null,
 ) : KActionInfo

@@ -303,6 +303,7 @@ class UpdateClause<T : KPojo>(
             paramMap,
             operationType = KOperationType.UPDATE,
             UpdateClauseInfo(
+                kClass,
                 tableName,
                 whereClauseSql
             )

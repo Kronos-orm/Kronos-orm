@@ -208,7 +208,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                     ),
                     paramMap,
                     operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(tableName, whereSql)
+                    DeleteClauseInfo(kClass, tableName, whereSql)
                 )
             )
         } else {
@@ -218,7 +218,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                     getDeleteSql(wrapper.orDefault(), tableName, whereSql),
                     paramMap,
                     operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(tableName, whereSql)
+                    DeleteClauseInfo(kClass, tableName, whereSql)
                 )
             )
         }

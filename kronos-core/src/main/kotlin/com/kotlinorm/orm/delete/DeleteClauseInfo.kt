@@ -17,5 +17,11 @@
 package com.kotlinorm.orm.delete
 
 import com.kotlinorm.interfaces.KActionInfo
+import com.kotlinorm.interfaces.KPojo
+import kotlin.reflect.KClass
 
-class DeleteClauseInfo(override val tableName: String, override val whereClause: String?) : KActionInfo
+class DeleteClauseInfo(
+    override val kClass: KClass<out KPojo>?,
+    override val tableName: String,
+    override val whereClause: String?
+) : KActionInfo

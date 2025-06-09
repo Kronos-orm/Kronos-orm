@@ -1,0 +1,493 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KotlinBlockBuilderContext</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.utils.context</a>
+</div>
+
+<h1>Coverage Summary for Class: KotlinBlockBuilderContext (com.kotlinorm.compiler.plugin.utils.context)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KotlinBlockBuilderContext</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (37/37)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.utils.context
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.helpers.Receivers
+&nbsp;import com.kotlinorm.compiler.helpers.applyIrCall
+&nbsp;import com.kotlinorm.compiler.helpers.irEnum
+&nbsp;import com.kotlinorm.compiler.helpers.irListOf
+&nbsp;import com.kotlinorm.compiler.helpers.subType
+&nbsp;import com.kotlinorm.compiler.helpers.valueArguments
+&nbsp;import com.kotlinorm.compiler.plugin.beans.CriteriaIR
+&nbsp;import com.kotlinorm.compiler.plugin.beans.FieldIR
+&nbsp;import com.kotlinorm.compiler.plugin.beans.primaryKeyTypeSymbol
+&nbsp;import com.kotlinorm.compiler.plugin.utils.CascadeAnnotationsFqName
+&nbsp;import com.kotlinorm.compiler.plugin.utils.IgnoreAnnotationsFqName
+&nbsp;import com.kotlinorm.compiler.plugin.utils.KPojoFqName
+&nbsp;import com.kotlinorm.compiler.plugin.utils.KronosColumnValueType
+&nbsp;import com.kotlinorm.compiler.plugin.utils.SerializeAnnotationsFqName
+&nbsp;import com.kotlinorm.compiler.plugin.utils.extractDeclarationComment
+&nbsp;import com.kotlinorm.compiler.plugin.utils.fieldSymbol
+&nbsp;import com.kotlinorm.compiler.plugin.utils.getColumnName
+&nbsp;import com.kotlinorm.compiler.plugin.utils.kTableForCondition.createCriteria
+&nbsp;import com.kotlinorm.compiler.plugin.utils.realStartOffset
+&nbsp;import com.kotlinorm.compiler.plugin.utils.sourceFileCache
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBoolean
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGetField
+&nbsp;import org.jetbrains.kotlin.ir.builders.irInt
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irSetField
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclaration
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrVariable
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlock
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.types.getClass
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.file
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.ir.util.sourceElement
+&nbsp;import org.jetbrains.kotlin.ir.util.superTypes
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import java.io.File
+&nbsp;import kotlin.text.Charsets.UTF_8
+&nbsp;
+&nbsp;open class KotlinBuilderWithScopeContext&lt;out T : IrBuilderWithScope&gt;(
+&nbsp;    open val pluginContext: IrPluginContext,
+&nbsp;    open val builder: T
+&nbsp;) {
+&nbsp;    /**
+&nbsp;     * Checks if the given IrExpression is a Kronos Column.
+&nbsp;     *
+&nbsp;     * This function checks if the given IrExpression is an instance of IrCallImpl and if its origin is either GET_PROPERTY or EQ.
+&nbsp;     * If these conditions are met, it retrieves the property name from the IrExpression and finds the corresponding property in the class.
+&nbsp;     * It then checks if any of the super types of the parent class of the property is &quot;com.kotlinorm.interfaces.KPojo&quot;.
+&nbsp;     *
+&nbsp;     * @receiver the `IrExpression` to check. It can be null.
+&nbsp;     * @return returns true if the IrExpression is a Kronos Column, false otherwise.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun IrExpression?.isKPojo(): Boolean {
+&nbsp;        if (this == null) return false
+&nbsp;        return (this is IrCallImpl &amp;&amp; this.symbol.owner.correspondingPropertySymbol?.owner is IrProperty &amp;&amp; this.let {
+&nbsp;            val propertyName = pluginContext.withContext{ correspondingName!!.asString() }
+&nbsp;            (dispatchReceiver!!.type.getClass()!!.properties.first { it.name.asString() == propertyName }.parent as IrClass).isKPojo()
+&nbsp;        }) || this is IrPropertyReference &amp;&amp; this.symbol.owner.parent is IrClass &amp;&amp; (this.symbol.owner.parent as IrClass).isKPojo()
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrType.isKPojo(): Boolean {
+&nbsp;        return superTypes().any { it.classFqName == pluginContext.KPojoFqName }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Finds a Kronos Column in the given IrExpression.
+&nbsp;     *
+&nbsp;     * This function checks if the given IrExpression is a Kronos Column. If it is, it returns the expression itself.
+&nbsp;     * If the expression is an instance of IrBlock and its origin is SAFE_CALL, it returns null.
+&nbsp;     * If the expression is not an instance of IrCall, it returns the expression itself.
+&nbsp;     * If the extension receiver or the dispatch receiver of the expression is an instance of IrCall, it recursively calls this function with the receiver.
+&nbsp;     * If none of the above conditions are met, it iterates over the value arguments of the expression. If it finds an argument that is an instance of IrCall, it recursively calls this function with the argument.
+&nbsp;     * If no Kronos Column is found, it returns the expression itself.
+&nbsp;     *
+&nbsp;     * @receiver the `IrExpression` to find the Kronos Column in.
+&nbsp;     * @return returns the found Kronos Column `IrExpression`, or null if no Kronos Column is found.
+&nbsp;     */
+&nbsp;    fun IrExpression.findKronosColumn(): IrExpression? {
+&nbsp;        if (this is IrBlock &amp;&amp; origin == IrStatementOrigin.SAFE_CALL) return null
+&nbsp;        if (this !is IrCall) return this
+&nbsp;        if (isKPojo()) {
+&nbsp;            return this
+&nbsp;        } else if (extensionReceiver is IrCall) {
+&nbsp;            return extensionReceiver!!.findKronosColumn()
+&nbsp;        } else if (dispatchReceiver is IrCall) {
+&nbsp;            return dispatchReceiver!!.findKronosColumn()
+&nbsp;        } else {
+&nbsp;            for (arg in valueArguments) {
+&nbsp;                if (arg is IrCall) {
+&nbsp;                    return arg.findKronosColumn()
+&nbsp;                }
+&nbsp;            }
+&nbsp;            return this
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Determines the type and value of a Kronos Column.
+&nbsp;     *
+&nbsp;     * This function checks if the given IrExpression is a Kronos Column. If it is, it returns a pair with the type as ColumnName and the expression itself.
+&nbsp;     * If the function name of the expression is &quot;value&quot;, it returns a pair with the type as Value and the expression itself.
+&nbsp;     * Otherwise, it tries to find a Kronos Column in the expression and returns a pair with the type as ColumnName and the found Kronos Column.
+&nbsp;     * If no Kronos Column is found, it throws an IllegalStateException.
+&nbsp;     *
+&nbsp;     * @receiver the `IrExpression` to check.
+&nbsp;     * @return returns a pair with the type and value of the Kronos Column.
+&nbsp;     * @throws IllegalStateException if no Kronos Column is found in the expression and the function name is not &quot;value&quot;.
+&nbsp;     */
+&nbsp;    fun IrExpression.columnValueGetter(): Pair&lt;KronosColumnValueType, IrExpression&gt; {
+&nbsp;        return if (this.isKPojo()) {
+&nbsp;            KronosColumnValueType.ColumnName to this
+&nbsp;        } else if (this.funcName() == &quot;value&quot;) {
+&nbsp;            KronosColumnValueType.Value to this
+&nbsp;        } else if (this.isKronosFunction()) {
+&nbsp;            KronosColumnValueType.Function to this
+&nbsp;        } else {
+&nbsp;            KronosColumnValueType.ColumnName to (findKronosColumn()
+&nbsp;                ?: throw IllegalStateException(&quot;`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value.&quot;))
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrExpression?.isKronosFunction(): Boolean {
+&nbsp;        if (this == null) return false
+&nbsp;        return this is IrCallImpl &amp;&amp; this.extensionReceiver?.type?.classFqName == FqName(&quot;com.kotlinorm.functions.FunctionHandler&quot;)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrExpression.setValue(property: IrProperty, value: IrExpression): IrExpression? {
+&nbsp;        with(builder) {
+&nbsp;            if (property.isDelegated) return null
+&nbsp;            return if (property.setter != null) {
+&nbsp;                applyIrCall(
+&nbsp;                    property.setter!!.symbol, value
+&nbsp;                ) {
+&nbsp;                    dispatchReceiver = this@setValue
+&nbsp;                }
+&nbsp;            } else {
+&nbsp;                irSetField(
+&nbsp;                    this@setValue, property.backingField!!, value
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrExpression.getValue(property: IrProperty): IrExpression {
+&nbsp;        with(builder) {
+&nbsp;            return if (property.getter != null) {
+&nbsp;                applyIrCall(
+&nbsp;                    property.getter!!.symbol
+&nbsp;                ) {
+&nbsp;                    dispatchReceiver = this@getValue
+&nbsp;                }
+&nbsp;            } else {
+&nbsp;                irGetField(
+&nbsp;                    this@getValue, property.backingField!!
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * For properties that are not columns, we need to check if :
+&nbsp;     * 1. the field using @Ignore annotation
+&nbsp;     * 2. the type is a KPojo or its super types are KPojo
+&nbsp;     * 3. is a Collection of KPojo, such as List&lt;KPojo&gt;
+&nbsp;     * 4. has Annotation `@Cascade`
+&nbsp;     *
+&nbsp;     * Specially, if the property is using `@Serialize` annotation, it will be treated as a column.
+&nbsp;     * but the priority of `@Serialize` is lower than `Ignore` annotation and `@Cascade` annotation.
+&nbsp;     */
+&nbsp;    fun IrProperty.isColumn(
+&nbsp;        irPropertyType: IrType = this.backingField?.type ?: pluginContext.irBuiltIns.anyNType,
+&nbsp;        ignored: IrConstructorCall? = ignoreAnnotationValue()
+&nbsp;    ): Boolean {
+&nbsp;        if (ignored.ignore(&quot;all&quot;)) return false
+&nbsp;        if (hasAnnotation(CascadeAnnotationsFqName)) return false
+&nbsp;        if (hasAnnotation(SerializeAnnotationsFqName)) return true
+&nbsp;        if (irPropertyType.isKPojo() || irPropertyType.subType()?.isKPojo() == true) return false
+&nbsp;        return true
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun IrProperty.ignoreAnnotationValue(): IrConstructorCall? {
+&nbsp;        return annotations.find { it.symbol.owner.returnType.getClass()!!.fqNameWhenAvailable == IgnoreAnnotationsFqName }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun IrConstructorCall?.ignore(name: String): Boolean {
+&nbsp;        if (this == null) return false
+&nbsp;        val action = this.getValueArgument(0)
+&nbsp;        if(action == null) return true
+&nbsp;        return (action is IrVarargImpl &amp;&amp;
+&nbsp;                action.elements.isNotEmpty() &amp;&amp;
+&nbsp;                (action.elements.first() is IrGetEnumValueImpl) &amp;&amp;
+&nbsp;                (action.elements.first() as IrGetEnumValueImpl).symbol.owner.name.asString() == name.uppercase()
+&nbsp;                )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrClass.isKPojo(): Boolean {
+&nbsp;        with(pluginContext) {
+&nbsp;            with(builder) {
+&nbsp;                return superTypes.any { it.classFqName == KPojoFqName }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrExpression.funcName(setNot: Boolean = false) = pluginContext.withContext{
+&nbsp;        funcName(setNot = setNot)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Retrieves the KDoc string for the current IR declaration.
+&nbsp;     *
+&nbsp;     * This function attempts to extract the KDoc comment associated with the current IR declaration.
+&nbsp;     * It uses the source offsets to locate the relevant lines in the source file and then extracts
+&nbsp;     * the comment content.
+&nbsp;     *
+&nbsp;     * @receiver The IR declaration for which to retrieve the KDoc string.
+&nbsp;     * @return An IR expression containing the KDoc string, or null if no KDoc comment is found.
+&nbsp;     */
+&nbsp;    fun IrDeclaration.getKDocString(): IrExpression {
+&nbsp;        val declaration = this
+&nbsp;        with(pluginContext){
+&nbsp;            with(builder){
+&nbsp;                val sourceOffsets = sourceElement()
+&nbsp;                if (sourceOffsets != null) {
+&nbsp;                    val startOffset = sourceOffsets.startOffset
+&nbsp;                    val endOffset = sourceOffsets.endOffset
+&nbsp;                    val fileEntry = file.fileEntry
+&nbsp;                    val sourceRange = fileEntry.getSourceRangeInfo(startOffset, endOffset)
+&nbsp;                    val source = sourceFileCache.getOrPut(fileEntry.name) {
+&nbsp;                        File(sourceRange.filePath).readLines(UTF_8)
+&nbsp;                    }
+&nbsp;                    val realStartOffset = realStartOffset(source, sourceRange.startLineNumber)
+&nbsp;                    val comment = when (declaration) {
+&nbsp;                            is IrProperty -&gt; extractDeclarationComment(
+&nbsp;                                source,
+&nbsp;                                realStartOffset..sourceRange.endLineNumber
+&nbsp;                            )
+&nbsp;
+&nbsp;                            is IrClass -&gt; extractDeclarationComment(
+&nbsp;                                source,
+&nbsp;                                sourceRange.startLineNumber..realStartOffset
+&nbsp;                            )
+&nbsp;
+&nbsp;                            else -&gt; null
+&nbsp;                        }
+&nbsp;
+&nbsp;                    if (comment != null) {
+&nbsp;                        return irString(comment)
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                return irString(&quot;&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    internal fun IrSimpleFunctionSymbol.invoke(
+&nbsp;        vararg values: IrExpression?,
+&nbsp;        typeArguments: Array&lt;IrType&gt; = emptyArray(),
+&nbsp;        setReceivers: Receivers.() -&gt; Unit = { }
+&nbsp;    ): IrFunctionAccessExpression {
+&nbsp;        return builder.applyIrCall(this, *values, typeArguments = typeArguments, setReceivers = setReceivers)
+&nbsp;    }
+&nbsp;
+&nbsp;    fun IrExpression?.irFieldOrNull(): IrExpression {
+&nbsp;        return if (this != null &amp;&amp; this.isKPojo()) getColumnName(this) else builder.irNull()
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts the current object to an IrVariable by creating a criteria using the provided propertyeters.
+&nbsp;     *
+&nbsp;     * @return an IrVariable representing the created criteria
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun FieldIR.build(): IrExpression {
+&nbsp;        with(pluginContext){
+&nbsp;            with(builder){
+&nbsp;                return applyIrCall(
+&nbsp;                    fieldSymbol.constructors.first(),
+&nbsp;                    columnName,
+&nbsp;                    irString(name),
+&nbsp;                    type,
+&nbsp;                    irEnum(primaryKeyTypeSymbol, primaryKey),
+&nbsp;                    dateTimeFormat ?: irNull(),
+&nbsp;                    tableName,
+&nbsp;                    cascade,
+&nbsp;                    irBoolean(cascadeIsArrayOrCollection),
+&nbsp;                    kClass,
+&nbsp;                    irListOf(irBuiltIns.stringType, superTypes),
+&nbsp;                    ignore ?: irNull(),
+&nbsp;                    irBoolean(isColumn),
+&nbsp;                    columnTypeLength ?: irInt(0),
+&nbsp;                    columnTypeScale ?: irInt(0),
+&nbsp;                    columnDefaultValue ?: irNull(),
+&nbsp;                    irBoolean(nullable),
+&nbsp;                    irBoolean(serializable),
+&nbsp;                    kDoc
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;typealias KotlinBuilderContext = KotlinBuilderWithScopeContext&lt;IrBuilderWithScope&gt;
+&nbsp;
+&nbsp;class KotlinBlockBuilderContext(
+<b class="fc">&nbsp;    override var pluginContext: IrPluginContext,</b>
+<b class="fc">&nbsp;    override var builder: IrBlockBuilder</b>
+<b class="fc">&nbsp;) : KotlinBuilderWithScopeContext&lt;IrBlockBuilder&gt;(pluginContext, builder){</b>
+&nbsp;    /**
+&nbsp;     * Converts the current object to an IrVariable by creating a criteria using the provided parameters.
+&nbsp;     *
+&nbsp;     * @return an IrVariable representing the created criteria
+&nbsp;     */
+&nbsp;    fun CriteriaIR.toIrVariable(): IrVariable {
+<b class="fc">&nbsp;        return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategyType)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;fun &lt;R&gt; IrBuilderWithScope.withBuilder(
+&nbsp;    pluginContext: IrPluginContext,
+&nbsp;    action: KotlinBuilderContext.() -&gt; R
+&nbsp;): R = action(
+&nbsp;    KotlinBuilderContext(pluginContext, this)
+&nbsp;)
+&nbsp;
+&nbsp;fun &lt;R&gt; IrBlockBuilder.withBlock(
+&nbsp;    pluginContext: IrPluginContext,
+&nbsp;    action: KotlinBlockBuilderContext.() -&gt; R
+&nbsp;): R = action(
+&nbsp;    KotlinBlockBuilderContext(pluginContext, this)
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-06-09 18:55</div>
+</div>
+</body>
+</html>

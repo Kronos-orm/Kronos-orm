@@ -1,0 +1,193 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KotlinPluginContext</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.utils.context</a>
+</div>
+
+<h1>Coverage Summary for Class: KotlinPluginContext (com.kotlinorm.compiler.plugin.utils.context)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KotlinPluginContext</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (20/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.5%
+  </span>
+  <span class="absValue">
+    (13/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.4%
+  </span>
+  <span class="absValue">
+    (97/146)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.utils.context
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrWhen
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;
+<b class="fc">&nbsp;class KotlinPluginContext(</b>
+<b class="fc">&nbsp;    var pluginContext: IrPluginContext,</b>
+&nbsp;) {
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    internal val IrCall.correspondingName
+<b class="pc">&nbsp;        get() = symbol.owner.correspondingPropertySymbol?.owner?.name</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns a string representing the function name based on the IrExpression type and origin, with optional logic for setNot parameter.
+&nbsp;     *
+&nbsp;     * @param setNot a boolean value indicating whether to add the &quot;not&quot; prefix to the function name
+&nbsp;     * @return a string representing the function name
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;    fun IrExpression.funcName(setNot: Boolean = false): String {</b>
+<b class="fc">&nbsp;        return when (this) {</b>
+<b class="fc">&nbsp;            is IrCall -&gt; when (origin) {</b>
+<b class="pc">&nbsp;                IrStatementOrigin.EQEQ, IrStatementOrigin.EXCLEQ -&gt; &quot;equal&quot;</b>
+<b class="fc">&nbsp;                IrStatementOrigin.GT -&gt; &quot;gt&quot;</b>
+<b class="fc">&nbsp;                IrStatementOrigin.LT -&gt; &quot;lt&quot;</b>
+<b class="fc">&nbsp;                IrStatementOrigin.GTEQ -&gt; &quot;ge&quot;</b>
+<b class="fc">&nbsp;                IrStatementOrigin.LTEQ -&gt; &quot;le&quot;</b>
+<b class="pc">&nbsp;                else -&gt; correspondingName?.asString() ?: symbol.owner.name.asString()</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            is IrWhen -&gt; when {</b>
+<b class="nc">&nbsp;                (origin == IrStatementOrigin.OROR &amp;&amp; !setNot) || (origin == IrStatementOrigin.ANDAND &amp;&amp; setNot) -&gt; &quot;OR&quot;</b>
+<b class="nc">&nbsp;                (origin == IrStatementOrigin.ANDAND &amp;&amp; !setNot) || (origin == IrStatementOrigin.OROR &amp;&amp; setNot) -&gt; &quot;AND&quot;</b>
+<b class="nc">&nbsp;                else -&gt; origin.toString()</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; &quot;&quot;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;fun &lt;T&gt; IrPluginContext.withContext(action: KotlinPluginContext.() -&gt; T) = action(
+&nbsp;    KotlinPluginContext(this)
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-06-09 18:55</div>
+</div>
+</body>
+</html>

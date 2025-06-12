@@ -97,6 +97,10 @@ object Kronos {
     // 默认日期格式
     var defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
 
+    var coroutineOprtEnable = true
+
+    var coroutineOprtSize = 1000
+
     @KronosInit
     fun init(action: Kronos.() -> Unit) {
         LastInsertIdPlugin.enabled = true

@@ -4,7 +4,7 @@
   "RESOURCES": "资源",
   "DISCUSSION": "交流",
   "REDEFINE": "重新定义",
-  "DESCRIPTION1": "Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用。",
+  "DESCRIPTION1": "Kronos，全新下一代 Kotlin ORM，为 Kotlin量身定做，基于编译器插件和协程开发，适用于后台和移动应用程序，支持多数据库。现代化、功能强大、高性能、且简单易用。",
   "DESCRIPTION2": "Kronos使用表达式树分析，结合Kotlin本身泛型、高阶函数、扩展函数等语法特性，让ORM拥有强大的表现力和简洁、语义化的写法， 使操作数据库变得更加简单。",
   "DESCRIPTION3": "Kronos 支持多种常见关系型数据库，包括 Mysql、Oracle、Postgres、Mssql、SQLite。",
   "GET_START": "快速上手",
@@ -56,5 +56,8 @@
   "FEATURE_3": "支持多种数据库方言",
   "READ_MORE": "阅读更多",
   "FEATURE_BLOG_TITLE_1": "Kotlin 多平台支持",
-  "FEATURE_BLOG_CONTENT_1": "Kronos目前对 kotlin 多平台的支持情况以及我们的kotlin多平台的开发和发布计划。"
+  "FEATURE_BLOG_CONTENT_1": "Kronos目前对 kotlin 多平台的支持情况以及我们的kotlin多平台的开发和发布计划。",
+  "FEATURE_BLOG_TITLE_2": "Kronos 代码生成器",
+  "FEATURE_BLOG_CONTENT_2": "Kronos最新版本支持代码生成，仅需简单配置，可以根据数据库表生成Kotlin ORM 类及各种Kotlin Class",
+  "IDE_PLUGIN": "IDE 插件"
 }

@@ -25,11 +25,11 @@
                                     <div class="flex flex-row md:flex-col justify-between items-start gap-2">
                                         <div>
                                             <span class="font-medium text-secondary text-sm">{{ item.title | transloco }}</span>
-                                            <div class="text-lg font-medium text-surface-900 dark:text-surface-0 mt-2">{{ item.content | transloco }}</div>
+                                            <div class="text-md font-medium text-surface-400 mt-2">{{ item.content | transloco }}</div>
                                         </div>
                                     </div>
                                     <div class="flex flex-col md:items-end gap-8">
-                                        <a class="p-button p-button-contrast"
+                                        <a class="p-button p-button-contrast text-nowrap"
                                            [href]="'/#/blog?blog=' + item.blog">{{ "READ_MORE" | transloco }}</a>
                                     </div>
                                 </div>

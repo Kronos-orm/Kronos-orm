@@ -22,7 +22,7 @@ Kronos支持对接其他的日志框架，目前支持的日志框架如下：
 
 ### 1. 显式指定KLoggerType
 
-需要显式指定`loggerType`为相应的类型，如未显式指定则使用的是`kronosorm`默认日志输出格式，
+需要显式指定`loggerType`为相应的类型，如未显式指定则使用的是`kronos-orm`默认日志输出格式，
 以下仅列出部分，详细请参考{{ $.keyword("getting-started/global-config", ["全局设置"]) }}。
 
 ```kotlin
@@ -63,16 +63,15 @@ Kronos.apply {
 </exclusions>
 </dependency>
 
-
         <!-- 配置 log4j2 -->
 <dependency>
-<groupId>org.springframework.boot</groupId>
-<artifactId>spring-boot-starter-log4j2</artifactId>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-log4j2</artifactId>
 </dependency>
         <!-- 加上这个才能辨认到log4j2.yml文件 -->
 <dependency>
-<groupId>com.fasterxml.jackson.dataformat</groupId>
-<artifactId>jackson-dataformat-yaml</artifactId>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-yaml</artifactId>
 </dependency>
 ```
 
@@ -240,10 +239,6 @@ Kronos.apply {
 logging:
   config: classpath:log4j2.yml
 ```
-
-
-
-
 
 ## 其他框架
 

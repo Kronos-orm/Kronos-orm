@@ -37,6 +37,12 @@ export class BlogComponent {
             content: 'FEATURE_BLOG_CONTENT_1',
             img: '/assets/images/features/img-1.png',
             blog: 'kotlin-multiplatform-support'
+        },
+        {
+            title: 'FEATURE_BLOG_TITLE_2',
+            content: 'FEATURE_BLOG_CONTENT_2',
+            img: '/assets/images/features/img-3.png',
+            blog: 'code-generation-support'
         }
     ]
 

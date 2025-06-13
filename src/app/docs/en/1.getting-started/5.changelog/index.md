@@ -3,7 +3,7 @@
 
 `Kronos` strictly adheres to the Semantic Versioning 2.0.0 specification.
 
-- **Current Version:** `0.0.2`
+- **Current Version:** `0.0.4`
 
 ## Update Logs
 
@@ -33,7 +33,7 @@
 
 ## Use Snapshots Version
 
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.3--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.5--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 Add maven repository for your project:
 
@@ -57,12 +57,12 @@ repositories {
 }
 
 plugins {
-    id 'kronos-gradle-plugin' version '0.0.3-SNAPSHOT'
+    id 'kronos-gradle-plugin' version '0.0.5-SNAPSHOT'
 }
 
 dependencies {
-    implementation "com.kotlinorm:kronos-core:0.0.3-SNAPSHOT"
-    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.0.3-SNAPSHOT"
+    implementation "com.kotlinorm:kronos-core:0.0.5-SNAPSHOT"
+    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.0.5-SNAPSHOT"
 }
 ```
 
@@ -88,12 +88,12 @@ repositories {
 }
 
 plugins {
-    id("kronos-gradle-plugin") version "0.0.3-SNAPSHOT"
+    id("kronos-gradle-plugin") version "0.0.5-SNAPSHOT"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.3-SNAPSHOT")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.3-SNAPSHOT")
+    implementation("com.kotlinorm:kronos-core:0.0.5-SNAPSHOT")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.5-SNAPSHOT")
 }
 ```
 
@@ -116,12 +116,12 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-core</artifactId>
-      <version>0.0.3-SNAPSHOT</version>
+      <version>0.0.5-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.3-SNAPSHOT</version>
+      <version>0.0.5-SNAPSHOT</version>
     </dependency>
   </dependencies>
 

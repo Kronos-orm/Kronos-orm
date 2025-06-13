@@ -18,7 +18,7 @@ h1, h2, h3, h4, h5, h6 {
     font-family: inherit;
     font-weight: 600;
     line-height: 1.2;
-    color: var(--surface-900);
+    color: var(--color-surface-900);
 }
 
 .p-megamenu-panel {
@@ -79,4 +79,23 @@ img {
 
 .p-hidden {
     display: none;
+}
+
+code {
+    counter-reset: step;
+    counter-increment: step 0;
+}
+
+*:not(pre) > code.ngde {
+    white-space: normal;
+}
+
+code .line::before {
+    content: counter(step);
+    counter-increment: step;
+    width: 1rem;
+    margin-right: 1.5rem;
+    display: inline-block;
+    text-align: right;
+    color: rgba(115, 138, 148, .4)
 }

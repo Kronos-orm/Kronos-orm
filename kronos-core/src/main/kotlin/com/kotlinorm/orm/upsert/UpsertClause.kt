@@ -38,6 +38,7 @@ import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.insert.InsertClause.Companion.build
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
@@ -83,6 +84,7 @@ class UpsertClause<T : KPojo>(
     private var cascadeAllowed: Set<Field>? = null
     private var lock: PessimisticLock? = null
     private var paramMapNew = mutableMapOf<Field, Any?>()
+    private var parallel: Int? = null
 
     init {
         if (setUpsertFields != null) {
@@ -268,6 +270,10 @@ class UpsertClause<T : KPojo>(
             return map { it.onConflict() }
         }
 
+        fun <T : KPojo> List<UpsertClause<T>>.parallel(n: Int): List<UpsertClause<T>> {
+            return this.onEach { it.parallel = n }
+        }
+
         fun <T : KPojo> List<UpsertClause<T>>.cascade(
             enabled: Boolean
         ): List<UpsertClause<T>> {
@@ -285,7 +291,8 @@ class UpsertClause<T : KPojo>(
         }
 
         fun <T : KPojo> List<UpsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+            val commonParallel = this.firstOrNull()?.parallel
+            return build().execute(wrapper, commonParallel)
         }
     }
 

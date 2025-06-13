@@ -56,6 +56,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
     var stash = mutableMapOf<String, Any?>()
+    private var parallel: Int? = null
 
     /**
      * cascadeAllowed
@@ -174,6 +175,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
             return this.onEach { it.cascade(someFields) }
         }
 
+        fun <T : KPojo> Iterable<InsertClause<T>>.parallel( n: Int): Iterable<InsertClause<T>> {
+            return this.onEach { it.parallel = n }
+        }
+
         /**
          * Builds a KronosActionTask for each InsertClause in the list.
          *
@@ -196,7 +201,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
          * @return KronosOperationResult returns the result of the execution of the KronosActionTask.
          */
         fun <T : KPojo> Iterable<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+            val commonParallel = this.firstOrNull()?.parallel
+            return build().execute(wrapper, commonParallel)
         }
 
         fun <T : KPojo> Array<InsertClause<T>>.cascade(enabled: Boolean): Array<out InsertClause<T>> {
@@ -205,6 +211,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
         fun <T : KPojo> Array<InsertClause<T>>.cascade(someFields: ToReference<T, Any?>): Array<out InsertClause<T>> {
             return this.onEach { it.cascade(someFields) }
+        }
+
+        fun <T : KPojo> Array<InsertClause<T>>.parallel( n: Int): Array<out InsertClause<T>> {
+            return this.onEach { it.parallel = n }
         }
 
         /**
@@ -230,7 +240,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
          * @return KronosOperationResult returns the result of the execution of the KronosActionTask.
          */
         fun <T : KPojo> Array<InsertClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+            val commonParallel = this.firstOrNull()?.parallel
+            return build().execute(wrapper, commonParallel)
         }
     }
 }

@@ -65,6 +65,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     private var logic = logicDeleteStrategy?.enabled ?: false
+    private var parallel: Int? = null
 
     fun logic(enabled: Boolean = true): DeleteClause<T> {
         this.logic = enabled
@@ -296,6 +297,10 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             return map { it.build(wrapper) }.merge()
         }
 
+        fun <T : KPojo> Iterable<DeleteClause<T>>.parallel(n: Int): Iterable<DeleteClause<T>> {
+            return this.onEach { it.parallel = n }
+        }
+
         /**
          * Executes an array of UpdateClause objects and returns the result of the execution.
          *
@@ -303,7 +308,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @return The KronosOperationResult of the execution.
          */
         fun <T : KPojo> Iterable<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+            val commonParallel = this.firstOrNull()?.parallel
+            return build().execute(wrapper, commonParallel)
         }
 
         /**
@@ -342,6 +348,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             return map { it.cascade(someFields) }
         }
 
+        fun <T : KPojo> Array<DeleteClause<T>>.parallel(n: Int): Array<out DeleteClause<T>> {
+            return this.onEach { it.parallel = n }
+        }
 
         /**
          * Builds a KronosAtomicBatchTask from an array of UpdateClause objects.
@@ -360,7 +369,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
          * @return The KronosOperationResult of the execution.
          */
         fun <T : KPojo> Array<DeleteClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+            val commonParallel = this.firstOrNull()?.parallel
+            return build().execute(wrapper, commonParallel)
         }
     }
 }

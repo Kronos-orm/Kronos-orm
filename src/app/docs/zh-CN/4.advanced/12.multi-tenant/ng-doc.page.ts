@@ -9,7 +9,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 const MultiTenantPage: NgDocPage = {
   title: `多租户`,
   mdFile: './index.md',
-  route: "multiTenant",
+  route: "multi-tenant",
   order: 12,
   category: AdvancedCategory,
   imports: [AnimateLogoComponent],

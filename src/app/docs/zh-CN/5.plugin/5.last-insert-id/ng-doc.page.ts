@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * LastInsertId是一个Kronos插件，用于获取最后插入的ID。
- * @status:warning WIP
+ * @status:info 新
  */
 const LastInsertIdPluginPage: NgDocPage = {
     title: `获取最后插入的ID`,

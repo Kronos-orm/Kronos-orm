@@ -21,17 +21,18 @@ import {TranslocoPipe} from "@jsverse/transloco";
         </p>
         <a class="p-button p-button-contrast" href="/#/blog?blog=kotlin-multiplatform-support">{{ "READ_MORE" | transloco }}</a>
       </p-card>
+      <p-card [header]="'FEATURE_BLOG_TITLE_2' | transloco" subheader="Kronos" [style]="{ minWidth: 'calc(100vw / 3)', maxWidth: '425px'}">
+        <ng-template pTemplate="header">
+          <img class="w-full" alt="Smarter framework" src="/assets/images/features/img-3.png" />
+        </ng-template>
+        <p>
+          {{"FEATURE_BLOG_CONTENT_2" | transloco}}
+        </p>
+        <a class="p-button p-button-contrast" href="/#/blog?blog=code-generation-support">{{ "READ_MORE" | transloco }}</a>
+      </p-card>
       <p-card header="Less runtime reflect, more compile-time task" subheader="Kronos" [style]="{ minWidth: 'calc(100vw / 3)', maxWidth: '425px'}">
         <ng-template pTemplate="header">
           <img class="w-full" alt="Less runtime reflect" src="/assets/images/features/img-2.png" />
-        </ng-template>
-        <p>
-          Some content is waiting to be written here...
-        </p>
-      </p-card>
-      <p-card header="Smarter framework, less code, simple solutions" subheader="Kronos" [style]="{ minWidth: 'calc(100vw / 3)', maxWidth: '425px'}">
-        <ng-template pTemplate="header">
-          <img class="w-full" alt="Smarter framework" src="/assets/images/features/img-3.png" />
         </ng-template>
         <p>
           Some content is waiting to be written here...

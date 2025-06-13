@@ -52,10 +52,12 @@
               "src/assets/fonts/hack-font-3.3.0/hack-subset.css",
               "node_modules/github-markdown-css/github-markdown-dark.css",
               "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
+              "node_modules/prismjs/themes/prism-okaidia.css",
               "src/styles.css"
             ],
             "scripts": [
               "node_modules/prismjs/prism.js",
+              "node_modules/prismjs/components/prism-toml.min.js",
               "node_modules/prismjs/components/prism-kotlin.min.js",
               "node_modules/prismjs/components/prism-groovy.min.js",
               "node_modules/prismjs/components/prism-xml-doc.min.js",

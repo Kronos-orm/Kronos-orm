@@ -4,13 +4,13 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章将介绍如何注册任务事件以实现任务的事件监听和处理。
- * @status:warning WIP
+ * @status:info 新
  */
 const TaskEventPage: NgDocPage = {
-  title: `任务事件监听`,
+  title: `任务事件系统`,
   mdFile: './index.md',
-  route: "multiTenant",
-  order: 12,
+  route: "task-event",
+  order: 13,
   category: AdvancedCategory,
   imports: [AnimateLogoComponent],
   demos: {AnimateLogoComponent}

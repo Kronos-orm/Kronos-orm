@@ -287,8 +287,18 @@ export class LayoutMenuBarComponent implements OnInit {
                     [{
                         items: [{
                             image: 'https://cdn.leinbo.com/assets/images/kronos/code-cover.jpg',
-                            label: 'COMING_SOON',
+                            styleClass: 'w-36',
                             subtext: 'CODE_GENERATOR',
+                            label: 'GET_START',
+                            routerLink: '/blog',
+                            queryParams: {blog: 'code-generation-support'}
+                        }]
+                    }, {
+                        items: [{
+                            image: '/assets/icons/kronos-circle.svg',
+                            styleClass: 'w-36',
+                            label: 'COMING_SOON',
+                            subtext: 'IDE_PLUGIN',
                         }]
                     }],
                 ]

@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * Data Guard 插件是一个Kronos插件，提供数据保护功能。
- * @status:warning WIP
+ * @status:info 新
  */
 const DataGuardPluginPage: NgDocPage = {
     title: `数据保护插件`,

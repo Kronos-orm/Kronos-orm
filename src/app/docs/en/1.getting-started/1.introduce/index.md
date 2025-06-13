@@ -20,7 +20,7 @@ graph LR
     A --> F[Kronos-data-source-wrapper]
     F --> G[DataSource]
     G --> H[Mysql, Sqlite, Postgresql, Oracle, SqlServer, etc.]
-    A --> K[Kronos-logging and Other Plugins]
+    A --> K[Kronos-logging, Kronos-codegen and Other Plugins]
 ```
 
 # Why Kronos?

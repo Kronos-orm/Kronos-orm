@@ -74,13 +74,15 @@ class KronosActionTask {
         }
     }
 
-    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+    fun execute(wrapper: KronosDataSourceWrapper? = null, parallel: Int? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault() //获取数据源
         beforeExecute?.invoke(this, dataSource) // 在执行之前执行的操作
 
         val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
             val first = it.first()
-            if (it.size == 1) listOf(first) else if (!coroutineOprtEnable || first.operationType == KOperationType.SELECT) {
+            if (it.size == 1) listOf(first) else if (
+                (!coroutineOprtEnable && null == parallel) || first.operationType == KOperationType.SELECT
+            ) {
                 listOf(
                     KronosAtomicBatchTask( //创建一个批量任务
                         first.sql,
@@ -90,7 +92,14 @@ class KronosActionTask {
                     )
                 )
             } else {
-                val paramChunks = it.map { task -> task.paramMap }.chunked(coroutineOprtSize)
+                val paramMapList = it.map { task -> task.paramMap }
+                val paramChunks = paramMapList.chunked(
+                    when {
+                        null == parallel -> coroutineOprtSize
+                        0 >= parallel -> 1
+                        else -> (paramMapList.size / parallel) + 1
+                    }
+                )
                 paramChunks.map { chunk ->
                     KronosAtomicBatchTask( //创建一个批量任务
                         first.sql,

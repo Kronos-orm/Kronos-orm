@@ -100,7 +100,7 @@ object Kronos {
     @KronosInit
     fun init(action: Kronos.() -> Unit) {
         LastInsertIdPlugin.enabled = true
-        this.action()
+        action()
         defaultLogger(this).info(
             log {
                 +"Kronos ORM Framework started."[green]

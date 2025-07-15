@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.21"
+kotlin = "2.2.0"
 dsl = "5.2.0"
 datetime = "0.6.2"
 serialization = "1.8.1"

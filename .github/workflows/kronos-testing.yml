@@ -45,4 +45,7 @@ jobs:
         run: psql service=${{ steps.postgres.outputs.service-name }} -c "SELECT 1"
 
       - name: Run tests 🧪
-        run: ./gradlew :kronos-testing:test --info --stacktrace
+        run: |
+          export postgres.password=kronos
+          export postgres.username=kronos
+          ./gradlew :kronos-testing:test --info --stacktrace

@@ -137,7 +137,7 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT COUNT(1) FROM 
+                SELECT COUNT(*) FROM 
                 (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
                 FROM `tb_user` 
                 LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 

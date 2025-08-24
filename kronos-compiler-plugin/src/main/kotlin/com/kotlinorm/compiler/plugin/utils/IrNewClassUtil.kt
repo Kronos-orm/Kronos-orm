@@ -223,7 +223,7 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
 @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalContracts::class)
 context(context: IrPluginContext, builder: IrBuilderWithScope)
 fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
-    val map = irFunction.parameters.first()
+    val map = irFunction.parameters.valueParameters.first()
     return builder.irBlockBody {
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
         +irBlock {

@@ -25,6 +25,7 @@ class IrClassNewTransformerTest {
             import kotlin.test.assertEquals
             import kotlin.test.assertNotNull
             import com.kotlinorm.enums.IgnoreAction
+            import com.kotlinorm.utils.Extensions.safeMapperTo
             
             
             /**
@@ -72,6 +73,8 @@ class IrClassNewTransformerTest {
             
             @CreateTime(enable = false)
             data class Customer(val id: Int? = null): KPojo
+
+            data class Customer2(val id: Int? = null): KPojo
 
             data class Student(
                 val id: Int? = null,
@@ -133,6 +136,10 @@ class IrClassNewTransformerTest {
                 assertEquals("2023-10-01 12:00:00", book["createTime"])
                 book["createTime"] = "2023-10-02 12:00:00"
                 assertEquals("2023-10-02 12:00:00", book["createTime"])
+                
+                val c1 = Customer(1)
+                val c2 = c1.safeMapperTo<Customer2>()
+                assertEquals(1, c2.id)
             }
         """.trimIndent(),
             testBaseName

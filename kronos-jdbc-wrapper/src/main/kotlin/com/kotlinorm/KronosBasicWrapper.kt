@@ -29,8 +29,6 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
-import javafx.beans.binding.Bindings.select
-import sun.misc.MessageUtils.where
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource
@@ -232,43 +230,53 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      */
     private fun PreparedStatement.setParameters(params: Array<Any?>) {
         params.forEachIndexed { index, value ->
-            if (value is Collection<*>) {
-                if (value.isEmpty()) {
-                    // If the collection is empty, set it as null in the PreparedStatement
-                    setNull(index + 1, java.sql.Types.NULL)
-                    return@forEachIndexed
+            when (value) {
+                is Collection<*> -> {
+                    if (value.isEmpty()) {
+                        // If the collection is empty, set it as null in the PreparedStatement
+                        setNull(index + 1, java.sql.Types.NULL)
+                        return@forEachIndexed
+                    }
+                    // If the value is an Iterable or Array, convert it to a string representation
+                    setArray(
+                        index + 1,
+                        connection.createArrayOf(
+                            value.first()!!::class.simpleName!!.lowercase(),
+                            value.toTypedArray()
+                        ),
+                    )
                 }
-                // If the value is an Iterable or Array, convert it to a string representation
-                setArray(
-                    index + 1,
-                    connection.createArrayOf(
-                        value.first()!!::class.simpleName!!.lowercase(),
-                        value.toTypedArray()
-                    ),
-                )
-            } else if (value is Array<*>) {
-                if (value.isEmpty()) {
-                    // If the array is empty, set it as null in the PreparedStatement
-                    setNull(index + 1, java.sql.Types.NULL)
-                    return@forEachIndexed
+
+                is Array<*> -> {
+                    if (value.isEmpty()) {
+                        // If the array is empty, set it as null in the PreparedStatement
+                        setNull(index + 1, java.sql.Types.NULL)
+                        return@forEachIndexed
+                    }
+                    // If the value is an Array, convert it to a string representation
+                    setArray(
+                        index + 1,
+                        connection.createArrayOf(
+                            value[0]!!::class.simpleName!!.lowercase(),
+                            value as Array<out Any?>?
+                        ),
+                    )
                 }
-                // If the value is an Array, convert it to a string representation
-                setArray(
-                    index + 1,
-                    connection.createArrayOf(
-                        value[0]!!::class.simpleName!!.lowercase(),
-                        value as Array<out Any?>?
-                    ),
-                )
-            } else if (value is String) {
-                // If the value is a String, set it directly
-                setString(index + 1, value)
-            } else if (value == null) {
-                // If the value is null, set it as null in the PreparedStatement
-                setNull(index + 1, java.sql.Types.NULL)
-            } else {
-                // Otherwise, set the value directly
-                setObject(index + 1, value)
+
+                is String -> {
+                    // If the value is a String, set it directly
+                    setString(index + 1, value)
+                }
+
+                null -> {
+                    // If the value is null, set it as null in the PreparedStatement
+                    setNull(index + 1, java.sql.Types.NULL)
+                }
+
+                else -> {
+                    // Otherwise, set the value directly
+                    setObject(index + 1, value)
+                }
             }
         }
     }

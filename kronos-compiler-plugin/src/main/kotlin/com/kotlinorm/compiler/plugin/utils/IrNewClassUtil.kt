@@ -17,6 +17,7 @@
 package com.kotlinorm.compiler.plugin.utils
 
 import com.kotlinorm.compiler.helpers.IrTryBuilder.Companion.irTry
+import com.kotlinorm.compiler.helpers.dispatchReceiver
 import com.kotlinorm.compiler.helpers.filterByFqName
 import com.kotlinorm.compiler.helpers.invoke
 import com.kotlinorm.compiler.helpers.irListOf
@@ -225,7 +226,7 @@ context(context: IrPluginContext, builder: IrBuilderWithScope)
 fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
     val map = irFunction.parameters.valueParameters.first()
     return builder.irBlockBody {
-        val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
         +irBlock {
             declaration.properties.toList().mapNotNull { property ->
                 if (property.isDelegated || property.isGetter ||
@@ -235,7 +236,7 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
                 }
                 dispatcher.setValue(
                     property, getSafeValueSymbol(
-                        irGet(irFunction.dispatchReceiverParameter!!),
+                        irGet(irFunction.parameters.dispatchReceiver!!),
                         property.backingField!!.type.classOrFail.toKClass(),
                         irListOf(
                             context.irBuiltIns.stringType,

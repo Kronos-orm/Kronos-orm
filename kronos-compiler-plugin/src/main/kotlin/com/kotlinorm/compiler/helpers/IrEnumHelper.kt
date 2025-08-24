@@ -25,10 +25,26 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 
-
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrBuilderWithScope.irEnum(irClassSymbol: IrClassSymbol, enumName: String): IrExpression{
-    val enumEntries = irClassSymbol.owner.declarations.filterIsInstance<IrEnumEntry>()
-    val enumEntry = enumEntries.firstOrNull() { it.name.asString().equals(enumName, true)  } ?: error("Enum entry $enumName not found in ${irClassSymbol.owner.fqNameWhenAvailable!!.asString()}")
-    return IrGetEnumValueImpl(startOffset, endOffset, irClassSymbol.defaultType, enumEntry.symbol)
+/**
+ * Creates an `IrExpression` representing the access to a specific enum entry of an enum class.
+ *
+ * @param irClassSymbol The symbol of the enum class.
+ * @param enumName The name of the enum entry to access.
+ * @return An `IrExpression` representing the enum entry access.
+ */
+@UnsafeDuringIrConstructionAPI
+context(builder: IrBuilderWithScope)
+fun irEnum(irClassSymbol: IrClassSymbol, enumName: String): IrExpression {
+    val enumEntries = irClassSymbol.owner
+        .declarations
+        .filterIsInstance<IrEnumEntry>()
+    val enumEntry = enumEntries.firstOrNull {
+        it.name.asString().equals(enumName, true)
+    } ?: error("Enum entry $enumName not found in ${irClassSymbol.owner.fqNameWhenAvailable!!.asString()}")
+    return IrGetEnumValueImpl(
+        builder.startOffset,
+        builder.endOffset,
+        irClassSymbol.defaultType,
+        enumEntry.symbol
+    )
 }

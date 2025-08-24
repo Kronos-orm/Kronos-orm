@@ -30,11 +30,12 @@ import org.jetbrains.kotlin.name.Name
  * @param className The fully qualified name of the class containing the function, if applicable. Defaults to null.
  * @return The reference to the function, or null if the function is not found.
  */
-internal fun IrPluginContext.referenceFunctions(
+context(context: IrPluginContext)
+internal fun referenceFunctions(
     packageName: String,
     functionName: String,
     className: String? = null
-) = referenceFunctions(
+) = context.referenceFunctions(
     CallableId(
         FqName(packageName),
         className?.let { FqName(it) },
@@ -48,6 +49,7 @@ internal fun IrPluginContext.referenceFunctions(
  * @param classId The fully qualified name of the class, with periods replaced by slashes.
  * @return The reference to the class, or null if the class is not found.
  */
-internal fun IrPluginContext.referenceClass(
+context(context: IrPluginContext)
+internal fun referenceClass(
     classId: String
-) = referenceClass(ClassId.fromString(classId.replace(".", "/")))
+) = context.referenceClass(ClassId.fromString(classId.replace(".", "/")))

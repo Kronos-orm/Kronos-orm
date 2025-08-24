@@ -16,8 +16,9 @@
 
 package com.kotlinorm.compiler.plugin.beans
 
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBlockBuilderContext
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.createCriteria
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 
@@ -43,4 +44,14 @@ class CriteriaIR(
     val children: List<IrVariable> = listOf(),
     var tableName: IrExpression? = null,
     var noValueStrategyType: IrExpression? = null
-)
+) {
+    /**
+     * Converts the current object to an IrVariable by creating a criteria using the provided parameters.
+     *
+     * @return an IrVariable representing the created criteria
+     */
+    context(_: IrPluginContext, builder: IrBlockBuilder)
+    fun toIrVariable(): IrVariable {
+        return createCriteria(parameterName, type, not, value, children, tableName, noValueStrategyType)
+    }
+}

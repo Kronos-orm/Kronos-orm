@@ -5,6 +5,12 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-nowarn")
+    }
+}
+
 dependencies {
     kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     testImplementation(libs.kotlin.test)

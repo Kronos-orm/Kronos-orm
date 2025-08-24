@@ -16,19 +16,20 @@
 
 package com.kotlinorm.compiler.plugin.utils
 
-import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.asIrConstructorCall
-import com.kotlinorm.compiler.helpers.dispatchBy
 import com.kotlinorm.compiler.helpers.findByFqName
+import com.kotlinorm.compiler.helpers.invoke
+import com.kotlinorm.compiler.helpers.irCast
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.valueArguments
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -38,27 +39,32 @@ import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.updateTimeStrategySymbol
+context(_: IrPluginContext)
+internal val updateTimeStrategySymbol
     get() =
         KronosSymbol.getPropertyGetter("updateTimeStrategy")!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.createTimeStrategySymbol
+context(_: IrPluginContext)
+internal val createTimeStrategySymbol
     get() =
         KronosSymbol.getPropertyGetter("createTimeStrategy")!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.logicDeleteStrategySymbol
+context(_: IrPluginContext)
+internal val logicDeleteStrategySymbol
     get() =
         KronosSymbol.getPropertyGetter("logicDeleteStrategy")!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.optimisticLockStrategySymbol
+context(_: IrPluginContext)
+internal val optimisticLockStrategySymbol
     get() =
         KronosSymbol.getPropertyGetter("optimisticLockStrategy")!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.commonStrategySymbol
+context(_: IrPluginContext)
+internal val commonStrategySymbol
     get() = referenceClass("com.kotlinorm.beans.config.KronosCommonStrategy")!!.constructors.first()
 
 val UpdateTimeFqName = FqName("com.kotlinorm.annotations.UpdateTime")
@@ -78,38 +84,35 @@ val OptimisticLockFqName = FqName("com.kotlinorm.annotations.Version")
  * @return The valid strategy as an IrExpression, or null if no valid strategy is found.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal fun KotlinBuilderContext.getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
-    with(pluginContext){
-        with(builder){
-            var strategy = applyIrCall(globalSymbol) { dispatchBy(irGetObject(KronosSymbol)) }
-            val tableAnno = irClass.annotations.findByFqName(fqName)?.asIrConstructorCall()
-            fun isAnnoDisabled() =
-               // 找到为IrBoolean且为false
-                tableAnno?.valueArguments?.any { arg -> arg is IrConst && arg.value == false } == true
-            if (isAnnoDisabled()) {
-                strategy = applyIrCall(
-                    commonStrategySymbol, irBoolean(false), applyIrCall(
-                        fieldSymbol.constructors.first(),
-                        irString("")
-                    )
-                )
-            } else {
-                var enabled: IrConst?
-                val search = irClass.properties.map {
-                    it to it.annotations.findByFqName(fqName)
-                }.find { it.second != null }
-                if (search != null) {
-                    val (col, anno) = search
-                    if (anno != null) {
-                        enabled = anno.getValueArgument(0) as IrConst?
-                        strategy = when (enabled?.value) {
-                            true, null -> applyIrCall(commonStrategySymbol, irBoolean(true), getColumnName(col))
-                            else -> applyIrCall(commonStrategySymbol, irBoolean(false), getColumnName(col))
-                        }
-                    }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+internal fun getValidStrategy(irClass: IrClass, globalSymbol: IrFunctionSymbol, fqName: FqName): IrExpression {
+    var strategy = globalSymbol(builder.irGetObject(KronosSymbol))
+    val tableAnno = irClass.annotations.findByFqName(fqName)?.irCast<IrConstructorCall>()
+    fun isAnnoDisabled() =
+        // 找到为IrBoolean且为false
+        tableAnno?.valueArguments?.any { arg -> arg is IrConst && arg.value == false } == true
+    if (isAnnoDisabled()) {
+        strategy = commonStrategySymbol(
+            builder.irBoolean(false),
+            fieldSymbol.constructors.first()(
+                builder.irString("")
+            )
+        )
+    } else {
+        var enabled: IrConst?
+        val search = irClass.properties.map {
+            it to it.annotations.findByFqName(fqName)
+        }.find { it.second != null }
+        if (search != null) {
+            val (col, anno) = search
+            if (anno != null) {
+                enabled = anno.valueArguments[0] as IrConst?
+                strategy = when (enabled?.value) {
+                    true, null -> commonStrategySymbol(builder.irBoolean(true), getColumnName(col))
+                    else -> commonStrategySymbol(builder.irBoolean(false), getColumnName(col))
                 }
             }
-            return strategy
         }
     }
+    return strategy
 }

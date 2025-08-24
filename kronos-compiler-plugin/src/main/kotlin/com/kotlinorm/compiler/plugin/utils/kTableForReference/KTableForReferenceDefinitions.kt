@@ -18,19 +18,26 @@ package com.kotlinorm.compiler.plugin.utils.kTableForReference
 
 import com.kotlinorm.compiler.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
-
+/**
+ * The fully qualified name of the KTableForReference class.
+ */
 const val KTABLE_FOR_REFERENCE_CLASS = "com.kotlinorm.beans.dsl.KTableForReference"
 
-private val IrPluginContext.kTableForReferenceSymbol
+/**
+ * Gets the symbol for the KTableForReference class.
+ */
+context(_: IrPluginContext)
+private val kTableForReferenceSymbol
     get() = referenceClass(KTABLE_FOR_REFERENCE_CLASS)!!
 
+/**
+ * Gets the symbol for the `addField` function of the KTableForReference class.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.addFieldSymbol
+context(_: IrPluginContext)
+internal val addRefFieldSymbol
     get() = kTableForReferenceSymbol.getSimpleFunction("addField")!!
-
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.aliasSymbol
-    get() = kTableForReferenceSymbol.getSimpleFunction("setAlias")!!

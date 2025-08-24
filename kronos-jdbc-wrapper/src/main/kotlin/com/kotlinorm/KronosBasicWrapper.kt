@@ -29,6 +29,8 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
+import javafx.beans.binding.Bindings.select
+import sun.misc.MessageUtils.where
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource

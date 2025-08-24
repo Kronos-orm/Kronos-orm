@@ -19,14 +19,18 @@ package com.kotlinorm.compiler.plugin.utils
 import com.kotlinorm.compiler.helpers.referenceClass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 
-internal val IrPluginContext.kColumnTypeSymbol
+/**
+ * Get the symbol for the KColumnType enum class.
+ */
+context(_: IrPluginContext)
+internal val kColumnTypeSymbol
     get() = referenceClass("com.kotlinorm.enums.KColumnType")!!
 
 /**
- * Get the sql type of the given property type.
+ * Get the SQL type of the given property type.
  *
  * @param propertyType the kotlin type of the property
- * @return the Kronos sql type of the property
+ * @return the Kronos SQL type of the property
  */
 fun kotlinTypeToKColumnType(propertyType: String) = when (propertyType) {
     "kotlin.Boolean" -> "BIT"

@@ -37,29 +37,64 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-val IrPluginContext.JavaLangExceptionSymbol
+/**
+ * Provides utilities to build `try-catch-finally` blocks in Kotlin IR.
+ */
+
+/**
+ * Gets the symbol for the `java.lang.Exception` class.
+ *
+ * @return The symbol for the `java.lang.Exception` class.
+ */
+context(_: IrPluginContext)
+val JavaLangExceptionSymbol
     get() = referenceClass("java.lang.Exception")!!
 
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-val IrPluginContext.printStackTraceSymbol
+/**
+ * Gets the symbol for the `printStackTrace` function of the `java.lang.Throwable` class.
+ *
+ * @return The symbol for the `printStackTrace` function.
+ */
+@UnsafeDuringIrConstructionAPI
+context(_: IrPluginContext)
+val printStackTraceSymbol
     get() = referenceClass("java.lang.Throwable")!!.getSimpleFunction("printStackTrace")!!
 
-class IrTryBuilder(private val builder: IrBuilderWithScope) {
+/**
+ * A builder class for constructing `IrTry` expressions with multiple `catch` blocks and an optional `finally` block.
+ *
+ * @property result The main expression to be executed within the `try` block.
+ * @property type The type of the `try` expression, defaulting to the type of the `result`.
+ */
+class IrTryBuilder(
+    val result: IrExpression,
+    val type: IrType = result.type
+) {
     private val catches = mutableListOf<IrCatch>()
     private val caughtTypes = mutableSetOf<IrType>()
     private var finallyExpression: IrExpression? = null
-
-    @OptIn(ExperimentalContracts::class)
-    fun IrPluginContext.irCatch(
-        throwableType: IrType = JavaLangExceptionSymbol.defaultType,
-        body: IrBuilderWithScope.(IrVariable) -> IrExpression = {
-            applyIrCall(printStackTraceSymbol) {
-                dispatchReceiver = irGet(it)
-            }
+        set(value) {
+            if (field != null) error("Finally block already set")
+            field = value
         }
+
+
+    /**
+     * Adds a `catch` block to the `try` expression for the specified throwable type.
+     *
+     * @param throwableType The type of exception to catch. Defaults to `java.lang.Exception`.
+     * @param body A lambda that defines the body of the `catch` block, receiving the caught exception variable.
+     * @throws IllegalArgumentException if the `throwableType` does not inherit from `kotlin.Throwable`
+     */
+    @ExperimentalContracts
+    @UnsafeDuringIrConstructionAPI
+    context(builder: IrBuilderWithScope, context: IrPluginContext)
+    private fun irCatch(
+        throwableType: IrType = JavaLangExceptionSymbol.defaultType,
+        body: IrBuilderWithScope.(IrVariable) -> IrExpression = { printStackTraceSymbol(irGet(it)) }
     ) {
         contract { callsInPlace(body, InvocationKind.EXACTLY_ONCE) }
-        if (throwableType.subType() == builder.context.irBuiltIns.throwableType && throwableType != builder.context.irBuiltIns.throwableType) error(
+        if (throwableType.sub() == builder.context.irBuiltIns.throwableType && throwableType != builder.context.irBuiltIns.throwableType) error(
             "Can only catch types that inherit from kotlin.Throwable"
         )
 
@@ -77,18 +112,60 @@ class IrTryBuilder(private val builder: IrBuilderWithScope) {
         catches += builder.irCatch(catchVariable, builder.body(catchVariable))
     }
 
-    fun irFinally(expression: IrExpression) {
-        if (finallyExpression != null) error("finally expression already set")
-        finallyExpression = expression
+    /**
+     * Adds a `catch` block to the `try` expression that catches all exceptions.
+     * The body of the `catch` block is defined by the provided lambda.
+     *
+     * @param expression A lambda that defines the body of the `catch` block.
+     * @return The current `IrTryBuilder` instance for chaining.
+     */
+    @ExperimentalContracts
+    @UnsafeDuringIrConstructionAPI
+    context(builder: IrBuilderWithScope, _: IrPluginContext)
+    fun catch(expression: IrTryBuilder.() -> Unit = {}): IrTryBuilder {
+        irCatch(builder.context.irBuiltIns.throwableType) {
+            builder.irBlock {
+                expression()
+            }
+        }
+        return this
     }
 
-    fun build(result: IrExpression, type: IrType): IrTry = builder.irTry(type, result, catches, finallyExpression)
-}
+    /**
+     * Sets the `finally` block for the `try` expression.
+     *
+     * @param expression The expression to be executed in the `finally` block.
+     * @return The current `IrTryBuilder` instance for chaining.
+     * @throws IllegalStateException if a `finally` block has already been set.
+     */
+    @ExperimentalContracts
+    @UnsafeDuringIrConstructionAPI
+    fun finally(expression: IrExpression): IrTryBuilder {
+        finallyExpression = expression
+        return this
+    }
 
-inline fun IrBuilderWithScope.irTry(
-    result: IrExpression = irBlock {},
-    type: IrType = result.type,
-    catches: IrTryBuilder.() -> Unit = {},
-): IrTry = IrTryBuilder(
-    this
-).apply(catches).build(result, type)
+    /**
+     * Builds the `IrTry` expression using the configured `try`, `catch`, and `finally` blocks.
+     *
+     * @return The constructed `IrTry` expression.
+     */
+    context(builder: IrBuilderWithScope, _: IrPluginContext)
+    fun build(): IrTry =
+        builder.irTry(type, result, catches, finallyExpression)
+
+    companion object {
+        /**
+         * Creates a new `IrTryBuilder` instance with the specified result expression and type.
+         *
+         * @param result The main expression to be executed within the `try` block. Defaults to an empty block.
+         * @param type The type of the `try` expression, defaulting to the type of the `result`.
+         * @return A new `IrTryBuilder` instance.
+         */
+        context(builder: IrBuilderWithScope, _: IrPluginContext)
+        fun irTry(
+            result: IrExpression = builder.irBlock {},
+            type: IrType = result.type,
+        ): IrTryBuilder = IrTryBuilder(result, type)
+    }
+}

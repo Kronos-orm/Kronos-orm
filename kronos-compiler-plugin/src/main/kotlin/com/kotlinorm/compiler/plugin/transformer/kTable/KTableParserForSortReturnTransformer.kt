@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.plugin.transformer.kTable
 
-import com.kotlinorm.compiler.plugin.utils.context.withBlock
 import com.kotlinorm.compiler.plugin.utils.kTableForSort.addFieldSortsIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -68,7 +67,7 @@ class KTableParserForSortReturnTransformer(
     override fun visitReturn(expression: IrReturn): IrExpression {
         with(DeclarationIrBuilder(pluginContext, irFunction.symbol)) {
             return irBlock {
-                +withBlock(pluginContext) { addFieldSortsIr(irFunction, expression) }
+                +with(pluginContext) { addFieldSortsIr(irFunction, expression) }
                 +expression
             }
         }

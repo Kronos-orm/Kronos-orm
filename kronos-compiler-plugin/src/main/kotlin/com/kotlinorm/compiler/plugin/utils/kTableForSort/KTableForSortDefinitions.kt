@@ -21,19 +21,38 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
+/**
+ * KTableForSort class name.
+ */
 const val KTABLE_FOR_SORT_CLASS = "com.kotlinorm.beans.dsl.KTableForSort"
 
-private val IrPluginContext.sortableClassSymbol
+/**
+ * KTableForSort class symbol.
+ */
+context(_: IrPluginContext)
+private val sortableClassSymbol
     get() = referenceClass(KTABLE_FOR_SORT_CLASS)!!
 
+/**
+ * Gets the symbol for the addSortField function in the KTableForSort class.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.addSortFieldSymbol
+context(_: IrPluginContext)
+internal val addSortFieldSymbol
     get() = sortableClassSymbol.getSimpleFunction("addSortField")!!
 
+/**
+ * Gets the symbol for the asc function in the KTableForSort class.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.createAscSymbol
+context(_: IrPluginContext)
+internal val createAscSymbol
     get() = sortableClassSymbol.getSimpleFunction("asc")!!
 
+/**
+ * Gets the symbol for the desc function in the KTableForSort class.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.createDescSymbol
+context(_: IrPluginContext)
+internal val createDescSymbol
     get() = sortableClassSymbol.getSimpleFunction("desc")!!

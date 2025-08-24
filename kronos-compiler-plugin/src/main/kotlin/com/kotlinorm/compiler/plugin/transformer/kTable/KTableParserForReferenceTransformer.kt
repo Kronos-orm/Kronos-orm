@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.plugin.transformer.kTable
 
-import com.kotlinorm.compiler.plugin.utils.context.withBuilder
 import com.kotlinorm.compiler.plugin.utils.kTableForReference.addReferenceList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -67,17 +66,13 @@ class KTableParserForReferenceTransformer(
     /**
      * Visits a call expression and returns an IrExpression.
      *
-     * @param expression the [IrCall] expression to visit
+     * @param expression the [IrReturn] expression to visit
      * @return the transformed IrExpression
      */
     override fun visitReturn(expression: IrReturn): IrExpression {
-        with(DeclarationIrBuilder(pluginContext, irFunction.symbol)) {
-            return irBlock {
-                +withBuilder(pluginContext) {
-                    addReferenceList(irFunction, expression)
-                }
+        return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                +with(pluginContext) { addReferenceList(irFunction, expression) }
                 +expression
-            }
         }
     }
 }

@@ -46,6 +46,6 @@ jobs:
 
       - name: Run tests 🧪
         run: |
-          export postgres.password=kronos
-          export postgres.username=kronos
+          export POSTGRES_USERNAME=kronos
+          export POSTGRES_PASSWORD=kronos
           ./gradlew :kronos-testing:test --info --stacktrace

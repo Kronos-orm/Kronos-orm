@@ -29,8 +29,8 @@ class TableOperationPostgres {
     private val ds = BasicDataSource().apply {
         driverClassName = "org.postgresql.Driver" // Postgres驱动类名
         url = "jdbc:postgresql://localhost:5432/kronos_testing" // Postgres数据库URL
-        username = System.getenv("postgres.username") // Postgres用户名
-        password = System.getenv("postgres.password") // Postgres密码
+        username = System.getenv("POSTGRES_USERNAME") // Postgres用户名
+        password = System.getenv("POSTGRES_PASSWORD") // Postgres密码
         maxIdle = 10 // 最大空闲连接数
     }.let {
         KronosBasicWrapper(it)

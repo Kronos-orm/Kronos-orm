@@ -51,8 +51,8 @@ class CodeGenerateTest {
                 dataSourceClassName = "org.apache.commons.dbcp2.BasicDataSource"
                 wrapperClassName = "com.kotlinorm.KronosBasicWrapper"
                 url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false&rewriteBatchedStatements=true"
-                username = "${System.getenv("mysql.username")}"
-                password = "${System.getenv("mysql.password")}"
+                username = "${System.getenv("MYSQL_USERNAME")}"
+                password = "${System.getenv("MYSQL_PASSWORD")}"
                 driverClassName = "com.mysql.cj.jdbc.Driver"
                 initialSize = 5
                 maxActive = 10

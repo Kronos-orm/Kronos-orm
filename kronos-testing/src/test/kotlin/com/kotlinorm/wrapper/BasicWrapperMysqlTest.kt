@@ -19,8 +19,8 @@ class BasicWrapperTest {
         // 数据库URL
         url =
             "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false&rewriteBatchedStatements=true"
-        username = System.getenv("mysql.username") // 数据库用户名
-        password = System.getenv("mysql.password") // 数据库密码
+        username = System.getenv("MYSQL_USERNAME") // 数据库用户名
+        password = System.getenv("MYSQL_PASSWORD") // 数据库密码
         maxIdle = 10 // 最大空闲连接数
     }.let {
         KronosBasicWrapper(it)

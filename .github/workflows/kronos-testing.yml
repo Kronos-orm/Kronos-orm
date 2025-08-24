@@ -9,7 +9,15 @@ on:
 jobs:
   high-level-tests:
     name: Run integration tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        # postgres-version: [17, 16, 15, 14, 13]
+        postgres-version: [17]
+        # mysql-version: [8.4, 8.0]
+        mysql-version: [8.0]
+        # sqlserver-version: [2022, 2019]
+        sqlserver-version: [2022]
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
@@ -25,27 +33,35 @@ jobs:
       - name: Set up MySQL 8.0 🐬
         uses: ankane/setup-mysql@v1
         with:
+          mysql-version: ${{ matrix.mysql-version }}
+          user: kronos
           database: kronos_testing
 
       - name: Test MySQL connection 🔗
-        run: mysql -D kronos_testing -e 'SELECT VERSION()'
+        run: mysql -u kronos -D kronos_testing -e 'SELECT VERSION()'
 
-      - name: Setup PostgreSQL 17 🐘
-        uses: ikalnytskyi/action-setup-postgres@v7
+      - name: Setup PostgreSQL 🐘
+        uses: ankane/setup-postgres@v1
         with:
-            username: kronos
-            password: kronos
+            postgres-version: ${{ matrix.postgres-version }}
+            user: kronos
             database: kronos_testing
-            port: 5432
-            postgres-version: "17"
-            ssl: true
         id: postgres
 
       - name: Test PostgreSQL connection 🔗
-        run: psql service=${{ steps.postgres.outputs.service-name }} -c "SELECT 1"
+        run: psql -U kronos -d kronos_testing -c 'SHOW server_version'
+
+      - name: Setup Sqlserver 🛢️
+        uses: ankane/setup-sqlserver@v1
+        with:
+          accept-eula: true
+          sqlserver-version: ${{ matrix.sqlserver-version }}
+
+      - name: Test Sqlserver connection 🔗
+        run: sqlcmd -S localhost -U SA -P 'YourStrong!Passw0rd' -Q "SELECT @@version"
 
       - name: Run tests 🧪
         run: |
+          export MYSQL_USERNAME=kronos
           export POSTGRES_USERNAME=kronos
-          export POSTGRES_PASSWORD=kronos
           ./gradlew :kronos-testing:test --info --stacktrace

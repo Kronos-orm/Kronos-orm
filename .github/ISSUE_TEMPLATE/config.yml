@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read CONTRIBUTING.md / 贡献指南
+    url: https://github.com/kotlin-orm/Kronos-orm/blob/main/CONTRIBUTING.md
+    about: Please read before filing an issue or PR. 提交前请阅读。
+  - name: Project README (EN) / 项目说明（英文）
+    url: https://github.com/kotlin-orm/Kronos-orm/blob/main/README.MD
+    about: Overview, getting started links. 概览与快速开始。
+  - name: 项目说明（中文）/ Project README (ZH)
+    url: https://github.com/kotlin-orm/Kronos-orm/blob/main/README-zh_CN.MD
+    about: 中文概览与快速开始。
+  - name: Developer Docs / 开发者文档
+    url: https://github.com/kotlin-orm/Kronos-orm/tree/main/develop-docs
+    about: Module design and architecture docs. 模块设计与架构文档。

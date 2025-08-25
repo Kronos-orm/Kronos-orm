@@ -1,0 +1,44 @@
+# 2. Layout and Key Classes
+
+Source path: `kronos-compiler-plugin/src/main/kotlin/com/kotlinorm/compiler`
+
+- plugin/
+  - KronosParserCompilerPluginRegistrar
+    - Extends CompilerPluginRegistrar, enables supportsK2.
+    - In registerExtensions, reads CLI options (debug, debug-info-path), registers IrGenerationExtension.
+  - KronosCommandLineProcessor
+    - Defines plugin ID: `kronos-compiler-plugin`;
+    - Defines two optional options:
+      - `debug` (Boolean): whether to output IR dump;
+      - `debug-info-path` (String): dump output directory.
+  - KronosParserExtension
+    - generate(...) is the entry point:
+      - resetKClassCreator();
+      - module.transform(KronosParserTransformer(...));
+      - Replay initFunctions and call buildKClassMapper to generate mappings;
+      - If debug=true, use dumpKotlinLike to write IR text to a directory.
+  - transformer/KronosParserTransformer
+    - visitCall:
+      - Record types in type arguments that are KPojo classes;
+      - Capture function expressions annotated with @KronosInit and save to initFunctions;
+      - For TypedQuery/SelectFrom* calls, run updateTypedQueryParameters.
+    - visitFunctionNew:
+      - Based on extension receiver FQ name, dispatch to KTableForSelect/Set/Condition/Sort/Reference transformers;
+    - visitClassNew/visitClassReference/visitConstructorCall:
+      - Collect all KPojo subclasses.
+- transformer/kTable/
+  - KTableParserForSelectTransformer
+    - Inject addFieldList(...) before return to collect selected fields;
+  - KTableParserForSetTransformer, KTableParserForConditionTransformer, KTableParserForSortReturnTransformer, KTableParserForReferenceTransformer
+    - Handle set, condition, sort, and reference DSL fragments, rewriting/enhancing IR accordingly;
+- utils/
+  - KClassCreatorUtil:
+    - initFunctions: where @KronosInit initializers are stored;
+    - buildKClassMapper(...): generate KClass mappings at the end of compilation;
+    - kPojoClasses: cache of collected KPojo classes;
+  - Ir*Helper:
+    - Provide helper methods to construct/traverse IR, reducing transformer complexity;
+  - KTableFor*Util:
+    - Provide addFieldList, condition composition, sort injection utilities;
+  - updateTypedQueryParameters
+    - Fix type parameters for TypedQuery/SelectFrom* to avoid missing types.

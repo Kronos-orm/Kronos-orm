@@ -40,6 +40,8 @@ import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeUpdateClause
+import com.kotlinorm.orm.upsert.UpsertClause
+import com.kotlinorm.orm.upsert.UpsertClause.Companion.build
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
@@ -85,6 +87,7 @@ class UpdateClause<T : KPojo>(
     private val minusAssigns = mutableListOf<Pair<Field, String>>()
     private var cascadeEnabled = true
     internal var cascadeAllowed: Set<Field>? = null
+    private var parallel: Int? = null
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。
@@ -382,6 +385,10 @@ class UpdateClause<T : KPojo>(
             return map { it.where(updateCondition) }
         }
 
+        fun <T : KPojo> List<UpdateClause<T>>.parallel(n: Int): List<UpdateClause<T>> {
+            return this.onEach { it.parallel = n }
+        }
+
         /**
          * Builds a KronosAtomicBatchTask from a list of UpdateClause objects.
          *
@@ -399,7 +406,8 @@ class UpdateClause<T : KPojo>(
          * @return The KronosOperationResult of the execution.
          */
         fun <T : KPojo> List<UpdateClause<T>>.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
-            return build().execute(wrapper)
+            val commonParallel = this.firstOrNull()?.parallel
+            return build().execute(wrapper, commonParallel)
         }
     }
 }

@@ -12,6 +12,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.kotlinx.coroutines.core)
     kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     testImplementation(libs.kotlin.test)
     testImplementation(libs.gson)

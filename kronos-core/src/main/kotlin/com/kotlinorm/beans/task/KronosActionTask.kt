@@ -16,9 +16,18 @@
 
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.Kronos.coroutineOprtEnable
+import com.kotlinorm.Kronos.coroutineOprtSize
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlin.collections.flatten
 
 /**
  * KronosActionTask class represents a Kronos action task used to execute multiple Kronos atomic action tasks.
@@ -65,34 +74,68 @@ class KronosActionTask {
         }
     }
 
-    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
+    fun execute(wrapper: KronosDataSourceWrapper? = null, parallel: Int? = null): KronosOperationResult {
         val dataSource = wrapper.orDefault() //获取数据源
         beforeExecute?.invoke(this, dataSource) // 在执行之前执行的操作
 
         val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组
             val first = it.first()
-            if (it.size > 1) { //如果有多个任务
-                KronosAtomicBatchTask( //创建一个批量任务
-                    first.sql,
-                    it.map { task -> task.paramMap }.toTypedArray(),
-                    first.operationType,
-                    first.actionInfo
+            if (it.size == 1) listOf(first) else if (
+                (!coroutineOprtEnable && null == parallel) || first.operationType == KOperationType.SELECT
+            ) {
+                listOf(
+                    KronosAtomicBatchTask( //创建一个批量任务
+                        first.sql,
+                        it.map { task -> task.paramMap }.toTypedArray(),
+                        first.operationType,
+                        first.actionInfo
+                    )
                 )
-            } else { //如果只有一个任务
-                first
+            } else {
+                val paramMapList = it.map { task -> task.paramMap }
+                val paramChunks = paramMapList.chunked(
+                    when {
+                        null == parallel -> coroutineOprtSize
+                        0 >= parallel -> 1
+                        else -> (paramMapList.size / parallel) + 1
+                    }
+                )
+                paramChunks.map { chunk ->
+                    KronosAtomicBatchTask( //创建一个批量任务
+                        first.sql,
+                        chunk.toTypedArray(),
+                        first.operationType,
+                        first.actionInfo
+                    )
+                }
             }
         }
 
         @Suppress("UNCHECKED_CAST")
         val results = dataSource.transact { //执行事务
-            groupedTasks.map {
-                it.execute(dataSource)
+            runBlocking {
+                groupedTasks.map { taskGroup ->
+                    coroutineScope {
+                        // 组内并发执行
+                        val originalResults = taskGroup.map { task ->
+                            async(Dispatchers.IO) {
+                                task.execute(dataSource)
+                            }
+                        }.awaitAll()
+                        KronosOperationResult(
+                            originalResults.sumOf { it.affectedRows }
+                        ).apply {
+                            stash.putAll(originalResults.last().stash)
+                        }
+                    }
+                }
             }
         } as List<KronosOperationResult>
+
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         return KronosOperationResult(affectRows).apply {
             afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
-            if(results.isNotEmpty()) {
+            if (results.isNotEmpty()) {
                 stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
             }
         }
@@ -134,7 +177,7 @@ class KronosActionTask {
         fun List<KronosActionTask>.merge(): KronosActionTask {
             return KronosActionTask().apply {
                 atomicTasks.addAll(flatMap { it.atomicTasks })
-                if(any { it.beforeExecute != null }) {
+                if (any { it.beforeExecute != null }) {
                     beforeExecute = { wrapper -> forEach { it.beforeExecute?.invoke(this, wrapper) } }
                 }
                 if (any { it.afterExecute != null }) {

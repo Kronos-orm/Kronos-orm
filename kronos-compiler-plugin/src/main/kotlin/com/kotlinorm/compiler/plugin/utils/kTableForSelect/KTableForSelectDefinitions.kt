@@ -21,16 +21,30 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
-
+/**
+ * The fully qualified name of the KTableForSelect class.
+ */
 const val KTABLE_FOR_SELECT_CLASS = "com.kotlinorm.beans.dsl.KTableForSelect"
 
-private val IrPluginContext.kTableForSelectSymbol
+/**
+ * Gets the symbol for the KTableForSelect class.
+ */
+context(_: IrPluginContext)
+private val kTableForSelectSymbol
     get() = referenceClass(KTABLE_FOR_SELECT_CLASS)!!
 
+/**
+ * Gets the symbol for the `addField` function of the KTableForSelect class.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.addFieldSymbol
+context(_: IrPluginContext)
+internal val addSelectFieldSymbol
     get() = kTableForSelectSymbol.getSimpleFunction("addField")!!
 
+/**
+ * Gets the symbol for the `setAlias` function of the KTableForSelect class.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.aliasSymbol
+context(_: IrPluginContext)
+internal val aliasSymbol
     get() = kTableForSelectSymbol.getSimpleFunction("setAlias")!!

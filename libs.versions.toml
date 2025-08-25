@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.21"
+kotlin = "2.2.0"
 dsl = "5.2.0"
 datetime = "0.6.2"
 serialization = "1.8.1"
@@ -13,7 +13,7 @@ gsonVer = "2.13.1"
 dokkaVer = "2.0.0"
 mavenCore = "3.9.9"
 autoService = "1.1.1"
-kotlinCompilerTest = "0.7.1"
+kotlinCompilerTest = "0.8.0"
 jackson = "2.19.0"
 
 [libraries]

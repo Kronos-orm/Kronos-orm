@@ -16,19 +16,22 @@
 
 package com.kotlinorm.compiler.plugin.utils
 
-import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.createKClassExpr
-import com.kotlinorm.compiler.helpers.dispatchBy
+import com.kotlinorm.compiler.helpers.IrTryBuilder.Companion.irTry
+import com.kotlinorm.compiler.helpers.dispatchReceiver
 import com.kotlinorm.compiler.helpers.filterByFqName
+import com.kotlinorm.compiler.helpers.invoke
 import com.kotlinorm.compiler.helpers.irListOf
 import com.kotlinorm.compiler.helpers.irMutableMapOf
-import com.kotlinorm.compiler.helpers.irTry
 import com.kotlinorm.compiler.helpers.mapGetterSymbol
 import com.kotlinorm.compiler.helpers.referenceClass
 import com.kotlinorm.compiler.helpers.referenceFunctions
+import com.kotlinorm.compiler.helpers.toKClass
 import com.kotlinorm.compiler.helpers.valueArguments
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
+import com.kotlinorm.compiler.helpers.valueParameters
+import com.kotlinorm.compiler.plugin.utils.kTableForCondition.ignore
+import com.kotlinorm.compiler.plugin.utils.kTableForCondition.ignoreAnnotationValue
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irBoolean
@@ -36,13 +39,17 @@ import org.jetbrains.kotlin.ir.builders.irBranch
 import org.jetbrains.kotlin.ir.builders.irElseBranch
 import org.jetbrains.kotlin.ir.builders.irEquals
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irReturn
+import org.jetbrains.kotlin.ir.builders.irSetField
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irWhen
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrFail
 import org.jetbrains.kotlin.ir.types.defaultType
@@ -55,80 +62,82 @@ import org.jetbrains.kotlin.ir.util.isSetter
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.FqName
+import kotlin.contracts.ExperimentalContracts
 
-
-val IrPluginContext.KronosSymbol
+context(_: IrPluginContext)
+val KronosSymbol
     get() = referenceClass("com.kotlinorm.Kronos")!!
 
-private val IrPluginContext.getSafeValueSymbol
+context(_: IrPluginContext)
+private val getSafeValueSymbol
     get() = referenceFunctions("com.kotlinorm.utils", "getSafeValue").first()
 
-private val IrPluginContext.KTableIndexSymbol
+context(_: IrPluginContext)
+private val KTableIndexSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.KTableIndex")!!
 
-val IrPluginContext.KPojoFqName
+context(_: IrPluginContext)
+val KPojoFqName
     get() = FqName("com.kotlinorm.interfaces.KPojo")
 
-val IrPluginContext.KPojoSymbol
+context(_: IrPluginContext)
+val KPojoSymbol
     get() = referenceClass("com.kotlinorm.interfaces.KPojo")!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createPropertyGetter(
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+fun createPropertyGetter(
     declaration: IrClass,
     irFunction: IrFunction
 ): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-            return irBlockBody {
-                +irReturn(
-                    irWhen(
-                        irBuiltIns.anyNType,
-                        declaration.properties.map {
-                            irBranch(
-                                irEquals(
-                                    irString(it.name.asString()),
-                                    irGet(irFunction.valueParameters[0])
-                                ),
-                                dispatcher.getValue(it)
-                            )
-                        }.toList() + irElseBranch(
-                            irNull()
-                        )
+    val dispatcher = builder.irGet(irFunction.dispatchReceiverParameter!!)
+    return builder.irBlockBody {
+        +irReturn(
+            irWhen(
+                context.irBuiltIns.anyNType,
+                declaration.properties.map {
+                    irBranch(
+                        irEquals(
+                            irString(it.name.asString()),
+                            irGet(irFunction.parameters.valueParameters[0])
+                        ),
+                        dispatcher.getValue(it)
                     )
+                }.toList() + irElseBranch(
+                    irNull()
                 )
-            }
-        }
+            )
+        )
     }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createPropertySetter(
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+fun createPropertySetter(
     declaration: IrClass,
     irFunction: IrFunction
 ): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-            return irBlockBody {
-                +irWhen(
-                    irBuiltIns.unitType,
-                    declaration.properties.map {
-                        irBranch(
-                            irEquals(
-                                irString(it.name.asString()),
-                                irGet(irFunction.valueParameters[0])
-                            ),
-                            irBlock {
-                                +(dispatcher.setValue(it, irGet(irFunction.valueParameters[1])) ?: irNull())
-                            }
-                        )
-                    }.toList() + irElseBranch(
-                        irNull()
-                    )
+    val dispatcher = builder.irGet(irFunction.dispatchReceiverParameter!!)
+    return builder.irBlockBody {
+        +irWhen(
+            context.irBuiltIns.unitType,
+            declaration.properties.map {
+                irBranch(
+                    irEquals(
+                        irString(it.name.asString()),
+                        irGet(irFunction.parameters.valueParameters[0])
+                    ),
+                    irBlock {
+                        +(dispatcher.setValue(
+                            it,
+                            irGet(irFunction.parameters.valueParameters[1])
+                        ) ?: irNull())
+                    }
                 )
-            }
-        }
+            }.toList() + irElseBranch(
+                irNull()
+            )
+        )
     }
 }
 
@@ -139,19 +148,10 @@ fun KotlinBuilderContext.createPropertySetter(
  * @return the `IrBlockBody` that represents the function.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createKClassFunction(
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKClassFunction(
     declaration: IrClass
-): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    createKClassExpr(declaration.symbol)
-                )
-            }
-        }
-    }
-}
+) = builder.irBlockBody { +irReturn(declaration.symbol.toKClass()) }
 
 /**
  * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
@@ -162,28 +162,23 @@ fun KotlinBuilderContext.createKClassFunction(
  * @return the `IrBlockBody` that represents the function.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createToMapFunction(
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+fun createToMapFunction(
     declaration: IrClass,
     irFunction: IrFunction
-): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            return irBlockBody {
-                val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-                +irReturn(
-                    irMutableMapOf(
-                        irBuiltIns.stringType,
-                        irBuiltIns.anyNType,
-                        declaration.properties.filter {
-                            return@filter !it.ignoreAnnotationValue().ignore("to_map") && !it.isSetter
-                        }.associate {
-                            irString(it.name.asString()) to dispatcher.getValue(it)
-                        }
-                    )
-                )
+) = builder.irBlockBody {
+    val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+    +irReturn(
+        irMutableMapOf(
+            context.irBuiltIns.stringType,
+            context.irBuiltIns.anyNType,
+            declaration.properties.filter {
+                return@filter !it.ignoreAnnotationValue().ignore("to_map") && !it.isSetter
+            }.associate {
+                irString(it.name.asString()) to dispatcher.getValue(it)
             }
-        }
-    }
+        )
+    )
 }
 
 /**
@@ -194,30 +189,28 @@ fun KotlinBuilderContext.createToMapFunction(
  * @return an `IrBlockBody` that sets the properties of the IrClass instance using values from the map
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            val map = irFunction.valueParameters.first()
-            return irBlockBody {
-                val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-                +declaration.properties.toList().mapNotNull { property ->
-                    if (property.isDelegated || property.isGetter ||
-                        property.ignoreAnnotationValue().ignore("from_map")
-                    ) {
-                        return@mapNotNull null
-                    }
-                    dispatcher.setValue(property, applyIrCall(
-                        mapGetterSymbol, irString(property.name.asString())
-                    ) {
-                        dispatchBy(irGet(map))
-                    })
-                }
-
-                +irReturn(
-                    irGet(irFunction.dispatchReceiverParameter!!)
-                )
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
+    val map = irFunction.parameters.valueParameters.first()
+    return builder.irBlockBody {
+        val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
+        +declaration.properties.toList().mapNotNull { property ->
+            if (property.isDelegated || property.isGetter ||
+                property.ignoreAnnotationValue().ignore("from_map")
+            ) {
+                return@mapNotNull null
             }
+            dispatcher.setValue(
+                property, mapGetterSymbol(
+                    irGet(map),
+                    irString(property.name.asString())
+                )
+            )
         }
+
+        +irReturn(
+            irGet(irFunction.dispatchReceiverParameter!!)
+        )
     }
 }
 
@@ -228,47 +221,40 @@ fun KotlinBuilderContext.createFromMapValueFunction(declaration: IrClass, irFunc
  * @param irFunction The IrFunction to create the safe from map value function for.
  * @return an `IrBlockBody` containing the generated code.
  */
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            val map = irFunction.valueParameters.first()
-            return irBlockBody {
-                val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
-                +irBlock {
-                    declaration.properties.toList().mapNotNull { property ->
-                        if (property.isDelegated || property.isGetter ||
-                            property.ignoreAnnotationValue().ignore("from_map")
-                        ) {
-                            return@mapNotNull null
-                        }
-                        dispatcher.setValue(
-                            property, applyIrCall(
-                                getSafeValueSymbol,
-                                irGet(irFunction.dispatchReceiverParameter!!),
-                                createKClassExpr(property.backingField!!.type.classOrFail),
-                                irListOf(
-                                    irBuiltIns.stringType,
-                                    property.backingField!!.type.getClass()!!.superTypes.map { type ->
-                                        irString(type.getClass()!!.kotlinFqName.asString())
-                                    }
-                                ),
-                                irGet(map),
-                                irString(property.name.asString()),
-                                irBoolean(property.hasAnnotation(SerializeAnnotationsFqName))
-                            )
-                        )?.let {
-                            +irTry(
-                                it,
-                                irBuiltIns.unitType,
-                            ) { irCatch() }
-                        }
-                    }
+@OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalContracts::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
+    val map = irFunction.parameters.valueParameters.first()
+    return builder.irBlockBody {
+        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
+        +irBlock {
+            declaration.properties.toList().mapNotNull { property ->
+                if (property.isDelegated || property.isGetter ||
+                    property.ignoreAnnotationValue().ignore("from_map")
+                ) {
+                    return@mapNotNull null
                 }
-
-                +irReturn(dispatcher)
+                dispatcher.setValue(
+                    property, getSafeValueSymbol(
+                        irGet(irFunction.parameters.dispatchReceiver!!),
+                        property.backingField!!.type.classOrFail.toKClass(),
+                        irListOf(
+                            context.irBuiltIns.stringType,
+                            property.backingField!!.type.getClass()!!.superTypes.map { type ->
+                                irString(type.getClass()!!.kotlinFqName.asString())
+                            }
+                        ),
+                        irGet(map),
+                        irString(property.name.asString()),
+                        irBoolean(property.hasAnnotation(SerializeAnnotationsFqName))
+                    )
+                )?.let {
+                    +irTry(it, context.irBuiltIns.unitType).catch().build()
+                }
             }
         }
+
+        +irReturn(dispatcher)
     }
 }
 
@@ -279,49 +265,34 @@ fun KotlinBuilderContext.createSafeFromMapValueFunction(declaration: IrClass, ir
  * @param declaration the IrClass declaration to generate the table name for
  * @return an `IrBlockBody` containing an IrReturn statement with the generated table name
  */
-fun KotlinBuilderContext.createKronosTableName(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder){
-            return irBlockBody {
-                +irReturn(
-                    getTableName(declaration)
-                )
-            }
-        }
-    }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosTableName(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        getTableName(declaration)
+    )
 }
 
-fun KotlinBuilderContext.createKronosComment(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    declaration.getKDocString()
-                )
-            }
-        }
-    }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosComment(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        declaration.getKDocString()
+    )
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createKronosTableIndex(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder) {
-            return irBlockBody {
-                val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
-                +irReturn(
-                    irListOf(
-                        KTableIndexSymbol.defaultType,
-                        indexesAnnotations.map {
-                            applyIrCall(
-                                KTableIndexSymbol.constructors.first(), *it.valueArguments.toTypedArray()
-                            )
-                        }
-                    )
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosTableIndex(declaration: IrClass) = builder.irBlockBody {
+    val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)
+    +irReturn(
+        irListOf(
+            KTableIndexSymbol.defaultType,
+            indexesAnnotations.map {
+                KTableIndexSymbol.constructors.first()(
+                    *it.valueArguments.toTypedArray()
                 )
             }
-        }
-    }
+        )
+    )
 }
 
 /**
@@ -331,21 +302,16 @@ fun KotlinBuilderContext.createKronosTableIndex(declaration: IrClass): IrBlockBo
  * @return an `IrBlockBody` containing the generated code.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun KotlinBuilderContext.createGetFieldsFunction(declaration: IrClass): IrBlockBody {
-    with(pluginContext) {
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    irListOf(
-                        fieldSymbol.owner.defaultType,
-                        declaration.properties.map {
-                            getColumnName(it)
-                        }.toList()
-                    )
-                )
-            }
-        }
-    }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createGetFieldsFunction(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        irListOf(
+            fieldSymbol.owner.defaultType,
+            declaration.properties.map {
+                getColumnName(it)
+            }.toList()
+        )
+    )
 }
 
 /**
@@ -356,16 +322,11 @@ fun KotlinBuilderContext.createGetFieldsFunction(declaration: IrClass): IrBlockB
  * @param declaration The IrClass declaration to generate the IrBlockBody for.
  * @return an `IrBlockBody` containing the generated code.
  */
-fun KotlinBuilderContext.createKronosCreateTime(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    getValidStrategy(declaration, createTimeStrategySymbol, CreateTimeFqName)
-                )
-            }
-        }
-    }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosCreateTime(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, createTimeStrategySymbol, CreateTimeFqName)
+    )
 }
 
 /**
@@ -376,16 +337,11 @@ fun KotlinBuilderContext.createKronosCreateTime(declaration: IrClass): IrBlockBo
  * @param declaration The IrClass declaration to generate the IrBlockBody for.
  * @return an `IrBlockBody` containing the generated code.
  */
-fun KotlinBuilderContext.createKronosUpdateTime(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    getValidStrategy(declaration, updateTimeStrategySymbol, UpdateTimeFqName)
-                )
-            }
-        }
-    }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosUpdateTime(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, updateTimeStrategySymbol, UpdateTimeFqName)
+    )
 }
 
 /**
@@ -395,26 +351,41 @@ fun KotlinBuilderContext.createKronosUpdateTime(declaration: IrClass): IrBlockBo
  * @param declaration the IrClass whose properties will be used as arguments for createFieldListSymbol
  * @return an `IrBlockBody` containing an irCall to createFieldListSymbol
  */
-fun KotlinBuilderContext.createKronosLogicDelete(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    getValidStrategy(declaration, logicDeleteStrategySymbol, LogicDeleteFqName)
-                )
-            }
-        }
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosLogicDelete(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, logicDeleteStrategySymbol, LogicDeleteFqName)
+    )
+}
+
+context(_: IrPluginContext, builder: IrBuilderWithScope)
+fun createKronosOptimisticLock(declaration: IrClass) = builder.irBlockBody {
+    +irReturn(
+        getValidStrategy(declaration, optimisticLockStrategySymbol, OptimisticLockFqName)
+    )
+}
+
+context(builder: IrBuilderWithScope)
+fun IrExpression.getValue(property: IrProperty): IrExpression {
+    return if (property.getter != null) {
+        property.getter!!.symbol(this@getValue)
+    } else {
+        builder.irGetField(
+            this@getValue, property.backingField!!
+        )
     }
 }
 
-fun KotlinBuilderContext.createKronosOptimisticLock(declaration: IrClass): IrBlockBody {
-    with(pluginContext){
-        with(builder) {
-            return irBlockBody {
-                +irReturn(
-                    getValidStrategy(declaration, optimisticLockStrategySymbol, OptimisticLockFqName)
-                )
-            }
+context(builder: IrBuilderWithScope)
+fun IrExpression.setValue(property: IrProperty, value: IrExpression): IrExpression? {
+    with(builder) {
+        if (property.isDelegated) return null
+        return if (property.setter != null) {
+            property.setter!!.symbol(this@setValue, value)
+        } else {
+            irSetField(
+                this@setValue, property.backingField!!, value
+            )
         }
     }
 }

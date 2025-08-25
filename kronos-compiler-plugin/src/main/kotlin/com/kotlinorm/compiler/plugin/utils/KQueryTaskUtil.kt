@@ -17,7 +17,9 @@
 package com.kotlinorm.compiler.plugin.utils
 
 import com.kotlinorm.compiler.helpers.irListOf
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
+import com.kotlinorm.compiler.helpers.valueArguments
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -45,21 +47,18 @@ val fqNameOfSelectFromsRegexes =
         "com.kotlinorm.orm.join.SelectFrom\\d.queryOneOrNull"
     )
 
-fun KotlinBuilderContext.updateTypedQueryParameters(irCall: IrCall): IrCall {
-    with(pluginContext){
-        with(builder){
-            val queryType = irCall.getTypeArgument(0)!!
-            val superTypes = (listOf(queryType) + queryType.superTypes()).map { it.classFqName!! }
-            val irSuperTypes = irListOf(
-                irBuiltIns.stringType,
-                superTypes.map { irString(it.asString()) }
-            )
-            val isKPojo = KPojoFqName in superTypes
-            // 请务必保证上方函数的最后两个参数为 isKPojo 和 superTypes
-            // 否则会导致 irCall 的参数顺序错乱
-            irCall.putValueArgument(irCall.valueArgumentsCount - 2, irBoolean(isKPojo))
-            irCall.putValueArgument(irCall.valueArgumentsCount - 1, irSuperTypes)
-            return irCall
-        }
-    }
+context(context: IrPluginContext, builder: IrBlockBuilder)
+fun updateTypedQueryParameters(irCall: IrCall): IrCall {
+    val queryType = irCall.typeArguments[0]!!
+    val superTypes = (listOf(queryType) + queryType.superTypes()).map { it.classFqName!! }
+    val irSuperTypes = irListOf(
+        context.irBuiltIns.stringType,
+        superTypes.map { builder.irString(it.asString()) }
+    )
+    val isKPojo = KPojoFqName in superTypes
+    // 请务必保证上方函数的最后两个参数为 isKPojo 和 superTypes
+    // 否则会导致 irCall 的参数顺序错乱
+    irCall.arguments[irCall.arguments.size - 2] = builder.irBoolean(isKPojo)
+    irCall.arguments[irCall.arguments.size - 1] = irSuperTypes
+    return irCall
 }

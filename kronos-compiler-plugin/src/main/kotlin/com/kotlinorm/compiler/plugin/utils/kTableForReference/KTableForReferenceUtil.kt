@@ -16,12 +16,16 @@
 
 package com.kotlinorm.compiler.plugin.utils.kTableForReference
 
-import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.dispatchBy
-import org.jetbrains.kotlin.ir.IrElement
+import com.kotlinorm.compiler.helpers.dispatchReceiverArgument
+import com.kotlinorm.compiler.helpers.extensionReceiver
+import com.kotlinorm.compiler.helpers.extensionReceiverArgument
+import com.kotlinorm.compiler.helpers.invoke
 import com.kotlinorm.compiler.helpers.valueArguments
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import com.kotlinorm.compiler.plugin.utils.getColumnName
+import com.kotlinorm.compiler.plugin.utils.kTableForCondition.funcName
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -38,16 +42,15 @@ import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
  * @param irReturn the IrReturn to which the fields will be added
  * @return a list of IrExpressions representing the applied `addField` operations
  */
-fun KotlinBuilderContext.addReferenceList(irFunction: IrFunction, irReturn: IrReturn): List<IrExpression> {
-    with(pluginContext) {
-        with(builder) {
-            return collectReferences(irFunction, irReturn).map {
-                applyIrCall(
-                    addFieldSymbol,
-                    it
-                ) { dispatchBy(builder.irGet(irFunction.extensionReceiverParameter!!)) }
-            }
-        }
+context(_: IrPluginContext, builder: IrBlockBuilder)
+fun addReferenceList(
+    irFunction: IrFunction,
+    irReturn: IrReturn
+): List<IrExpression> {
+    return collectReferences(irFunction, irReturn).map {
+        addRefFieldSymbol(
+            builder.irGet(irFunction.parameters.extensionReceiver!!), it
+        )
     }
 }
 
@@ -57,64 +60,63 @@ fun KotlinBuilderContext.addReferenceList(irFunction: IrFunction, irReturn: IrRe
  * @param element the [IrElement] to extract field names from
  * @return a mutable list of IR expressions representing the field names
  */
-fun KotlinBuilderContext.collectReferences(
+context(_: IrPluginContext, builder: IrBlockBuilder)
+fun collectReferences(
     irFunction: IrFunction,
     element: IrElement
 ): MutableList<IrExpression> {
     // Initialize an empty list for field names.
     // 初始化字段名的空列表。
-    with(pluginContext){
-        with(builder){
-            val fields = mutableListOf<IrExpression>()
-            when (element) {
-                is IrBlockBody -> {
-                    element.statements.forEach { statement ->
-                        // Recursively add field names from each statement in a block body.
-                        // 从块体中的每个声明递归添加字段名。
-                        fields += collectReferences(irFunction, statement)
+    val fields = mutableListOf<IrExpression>()
+    when (element) {
+        is IrBlockBody -> {
+            element.statements.forEach { statement ->
+                // Recursively add field names from each statement in a block body.
+                // 从块体中的每个声明递归添加字段名。
+                fields += collectReferences(irFunction, statement)
+            }
+        }
+
+        is IrTypeOperatorCall -> {
+            fields += collectReferences(irFunction, element.argument)
+        }
+
+        is IrCall -> {
+            val extensionReceiver = element.extensionReceiverArgument
+            val dispatchReceiver = element.dispatchReceiverArgument
+            when {
+                element.origin == IrStatementOrigin.PLUS -> {
+                    // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
+                    // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
+                    fields += collectReferences(
+                        irFunction,
+                        (extensionReceiver ?: dispatchReceiver)!!
+                    )
+                    element.valueArguments.forEach {
+                        if (it != null) fields += collectReferences(irFunction, it)
                     }
                 }
 
-                is IrTypeOperatorCall -> {
-                    fields += collectReferences(irFunction, element.argument)
-                }
-
-                is IrCall -> {
-                    when {
-                        element.origin == IrStatementOrigin.PLUS -> {
-                            // Add field names from both the receiver and value arguments if the origin is a PLUS operation.
-                            // 如果起源是 PLUS 操作，从接收器和值参数添加字段名。
-                            fields += collectReferences(
-                                irFunction,
-                                (element.extensionReceiver ?: element.dispatchReceiver)!!
-                            )
-                            element.valueArguments.forEach {
-                                if (it != null) fields += collectReferences(irFunction, it)
-                            }
-                        }
-
-                        element.funcName() == "unaryPlus" -> {
-                            // Add field names from the receiver if the origin is a UPLUS operation.
-                            // 如果起源是 unaryPlus 操作，从接收器添加字段名。
-                            fields += collectReferences(
-                                irFunction,
-                                element.extensionReceiver ?: element.dispatchReceiver!!
-                            )
-                        }
-                    }
-                }
-
-                is IrPropertyReference -> {
-                    fields += getColumnName(element)
-                }
-
-                is IrReturn -> {
-                    // Handle return statements by recursively adding field names from the return value.
-                    // 通过递归从返回值添加字段名来处理返回语句。
-                    return collectReferences(irFunction, element.value)
+                element.funcName() == "unaryPlus" -> {
+                    // Add field names from the receiver if the origin is a UPLUS operation.
+                    // 如果起源是 unaryPlus 操作，从接收器添加字段名。
+                    fields += collectReferences(
+                        irFunction,
+                        extensionReceiver ?: dispatchReceiver!!
+                    )
                 }
             }
-            return fields
+        }
+
+        is IrPropertyReference -> {
+            fields += getColumnName(element)
+        }
+
+        is IrReturn -> {
+            // Handle return statements by recursively adding field names from the return value.
+            // 通过递归从返回值添加字段名来处理返回语句。
+            return collectReferences(irFunction, element.value)
         }
     }
+    return fields
 }

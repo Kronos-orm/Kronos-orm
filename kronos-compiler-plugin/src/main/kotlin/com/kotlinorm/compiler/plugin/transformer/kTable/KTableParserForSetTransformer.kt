@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.plugin.transformer.kTable
 
-import com.kotlinorm.compiler.plugin.utils.context.withBlock
 import com.kotlinorm.compiler.plugin.utils.kTableForSet.putFieldParamMap
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -75,7 +74,7 @@ class KTableParserForSetTransformer(
         return if(expression.origin == null) {
             DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
                 +expression.statements
-                +withBlock(pluginContext) { putFieldParamMap(irFunction) }
+                +with(pluginContext) { putFieldParamMap(irFunction) }
                 super.visitBlock(expression)
             }
         } else {

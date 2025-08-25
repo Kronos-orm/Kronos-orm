@@ -18,8 +18,6 @@ package com.kotlinorm.compiler.helpers
 
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irCall
-import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
@@ -28,80 +26,41 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.name.FqName
 
-// A helpers class for specifying the receiver of an IR function call
-// applyIrCall的辅助类，用于指定IR函数调用的接收器
-class Receivers(
-    // The dispatch receiver expression
-    // 分派接收器表达式
-    var dispatchReceiver: IrExpression? = null,
-    // The extension receiver expression
-    // 扩展接收器表达式
-    var extensionReceiver: IrExpression? = null
-)
+typealias IrTypes = List<IrType>
 
 /**
- * Creates a new instance of the Receivers class with the specified dispatch receiver.
+ * Creates an IR function access expression using the given function symbol and arguments.
  *
- * @param dispatchReceiver The dispatch receiver expression.
- * @return A new instance of the `Receivers` class with the specified dispatch receiver.
- * @author OUSC
+ * @param args The arguments to pass to the function call.
+ * @param types The types of the arguments.
+ * @param operator An optional origin for the function call, such as an operator like `invoke`.
+ * @return An IR function access expression representing the function call.
  */
-internal fun Receivers.dispatchBy(dispatchReceiver: IrExpression?) {
-    this.dispatchReceiver = dispatchReceiver
-}
-
-/**
- * Creates a new instance of the Receivers class with the specified extension receiver.
- *
- * @param extensionReceiver The extension receiver expression.
- * @return A new instance of the `Receivers` class with the specified extension receiver.
- * @author OUSC
- */
-internal fun Receivers.extensionBy(extensionReceiver: IrExpression?) {
-    this.extensionReceiver = extensionReceiver
-}
-
-/**
- * Applies an IR function call with the given function symbol, values, and receivers.
- *
- * @param irCall The function symbol of the IR call.
- * @param values The vararg array of expression values for the IR call.
- * @param setReceivers The lambda function that to set the receivers for the IR call. Defaults to a lambda that returns an empty Receivers instance.
- * @return The `IrFunctionAccessExpression` representing the applied IR function call.
- * @author OUSC
- */
-internal fun IrBuilderWithScope.applyIrCall(
-    irCall: IrFunctionSymbol,
-    vararg values: IrExpression?,
-    typeArguments: Array<IrType> = emptyArray(),
+context(builder: IrBuilderWithScope)
+internal operator fun IrFunctionSymbol.invoke(
+    vararg args: IrExpression?,
+    types: IrTypes = emptyList(),
     operator: IrStatementOrigin? = null,
-    setReceivers: Receivers.() -> Unit = { }
 ): IrFunctionAccessExpression {
-    val receiver = Receivers().apply(setReceivers)
-    return irCall(irCall).apply {
-        dispatchReceiver = receiver.dispatchReceiver
-        extensionReceiver = receiver.extensionReceiver
+    return builder.irCall(this).apply {
         origin = operator
-        values.forEachIndexed { index, value ->
-            putValueArgument(index, value)
-        }
-        typeArguments.forEachIndexed { index, value ->
-            putTypeArgument(index, value)
-        }
+        args.forEachIndexed { i, arg -> arguments[i] = arg }
+        types.forEachIndexed { i, type -> typeArguments[i] = type }
     }
 }
 
 /**
- * Casts the given IrExpression to an IrCall.
+ * Casts the current IrExpression to the specified type T.
  *
- * @return The `IrCall` representation of the IrExpression.
+ * @param T The target type to cast to, which must be a subtype of IrExpression.
+ * @return The current IrExpression cast to type T.
  */
-internal fun IrExpression.asIrCall(): IrCall {
-    return this as IrCall
-}
-
-internal fun IrExpression.asIrConstructorCall(): IrConstructorCall {
-    return this as IrConstructorCall
+internal inline fun <reified T : IrExpression> IrExpression.irCast(): T {
+    return try {
+        this as T
+    } catch (e: ClassCastException) {
+        throw IllegalArgumentException("Expected IrExpression to be of type ${T::class.java}, but was ${this::class.java}", e)
+    }
 }
 
 /**
@@ -121,6 +80,3 @@ internal fun <T : IrFunctionAccessExpression> Iterable<T>.findByFqName(fqName: F
  */
 internal fun <T : IrFunctionAccessExpression> Iterable<T>.filterByFqName(fqName: FqName): List<T> =
     filter { it.type.classFqName == fqName }
-
-val IrFunctionAccessExpression.valueArguments: List<IrExpression?>
-    get() = List(valueArgumentsCount) { getValueArgument(it) }

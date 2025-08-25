@@ -16,6 +16,8 @@
 
 package com.kotlinorm.compiler.plugin.transformer
 
+import com.kotlinorm.compiler.helpers.extensionReceiver
+import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForConditionTransformer
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForReferenceTransformer
 import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSelectTransformer
@@ -24,8 +26,6 @@ import com.kotlinorm.compiler.plugin.transformer.kTable.KTableParserForSortRetur
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.initFunctions
 import com.kotlinorm.compiler.plugin.utils.KClassCreatorUtil.kPojoClasses
 import com.kotlinorm.compiler.plugin.utils.KPojoFqName
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
-import com.kotlinorm.compiler.plugin.utils.context.withBuilder
 import com.kotlinorm.compiler.plugin.utils.fqNameOfSelectFromsRegexes
 import com.kotlinorm.compiler.plugin.utils.fqNameOfTypedQuery
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.KTABLE_FOR_CONDITION_CLASS
@@ -72,20 +72,21 @@ class KronosParserTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
         with(pluginContext) {
-            for(i in 0 until expression.typeArgumentsCount) {
-                val typeArgument = expression.getTypeArgument(i)
+            for (i in 0 until expression.typeArguments.size) {
+                val typeArgument = expression.typeArguments[i]
                 if (typeArgument != null && typeArgument.getClass() != null && typeArgument.superTypes().any { it.classFqName == KPojoFqName }) {
                     kPojoClasses.add(typeArgument.getClass()!!)
                 }
             }
             if (expression.symbol.owner.hasAnnotation(initAnnotationFqName)) {
-                val initializer = (expression.getValueArgument(0) as IrFunctionExpressionImpl).function
+                val initializer = (expression.valueArguments[0] as IrFunctionExpressionImpl).function
                 with(DeclarationIrBuilder(pluginContext, initializer.symbol) as IrBuilderWithScope) {
                     initFunctions.add(
-                        KotlinBuilderContext(
+                        Triple(
                             pluginContext,
-                            this
-                        ) to initializer
+                            this,
+                            initializer
+                        )
                     )
                 }
             }
@@ -101,7 +102,7 @@ class KronosParserTransformer(
      * @return the transformed function body or the result of calling the super class's implementation
      */
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
-        when (declaration.extensionReceiverParameter?.type?.classFqName?.asString()) {
+        when (declaration.parameters.extensionReceiver?.type?.classFqName?.asString()) {
             KTABLE_FOR_SELECT_CLASS -> declaration.body = transformKTableForSelect(declaration)
             KTABLE_FOR_SET_CLASS -> declaration.body = transformKTableForSet(declaration)
             KTABLE_FOR_CONDITION_CLASS -> declaration.body = transformKTableForCondition(declaration)
@@ -240,10 +241,10 @@ class KronosParserTransformer(
         if (
             (fqNameOfIrCall in fqNameOfTypedQuery ||
             fqNameOfSelectFromsRegexes.any { Regex(it).matches(fqNameOfIrCall.asString()) }) &&
-            expression.typeArgumentsCount == 1
+            expression.typeArguments.size == 1
         ) {
             return DeclarationIrBuilder(pluginContext, expression.symbol).irBlock {
-                withBuilder(pluginContext) {
+                with(pluginContext) {
                     +updateTypedQueryParameters(expression)
                 }
                 finally()

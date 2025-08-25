@@ -42,12 +42,14 @@ fun KronosCommonStrategy.execute(
     defaultValue: Any = 0,
     afterExecute: KronosCommonStrategy.(field: Field, value: Any?) -> Unit
 ) {
-    if (timeStrategy) {
-        val format = field.dateFormat ?: defaultDateFormat
-        afterExecute(field, currentDateTime(format))
-    } else {
-        afterExecute(field, defaultValue)
-    }
+    afterExecute(
+        field,
+        if (timeStrategy) {
+            currentDateTime(field.dateFormat ?: defaultDateFormat)
+        } else {
+            defaultValue
+        }
+    )
 }
 
 fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { addAll(this@toLinkedSet) }

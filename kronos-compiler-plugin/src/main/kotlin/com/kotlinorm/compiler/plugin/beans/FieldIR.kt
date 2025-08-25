@@ -16,12 +16,27 @@
 
 package com.kotlinorm.compiler.plugin.beans
 
+import com.kotlinorm.compiler.helpers.invoke
+import com.kotlinorm.compiler.helpers.irEnum
+import com.kotlinorm.compiler.helpers.irListOf
 import com.kotlinorm.compiler.helpers.referenceClass
+import com.kotlinorm.compiler.plugin.utils.fieldSymbol
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irInt
+import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.constructors
 
-internal val IrPluginContext.primaryKeyTypeSymbol
+/**
+ * Gets the symbol for the PrimaryKeyType enum class.
+ */
+context(_: IrPluginContext)
+internal val primaryKeyTypeSymbol
     get() = referenceClass("com.kotlinorm.enums.PrimaryKeyType")!!
 
 /**
@@ -69,4 +84,36 @@ class FieldIR(
     internal val nullable: Boolean,
     internal val serializable: Boolean,
     internal val kDoc: IrExpression
-)
+){
+
+
+    /**
+     * Converts the current object to an IrVariable by creating a criteria using the provided propertyeters.
+     *
+     * @return an IrVariable representing the created criteria
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    context(context: IrPluginContext, builder: IrBuilderWithScope)
+    fun build(): IrExpression {
+        return fieldSymbol.constructors.first()(
+            columnName,
+            builder.irString(name),
+            type,
+            irEnum(primaryKeyTypeSymbol, primaryKey),
+            dateTimeFormat ?: builder.irNull(),
+            tableName,
+            cascade,
+            builder.irBoolean(cascadeIsArrayOrCollection),
+            kClass,
+            irListOf(context.irBuiltIns.stringType, superTypes),
+            ignore ?: builder.irNull(),
+            builder.irBoolean(isColumn),
+            columnTypeLength ?: builder.irInt(0),
+            columnTypeScale ?: builder.irInt(0),
+            columnDefaultValue ?: builder.irNull(),
+            builder.irBoolean(nullable),
+            builder.irBoolean(serializable),
+            kDoc
+        )
+    }
+}

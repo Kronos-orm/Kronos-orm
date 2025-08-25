@@ -16,17 +16,19 @@
 
 package com.kotlinorm.compiler.plugin.utils
 
-import com.kotlinorm.compiler.helpers.applyIrCall
-import com.kotlinorm.compiler.helpers.createExprNew
-import com.kotlinorm.compiler.helpers.createKClassExpr
+import com.kotlinorm.compiler.helpers.instantiate
+import com.kotlinorm.compiler.helpers.invoke
 import com.kotlinorm.compiler.helpers.kFunctionN
 import com.kotlinorm.compiler.helpers.nType
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
+import com.kotlinorm.compiler.helpers.toKClass
+import com.kotlinorm.compiler.helpers.valueParameters
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.declarations.IrValueParameterBuilder
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.declarations.buildValueParameter
@@ -41,6 +43,7 @@ import org.jetbrains.kotlin.ir.builders.irWhen
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
@@ -58,14 +61,15 @@ import org.jetbrains.kotlin.name.SpecialNames
 
 object KClassCreatorUtil {
     val kPojoClasses = mutableSetOf<IrClass>()
-    val initFunctions = mutableSetOf<Pair<KotlinBuilderContext, IrFunction>>()
+    val initFunctions = mutableSetOf<Triple<IrPluginContext, IrBuilderWithScope, IrFunction>>()
     fun resetKClassCreator() {
         kPojoClasses.clear()
         initFunctions.clear()
     }
 
-    private val IrPluginContext.kClassCreatorSymbol
-        get() = referenceProperties(
+    context(context: IrPluginContext)
+    private val kClassCreatorSymbol
+        get() = context.referenceProperties(
             CallableId(
                 packageName = FqName("com.kotlinorm.utils"),
                 callableName = Name.identifier("kClassCreator")
@@ -73,10 +77,12 @@ object KClassCreatorUtil {
         ).first()
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private val IrPluginContext.kClassCreatorSetterSymbol
+    context(_: IrPluginContext)
+    private val kClassCreatorSetterSymbol
         get() = kClassCreatorSymbol.owner.setter!!.symbol
 
-    private fun IrPluginContext.lambdaArgument(
+    context(_: IrPluginContext)
+    private fun lambdaArgument(
         lambda: IrSimpleFunction,
         type: IrType = kFunctionN(lambda.allParameters.size).typeWith(lambda.allParameters.map { it.type } + lambda.returnType),
         startOffset: Int = UNDEFINED_OFFSET,
@@ -89,54 +95,51 @@ object KClassCreatorUtil {
         IrStatementOrigin.LAMBDA
     )
 
-    fun KotlinBuilderContext.buildKClassMapper(declaration: IrFunction) {
-        with(pluginContext){
-            with(builder){
-                declaration.body = irBlockBody {
-                    val lambda = irFactory.buildFun {
-                        origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
-                        name = SpecialNames.ANONYMOUS
-                        visibility = DescriptorVisibilities.LOCAL
-                        returnType = KPojoSymbol.nType
-                        modality = Modality.FINAL
-                    }.apply {
-                        parent = declaration
-                        valueParameters += irFactory.buildValueParameter(IrValueParameterBuilder().apply {
-                            name = Name.identifier("kClass")
-                            type = createKClassExpr(KPojoSymbol).type // KClass<KPojo>
-                        }, this)
-                        body = irBuiltIns.createIrBuilder(symbol).run {
-                            irBlockBody {
-                                +irReturn(
-                                    irWhen(
-                                        KPojoSymbol.nType,
-                                        kPojoClasses.distinctBy { it.fqNameWhenAvailable }.mapNotNull {
-                                            createExprNew(it.symbol)?.let { new ->
-                                                irBranch(
-                                                    irEquals(
-                                                        irGet(valueParameters.first()),
-                                                        createKClassExpr(it.symbol)
-                                                    ),
-                                                    new
-                                                )
-                                            }
-                                        } + irElseBranch(
-                                            irNull()
+    context(_: IrPluginContext, builder: IrBuilderWithScope)
+    fun buildKClassMapper(declaration: IrFunction) {
+        declaration.body = builder.irBlockBody {
+            val lambda = context.irFactory.buildFun {
+                origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
+                name = SpecialNames.ANONYMOUS
+                visibility = DescriptorVisibilities.LOCAL
+                returnType = KPojoSymbol.nType
+                modality = Modality.FINAL
+            }.apply {
+                parent = declaration
+                parameters = parameters + context.irFactory.buildValueParameter(IrValueParameterBuilder().apply {
+                    name = Name.identifier("kClass")
+                    type = KPojoSymbol.toKClass().type // KClass<KPojo>
+                    kind = IrParameterKind.Regular
+                }, this)
+                body = context.irBuiltIns.createIrBuilder(symbol).run {
+                    irBlockBody {
+                        +irReturn(
+                            irWhen(
+                                KPojoSymbol.nType,
+                                kPojoClasses.distinctBy { it.fqNameWhenAvailable }.mapNotNull {
+                                    it.symbol.instantiate()?.let { new ->
+                                        irBranch(
+                                            irEquals(
+                                                irGet(parameters.valueParameters.first()),
+                                                it.symbol.toKClass()
+                                            ),
+                                            new
                                         )
-                                    )
+                                    }
+                                } + irElseBranch(
+                                    irNull()
                                 )
-                            }
-                        }
+                            )
+                        )
                     }
-
-                    +applyIrCall(
-                        kClassCreatorSetterSymbol,
-                        lambdaArgument(lambda),
-                        operator = IrStatementOrigin.EQ
-                    )
-                    declaration.body?.statements?.forEach { +it }
                 }
             }
+
+            +kClassCreatorSetterSymbol(
+                lambdaArgument(lambda),
+                operator = IrStatementOrigin.EQ
+            )
+            declaration.body?.statements?.forEach { +it }
         }
     }
 }

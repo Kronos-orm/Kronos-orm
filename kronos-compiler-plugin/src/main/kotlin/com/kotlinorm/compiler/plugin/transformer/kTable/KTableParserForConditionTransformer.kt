@@ -16,8 +16,7 @@
 
 package com.kotlinorm.compiler.plugin.transformer.kTable
 
-import com.kotlinorm.compiler.plugin.utils.context.withBlock
-import com.kotlinorm.compiler.plugin.utils.kTableForCondition.setCriteriaIr
+import com.kotlinorm.compiler.plugin.utils.kTableForCondition.updateCriteriaIr
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -73,7 +72,7 @@ class KTableParserForConditionTransformer(
             return super.visitReturn(expression)
         }
         return DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-            +withBlock(pluginContext){ setCriteriaIr(irFunction) }
+            +with(pluginContext) { updateCriteriaIr(irFunction) }
         }
     }
 }

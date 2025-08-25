@@ -26,7 +26,7 @@ package com.kotlinorm.annotations
  * @constructor Create empty Unsafe Criteria
  * @author ousc
  */
-@RequiresOptIn(level = RequiresOptIn.Level.ERROR, message = "This function is cast, please use it carefully.")
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING, message = "This function is cast, please use it carefully.")
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 annotation class UnsafeCriteria(val message: String = "")

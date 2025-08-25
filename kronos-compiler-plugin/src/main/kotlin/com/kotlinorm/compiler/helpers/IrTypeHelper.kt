@@ -29,7 +29,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
  *
  * @return The IrSimpleType representation of the IrType.
  */
-internal fun IrType.asSimpleType() = this as IrSimpleType
+internal fun IrType.simple() = this as IrSimpleType
 
 /**
  * Returns the first type argument of the given IrType as an IrSimpleType.
@@ -37,7 +37,7 @@ internal fun IrType.asSimpleType() = this as IrSimpleType
  *
  * @return The first type argument of the given IrType as an IrSimpleType.
  */
-internal fun IrType.subType() = asSimpleType().arguments.firstOrNull()?.typeOrFail?.asSimpleType()
+internal fun IrType.sub() = simple().arguments.firstOrNull()?.typeOrFail
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal val IrClassSymbol.nType get() = owner.defaultType.withNullability(true)

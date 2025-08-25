@@ -17,21 +17,30 @@
 package com.kotlinorm.compiler.plugin.utils.kTableForSet
 
 import com.kotlinorm.compiler.helpers.referenceClass
+import com.kotlinorm.compiler.helpers.valueParameters
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
-
+/**
+ * The fully qualified name of the KTableForSet class.
+ */
 const val KTABLE_FOR_SET_CLASS = "com.kotlinorm.beans.dsl.KTableForSet"
 
-private val IrPluginContext.kTableForSetSymbol
+/**
+ * Gets the symbol for the KTableForSet class.
+ */
+context(_: IrPluginContext)
+private val kTableForSetSymbol
     get() = referenceClass(KTABLE_FOR_SET_CLASS)!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.setValueSymbol
-    get() = kTableForSetSymbol.functions.first { it.owner.name.toString() == "setValue" && it.owner.valueParameters.size == 2 }
+context(_: IrPluginContext)
+internal val setValueSymbol
+    get() = kTableForSetSymbol.functions.first { it.owner.name.toString() == "setValue" && it.owner.parameters.valueParameters.size == 2 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-internal val IrPluginContext.setAssignSymbol
+context(_: IrPluginContext)
+internal val setAssignSymbol
     get() = kTableForSetSymbol.getSimpleFunction("setAssign")!!

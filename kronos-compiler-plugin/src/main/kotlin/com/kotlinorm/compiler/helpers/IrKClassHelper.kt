@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.helpers
 
-import com.kotlinorm.compiler.plugin.utils.context.KotlinBuilderContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -29,46 +28,55 @@ import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.constructors
 
-fun IrPluginContext.kFunctionN(n: Int): IrClassSymbol {
-    return referenceClass(StandardNames.getFunctionClassId(n))!!
-}
+/**
+ * Retrieves the symbol of the `kotlin.FunctionN` class for a given arity `n` in the provided `IrPluginContext`.
+ *
+ * @param n The arity of the function (number of parameters).
+ * @return The symbol of the `kotlin.FunctionN` class.
+ */
+context(context: IrPluginContext)
+fun kFunctionN(n: Int) = context.referenceClass(StandardNames.getFunctionClassId(n))!!
 
 /**
  * Retrieves the symbol of the `println` function from the `kotlin.io` package in the given `IrPluginContext`.
  *
  * @return The symbol of the `println` function.
  */
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-val IrPluginContext.irPrintln
+@UnsafeDuringIrConstructionAPI
+context(context: IrPluginContext)
+val irPrintln
     get(): IrSimpleFunctionSymbol = referenceFunctions("kotlin.io", "println").single {
-        val parameters = it.owner.valueParameters
-        parameters.size == 1 && parameters[0].type == irBuiltIns.anyNType
+        it.owner.parameters.single().type == context.irBuiltIns.anyNType
     }
 
-fun KotlinBuilderContext.createKClassExpr(
-    klassSymbol: IrClassSymbol
-): IrExpression {
-    with(pluginContext){
-        with(builder){
-            val classType = klassSymbol.defaultType
-            return IrClassReferenceImpl(
-                startOffset = startOffset,
-                endOffset = endOffset,
-                type = irBuiltIns.kClassClass.typeWith(classType),
-                symbol = klassSymbol,
-                classType = classType
-            )
-        }
-    }
+/**
+ * Creates an `IrExpression` representing a reference to the Kotlin class (`KClass`) of the given `IrClassSymbol`.
+ *
+ * @receiver The `IrClassSymbol` for which to create the `KClass` reference.
+ * @return An `IrExpression` representing the `KClass` reference.
+ */
+context(builder: IrBuilderWithScope, context: IrPluginContext)
+fun IrClassSymbol.toKClass(): IrExpression {
+    val classType = defaultType
+    return IrClassReferenceImpl(
+        startOffset = builder.startOffset, endOffset = builder.endOffset,
+        type = context.irBuiltIns.kClassClass.typeWith(classType),
+        symbol = this,
+        classType = classType
+    )
 }
 
+/**
+ * Instantiates an object of the class represented by the `IrClassSymbol` by invoking its primary constructor.
+ * If the primary constructor has parameters, they must either have default values or be absent.
+ *
+ * @receiver The `IrClassSymbol` representing the class to instantiate.
+ * @return An `IrExpression` representing the instantiated object, or null if no suitable constructor is found.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrBuilderWithScope.createExprNew(
-    klassSymbol: IrClassSymbol
-): IrExpression? {
-    return klassSymbol.constructors.firstOrNull {
-        it.owner.valueParameters.isEmpty() || it.owner.valueParameters.all { v -> v.defaultValue != null }
-    }?.let {
-        applyIrCall(it)
-    }
+context(builder: IrBuilderWithScope)
+fun IrClassSymbol.instantiate(): IrExpression? {
+    return constructors.firstOrNull {
+        it.owner.parameters.isEmpty() || it.owner.parameters.all { v -> v.defaultValue != null }
+    }?.invoke()
 }

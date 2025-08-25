@@ -16,6 +16,17 @@
 
 package com.kotlinorm.compiler.plugin.utils
 
+import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrDeclaration
+import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.util.file
+import org.jetbrains.kotlin.ir.util.sourceElement
+import java.io.File
+import kotlin.text.Charsets.UTF_8
+
 /**
  * Calculates the real start offset of the source code, skipping over comments and annotations.
  *
@@ -157,4 +168,48 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
         }
     }
     return comment
+}
+
+/**
+ * Retrieves the KDoc string for the current IR declaration.
+ *
+ * This function attempts to extract the KDoc comment associated with the current IR declaration.
+ * It uses the source offsets to locate the relevant lines in the source file and then extracts
+ * the comment content.
+ *
+ * @receiver The IR declaration for which to retrieve the KDoc string.
+ * @return An IR expression containing the KDoc string, or null if no KDoc comment is found.
+ */
+context(builder: IrBuilderWithScope)
+fun IrDeclaration.getKDocString(): IrExpression {
+    val declaration = this
+    val sourceOffsets = sourceElement()
+    if (sourceOffsets != null) {
+        val startOffset = sourceOffsets.startOffset
+        val endOffset = sourceOffsets.endOffset
+        val fileEntry = file.fileEntry
+        val sourceRange = fileEntry.getSourceRangeInfo(startOffset, endOffset)
+        val source = sourceFileCache.getOrPut(fileEntry.name) {
+            File(sourceRange.filePath).readLines(UTF_8)
+        }
+        val realStartOffset = realStartOffset(source, sourceRange.startLineNumber)
+        val comment = when (declaration) {
+            is IrProperty -> extractDeclarationComment(
+                source,
+                realStartOffset..sourceRange.endLineNumber
+            )
+
+            is IrClass -> extractDeclarationComment(
+                source,
+                sourceRange.startLineNumber..realStartOffset
+            )
+
+            else -> null
+        }
+
+        if (comment != null) {
+            return builder.irString(comment)
+        }
+    }
+    return builder.irString("")
 }

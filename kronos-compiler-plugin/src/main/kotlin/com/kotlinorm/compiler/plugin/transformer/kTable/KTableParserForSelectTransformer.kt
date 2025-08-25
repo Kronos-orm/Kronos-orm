@@ -16,14 +16,12 @@
 
 package com.kotlinorm.compiler.plugin.transformer.kTable
 
-import com.kotlinorm.compiler.plugin.utils.context.withBuilder
 import com.kotlinorm.compiler.plugin.utils.kTableForSelect.addFieldList
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 
 /**
@@ -67,17 +65,14 @@ class KTableParserForSelectTransformer(
     /**
      * Visits a call expression and returns an IrExpression.
      *
-     * @param expression the [IrCall] expression to visit
+     * @param expression the [IrReturn] expression to visit
      * @return the transformed IrExpression
      */
-    override fun visitReturn(expression: IrReturn): IrExpression {
-        with(DeclarationIrBuilder(pluginContext, irFunction.symbol)) {
-            return irBlock {
-                +withBuilder(pluginContext){
-                    addFieldList(irFunction, expression)
-                }
-                +expression
+    override fun visitReturn(expression: IrReturn) =
+        DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+            +with(pluginContext) {
+                addFieldList(irFunction, expression)
             }
+            +expression
         }
-    }
 }

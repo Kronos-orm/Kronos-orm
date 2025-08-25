@@ -16,7 +16,7 @@
 
 package com.kotlinorm.compiler.plugin.transformer
 
-import com.kotlinorm.compiler.plugin.utils.context.withBuilder
+import com.kotlinorm.compiler.helpers.set
 import com.kotlinorm.compiler.plugin.utils.createFromMapValueFunction
 import com.kotlinorm.compiler.plugin.utils.createGetFieldsFunction
 import com.kotlinorm.compiler.plugin.utils.createKClassFunction
@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
@@ -138,11 +139,11 @@ class KronosIrClassNewTransformer(
             }
             fun replaceFakeBody(functionBodyFactory: () -> IrBlockBody) {
                 declaration.isFakeOverride = false
-                declaration.dispatchReceiverParameter = irClass.thisReceiver
+                declaration[IrParameterKind.DispatchReceiver] = irClass.thisReceiver
                 declaration.body = functionBodyFactory()
             }
             with(DeclarationIrBuilder(pluginContext, declaration.symbol) as IrBuilderWithScope) {
-                withBuilder(pluginContext) {
+                with(pluginContext) {
                     when (declaration.name.asString()) {
                         "kClass" -> replaceFakeBody { createKClassFunction(irClass) }
                         "toDataMap" -> replaceFakeBody { createToMapFunction(irClass, declaration) }

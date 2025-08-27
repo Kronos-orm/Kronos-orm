@@ -45,19 +45,23 @@ Based on the KCP implementation of expression tree parsing and concatenation, Kr
 --------
 # Re-define KotlinORM
 
-❓ **Why Kronos?**
+❓ Why Kronos?
 
-* Utilizes the **entire ecosystem and resources** of the JVM platform, such as **database drivers and logging frameworks**, with potential future support for Kotlin Multiplatform.
-* **Powered by Kotlin compiler plugins and coroutines**, with **NO reflection** used, Kronos delivers unmatched **high-performance** database operations.
-* Supports most **mainstream databases** and allows **freely adding database extensions through plugins**.
-* **Concise and expressive writing, supporting Kotlin native syntax** `==`, `>`, `<`, `in`, etc., instead of .eq, .gt, .lt, etc.
-* Strong type checking.
-* Supports **transactions**, **complex cascading operations without foreign keys (one-to-one, one-to-many, many-to-many)**, **serialization and deserialization**, **cross-database queries**, and **database table/index/remarks creation and structure synchronization**, etc.
-* Supports **Logical Deletion**, **Optimistic Lock**, **Creation Time**, **Update Time**, and offers flexible customization settings.
-* **Easily integrate with any third-party framework** such as `Spring`, `Ktor`, `Vert.x`, `Solon`, etc. See more information in the sample projects plz.
-* **Native SQL database manipulation based on named parameters**.
-* Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **NO reflection, near-zero overhead**.
-* Data classes can be treated as database table models, **significantly reducing additional class definitions**.
+- Leverages the full JVM ecosystem (drivers, logging, pools) and is designed with future Kotlin Multiplatform in mind.
+- Compiler-plugin powered and coroutine-friendly. Absolutely no reflection at runtime for core operations, enabling high performance and low GC overhead.
+- Concise, expressive Kotlin-first DSL using native operators `==`, `>`, `<`, `in`, etc. (not `.eq`, `.gt`, `.lt`). Strong static typing everywhere.
+- Rich features out of the box: transactions, cross-database queries, schema create/sync (tables/indexes/comments), serialization/deserialization, and powerful cascading without FKs (one-to-one / one-to-many / many-to-many).
+- Built-ins: logical deletion, optimistic lock, create/update timestamps; all customizable.
+- Easy to integrate with any stack (Spring, Ktor, Vert.x, Solon, Android). See example projects below.
+- Native SQL with named parameters when you need full control.
+- Compile-time mappers to/from Map and meta APIs for KPojo with near-zero overhead.
+
+## Developer Docs
+- Looking for architecture diagrams, module internals, and deep‑dive guides? See the [Developer Docs](./develop-docs/README.md).
+- Who should read this:
+  - Contributors and maintainers extending or modifying Kronos.
+  - Advanced users who want to understand internals and design trade‑offs.
+  - Integrators and plugin authors building logging/JDBC/codegen extensions or embedding Kronos into your platform.
 
 -------
 
@@ -336,7 +340,7 @@ user.upsert { it.username }
 
 // upsert on duplicate key
 user.upsert { it.username }
-    .onConfict() // We have achieved compatibility with different databases
+    .onConflict() // Cross-database compatible upsert syntax
     .execute()
 ```
 

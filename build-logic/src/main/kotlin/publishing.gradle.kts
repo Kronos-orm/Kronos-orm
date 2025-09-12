@@ -52,7 +52,7 @@ class AliyunMvn(
     val username: String? = System.getenv("ALIYUN_USERNAME") ?: project.findProperty("aliyunUsername") as String?,
     val password: String? = System.getenv("ALIYUN_PASSWORD") ?: project.findProperty("aliyunPassword") as String?,
 ) {
-    val isPresent get() = username != null && password != null
+    val publishRequired get() = username != null && password != null
 }
 
 class SnapshotMvn(
@@ -62,7 +62,7 @@ class SnapshotMvn(
     val password: String? = System.getenv("ORG_GRADLE_PROJECT_mavenCentralPassword")
         ?: project.findProperty("mavenCentralPassword") as String?
 ) {
-    val isPresent get() = publish.version.endsWith("SNAPSHOT") && username != null && password != null
+    val publishRequired get() = publish.version.endsWith("SNAPSHOT")
 }
 
 val aliyun = AliyunMvn()
@@ -112,7 +112,7 @@ mavenPublishing {
         }
     }
 
-    if (!snapshot.isPresent) {
+    if (!snapshot.publishRequired) {
         signAllPublications()
     }
 
@@ -121,7 +121,7 @@ mavenPublishing {
 
 publishing {
     repositories {
-        if (aliyun.isPresent) {
+        if (aliyun.publishRequired) {
             maven {
                 name = "aliyun"
                 url = uri(aliyun.url)
@@ -131,7 +131,7 @@ publishing {
                 }
             }
         }
-        if (snapshot.isPresent) {
+        if (snapshot.publishRequired) {
             maven {
                 name = "CentralPortalSnapshots"
                 url = snapshot.url
@@ -154,25 +154,31 @@ if (project.name == "kronos-orm") {
         }
         dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToMavenLocalRepository"))
     }
-    tasks.register("publishAllToMavenCentral") {
-        group = "kronos publishing"
-        project.subprojects.forEach {
-            if (it.plugins.hasPlugin("com.vanniktech.maven.publish")) {
-                dependsOn(it.tasks.named("publishMavenPublicationToMavenCentralRepository"))
+    if (!snapshot.publishRequired) {
+        tasks.register("publishAllToMavenCentral") {
+            group = "kronos publishing"
+            project.subprojects.forEach {
+                if (it.plugins.hasPlugin("com.vanniktech.maven.publish")) {
+                    dependsOn(it.tasks.named("publishAllPublicationsToMavenCentralRepository"))
+                }
             }
+            dependsOn(
+                gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToMavenCentralRepository")
+            )
         }
-        dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToMavenCentralRepository"))
     }
-    tasks.register("publishAllToAliyun") {
-        group = "kronos publishing"
-        project.subprojects.forEach {
-            if (it.plugins.hasPlugin("com.vanniktech.maven.publish") && it.providers.gradleProperty("aliyunPackages").isPresent) {
-                dependsOn(it.tasks.named("publishMavenPublicationToAliyunRepository"))
+    if (aliyun.publishRequired) {
+        tasks.register("publishAllToAliyun") {
+            group = "kronos publishing"
+            project.subprojects.forEach {
+                if (it.plugins.hasPlugin("com.vanniktech.maven.publish") && it.providers.gradleProperty("aliyunPackages").isPresent) {
+                    dependsOn(it.tasks.named("publishMavenPublicationToAliyunRepository"))
+                }
             }
+            dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToAliyunRepository"))
         }
-        dependsOn(gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToAliyunRepository"))
     }
-    if (snapshot.isPresent) {
+    if (snapshot.publishRequired) {
         tasks.register("publishAllToCentralSnapshots") {
             group = "kronos publishing"
             project.subprojects.forEach {
@@ -181,19 +187,20 @@ if (project.name == "kronos-orm") {
                 }
             }
             dependsOn(
-                gradle.includedBuild("kronos-gradle-plugin").task(":publishAllPublicationsToCentralPortalSnapshotsRepository")
+                gradle.includedBuild("kronos-gradle-plugin")
+                    .task(":publishAllPublicationsToCentralPortalSnapshotsRepository")
             )
         }
     }
 }
 if (project.name == "kronos-gradle-plugin") {
     afterEvaluate {
-        if (!aliyun.isPresent) {
+        if (aliyun.publishRequired){
             tasks.register("publishAllPublicationsToAliyunRepository") {
                 group = "kronos publishing"
             }
         }
-        if (!snapshot.isPresent) {
+        if (!snapshot.publishRequired) {
             tasks.forEach {
                 if (it.name.startsWith("publish")) {
                     it.dependsOn(tasks.getByName("signMavenPublication"))

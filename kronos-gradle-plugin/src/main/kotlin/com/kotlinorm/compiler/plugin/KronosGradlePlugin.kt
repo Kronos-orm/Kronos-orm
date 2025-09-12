@@ -42,7 +42,12 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         println("Loaded Gradle plugin ${javaClass.name} version $version")
         println("Loaded Compiler plugin $group.$artifactId version $version")
-        return kotlinCompilation.target.project.provider { listOf() }
+        val timestamp = System.currentTimeMillis()
+        return kotlinCompilation.target.project.provider {
+            listOf(
+                SubpluginOption("timestamp", timestamp.toString())
+            )
+        }
     }
 
     override fun getCompilerPluginId(): String {

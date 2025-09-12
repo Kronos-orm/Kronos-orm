@@ -8,12 +8,14 @@ on:
 
 jobs:
   greeting:
+    name: Send greetings 👋
     runs-on: ubuntu-latest
     permissions:
       issues: write
       pull-requests: write
     steps:
-    - uses: actions/first-interaction@v3
+    - name: First interaction 🤝
+      uses: actions/first-interaction@v3
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         # Issue欢迎消息

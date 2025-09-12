@@ -1,0 +1,91 @@
+name: Publish Kronos
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish 🚀
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK 21 ☕️
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'adopt'
+
+      - name: Detect version and mode 🔎
+        id: detect
+        run: |
+          cur=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
+          echo "Current version: $cur"
+          echo "current=$cur" >> "$GITHUB_OUTPUT"
+          if echo "$cur" | grep -q "-SNAPSHOT$"; then
+            echo "mode=snapshot" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=release" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure git user 👤
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Release ✨ - confirm version and commit
+        if: steps.detect.outputs.mode == 'release'
+        id: release_set
+        run: |
+          # Ensure version is a clean release (no -SNAPSHOT); if somehow a -SNAPSHOT is present, drop it.
+          NEW_VERSION=$( bash .github/scripts/bump-version.sh release-from-current | tail -n1 | cut -d= -f2 )
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          # Commit only if files changed
+          git add -A
+          git diff --cached --quiet || git commit -m "chore(version): release $NEW_VERSION [skip ci]"
+
+      - name: Release 🏷️ - tag and push version commit
+        if: steps.detect.outputs.mode == 'release'
+        run: |
+          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          ver=${{ steps.release_set.outputs.version }}
+          if [ -z "$ver" ]; then ver=${{ steps.detect.outputs.current }}; fi
+          git tag "v$ver"
+          git push origin "v$ver"
+
+      - name: Release 🚀 - publish to Maven Central
+        if: steps.detect.outputs.mode == 'release'
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          bash ./gradlew --no-daemon clean publishAllToMavenCentral -x test
+
+      - name: Release 🔼 - bump to next SNAPSHOT and push
+        if: steps.detect.outputs.mode == 'release'
+        run: |
+          bash .github/scripts/bump-version.sh next-snapshot
+          NEXT_SNAPSHOT=$( bash .github/scripts/bump-version.sh next-snapshot | tail -n1 | cut -d= -f2 )
+          git add -A
+          git commit -m "chore(version): start $NEXT_SNAPSHOT [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+
+      - name: Snapshot 📸 - publish to Central Snapshots
+        if: steps.detect.outputs.mode == 'snapshot'
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          bash ./gradlew --no-daemon clean publishAllToCentralSnapshots -x test

@@ -16,7 +16,12 @@
 
 package com.kotlinorm.types
 
-import com.kotlinorm.beans.dsl.*
+import com.kotlinorm.beans.dsl.KTableForCondition
+import com.kotlinorm.beans.dsl.KTableForReference
+import com.kotlinorm.beans.dsl.KTableForSelect
+import com.kotlinorm.beans.dsl.KTableForSet
+import com.kotlinorm.beans.dsl.KTableForSort
+
 
 typealias ToSelect<T, R> = (KTableForSelect<T>.(it: T) -> R)?
 typealias ToSet<T, R> = (KTableForSet<T>.(it: T) -> R)?

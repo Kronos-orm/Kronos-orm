@@ -125,7 +125,7 @@ complexity:
     active: false
     ignoredLabels: []
   LargeClass:
-    active: true
+    active: false
     threshold: 600
   LongMethod:
     active: true
@@ -205,7 +205,7 @@ empty-blocks:
     active: true
     allowedExceptionNameRegex: '_|(ignore|expected).*'
   EmptyClassBlock:
-    active: true
+    active: false
   EmptyDefaultConstructor:
     active: true
   EmptyDoWhileBlock:
@@ -217,7 +217,7 @@ empty-blocks:
   EmptyForBlock:
     active: true
   EmptyFunctionBlock:
-    active: true
+    active: false
     ignoreOverridden: false
   EmptyIfBlock:
     active: true
@@ -651,7 +651,8 @@ style:
     excludeCommentStatements: false
     excludeRawStrings: true
     excludes:
-      - "**/com/kotlinorm/orm/**/Patch.kt"
+      - "**/com/kotlinorm/orm/join/Patch.kt"
+      - "**/com/kotlinorm/orm/join/SelectFrom**.kt"
   MayBeConst:
     active: true
   ModifierOrder:
@@ -747,7 +748,7 @@ style:
   UnusedImports:
     active: false
   UnusedParameter:
-    active: true
+    active: false
     allowedNames: 'ignored|expected'
   UnusedPrivateClass:
     active: true

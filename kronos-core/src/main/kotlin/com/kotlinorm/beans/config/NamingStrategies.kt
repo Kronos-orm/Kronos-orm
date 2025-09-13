@@ -38,8 +38,11 @@ class LineHumpNamingStrategy : KronosNamingStrategy {
         val str = line.trim()
         if (str.isEmpty()) return ""
         return str.split("_")
-            .mapIndexed { index, it ->
-                if (it[0] in 'a'..'z' && index != 0) it[0] - 32 + it.substring(1) else it
+            .mapIndexed { index, word ->
+                when {
+                    index == 0 || word.isEmpty() -> word
+                    else -> word.replaceFirstChar { it.uppercaseChar() }
+                }
             }
             .joinToString("")
     }

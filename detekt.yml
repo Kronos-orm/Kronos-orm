@@ -346,6 +346,7 @@ naming:
     active: true
     rootPackage: ''
     requireRootInDeclaration: false
+    excludes: ['**/*.kts']
   LambdaParameterNaming:
     active: false
     parameterPattern: '[a-z][A-Za-z0-9]*|_'

@@ -1,6 +1,4 @@
-import org.gradle.kotlin.dsl.invoke
-import org.jetbrains.dokka.gradle.DokkaTask
-
+package kronos
 
 /*
  * This plugin configures the Dokka documentation generator.
@@ -49,7 +47,7 @@ if (project == project.rootProject) {
         }
     }
 } else {
-    tasks.withType<DokkaTask>().configureEach {
+    tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
         dokkaSourceSets {
             configureEach {
                 includes.from("README.md")

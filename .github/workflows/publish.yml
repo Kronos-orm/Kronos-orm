@@ -31,7 +31,7 @@ jobs:
           cur=$(grep -E 'project\.version\s*=\s*"[^"]+"' build-logic/src/main/kotlin/publishing.gradle.kts | head -n1 | sed -E 's/.*project\.version\s*=\s*"([^"]+)".*/\1/')
           echo "Current version: $cur"
           echo "current=$cur" >> "$GITHUB_OUTPUT"
-          if echo "$cur" | grep -q "-SNAPSHOT$"; then
+          if echo "$cur" | grep -q -- "-SNAPSHOT$"; then
             echo "mode=snapshot" >> "$GITHUB_OUTPUT"
           else
             echo "mode=release" >> "$GITHUB_OUTPUT"

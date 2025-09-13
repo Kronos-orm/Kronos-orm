@@ -23,12 +23,12 @@ import java.util.*
 import javax.sql.DataSource
 
 fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceWrapper {
-    val className = className ?: {
+    val className = className ?: run {
         Kronos.defaultLogger(dataSource).warn(
             log { +"wrapperClassName is not set, using default: com.kotlinorm.KronosBasicWrapper" }
         )
         "com.kotlinorm.KronosBasicWrapper"
-    }()
+    }
     return try {
         Class.forName(className)
             .getDeclaredConstructor(dataSource::class.java)
@@ -37,8 +37,10 @@ fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceW
         Class.forName(className)
             .getDeclaredConstructor(DataSource::class.java)
             .newInstance(dataSource) as KronosDataSourceWrapper
-    } catch (e: Exception) {
-        throw RuntimeException("Failed to create wrapper for $className", e)
+    } catch (e: ReflectiveOperationException) {
+        throw IllegalStateException("Failed to create wrapper for $className", e)
+    } catch (e: ClassCastException) {
+        throw IllegalStateException("Failed to create wrapper for $className", e)
     }
 }
 
@@ -78,7 +80,31 @@ fun initialDataSource(config: Map<String, Any?>): DataSource {
                             "Setter for '$key' not found in ${this::class.java.name}"
                         }
                     )
-            } catch (e: Exception) {
+            } catch (e: IllegalArgumentException) {
+                Kronos.defaultLogger(this).warn(
+                    log {
+                        "Error setting property '$key': ${e.message?.replace('\n', ' ')}"
+                    }
+                )
+            } catch (e: ReflectiveOperationException) {
+                Kronos.defaultLogger(this).warn(
+                    log {
+                        "Error setting property '$key': ${e.message?.replace('\n', ' ')}"
+                    }
+                )
+            } catch (e: ClassCastException) {
+                Kronos.defaultLogger(this).warn(
+                    log {
+                        "Error setting property '$key': ${e.message?.replace('\n', ' ')}"
+                    }
+                )
+            } catch (e: TypeCastException) {
+                Kronos.defaultLogger(this).warn(
+                    log {
+                        "Error setting property '$key': ${e.message?.replace('\n', ' ')}"
+                    }
+                )
+            } catch (e: SecurityException) {
                 Kronos.defaultLogger(this).warn(
                     log {
                         "Error setting property '$key': ${e.message?.replace('\n', ' ')}"
@@ -97,7 +123,7 @@ private fun findCompatibleMethod(clazz: Class<*>, methodName: String, value: Any
                     method.parameterCount == 1 &&
                     isTypeCompatible(method.parameterTypes[0], value)
         }
-    } catch (_: Exception) {
+    } catch (_: SecurityException) {
         null
     }
 }

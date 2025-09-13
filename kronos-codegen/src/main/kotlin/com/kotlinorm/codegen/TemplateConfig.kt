@@ -90,7 +90,7 @@ class TemplateConfig(
     companion object {
         fun template(render: KronosTemplate.() -> Unit): List<KronosConfig> {
             codeGenConfig
-                ?: throw IllegalStateException("TemplateConfig is not initialized. Please call init(path: String) first.")
+                ?: error("TemplateConfig is not initialized. Please call init(path: String) first.")
             return codeGenConfig!!.toKronosConfigs().map {
                 it.render()
                 KronosConfig(

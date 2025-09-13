@@ -15,9 +15,6 @@
  */
 package com.kotlinorm.codegen
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.interfaces.KronosNamingStrategy
-
 class TableConfig(
     val name: String,
     val className: String?

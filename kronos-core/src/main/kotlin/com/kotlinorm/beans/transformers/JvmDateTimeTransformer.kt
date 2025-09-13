@@ -74,8 +74,6 @@ object JvmDateTimeTransformer : ValueTransformer {
                 LocalDateTime.parse(value.toString(), DateTimeFormatter.ofPattern(pattern))
             } catch (_: DateTimeParseException) {
                 LocalDateTime.parse(value.toString())
-            } catch (e: Exception) {
-                throw e
             }
         }
         return when (targetKotlinType) {

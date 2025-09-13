@@ -107,261 +107,474 @@ fun buildCriteria(
     noValueStrategyType: IrExpression? = null
 ): IrVariable? {
     with(builder) {
-        var paramName: IrExpression? = null
-        var type = "ROOT"
-        var not = setNot
-        var value: IrExpression? = null
-        val children: MutableList<IrVariable?> = mutableListOf()
-        var tableName: IrExpression? = null
-        var strategy = noValueStrategyType
-
-        when (element) {
-            is IrBlockBody -> {
-                element.statements.forEach { statement ->
-                    children.add(buildCriteria(irFunction, statement))
-                }
+        with(
+            LocalState(
+                paramName = null,
+                type = "ROOT",
+                not = setNot,
+                value = null,
+                children = mutableListOf(),
+                tableName = null,
+                strategy = noValueStrategyType
+            )
+        ) {
+            when (element) {
+                is IrBlockBody -> handleIrBlockBody(irFunction, element)
+                is IrWhenImpl -> handleIrWhen(irFunction, element, setNot)
+                is IrCall -> handleIrCall(irFunction, element)?.let { return it }
+                is IrReturn -> return buildCriteria(irFunction, element.value)
+                is IrConstImpl -> handleIrConst(element)
             }
 
-            is IrWhenImpl -> {
-                type = element.funcName(setNot)
-                element.branches.forEach {
-                    children.add(buildCriteria(irFunction, it.condition, setNot))
-                    children.add(buildCriteria(irFunction, it.result, setNot))
-                }
-            }
+            return CriteriaIR(
+                paramName,
+                type,
+                not,
+                value,
+                children.filterNotNull(),
+                tableName,
+                strategy
+            ).toIrVariable()
+        }
+    }
+}
 
-            is IrCall -> {
-                val funcName = element.funcName()
-                var args = element.valueArguments
-                val dispatchReceiver = element.dispatchReceiverArgument
-                val extensionReceiver = element.extensionReceiverArgument
-                if (args.isEmpty() && dispatchReceiver != null && dispatchReceiver is IrCall) {
-                    args = dispatchReceiver.arguments
-                }
+/**
+ * A local state for building a criteria.
+ *
+ * @property paramName The name of the parameter.
+ * @property type The type of the criteria.
+ * @property not Whether to set the not flag.
+ * @property value The value of the criteria.
+ * @property children The children of the criteria.
+ * @property tableName The name of the table.
+ * @property strategy The strategy to use when there is no value.
+ * @constructor Creates a new instance of [LocalState].
+ */
+private data class LocalState(
+    var paramName: IrExpression?,
+    var type: String,
+    var not: Boolean,
+    var value: IrExpression?,
+    val children: MutableList<IrVariable?>,
+    var tableName: IrExpression?,
+    var strategy: IrExpression?
+)
 
-                if ("not" == funcName) {
-                    return buildCriteria(irFunction, dispatchReceiver!!, !not)
-                }
+/**
+ * Handles an IrBlockBody element.
+ * This function recursively handles the children of the IrBlockBody element and builds a criteria IR variable based on the result.
+ *
+ * @param irFunction The function to build the criteria for.
+ * @param element The IrBlockBody element to handle.
+ * @throws IllegalArgumentException if the element is not an IrBlockBody element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleIrBlockBody(
+    irFunction: IrFunction,
+    element: IrBlockBody
+) {
+    element.statements.forEach { statement ->
+        state.children.add(buildCriteria(irFunction, statement))
+    }
+}
 
-                val (conditionType, isNot) = parseConditionType(funcName)
-                type = conditionType
-                not = not xor isNot
+/**
+ * Handles an IrWhen element.
+ * This function recursively handles the children of the IrWhen element and builds a criteria IR variable based on the result.
+ *
+ * @param irFunction The function to build the criteria for.
+ * @param element The IrWhen element to handle.
+ * @param setNot Whether to set the not flag.
+ * @throws IllegalArgumentException if the element is not an IrWhen element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleIrWhen(
+    irFunction: IrFunction,
+    element: IrWhenImpl,
+    setNot: Boolean
+) {
+    state.type = element.funcName(setNot)
+    element.branches.forEach {
+        state.children.add(buildCriteria(irFunction, it.condition, setNot))
+        state.children.add(buildCriteria(irFunction, it.result, setNot))
+    }
+}
 
-                when (funcName) {
-                    "isNull", "notNull" -> {
-                        paramName = getColumnOrValue(extensionReceiver!!)
-                        // 形如 it.<property>.isNull的写法
-                        // Write like it.<property>.isNull
-                        tableName = getTableName(dispatchReceiver!!.type.sub()!!.getClass()!!)
-                    }
+/**
+ * Handles an IrCall element.
+ * This function builds a criteria IR variable based on the given IrCall element.
+ *
+ * @param irFunction The function to build the criteria for.
+ * @param element The IrCall element to handle.
+ * @return The built criteria IR variable, or null if the element is a constant.
+ * @throws IllegalArgumentException if the element is not an IrCall element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleIrCall(
+    irFunction: IrFunction,
+    element: IrCall
+): IrVariable? {
+    val funcName = element.funcName()
+    var args = element.valueArguments
+    val dispatchReceiver = element.dispatchReceiverArgument
+    val extensionReceiver = element.extensionReceiverArgument
+    if (args.isEmpty() && dispatchReceiver != null && dispatchReceiver is IrCall) {
+        args = dispatchReceiver.arguments
+    }
 
-                    "lt", "gt", "le", "ge" -> {
-                        if (args.isEmpty()) {
-                            // 形如it.<property>.lt的写法
-                            // Write like it.<property>.lt with no arguments
-                            paramName = getColumnOrValue(extensionReceiver!!)
-                            tableName = getTableName(dispatchReceiver!!.type.sub()!!.getClass()!!)
-                            value = getValueByFieldNameSymbol(
-                                irGet(irFunction.parameters.extensionReceiver!!),
-                                irString(extensionReceiver.irCast<IrCall>().funcName())
-                            )
-                        } else {
-                            // it.xxx > xx 或 xx > it.xxx
-                            // it.xxx > xx or xx > it.xxx
-                            val irCall = args.first()!!.irCast<IrCall>()
-                            // 提供fun(a, b)形式和A.B.C形式的函数调用支持(!!属于fun(a, b))
-                            // Provides support for function calls of the form fun(a, b)
-                            // and of the form A.B.C (!!!). belongs to fun(a, b))
-                            val (left, operator, right) = runExpressionAnalysis(
-                                irCall.extensionReceiverArgument,
-                                funcName,
-                                irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
-                            )
-                            paramName = left
-                            type = operator
-                            value = right
-                            tableName =
-                                getTableName(irCall.findKronosColumn()!!.irCast<IrCall>().dispatchReceiverArgument!!)
-                        }
-                    }
+    if ("not" == funcName) {
+        return buildCriteria(irFunction, dispatchReceiver!!, !state.not)
+    }
 
-                    "equal" -> {
-                        not = not xor element.valueArguments.isEmpty()
-                        val index = when {
-                            args[0].isKPojo() || args[0].isKronosFunction() -> 0
-                            args[1].isKPojo() || args[0].isKronosFunction() -> 1
-                            else -> {
-                                type = "sql"
-                                value = element
-                                -1
-                            }
-                        }
-                        if (index != -1) {
-                            val irCall = args[index]!!.irCast<IrCall>()
-                            val (left, _, right) = runExpressionAnalysis(
-                                irCall,
-                                funcName,
-                                args[1 - index]
-                            )
-                            paramName = left
-                            value = right
-                            tableName = getTableName(irCall.dispatchReceiverArgument!!)
-                        }
-                    }
+    val (conditionType, isNot) = parseConditionType(funcName)
+    state.type = conditionType
+    state.not = state.not xor isNot
 
-                    "eq", "neq" -> {
-                        if (extensionReceiver != null && extensionReceiver.isKPojo()) {
-                            paramName = getColumnOrValue(extensionReceiver)
-                            value = getValueByFieldNameSymbol(
-                                irGet(irFunction.parameters.extensionReceiver!!),
-                                irString(
-                                    extensionReceiver.irCast<IrCall>().correspondingName!!.asString()
+    when (funcName) {
+        "isNull", "notNull" -> handleNullChecks(extensionReceiver, dispatchReceiver)
+        "lt", "gt", "le", "ge" -> handleCompareOps(irFunction, funcName, extensionReceiver, dispatchReceiver, args)
+        "equal" -> handleEqualOp(element, funcName, args)
+        "eq", "neq" -> handleEqNeqOp(irFunction, element, extensionReceiver)
+        "between", "like", "regexp", "notBetween", "notLike", "notRegexp" -> handleBetweenLikeRegexpOps(irFunction, element, extensionReceiver, args)
+        "startsWith" -> handleStartsWithOp(irFunction, element, extensionReceiver, args)
+        "endsWith" -> handleEndsWithOp(irFunction, extensionReceiver, dispatchReceiver, args)
+        "contains" -> handleContainsOp(irFunction, extensionReceiver, dispatchReceiver, args)
+        "asSql" -> handleAsSqlOp(extensionReceiver)
+        "ifNoValue" -> return handleIfNoValueOp(irFunction, extensionReceiver, args)
+    }
+    return null
+}
+
+/**
+ * Handles null checks.
+ * This function builds a criteria IR variable based on the given null checks.
+ *
+ * @param extensionReceiver The extension receiver of the null check.
+ * @param dispatchReceiver The dispatch receiver of the null check.
+ * @throws IllegalArgumentException if the extension receiver is not an IrCall element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleNullChecks(
+    extensionReceiver: IrExpression?,
+    dispatchReceiver: IrExpression?
+) {
+    state.paramName = getColumnOrValue(extensionReceiver!!)
+    state.tableName = getTableName(dispatchReceiver!!.type.sub()!!.getClass()!!)
+}
+
+/**
+ * Handles compare operations.
+ * This function builds a criteria IR variable based on the given compare operations.
+ *
+ * @param irFunction The function to build the criteria for.
+ * @param funcName The name of the compare operation.
+ * @param extensionReceiver The extension receiver of the compare operation.
+ * @param dispatchReceiver The dispatch receiver of the compare operation.
+ * @param args The arguments of the compare operation.
+ * @throws IllegalArgumentException if the extension receiver is not an IrCall element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleCompareOps(
+    irFunction: IrFunction,
+    funcName: String,
+    extensionReceiver: IrExpression?,
+    dispatchReceiver: IrExpression?,
+    args: List<IrExpression?>
+) {
+    if (args.isEmpty()) {
+        state.paramName = getColumnOrValue(extensionReceiver!!)
+        state.tableName = getTableName(dispatchReceiver!!.type.sub()!!.getClass()!!)
+        state.value = getValueByFieldNameSymbol(
+            builder.irGet(irFunction.parameters.extensionReceiver!!),
+            builder.irString(extensionReceiver.irCast<IrCall>().funcName())
+        )
+    } else {
+        val irCall = args.first()!!.irCast<IrCall>()
+        val (left, operator, right) = runExpressionAnalysis(
+            irCall.extensionReceiverArgument,
+            funcName,
+            irCall.valueArguments.firstOrNull() ?: args.getOrNull(1)
+        )
+        state.paramName = left
+        state.type = operator
+        state.value = right
+        state.tableName = getTableName(irCall.findKronosColumn()!!.irCast<IrCall>().dispatchReceiverArgument!!)
+    }
+}
+
+/**
+ * Handles equal operations.
+ * This function builds a criteria IR variable based on the given equal operations.
+ *
+ * @param element The IrCall element representing the equal operation.
+ * @param funcName The name of the equal operation.
+ * @param args The arguments of the equal operation.
+ * @throws IllegalArgumentException if the element is not an IrCall element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleEqualOp(
+    element: IrCall,
+    funcName: String,
+    args: List<IrExpression?>
+) {
+    state.not = state.not xor element.valueArguments.isEmpty()
+    val index = when {
+        args[0].isKPojo() || args[0].isKronosFunction() -> 0
+        args[1].isKPojo() || args[0].isKronosFunction() -> 1
+        else -> {
+            state.type = "sql"
+            state.value = element
+            -1
+        }
+    }
+    if (index != -1) {
+        val irCall = args[index]!!.irCast<IrCall>()
+        val (left, _, right) = runExpressionAnalysis(
+            irCall,
+            funcName,
+            args[1 - index]
+        )
+        state.paramName = left
+        state.value = right
+        state.tableName = getTableName(irCall.dispatchReceiverArgument!!)
+    }
+}
+
+/**
+ * Handles equal and not equal operations.
+ * This function builds a criteria IR variable based on the given equal and not equal operations.
+ *
+ * @param irFunction The function to build the criteria for.
+ * @param element The IrCall element representing the equal or not equal operation.
+ * @param extensionReceiver The extension receiver of the equal or not equal operation.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleEqNeqOp(
+    irFunction: IrFunction,
+    element: IrCall,
+    extensionReceiver: IrExpression?
+) {
+    if (extensionReceiver != null && extensionReceiver.isKPojo()) {
+        state.paramName = getColumnOrValue(extensionReceiver)
+        state.value = getValueByFieldNameSymbol(
+            builder.irGet(irFunction.parameters.extensionReceiver!!),
+            builder.irString(
+                extensionReceiver.irCast<IrCall>().correspondingName!!.asString()
+            )
+        )
+        state.tableName = getTableName(extensionReceiver.irCast<IrCall>().dispatchReceiverArgument!!)
+    } else if (extensionReceiver != null) {
+        val irClass = element.extensionReceiverArgument?.type?.getClass()
+
+        fun generateEq(kPojo: IrClass, receiver: IrExpression, excludes: List<String>) {
+            kPojo.properties.forEach { prop ->
+                if (prop.isColumn() && prop.name.asString() !in excludes) {
+                    state.children.add(
+                        buildCriteria(
+                            irFunction,
+                            ComparableEq.getter!!.symbol(
+                                extensionReceiver,
+                                builder.irGet(
+                                    prop.backingField!!.type, receiver,
+                                    prop.getter!!.symbol
                                 )
-                            )
-                            tableName = getTableName(extensionReceiver.irCast<IrCall>().dispatchReceiverArgument!!)
-                        } else if (extensionReceiver != null) {
-                            val irClass = element.extensionReceiverArgument?.type?.getClass()
-
-                            fun generateEq(kPojo: IrClass, receiver: IrExpression, excludes: List<String>) {
-                                kPojo.properties.forEach { prop ->
-                                    if (prop.isColumn() && prop.name.asString() !in excludes) {
-                                        children.add(
-                                            buildCriteria(
-                                                irFunction,
-                                                ComparableEq.getter!!.symbol(
-                                                    extensionReceiver,
-                                                    irGet(
-                                                        prop.backingField!!.type, receiver,
-                                                        prop.getter!!.symbol
-                                                    )
-                                                ),
-                                                setNot
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-
-                            if (irClass?.kotlinFqName == KPojoFqName) {
-                                if (extensionReceiver is IrCallImpl && extensionReceiver.irCast<IrCall>().origin == IrStatementOrigin.MINUS) {
-                                    type = "AND"
-                                    val (kPojoClass, kPojo, excludes) = analyzeMinusExpression(extensionReceiver.irCast<IrCall>())
-                                    generateEq(kPojoClass, kPojo, excludes)
-                                } else if (irClass.superTypes.any { it.classFqName == KPojoFqName }) {
-                                    type = "AND"
-                                    generateEq(irClass, extensionReceiver, listOf())
-                                }
-                            }
-                        }
-                    }
-
-                    "between", "like", "regexp", "notBetween", "notLike", "notRegexp" -> {
-                        paramName = getColumnOrValue(extensionReceiver!!)
-                        value = if (args.isEmpty()) {
-                            getValueByFieldNameSymbol(
-                                irGet(irFunction.parameters.extensionReceiver!!),
-                                irString(extensionReceiver.irCast<IrCall>().correspondingName!!.asString()),
-                            )
-                        } else {
-                            getColumnOrValue(args.first())
-                        }
-                        tableName = getTableName(element.dispatchReceiver!!.type.sub()!!.getClass()!!)
-                    }
-
-                    "startsWith" -> {
-                        val str = if (args.isEmpty()) {
-                            getValueByFieldNameSymbol(
-                                irGet(irFunction.parameters.extensionReceiver!!),
-                                irString(extensionReceiver!!.irCast<IrCall>().correspondingName!!.asString())
-                            )
-                        } else {
-                            getColumnOrValue(args.first())
-                        }
-                        paramName = getColumnOrValue(extensionReceiver!!)
-                        value = stringPlusSymbol(str, irString("%"))
-                        tableName = getTableName(element.dispatchReceiver!!.type.sub()!!.getClass()!!)
-                    }
-
-                    "endsWith" -> {
-                        val str = if (args.isEmpty()) {
-                            getValueByFieldNameSymbol(
-                                irGet(irFunction.parameters.extensionReceiver!!),
-                                irString(extensionReceiver!!.irCast<IrCall>().correspondingName!!.asString())
-                            )
-                        } else {
-                            getColumnOrValue(args.first())
-                        }
-                        paramName = getColumnOrValue(extensionReceiver!!)
-                        value = stringPlusSymbol(irString("%"), str)
-                        tableName = getTableName(dispatchReceiver!!.type.sub()!!.getClass()!!)
-                    }
-
-                    "contains" -> {
-                        val left = extensionReceiver ?: dispatchReceiver
-                        if (left!!.type.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES || left.type.superTypes()
-                                .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
-                        ) {
-                            tableName =
-                                getTableName(args.first()!!.irCast<IrCall>().dispatchReceiver!!.type.getClass()!!)
-                            // 形如 it.<property> in [1, 2, 3]的写法
-                            // Write like it.<property> in listOf(1, 2, 3)
-                            paramName = getColumnOrValue(args.first()!!)
-                            value = left
-                        } else {
-                            tableName = getTableName(left.irCast<IrCall>().dispatchReceiver!!.type.getClass()!!)
-                            type = "like"
-                            val str = if (args.isEmpty()) {
-                                paramName = getColumnOrValue(left)
-                                // 形如 it.<property>.contains后面不加参数的写法
-                                // Write it as it.<property>.contains with no arguments after it
-                                getValueByFieldNameSymbol(
-                                    irGet(irFunction.parameters.extensionReceiver!!),
-                                    irString(left.irCast<IrCall>().correspondingName!!.asString())
-                                )
-                            } else {
-                                paramName = getColumnOrValue(left)
-                                // 形如 it.<property>.contains("xx")的写法
-                                // Writes like it.<property>.contains("xx") or "xx" in it.<property>
-                                getColumnOrValue(args.first())
-                            }
-
-                            value = if (str is IrConstImpl && str.value is String) {
-                                irString("%${str.value}%")
-                            } else {
-                                buildContainsStrSymbol(irGet(irFunction.parameters.extensionReceiver!!), str)
-                            }
-                        }
-                    }
-
-                    "asSql" -> {
-                        value = extensionReceiver
-                    }
-
-                    "ifNoValue" -> {
-                        strategy = args.first()
-                        return buildCriteria(irFunction, extensionReceiver!!, not, strategy)
-                    }
+                            ),
+                            state.not
+                        )
+                    )
                 }
             }
-
-            is IrReturn -> {
-                return buildCriteria(irFunction, element.value)
-            }
-
-            is IrConstImpl -> {
-                if (element.type == context.irBuiltIns.stringType) {
-                    type = "sql"
-                    value = element
-                } else {
-                    null
-                }
-            }
-
         }
 
-        return CriteriaIR(
-            paramName, type, not, value, children.filterNotNull(), tableName, strategy
-        ).toIrVariable()
+        if (irClass?.kotlinFqName == KPojoFqName) {
+            if (extensionReceiver is IrCallImpl && extensionReceiver.irCast<IrCall>().origin == IrStatementOrigin.MINUS) {
+                state.type = "AND"
+                val (kPojoClass, kPojo, excludes) = analyzeMinusExpression(extensionReceiver.irCast<IrCall>())
+                generateEq(kPojoClass, kPojo, excludes)
+            } else if (irClass.superTypes.any { it.classFqName == KPojoFqName }) {
+                state.type = "AND"
+                generateEq(irClass, extensionReceiver, listOf())
+            }
+        }
+    }
+}
+
+/**
+ * Handles between, like, regexp, notBetween, notLike, and notRegexp operations.
+ * This function builds a criteria IR variable based on the given between, like, regexp, notBetween, notLike, and notRegexp operations.
+ * 
+ * @param irFunction The function to build the criteria for.
+ * @param element The IrCall element representing the between, like, regexp, notBetween, notLike, and notRegexp operation.
+ * @param extensionReceiver The extension receiver of the between, like, regexp, notBetween, notLike, and notRegexp operation.
+ * @param args The arguments of the between, like, regexp, notBetween, notLike, and notRegexp operation.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleBetweenLikeRegexpOps(
+    irFunction: IrFunction,
+    element: IrCall,
+    extensionReceiver: IrExpression?,
+    args: List<IrExpression?>
+) {
+    state.paramName = getColumnOrValue(extensionReceiver!!)
+    state.value = if (args.isEmpty()) {
+        getValueByFieldNameSymbol(
+            builder.irGet(irFunction.parameters.extensionReceiver!!),
+            builder.irString(extensionReceiver.irCast<IrCall>().correspondingName!!.asString()),
+        )
+    } else {
+        getColumnOrValue(args.first())
+    }
+    state.tableName = getTableName(element.dispatchReceiver!!.type.sub()!!.getClass()!!)
+}
+
+/**
+ * Handles startsWith, endsWith, and contains operations.
+ * This function builds a criteria IR variable based on the given startsWith, endsWith, and contains operations.
+ * 
+ * @param irFunction The function to build the criteria for.
+ * @param element The IrCall element representing the startsWith, endsWith, or contains operation.
+ * @param extensionReceiver The extension receiver of the startsWith, endsWith, or contains operation.
+ * @param args The arguments of the startsWith, endsWith, or contains operation.
+ * @throws IllegalArgumentException if the extension receiver is not an IrCall element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleStartsWithOp(
+    irFunction: IrFunction,
+    element: IrCall,
+    extensionReceiver: IrExpression?,
+    args: List<IrExpression?>
+) {
+    val str = if (args.isEmpty()) {
+        getValueByFieldNameSymbol(
+            builder.irGet(irFunction.parameters.extensionReceiver!!),
+            builder.irString(extensionReceiver!!.irCast<IrCall>().correspondingName!!.asString())
+        )
+    } else {
+        getColumnOrValue(args.first())
+    }
+    state.paramName = getColumnOrValue(extensionReceiver!!)
+    state.value = stringPlusSymbol(str, builder.irString("%"))
+    state.tableName = getTableName(element.dispatchReceiver!!.type.sub()!!.getClass()!!)
+}
+
+/**
+ * Handles endsWith, and contains operations.
+ * This function builds a criteria IR variable based on the given endsWith and contains operations.
+ * 
+ * @param irFunction The function to build the criteria for.
+ * @param extensionReceiver The extension receiver of the endsWith, or contains operation.
+ * @param dispatchReceiver The dispatch receiver of the endsWith, or contains operation.
+ * @param args The arguments of the endsWith, or contains operation.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleEndsWithOp(
+    irFunction: IrFunction,
+    extensionReceiver: IrExpression?,
+    dispatchReceiver: IrExpression?,
+    args: List<IrExpression?>
+) {
+    val str = if (args.isEmpty()) {
+        getValueByFieldNameSymbol(
+            builder.irGet(irFunction.parameters.extensionReceiver!!),
+            builder.irString(extensionReceiver!!.irCast<IrCall>().correspondingName!!.asString())
+        )
+    } else {
+        getColumnOrValue(args.first())
+    }
+    state.paramName = getColumnOrValue(extensionReceiver!!)
+    state.value = stringPlusSymbol(builder.irString("%"), str)
+    state.tableName = getTableName(dispatchReceiver!!.type.sub()!!.getClass()!!)
+}
+
+/**
+ * Handles in, notIn, and contains operations.
+ * This function builds a criteria IR variable based on the given in, notIn, and contains operations.
+ * 
+ * @param irFunction The function to build the criteria for.
+ * @param extensionReceiver The extension receiver of the in, notIn, or contains operation.
+ * @param dispatchReceiver The dispatch receiver of the in, notIn, or contains operation.
+ * @param args The arguments of the in, notIn, or contains operation.
+ * @throws IllegalArgumentException if the dispatch receiver is not an IrCall element.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleContainsOp(
+    irFunction: IrFunction,
+    extensionReceiver: IrExpression?,
+    dispatchReceiver: IrExpression?,
+    args: List<IrExpression?>
+) {
+    val left = extensionReceiver ?: dispatchReceiver
+    if (left!!.type.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES || left.type.superTypes()
+            .any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
+    ) {
+        state.tableName = getTableName(args.first()!!.irCast<IrCall>().dispatchReceiver!!.type.getClass()!!)
+        state.paramName = getColumnOrValue(args.first()!!)
+        state.value = left
+    } else {
+        state.tableName = getTableName(left.irCast<IrCall>().dispatchReceiver!!.type.getClass()!!)
+        state.type = "like"
+        val str = if (args.isEmpty()) {
+            state.paramName = getColumnOrValue(left)
+            getValueByFieldNameSymbol(
+                builder.irGet(irFunction.parameters.extensionReceiver!!),
+                builder.irString(left.irCast<IrCall>().correspondingName!!.asString())
+            )
+        } else {
+            state.paramName = getColumnOrValue(left)
+            getColumnOrValue(args.first())
+        }
+
+        state.value = if (str is IrConstImpl && str.value is String) {
+            builder.irString("%${str.value}%")
+        } else {
+            buildContainsStrSymbol(builder.irGet(irFunction.parameters.extensionReceiver!!), str)
+        }
+    }
+}
+
+/**
+ * Handles asSql operations.
+ * This function builds a criteria IR variable based on the given asSql operation.
+ *
+ * @param extensionReceiver The extension receiver of the asSql operation.
+ */
+context(state: LocalState)
+private fun handleAsSqlOp(
+    extensionReceiver: IrExpression?
+) {
+    state.value = extensionReceiver
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder, state: LocalState)
+private fun handleIfNoValueOp(
+    irFunction: IrFunction,
+    extensionReceiver: IrExpression?,
+    args: List<IrExpression?>
+): IrVariable? {
+    state.strategy = args.first()
+    return buildCriteria(irFunction, extensionReceiver!!, state.not, state.strategy)
+}
+
+context(context: IrPluginContext, _: IrBlockBuilder, state: LocalState)
+private fun handleIrConst(
+    element: IrConstImpl
+) {
+    if (element.type == context.irBuiltIns.stringType) {
+        state.type = "sql"
+        state.value = element
     }
 }
 
@@ -559,16 +772,26 @@ fun IrProperty.isColumn(
     return true
 }
 
+/**
+ * Finds the Ignore annotation value.
+ *
+ * @return the Ignore annotation value, or null if the property is not annotated with Ignore.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrProperty.ignoreAnnotationValue(): IrConstructorCall? {
     return annotations.find { it.symbol.owner.returnType.getClass()!!.fqNameWhenAvailable == IgnoreAnnotationsFqName }
 }
 
+/**
+ * Checks if the given IrConstructorCall is an instance of Ignore annotation.
+ *
+ * @param name the name of the Ignore annotation.
+ * @return true if the IrConstructorCall is an instance of Ignore annotation, false otherwise.
+ */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrConstructorCall?.ignore(name: String): Boolean {
     if (this == null) return false
-    val action = valueArguments[0]
-    if (action == null) return true
+    val action = valueArguments[0] ?: return true
     return (
             action is IrVarargImpl &&
                     action.elements.isNotEmpty() &&

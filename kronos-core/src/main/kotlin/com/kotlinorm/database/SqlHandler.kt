@@ -46,7 +46,7 @@ object SqlHandler {
         superTypes: List<String> = emptyList()
     ): T {
         return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?
-            ?: throw Exception("No result found")
+            ?: throw NoSuchElementException("No result found")
     }
 
     inline fun <reified T> KronosDataSourceWrapper.queryOneOrNull(

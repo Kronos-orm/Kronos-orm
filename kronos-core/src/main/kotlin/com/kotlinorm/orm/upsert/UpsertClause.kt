@@ -181,7 +181,7 @@ class UpsertClause<T : KPojo>(
             }
         }
 
-        val paramMap = (paramMap.filter { it -> it.key in (toUpdateFields + toInsertFields + onFields).map { f-> f.name } }).toMutableMap()
+        val paramMap = (paramMap.filter { it.key in (toUpdateFields + toInsertFields + onFields).map { f -> f.name } }).toMutableMap()
 
         if (onConflict) {
             onFields += toUpdateFields

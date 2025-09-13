@@ -23,7 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.to
 
-class Update {
+class MysqlUpdateTest {
     init {
         Kronos.init {
             fieldNamingStrategy = lineHumpNamingStrategy

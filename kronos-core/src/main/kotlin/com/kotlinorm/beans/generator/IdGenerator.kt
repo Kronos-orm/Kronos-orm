@@ -72,7 +72,7 @@ object SnowflakeIdGenerator : KIdGenerator<Long> {
         var timestamp = System.currentTimeMillis()
 
         if (timestamp < lastTimestamp) {
-            throw IllegalStateException("Clock moved backwards. Refusing to generate id for ${lastTimestamp - timestamp} milliseconds.")
+            error("Clock moved backwards. Refusing to generate id for ${lastTimestamp - timestamp} milliseconds.")
         }
 
         if (lastTimestamp == timestamp) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.oneToOne
+package com.kotlinorm.beans.sample.oneToOne
 
 import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.annotations.CreateTime

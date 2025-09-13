@@ -29,17 +29,28 @@ fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceW
         )
         "com.kotlinorm.KronosBasicWrapper"
     }
-    return try {
-        Class.forName(className)
-            .getDeclaredConstructor(dataSource::class.java)
-            .newInstance(dataSource) as KronosDataSourceWrapper
+    val clazz: Class<*>
+    try {
+        clazz = Class.forName(className)
+    } catch (e: ClassNotFoundException) {
+        throw IllegalStateException("Wrapper class not found: " + className, e)
+    }
+
+    val ctor = try {
+        clazz.getDeclaredConstructor(dataSource::class.java)
     } catch (_: NoSuchMethodException) {
-        Class.forName(className)
-            .getDeclaredConstructor(DataSource::class.java)
-            .newInstance(dataSource) as KronosDataSourceWrapper
-    } catch (e: ReflectiveOperationException) {
-        throw IllegalStateException("Failed to create wrapper for $className", e)
+        try {
+            clazz.getDeclaredConstructor(DataSource::class.java)
+        } catch (e: NoSuchMethodException) {
+            throw IllegalStateException("No compatible constructor found for $className. Expected (${"${dataSource::class.java.name}"} or ${DataSource::class.java.name}).", e)
+        }
+    }
+
+    return try {
+        ctor.newInstance(dataSource) as KronosDataSourceWrapper
     } catch (e: ClassCastException) {
+        throw IllegalStateException("Failed to create wrapper for $className", e)
+    } catch (e: ReflectiveOperationException) {
         throw IllegalStateException("Failed to create wrapper for $className", e)
     }
 }

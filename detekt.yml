@@ -612,7 +612,7 @@ style:
     active: true
     ignoreUsageInGenerics: false
   FunctionOnlyReturningConstant:
-    active: true
+    active: false
     ignoreOverridableFunction: true
     ignoreActualFunction: true
     excludedFunctions: []
@@ -650,6 +650,8 @@ style:
     excludeImportStatements: true
     excludeCommentStatements: false
     excludeRawStrings: true
+    excludes:
+      - "**/com/kotlinorm/orm/**/Patch.kt"
   MayBeConst:
     active: true
   ModifierOrder:

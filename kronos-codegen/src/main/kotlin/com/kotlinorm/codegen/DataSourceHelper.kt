@@ -19,7 +19,7 @@ import com.kotlinorm.Kronos
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import java.lang.reflect.Method
-import java.util.*
+import java.util.Locale
 import javax.sql.DataSource
 
 fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceWrapper {
@@ -47,12 +47,12 @@ fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceW
 fun initialDataSource(config: Map<String, Any?>): DataSource {
     val dataSource =
         Class.forName(
-            config["dataSourceClassName"]?.toString() ?: {
+            config["dataSourceClassName"]?.toString() ?: run {
                 Kronos.defaultLogger(config).warn(
                     log { +"dataSourceClassName is not set, using default: org.apache.commons.dbcp2.BasicDataSource" }
                 )
                 "org.apache.commons.dbcp2.BasicDataSource"
-            }()
+            }
         )
             .getDeclaredConstructor()
             .newInstance() as DataSource

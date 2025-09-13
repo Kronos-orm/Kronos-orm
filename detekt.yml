@@ -804,3 +804,4 @@ style:
     excludeImports:
       - 'java.util.*'
       - 'com.kotlinorm.enums.KColumnType.*'
+      - 'com.kotlinorm.enums.CascadeDeleteAction.*'

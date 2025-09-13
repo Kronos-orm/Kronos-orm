@@ -1,3 +1,5 @@
+package kronos
+
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
 import java.net.URI

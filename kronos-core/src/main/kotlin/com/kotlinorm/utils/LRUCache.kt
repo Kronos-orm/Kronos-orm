@@ -55,7 +55,7 @@ class LRUCache<T, R>(private val capacity: Int = DEFAULT_LRU_CACHE_CAPACITY, val
     }
 
     operator fun get(key: T, defaultValue: ((T) -> R?)): R {
-        return get(key) ?: defaultValue(key) ?: throw IllegalStateException("default value not found")
+        return get(key) ?: defaultValue(key) ?: error("default value not found")
     }
 
     operator fun set(key: T, value: R) {

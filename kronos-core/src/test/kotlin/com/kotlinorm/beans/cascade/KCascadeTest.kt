@@ -1,9 +1,9 @@
 package com.kotlinorm.beans.cascade
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.sample.cascade.manyToMany.Course
+import com.kotlinorm.beans.sample.manyToMany.Course
 import com.kotlinorm.beans.sample.cascade.manyToMany.Student
-import com.kotlinorm.beans.sample.cascade.manyToMany.StudentCourse
+import com.kotlinorm.beans.sample.manyToMany.StudentCourse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

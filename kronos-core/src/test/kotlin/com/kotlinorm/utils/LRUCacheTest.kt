@@ -81,7 +81,7 @@ class LRUCacheTest {
     fun getThrowsExceptionWhenDefaultValueIsNull() {
         val cache = LRUCache<String, String?>(2)
         val defaultValue = { _: String -> null }
-        assertFailsWith<IllegalStateException> { cache.get("a", defaultValue) }
+        assertFailsWith<IllegalStateException> { cache["a", defaultValue] }
     }
 
     @Test

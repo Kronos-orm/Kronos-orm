@@ -186,7 +186,7 @@ fun getFunctionName(expression: IrExpression): IrExpression {
         }
 
         else -> {
-            throw IllegalStateException("Unexpected expression type: $expression")
+            error("Unexpected expression type: $expression")
         }
     }
 }
@@ -355,7 +355,7 @@ context(_: IrPluginContext, builder: IrBuilderWithScope)
 fun getTableName(expression: IrExpression): IrExpression {
     val irClass = when (expression) {
         is IrGetValue, is IrCall, is IrGetObjectValue -> expression.type.getClass()
-        else -> throw IllegalStateException("Unexpected expression type: $expression")
+        else -> error("Unexpected expression type: $expression")
     }!!
     return getTableName(irClass)
 }

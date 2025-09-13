@@ -38,9 +38,9 @@ fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceW
             .getDeclaredConstructor(DataSource::class.java)
             .newInstance(dataSource) as KronosDataSourceWrapper
     } catch (e: ReflectiveOperationException) {
-        throw IllegalStateException("Failed to create wrapper for $className", e)
+        error("Failed to create wrapper for $className", e)
     } catch (e: ClassCastException) {
-        throw IllegalStateException("Failed to create wrapper for $className", e)
+        error("Failed to create wrapper for $className", e)
     }
 }
 

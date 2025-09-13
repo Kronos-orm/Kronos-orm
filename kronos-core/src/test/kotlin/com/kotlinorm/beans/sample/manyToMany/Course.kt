@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.manyToMany
+package com.kotlinorm.beans.sample.manyToMany
 
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
@@ -23,6 +23,7 @@ import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.annotations.Version
 import com.kotlinorm.beans.dsl.KCascade.Companion.manyToMany
+import com.kotlinorm.beans.sample.cascade.manyToMany.Student
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 

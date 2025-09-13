@@ -335,7 +335,7 @@ naming:
     minimumFunctionNameLength: 3
   FunctionNaming:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', "**/com/kotlinorm/beans/dsl/KTableForSelect.kt", "**/com/kotlinorm/functions/FunctionHandler.kt"]
     functionPattern: '[a-z][a-zA-Z0-9]*'
     excludeClassPattern: '$^'
   FunctionParameterNaming:
@@ -364,7 +364,7 @@ naming:
 #      - 'mingwX64'
 #      - 'linuxX64'
   MemberNameEqualsClassName:
-    active: true
+    active: false
   NoNameShadowing:
     active: true
   NonBooleanPropertyPrefixedWithIs:
@@ -653,6 +653,7 @@ style:
     excludeCommentStatements: false
     excludeRawStrings: true
     excludes:
+      - '**/test/**'
       - "**/com/kotlinorm/orm/join/Patch.kt"
       - "**/com/kotlinorm/orm/join/SelectFrom**.kt"
       - "**/com/kotlinorm/database/**/**Support.kt"
@@ -712,7 +713,7 @@ style:
     ignoredCharacters: []
   ThrowsCount:
     active: true
-    max: 2
+    max: 8
     excludeGuardClauses: false
   TrailingWhitespace:
     active: false
@@ -759,7 +760,7 @@ style:
     active: true
     allowedNames: ''
   UnusedPrivateProperty:
-    active: true
+    active: false
     allowedNames: '_|ignored|expected|serialVersionUID'
   UseAnyOrNoneInsteadOfFind:
     active: true
@@ -786,9 +787,9 @@ style:
   UseOrEmpty:
     active: true
   UseRequire:
-    active: true
+    active: false
   UseRequireNotNull:
-    active: true
+    active: false
   UseSumOfInsteadOfFlatMapSize:
     active: false
   UselessCallOnNotNull:

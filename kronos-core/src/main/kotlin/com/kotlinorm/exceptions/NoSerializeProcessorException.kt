@@ -17,9 +17,9 @@
 package com.kotlinorm.exceptions
 
 /**
- * No Json Resolver Exception
+ * No Serialize Processor Exception
  *
- * Exception thrown when there is no serialize resolver
+ * Exception thrown when there is no serialize-processor.
  *
  * @author OUSC
  * @create 2022/11/30 00:21

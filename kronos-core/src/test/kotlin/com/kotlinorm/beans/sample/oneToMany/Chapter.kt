@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.sample.cascade.oneToMany
+package com.kotlinorm.beans.sample.oneToMany
 
 
 import com.kotlinorm.annotations.Cascade

@@ -520,7 +520,7 @@ fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> 
         KronosColumnValueType.Function to this
     } else {
         KronosColumnValueType.ColumnName to (findKronosColumn()
-            ?: throw IllegalStateException("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
+            ?: error("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
     }
 }
 

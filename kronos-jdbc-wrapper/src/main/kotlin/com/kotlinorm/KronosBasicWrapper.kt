@@ -150,13 +150,20 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
     */
    override fun transact(block: () -> Any?): Any? = dataSource.connection.use { conn ->
        conn.autoCommit = false
+       var committed = false
        try {
            val result = block()
            conn.commit()
+           committed = true
            result
-       } catch (e: Exception) {
-           conn.rollback()
-           throw e
+       } finally {
+           if (!committed) {
+               try {
+                   conn.rollback()
+               } catch (_: java.sql.SQLException) {
+                   // ignore rollback failure
+               }
+           }
        }
    }
 
@@ -414,7 +421,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      */
     private fun ResultSet.createKPojo(kClass: KClass<KPojo>, columns: Map<String, Field>): KPojo {
         return kClass.createInstance().apply {
-            (1..metaData.columnCount).forEach { i ->
+            for (i in 1..metaData.columnCount) {
                 val label = metaData.getColumnLabel(i)
                 columns[label]?.let { field ->
                     try {

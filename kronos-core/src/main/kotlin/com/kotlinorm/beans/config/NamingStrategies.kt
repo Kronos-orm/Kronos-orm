@@ -17,7 +17,7 @@
 package com.kotlinorm.beans.config
 
 import com.kotlinorm.interfaces.KronosNamingStrategy
-import java.util.*
+import java.util.Locale
 
 class LineHumpNamingStrategy : KronosNamingStrategy {
     override fun k2db(name: String): String {

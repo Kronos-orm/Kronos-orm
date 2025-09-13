@@ -44,10 +44,8 @@ object KotlinXDateTimeTransformer : ValueTransformer {
         } else {
             try {
                 LocalDateTime.parse(value.toString(), pattern)
-            } catch (e: RuntimeException) {
+            } catch (_: IllegalArgumentException) {
                 LocalDateTime.parse(value.toString())
-            } catch (e: Exception) {
-                throw e
             }
         }
         return when (targetKotlinType) {

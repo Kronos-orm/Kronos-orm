@@ -74,6 +74,7 @@ object NamedParameterUtils {
      * @param sql the SQL statement
      * @return the parsed statement, represented as com.kotlinorm.beans.parser.ParsedSql instance
      */
+    @Suppress("ComplexMethod")
     fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = mapOf()): ParsedSql {
         val original = namedSqlCache[sql]
         if (original != null) {

@@ -121,6 +121,8 @@ complexity:
       - 'run'
       - 'use'
       - 'with'
+    excludes:
+      - "**/com/kotlinorm/database/**/**Support.kt"
   LabeledExpression:
     active: false
     ignoredLabels: []
@@ -622,7 +624,7 @@ style:
     excludes: [ '**/NamedParameterUtils.kt' ]
   MagicNumber:
     active: true
-    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/enums/**.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
+    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
     ignoreNumbers:
       - '-1'
       - '0'
@@ -653,6 +655,7 @@ style:
     excludes:
       - "**/com/kotlinorm/orm/join/Patch.kt"
       - "**/com/kotlinorm/orm/join/SelectFrom**.kt"
+      - "**/com/kotlinorm/database/**/**Support.kt"
   MayBeConst:
     active: true
   ModifierOrder:
@@ -801,3 +804,4 @@ style:
     excludeImports:
       - 'java.util.*'
       - 'com.kotlinorm.enums.KColumnType.*'
+      - 'com.kotlinorm.enums.CascadeDeleteAction.*'

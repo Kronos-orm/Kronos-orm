@@ -219,9 +219,9 @@ tasks.register("generateJoinClause") {
 
         println("• Generating selectFromN files:")
         val rangeList = joinRange.toList()
-        rangeList.forEachIndexed { index, it ->
-            println("• Generating SelectFrom${it.toString().padEnd(2, ' ')}.kt\t${index + 1}/${rangeList.size}")
-            generateSelectFromN(it)
+        rangeList.forEachIndexed { index, num ->
+            println("• Generating SelectFrom${num.toString().padEnd(2, ' ')}.kt\t${index + 1}/${rangeList.size}")
+            generateSelectFromN(num)
         }
         println("✓ SelectFromN files generated successfully")
 

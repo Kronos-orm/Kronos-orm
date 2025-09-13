@@ -24,6 +24,7 @@ import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.annotations.Version
+import com.kotlinorm.beans.sample.oneToMany.Book
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 

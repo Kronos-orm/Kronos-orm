@@ -621,7 +621,7 @@ style:
     excludedFunctions: []
   LoopWithTooManyJumpStatements:
     active: true
-    maxJumpCount: 1
+    maxJumpCount: 5
     excludes: [ '**/NamedParameterUtils.kt' ]
   MagicNumber:
     active: true

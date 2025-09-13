@@ -283,7 +283,7 @@ object NamedParameterUtils {
      * that is, whether the given character qualifies as a separator.
      */
     private fun isParameterSeparator(c: Char): Boolean {
-        return (c.code < 128 && separatorIndex[c.code]) || Character.isWhitespace(c)
+        return (c.code < SEPARATOR_INDEX_SIZE && separatorIndex[c.code]) || Character.isWhitespace(c)
     }
 
 

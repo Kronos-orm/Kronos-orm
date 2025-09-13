@@ -59,7 +59,6 @@ import com.kotlinorm.utils.toLinkedSet
  * @param T the type of the pojo
  *
  * @property pojo the pojo for the update
- * @property isExcept whether to exclude the fields from the update
  * @param setUpsertFields the fields to update
  * @author Jieyao Lu, OUSC
  */
@@ -182,7 +181,7 @@ class UpsertClause<T : KPojo>(
             }
         }
 
-        val paramMap = (paramMap.filter { it -> it.key in (toUpdateFields + toInsertFields + onFields).map { it.name } }).toMutableMap()
+        val paramMap = (paramMap.filter { it -> it.key in (toUpdateFields + toInsertFields + onFields).map { f-> f.name } }).toMutableMap()
 
         if (onConflict) {
             onFields += toUpdateFields

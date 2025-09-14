@@ -2,7 +2,6 @@ package kronos
 
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
-import com.vanniktech.maven.publish.SonatypeHost
 import java.net.URI
 
 /*
@@ -116,7 +115,7 @@ mavenPublishing {
         signAllPublications()
     }
 
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, true)
+    publishToMavenCentral(true)
 }
 
 publishing {

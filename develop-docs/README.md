@@ -30,6 +30,7 @@ Kronos-ORM is composed of several modules working together:
 - kronos-compiler-plugin: compile-time transforms and injections for DSL ergonomics.
 
 Quick navigation:
+- Getting started: [Download, Build and Run Guide](./getting-started.md)
 - Core: [Architecture diagrams (EN)](./kronos-core/sections/en/04-Architecture.md) and other sections in the module
 - Logging: [README](./kronos-logging/README.md), EN sections and zh_CN sections
 - JDBC Wrapper: [README](./kronos-jdbc-wrapper/README.md)

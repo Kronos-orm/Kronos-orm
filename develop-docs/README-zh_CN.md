@@ -22,23 +22,24 @@
 本页为 develop-docs 的中文入口，帮助你建立整体心智模型并快速跳转到各模块的详细文档，同时附带多张示意图。
 
 ## 模块概览
-- kronos-core：核心契约（KPojo、任务、策略）、执行引擎、工具与日志契约；
+- kronos-core：核心部分（注解、KPojo、任务、策略）、执行引擎、工具与内置日志工具；
 - kronos-logging：日志适配器与自动探测，内置简单 Logger；日志 DSL 定义在 core；
 - kronos-jdbc-wrapper：JDBC 生产可用的数据源包装实现；
 - kronos-codegen：从数据库元数据生成 Kotlin 实体与注解；
-- kronos-compiler-plugin：编译期增强与注入，提升 DSL 体验。
+- kronos-compiler-plugin：编译期增强与注入，实现 DSL 解析。
 
 快速导航：
-- Core：[架构图（中文）](./kronos-core/sections/zh_CN/04-架构图.md)
-- Logging：[README](./kronos-logging/README.md)（含 EN/中文章节）
+- 入门：[下载、构建与运行指南](getting-started-zh_CN.md)
+- Core：[架构图](./kronos-core/sections/zh_CN/04-架构图.md)
+- Logging：[README](./kronos-logging/README.md)
 - JDBC Wrapper：[README](./kronos-jdbc-wrapper/README.md)
 - Codegen：[README](./kronos-codegen/README.md)
-- Compiler Plugin：[目录结构与关键类（中文）](./kronos-compiler/sections/zh_CN/02-目录结构与关键类.md)
+- Compiler Plugin：[目录结构与关键类](./kronos-compiler/sections/zh_CN/02-目录结构与关键类.md)
 
 重点章节直达：
-- 日志 DSL 与设计（EN）：[kronos-logging/sections/en/04-dsl-and-design.md](./kronos-logging/sections/en/04-dsl-and-design.md)
-- JDBC 用法示例（EN）：[kronos-jdbc-wrapper/sections/en/03-usage.md](./kronos-jdbc-wrapper/sections/en/03-usage.md)
-- 核心架构与流程图（中文）：[kronos-core/sections/zh_CN/04-架构图.md](./kronos-core/sections/zh_CN/04-架构图.md)
+- 日志 DSL 与设计：[kronos-logging/sections/zh-CN/04-dsl-and-design.md](./kronos-logging/sections/en/04-dsl-and-design.md)
+- JDBC 用法示例：[kronos-jdbc-wrapper/sections/zh-CN/03-usage.md](./kronos-jdbc-wrapper/sections/en/03-usage.md)
+- 核心架构与流程图：[kronos-core/sections/zh_CN/04-架构图.md](./kronos-core/sections/zh_CN/04-架构图.md)
 
 ### 顶层关系图
 ```mermaid

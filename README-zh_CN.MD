@@ -37,7 +37,7 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.5--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.6--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -196,6 +196,26 @@ dependencies {
 ```
 
 </details>
+
+## 🗄️ 支持的数据库
+
+Kronos-ORM 支持多种数据库：
+
+- MySQL（MySQL）
+- PostgreSQL（PostgreSQL）
+- SQLite（SQLite）
+- Oracle（甲骨文数据库）
+- Microsoft SQL Server（SQL Server）
+- DB2（IBM DB2）
+- Sybase（Sybase）
+- H2（H2 Database）
+- OceanBase（OceanBase）
+- DM8（达梦数据库）
+- GaussDB（华为 GaussDB）
+
+> 说明：
+> - 不同方言的特性覆盖可能略有差异；核心 DSL、UPSERT/锁等语法尽量提供跨库兼容能力。
+> - 集成测试模块目前主要以 MySQL、PostgreSQL 为示例以便 CI 运行。
 
 ## 🚀 快速入门
 

@@ -23,7 +23,7 @@ This page is the English entry to all developer documents under develop-docs. It
 
 ## Overview
 Kronos-ORM is composed of several modules working together:
-- kronos-core: core contracts (KPojo, tasks, strategies), execution engine, utilities, and logging contract;
+- kronos-core: core contracts (KPojo, tasks, strategies), execution engine, AST-based SQL rendering, utilities, and logging contract;
 - kronos-logging: adapters to external logging systems + bundled logger; logging DSL is defined in core;
 - kronos-jdbc-wrapper: production-ready JDBC implementation of KronosDataSourceWrapper;
 - kronos-codegen: generate Kotlin entities and annotations from DB metadata;
@@ -31,7 +31,7 @@ Kronos-ORM is composed of several modules working together:
 
 Quick navigation:
 - Getting started: [Download, Build and Run Guide](./getting-started.md)
-- Core: [Architecture diagrams (EN)](./kronos-core/sections/en/04-Architecture.md) and other sections in the module
+- Core: [Architecture diagrams (EN)](./kronos-core/sections/en/04-Architecture.md) and other sections in the module; [AST builders & subqueries (EN)](./kronos-core/sections/en/ast-builders-and-examples.md); [SQL Rendering (EN)](./kronos-core/sections/en/features/sql-rendering/README.md) | [中文版](./kronos-core/sections/zh_CN/features/sql-rendering/README.md)
 - Logging: [README](./kronos-logging/README.md), EN sections and zh_CN sections
 - JDBC Wrapper: [README](./kronos-jdbc-wrapper/README.md)
 - Codegen: [README](./kronos-codegen/README.md)

@@ -16,10 +16,20 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.Statement
 import kotlin.reflect.KClass
 
 interface KActionInfo {
     val kClass: KClass<out KPojo>?
-    val tableName: String
-    val whereClause: String?
+    /** Optional: direct AST statement if available (preferred). */
+    val statement: Statement?
+    /**
+     * Fallback tableName and where for legacy paths when statement is null.
+     */
+    val tableName: String?
+    /**
+     * Where condition represented as AST Expression. Null means no WHERE.
+     */
+    val where: Expression?
 }

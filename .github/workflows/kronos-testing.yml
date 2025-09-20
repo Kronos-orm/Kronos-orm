@@ -64,4 +64,4 @@ jobs:
         run: |
           export MYSQL_USERNAME=kronos
           export POSTGRES_USERNAME=kronos
-          ./gradlew :kronos-testing:test --info --stacktrace
+          ./gradlew :kronos-testing:test --info -DtestLogging.exceptionFormat=full -DtestLogging.showStandardStreams=true

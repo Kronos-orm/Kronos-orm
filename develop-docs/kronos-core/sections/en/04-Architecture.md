@@ -48,6 +48,13 @@ flowchart TD
     EN[enums]
   end
 
+  %% SQL Rendering
+  subgraph SQL[SQL Rendering]
+    AST[AST Nodes<br/>Select/Insert/Update/Delete]
+    ASR[AstSqlRenderer<br/>Default implementations]
+    DBS[DatabaseSupport<br/>Mysql/Postgres/Oracle/etc]
+  end
+
   %% DDL & Table Ops
   subgraph DDL[DDL & Table Ops]
     DI[DDLInfo]
@@ -70,6 +77,8 @@ flowchart TD
   CS --> EXEC
 
   ORM -->|build Task| EXEC
+  EXEC -->|AST nodes| SQL
+  SQL -->|SQL + params| EXEC
   EXEC -->|named params| NPU
   EXEC -->|functions| FUNC
   EXEC -->|serialize| SER
@@ -106,6 +115,7 @@ sequenceDiagram
   participant KCP as Compiler Plugin
   participant CORE as kronos-core
   participant FUNC as FunctionManager/Builders
+  participant SQL as SQL Rendering
   participant NP as NamedParameterUtils
   participant DS as DataSourceWrapper
   participant SER as SerializeProcessor
@@ -116,6 +126,8 @@ sequenceDiagram
   KCP-->>DSL: Inject KPojo bodies / helpers
   DSL->>CORE: Build ClauseInfo -> AtomicTask (Query/Action)
   P-->>CORE: before* hooks (DataGuard, etc.)
+  CORE->>SQL: AST nodes -> SQL + parameters
+  SQL-->>CORE: Rendered SQL with parameters
   CORE->>FUNC: Function fields -> dialect SQL fragments
   CORE->>NP: Parse & substitute named params
   CORE->>SER: serialize/deserialize fields/params

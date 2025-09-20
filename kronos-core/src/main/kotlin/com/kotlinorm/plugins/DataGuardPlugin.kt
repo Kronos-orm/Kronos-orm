@@ -16,6 +16,9 @@
 
 package com.kotlinorm.plugins
 
+import com.kotlinorm.ast.DdlStatement
+import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.beans.task.registerTaskEventPlugin
 import com.kotlinorm.beans.task.unregisterTaskEventPlugin
 import com.kotlinorm.database.SqlManager.getDBNameFrom
@@ -197,8 +200,14 @@ object DataGuardPlugin : TaskEventPlugin {
 
     override val doBeforeAction: ActionTaskEvent = { task, wrapper ->
         val dbName = getDBNameFrom(wrapper)
-        val tableName = task.actionInfo?.tableName
-        val whereClause = task.actionInfo?.whereClause
+        // derive tableName and where from an AST statement if present; fallback to legacy fields
+        val stmt = task.actionInfo?.statement
+        val (tableName, whereAst) = when (stmt) {
+            is DeleteStatement -> stmt.target.table to stmt.where
+            is UpdateStatement -> stmt.target.table to stmt.where
+            is DdlStatement -> stmt.targetTable.table to null
+            else -> task.actionInfo?.tableName to task.actionInfo?.where
+        }
 
         when (task.operationType) {
             KOperationType.TRUNCATE -> {
@@ -220,13 +229,13 @@ object DataGuardPlugin : TaskEventPlugin {
             }
 
             KOperationType.DELETE -> {
-                if (!pluginConfig.deleteAll.isAllowed(dbName, tableName) && whereClause.isNullOrBlank()) {
+                if (!pluginConfig.deleteAll.isAllowed(dbName, tableName) && whereAst == null) {
                     throw UnsupportedOperationException("Delete operation is not allowed.")
                 }
             }
 
             KOperationType.UPDATE -> {
-                if (!pluginConfig.updateAll.isAllowed(dbName, tableName) && whereClause.isNullOrBlank()) {
+                if (!pluginConfig.updateAll.isAllowed(dbName, tableName) && whereAst == null) {
                     throw UnsupportedOperationException("Update operation is not allowed.")
                 }
             }

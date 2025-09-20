@@ -125,7 +125,7 @@ object CascadeUpdateClause {
         return node.kPojo.update().apply {
             node.updateParams.forEach { (_, value) ->
                 val updateField = allFields.first { it.name == value }
-                toUpdateFields += updateField
+                // toUpdateFields is now managed by UpdateStatement
                 paramMapNew[updateField + "New"] = paramMap[value + "New"]
             }
         }.build()

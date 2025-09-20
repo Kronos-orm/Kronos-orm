@@ -177,7 +177,7 @@ object CascadeDeleteClause {
                                 listOfValidCascade?.forEach { validCascade->
                                     validCascade.kCascade.properties.forEach{ property ->
                                         val field =  allFields.first { f -> f.name == property }
-                                        toUpdateFields += field
+                                        // toUpdateFields is now managed by UpdateStatement
                                         paramMapNew[field + "New"] = null
                                     }
                                 }
@@ -190,7 +190,7 @@ object CascadeDeleteClause {
                                         val field =  allFields.first { f -> f.name == property }
                                         val defaultValue = validCascade.kCascade.defaultValue.getOrNull(index)
                                         if(defaultValue != null && defaultValue != RESERVED) {
-                                            toUpdateFields += field
+                                            // toUpdateFields is now managed by UpdateStatement
                                             paramMapNew[field + "New"] = defaultValue
                                         }
                                     }

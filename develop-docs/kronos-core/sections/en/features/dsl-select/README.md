@@ -14,7 +14,7 @@ flowchart LR
 
 What it does:
 - Carries SELECT semantics: table, fields, filters, group/order/having, pagination, lock.
-- Works with functions/aliases; final dialect SQL is built by the execution layer.
+- Works with functions/aliases; the final dialect SQL is built by the execution layer.
 
 Why this design:
 - Decouple compile-time/DSL from runtime execution; keep a stable semantic model.

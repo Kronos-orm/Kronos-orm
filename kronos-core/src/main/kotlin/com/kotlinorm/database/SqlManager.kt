@@ -25,8 +25,6 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
-import com.kotlinorm.orm.join.JoinClauseInfo
-import com.kotlinorm.orm.select.SelectClauseInfo
 
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
@@ -152,13 +150,24 @@ object SqlManager {
         dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns
     ) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
+    // AST-based overloads (preferred)
     fun getSelectSql(
-        dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo
-    ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, selectClause)
+        dataSource: KronosDataSourceWrapper, select: com.kotlinorm.ast.SelectStatement
+    ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, select)
         ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
-    fun getJoinSql(
-        dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
-    ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)
+    fun getInsertSql(
+        dataSource: KronosDataSourceWrapper, insert: com.kotlinorm.ast.InsertStatement
+    ) = dataSource.dbType.dbSupport?.getInsertSql(dataSource, insert)
+        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+
+    fun getUpdateSql(
+        dataSource: KronosDataSourceWrapper, update: com.kotlinorm.ast.UpdateStatement
+    ) = dataSource.dbType.dbSupport?.getUpdateSql(dataSource, update)
+        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+
+    fun getDeleteSql(
+        dataSource: KronosDataSourceWrapper, delete: com.kotlinorm.ast.DeleteStatement
+    ) = dataSource.dbType.dbSupport?.getDeleteSql(dataSource, delete)
         ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 }

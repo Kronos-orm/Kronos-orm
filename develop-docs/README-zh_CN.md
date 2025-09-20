@@ -22,7 +22,7 @@
 本页为 develop-docs 的中文入口，帮助你建立整体心智模型并快速跳转到各模块的详细文档，同时附带多张示意图。
 
 ## 模块概览
-- kronos-core：核心部分（注解、KPojo、任务、策略）、执行引擎、工具与内置日志工具；
+- kronos-core：核心部分（注解、KPojo、任务、策略）、执行引擎、基于 AST 的 SQL 渲染、工具与内置日志工具；
 - kronos-logging：日志适配器与自动探测，内置简单 Logger；日志 DSL 定义在 core；
 - kronos-jdbc-wrapper：JDBC 生产可用的数据源包装实现；
 - kronos-codegen：从数据库元数据生成 Kotlin 实体与注解；
@@ -30,7 +30,7 @@
 
 快速导航：
 - 入门：[下载、构建与运行指南](getting-started-zh_CN.md)
-- Core：[架构图](./kronos-core/sections/zh_CN/04-架构图.md)
+- Core：[架构图](./kronos-core/sections/zh_CN/04-架构图.md)；[AST 构建器与子查询示例](./kronos-core/sections/zh_CN/ast-构建与子查询示例.md)；[SQL 渲染（中文）](./kronos-core/sections/zh_CN/features/sql-rendering/README.md) | [English](./kronos-core/sections/en/features/sql-rendering/README.md)
 - Logging：[README](./kronos-logging/README.md)
 - JDBC Wrapper：[README](./kronos-jdbc-wrapper/README.md)
 - Codegen：[README](./kronos-codegen/README.md)

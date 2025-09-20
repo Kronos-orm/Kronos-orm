@@ -1,9 +1,11 @@
 import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.orm.ddl.DDLInfo
-import com.kotlinorm.orm.delete.DeleteClauseInfo
-import com.kotlinorm.orm.update.UpdateClauseInfo
+import com.kotlinorm.ast.RawSqlExpr
+import com.kotlinorm.ast.DdlStatement
+import com.kotlinorm.ast.DdlType
+import com.kotlinorm.ast.table
+import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.plugins.DataGuardPlugin
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import kotlin.test.AfterTest
@@ -35,23 +37,40 @@ class DataGuardPluginTest {
         whereClause: String? = null
     ): KronosAtomicActionTask {
         val actionInfo = when (operation) {
-            KOperationType.DELETE -> DeleteClauseInfo(
-                null,
-                tableName = tableName ?: parseTableName(sql),
-                whereClause = whereClause
-            )
+            KOperationType.DELETE -> object : KActionInfo {
+                override val kClass = null
+                override val statement = null
+                override val tableName = tableName ?: parseTableName(sql)
+                override val where = whereClause?.let { RawSqlExpr(it) }
+            }
 
-            KOperationType.UPDATE -> UpdateClauseInfo(
-                null,
-                tableName = tableName ?: parseTableName(sql),
-                whereClause = whereClause
-            )
+            KOperationType.UPDATE -> object : KActionInfo {
+                override val kClass = null
+                override val statement = null
+                override val tableName = tableName ?: parseTableName(sql)
+                override val where = whereClause?.let { RawSqlExpr(it) }
+            }
 
-            KOperationType.TRUNCATE, KOperationType.DROP, KOperationType.ALTER ->
-                DDLInfo(
-                    null,
-                    tableName = tableName ?: parseTableName(sql),
-                )
+            KOperationType.TRUNCATE -> object : KActionInfo {
+                override val kClass = null
+                override val statement = DdlStatement(DdlType.other, table(tableName ?: parseTableName(sql)))
+                override val tableName = tableName ?: parseTableName(sql)
+                override val where = null
+            }
+            
+            KOperationType.DROP -> object : KActionInfo {
+                override val kClass = null
+                override val statement = DdlStatement(DdlType.dropTable, table(tableName ?: parseTableName(sql)))
+                override val tableName = tableName ?: parseTableName(sql)
+                override val where = null
+            }
+            
+            KOperationType.ALTER -> object : KActionInfo {
+                override val kClass = null
+                override val statement = DdlStatement(DdlType.alterTable, table(tableName ?: parseTableName(sql)))
+                override val tableName = tableName ?: parseTableName(sql)
+                override val where = null
+            }
 
             else -> throw IllegalArgumentException("Unsupported operation type")
         }

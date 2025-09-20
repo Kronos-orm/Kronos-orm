@@ -56,4 +56,33 @@ class Criteria(
     fun addChild(criteria: Criteria?) {
         children.add(criteria)
     }
+
+    override fun toString(): String {
+        return when (type) {
+            ConditionType.Equal -> "${field.columnName} = :${field.name}"
+            ConditionType.Like -> "${field.columnName} LIKE :${field.name}"
+            ConditionType.In -> "${field.columnName} IN :${field.name}List"
+            ConditionType.Gt -> "${field.columnName} > :${field.name}Min"
+            ConditionType.Ge -> "${field.columnName} >= :${field.name}Min"
+            ConditionType.Lt -> "${field.columnName} < :${field.name}Max"
+            ConditionType.Le -> "${field.columnName} <= :${field.name}Max"
+            ConditionType.Between -> "${field.columnName} BETWEEN :${field.name}Min AND :${field.name}Max"
+            ConditionType.IsNull -> "${field.columnName} IS NULL"
+            ConditionType.And -> {
+                val childSqls = children.filterNotNull().map { it.toString() }
+                if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" AND ")
+            }
+            ConditionType.Or -> {
+                val childSqls = children.filterNotNull().map { it.toString() }
+                if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" OR ")
+            }
+            ConditionType.Root -> {
+                val childSqls = children.filterNotNull().map { it.toString() }
+                if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" AND ")
+            }
+            ConditionType.Regexp -> "${field.columnName} REGEXP :${field.name}Pattern"
+            ConditionType.Sql -> value as? String ?: "${field.columnName}"
+            else -> "${field.columnName} ${type.value} :${field.name}"
+        }
+    }
 }

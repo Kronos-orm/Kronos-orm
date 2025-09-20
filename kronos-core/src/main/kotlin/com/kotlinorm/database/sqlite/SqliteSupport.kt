@@ -17,7 +17,6 @@
 package com.kotlinorm.database.sqlite
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
@@ -30,14 +29,12 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
-import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
-import com.kotlinorm.orm.join.JoinClauseInfo
-import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.extractNumberInParentheses
+import com.kotlinorm.ast.AstSqlRenderer
 
 object SqliteSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
@@ -230,72 +227,44 @@ object SqliteSupport : DatabasesSupport {
                 minusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} - :${it.second}" } +
                 whereClauseSql.orEmpty()
 
-    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
-        val selectSql = selectFields.joinToString(", ") {
-            when {
-                it is FunctionField -> getBuiltFunctionField(it, dataSource)
-                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it.name)}"
-                else -> quote(it)
-            }
-        }
+    // AST-based SQL rendering methods
+    override fun getSelectSql(
+            dataSource: KronosDataSourceWrapper,
+            select: com.kotlinorm.ast.SelectStatement
+    ): String = AstSqlRenderer.renderSelect(dataSource, this, select)
 
-        val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
-        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
-        val distinctSql = if (distinct) " DISTINCT" else null
+    override fun getInsertSql(
+            dataSource: KronosDataSourceWrapper,
+            insert: com.kotlinorm.ast.InsertStatement
+    ): String = AstSqlRenderer.renderInsert(dataSource, this, insert)
 
-        if (null != lock) throw UnsupportedDatabaseTypeException(
-            DBType.SQLite,
-            "Sqlite doesn't support the lock() method because Sqlite only has database locks"
-        )
+    override fun getUpdateSql(
+            dataSource: KronosDataSourceWrapper,
+            update: com.kotlinorm.ast.UpdateStatement
+    ): String = AstSqlRenderer.renderUpdate(dataSource, this, update)
 
-        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
-            databaseName?.let { quote(it) + "." } ?: ""
-        }${
-            quote(tableName)
-        }${
-            whereClauseSql.orEmpty()
-        }${
-            groupByClauseSql.orEmpty()
-        }${
-            havingClauseSql.orEmpty()
-        }${
-            orderByClauseSql.orEmpty()
-        }${
-            paginationSql ?: limitSql ?: ""
-        }"
-    }
+    override fun getDeleteSql(
+            dataSource: KronosDataSourceWrapper,
+            delete: com.kotlinorm.ast.DeleteStatement
+    ): String = AstSqlRenderer.renderDelete(dataSource, this, delete)
 
-    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
-        val selectSql = selectFields.joinToString(", ") {
-            val field = it.second
-            when {
-                field is FunctionField -> getBuiltFunctionField(field, dataSource, true)
-                field.type == CUSTOM_CRITERIA_SQL -> field.toString()
-                field.name != field.columnName -> "${quote(field, true)} AS ${quote(field.name)}"
-                else -> "${SqlManager.quote(dataSource, field, true, databaseOfTable)} AS ${quote(it.first)}"
-            }
-        }
+    override fun getSelectSqlWithParams(
+            dataSource: KronosDataSourceWrapper,
+            select: com.kotlinorm.ast.SelectStatement
+    ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderSelectWithParams(dataSource, this, select)
 
-        val paginationSql = if (pagination) " LIMIT $ps OFFSET $pi" else null
-        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
-        val distinctSql = if (distinct) " DISTINCT" else null
-        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
-            SqlManager.quote(dataSource, tableName, true, map = databaseOfTable)
-        }${
-            joinSql.orEmpty()
-        }${
-            whereClauseSql.orEmpty()
-        }${
-            groupByClauseSql.orEmpty()
-        }${
-            havingClauseSql.orEmpty()
-        }${
-            orderByClauseSql.orEmpty()
-        }${
-            paginationSql ?: limitSql ?: ""
-        }"
-    }
+    override fun getInsertSqlWithParams(
+            dataSource: KronosDataSourceWrapper,
+            insert: com.kotlinorm.ast.InsertStatement
+    ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderInsertWithParams(dataSource, this, insert)
+
+    override fun getUpdateSqlWithParams(
+            dataSource: KronosDataSourceWrapper,
+            update: com.kotlinorm.ast.UpdateStatement
+    ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderUpdateWithParams(dataSource, this, update)
+
+    override fun getDeleteSqlWithParams(
+            dataSource: KronosDataSourceWrapper,
+            delete: com.kotlinorm.ast.DeleteStatement
+    ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderDeleteWithParams(dataSource, this, delete)
 }

@@ -10,6 +10,10 @@
 - Transactions:
   - ActionTask.execute() uses wrapper.transact to group multiple atomic tasks;
   - Equal SQL atomic tasks are merged into KronosAtomicBatchTask for batching;
+- SQL Rendering:
+  - AST-based SQL generation with database-specific support classes
+  - DatabasesSupport interface provides dialect-specific SQL rendering
+  - AstSqlRenderer provides default implementations for common SQL patterns
 - Dialect:
   - dbType (com.kotlinorm.enums.DBType) is used across functions/plugins to branch behavior;
 - Typical implementation:

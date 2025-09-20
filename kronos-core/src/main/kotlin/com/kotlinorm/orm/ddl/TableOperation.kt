@@ -29,6 +29,10 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.interfaces.KActionInfo
+import com.kotlinorm.ast.DdlStatement
+import com.kotlinorm.ast.DdlType
+import com.kotlinorm.ast.table
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.createInstance
 
@@ -68,7 +72,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             it,
             mapOf("tableName" to instance.kronosTableName()),
             KOperationType.CREATE,
-            DDLInfo(T::class, instance.kronosTableName())
+            object : KActionInfo {
+                override val kClass = T::class
+                override val statement = DdlStatement(DdlType.createTable, table(instance.kronosTableName()), it)
+                override val tableName = instance.kronosTableName()
+                override val where = null
+            }
         )
     }.toKronosActionTask().execute(dataSource)
 
@@ -82,7 +91,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             getTableDropSql(dataSource.dbType, instance.kronosTableName()),
             mapOf("tableName" to instance.kronosTableName()),
             KOperationType.DROP,
-            DDLInfo(T::class, instance.kronosTableName())
+            object : KActionInfo {
+                override val kClass = T::class
+                override val statement = DdlStatement(DdlType.dropTable, table(instance.kronosTableName()))
+                override val tableName = instance.kronosTableName()
+                override val where = null
+            }
         ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -96,7 +110,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 getTableDropSql(dataSource.dbType, tableName),
                 mapOf("tableName" to tableName),
                 KOperationType.DROP,
-                DDLInfo(null, tableName)
+                object : KActionInfo {
+                    override val kClass = null
+                    override val statement = DdlStatement(DdlType.dropTable, table(tableName))
+                    override val tableName = tableName
+                    override val where = null
+                }
             )
         }.toKronosActionTask().execute(dataSource)
 
@@ -117,7 +136,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         ),
         mapOf("tableName" to instance.kronosTableName()),
         KOperationType.TRUNCATE,
-        DDLInfo(T::class, instance.kronosTableName())
+        object : KActionInfo {
+            override val kClass = T::class
+            override val statement = DdlStatement(DdlType.other, table(instance.kronosTableName()))
+            override val tableName = instance.kronosTableName()
+            override val where = null
+        }
     ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -132,7 +156,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 getTableTruncateSql(dataSource.dbType, name, restartIdentity),
                 mapOf("tableName" to name),
                 KOperationType.TRUNCATE,
-                DDLInfo(null, name)
+                object : KActionInfo {
+                    override val kClass = null
+                    override val statement = DdlStatement(DdlType.other, table(name))
+                    override val tableName = name
+                    override val where = null
+                }
             )
         }.toKronosActionTask().execute(dataSource)
 

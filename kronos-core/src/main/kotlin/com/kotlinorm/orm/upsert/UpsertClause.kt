@@ -41,6 +41,15 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
+import com.kotlinorm.ast.AstSqlRenderer
+import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.UpdateStatement
+import com.kotlinorm.ast.ValuesSource
+import com.kotlinorm.ast.NamedParam
+import com.kotlinorm.ast.CriteriaExpr
+import com.kotlinorm.ast.table
+import com.kotlinorm.ast.Assignment
+import com.kotlinorm.ast.ColumnRef
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
@@ -82,6 +91,10 @@ class UpsertClause<T : KPojo>(
     private var cascadeAllowed: Set<Field>? = null
     private var lock: PessimisticLock? = null
     private var paramMapNew = mutableMapOf<Field, Any?>()
+    
+    // AST structures for SQL generation
+    private var insertStatement: InsertStatement? = null
+    private var updateStatement: UpdateStatement? = null
 
     init {
         if (setUpsertFields != null) {
@@ -204,6 +217,52 @@ class UpsertClause<T : KPojo>(
                 toUpdateFields += field
                 paramMap[field.name] = value
             }
+            
+            // Build AST for onConflict SQL
+            val insertAssignments = toInsertFields.map { field ->
+                Assignment(
+                    ColumnRef(tableAlias = field.tableName, column = field.columnName, sourceField = field),
+                    NamedParam(":" + field.name)
+                )
+            }
+            
+            val updateAssignments = toUpdateFields.map { field ->
+                Assignment(
+                    ColumnRef(tableAlias = field.tableName, column = field.columnName, sourceField = field),
+                    NamedParam(":" + field.name)
+                )
+            }
+            
+            insertStatement = InsertStatement(
+                target = table(tableName),
+                columns = toInsertFields.map { it.columnName }.toMutableList(),
+                source = ValuesSource(listOf(toInsertFields.map { NamedParam(":" + it.name) }))
+            )
+            
+            updateStatement = UpdateStatement(
+                target = table(tableName),
+                set = updateAssignments.toMutableList(),
+                where = onFields.filter { it.isColumn && it.name in paramMap.keys }
+                    .map { it.eq(paramMap[it.name]) }
+                    .toCriteria()
+                    ?.let { CriteriaExpr(it) }
+            )
+            
+            // Use database support for onConflict SQL generation
+            val dbSupport = com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport(dataSource.dbType)!!
+            val insertRendered = dbSupport.getInsertSqlWithParams(dataSource, insertStatement!!)
+            val sql = insertRendered.sql
+            val renderedParams = insertRendered.params
+            
+            val updateRendered = dbSupport.getUpdateSqlWithParams(dataSource, updateStatement!!)
+            val updateSql = updateRendered.sql
+            val updateParams = updateRendered.params
+            
+            // Merge parameters
+            val finalParamMap = paramMap.toMutableMap()
+            finalParamMap.putAll(renderedParams)
+            finalParamMap.putAll(updateParams)
+            
             return KronosAtomicActionTask(
                 SqlManager.getOnConflictSql(
                     dataSource, ConflictResolver(
@@ -213,7 +272,7 @@ class UpsertClause<T : KPojo>(
                         toInsertFields
                     )
                 ),
-                paramMap,
+                finalParamMap,
                 operationType = KOperationType.UPSERT
             ).toKronosActionTask()
         } else {
@@ -228,10 +287,10 @@ class UpsertClause<T : KPojo>(
                             selectFields =
                                 linkedSetOf(Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL))
                             selectAll = false
-                            condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
-                                .map {
-                                    it.eq(paramMap[it.name])
-                                }.toCriteria()
+                            by { t ->
+                                onFields.filter { it.isColumn && it.name in paramMap.keys }
+                                    .map { it.eq(paramMap[it.name]) }.toCriteria()!!
+                            }
                         }
                         .queryOneOrNull<Int>() ?: 0)
                     > 0
@@ -239,12 +298,13 @@ class UpsertClause<T : KPojo>(
                     pojo.update().cascade(cascadeEnabled)
                         .apply {
                             this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
-                            this@apply.toUpdateFields = this@UpsertClause.toUpdateFields
                             this@UpsertClause.toUpdateFields.forEach {
                                 this@apply.paramMapNew[it + "New"] = paramMap[it.name]
                             }
-                            condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
-                                .map { it.eq(paramMap[it.name]) }.toCriteria()
+                            by { t ->
+                                onFields.filter { it.isColumn && it.name in paramMap.keys }
+                                    .map { it.eq(paramMap[it.name]) }.toCriteria()!!
+                            }
                         }
                         .execute(wrapper)
                 } else {

@@ -34,7 +34,7 @@ import com.kotlinorm.enums.NoValueStrategyType.JudgeNull
 import com.kotlinorm.enums.NoValueStrategyType.Ignore
 import com.kotlinorm.enums.NoValueStrategyType.False
 import com.kotlinorm.interfaces.NoValueStrategy
-import com.kotlinorm.utils.ConditionSqlBuilder.isEmptyArrayOrCollection
+import com.kotlinorm.utils.CollectionUtils
 
 object DefaultNoValueStrategy : NoValueStrategy {
     override fun ifNoValue(kOperateType: KOperationType, criteria: Criteria): NoValueStrategyType {
@@ -47,7 +47,7 @@ object DefaultNoValueStrategy : NoValueStrategy {
             }
 
             else ->
-                if (criteria.type == In && criteria.value.isEmptyArrayOrCollection())
+                if (criteria.type == In && CollectionUtils.isEmptyArrayOrCollection(criteria.value))
                     NoValueStrategyType.fromValue((criteria.not).toString())
                 else
                     Ignore

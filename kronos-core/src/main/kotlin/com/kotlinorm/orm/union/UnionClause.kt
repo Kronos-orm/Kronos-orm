@@ -20,7 +20,7 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.SelectClause
-import com.kotlinorm.utils.ConditionSqlBuilder
+import com.kotlinorm.utils.KeyCounter
 
 open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
     private val tasks = tasks.toMutableList()
@@ -44,7 +44,7 @@ open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
         queryFunction: (KronosQueryTask) -> List<Map<String, Any?>>
     ): List<Map<String, Any?>> {
         prepareTasks()
-        val safeKeyList = getUniqueTask(ConditionSqlBuilder.KeyCounter())
+        val safeKeyList = getUniqueTask(KeyCounter())
 
         val resultMap = safeKeyList.mapIndexed { index, safeKey ->
             val result = queryFunction(builtTasks[index])
@@ -58,12 +58,10 @@ open class UnionClause(tasks: List<SelectClause<out KPojo>>) {
         builtTasks = tasks.map { it.build() }
     }
 
-    private fun getUniqueTask(keyCounters: ConditionSqlBuilder.KeyCounter): List<String> {
+    private fun getUniqueTask(keyCounters: KeyCounter): List<String> {
         val fieldCountMap = mutableMapOf<String, Int>()
         safeKeyList = tasks.map { task ->
-            val safeKey = ConditionSqlBuilder.getSafeKey(
-                task.pojo::class.simpleName.toString(), keyCounters, mutableMapOf(), task
-            )
+            val safeKey = "${task.pojo::class.simpleName}_${keyCounters.getNext(task.pojo::class.simpleName.toString())}"
             task.selectFields.forEach { field ->
                 fieldCountMap[field.name] = fieldCountMap.getOrDefault(field.name, 0) + 1
             }

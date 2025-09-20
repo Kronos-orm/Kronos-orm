@@ -61,20 +61,39 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
+        // Build records task with current statement
         val recordsTask = selectClause.build(wrapper)
-        selectClause.pageEnabled = false
-        selectClause.limitCapacity = 0
-        if(selectClause.selectAll || selectClause.selectFields.none { it.type == CUSTOM_CRITERIA_SQL }) {
+        
+        // Create count task by modifying the statement
+        val originalLimit = selectClause.selectStatement.limit
+        val originalOffset = selectClause.selectStatement.offset
+        val originalSelectAll = selectClause.selectStatement.selectAll
+        val originalSelectFields = selectClause.selectFields.toSet()
+        
+        // Reset pagination for count query
+        selectClause.selectStatement.limit = null
+        selectClause.selectStatement.offset = null
+        
+        // Set count projection
+        if(selectClause.selectStatement.selectAll || selectClause.selectFields.none { it.type == CUSTOM_CRITERIA_SQL }) {
             // 不能直接将 select字段变成1，因为查询的字段可能在where条件中使用
             // 例如：select (select count(1) from table1) as count from table2 where count > 0
             // 只有查询的字段为空或者没有自定义sql时才能将select字段变成1
             selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
-            selectClause.selectAll = false
+            selectClause.selectStatement.selectAll = false
         }
+        
         val cntTask = selectClause.build(wrapper)
         cntTask.atomicTask.sql = "SELECT COUNT(*) FROM (${cntTask.atomicTask.sql}) AS total_count"
         cntTask.beforeQuery = null
         cntTask.afterQuery = null
+        
+        // Restore original statement state
+        selectClause.selectStatement.limit = originalLimit
+        selectClause.selectStatement.offset = originalOffset
+        selectClause.selectStatement.selectAll = originalSelectAll
+        selectClause.selectFields = originalSelectFields.toCollection(linkedSetOf())
+        
         return cntTask to recordsTask
     }
 }

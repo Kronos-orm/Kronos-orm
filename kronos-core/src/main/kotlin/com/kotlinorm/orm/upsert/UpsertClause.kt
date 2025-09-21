@@ -230,7 +230,7 @@ class UpsertClause<T : KPojo>(
                                         column = field.columnName,
                                         sourceField = field
                                 ),
-                                NamedParam(":" + field.name)
+                                NamedParam(field.name)
                         )
                     }
 
@@ -242,7 +242,7 @@ class UpsertClause<T : KPojo>(
                                         column = field.columnName,
                                         sourceField = field
                                 ),
-                                NamedParam(":" + field.name)
+                                NamedParam(field.name)
                         )
                     }
 
@@ -251,9 +251,7 @@ class UpsertClause<T : KPojo>(
                             target = table(tableName),
                             columns = toInsertFields.map { it.columnName }.toMutableList(),
                             source =
-                                    ValuesSource(
-                                            listOf(toInsertFields.map { NamedParam(":" + it.name) })
-                                    )
+                                    ValuesSource(listOf(toInsertFields.map { NamedParam(it.name) }))
                     )
 
             updateStatement =

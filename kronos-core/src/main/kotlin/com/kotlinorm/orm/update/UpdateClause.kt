@@ -23,8 +23,6 @@ import com.kotlinorm.ast.Statement
 import com.kotlinorm.ast.TableName
 import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.ast.table
-import com.kotlinorm.beans.dsl.Criteria
-import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -108,11 +106,12 @@ class UpdateClause<T : KPojo>(
                     val paramName = "${columnName}New"
                     updateStatement?.let { stmt ->
                         stmt.set.add(
-                            Assignment(
-                                ColumnRef(column = columnName, tableAlias = null),
-                                NamedParam(paramName)
-                            )
+                                Assignment(
+                                        ColumnRef(column = columnName, tableAlias = null),
+                                        NamedParam(paramName)
+                                )
                         )
+                        stmt.toUpdateFields.add(field)
                         paramMapNew[field] = paramMap[columnName]
                     }
                 }
@@ -125,11 +124,12 @@ class UpdateClause<T : KPojo>(
                     val paramName = "${columnName}New"
                     updateStatement?.let { stmt ->
                         stmt.set.add(
-                            Assignment(
-                                ColumnRef(column = columnName, tableAlias = null),
-                                NamedParam(paramName)
-                            )
+                                Assignment(
+                                        ColumnRef(column = columnName, tableAlias = null),
+                                        NamedParam(paramName)
+                                )
                         )
+                        stmt.toUpdateFields.add(field)
                         paramMapNew[field] = paramMap[columnName]
                     }
                 }
@@ -303,8 +303,7 @@ class UpdateClause<T : KPojo>(
         ) {
             allFields.forEach { field ->
                 updateStatement?.addUpdateField(field)
-                paramMapNew[field + "New"] =
-                        processParams(wrapper.orDefault(), field, paramMap[field.name])
+                paramMapNew[field] = processParams(wrapper.orDefault(), field, paramMap[field.name])
             }
         }
 
@@ -327,22 +326,19 @@ class UpdateClause<T : KPojo>(
 
         createTimeStrategy?.apply {
             updateStatement?.toUpdateFields?.remove(field)
-            paramMapNew -= field + "New"
+            paramMapNew -= field
         }
 
         // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
         updateTimeStrategy?.execute(true) { field, value ->
             updateStatement?.addUpdateField(field)
-            paramMapNew[field + "New"] = processParams(wrapper.orDefault(), field, value)
+            paramMapNew[field] = processParams(wrapper.orDefault(), field, value)
         }
 
         // 去重和过滤更新字段
         updateStatement?.toUpdateFields?.let { fields ->
-            val distinctFields = fields
-                    .asSequence()
-                    .distinctBy { it.columnName }
-                    .filter { it.isColumn }
-                    .toList()
+            val distinctFields =
+                    fields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList()
             fields.clear()
             fields.addAll(distinctFields)
         }
@@ -366,48 +362,44 @@ class UpdateClause<T : KPojo>(
             val paramName = field.name + "New"
             assignments +=
                     Assignment(
-                            ColumnRef(column = field.columnName, tableAlias = field.tableName),
+                            ColumnRef(column = field.columnName, tableAlias = null),
                             NamedParam(paramName)
                     )
         }
         updateStatement?.plusAssigns?.forEach { (field, paramKey) ->
             assignments +=
                     Assignment(
-                            ColumnRef(tableAlias = field.tableName, column = field.columnName),
+                            ColumnRef(tableAlias = null, column = field.columnName),
                             BinaryOp(
-                                    ColumnRef(
-                                            tableAlias = field.tableName,
-                                            column = field.columnName
-                                    ),
+                                    ColumnRef(tableAlias = null, column = field.columnName),
                                     "+",
-                                    NamedParam(":" + paramKey)
+                                    NamedParam(paramKey)
                             )
                     )
         }
         updateStatement?.minusAssigns?.forEach { (field, paramKey) ->
             assignments +=
                     Assignment(
-                            ColumnRef(tableAlias = field.tableName, column = field.columnName),
+                            ColumnRef(tableAlias = null, column = field.columnName),
                             BinaryOp(
-                                    ColumnRef(
-                                            tableAlias = field.tableName,
-                                            column = field.columnName
-                                    ),
+                                    ColumnRef(tableAlias = null, column = field.columnName),
                                     "-",
-                                    NamedParam(":" + paramKey)
+                                    NamedParam(paramKey)
                             )
                     )
         }
         // 构建AST结构
-        updateStatement = UpdateStatement(
-                target = table(tableName),
-                set = assignments.toMutableList(),
-                where = updateStatement?.where
-        )
+        updateStatement =
+                UpdateStatement(
+                        target = table(tableName),
+                        set = assignments.toMutableList(),
+                        where = updateStatement?.where
+                )
 
         // 通过DatabaseSupport渲染SQL
-        val support = getDBSupport(wrapper.orDefault().dbType)
-                ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
+        val support =
+                getDBSupport(wrapper.orDefault().dbType)
+                        ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
         val rendered = support.getUpdateSqlWithParams(wrapper.orDefault(), updateStatement!!)
         val sql = rendered.sql
         paramMap.putAll(rendered.params)
@@ -415,11 +407,17 @@ class UpdateClause<T : KPojo>(
         // 合并参数映射，准备执行SQL所需的参数
         val fieldMap = fieldsMapCache[kClass]!!
         paramMapNew.forEach { (key, value) ->
-            val field = fieldMap[key.name]
+            val paramName =
+                    if (key is Field) {
+                        key.name + "New"
+                    } else {
+                        key.name
+                    }
+            val field = if (key is Field) key else fieldMap[key.name]
             if (field != null && value != null) {
-                paramMap[key.name] = processParams(wrapper.orDefault(), field, value)
+                paramMap[paramName] = processParams(wrapper.orDefault(), field, value)
             } else {
-                paramMap[key.name] = value
+                paramMap[paramName] = value
             }
         }
 
@@ -445,7 +443,9 @@ class UpdateClause<T : KPojo>(
                 kClass,
                 paramMap.toMap(),
                 (updateStatement?.toUpdateFields ?: emptySet()).toCollection(linkedSetOf()),
-                (updateStatement?.where as? CriteriaExpr)?.let { /* legacy prop */ null },
+                (updateStatement?.where as? CriteriaExpr)?.let { /* legacy prop */
+                    null
+                },
                 rootTask
         )
     }

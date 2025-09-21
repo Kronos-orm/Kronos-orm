@@ -376,7 +376,7 @@ object AstSqlRenderer {
                             }
                             else -> "'" + v.toString().replace("'", "''") + "'"
                         }
-                is NamedParam -> e.name
+                is NamedParam -> ":" + e.name
                 is PositionalParam -> "?" // index ignored here
                 is UnaryOp -> "${e.op} ${paren(renderExpr(wrapper, support, e.expr))}"
                 is BinaryOp ->

@@ -109,7 +109,7 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                     // 如果已有statement，需要合并条件
                     val existingCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
                     if (existingCriteria != null) {
-                        existingCriteria.criteria.children.addAll(criteria.children)
+                        existingCriteria.criteria.children.add(criteria)
                     }
                 }
             }
@@ -154,18 +154,14 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             criteriaParamMap = paramMap
             deleteCondition(it)
             if (criteria == null) return@afterFilter
-            val currentCriteria = criteria!!
             if (statement == null) {
                 statement =
-                        DeleteStatement(
-                                target = table(tableName),
-                                where = CriteriaExpr(currentCriteria)
-                        )
+                        DeleteStatement(target = table(tableName), where = CriteriaExpr(criteria!!))
             } else {
                 // 如果已经有statement，需要合并条件
                 val existingCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
                 if (existingCriteria != null) {
-                    existingCriteria.criteria.children.addAll(currentCriteria.children)
+                    existingCriteria.criteria.children.add(criteria!!)
                 }
             }
         }
@@ -217,6 +213,20 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
         }
 
+        // 在构建参数映射之前，铺平条件树
+        val currentCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
+        if (currentCriteria != null) {
+            val flattenedCriteria = currentCriteria.criteria.flatten()
+            if (flattenedCriteria != null) {
+                // 创建一个新的 CriteriaExpr 来替换现有的
+                statement =
+                        DeleteStatement(
+                                target = (statement as DeleteStatement).target,
+                                where = CriteriaExpr(flattenedCriteria)
+                        )
+            }
+        }
+
         // 构建条件参数映射（通过 AST 渲染收集）
         val paramMap = mutableMapOf<String, Any?>()
 
@@ -260,21 +270,18 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             assignments +=
                     toUpdateFields.map { field ->
                         Assignment(
-                                ColumnRef(tableAlias = field.tableName, column = field.columnName),
-                                NamedParam(":" + field.name + "New")
+                                ColumnRef(tableAlias = null, column = field.columnName),
+                                NamedParam(field.name + "New")
                         )
                     }
             plusAssign?.let { (field, paramKey) ->
                 assignments +=
                         Assignment(
-                                ColumnRef(tableAlias = field.tableName, column = field.columnName),
+                                ColumnRef(tableAlias = null, column = field.columnName),
                                 BinaryOp(
-                                        ColumnRef(
-                                                tableAlias = field.tableName,
-                                                column = field.columnName
-                                        ),
+                                        ColumnRef(tableAlias = null, column = field.columnName),
                                         "+",
-                                        NamedParam(":" + paramKey)
+                                        NamedParam(paramKey)
                                 )
                         )
             }

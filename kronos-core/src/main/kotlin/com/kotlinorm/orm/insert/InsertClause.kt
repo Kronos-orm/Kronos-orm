@@ -140,10 +140,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 InsertStatement(
                         target = table(tableName),
                         columns = toInsertFields.map { it.columnName }.toMutableList(),
-                        source =
-                                ValuesSource(
-                                        listOf(toInsertFields.map { NamedParam(":" + it.name) })
-                                )
+                        source = ValuesSource(listOf(toInsertFields.map { NamedParam(it.name) }))
                 )
 
         // 通过DatabaseSupport渲染SQL

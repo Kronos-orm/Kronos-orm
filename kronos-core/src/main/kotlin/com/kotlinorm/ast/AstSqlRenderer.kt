@@ -1,21 +1,20 @@
 package com.kotlinorm.ast
 
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
+import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.database.SqlManager.quoted
-import com.kotlinorm.beans.dsl.Field
 
 /**
- * SQL renderer utility for the AST. Provides default implementations that can be used by
- * database support classes. Each database support class can override these methods to provide
+ * SQL renderer utility for the AST. Provides default implementations that can be used by database
+ * support classes. Each database support class can override these methods to provide
  * database-specific SQL rendering.
  */
 object AstSqlRenderer {
 
-    data class RenderedSql(
-            val sql: String,
-            val params: MutableMap<String, Any?> = mutableMapOf()
-    )
+    data class RenderedSql(val sql: String, val params: MutableMap<String, Any?> = mutableMapOf())
 
     fun renderInsert(
             wrapper: KronosDataSourceWrapper,
@@ -31,9 +30,11 @@ object AstSqlRenderer {
             stmt: InsertStatement
     ): RenderedSql {
         val cols =
-                if (stmt.columns.isEmpty()) "" else stmt.columns.joinToString(", ") { support.quote(it) }
-        val target = listOfNotNull(stmt.target.database, stmt.target.schema, stmt.target.table)
-                .joinToString(".") { support.quote(it) }
+                if (stmt.columns.isEmpty()) ""
+                else stmt.columns.joinToString(", ") { support.quote(it) }
+        val target =
+                listOfNotNull(stmt.target.database, stmt.target.schema, stmt.target.table)
+                        .joinToString(".") { support.quote(it) }
         val params = mutableMapOf<String, Any?>()
         val sql = buildString {
             append("INSERT INTO ")
@@ -75,31 +76,35 @@ object AstSqlRenderer {
             support: DatabasesSupport,
             stmt: UpdateStatement
     ): RenderedSql {
-        val target = listOfNotNull(stmt.target.database, stmt.target.schema, stmt.target.table)
-                .joinToString(".") { support.quote(it) }
+        val target =
+                listOfNotNull(stmt.target.database, stmt.target.schema, stmt.target.table)
+                        .joinToString(".") { support.quote(it) }
         val params = mutableMapOf<String, Any?>()
-        val setSql = stmt.set.joinToString(", ") { assign ->
-            val col = buildString {
-                if (!assign.column.tableAlias.isNullOrBlank()) {
-                    append(support.quote(assign.column.tableAlias!!))
-                    append('.')
+        val setSql =
+                stmt.set.joinToString(", ") { assign ->
+                    val col = buildString {
+                        if (!assign.column.tableAlias.isNullOrBlank()) {
+                            append(support.quote(assign.column.tableAlias!!))
+                            append('.')
+                        }
+                        append(support.quote(assign.column.column))
+                    }
+                    val v = renderExpr(wrapper, support, assign.value)
+                    "$col = $v"
                 }
-                append(support.quote(assign.column.column))
-            }
-            val v = renderExpr(wrapper, support, assign.value)
-            "$col = $v"
-        }
-        val whereSql = stmt.where?.let { w ->
-            when (w) {
-                is RawSqlExpr -> w.sql // may already contain WHERE
-                is CriteriaExpr -> {
-                    val (sql, map) = renderCriteriaWithParams(wrapper, support, w.criteria)
-                    params.putAll(map)
-                    " WHERE $sql"
+        val whereSql =
+                stmt.where?.let { w ->
+                    when (w) {
+                        is RawSqlExpr -> w.sql // may already contain WHERE
+                        is CriteriaExpr -> {
+                            val (sql, map) = renderCriteriaWithParams(wrapper, support, w.criteria)
+                            params.putAll(map)
+                            " WHERE $sql"
+                        }
+                        else -> " WHERE " + renderExpr(wrapper, support, w)
+                    }
                 }
-                else -> " WHERE " + renderExpr(wrapper, support, w)
-            }
-        } ?: ""
+                        ?: ""
         val sql = "UPDATE $target SET $setSql$whereSql"
         return RenderedSql(sql, params)
     }
@@ -458,11 +463,13 @@ object AstSqlRenderer {
     private fun renderCriteriaDirect(
             wrapper: KronosDataSourceWrapper,
             support: DatabasesSupport,
-            criteria: com.kotlinorm.beans.dsl.Criteria
+            criteria: Criteria
     ): String {
         return when (criteria.type) {
-            com.kotlinorm.enums.ConditionType.Equal -> "${criteria.field.quoted(wrapper)} = :${criteria.field.name}"
-            com.kotlinorm.enums.ConditionType.Like -> "${criteria.field.quoted(wrapper)} LIKE :${criteria.field.name}"
+            com.kotlinorm.enums.ConditionType.Equal ->
+                    "${criteria.field.quoted(wrapper)} = :${criteria.field.name}"
+            com.kotlinorm.enums.ConditionType.Like ->
+                    "${criteria.field.quoted(wrapper)} LIKE :${criteria.field.name}"
             com.kotlinorm.enums.ConditionType.In -> {
                 val value = criteria.value
                 if (value is List<*> && value.isEmpty()) {
@@ -471,47 +478,64 @@ object AstSqlRenderer {
                     "${criteria.field.quoted(wrapper)} IN (:${criteria.field.name}List)"
                 }
             }
-            com.kotlinorm.enums.ConditionType.Gt -> "${criteria.field.quoted(wrapper)} > :${criteria.field.name}Min"
-            com.kotlinorm.enums.ConditionType.Ge -> "${criteria.field.quoted(wrapper)} >= :${criteria.field.name}Min"
-            com.kotlinorm.enums.ConditionType.Lt -> "${criteria.field.quoted(wrapper)} < :${criteria.field.name}Max"
-            com.kotlinorm.enums.ConditionType.Le -> "${criteria.field.quoted(wrapper)} <= :${criteria.field.name}Max"
-            com.kotlinorm.enums.ConditionType.Between -> "${criteria.field.quoted(wrapper)} BETWEEN :${criteria.field.name}Min AND :${criteria.field.name}Max"
+            com.kotlinorm.enums.ConditionType.Gt ->
+                    "${criteria.field.quoted(wrapper)} > :${criteria.field.name}Min"
+            com.kotlinorm.enums.ConditionType.Ge ->
+                    "${criteria.field.quoted(wrapper)} >= :${criteria.field.name}Min"
+            com.kotlinorm.enums.ConditionType.Lt ->
+                    "${criteria.field.quoted(wrapper)} < :${criteria.field.name}Max"
+            com.kotlinorm.enums.ConditionType.Le ->
+                    "${criteria.field.quoted(wrapper)} <= :${criteria.field.name}Max"
+            com.kotlinorm.enums.ConditionType.Between ->
+                    "${criteria.field.quoted(wrapper)} BETWEEN :${criteria.field.name}Min AND :${criteria.field.name}Max"
             com.kotlinorm.enums.ConditionType.IsNull -> "${criteria.field.quoted(wrapper)} IS NULL"
             com.kotlinorm.enums.ConditionType.And -> {
-                val childSqls = criteria.children.filterNotNull().map { renderCriteriaDirect(wrapper, support, it) }
+                val childSqls =
+                        criteria.children.filterNotNull().map {
+                            renderCriteriaDirect(wrapper, support, it)
+                        }
                 if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" AND ")
             }
             com.kotlinorm.enums.ConditionType.Or -> {
-                val childSqls = criteria.children.filterNotNull().map { renderCriteriaDirect(wrapper, support, it) }
+                val childSqls =
+                        criteria.children.filterNotNull().map {
+                            renderCriteriaDirect(wrapper, support, it)
+                        }
                 if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" OR ")
             }
             com.kotlinorm.enums.ConditionType.Root -> {
-                val childSqls = criteria.children.filterNotNull().map { renderCriteriaDirect(wrapper, support, it) }
+                val childSqls =
+                        criteria.children.filterNotNull().map {
+                            renderCriteriaDirect(wrapper, support, it)
+                        }
                 if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" AND ")
             }
-            com.kotlinorm.enums.ConditionType.Regexp -> "${criteria.field.quoted(wrapper)} REGEXP :${criteria.field.name}Pattern"
-            com.kotlinorm.enums.ConditionType.Sql -> criteria.value as? String ?: criteria.field.quoted(wrapper)
-            else -> "${criteria.field.quoted(wrapper)} ${criteria.type.value} :${criteria.field.name}"
+            com.kotlinorm.enums.ConditionType.Regexp ->
+                    "${criteria.field.quoted(wrapper)} REGEXP :${criteria.field.name}Pattern"
+            com.kotlinorm.enums.ConditionType.Sql -> criteria.value as? String
+                            ?: criteria.field.quoted(wrapper)
+            else ->
+                    "${criteria.field.quoted(wrapper)} ${criteria.type.value} :${criteria.field.name}"
         }
     }
 
     private fun renderCriteriaWithParams(
             wrapper: KronosDataSourceWrapper,
             support: DatabasesSupport,
-            criteria: com.kotlinorm.beans.dsl.Criteria,
+            criteria: Criteria,
             params: MutableMap<String, Any?> = mutableMapOf(),
             keyCounter: KeyCounterState = KeyCounterState()
     ): Pair<String, MutableMap<String, Any?>> {
         val sql = renderCriteriaDirect(wrapper, support, criteria).trim()
-        fun collect(c: com.kotlinorm.beans.dsl.Criteria?) {
+        fun collect(c: Criteria?) {
             if (c == null) return
             val field = c.field
             val v = c.value
             when (c.type) {
                 com.kotlinorm.enums.ConditionType.Equal -> {
-                    if (v !is com.kotlinorm.beans.dsl.Field) {
+                    if (v !is Field) {
                         val key = safeKey(field.name, keyCounter, params, c)
-                        if (v != null && v !is com.kotlinorm.beans.dsl.FunctionField) params[key] = v
+                        if (v != null && v !is FunctionField) params[key] = v
                     }
                 }
                 com.kotlinorm.enums.ConditionType.Like -> {
@@ -545,10 +569,12 @@ object AstSqlRenderer {
                     val key = safeKey(field.name + "Pattern", keyCounter, params, c)
                     if (v != null) params[key] = v
                 }
-                com.kotlinorm.enums.ConditionType.And, com.kotlinorm.enums.ConditionType.Or, com.kotlinorm.enums.ConditionType.Root -> {
+                com.kotlinorm.enums.ConditionType.And,
+                com.kotlinorm.enums.ConditionType.Or,
+                com.kotlinorm.enums.ConditionType.Root -> {
                     c.children.forEach { collect(it) }
                 }
-                else -> { }
+                else -> {}
             }
         }
         collect(criteria)
@@ -564,19 +590,21 @@ object AstSqlRenderer {
         if (!keyCounters.initialized) {
             keyCounters.initialized = true
             dataMap.keys.forEach { key ->
-                val (k, c) = if (key.contains("@")) {
-                    val split = key.split("@")
-                    split[0] to split[1].toInt()
-                } else {
-                    key to 0
-                }
+                val (k, c) =
+                        if (key.contains("@")) {
+                            val split = key.split("@")
+                            split[0] to split[1].toInt()
+                        } else {
+                            key to 0
+                        }
                 keyCounters.metaOfMap.getOrPut(k) { mutableMapOf() }[c] = dataMap[key]
             }
         }
-        val value = when (data) {
-            is com.kotlinorm.beans.dsl.Criteria -> data.value
-            else -> data
-        }
+        val value =
+                when (data) {
+                    is Criteria -> data.value
+                    else -> data
+                }
         val keyCount = keyCounters.metaOfMap[keyName]?.toList()?.firstOrNull { it.second == value }
         return if (keyCount == null) {
             val counter = keyCounters.metaOfMap[keyName]?.keys?.maxOrNull() ?: -1

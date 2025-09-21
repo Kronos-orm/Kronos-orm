@@ -16,8 +16,6 @@ package com.kotlinorm.orm.insert
 import com.kotlinorm.ast.InsertStatement
 import com.kotlinorm.ast.NamedParam
 import com.kotlinorm.ast.ValuesSource
-import com.kotlinorm.ast.SelectSource
-import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.ast.table
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -37,7 +35,6 @@ import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoPrimaryKeyCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
-import com.kotlinorm.database.SqlManager.getInsertSql
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.EmptyFieldsException
@@ -52,7 +49,7 @@ import com.kotlinorm.utils.processParams
 
 class InsertClause<T : KPojo>(val pojo: T) {
     // 直接存储AST结构
-    private var insertStatement: com.kotlinorm.ast.InsertStatement? = null
+    private var insertStatement: InsertStatement? = null
     private val paramMap = pojo.toDataMap()
     private val tableName = pojo.kronosTableName()
     private var kClass = pojo.kClass()
@@ -150,15 +147,17 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 )
 
         // 通过DatabaseSupport渲染SQL
-        val support = getDBSupport(wrapper.orDefault().dbType)
-                ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
+        val support =
+                getDBSupport(wrapper.orDefault().dbType)
+                        ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
         val rendered = support.getInsertSqlWithParams(wrapper.orDefault(), insertStatement!!)
-        val sql = insertSqlCache[
-                kClass to useIdentity,
-                {
-                    insertSqlCache[kClass to useIdentity] = rendered.sql
-                    rendered.sql
-                }]
+        val sql =
+                insertSqlCache[
+                        kClass to useIdentity,
+                        {
+                            insertSqlCache[kClass to useIdentity] = rendered.sql
+                            rendered.sql
+                        }]
 
         return CascadeInsertClause.build(
                 cascadeEnabled,

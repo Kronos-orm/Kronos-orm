@@ -13,6 +13,11 @@
  */
 package com.kotlinorm.database.mysql
 
+import com.kotlinorm.ast.AstSqlRenderer
+import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
@@ -70,7 +75,6 @@ import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.utils.extractNumberInParentheses
 import com.kotlinorm.utils.trimWhitespace
-import com.kotlinorm.ast.AstSqlRenderer
 import java.math.BigInteger
 
 object MysqlSupport : DatabasesSupport {
@@ -405,41 +409,41 @@ object MysqlSupport : DatabasesSupport {
     // AST-based SQL rendering methods
     override fun getSelectSql(
             dataSource: KronosDataSourceWrapper,
-            select: com.kotlinorm.ast.SelectStatement
+            select: SelectStatement
     ): String = AstSqlRenderer.renderSelect(dataSource, this, select)
 
     override fun getInsertSql(
             dataSource: KronosDataSourceWrapper,
-            insert: com.kotlinorm.ast.InsertStatement
+            insert: InsertStatement
     ): String = AstSqlRenderer.renderInsert(dataSource, this, insert)
 
     override fun getUpdateSql(
             dataSource: KronosDataSourceWrapper,
-            update: com.kotlinorm.ast.UpdateStatement
+            update: UpdateStatement
     ): String = AstSqlRenderer.renderUpdate(dataSource, this, update)
 
     override fun getDeleteSql(
             dataSource: KronosDataSourceWrapper,
-            delete: com.kotlinorm.ast.DeleteStatement
+            delete: DeleteStatement
     ): String = AstSqlRenderer.renderDelete(dataSource, this, delete)
 
     override fun getSelectSqlWithParams(
             dataSource: KronosDataSourceWrapper,
-            select: com.kotlinorm.ast.SelectStatement
+            select: SelectStatement
     ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderSelectWithParams(dataSource, this, select)
 
     override fun getInsertSqlWithParams(
             dataSource: KronosDataSourceWrapper,
-            insert: com.kotlinorm.ast.InsertStatement
+            insert: InsertStatement
     ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderInsertWithParams(dataSource, this, insert)
 
     override fun getUpdateSqlWithParams(
             dataSource: KronosDataSourceWrapper,
-            update: com.kotlinorm.ast.UpdateStatement
+            update: UpdateStatement
     ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderUpdateWithParams(dataSource, this, update)
 
     override fun getDeleteSqlWithParams(
             dataSource: KronosDataSourceWrapper,
-            delete: com.kotlinorm.ast.DeleteStatement
+            delete: DeleteStatement
     ): AstSqlRenderer.RenderedSql = AstSqlRenderer.renderDeleteWithParams(dataSource, this, delete)
 }

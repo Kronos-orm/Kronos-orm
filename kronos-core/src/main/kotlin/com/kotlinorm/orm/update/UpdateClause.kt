@@ -17,10 +17,14 @@ import com.kotlinorm.ast.Assignment
 import com.kotlinorm.ast.BinaryOp
 import com.kotlinorm.ast.ColumnRef
 import com.kotlinorm.ast.CriteriaExpr
+import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.NamedParam
+import com.kotlinorm.ast.Statement
+import com.kotlinorm.ast.TableName
 import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.ast.table
 import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -37,11 +41,11 @@ import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
-import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeUpdateClause
@@ -56,7 +60,6 @@ import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.processParams
-import com.kotlinorm.utils.toLinkedSet
 
 /**
  * Update Clause
@@ -74,7 +77,7 @@ class UpdateClause<T : KPojo>(
         private var setUpdateFields: ToSelect<T, Any?> = null
 ) {
     // 直接存储AST结构
-    private var updateStatement: com.kotlinorm.ast.UpdateStatement? = null
+    private var updateStatement: UpdateStatement? = null
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
     private var kClass = pojo.kClass()
@@ -93,14 +96,41 @@ class UpdateClause<T : KPojo>(
      * 2. 遍历更新字段列表，将字段名拼接为"New"格式，并映射到参数映射表中。
      */
     init {
-        // 如果设置了更新字段，则进行字段配置和更新字段列表的构建
+        // Initialize update statement with target table
+        updateStatement = UpdateStatement(TableName(table = tableName), mutableListOf())
+
+        // Process update fields if provided
         if (setUpdateFields != null) {
             pojo.afterSelect {
-                setUpdateFields!!(it) // 配置更新字段
-                updateStatement?.let { stmt ->
-                    fields.forEach { field ->
-                        stmt.addUpdateField(field)
-                        paramMapNew[field + "New"] = paramMap[field.name]
+                setUpdateFields!!(it) // Configure update fields
+                fields.forEach { field ->
+                    val columnName = field.name
+                    val paramName = "${columnName}New"
+                    updateStatement?.let { stmt ->
+                        stmt.set.add(
+                            Assignment(
+                                ColumnRef(column = columnName, tableAlias = null),
+                                NamedParam(paramName)
+                            )
+                        )
+                        paramMapNew[field] = paramMap[columnName]
+                    }
+                }
+            }
+        } else {
+            // If no fields are specified, update all fields except the ID
+            allFields.forEach { field ->
+                if (field.name != "id") { // Skip ID field as it's typically not updated
+                    val columnName = field.name
+                    val paramName = "${columnName}New"
+                    updateStatement?.let { stmt ->
+                        stmt.set.add(
+                            Assignment(
+                                ColumnRef(column = columnName, tableAlias = null),
+                                NamedParam(paramName)
+                            )
+                        )
+                        paramMapNew[field] = paramMap[columnName]
                     }
                 }
             }
@@ -134,13 +164,13 @@ class UpdateClause<T : KPojo>(
                 paramMapNew[assignField + "2MinusNew"] = assign.second
             }
 
-            fields.filter { field ->
-                field !in
-                        plusAssign.map { item -> item.first } +
-                                minusAssign.map { item -> item.first }
-            }.forEach { field ->
-                updateStatement?.addUpdateField(field)
-            }
+            fields
+                    .filter { field ->
+                        field !in
+                                plusAssign.map { item -> item.first } +
+                                        minusAssign.map { item -> item.first }
+                    }
+                    .forEach { field -> updateStatement?.addUpdateField(field) }
             paramMapNew.putAll(
                     fieldParamMap
                             .filter { field ->
@@ -189,11 +219,13 @@ class UpdateClause<T : KPojo>(
 
             // 根据fields中的字段及其值构建删除条件
             val newCondition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
-            updateStatement?.let { stmt ->
-                if (stmt.condition == null) {
-                    stmt.setWhereCriteria(newCondition)
-                } else {
-                    stmt.condition!!.children.add(newCondition)
+            if (newCondition != null) {
+                updateStatement?.let { stmt ->
+                    if (stmt.condition == null) {
+                        stmt.setWhereCriteria(newCondition)
+                    } else {
+                        stmt.condition!!.children.add(newCondition)
+                    }
                 }
             }
         }
@@ -261,16 +293,18 @@ class UpdateClause<T : KPojo>(
                             }
                             .toList()
                             .toCriteria()
-            updateStatement?.setWhereCriteria(defaultCondition)
+            defaultCondition?.let { updateStatement?.setWhereCriteria(it) }
         }
 
         // 如果没有指定字段需要更新，则更新所有字段
-        if (updateStatement?.toUpdateFields?.isEmpty() == true && 
-            updateStatement?.plusAssigns?.isEmpty() == true && 
-            updateStatement?.minusAssigns?.isEmpty() == true) {
+        if (updateStatement?.toUpdateFields?.isEmpty() == true &&
+                        updateStatement?.plusAssigns?.isEmpty() == true &&
+                        updateStatement?.minusAssigns?.isEmpty() == true
+        ) {
             allFields.forEach { field ->
                 updateStatement?.addUpdateField(field)
-                paramMapNew[field + "New"] = processParams(wrapper.orDefault(), field, paramMap[field.name])
+                paramMapNew[field + "New"] =
+                        processParams(wrapper.orDefault(), field, paramMap[field.name])
             }
         }
 
@@ -314,7 +348,8 @@ class UpdateClause<T : KPojo>(
         }
 
         optimisticStrategy?.execute { field, _ ->
-            if (updateStatement?.toUpdateFields?.any { it.columnName == field.columnName } == true) {
+            if (updateStatement?.toUpdateFields?.any { it.columnName == field.columnName } == true
+            ) {
                 throw IllegalArgumentException("The version field cannot be updated manually.")
             }
 
@@ -328,10 +363,11 @@ class UpdateClause<T : KPojo>(
         // Build AST UpdateStatement
         val assignments = mutableListOf<Assignment>()
         updateStatement?.toUpdateFields?.forEach { field ->
+            val paramName = field.name + "New"
             assignments +=
                     Assignment(
-                            ColumnRef(tableAlias = field.tableName, column = field.columnName),
-                            NamedParam(":" + field.name + "New")
+                            ColumnRef(column = field.columnName, tableAlias = field.tableName),
+                            NamedParam(paramName)
                     )
         }
         updateStatement?.plusAssigns?.forEach { (field, paramKey) ->
@@ -394,13 +430,11 @@ class UpdateClause<T : KPojo>(
                         paramMap,
                         operationType = KOperationType.UPDATE,
                         actionInfo =
-                                object : com.kotlinorm.interfaces.KActionInfo {
+                                object : KActionInfo {
                                     override val kClass = this@UpdateClause.kClass
-                                    override val statement: com.kotlinorm.ast.Statement? =
-                                            updateStatement
+                                    override val statement: Statement? = updateStatement
                                     override val tableName: String? = this@UpdateClause.tableName
-                                    override val where: com.kotlinorm.ast.Expression? =
-                                            updateStatement?.where
+                                    override val where: Expression? = updateStatement?.where
                                 }
                 )
 

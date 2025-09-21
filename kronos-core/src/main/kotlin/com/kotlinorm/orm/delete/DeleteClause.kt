@@ -18,11 +18,12 @@ import com.kotlinorm.ast.BinaryOp
 import com.kotlinorm.ast.ColumnRef
 import com.kotlinorm.ast.CriteriaExpr
 import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.NamedParam
+import com.kotlinorm.ast.Statement
 import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.ast.table
 import com.kotlinorm.beans.config.KronosCommonStrategy
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -37,19 +38,17 @@ import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
-import com.kotlinorm.database.SqlManager.getDeleteSql
-import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeDeleteClause
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
- 
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
@@ -60,12 +59,12 @@ import com.kotlinorm.utils.processParams
 
 class DeleteClause<T : KPojo>(private val pojo: T) {
     // 直接存储AST结构
-    private var deleteStatement: com.kotlinorm.ast.DeleteStatement? = null
-    private var updateStatement: com.kotlinorm.ast.UpdateStatement? = null // 用于逻辑删除
+    private var deleteStatement: DeleteStatement? = null
+    private var updateStatement: UpdateStatement? = null // 用于逻辑删除
     private var kClass = pojo.kClass()
     private var paramMap = pojo.toDataMap()
     private var tableName = pojo.kronosTableName()
-    private var condition: Criteria? = null
+    private var statement: Statement? = null
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
@@ -98,12 +97,21 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
 
             // 根据fields中的字段及其值构建删除条件
-            if (condition == null) {
-                condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
-            } else {
-                condition!!.children.add(
-                        fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
-                )
+            val criteria = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+            if (criteria != null) {
+                if (statement == null) {
+                    statement =
+                            DeleteStatement(
+                                    target = table(tableName),
+                                    where = CriteriaExpr(criteria)
+                            )
+                } else {
+                    // 如果已有statement，需要合并条件
+                    val existingCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
+                    if (existingCriteria != null) {
+                        existingCriteria.criteria.children.addAll(criteria.children)
+                    }
+                }
             }
         }
         return this
@@ -146,11 +154,19 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             criteriaParamMap = paramMap
             deleteCondition(it)
             if (criteria == null) return@afterFilter
-            if (condition == null) {
-                condition = criteria
+            val currentCriteria = criteria!!
+            if (statement == null) {
+                statement =
+                        DeleteStatement(
+                                target = table(tableName),
+                                where = CriteriaExpr(currentCriteria)
+                        )
             } else {
-                // 如果已经有条件，则将新条件添加到现有条件中
-                condition!!.children.addAll(criteria!!.children)
+                // 如果已经有statement，需要合并条件
+                val existingCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
+                if (existingCriteria != null) {
+                    existingCriteria.criteria.children.addAll(currentCriteria.children)
+                }
             }
         }
         return this
@@ -167,14 +183,19 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
      */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        if (condition == null) {
+        if (statement == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition =
+            val defaultCriteria =
                     allColumns
                             .mapNotNull { field ->
                                 field.eq(paramMap[field.name]).takeIf { it.value != null }
                             }
                             .toCriteria()
+            statement =
+                    DeleteStatement(
+                            target = table(tableName),
+                            where = defaultCriteria?.let { CriteriaExpr(it) }
+                    )
         }
 
         // 设置逻辑删除的策略
@@ -182,12 +203,17 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             logicDeleteStrategy?.execute(
                     defaultValue = getDefaultBoolean(wrapper.orDefault(), false)
             ) { field, value ->
-                condition =
-                        listOfNotNull(
-                                        condition,
-                                        "${field.quoted(wrapper.orDefault())} = $value".asSql()
-                                )
-                                .toCriteria()
+                val currentCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
+                val newCriteria = "${field.quoted(wrapper.orDefault())} = $value".asSql()
+                if (currentCriteria != null) {
+                    currentCriteria.criteria.children.add(newCriteria)
+                } else {
+                    statement =
+                            DeleteStatement(
+                                    target = table(tableName),
+                                    where = CriteriaExpr(newCriteria)
+                            )
+                }
             }
         }
 
@@ -253,16 +279,18 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                         )
             }
             // 构建AST结构（逻辑删除使用UPDATE）
+            val whereCriteria = (statement as? DeleteStatement)?.where as? CriteriaExpr
             updateStatement =
                     UpdateStatement(
                             target = table(tableName),
                             set = assignments,
-                            where = condition?.let { CriteriaExpr(it) }
+                            where = whereCriteria
                     )
 
             // 通过DatabaseSupport渲染SQL
-            val support = getDBSupport(wrapper.orDefault().dbType)
-                    ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
+            val support =
+                    getDBSupport(wrapper.orDefault().dbType)
+                            ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
             val rendered = support.getUpdateSqlWithParams(wrapper.orDefault(), updateStatement!!)
             val sql = rendered.sql
             paramMap.putAll(rendered.params)
@@ -271,7 +299,9 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                     cascadeAllowed,
                     kClass,
                     pojo,
-                    (updateStatement?.where as? CriteriaExpr)?.let { /* legacy */ null },
+                    (updateStatement?.where as? CriteriaExpr)?.let { /* legacy */
+                        null
+                    },
                     paramMap,
                     true,
                     KronosAtomicActionTask(
@@ -279,30 +309,28 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                             paramMap,
                             operationType = KOperationType.DELETE,
                             actionInfo =
-                                    object : com.kotlinorm.interfaces.KActionInfo {
+                                    object : KActionInfo {
                                         override val kClass = this@DeleteClause.kClass
-                                        override val statement: com.kotlinorm.ast.Statement? =
-                                                updateStatement
+                                        override val statement: Statement? = updateStatement
                                         override val tableName: String? =
                                                 this@DeleteClause.tableName
-                                        override val where: com.kotlinorm.ast.Expression? =
-                                                updateStatement?.where
+                                        override val where: Expression? = updateStatement?.where
                                     }
                     )
             )
         } else {
             // 构建AST结构（物理删除使用DELETE）
             deleteStatement =
-                    DeleteStatement(
-                            target = table(tableName),
-                            where = condition?.let { CriteriaExpr(it) }
-                    )
+                    statement as? DeleteStatement
+                            ?: DeleteStatement(target = table(tableName), where = null)
 
             // 通过DatabaseSupport渲染SQL
-            val support = getDBSupport(wrapper.orDefault().dbType)
-                    ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
-            val renderedSql = support.getDeleteSql(wrapper.orDefault(), deleteStatement!!)
-            val sql = renderedSql
+            val support =
+                    getDBSupport(wrapper.orDefault().dbType)
+                            ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
+            val rendered = support.getDeleteSqlWithParams(wrapper.orDefault(), deleteStatement!!)
+            val sql = rendered.sql
+            paramMap.putAll(rendered.params)
             return CascadeDeleteClause.build(
                     cascadeEnabled,
                     cascadeAllowed,
@@ -316,14 +344,12 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
                             paramMap,
                             operationType = KOperationType.DELETE,
                             actionInfo =
-                                    object : com.kotlinorm.interfaces.KActionInfo {
+                                    object : KActionInfo {
                                         override val kClass = this@DeleteClause.kClass
-                                        override val statement: com.kotlinorm.ast.Statement? =
-                                                deleteStatement
+                                        override val statement: Statement? = deleteStatement
                                         override val tableName: String? =
                                                 this@DeleteClause.tableName
-                                        override val where: com.kotlinorm.ast.Expression? =
-                                                deleteStatement?.where
+                                        override val where: Expression? = deleteStatement?.where
                                     }
                     )
             )

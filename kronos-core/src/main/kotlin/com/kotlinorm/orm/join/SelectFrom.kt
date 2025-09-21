@@ -1,21 +1,19 @@
 /**
  * Copyright 2022-2025 kronos-orm
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * ```
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * ```
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
-
 package com.kotlinorm.orm.join
 
+import com.kotlinorm.ast.CriteriaExpr
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
 import com.kotlinorm.beans.dsl.KSelectable
@@ -40,12 +38,11 @@ import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
-import com.kotlinorm.ast.CriteriaExpr
-import com.kotlinorm.utils.KeyCounter
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.KeyCounter
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.logAndReturn
@@ -76,9 +73,9 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     private var cascadeSelectedProps: Set<Field>? = null
     private val databaseOfTable: MutableMap<String, String> = mutableMapOf()
     internal var operationType = KOperationType.SELECT
-    
+
     private val keyCounters = KeyCounter()
-    
+
     init {
         // Initialize the AST statement
         selectStatement.setFrom(tableName)
@@ -90,14 +87,13 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            
+
             // Set the condition directly on the statement
             if (criteria != null) {
                 selectStatement.setWhereCriteria(criteria)
             }
         }
     }
-
 
     /**
      * Performs a left join operation between two tables.
@@ -113,7 +109,15 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                    KJoinable(
+                            tableName,
+                            JoinType.LEFT_JOIN,
+                            criteria,
+                            T::class as KClass<KPojo>,
+                            another
+                    )
+            )
         }
     }
 
@@ -131,7 +135,15 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                    KJoinable(
+                            tableName,
+                            JoinType.RIGHT_JOIN,
+                            criteria,
+                            T::class as KClass<KPojo>,
+                            another
+                    )
+            )
         }
     }
 
@@ -149,7 +161,15 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                    KJoinable(
+                            tableName,
+                            JoinType.CROSS_JOIN,
+                            criteria,
+                            T::class as KClass<KPojo>,
+                            another
+                    )
+            )
         }
     }
 
@@ -167,7 +187,15 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                    KJoinable(
+                            tableName,
+                            JoinType.INNER_JOIN,
+                            criteria,
+                            T::class as KClass<KPojo>,
+                            another
+                    )
+            )
         }
     }
 
@@ -185,7 +213,15 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                    KJoinable(
+                            tableName,
+                            JoinType.FULL_JOIN,
+                            criteria,
+                            T::class as KClass<KPojo>,
+                            another
+                    )
+            )
         }
     }
 
@@ -209,9 +245,7 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     }
 
     fun db(vararg databaseOfTables: Pair<KPojo, String>) {
-        databaseOfTables.forEach {
-            databaseOfTable[it.first.kronosTableName()] = it.second
-        }
+        databaseOfTables.forEach { databaseOfTable[it.first.kronosTableName()] = it.second }
     }
 
     fun cascade(enabled: Boolean) {
@@ -238,14 +272,14 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         if (someFields == null) throw EmptyFieldsException()
 
         pojo.afterSort {
-            someFields(t1)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
+            someFields(t1) // 在这里对排序操作进行封装，为后续的链式调用提供支持。
             selectStatement.setOrderByFromPairs(sortedFields.toLinkedSet())
         }
     }
 
     /**
-     * Sets the groupBy flag to true and checks if the `someFields` parameter is null.
-     * If it is null, throws a EmptyFieldsException.
+     * Sets the groupBy flag to true and checks if the `someFields` parameter is null. If it is
+     * null, throws a EmptyFieldsException.
      *
      * @param someFields The fields to group the result set by.
      * @throws EmptyFieldsException If the `someFields` parameter is null.
@@ -263,9 +297,7 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         }
     }
 
-    /**
-     * Sets the distinctEnabled flag to true, indicating that the result set should be distinct.
-     */
+    /** Sets the distinctEnabled flag to true, indicating that the result set should be distinct. */
     fun distinct() {
         selectStatement.distinct = true
     }
@@ -283,7 +315,8 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
      * Sets the page information for the query, enabling pagination.
      *
      * @param pi the current page number, indicating which page of data to retrieve
-     * @param ps the number of records per page, specifying the number of records to display per page
+     * @param ps the number of records per page, specifying the number of records to display per
+     * page
      */
     fun page(pi: Int, ps: Int) {
         selectStatement.setPage(pi, ps)
@@ -306,13 +339,15 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
             }
             // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
             val newCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
-            if (selectStatement.where == null) {
-                selectStatement.setWhereCriteria(newCondition)
-            } else {
-                // 如果已有条件，则将新条件添加到现有条件中
-                val existingCriteria = (selectStatement.where as? CriteriaExpr)?.criteria
-                if (existingCriteria != null) {
-                    existingCriteria.children.add(newCondition)
+            if (newCondition != null) {
+                if (selectStatement.where == null) {
+                    selectStatement.setWhereCriteria(newCondition)
+                } else {
+                    // 如果已有条件，则将新条件添加到现有条件中
+                    val existingCriteria = (selectStatement.where as? CriteriaExpr)?.criteria
+                    if (existingCriteria != null) {
+                        existingCriteria.children.add(newCondition)
+                    }
                 }
             }
         }
@@ -321,17 +356,20 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     /**
      * Sets the condition for the query based on the provided select condition.
      *
-     * @param selectCondition the conditional field representing the query condition. Defaults to null.
-     * If null, a condition is built to query all fields. Otherwise, the provided select condition is executed
-     * and the resulting condition is set.
+     * @param selectCondition the conditional field representing the query condition. Defaults to
+     * null. If null, a condition is built to query all fields. Otherwise, the provided select
+     * condition is executed and the resulting condition is set.
      */
     fun where(selectCondition: ToFilter<T1, Boolean?> = null) {
         if (selectCondition == null) {
             // 当没有提供选择条件时，构建一个查询所有字段的条件
-            val buildCondition = paramMap.keys.map { propName ->
-                allFields.first { it.name == propName }.eq(paramMap[propName])
-            }.toCriteria()
-            selectStatement.setWhereCriteria(buildCondition)
+            val buildCondition =
+                    paramMap.keys
+                            .map { propName ->
+                                allFields.first { it.name == propName }.eq(paramMap[propName])
+                            }
+                            .toCriteria()
+            buildCondition?.let { selectStatement.setWhereCriteria(it) }
         } else {
             pojo.afterFilter {
                 criteriaParamMap = paramMap
@@ -340,7 +378,9 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
                 if (selectStatement.where == null) {
                     selectStatement.setWhereCriteria(criteria) // 设置查询条件
                 } else {
-                    (selectStatement.where as? CriteriaExpr)?.criteria?.children?.addAll(criteria!!.children) // 将新条件添加到现有条件中
+                    (selectStatement.where as? CriteriaExpr)?.criteria?.children?.addAll(
+                            criteria!!.children
+                    ) // 将新条件添加到现有条件中
                 }
             }
         }
@@ -349,9 +389,9 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     /**
      * Sets the condition for the HAVING clause based on the provided select condition.
      *
-     * @param selectCondition the conditional field representing the HAVING condition. Defaults to null.
-     * If null, a condition is built to query all fields. Otherwise, the provided select condition is executed
-     * and the resulting condition is set.
+     * @param selectCondition the conditional field representing the HAVING condition. Defaults to
+     * null. If null, a condition is built to query all fields. Otherwise, the provided select
+     * condition is executed and the resulting condition is set.
      *
      * @throws EmptyFieldsException if the selectCondition parameter is null.
      */
@@ -371,9 +411,11 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     }
 
     /**
-     * Queries the data source using the provided data source wrapper and returns a list of maps representing the results.
+     * Queries the data source using the provided data source wrapper and returns a list of maps
+     * representing the results.
      *
-     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
+     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the
+     * default data source wrapper is used.
      * @return a list of maps representing the results of the query.
      */
     fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
@@ -381,9 +423,9 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     }
 
     inline fun <reified T> queryList(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+            wrapper: KronosDataSourceWrapper? = null,
+            isKPojo: Boolean = false,
+            superTypes: List<String> = listOf()
     ): List<T> {
         return this.build().queryList(wrapper, isKPojo, superTypes)
     }
@@ -393,10 +435,12 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     fun queryList(wrapper: KronosDataSourceWrapper? = null): List<T1> {
         with(this.build()) {
             beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, pojo::class, true, listOf()) as List<T1>,
-                QueryType.QueryList
-            )
+            val result =
+                    atomicTask.logAndReturn(
+                            wrapper.orDefault().forList(atomicTask, pojo::class, true, listOf()) as
+                                    List<T1>,
+                            QueryType.QueryList
+                    )
             afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
             return result
         }
@@ -413,9 +457,9 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     }
 
     inline fun <reified T> queryOne(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+            wrapper: KronosDataSourceWrapper? = null,
+            isKPojo: Boolean = false,
+            superTypes: List<String> = listOf()
     ): T {
         limit(1)
         return this.build().queryOne(wrapper, isKPojo, superTypes)
@@ -427,20 +471,21 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         limit(1)
         with(this.build()) {
             beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf())
-                    ?: throw NullPointerException("No such record")) as T1,
-                QueryType.QueryOne
-            )
+            val result =
+                    atomicTask.logAndReturn(
+                            (wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf())
+                                    ?: throw NullPointerException("No such record")) as T1,
+                            QueryType.QueryOne
+                    )
             afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
             return result
         }
     }
 
     inline fun <reified T> queryOneOrNull(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+            wrapper: KronosDataSourceWrapper? = null,
+            isKPojo: Boolean = false,
+            superTypes: List<String> = listOf()
     ): T? {
         limit(1)
         return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
@@ -452,10 +497,13 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
         limit(1)
         with(this.build()) {
             beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, pojo::class, true, listOf()) as T1?,
-                QueryType.QueryOneOrNull
-            )
+            val result =
+                    atomicTask.logAndReturn(
+                            wrapper.orDefault()
+                                    .forObject(atomicTask, pojo::class, true, listOf()) as
+                                    T1?,
+                            QueryType.QueryOneOrNull
+                    )
             afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
             return result
         }
@@ -464,7 +512,8 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     /**
      * Builds and returns a KronosAtomicQueryTask object based on the provided data source wrapper.
      *
-     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
+     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the
+     * default data source wrapper is used.
      * @return a KronosAtomicQueryTask object representing the query.
      */
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
@@ -475,26 +524,38 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
 
         // 如果条件为空，则根据paramMap构建查询条件
         if (selectStatement.where == null) {
-            val buildCondition = paramMap.keys.filter {
-                paramMap[it] != null
-            }.mapNotNull { propName ->
-                allFields.firstOrNull { it.name == propName }?.eq(paramMap[propName])
-            }.toCriteria()
-            selectStatement.setWhereCriteria(buildCondition)
+            val buildCondition =
+                    paramMap.keys
+                            .filter { paramMap[it] != null }
+                            .mapNotNull { propName ->
+                                allFields
+                                        .firstOrNull { it.name == propName }
+                                        ?.eq(paramMap[propName])
+                            }
+                            .toCriteria()
+            buildCondition?.let { selectStatement.setWhereCriteria(it) }
         }
 
         // 设置逻辑删除的条件
-        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { _, value ->
-            val logicDeleteCondition = "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, true, databaseOfTable)} = $value".asSql()
+        logicDeleteStrategy?.execute(
+                defaultValue = getDefaultBoolean(wrapper.orDefault(), false)
+        ) { _, value ->
+            val logicDeleteCondition =
+                    "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, true, databaseOfTable)} = $value".asSql()
             if (selectStatement.where == null) {
                 selectStatement.setWhereCriteria(logicDeleteCondition)
             } else {
-                (selectStatement.where as? CriteriaExpr)?.criteria?.children?.add(logicDeleteCondition)
+                (selectStatement.where as? CriteriaExpr)?.criteria?.children?.add(
+                        logicDeleteCondition
+                )
             }
         }
-        
+
         // Use database support for SQL generation with parameters
-        val dbSupport = com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport(wrapper.orDefault().dbType)!!
+        val dbSupport =
+                com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport(
+                        wrapper.orDefault().dbType
+                )!!
         val renderedSql = dbSupport.getSelectSqlWithParams(wrapper.orDefault(), selectStatement)
         val sql = renderedSql.sql
         val renderedParams = renderedSql.params
@@ -512,10 +573,13 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
 
         // 返回构建好的KronosAtomicTask对象
         return CascadeJoinClause.build(
-            cascadeEnabled, cascadeAllowed, listOfPojo, KronosAtomicQueryTask(
-                sql, paramMapNew, operationType = KOperationType.SELECT
-            ), operationType, emptyMap<String, Field>().toMutableMap(), cascadeSelectedProps ?: mutableSetOf()
+                cascadeEnabled,
+                cascadeAllowed,
+                listOfPojo,
+                KronosAtomicQueryTask(sql, paramMapNew, operationType = KOperationType.SELECT),
+                operationType,
+                emptyMap<String, Field>().toMutableMap(),
+                cascadeSelectedProps ?: mutableSetOf()
         )
     }
-
 }

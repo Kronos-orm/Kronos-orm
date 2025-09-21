@@ -13,6 +13,12 @@
  */
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.ast.AstSqlRenderer
+import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.UpdateStatement
+import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.database.ConflictResolver
@@ -22,131 +28,117 @@ import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
 
 interface DatabasesSupport {
-    var quotes: Pair<String, String>
+        var quotes: Pair<String, String>
 
-    fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper): String
+        fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper): String
 
-    fun String?.orEmpty(): String = this ?: ""
+        fun String?.orEmpty(): String = this ?: ""
 
-    fun quote(str: String): String = "${quotes.first}$str${quotes.second}"
+        fun quote(str: String): String = "${quotes.first}$str${quotes.second}"
 
-    fun quote(field: Field, showTable: Boolean = false): String =
-            "${if (showTable) quote(field.tableName) + "." else ""}${quote(field.columnName)}"
+        fun quote(field: Field, showTable: Boolean = false): String =
+                "${if (showTable) quote(field.tableName) + "." else ""}${quote(field.columnName)}"
 
-    fun equation(field: Field, showTable: Boolean = false): String =
-            "${quote(field, showTable)} = :${field.name}"
+        fun equation(field: Field, showTable: Boolean = false): String =
+                "${quote(field, showTable)} = :${field.name}"
 
-    fun getColumnType(type: KColumnType, length: Int, scale: Int): String
+        fun getColumnType(type: KColumnType, length: Int, scale: Int): String
 
-    fun getKColumnType(type: String, length: Int = 0, scale: Int = 0): KColumnType =
-            KColumnType.fromString(type)
+        fun getKColumnType(type: String, length: Int = 0, scale: Int = 0): KColumnType =
+                KColumnType.fromString(type)
 
-    fun getColumnCreateSql(dbType: DBType, column: Field): String
+        fun getColumnCreateSql(dbType: DBType, column: Field): String
 
-    fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String
+        fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String
 
-    fun getTableCreateSqlList(
-            dbType: DBType,
-            tableName: String,
-            tableComment: String?,
-            columns: List<Field>,
-            indexes: List<KTableIndex>
-    ): List<String>
+        fun getTableCreateSqlList(
+                dbType: DBType,
+                tableName: String,
+                tableComment: String?,
+                columns: List<Field>,
+                indexes: List<KTableIndex>
+        ): List<String>
 
-    fun getTableExistenceSql(dbType: DBType): String
+        fun getTableExistenceSql(dbType: DBType): String
 
-    fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean): String
-    fun getTableDropSql(dbType: DBType, tableName: String): String
+        fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean): String
+        fun getTableDropSql(dbType: DBType, tableName: String): String
 
-    fun getTableCommentSql(dbType: DBType): String
+        fun getTableCommentSql(dbType: DBType): String
 
-    fun getTableColumns(
-            dataSource: KronosDataSourceWrapper,
-            tableName: String,
-    ): List<Field>
+        fun getTableColumns(
+                dataSource: KronosDataSourceWrapper,
+                tableName: String,
+        ): List<Field>
 
-    fun getTableIndexes(
-            dataSource: KronosDataSourceWrapper,
-            tableName: String,
-    ): List<KTableIndex>
+        fun getTableIndexes(
+                dataSource: KronosDataSourceWrapper,
+                tableName: String,
+        ): List<KTableIndex>
 
-    fun getTableSyncSqlList(
-            dataSource: KronosDataSourceWrapper,
-            tableName: String,
-            originalTableComment: String?,
-            tableComment: String?,
-            columns: TableColumnDiff,
-            indexes: TableIndexDiff,
-    ): List<String>
+        fun getTableSyncSqlList(
+                dataSource: KronosDataSourceWrapper,
+                tableName: String,
+                originalTableComment: String?,
+                tableComment: String?,
+                columns: TableColumnDiff,
+                indexes: TableIndexDiff,
+        ): List<String>
 
-    fun getOnConflictSql(conflictResolver: ConflictResolver): String
+        fun getOnConflictSql(conflictResolver: ConflictResolver): String
 
-    fun getInsertSql(
-            dataSource: KronosDataSourceWrapper,
-            tableName: String,
-            columns: List<Field>
-    ): String
+        fun getInsertSql(
+                dataSource: KronosDataSourceWrapper,
+                tableName: String,
+                columns: List<Field>
+        ): String
 
-    fun getDeleteSql(
-            dataSource: KronosDataSourceWrapper,
-            tableName: String,
-            whereClauseSql: String?
-    ): String
+        fun getDeleteSql(
+                dataSource: KronosDataSourceWrapper,
+                tableName: String,
+                whereClauseSql: String?
+        ): String
 
-    fun getUpdateSql(
-            dataSource: KronosDataSourceWrapper,
-            tableName: String,
-            toUpdateFields: List<Field>,
-            whereClauseSql: String?,
-            plusAssigns: MutableList<Pair<Field, String>>,
-            minusAssigns: MutableList<Pair<Field, String>>
-    ): String
+        fun getUpdateSql(
+                dataSource: KronosDataSourceWrapper,
+                tableName: String,
+                toUpdateFields: List<Field>,
+                whereClauseSql: String?,
+                plusAssigns: MutableList<Pair<Field, String>>,
+                minusAssigns: MutableList<Pair<Field, String>>
+        ): String
 
-    // AST-based SQL rendering methods - to be implemented by each database support
-    fun getSelectSql(
-            dataSource: KronosDataSourceWrapper,
-            select: com.kotlinorm.ast.SelectStatement
-    ): String
+        // AST-based SQL rendering methods - to be implemented by each database support
+        fun getSelectSql(dataSource: KronosDataSourceWrapper, select: SelectStatement): String
 
-    fun getInsertSql(
-            dataSource: KronosDataSourceWrapper,
-            insert: com.kotlinorm.ast.InsertStatement
-    ): String
+        fun getInsertSql(dataSource: KronosDataSourceWrapper, insert: InsertStatement): String
 
-    fun getUpdateSql(
-            dataSource: KronosDataSourceWrapper,
-            update: com.kotlinorm.ast.UpdateStatement
-    ): String
+        fun getUpdateSql(dataSource: KronosDataSourceWrapper, update: UpdateStatement): String
 
-    fun getDeleteSql(
-            dataSource: KronosDataSourceWrapper,
-            delete: com.kotlinorm.ast.DeleteStatement
-    ): String
+        fun getDeleteSql(dataSource: KronosDataSourceWrapper, delete: DeleteStatement): String
 
-    // AST-based SQL rendering with parameters - to be implemented by each database support
-    fun getSelectSqlWithParams(
-            dataSource: KronosDataSourceWrapper,
-            select: com.kotlinorm.ast.SelectStatement
-    ): com.kotlinorm.ast.AstSqlRenderer.RenderedSql
+        // AST-based SQL rendering with parameters - to be implemented by each database support
+        fun getSelectSqlWithParams(
+                dataSource: KronosDataSourceWrapper,
+                select: SelectStatement
+        ): AstSqlRenderer.RenderedSql
 
-    fun getInsertSqlWithParams(
-            dataSource: KronosDataSourceWrapper,
-            insert: com.kotlinorm.ast.InsertStatement
-    ): com.kotlinorm.ast.AstSqlRenderer.RenderedSql
+        fun getInsertSqlWithParams(
+                dataSource: KronosDataSourceWrapper,
+                insert: InsertStatement
+        ): AstSqlRenderer.RenderedSql
 
-    fun getUpdateSqlWithParams(
-            dataSource: KronosDataSourceWrapper,
-            update: com.kotlinorm.ast.UpdateStatement
-    ): com.kotlinorm.ast.AstSqlRenderer.RenderedSql
+        fun getUpdateSqlWithParams(
+                dataSource: KronosDataSourceWrapper,
+                update: UpdateStatement
+        ): AstSqlRenderer.RenderedSql
 
-    fun getDeleteSqlWithParams(
-            dataSource: KronosDataSourceWrapper,
-            delete: com.kotlinorm.ast.DeleteStatement
-    ): com.kotlinorm.ast.AstSqlRenderer.RenderedSql
+        fun getDeleteSqlWithParams(
+                dataSource: KronosDataSourceWrapper,
+                delete: DeleteStatement
+        ): AstSqlRenderer.RenderedSql
 
-    /** 渲染Criteria条件为SQL字符串（默认只返回SQL片段，不收集参数） */
-    fun renderCriteria(
-            dataSource: KronosDataSourceWrapper,
-            criteria: com.kotlinorm.beans.dsl.Criteria
-    ): String = criteria.toString()
+        /** 渲染Criteria条件为SQL字符串（默认只返回SQL片段，不收集参数） */
+        fun renderCriteria(dataSource: KronosDataSourceWrapper, criteria: Criteria): String =
+                criteria.toString()
 }

@@ -13,6 +13,8 @@
  */
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.ast.CriteriaExpr
+import com.kotlinorm.ast.TableName
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
@@ -63,32 +65,37 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
     private var allFields = kPojoAllFieldsCache[kClass]!!
     private var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
-    
-    private fun hasLogicDeleteCondition(criteria: com.kotlinorm.beans.dsl.Criteria, logicDeleteField: com.kotlinorm.beans.dsl.Field): Boolean {
+
+    private fun hasLogicDeleteCondition(criteria: Criteria, logicDeleteField: Field): Boolean {
         return when (criteria.type) {
             com.kotlinorm.enums.ConditionType.Sql -> {
                 val sql = criteria.value as? String ?: ""
                 sql.contains("`${logicDeleteField.columnName}` =")
             }
-            com.kotlinorm.enums.ConditionType.And, com.kotlinorm.enums.ConditionType.Or, com.kotlinorm.enums.ConditionType.Root -> {
-                criteria.children.any { child -> child?.let { hasLogicDeleteCondition(it, logicDeleteField) } ?: false }
+            com.kotlinorm.enums.ConditionType.And,
+            com.kotlinorm.enums.ConditionType.Or,
+            com.kotlinorm.enums.ConditionType.Root -> {
+                criteria.children.any { child ->
+                    child?.let { hasLogicDeleteCondition(it, logicDeleteField) } ?: false
+                }
             }
             else -> false
         }
     }
-    
+
     init {
         // 初始化基本的AST结构
-        val initFields = if (setSelectFields != null) {
-            var result: List<Field> = emptyList()
-            pojo.afterSelect {
-                setSelectFields(it)
-                result = fields
-            }
-            result
-        } else {
-            allFields
-        }
+        val initFields =
+                if (setSelectFields != null) {
+                    var result: List<Field> = emptyList()
+                    pojo.afterSelect {
+                        setSelectFields(it)
+                        result = fields
+                    }
+                    result
+                } else {
+                    allFields
+                }
         selectStatement.setProjectionsFromFields(initFields)
         selectStatement.setFrom(tableName)
         selectStatement.selectAll = setSelectFields == null
@@ -116,7 +123,7 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
         if (databaseName.isNotBlank()) {
             // 更新 AST 的 from，带上 database 名称
             val currentFrom = selectStatement.from
-            if (currentFrom is com.kotlinorm.ast.TableName) {
+            if (currentFrom is TableName) {
                 selectStatement.setFrom(
                         table = currentFrom.table,
                         alias = currentFrom.alias,
@@ -229,10 +236,12 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
             }
-            val current = (selectStatement.where as? com.kotlinorm.ast.CriteriaExpr)?.criteria
+            val current = (selectStatement.where as? CriteriaExpr)?.criteria
             val add = fields.map { it.eq(paramMap[it.name]) }.toCriteria()
-            val merged = current?.apply { children.add(add) } ?: add
-            selectStatement.setWhereCriteria(merged)
+            if (add != null) {
+                val merged = current?.apply { children.add(add) } ?: add
+                selectStatement.setWhereCriteria(merged)
+            }
         }
         return this // 返回当前SelectClause实例，允许链式调用
     }
@@ -253,8 +262,10 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
             criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
             if (criteria == null) return@afterFilter
-            val current = (selectStatement.where as? com.kotlinorm.ast.CriteriaExpr)?.criteria
-            val merged = if (current == null) criteria else current.apply { children.addAll(criteria!!.children) }
+            val current = (selectStatement.where as? CriteriaExpr)?.criteria
+            val merged =
+                    if (current == null) criteria
+                    else current.apply { children.addAll(criteria!!.children) }
             selectStatement.setWhereCriteria(merged)
         }
         return this
@@ -278,8 +289,10 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
             criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
             if (criteria == null) return@afterFilter
-            val current = (selectStatement.having as? com.kotlinorm.ast.CriteriaExpr)?.criteria
-            val merged = if (current == null) criteria else current.apply { children.addAll(criteria!!.children) }
+            val current = (selectStatement.having as? CriteriaExpr)?.criteria
+            val merged =
+                    if (current == null) criteria
+                    else current.apply { children.addAll(criteria!!.children) }
             selectStatement.setHavingCriteria(merged)
         }
         return this // 允许链式调用
@@ -317,7 +330,7 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
         }
 
         // 如果条件为空，则根据paramMap构建查询条件
-        val currentCond = (selectStatement.where as? com.kotlinorm.ast.CriteriaExpr)?.criteria
+        val currentCond = (selectStatement.where as? CriteriaExpr)?.criteria
         val autoCond =
                 paramMap.keys
                         .filter { paramMap[it] != null }
@@ -325,28 +338,28 @@ class SelectClause<T : KPojo>(pojo: T, setSelectFields: ToSelect<T, Any?> = null
                             allColumns.find { it.name == propName }?.eq(paramMap[propName])
                         }
                         .toCriteria()
-        if (currentCond == null) selectStatement.setWhereCriteria(autoCond)
+        if (currentCond == null && autoCond != null) selectStatement.setWhereCriteria(autoCond)
 
         // 设置逻辑删除的条件
         logicDeleteStrategy?.execute(
                 defaultValue = getDefaultBoolean(wrapper.orDefault(), false)
         ) { field, value ->
-            val current = (selectStatement.where as? com.kotlinorm.ast.CriteriaExpr)?.criteria
+            val current = (selectStatement.where as? CriteriaExpr)?.criteria
             // 检查是否已经存在逻辑删除条件
-            val hasLogicDelete = current?.let { criteria ->
-                hasLogicDeleteCondition(criteria, field)
-            } ?: false
-            
+            val hasLogicDelete =
+                    current?.let { criteria -> hasLogicDeleteCondition(criteria, field) } ?: false
+
             if (!hasLogicDelete) {
                 val add = "${field.quoted(wrapper.orDefault())} = $value".asSql()
                 val merged = listOfNotNull(current, add).filterNotNull().toCriteria()
-                selectStatement.setWhereCriteria(merged)
+                merged?.let { selectStatement.setWhereCriteria(it) }
             }
         }
 
         // 通过数据库支持类渲染SQL并收集参数
-        val support = getDBSupport(wrapper.orDefault().dbType)
-                ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
+        val support =
+                getDBSupport(wrapper.orDefault().dbType)
+                        ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
         val rendered = support.getSelectSqlWithParams(wrapper.orDefault(), selectStatement)
         val sql = rendered.sql
         val paramMapNew = rendered.params

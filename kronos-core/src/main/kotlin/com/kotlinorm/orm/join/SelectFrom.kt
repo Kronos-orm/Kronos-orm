@@ -77,6 +77,8 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
     private val keyCounters = KeyCounter()
 
     init {
+        // Initialize tableName from the pojo
+        tableName = t1.kronosTableName()
         // Initialize the AST statement
         selectStatement.setFrom(tableName)
     }
@@ -541,7 +543,7 @@ open class SelectFrom<T1 : KPojo>(t1: T1) : KSelectable<T1>(t1) {
                 defaultValue = getDefaultBoolean(wrapper.orDefault(), false)
         ) { _, value ->
             val logicDeleteCondition =
-                    "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, true, databaseOfTable)} = $value".asSql()
+                    "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, databaseOfTable)} = $value".asSql()
             if (selectStatement.where == null) {
                 selectStatement.setWhereCriteria(logicDeleteCondition)
             } else {

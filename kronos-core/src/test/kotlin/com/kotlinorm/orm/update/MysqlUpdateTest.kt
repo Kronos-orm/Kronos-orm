@@ -2,11 +2,9 @@ package com.kotlinorm.orm.update
 
 import com.kotlinorm.GsonProcessor
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.parser.NoneDataSourceWrapper.transact
 import com.kotlinorm.beans.sample.Movie
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.enums.NoValueStrategyType
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
@@ -51,7 +49,7 @@ class MysqlUpdateTest {
                 .build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew, `gender` = `gender` + :gender2PlusNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew, `gender` = `gender` + :gender2PlusNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -77,7 +75,7 @@ class MysqlUpdateTest {
             .build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`username` = :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -99,7 +97,7 @@ class MysqlUpdateTest {
             .by { it.id }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -119,7 +117,7 @@ class MysqlUpdateTest {
             .by { it.id }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -142,7 +140,7 @@ class MysqlUpdateTest {
             .build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(mapOf("id" to 1, "genderNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
@@ -155,7 +153,7 @@ class MysqlUpdateTest {
             .where { it.id < 1 && it.id > 0 }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` < :idMax AND `id` > :idMin AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` < :idMax AND `tb_user`.`id` > :idMin AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -175,7 +173,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.neq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` != :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` != :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -193,7 +191,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id != 1 }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` != :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` != :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -211,7 +209,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username like "%t" }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -229,7 +227,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.like("%t") }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -247,7 +245,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username notLike "%t" }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` NOT LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -265,7 +263,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.notLike("%t") }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` NOT LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -283,7 +281,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id between (1..2) }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` BETWEEN :idMin AND :idMax AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` BETWEEN :idMin AND :idMax AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -302,7 +300,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id notBetween (1..2) }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` NOT BETWEEN :idMin AND :idMax AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` NOT BETWEEN :idMin AND :idMax AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -326,7 +324,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.isNull }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IS NULL AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` IS NULL AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -366,7 +364,7 @@ class MysqlUpdateTest {
         }.build()
 
         assertEquals(
-            "UPDATE `movie` SET `id` = :idNew, `name` = :nameNew, `year` = :yearNew, `director` = :directorNew, `actor` = :actorNew, `type` = :typeNew, `country` = :countryNew, `language` = :languageNew, `description` = :descriptionNew, `poster` = :posterNew, `video` = :videoNew, `summary` = :summaryNew, `tags` = :tagsNew, `score` = :scoreNew, `vote` = :voteNew, `favorite` = :favoriteNew, `update_time` = :updateTimeNew WHERE xxxxxxx AND `id` = :id AND `name` LIKE :name AND `score` BETWEEN :scoreMin AND :scoreMax AND `tags` = :tags AND `description` LIKE :description AND (`year` IN (:yearList) OR `vote` < :voteMax OR `favorite` = :favorite) AND `director` = :director AND `actor` = :actor AND (`country` NOT IN (:countryList) OR `language` = :language OR (`poster` IS NOT NULL AND `video` IS NOT NULL AND `summary` NOT LIKE :summary)) AND `deleted` = 0",
+            "UPDATE `movie` SET `id` = :idNew, `name` = :nameNew, `year` = :yearNew, `director` = :directorNew, `actor` = :actorNew, `type` = :typeNew, `country` = :countryNew, `language` = :languageNew, `description` = :descriptionNew, `poster` = :posterNew, `video` = :videoNew, `summary` = :summaryNew, `tags` = :tagsNew, `score` = :scoreNew, `vote` = :voteNew, `favorite` = :favoriteNew, `update_time` = :updateTimeNew WHERE xxxxxxx AND `tb_user`.`id` = :id AND `tb_user`.`name` LIKE :name AND `tb_user`.`score` BETWEEN :scoreMin AND :scoreMax AND `tb_user`.`tags` = :tags AND `tb_user`.`description` LIKE :description AND (`tb_user`.`year` IN (:yearList) OR `tb_user`.`vote` < :voteMax OR `tb_user`.`favorite` = :favorite) AND `tb_user`.`director` = :director AND `tb_user`.`actor` = :actor AND (`tb_user`.`country` NOT IN (:countryList) OR `tb_user`.`language` = :language OR (`tb_user`.`poster` IS NOT NULL AND `tb_user`.`video` IS NOT NULL AND `tb_user`.`summary` NOT LIKE :summary)) AND `tb_user`.`deleted` = 0",
             sql
         )
         val expectedMap = mapOf(
@@ -412,7 +410,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.notNull }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IS NOT NULL AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` IS NOT NULL AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -437,7 +435,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id in listOf(1, 2, 3) }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IN (:idList) AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` IN (:idList) AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -456,7 +454,7 @@ class MysqlUpdateTest {
             .where { it.id !in listOf(1, 2, 3) }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` NOT IN (:idList) AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` NOT IN (:idList) AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -475,7 +473,7 @@ class MysqlUpdateTest {
             .where { listOf(1, 2, 3).contains(it.id) }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IN (:idList) AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` IN (:idList) AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -494,7 +492,7 @@ class MysqlUpdateTest {
             it.username = "ZhangSan"
         }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`username` = :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -514,7 +512,7 @@ class MysqlUpdateTest {
             .where { it.id startsWith "1" }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` LIKE :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` LIKE :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -533,7 +531,7 @@ class MysqlUpdateTest {
             .where { it.id endsWith "1" }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` LIKE :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` LIKE :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -552,7 +550,7 @@ class MysqlUpdateTest {
             .where { it.username.contains("test") }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -574,7 +572,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.like }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -592,7 +590,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.notLike }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` NOT LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -610,7 +608,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.startsWith }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -628,7 +626,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.username.endsWith }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`username` LIKE :username AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -650,7 +648,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.lt }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` < :idMax AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` < :idMax AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -668,7 +666,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.gt }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` > :idMin AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` > :idMin AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -686,7 +684,7 @@ class MysqlUpdateTest {
         val (sql, paramMap) = testUser.update { it.id + it.username }
             .where { it.id.le }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` <= :idMax AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` <= :idMax AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -705,7 +703,7 @@ class MysqlUpdateTest {
             .where { it.id.ge }.build()
 
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` >= :idMin AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` >= :idMin AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -725,7 +723,7 @@ class MysqlUpdateTest {
             .by { it.id }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -746,7 +744,7 @@ class MysqlUpdateTest {
             .set { it.id = 1 }
             .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
-        assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0", sql)
+        assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `tb_user`.`deleted` = 0", sql)
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
         assertEquals(testUser.mapperTo(), testUser)
     }
@@ -758,7 +756,7 @@ class MysqlUpdateTest {
             .where { it.gender.eq.ifNoValue(NoValueStrategyType.Ignore) }
             .build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
@@ -769,7 +767,7 @@ class MysqlUpdateTest {
     fun testBatchUpdateBy() {
         val (sql, _, list) = arrayOf(user, testUser).update { it.username }.by { it.id }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -788,7 +786,7 @@ class MysqlUpdateTest {
     fun testBatchUpdateExceptBy() {
         val (sql, _, list) = arrayOf(user, testUser).update { it - it.username }.by { it.id }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -815,7 +813,7 @@ class MysqlUpdateTest {
     fun testBatchUpdateWhere() {
         val (sql, _, list) = arrayOf(user, testUser).update().set { it.gender = 2 }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -836,7 +834,7 @@ class MysqlUpdateTest {
     fun testBatchUpdateIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.username }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(
@@ -863,7 +861,7 @@ class MysqlUpdateTest {
     fun testBatchUpdateExceptIterWhere() {
         val (sql, _, list) = listOf(user, testUser).update { it - it.id }.where { it.id.eq }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0",
             sql
         )
         assertEquals(

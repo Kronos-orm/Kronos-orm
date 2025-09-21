@@ -42,11 +42,10 @@ object FunctionManager {
     }
 
     fun getBuiltFunctionField(
-        field: FunctionField, dataSource: KronosDataSourceWrapper,
-        showTable: Boolean = false, showAlias: Boolean = true
+        field: FunctionField, dataSource: KronosDataSourceWrapper
     ): String {
         return registeredFunctionBuilders.firstOrNull { it.support(field, dataSource.dbType) }
-            ?.transform(field, dataSource, showTable, showAlias)
+            ?.transform(field, dataSource)
             ?: throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
     }
 }

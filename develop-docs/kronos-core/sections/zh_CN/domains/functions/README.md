@@ -6,7 +6,7 @@
   - FunctionManager：注册/选择 FunctionBuilder；
   - FunctionBuilder（com.kotlinorm.interfaces）：
     - support(field: FunctionField, db: DBType): Boolean
-    - transform(field, dataSource, showTable, showAlias): String
+    - transform(field, dataSource): String
   - FunctionField（com.kotlinorm.beans.dsl）：描述函数名、参数、别名等；
 - 内置 builder：
   - PolymerizationFunctionBuilder（聚合）

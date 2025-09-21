@@ -6,7 +6,7 @@ The function system maps function-call-like DSL expressions into dialect SQL fra
   - FunctionManager: register/select FunctionBuilder;
   - FunctionBuilder (com.kotlinorm.interfaces):
     - support(field: FunctionField, db: DBType): Boolean
-    - transform(field, dataSource, showTable, showAlias): String
+    - transform(field, dataSource): String
   - FunctionField (com.kotlinorm.beans.dsl): describes function name, args, alias, etc.
 - Built-in builders:
   - PolymerizationFunctionBuilder (aggregation)

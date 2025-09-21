@@ -3,6 +3,7 @@ package com.kotlinorm.ast
 
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 
@@ -51,10 +52,18 @@ class SelectStatement(
         this.projections =
             fields.map { f ->
                 val alias = f.name.takeIf { it.isNotBlank() && it != f.columnName }
-                val expr = if (f.type == CUSTOM_CRITERIA_SQL) {
-                    RawSqlExpr(f.toString())
-                } else {
-                    ColumnRef(tableAlias = null, column = f.columnName, sourceField = f)
+                val expr = when {
+                    f is FunctionField -> {
+                        // FunctionField需要特殊处理，不能直接用字符串存储
+                        // 在AST阶段保持FunctionField对象，等待后续渲染时使用wrapper和数据库类型信息
+                        FunctionFieldExpr(f)
+                    }
+                    f.type == CUSTOM_CRITERIA_SQL -> {
+                        RawSqlExpr(f.toString())
+                    }
+                    else -> {
+                        ColumnRef(tableAlias = null, column = f.columnName, sourceField = f)
+                    }
                 }
                 ProjectionItem(expression = expr, alias = alias)
             }.toMutableList()

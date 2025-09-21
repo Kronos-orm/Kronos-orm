@@ -36,11 +36,15 @@ interface DatabasesSupport {
 
         fun quote(str: String): String = "${quotes.first}$str${quotes.second}"
 
-        fun quote(field: Field, showTable: Boolean = false): String =
-                "${if (showTable) quote(field.tableName) + "." else ""}${quote(field.columnName)}"
+        fun quote(field: Field): String =
+                if (field.tableName.isNotBlank()) {
+                    "${quote(field.tableName)}.${quote(field.columnName)}"
+                } else {
+                    quote(field.columnName)
+                }
 
-        fun equation(field: Field, showTable: Boolean = false): String =
-                "${quote(field, showTable)} = :${field.name}"
+        fun equation(field: Field): String =
+                "${quote(field)} = :${field.name}"
 
         fun getColumnType(type: KColumnType, length: Int, scale: Int): String
 
@@ -138,7 +142,6 @@ interface DatabasesSupport {
                 delete: DeleteStatement
         ): AstSqlRenderer.RenderedSql
 
-        /** 渲染Criteria条件为SQL字符串（默认只返回SQL片段，不收集参数） */
         fun renderCriteria(dataSource: KronosDataSourceWrapper, criteria: Criteria): String =
-                criteria.toString()
+                com.kotlinorm.ast.AstSqlRenderer.renderCriteriaDirect(dataSource, this, criteria)
 }

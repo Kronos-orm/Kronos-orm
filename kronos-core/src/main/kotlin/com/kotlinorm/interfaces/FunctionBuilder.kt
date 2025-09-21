@@ -34,9 +34,7 @@ interface FunctionBuilder {
 
     fun transform(
         field: FunctionField,
-        dataSource: KronosDataSourceWrapper,
-        showTable: Boolean,
-        showAlias: Boolean
+        dataSource: KronosDataSourceWrapper
     ): String
 
 }

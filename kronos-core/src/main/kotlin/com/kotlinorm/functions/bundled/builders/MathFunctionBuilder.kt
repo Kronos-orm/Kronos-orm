@@ -170,15 +170,15 @@ object MathFunctionBuilder : FunctionBuilder {
     }
 
     override fun transform(
-        field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean
+        field: FunctionField, dataSource: KronosDataSourceWrapper
     ): String {
-        return getFunctionSql(field, dataSource, showTable, showAlias)
+        return getFunctionSql(field, dataSource)
     }
 
     private fun getFunctionSql(
-        field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean
+        field: FunctionField, dataSource: KronosDataSourceWrapper
     ): String {
-        val alias = if (showAlias) field.name else ""
+        val alias = field.name
         return when (field.functionName) {
             "add", "sub", "mul", "div" -> {
                 val operator = when (field.functionName) {
@@ -188,7 +188,7 @@ object MathFunctionBuilder : FunctionBuilder {
                     "div" -> "/"
                     else -> throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
                 }
-                buildOperations(operator, alias, field.fields, dataSource, showTable)
+                buildOperations(operator, alias, field.fields, dataSource)
             }
 
             else -> {
@@ -207,27 +207,24 @@ object MathFunctionBuilder : FunctionBuilder {
                     "trunc" to DBType.Mssql -> "ROUND"
                     else -> field.functionName
                 }
-                buildFields(functionName.uppercase(), alias, field.fields, dataSource, showTable)
+                buildFields(functionName.uppercase(), alias, field.fields, dataSource)
             }
         }
     }
 
-    fun buildField(it: Pair<Field?, Any?>, dataSource: KronosDataSourceWrapper, showTable: Boolean): String {
-        return it.first?.quoted(
-            dataSource, showTable
-        ) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
+    fun buildField(it: Pair<Field?, Any?>, dataSource: KronosDataSourceWrapper): String {
+        return it.first?.quoted(dataSource) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
     }
 
     fun buildOperations(
         operator: String,
         alias: String,
         fields: List<Pair<Field?, Any?>>,
-        dataSource: KronosDataSourceWrapper,
-        showTable: Boolean
+        dataSource: KronosDataSourceWrapper
     ): String {
         return buildAlias("(${
             fields.joinToString(" $operator ") {
-                buildField(it, dataSource, showTable)
+                buildField(it, dataSource)
             }
         })", alias)
     }
@@ -236,12 +233,11 @@ object MathFunctionBuilder : FunctionBuilder {
         functionName: String,
         alias: String,
         fields: List<Pair<Field?, Any?>>,
-        dataSource: KronosDataSourceWrapper,
-        showTable: Boolean
+        dataSource: KronosDataSourceWrapper
     ): String {
         return buildAlias("${functionName}(${
             fields.joinToString(", ") {
-                buildField(it, dataSource, showTable)
+                buildField(it, dataSource)
             }
         })", alias)
     }

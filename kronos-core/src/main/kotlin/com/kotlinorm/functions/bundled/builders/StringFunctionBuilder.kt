@@ -139,18 +139,16 @@ object StringFunctionBuilder : FunctionBuilder {
 
     override fun transform(
         field: FunctionField,
-        dataSource: KronosDataSourceWrapper,
-        showTable: Boolean,
-        showAlias: Boolean
+        dataSource: KronosDataSourceWrapper
     ): String {
-        val alias = if (showAlias) field.name else ""
+        val alias = field.name
         field.functionName = when (field.functionName) {
             "join" -> {
                 if (dataSource.dbType == DBType.Oracle) {
                     val separator = field.fields.first().second
                     val fields: List<Pair<Field?, Any?>> =
                         field.fields.drop(1).flatMap { listOf(Pair(null, separator), it) }.drop(1)
-                    return buildOperations("||", alias, fields, dataSource, showTable)
+                    return buildOperations("||", alias, fields, dataSource)
                 } else {
                     field.fields = field.fields.drop(1)
                     "CONCAT_WS"
@@ -160,8 +158,8 @@ object StringFunctionBuilder : FunctionBuilder {
             "repeat" -> {
                 when (dataSource.dbType) {
                     DBType.Oracle -> {
-                        val f = buildField(field.fields[0], dataSource, showTable)
-                        val times = buildField(field.fields[1], dataSource, showTable)
+                        val f = buildField(field.fields[0], dataSource)
+                        val times = buildField(field.fields[1], dataSource)
                         return buildAlias(
                             "RPAD($f, $times * LENGTH($f, $times), $f)",
                             alias
@@ -176,14 +174,14 @@ object StringFunctionBuilder : FunctionBuilder {
             "right" -> {
                 when (dataSource.dbType) {
                     DBType.Oracle -> {
-                        val f = buildField(field.fields[0], dataSource, showTable)
-                        val length = buildField(field.fields[1], dataSource, showTable)
+                        val f = buildField(field.fields[0], dataSource)
+                        val length = buildField(field.fields[1], dataSource)
                         return buildAlias("SUBSTR($f, -$length)", alias)
                     }
 
                     DBType.Postgres -> {
-                        val f = buildField(field.fields[0], dataSource, showTable)
-                        val length = buildField(field.fields[1], dataSource, showTable)
+                        val f = buildField(field.fields[0], dataSource)
+                        val length = buildField(field.fields[1], dataSource)
                         return buildAlias("SUBSTRING($f FROM -$length)", alias)
                     }
 
@@ -194,14 +192,14 @@ object StringFunctionBuilder : FunctionBuilder {
             "left" -> {
                 when (dataSource.dbType) {
                     DBType.Oracle -> {
-                        val f = buildField(field.fields[0], dataSource, showTable)
-                        val length = buildField(field.fields[1], dataSource, showTable)
+                        val f = buildField(field.fields[0], dataSource)
+                        val length = buildField(field.fields[1], dataSource)
                         return buildAlias("SUBSTR($f, 1, $length)", alias)
                     }
 
                     DBType.Postgres -> {
-                        val f = buildField(field.fields[0], dataSource, showTable)
-                        val length = buildField(field.fields[1], dataSource, showTable)
+                        val f = buildField(field.fields[0], dataSource)
+                        val length = buildField(field.fields[1], dataSource)
                         return buildAlias("SUBSTRING($f FROM 1 FOR $length)", alias)
                     }
 
@@ -212,9 +210,9 @@ object StringFunctionBuilder : FunctionBuilder {
             "substr" -> {
                 when (dataSource.dbType) {
                     DBType.Postgres -> {
-                        val f = buildField(field.fields[0], dataSource, showTable)
-                        val start = buildField(field.fields[1], dataSource, showTable)
-                        val length = buildField(field.fields[2], dataSource, showTable)
+                        val f = buildField(field.fields[0], dataSource)
+                        val start = buildField(field.fields[1], dataSource)
+                        val length = buildField(field.fields[2], dataSource)
                         return buildAlias("SUBSTRING(${f} FROM $start FOR $length)", alias)
                     }
 
@@ -230,6 +228,6 @@ object StringFunctionBuilder : FunctionBuilder {
 
             else -> field.functionName.uppercase()
         }
-        return buildFields(field.functionName, alias, field.fields, dataSource, showTable)
+        return buildFields(field.functionName, alias, field.fields, dataSource)
     }
 }

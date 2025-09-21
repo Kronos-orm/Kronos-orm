@@ -204,6 +204,8 @@ object AstSqlRenderer {
                     if (sql.isNotBlank()) {
                         sb.append(" WHERE ").append(sql)
                         params.putAll(map)
+                    } else {
+                        // 空条件，不添加WHERE子句
                     }
                 }
                 else -> sb.append(" WHERE ").append(renderExpr(wrapper, support, whereExpr))
@@ -231,6 +233,8 @@ object AstSqlRenderer {
                     if (sql.isNotBlank()) {
                         sb.append(" HAVING ").append(sql)
                         params.putAll(map)
+                    } else {
+                        // 空条件，不添加HAVING子句
                     }
                 }
                 else -> sb.append(" HAVING ").append(renderExpr(wrapper, support, havingExpr))
@@ -334,7 +338,7 @@ object AstSqlRenderer {
                                     ?.let {
                                         when (it) {
                                             is RawSqlExpr -> it.sql
-                                            else -> renderExpr(wrapper, support, it)
+                                            is Expression -> renderExpr(wrapper, support, it)
                                         }
                                     }
                                     ?.let { " ON $it" }
@@ -342,7 +346,6 @@ object AstSqlRenderer {
                     "$left $typeSql $right$onSql"
                 }
                 is RawTableSource -> ts.sql
-                else -> error("Unsupported TableSource: $ts")
             }
 
     private fun renderExpr(
@@ -444,6 +447,13 @@ object AstSqlRenderer {
                         }
                 is Cast -> "CAST(${renderExpr(wrapper, support, e.expr)} AS ${e.typeName})"
                 is RawSqlExpr -> e.sql
+                is FunctionFieldExpr -> {
+                    // 使用FunctionManager来渲染FunctionField，需要wrapper和数据库类型信息
+                    com.kotlinorm.functions.FunctionManager.getBuiltFunctionField(
+                        e.functionField, 
+                        wrapper
+                    )
+                }
                 is CriteriaExpr -> {
                     // 兼容：仅渲染SQL文本（无参数收集）
                     val (sql, _) = renderCriteriaWithParams(wrapper, support, e.criteria)
@@ -460,12 +470,17 @@ object AstSqlRenderer {
             var metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
     )
 
-    private fun renderCriteriaDirect(
+    fun renderCriteriaDirect(
             wrapper: KronosDataSourceWrapper,
             support: DatabasesSupport,
             criteria: Criteria
     ): String {
-        return when (criteria.type) {
+        // 处理空值策略
+        if (criteria.noValueStrategyType == com.kotlinorm.enums.NoValueStrategyType.Ignore && criteria.value == null) {
+            return ""
+        }
+        
+        val baseSql = when (criteria.type) {
             com.kotlinorm.enums.ConditionType.Equal ->
                     "${criteria.field.quoted(wrapper)} = :${criteria.field.name}"
             com.kotlinorm.enums.ConditionType.Like ->
@@ -493,22 +508,22 @@ object AstSqlRenderer {
                 val childSqls =
                         criteria.children.filterNotNull().map {
                             renderCriteriaDirect(wrapper, support, it)
-                        }
-                if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" AND ")
+                        }.filter { it.isNotEmpty() }
+                childSqls.joinToString(" AND ")
             }
             com.kotlinorm.enums.ConditionType.Or -> {
                 val childSqls =
                         criteria.children.filterNotNull().map {
                             renderCriteriaDirect(wrapper, support, it)
-                        }
-                if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" OR ")
+                        }.filter { it.isNotEmpty() }
+                childSqls.joinToString(" OR ")
             }
             com.kotlinorm.enums.ConditionType.Root -> {
                 val childSqls =
                         criteria.children.filterNotNull().map {
                             renderCriteriaDirect(wrapper, support, it)
-                        }
-                if (childSqls.isEmpty()) "1=1" else childSqls.joinToString(" AND ")
+                        }.filter { it.isNotEmpty() }
+                childSqls.joinToString(" AND ")
             }
             com.kotlinorm.enums.ConditionType.Regexp ->
                     "${criteria.field.quoted(wrapper)} REGEXP :${criteria.field.name}Pattern"
@@ -516,6 +531,19 @@ object AstSqlRenderer {
                             ?: criteria.field.quoted(wrapper)
             else ->
                     "${criteria.field.quoted(wrapper)} ${criteria.type.value} :${criteria.field.name}"
+        }
+        
+        // 处理 not 属性
+        return if (criteria.not && baseSql.isNotEmpty()) {
+            when (criteria.type) {
+                com.kotlinorm.enums.ConditionType.IsNull -> baseSql.replace("IS NULL", "IS NOT NULL")
+                com.kotlinorm.enums.ConditionType.Like -> baseSql.replace("LIKE", "NOT LIKE")
+                com.kotlinorm.enums.ConditionType.In -> baseSql.replace("IN", "NOT IN")
+                com.kotlinorm.enums.ConditionType.Regexp -> baseSql.replace("REGEXP", "NOT REGEXP")
+                else -> "NOT ($baseSql)"
+            }
+        } else {
+            baseSql
         }
     }
 

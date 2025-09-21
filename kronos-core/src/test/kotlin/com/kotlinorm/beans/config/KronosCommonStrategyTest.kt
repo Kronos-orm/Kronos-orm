@@ -42,7 +42,7 @@ class KronosCommonStrategyTest {
     @Test
     fun testUpdateTimeStrategy() {
         val (sql, paramMap) = TestPojo(1, "kronos").update { it.name + it.createTime }.by { it.id }.build()
-        assertEquals("UPDATE `test_pojo` SET `name` = :nameNew, `update_time` = :updateTimeNew WHERE `id` = :id", sql)
+        assertEquals("UPDATE `test_pojo` SET `name` = :nameNew, `update_time` = :updateTimeNew WHERE `test_pojo`.`id` = :id", sql)
         assertEquals(
             mapOf(
                 "id" to 1,
@@ -86,7 +86,7 @@ class KronosCommonStrategyTest {
     @Test
     fun testUpdateTimeStrategy2() {
         val (sql, paramMap) = TestPojo2(1, "kronos").update { it.name }.by { it.id }.build()
-        assertEquals("UPDATE `test_pojo2` SET `name` = :nameNew WHERE `id` = :id", sql)
+        assertEquals("UPDATE `test_pojo2` SET `name` = :nameNew WHERE `test_pojo2`.`id` = :id", sql)
         assertEquals(
             mapOf(
                 "id" to 1,

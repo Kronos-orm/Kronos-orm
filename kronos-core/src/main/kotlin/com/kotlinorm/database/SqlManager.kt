@@ -117,14 +117,13 @@ object SqlManager {
             dataSource.dbType.dbSupport?.getOnConflictSql(conflictResolver)
                     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
-    fun Field.quoted(dataSource: KronosDataSourceWrapper, showTable: Boolean = false) =
-            dataSource.dbType.dbSupport?.quote(this, showTable)
+    fun Field.quoted(dataSource: KronosDataSourceWrapper) =
+            dataSource.dbType.dbSupport?.quote(this)
                     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
     fun quote(
             dataSource: KronosDataSourceWrapper,
             tableName: String,
-            showTable: Boolean = false,
             columnName: String? = null,
             map: Map<String, String> = emptyMap()
     ): String {
@@ -135,8 +134,7 @@ object SqlManager {
 
         return listOfNotNull(
                         if (databaseName.isNullOrBlank()) null else support.quote(databaseName),
-                        if (!showTable && databaseName.isNullOrBlank()) null
-                        else support.quote(tableName),
+                        support.quote(tableName),
                         columnName?.let { support.quote(it) }
                 )
                 .joinToString(".")
@@ -145,9 +143,8 @@ object SqlManager {
     fun quote(
             dataSource: KronosDataSourceWrapper,
             field: Field,
-            showTable: Boolean = false,
             map: Map<String, String> = emptyMap()
-    ) = quote(dataSource, field.tableName, showTable, field.columnName, map)
+    ) = quote(dataSource, field.tableName, field.columnName, map)
 
     fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
             dataSource.dbType.dbSupport?.getInsertSql(dataSource, tableName, columns)

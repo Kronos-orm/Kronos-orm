@@ -3,6 +3,7 @@ package com.kotlinorm.ast
 
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 
 /** Expressions tree for SQL */
 
@@ -76,3 +77,9 @@ data class RawSqlExpr(val sql: String) : Expression
  * expression breakdown is not yet available.
  */
 data class CriteriaExpr(val criteria: Criteria) : Expression
+
+/**
+ * Function field expression - represents FunctionField that needs to be rendered with wrapper and database type info.
+ * This preserves the FunctionField object in AST stage instead of converting to string.
+ */
+data class FunctionFieldExpr(val functionField: FunctionField) : Expression

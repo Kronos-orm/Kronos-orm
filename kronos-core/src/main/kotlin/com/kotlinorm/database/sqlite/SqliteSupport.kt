@@ -73,7 +73,7 @@ object SqliteSupport : DatabasesSupport {
     }${
         if (column.primaryKey == PrimaryKeyType.IDENTITY) " AUTOINCREMENT" else ""
     }${
-        if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+        if (column.defaultValue != null) " DEFAULT ${column.defaultValue.ifEmpty { "\"\"" }}" else ""
     }"
 
     // 生成SQLite的列定义字符串

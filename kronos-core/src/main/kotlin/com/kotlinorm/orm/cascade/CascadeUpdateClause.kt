@@ -16,6 +16,8 @@
 
 package com.kotlinorm.orm.cascade
 
+import com.kotlinorm.ast.CriteriaExpr
+import com.kotlinorm.ast.Expression
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
@@ -40,11 +42,11 @@ object CascadeUpdateClause {
         kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
-        whereClauseSql: String?,
+        whereExpr: Expression?,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
-            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, whereClauseSql, rootTask
+            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, whereExpr, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
@@ -53,7 +55,7 @@ object CascadeUpdateClause {
         kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
-        whereClauseSql: String?,
+        whereExpr: Expression?,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
@@ -70,9 +72,9 @@ object CascadeUpdateClause {
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
                 toUpdateRecords.addAll(
                     pojo.select()
-                        .where { whereClauseSql.asSql() }
                         .patch(*paramMap.toList().toTypedArray())
                         .apply {
+                            this.selectStatement.where = whereExpr
                             this.cascadeAllowed = cascadeAllowed
                             this.operationType = KOperationType.UPDATE
                         }

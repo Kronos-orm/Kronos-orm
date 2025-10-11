@@ -382,8 +382,14 @@ object AstSqlRenderer {
                 is NamedParam -> ":" + e.name
                 is PositionalParam -> "?" // index ignored here
                 is UnaryOp -> "${e.op} ${paren(renderExpr(wrapper, support, e.expr))}"
-                is BinaryOp ->
-                        "${paren(renderExpr(wrapper, support, e.left))} ${e.op} ${paren(renderExpr(wrapper, support, e.right))}"
+                is BinaryOp -> {
+                    val left = renderExpr(wrapper, support, e.left)
+                    val right = renderExpr(wrapper, support, e.right)
+                    // 对于简单的列引用和参数，不需要添加括号
+                    val leftStr = if (e.left is ColumnRef || e.left is NamedParam) left else paren(left)
+                    val rightStr = if (e.right is ColumnRef || e.right is NamedParam) right else paren(right)
+                    "$leftStr ${e.op} $rightStr"
+                }
                 is FuncCall ->
                         buildString {
                             append(e.name)
@@ -539,7 +545,9 @@ object AstSqlRenderer {
                 com.kotlinorm.enums.ConditionType.IsNull -> baseSql.replace("IS NULL", "IS NOT NULL")
                 com.kotlinorm.enums.ConditionType.Like -> baseSql.replace("LIKE", "NOT LIKE")
                 com.kotlinorm.enums.ConditionType.In -> baseSql.replace("IN", "NOT IN")
+                com.kotlinorm.enums.ConditionType.Between -> baseSql.replace("BETWEEN", "NOT BETWEEN")
                 com.kotlinorm.enums.ConditionType.Regexp -> baseSql.replace("REGEXP", "NOT REGEXP")
+                com.kotlinorm.enums.ConditionType.Equal -> baseSql.replace("=", "!=")
                 else -> "NOT ($baseSql)"
             }
         } else {

@@ -87,6 +87,7 @@ class UpdateClause<T : KPojo>(
     internal var paramMapNew = mutableMapOf<Field, Any?>()
     private var cascadeEnabled = true
     internal var cascadeAllowed: Set<Field>? = null
+    private var hasExplicitSetFields = false
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。 该函数不接受参数，也不返回任何值。 主要完成以下功能：
@@ -146,6 +147,7 @@ class UpdateClause<T : KPojo>(
      */
     fun set(newValue: ToSet<T, Unit>): UpdateClause<T> {
         newValue ?: throw EmptyFieldsException()
+        hasExplicitSetFields = true
         pojo.afterSet {
             newValue(it)
             val plusAssign = plusAssignFields
@@ -164,7 +166,9 @@ class UpdateClause<T : KPojo>(
                 paramMapNew[assignField + "2MinusNew"] = assign.second
             }
 
-            fields
+            // 只添加用户明确指定的字段，而不是所有字段
+            // 只添加在fieldParamMap中的字段，这些是用户明确指定的字段
+            fieldParamMap.keys
                     .filter { field ->
                         field !in
                                 plusAssign.map { item -> item.first } +
@@ -297,9 +301,11 @@ class UpdateClause<T : KPojo>(
         }
 
         // 如果没有指定字段需要更新，则更新所有字段
+        // 注意：只有当用户没有调用set方法时，才更新所有字段
         if (updateStatement?.toUpdateFields?.isEmpty() == true &&
                         updateStatement?.plusAssigns?.isEmpty() == true &&
-                        updateStatement?.minusAssigns?.isEmpty() == true
+                        updateStatement?.minusAssigns?.isEmpty() == true &&
+                        !hasExplicitSetFields
         ) {
             allFields.forEach { field ->
                 updateStatement?.addUpdateField(field)
@@ -406,15 +412,9 @@ class UpdateClause<T : KPojo>(
 
         // 合并参数映射，准备执行SQL所需的参数
         val fieldMap = fieldsMapCache[kClass]!!
-        paramMapNew.forEach { (key, value) ->
-            val paramName =
-                    if (key is Field) {
-                        key.name + "New"
-                    } else {
-                        key.name
-                    }
-            val field = if (key is Field) key else fieldMap[key.name]
-            if (field != null && value != null) {
+        paramMapNew.forEach { (field, value) ->
+            val paramName = field.name + "New"
+            if (value != null) {
                 paramMap[paramName] = processParams(wrapper.orDefault(), field, value)
             } else {
                 paramMap[paramName] = value
@@ -431,7 +431,7 @@ class UpdateClause<T : KPojo>(
                                 object : KActionInfo {
                                     override val kClass = this@UpdateClause.kClass
                                     override val statement: Statement? = updateStatement
-                                    override val tableName: String? = this@UpdateClause.tableName
+                                    override val tableName: String = this@UpdateClause.tableName
                                     override val where: Expression? = updateStatement?.where
                                 }
                 )
@@ -443,9 +443,7 @@ class UpdateClause<T : KPojo>(
                 kClass,
                 paramMap.toMap(),
                 (updateStatement?.toUpdateFields ?: emptySet()).toCollection(linkedSetOf()),
-                (updateStatement?.where as? CriteriaExpr)?.let { /* legacy prop */
-                    null
-                },
+                updateStatement?.where,
                 rootTask
         )
     }

@@ -37,7 +37,7 @@ object NamedParameterUtils {
     private val START_SKIP = arrayOf("'", "\"", "--", "/*", "`")
 
     /**
-     * Set of characters that at are the corresponding comment or quotes ending characters.
+     * Set of characters that are the corresponding comment or quotes ending characters.
      */
     private val STOP_SKIP = arrayOf("'", "\"", "\n", "*/", "`")
 
@@ -78,7 +78,8 @@ object NamedParameterUtils {
     fun parseSqlStatement(sql: String, paramMap: Map<String, Any?> = mapOf()): ParsedSql {
         val original = namedSqlCache[sql]
         if (original != null) {
-            return ParsedSql(
+            // Rebuild ParsedSql and recompute jdbcSql using current paramMap to ensure correct placeholder expansion
+            val parsed = ParsedSql(
                 sql,
                 paramMap,
                 original.parameterNames,
@@ -86,8 +87,10 @@ object NamedParameterUtils {
                 original.namedParameterCount,
                 original.unnamedParameterCount,
                 original.totalParameterCount,
-                original.jdbcSql
+                ""
             )
+            parsed.jdbcSql = substituteNamedParameters(parsed, paramMap)
+            return parsed
         }
         val namedParameters: MutableSet<String> = HashSet()
         val sqlToUse = StringBuilder(sql)
@@ -202,7 +205,7 @@ object NamedParameterUtils {
         parsedSql.namedParameterCount = namedParameterCount
         parsedSql.unnamedParameterCount = unnamedParameterCount
         parsedSql.totalParameterCount = totalParameterCount
-        parsedSql.jdbcSql = substituteNamedParameters(parsedSql)
+        parsedSql.jdbcSql = substituteNamedParameters(parsedSql, paramMap)
         namedSqlCache[sql] = parsedSql
 
         return parsedSql
@@ -226,7 +229,7 @@ object NamedParameterUtils {
         parameter: String
     ): Int {
         if (!namedParameters.contains(parameter)) {
-            namedParameters.add(parameter);
+            namedParameters.add(parameter)
             return namedParameterCount + 1
         }
         return namedParameterCount
@@ -256,7 +259,7 @@ object NamedParameterUtils {
                             var endPos = m
                             for (n in 1 until STOP_SKIP[i].length) {
                                 if (m + n >= statement.size) {
-                                    // last comment not closed properly
+                                    // last comment isn't closed properly
                                     return statement.size
                                 }
                                 if (statement[m + n] != STOP_SKIP[i][n]) {
@@ -271,7 +274,7 @@ object NamedParameterUtils {
                             }
                         }
                     }
-                    // character sequence ending comment or quote not found
+                    // character sequence ending comment or quote isn't found
                     return statement.size
                 }
             }
@@ -324,19 +327,16 @@ object NamedParameterUtils {
             val startIndex = indexes[0]
             val endIndex = indexes[1]
             actualSql.append(originalSql, lastIndex, startIndex)
-            if (paramSource != null && paramSource.containsKey(paramName) && paramSource[paramName] != null) {
-                val value: Any = paramSource[paramName]!!
-                if (value is Iterable<*>) {
-                    for ((k, entryItem) in value.withIndex()) {
-                        if (k > 0) {
-                            actualSql.append(", ")
-                        }
-                        if (entryItem is Array<*> && entryItem.isArrayOf<Any>()) {
+            if (paramSource != null) {
+                val raw = getValueFromMap(paramSource, paramName)
+                val list = if (raw != null) toList(raw) else emptyList()
+                if (list.isNotEmpty()) {
+                    list.forEachIndexed { k, entryItem ->
+                        if (k > 0) actualSql.append(", ")
+                        if (entryItem is Array<*>) {
                             actualSql.append('(')
                             for (m in entryItem.indices) {
-                                if (m > 0) {
-                                    actualSql.append(", ")
-                                }
+                                if (m > 0) actualSql.append(", ")
                                 actualSql.append('?')
                             }
                             actualSql.append(')')
@@ -360,15 +360,13 @@ object NamedParameterUtils {
      * Convert a Map of named parameter values to a corresponding array.
      * @param parsedSql the parsed SQL statement
      * @param paramSource the source for named parameters
-     * @param declaredParams the List of declared SqlParameter objects
-     * (may be `null`). If specified, the parameter metadata will
+     * (maybe `null`). If specified, the parameter metadata will
      * be built into the value array in the form of SqlParameterValue objects.
      * @return the array of values
      */
     fun buildValueArray(
         parsedSql: ParsedSql, paramSource: Map<String, Any?>
     ): Array<Any?> {
-        val paramArray = arrayOfNulls<Any>(parsedSql.totalParameterCount)
         if (parsedSql.namedParameterCount > 0 && parsedSql.unnamedParameterCount > 0) {
             throw InvalidDataAccessApiUsageException(
                 "Not allowed to mix named and traditional ? placeholders. You have " +
@@ -377,11 +375,26 @@ object NamedParameterUtils {
                         parsedSql.originalSql
             )
         }
+
+        val params = mutableListOf<Any?>()
         val paramNames: List<String> = parsedSql.parameterNames
         for (i in paramNames.indices) {
-            paramArray[i] = getValueFromMap(paramSource, paramNames[i])
+            val v = getValueFromMap(paramSource, paramNames[i])
+            val list = toList(v)
+            // If list elements are arrays (tuple case), flatten their contents
+            if (list.firstOrNull() is Array<*>) {
+                list.forEach { tuple ->
+                    if (tuple is Array<*>) {
+                        tuple.forEach { params.add(it) }
+                    } else {
+                        params.add(tuple)
+                    }
+                }
+            } else {
+                params.addAll(list)
+            }
         }
-        return paramArray
+        return params.toTypedArray()
     }
 
     private fun getValueFromMap(map: Map<String, Any?>, path: String): Any? {
@@ -398,15 +411,9 @@ object NamedParameterUtils {
                     // 如果当前值是 List，取出对应的索引
                     key.toIntOrNull()?.let {
                         when (current) {
-                            is IntArray -> (current as IntArray)[it]
-                            is LongArray -> (current as LongArray)[it]
-                            is ShortArray -> (current as ShortArray)[it]
-                            is ByteArray -> (current as ByteArray)[it]
-                            is DoubleArray -> (current as DoubleArray)[it]
-                            is FloatArray -> (current as FloatArray)[it]
-                            is BooleanArray -> (current as BooleanArray)[it]
-                            is Array<*> -> (current as Array<*>)[it]
-                            is Iterable<*> -> (current as Iterable<*>).elementAt(it)
+                            is IntArray, is LongArray, is ShortArray, is ByteArray, is DoubleArray, is FloatArray, is BooleanArray, is Array<*>, is Iterable<*> -> toList(
+                                current
+                            )[it]
                             else -> throw InvalidDataAccessApiUsageException(
                                 "Collection named '$key' in parameter source is not an Iterable or Array"
                             )
@@ -426,5 +433,19 @@ object NamedParameterUtils {
         return regex.findAll(path).mapNotNull {
             it.groups["key"]?.value ?: it.groups[2]?.value
         }.toList()
+    }
+
+    private fun toList(value: Any?): List<Any?> = when (value) {
+        null -> listOf(null)
+        is Iterable<*> -> value.toList()
+        is Array<*> -> value.toList()
+        is IntArray -> value.toList()
+        is LongArray -> value.toList()
+        is ShortArray -> value.toList()
+        is ByteArray -> value.toList()
+        is DoubleArray -> value.toList()
+        is FloatArray -> value.toList()
+        is BooleanArray -> value.toList()
+        else -> listOf(value)
     }
 }

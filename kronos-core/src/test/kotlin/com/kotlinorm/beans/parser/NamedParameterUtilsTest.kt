@@ -315,10 +315,10 @@ class NamedParameterUtilsTest {
     @Test
     fun parseSqlStatementWithBrackets() {
         val sql = "select * from `tb&user` where id in (:id)"
-        val parsedSql = parseSqlStatement(sql, mapOf("id" to listOf(1)))
+        val parsedSql = parseSqlStatement(sql, mapOf("id" to listOf(1, 2, 3)))
         assertContentEquals(listOf("id"), parsedSql.parameterNames)
-        assertEquals("select * from `tb&user` where id in (?)", parsedSql.jdbcSql)
-        assertEquals(listOf(1), parsedSql.jdbcParamList[0])
+        assertEquals("select * from `tb&user` where id in (?, ?, ?)", parsedSql.jdbcSql)
+        assertContentEquals(listOf(1, 2, 3), parsedSql.jdbcParamList.toList())
     }
 
     @Test

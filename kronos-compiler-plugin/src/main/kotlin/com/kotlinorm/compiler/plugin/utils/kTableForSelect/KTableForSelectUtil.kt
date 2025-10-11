@@ -29,6 +29,7 @@ import com.kotlinorm.compiler.plugin.utils.kColumnTypeSymbol
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.analyzeMinusExpression
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.funcName
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.isColumn
+import com.kotlinorm.compiler.plugin.utils.kTableForCondition.isKPojo
 import com.kotlinorm.compiler.plugin.utils.kTableForCondition.isKronosFunction
 import com.kotlinorm.compiler.plugin.utils.kotlinTypeToKColumnType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -44,7 +45,9 @@ import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.properties
 
@@ -162,6 +165,19 @@ fun collectFields(
 
         is IrPropertyReference -> {
             fields += getColumnName(element)
+        }
+
+        is IrGetValueImpl -> {
+            val irClass = element.type.classOrNull?.owner
+            if (irClass?.isKPojo() == true) {
+                irClass.properties.forEach { prop ->
+                    if (prop.isColumn()) {
+                        fields.add(
+                            getColumnName(prop)
+                        )
+                    }
+                }
+            }
         }
 
         is IrReturn -> {

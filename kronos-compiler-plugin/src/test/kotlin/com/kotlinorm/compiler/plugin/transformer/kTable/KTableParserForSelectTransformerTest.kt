@@ -13,7 +13,7 @@ class KTableParserForSelectTransformerTest {
     fun `KTable Parser For Select Transformer Test`() {
 
         val result = compile(
-            """
+            $$"""
             import com.kotlinorm.Kronos
             import com.kotlinorm.annotations.*
             import com.kotlinorm.beans.dsl.Field
@@ -67,7 +67,7 @@ class KTableParserForSelectTransformerTest {
                 var deleted: Boolean? = null
             ) : KPojo {
                 fun getColumn(name: String): Field {
-                    return kronosColumns().find { it.name == name }!!
+                    return kronosColumns().find { it.name == name } ?: error("$name not found")
                 }
             }
             
@@ -93,6 +93,41 @@ class KTableParserForSelectTransformerTest {
                 fun List<User>.select(block: ToSelect<User, Any?>): List<List<Field>>{
                     return map { it.select(block) }
                 }
+
+
+                assertEquals(
+                    listOf(
+                        user.getColumn("id"),
+                        user.getColumn("username"),
+                        user.getColumn("gender"),
+                        user.getColumn("telephone"),
+                        user.getColumn("email"),
+                        user.getColumn("birthday"),
+                        user.getColumn("habits"),
+                        user.getColumn("age"),
+                        user.getColumn("avatar"),
+                        user.getColumn("friendId"),
+                        user.getColumn("createTime"),
+                        user.getColumn("updateTime"),
+                        user.getColumn("version"),
+                        user.getColumn("deleted"),
+                        Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL)
+                    ),
+                    user.select {
+                        it + "1"
+                    }
+                )
+
+
+                assertEquals(
+                    listOf(
+                        Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL),
+                        Field("2", type = KColumnType.CUSTOM_CRITERIA_SQL)
+                    ),
+                    user.select {
+                        + "1" + "2"
+                    }
+                )
 
 
                 assertEquals(
@@ -166,8 +201,6 @@ class KTableParserForSelectTransformerTest {
                         it.id
                     }
                 )
-
-
             }
         """.trimIndent(),
             testBaseName

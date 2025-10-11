@@ -38,8 +38,9 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender` FROM `tb_user` 
-                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender` 
+                FROM `tb_user` 
+                LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender` 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(), sql
@@ -64,10 +65,14 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` FROM `tb_user` 
-                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
-                RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
-                FULL JOIN `tb_address` ON `tb_user`.`id` = `tb_address`.`user_id` AND `tb_address`.`deleted` = 0 
+                SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
+                FROM `tb_user` 
+                LEFT JOIN `user_relation` 
+                ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender` 
+                RIGHT JOIN `movie` 
+                ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 
+                FULL JOIN `tb_address` 
+                ON `tb_address`.`user_id` = `tb_user`.`id` AND `tb_address`.`deleted` = 0 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(),
@@ -101,8 +106,9 @@ class MysqlJoinTest {
         assertEquals(
             """
                 SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
-                FROM `tb_user` LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` 
-                LEFT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
+                FROM `tb_user` 
+                LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` 
+                LEFT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(), sql
@@ -137,14 +143,12 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT COUNT(*) FROM 
-                (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
-                FROM `tb_user` 
-                LEFT JOIN `user_relation` ON `user_relation`.`id2` = `tb_user`.`id` AND `user_relation`.`gender` = `tb_user`.`gender` 
-                RIGHT JOIN `movie` ON `tb_user`.`id` = `movie`.`year` AND `movie`.`deleted` = 0 
-                FULL JOIN `tb_address` ON `tb_user`.`id` = `tb_address`.`user_id` AND `tb_address`.`deleted` = 0 
-                WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
-                ORDER BY `tb_user`.`id` DESC) AS total_count
+               SELECT COUNT(*) FROM (SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
+                    FROM `tb_user` 
+                    LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender` 
+                    RIGHT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 
+                    FULL JOIN `tb_address` ON `tb_address`.`user_id` = `tb_user`.`id` AND `tb_address`.`deleted` = 0 
+                    WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 ORDER BY `tb_user`.`id` DESC) AS total_count
             """.trimWhitespace(),
             sql
         )
@@ -174,8 +178,10 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT `tb_user`.`id` AS `id`, `test`.`user_relation`.`gender` AS `gender` FROM `tb_user` 
-                LEFT JOIN `test`.`user_relation` ON `test`.`user_relation`.`id2` = `tb_user`.`id` AND `test`.`user_relation`.`gender` = `tb_user`.`gender` 
+                SELECT `tb_user`.`id` AS `id`, `test`.`user_relation`.`gender` AS `gender` 
+                FROM `tb_user` 
+                LEFT JOIN `test`.`user_relation` 
+                ON `tb_user`.`id` = `test`.`user_relation`.`id2` AND `tb_user`.`gender` = `test`.`user_relation`.`gender` 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(),
@@ -197,9 +203,9 @@ class MysqlJoinTest {
 
         assertEquals(
             """
-                SELECT COUNT(1) AS count FROM `tb_user` 
+                SELECT COUNT(1) AS count FROM `tb_user`
                 LEFT JOIN `user_relation` 
-                ON `user_relation`.`id2` = `tb_user`.`id`
+                ON `tb_user`.`id` = `user_relation`.`id2` 
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0
             """.trimWhitespace(), sql
         )

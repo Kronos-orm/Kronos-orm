@@ -236,54 +236,12 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      *               with the index in the array matching the parameter index (1-based).
      */
     private fun PreparedStatement.setParameters(params: Array<Any?>) {
-        params.forEachIndexed { index, value ->
-            when (value) {
-                is Collection<*> -> {
-                    if (value.isEmpty()) {
-                        // If the collection is empty, set it as null in the PreparedStatement
-                        setNull(index + 1, java.sql.Types.NULL)
-                        return@forEachIndexed
-                    }
-                    // If the value is an Iterable or Array, convert it to a string representation
-                    setArray(
-                        index + 1,
-                        connection.createArrayOf(
-                            value.first()!!::class.simpleName!!.lowercase(),
-                            value.toTypedArray()
-                        ),
-                    )
-                }
-
-                is Array<*> -> {
-                    if (value.isEmpty()) {
-                        // If the array is empty, set it as null in the PreparedStatement
-                        setNull(index + 1, java.sql.Types.NULL)
-                        return@forEachIndexed
-                    }
-                    // If the value is an Array, convert it to a string representation
-                    setArray(
-                        index + 1,
-                        connection.createArrayOf(
-                            value[0]!!::class.simpleName!!.lowercase(),
-                            value as Array<out Any?>?
-                        ),
-                    )
-                }
-
-                is String -> {
-                    // If the value is a String, set it directly
-                    setString(index + 1, value)
-                }
-
-                null -> {
-                    // If the value is null, set it as null in the PreparedStatement
-                    setNull(index + 1, java.sql.Types.NULL)
-                }
-
-                else -> {
-                    // Otherwise, set the value directly
-                    setObject(index + 1, value)
-                }
+        var i = 0 // JDBC parameters are 1-based
+        while (i < params.size) {
+            when (val value = params[i]) {
+                null -> setNull(++i, java.sql.Types.NULL)
+                is String -> setString(++i, value)
+                else -> setObject(++i, value)
             }
         }
     }

@@ -290,6 +290,20 @@ class KTableParserForConditionTransformerTest {
                 )
     }
 
+    @Test
+    fun `test function handler condition`() {
+        "FunctionHandler" testCompile (
+                """
+                fun test(){
+                    val expected = user.getColumn("id").eq(FunctionField("any", listOf(null to 1)))
+                    assertEquals(expected, where { it.id == f.any(listOf(1)) })    
+                    val expected2 = user.getColumn("id").eq(FunctionField("all", listOf(null to 1)))
+                    assertEquals(expected2, where { it.id == f.all(listOf(1)) })  
+                }
+                """
+                )
+    }
+
     @Language("kotlin")
     private val mainKt = """
             import com.kotlinorm.Kronos
@@ -303,6 +317,11 @@ class KTableParserForConditionTransformerTest {
             import com.kotlinorm.types.ToFilter
             import java.time.LocalDateTime
             import kotlin.test.assertEquals
+            import com.kotlinorm.functions.FunctionManager.registerFunctionBuilder
+            import com.kotlinorm.functions.bundled.builders.PostgresFunctionBuilder
+            import com.kotlinorm.beans.dsl.FunctionField
+            import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
+            import com.kotlinorm.functions.bundled.exts.PostgresFunctions.all
             
             /**
              * User
@@ -404,6 +423,7 @@ class KTableParserForConditionTransformerTest {
                 Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
+                    registerFunctionBuilder(PostgresFunctionBuilder)
                 }
                 
                 val user = User()

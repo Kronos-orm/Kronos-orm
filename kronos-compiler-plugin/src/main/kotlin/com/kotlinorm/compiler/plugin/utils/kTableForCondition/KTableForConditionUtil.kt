@@ -326,8 +326,8 @@ private fun handleEqualOp(
 ) {
     state.not = state.not xor element.valueArguments.isEmpty()
     val index = when {
-        args[0].isKPojo() || args[0].isKronosFunction() -> 0
-        args[1].isKPojo() || args[0].isKronosFunction() -> 1
+        args[0].isKPojo() -> 0
+        args[1].isKPojo() -> 1
         else -> {
             state.type = "sql"
             state.value = element

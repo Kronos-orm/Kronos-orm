@@ -7,7 +7,10 @@ import com.kotlinorm.beans.sample.databases.PgUser
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.functions.FunctionManager.registerFunctionBuilder
+import com.kotlinorm.functions.bundled.builders.PostgresFunctionBuilder
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
@@ -46,6 +49,7 @@ class TableOperationPostgres {
             tableNamingStrategy = lineHumpNamingStrategy
             // 设置数据源提供器
             dataSource = { ds }
+            registerFunctionBuilder(PostgresFunctionBuilder)
         }
     }
 
@@ -164,8 +168,8 @@ class TableOperationPostgres {
 
     @Test
     fun testBasic() {
-        dataSource.table.dropTable(user)
         dataSource.table.syncTable(user)
+        dataSource.table.truncateTable(user)
         val user = PgUser(id = 8, regTime = Instant.ofEpochMilli(160000000000L))
         user.insert().execute()
         val selected = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }.queryOne()
@@ -176,7 +180,8 @@ class TableOperationPostgres {
             Instant.ofEpochMilli(160000000000L), selected.regTime,
             "插入的用户创建时间应该为160000000000L对应的时间戳"
         )
-        val list = PgUser().select { it.id + it.regTime }.where { it.regTime == Instant.ofEpochMilli(160000000000L) && it.id in listOf(8) }
+        val list = PgUser().select { it.id + it.regTime }
+            .where { it.regTime == Instant.ofEpochMilli(160000000000L) && it.id == f.any(listOf(8)) }
             .queryList()
         assertEquals(
             1, list.size, "查询到的用户数量应该为1"

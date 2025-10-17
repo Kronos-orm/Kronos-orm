@@ -59,10 +59,10 @@ class KronosCommandLineProcessor : CommandLineProcessor {
     ) {
         println("processOption:: option=$option value=$value")
         return when (option.optionName) {
-            com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE -> configuration.put(
-                com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.ARG_OPTION_DEBUG_MODE, value.lowercase() == "true")
-            com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH -> configuration.put(
-                com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.ARG_OPTION_DEBUG_INFO_PATH, value)
+            OPTION_DEBUG_MODE -> configuration.put(
+                ARG_OPTION_DEBUG_MODE, value.lowercase() == "true")
+            OPTION_DEBUG_INFO_PATH -> configuration.put(
+                ARG_OPTION_DEBUG_INFO_PATH, value)
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }

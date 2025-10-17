@@ -210,6 +210,19 @@ class KTableParserForConditionTransformerTest {
     }
 
     @Test
+    fun `test 'takeIf' condition`() {
+        "TakeIf" testCompile (
+                """
+                fun test(){
+                    user.id = 1
+                    val expected: Condition? = null
+                    assertEquals(expected, where { (it.id == 1).takeIf(false) })
+                }
+                """
+                )
+    }
+
+    @Test
     fun `test 'notBetween' condition`() {
         "NotBetween" testCompile (
                 """

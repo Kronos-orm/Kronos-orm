@@ -46,6 +46,9 @@ open class KTableForCondition<T : KPojo> {
 
     val <T : Any?> T?.value get() = this
 
+    @get:JvmName("valueN")
+    val <T: Any> T.value get() = this
+
     /**
      * Check if the iterable contains the element
      *
@@ -141,6 +144,18 @@ open class KTableForCondition<T : KPojo> {
      * @return `1`
      */
     fun Boolean?.ifNoValue(strategy: NoValueStrategyType) = true
+
+    /**
+     * Take the value if the condition is true
+     *
+     * Only for compiler plugin to parse to [Criteria]
+     *
+     * Return the value itself whether which condition is true or not
+     *
+     * @param block The condition block
+     * @return The value itself
+     */
+    fun Boolean?.takeIf(boolean: Boolean) = true
 
     /**
      * Checks if the given value is like the specified string.

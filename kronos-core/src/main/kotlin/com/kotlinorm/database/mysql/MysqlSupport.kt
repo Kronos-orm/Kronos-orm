@@ -28,47 +28,7 @@ import com.kotlinorm.database.SqlManager.indexCreateDefSql
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
-import com.kotlinorm.enums.KColumnType.BIGINT
-import com.kotlinorm.enums.KColumnType.BINARY
-import com.kotlinorm.enums.KColumnType.BIT
-import com.kotlinorm.enums.KColumnType.BLOB
-import com.kotlinorm.enums.KColumnType.CHAR
-import com.kotlinorm.enums.KColumnType.CLOB
-import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
-import com.kotlinorm.enums.KColumnType.DATE
-import com.kotlinorm.enums.KColumnType.DATETIME
-import com.kotlinorm.enums.KColumnType.DECIMAL
-import com.kotlinorm.enums.KColumnType.DOUBLE
-import com.kotlinorm.enums.KColumnType.ENUM
-import com.kotlinorm.enums.KColumnType.FLOAT
-import com.kotlinorm.enums.KColumnType.GEOMETRY
-import com.kotlinorm.enums.KColumnType.INT
-import com.kotlinorm.enums.KColumnType.JSON
-import com.kotlinorm.enums.KColumnType.LINESTRING
-import com.kotlinorm.enums.KColumnType.LONGBLOB
-import com.kotlinorm.enums.KColumnType.LONGTEXT
-import com.kotlinorm.enums.KColumnType.LONGVARBINARY
-import com.kotlinorm.enums.KColumnType.MEDIUMBLOB
-import com.kotlinorm.enums.KColumnType.MEDIUMINT
-import com.kotlinorm.enums.KColumnType.MEDIUMTEXT
-import com.kotlinorm.enums.KColumnType.NCHAR
-import com.kotlinorm.enums.KColumnType.NCLOB
-import com.kotlinorm.enums.KColumnType.NUMERIC
-import com.kotlinorm.enums.KColumnType.NVARCHAR
-import com.kotlinorm.enums.KColumnType.POINT
-import com.kotlinorm.enums.KColumnType.REAL
-import com.kotlinorm.enums.KColumnType.SERIAL
-import com.kotlinorm.enums.KColumnType.SET
-import com.kotlinorm.enums.KColumnType.SMALLINT
-import com.kotlinorm.enums.KColumnType.TEXT
-import com.kotlinorm.enums.KColumnType.TIME
-import com.kotlinorm.enums.KColumnType.TIMESTAMP
-import com.kotlinorm.enums.KColumnType.TINYINT
-import com.kotlinorm.enums.KColumnType.UUID
-import com.kotlinorm.enums.KColumnType.VARBINARY
-import com.kotlinorm.enums.KColumnType.VARCHAR
-import com.kotlinorm.enums.KColumnType.XML
-import com.kotlinorm.enums.KColumnType.YEAR
+import com.kotlinorm.enums.KColumnType.*
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
@@ -162,7 +122,7 @@ object MysqlSupport : DatabasesSupport {
         }${
             if (column.primaryKey == PrimaryKeyType.IDENTITY) " AUTO_INCREMENT" else ""
         }${
-            if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+            if (column.defaultValue != null) " DEFAULT ${column.defaultValue.ifEmpty { "\"\"" }}" else ""
         } COMMENT '${column.kDoc.orEmpty()}'"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =

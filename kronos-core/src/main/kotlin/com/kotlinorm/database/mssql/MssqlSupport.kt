@@ -121,7 +121,7 @@ object MssqlSupport : DatabasesSupport {
     }${
         if (column.primaryKey == PrimaryKeyType.IDENTITY) " IDENTITY" else ""
     }${
-        if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+        if (column.defaultValue != null) " DEFAULT ${column.defaultValue.ifEmpty { "\"\"" }}" else ""
     }"
 
     override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String {

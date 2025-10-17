@@ -130,7 +130,7 @@ object PostgresqlSupport : DatabasesSupport {
         }${
             if (column.primaryKey != PrimaryKeyType.NOT) " PRIMARY KEY" else ""
         }${
-            if (column.defaultValue != null) " DEFAULT ${column.defaultValue}" else ""
+            if (column.defaultValue != null) " DEFAULT ${column.defaultValue.ifEmpty { "\"\"" }}" else ""
         }"
     }
 

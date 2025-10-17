@@ -17,9 +17,9 @@ jobs:
     - name: First interaction 🤝
       uses: actions/first-interaction@v3
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
         # Issue欢迎消息
-        issue-message: |
+        issue_message: |
           🌟 Welcome to submit issues for kronos-orm! Please confirm:
           1️⃣ Have reviewed [Documentation](https://kotlinorm.com/documentation) and [existing issues](https://github.com/krronos-orm/kronos-orm/issues)
           2️⃣ Include the following information:
@@ -49,7 +49,7 @@ jobs:
           *感谢您对开源项目的贡献！💐*
 
         # PR欢迎消息  
-        pr-message: |
+        pr_message: |
           🎉 Thank you for submitting a Pull Request to kronos-orm! Please confirm:
           - [ ] Follow the [Contribution Guidelines](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md)
           - [ ] Follow the [Kotlin Coding Conventions](https://kotlinlang.org/docs/coding-conventions.html)

@@ -21,6 +21,7 @@ import com.kotlinorm.compiler.helpers.extensionReceiver
 import com.kotlinorm.compiler.helpers.extensionReceiverArgument
 import com.kotlinorm.compiler.helpers.invoke
 import com.kotlinorm.compiler.helpers.irCast
+import com.kotlinorm.compiler.helpers.nType
 import com.kotlinorm.compiler.helpers.sub
 import com.kotlinorm.compiler.helpers.valueArguments
 import com.kotlinorm.compiler.plugin.beans.CriteriaIR
@@ -33,10 +34,14 @@ import com.kotlinorm.compiler.plugin.utils.SerializeAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.getColumnOrValue
 import com.kotlinorm.compiler.plugin.utils.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.jvm.ir.unwrapInlineLambda
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irIfThenElse
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -52,6 +57,7 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrWhenImpl
@@ -245,6 +251,7 @@ private fun handleIrCall(
         "contains" -> handleContainsOp(irFunction, extensionReceiver, dispatchReceiver, args)
         "asSql" -> handleAsSqlOp(extensionReceiver)
         "ifNoValue" -> return handleIfNoValueOp(irFunction, extensionReceiver, args)
+        "takeIf" -> return handleTakeIfOp(irFunction, extensionReceiver, args)
     }
     return null
 }
@@ -566,6 +573,28 @@ private fun handleIfNoValueOp(
 ): IrVariable? {
     state.strategy = args.first()
     return buildCriteria(irFunction, extensionReceiver!!, state.not, state.strategy)
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(_: IrPluginContext, builder: IrBlockBuilder)
+private fun handleTakeIfOp(
+    irFunction: IrFunction,
+    extensionReceiver: IrExpression?,
+    args: List<IrExpression?>
+): IrVariable {
+    return builder.irTemporary(
+        builder.irIfThenElse(
+            criteriaClassSymbol.nType,
+            args[args.size - 1]!!,
+            builder.irGet(
+                buildCriteria(
+                    irFunction,
+                    extensionReceiver!!
+                )!!
+            ),
+            builder.irNull()
+        )
+    )
 }
 
 context(context: IrPluginContext, _: IrBlockBuilder, state: LocalState)

@@ -181,6 +181,31 @@ class MysqlSelectTest {
             sql2
         )
         assertEquals(mapOf<String, Any>(), paramMap2)
+
+        val (sql3, paramMap3) = user.select { it.id + it.username }
+            .where { it.id in listOf<Int?>() }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE false AND `deleted` = 0",
+            sql3
+        )
+        assertEquals(mapOf<String, Any>(), paramMap3)
+
+        val ids = listOf<String?>("1", "2", "3")
+        val (sql4, paramMap4) = user.select { it.id + it.username }
+            .where { it.username in ids }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE `username` IN (:usernameList) AND `deleted` = 0",
+            sql4
+        )
+        assertEquals(
+            mapOf(
+                "usernameList" to ids
+            ), paramMap4
+        )
     }
 
     @Test
@@ -293,5 +318,21 @@ class MysqlSelectTest {
         )
 
         assertEquals(mapOf("lengthMin" to 5), paramMap)
+    }
+
+    @Test
+    fun testTakeIf() {
+        val (sql, paramMap) = user
+            .select{ it.id }
+            .where {
+                it.id == 1 &&
+                        (it.username == "123").takeIf(user.id == 1)
+            }
+            .build()
+        assertEquals(
+            "SELECT `id` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            sql
+        )
+        assertEquals(mapOf("id" to 1), paramMap)
     }
 }

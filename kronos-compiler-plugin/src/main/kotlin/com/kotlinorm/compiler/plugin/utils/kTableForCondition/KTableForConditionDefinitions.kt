@@ -50,8 +50,7 @@ context(_: IrPluginContext)
 internal val criteriaSetterSymbol
     get() = kTableForConditionSymbol.getPropertySetter("criteria")!!
 
-context(_: IrPluginContext)
-private val criteriaClassSymbol
+context(_: IrPluginContext) val criteriaClassSymbol
     get() = referenceClass("com.kotlinorm.beans.dsl.Criteria")!!
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -106,6 +105,7 @@ fun parseConditionType(funcName: String): Pair<String, Boolean> {
         "ifNoValue" -> "ifNoValue" to false
         "regexp" -> "regexp" to false
         "notRegexp" -> "regexp" to true
+        "takeIf" -> "takeIf" to false
         else -> throw IllegalArgumentException("Unknown condition type: $funcName")
     }
 }

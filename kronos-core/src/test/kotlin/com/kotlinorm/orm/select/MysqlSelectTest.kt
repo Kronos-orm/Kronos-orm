@@ -334,5 +334,30 @@ class MysqlSelectTest {
             sql
         )
         assertEquals(mapOf("id" to 1), paramMap)
+
+        val (sql2, paramMap2) = user
+            .select { it.id }
+            .where {
+                it.username.contains("123") &&
+                        ((it.gender == 1 && it.username == "123") || (it.gender == 2 && it.username == "123")).takeIf(
+                            user.id == 2
+                        )
+            }
+            .build()
+        assertEquals(
+            "SELECT `id` FROM `tb_user` WHERE `username` LIKE :username AND " +
+                    "((`gender` = :gender AND `username` = :username@1) OR (`gender` = :gender@1 AND `username` = :username@2)) AND " +
+                    "`deleted` = 0",
+            sql2
+        )
+        assertEquals(
+            mapOf(
+                "username" to "%123%",
+                "gender" to 1,
+                "username@1" to "123",
+                "gender@1" to 2,
+                "username@2" to "123",
+            ), paramMap2
+        )
     }
 }

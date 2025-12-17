@@ -382,16 +382,9 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
             for (i in 1..metaData.columnCount) {
                 val label = metaData.getColumnLabel(i)
                 columns[label]?.let { field ->
-                    try {
-                        this[label] = if (strictSetValue) getObject(i, field.kClass!!.java)
-                        else getTypeSafeValue(
-                            field.kClass!!.qualifiedName!!,
-                            getObject(i),
-                            field.superTypes
-                        )
-                    } catch (_: NullPointerException) {
-                        this[label] = null
-                    }
+                    this[label] = getObjectValue(
+                        i, field.kClass!!, field.superTypes
+                    )
                 }
             }
         }
@@ -412,11 +405,12 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @param kClass The Kotlin class of the target object type.
      * @return The value at the specified column position, converted to the specified type.
      */
-    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>): Any? =
-        try{
-            if (strictSetValue) getObject(position, kClass.java)
-            else getTypeSafeValue(kClass.qualifiedName!!, getObject(position))
-        } catch (_: NullPointerException) {
-            null
+    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String> = listOf()): Any? =
+        if (strictSetValue) {
+            getObject(position, kClass.java)
+        } else {
+            getObject(position)?.let {
+                getTypeSafeValue(kClass.qualifiedName!!, it, superTypes)
+            }
         }
 }

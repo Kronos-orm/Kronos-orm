@@ -3,6 +3,7 @@ package com.kotlinorm.wrapper
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
+import com.kotlinorm.beans.sample.Order
 import com.kotlinorm.beans.sample.databases.MysqlUser
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
@@ -246,6 +247,41 @@ class BasicWrapperTest {
                 "update_time" to LocalDateTime.parse("2022-01-01T00:00"),
                 "deleted" to false
             ), result
+        )
+    }
+
+    @Test
+    fun testGetNullDate() {
+        if (dataSource.table.exists(Order())) {
+            dataSource.table.dropTable(Order())
+        }
+        dataSource.table.syncTable(Order())
+        wrapper.batchUpdate(
+            KronosAtomicBatchTask(
+                "insert into tb_order (id, user_id, order_date, total_amount, status, version, create_time, update_time) values (:id, :user_id, :order_date, :total_amount, :status, :version, :create_time, :update_time)",
+                arrayOf(
+                    mapOf(
+                        "id" to 1,
+                        "user_id" to 1,
+                        "order_date" to null,
+                        "total_amount" to 1.0,
+                        "status" to 1,
+                        "version" to 1,
+                        "createTime" to "2022-01-01T00:00",
+                        "updateTime" to LocalDateTime.parse("2022-01-01T00:00")
+                    )
+                )
+            ),
+        )
+        val result = wrapper.forObject(
+            KronosAtomicQueryTask("select id, user_id userId, order_date orderDate from tb_order where id = 1"),
+            Order::class,
+            true,
+            listOf()
+        )
+        assertEquals(
+            Order(1, 1, null),
+            result
         )
     }
 }

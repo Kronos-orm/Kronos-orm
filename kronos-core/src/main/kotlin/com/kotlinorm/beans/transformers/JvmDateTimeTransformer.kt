@@ -66,7 +66,7 @@ object JvmDateTimeTransformer : ValueTransformer {
         } else if (value is Instant) {
             LocalDateTime.ofInstant(value, timeZone)
         } else if (value is java.sql.Date) {
-            LocalDateTime.ofInstant(value.toInstant(), timeZone)
+            value.toLocalDate().atStartOfDay(timeZone).toLocalDateTime()
         } else if (value is java.sql.Timestamp) {
             LocalDateTime.ofInstant(value.toInstant(), timeZone)
         } else {

@@ -8,10 +8,11 @@ import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransfor
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -144,6 +145,15 @@ class CommonUtilTest {
         assertEquals(
             date,
             Date.from(LocalDateTime.parse(dateTimeString).atZone(ZoneId.systemDefault()).toInstant())
+        )
+
+        // 测试LocalDate类型
+        val dateString = dateTimeString.slice(0..<10)
+        assertEquals(
+            LocalDate.parse(dateString),
+            getTypeSafeValue(
+                "java.time.LocalDate", java.sql.Date.valueOf(dateString)
+            )
         )
 
         // 将 KotlinXDateTimeTransformer 添加到值转换器列表中

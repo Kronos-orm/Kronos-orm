@@ -74,7 +74,7 @@ class UpdateClause<T : KPojo>(
     private var kClass = pojo.kClass()
     private var createTimeStrategy = kPojoCreateTimeCache[kClass]
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     internal var allFields = kPojoAllFieldsCache[kClass]!!
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
@@ -247,12 +247,14 @@ class UpdateClause<T : KPojo>(
 
         // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
         logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
-            toUpdateFields -= field
-            paramMapNew -= field + "New"
-            // 构建逻辑删除的条件SQL
-            condition = listOfNotNull(
-                condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
-            ).toCriteria()
+            if (enabled) {
+                toUpdateFields -= field
+                paramMapNew -= field + "New"
+                // 构建逻辑删除的条件SQL
+                condition = listOfNotNull(
+                    condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
+                ).toCriteria()
+            }
         }
 
         createTimeStrategy?.apply {

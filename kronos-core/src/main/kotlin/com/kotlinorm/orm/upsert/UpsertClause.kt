@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.upsert
 
+import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -34,6 +35,7 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -230,12 +232,20 @@ class UpsertClause<T : KPojo>(
                             selectAll = false
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map {
-                                    it.eq(paramMap[it.name])
+                                    // it.eq(paramMap[it.name])
+                                    it.eq(paramMap[it.name]).apply {
+                                        noValueStrategyType = NoValueStrategyType.JudgeNull
+                                    }
                                 }.toCriteria()
+                            logicDeleteStrategy = null
                         }
                         .queryOneOrNull<Int>() ?: 0)
                     > 0
                 ) {
+                    logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
+                        toUpdateFields += field
+                        paramMap[field.name] = value
+                    }
                     pojo.update().cascade(cascadeEnabled)
                         .apply {
                             this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
@@ -245,6 +255,9 @@ class UpsertClause<T : KPojo>(
                             }
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
+                            logicDeleteStrategy = logicDeleteStrategy?.let {
+                                KronosCommonStrategy(false, it.field)
+                            }
                         }
                         .execute(wrapper)
                 } else {

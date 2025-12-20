@@ -11,7 +11,7 @@ English | <a href="./README-zh_CN.md">简体中文</a>
 
 <br/>
 
-<a href="http://kotlinlang.org"><img src="https://img.shields.io/badge/kotlin-2.2.0-%237f52ff.svg?logo=kotlin" alt="Kotlin"></a>
+<a href="http://kotlinlang.org"><img src="https://img.shields.io/badge/kotlin-2.2.21-%237f52ff.svg?logo=kotlin" alt="Kotlin"></a>
 <a href="https://www.apache.org/licenses/LICENSE-2.0.html"><img src="https://img.shields.io/:license-apache_2.0-green.svg" alt="License"></a>
 <br/>
 <a href="https://www.kotlinorm.com">Official Website</a> | <a href="https://kotlinorm.com/#/documentation/en/getting-started/quick-start">Documentation</a>

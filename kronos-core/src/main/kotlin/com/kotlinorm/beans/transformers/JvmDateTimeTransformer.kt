@@ -23,8 +23,8 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
-import java.util.*
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
 
 /**
  * Transformer for DateTime type.
@@ -42,6 +42,7 @@ object JvmDateTimeTransformer : ValueTransformer {
         "java.time.Instant",
         "java.time.ZonedDateTime",
         "java.time.OffsetDateTime",
+        "kotlin.time.Instant"
     )
 
     override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
@@ -50,6 +51,7 @@ object JvmDateTimeTransformer : ValueTransformer {
                 targetKotlinType in dateTimeTypes
     }
 
+    @OptIn(ExperimentalTime::class)
     override fun transform(
         targetKotlinType: String,
         value: Any,
@@ -69,6 +71,8 @@ object JvmDateTimeTransformer : ValueTransformer {
             value.toLocalDate().atStartOfDay(timeZone).toLocalDateTime()
         } else if (value is java.sql.Timestamp) {
             LocalDateTime.ofInstant(value.toInstant(), timeZone)
+        } else if (value is kotlin.time.Instant) {
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(value.toEpochMilliseconds()), timeZone)
         } else {
             try {
                 LocalDateTime.parse(value.toString(), DateTimeFormatter.ofPattern(pattern))
@@ -80,12 +84,13 @@ object JvmDateTimeTransformer : ValueTransformer {
             "java.time.LocalDateTime" -> localDateTime
             "kotlin.String" -> DateTimeFormatter.ofPattern(pattern).format(localDateTime)
             "kotlin.Long" -> localDateTime.atZone(timeZone).toInstant().toEpochMilli()
+            "kotlin.time.Instant" -> kotlin.time.Instant.fromEpochMilliseconds(localDateTime.atZone(timeZone).toInstant().toEpochMilli())
             "java.time.LocalDate" -> localDateTime.toLocalDate()
             "java.time.LocalTime" -> localDateTime.toLocalTime()
             "java.time.Instant" -> localDateTime.atZone(timeZone).toInstant()
             "java.time.ZonedDateTime" -> localDateTime.atZone(timeZone)
             "java.time.OffsetDateTime" -> localDateTime.atZone(timeZone).toOffsetDateTime()
-            "java.util.Date" -> Date.from(localDateTime.atZone(timeZone).toInstant())
+            "java.util.Date" -> java.util.Date.from(localDateTime.atZone(timeZone).toInstant())
             "java.sql.Date" -> java.sql.Date.valueOf(localDateTime.toLocalDate())
             "java.sql.Timestamp" -> java.sql.Timestamp.valueOf(localDateTime)
             else -> null

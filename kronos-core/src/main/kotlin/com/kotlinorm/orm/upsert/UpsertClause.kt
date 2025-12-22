@@ -242,10 +242,6 @@ class UpsertClause<T : KPojo>(
                         .queryOneOrNull<Int>() ?: 0)
                     > 0
                 ) {
-                    logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
-                        toUpdateFields += field
-                        paramMap[field.name] = value
-                    }
                     pojo.update().cascade(cascadeEnabled)
                         .apply {
                             this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
@@ -253,11 +249,18 @@ class UpsertClause<T : KPojo>(
                             this@UpsertClause.toUpdateFields.forEach {
                                 this@apply.paramMapNew[it + "New"] = paramMap[it.name]
                             }
+                            this@UpsertClause.logicDeleteStrategy?.execute(
+                                defaultValue = getDefaultBoolean(
+                                    wrapper.orDefault(),
+                                    false
+                                )
+                            ) { field, value ->
+                                this@apply.toUpdateFields += field
+                                this@apply.paramMapNew[field + "New"] = value
+                            }
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map { it.eq(paramMap[it.name]) }.toCriteria()
-                            logicDeleteStrategy = logicDeleteStrategy?.let {
-                                KronosCommonStrategy(false, it.field)
-                            }
+                            logicDeleteStrategy = null
                         }
                         .execute(wrapper)
                 } else {

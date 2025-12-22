@@ -39,11 +39,20 @@ class UpsertMySql {
     }
 
     @Test
-    fun testUpsert() {
+    fun testUpsertDeletedRow() {
         dataSource.table.syncTable<MysqlUser>()
         val user = MysqlUser(username = "张三")
         val lastInsertId = user.insert().execute().lastInsertId?.toInt()
         MysqlUser(id = lastInsertId).delete().logic().by { it.id }.execute()
         MysqlUser(id = lastInsertId, username = "李四").upsert { it.username }.on { it.id }.execute()
+    }
+
+    @Test
+    fun testUpsertOnDeleted() {
+        dataSource.table.syncTable<MysqlUser>()
+        val user = MysqlUser(username = "张三")
+        val lastInsertId = user.insert().execute().lastInsertId?.toInt()
+        MysqlUser(id = lastInsertId).delete().logic().by { it.id }.execute()
+        MysqlUser(username = "李四", deleted = true).upsert { it.username }.on { it.deleted }.execute()
     }
 }

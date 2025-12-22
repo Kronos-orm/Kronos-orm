@@ -247,14 +247,12 @@ class UpdateClause<T : KPojo>(
 
         // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
         logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
-            if (enabled) {
-                toUpdateFields -= field
-                paramMapNew -= field + "New"
-                // 构建逻辑删除的条件SQL
-                condition = listOfNotNull(
-                    condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
-                ).toCriteria()
-            }
+            toUpdateFields -= field
+            paramMapNew -= field + "New"
+            // 构建逻辑删除的条件SQL
+            condition = listOfNotNull(
+                condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
+            ).toCriteria()
         }
 
         createTimeStrategy?.apply {

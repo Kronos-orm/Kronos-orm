@@ -232,7 +232,6 @@ class UpsertClause<T : KPojo>(
                             selectAll = false
                             condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
                                 .map {
-                                    // it.eq(paramMap[it.name])
                                     it.eq(paramMap[it.name]).apply {
                                         noValueStrategyType = NoValueStrategyType.JudgeNull
                                     }

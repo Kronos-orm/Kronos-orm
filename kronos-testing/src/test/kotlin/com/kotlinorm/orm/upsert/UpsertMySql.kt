@@ -8,9 +8,11 @@ import com.kotlinorm.beans.sample.databases.MysqlUser
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
 import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class UpsertMySql {
     private val wrapper = BasicDataSource().apply {
@@ -45,6 +47,8 @@ class UpsertMySql {
         val lastInsertId = user.insert().execute().lastInsertId?.toInt()
         MysqlUser(id = lastInsertId).delete().logic().by { it.id }.execute()
         MysqlUser(id = lastInsertId, username = "李四").upsert { it.username }.on { it.id }.execute()
+        val result = MysqlUser(id = lastInsertId).select().where { it.id.eq }.queryOneOrNull()
+        assertEquals(result?.username, "李四")
     }
 
     @Test
@@ -54,5 +58,7 @@ class UpsertMySql {
         val lastInsertId = user.insert().execute().lastInsertId?.toInt()
         MysqlUser(id = lastInsertId).delete().logic().by { it.id }.execute()
         MysqlUser(username = "李四", deleted = true).upsert { it.username }.on { it.deleted }.execute()
+        val result = MysqlUser(id = lastInsertId).select().where { it.id.eq }.queryOneOrNull()
+        assertEquals(result?.username, "李四")
     }
 }

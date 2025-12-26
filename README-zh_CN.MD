@@ -21,7 +21,7 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 
 基于KCP实现的表达式树解析和协程，Kronos拥有**强大的性能、表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.2.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.2.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 

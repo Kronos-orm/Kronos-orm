@@ -21,7 +21,7 @@ Kronos is a modern ORM framework designed for Kotlin based on the compiler plugi
 
 Based on the KCP implementation of expression tree parsing and concatenation, Kronos has **powerful performance, expressiveness, and a concise, semantic writing style**, make the operation of the database has become **more simple**.
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.2.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.2.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 

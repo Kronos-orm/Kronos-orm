@@ -65,7 +65,7 @@ class SelectClause<T : KPojo>(
     private var kClass = pojo.kClass()
     private var tableName = pojo.kronosTableName()
     internal var paramMap = pojo.toDataMap()
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var allFields = kPojoAllFieldsCache[kClass]!!
     private var allColumns = kPojoAllColumnsCache[kClass]!!
     internal var condition: Criteria? = null

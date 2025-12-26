@@ -74,7 +74,7 @@ class UpdateClause<T : KPojo>(
     private var kClass = pojo.kClass()
     private var createTimeStrategy = kPojoCreateTimeCache[kClass]
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     internal var allFields = kPojoAllFieldsCache[kClass]!!
     internal var allColumns = kPojoAllColumnsCache[kClass]!!

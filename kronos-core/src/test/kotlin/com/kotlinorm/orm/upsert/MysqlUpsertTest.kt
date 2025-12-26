@@ -191,6 +191,24 @@ class MysqlUpsertTest {
                         ), paramMap
                     )
                 }
+
+                null -> {
+                    assertEquals(
+                        "INSERT INTO `tb_user` (`username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:username, :score, :gender, :createTime, :updateTime, :deleted)",
+                        sql
+                    )
+                    assertEquals(
+                        mapOf(
+                            "id" to null,
+                            "score" to null,
+                            "gender" to "0",
+                            "username" to "test",
+                            "deleted" to 0,
+                            "updateTime" to paramMap["updateTime"],
+                            "createTime" to paramMap["createTime"]
+                        ), paramMap
+                    )
+                }
             }
             return super.update(task)
         }
@@ -259,4 +277,9 @@ class MysqlUpsertTest {
         arrayOf(testUser, testUser2).upsert { it.username }.execute()
     }
 
+    @Test
+    fun testUpsertEmptyId() {
+        val testUser = MysqlUser(null, "test")
+        testUser.upsert { it.username }.on { it.id }.execute()
+    }
 }

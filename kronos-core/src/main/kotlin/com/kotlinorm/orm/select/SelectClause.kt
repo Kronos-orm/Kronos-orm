@@ -358,8 +358,7 @@ class SelectClause<T : KPojo>(
         }
 
         patchedParamMap.forEach { param ->
-            //如果paramMapNew存在，则不覆盖
-            if (paramMapNew.containsKey(param.key)) return@forEach
+            //允许覆盖
             paramMapNew[param.key] = param.value
         }
 

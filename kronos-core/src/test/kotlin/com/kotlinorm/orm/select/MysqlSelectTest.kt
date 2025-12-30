@@ -374,7 +374,7 @@ class MysqlSelectTest {
         )
         assertEquals(
             mapOf(
-                "id" to 1,
+                "id" to 2,
                 "username" to "123"
             ), paramMap
         )

@@ -118,8 +118,9 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                     stack.push(cur)
                     cur = if (cur.children.isNotEmpty()) cur.children.first() else null
                 }
-                val top = stack.pop()
+                val top = stack.last()
                 if (top.children.size <= 1 || top.children[1] == prev) {
+                    stack.pop()
                     prev = top
                     val topTableName = top.tableName
                     if (!topTableName.isNullOrEmpty()) {
@@ -147,7 +148,6 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
                     }
 
-                    if (stack.isNotEmpty()) stack.pop()
                 } else cur = top.children[1]
             }
 

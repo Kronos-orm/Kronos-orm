@@ -65,6 +65,7 @@ class SelectClause<T : KPojo>(
     private var kClass = pojo.kClass()
     private var tableName = pojo.kronosTableName()
     internal var paramMap = pojo.toDataMap()
+    internal val patchedParamMap = mutableMapOf<String, Any?>()
     internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var allFields = kPojoAllFieldsCache[kClass]!!
     private var allColumns = kPojoAllColumnsCache[kClass]!!
@@ -294,6 +295,7 @@ class SelectClause<T : KPojo>(
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): SelectClause<T> {
+        patchedParamMap.putAll(pairs.map { it.first to it.second })
         paramMap.putAll(pairs)
         return this
     }
@@ -353,6 +355,11 @@ class SelectClause<T : KPojo>(
             } else {
                 paramMapNew[key] = value
             }
+        }
+
+        patchedParamMap.forEach { param ->
+            //允许覆盖
+            paramMapNew[param.key] = param.value
         }
 
         // 返回构建好的KronosAtomicTask对象

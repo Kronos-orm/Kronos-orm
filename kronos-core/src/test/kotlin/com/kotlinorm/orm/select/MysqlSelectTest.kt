@@ -360,4 +360,23 @@ class MysqlSelectTest {
             ), paramMap2
         )
     }
+
+    @Test
+    fun testSelectPatch() {
+        val (sql, paramMap) = user.select {
+            it.id + it.username
+        }.where {
+            it.id == 1 && "`username` = :username".asSql()
+        }.patch("id" to 2, "username" to "123").build()
+        assertEquals(
+            "SELECT `id`, `username` FROM `tb_user` WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
+            sql
+        )
+        assertEquals(
+            mapOf(
+                "id" to 2,
+                "username" to "123"
+            ), paramMap
+        )
+    }
 }

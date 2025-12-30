@@ -107,8 +107,9 @@ class MysqlJoinTest {
             """
                 SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender`, `movie`.`id` AS `id@1` 
                 FROM `tb_user` 
-                LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` 
+                LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender`
                 LEFT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0 
+                LEFT JOIN `tb_address` ON `tb_address`.`user_id` = `tb_user`.`id` AND `tb_address`.`deleted` = 0
                 WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 
                 ORDER BY `tb_user`.`id` DESC
             """.trimWhitespace(), sql

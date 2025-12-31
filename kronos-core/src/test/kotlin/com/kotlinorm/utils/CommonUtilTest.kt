@@ -17,6 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.time.ExperimentalTime
 
 class CommonUtilTest {
     @Test
@@ -57,6 +58,7 @@ class CommonUtilTest {
         assertEquals(linkedSet, linkedSetOf(1, 2, 3, 4, 5))
     }
 
+    @OptIn(ExperimentalTime::class)
     @Test
     fun testGetTypeSafeValue() {
         // 测试整数类型

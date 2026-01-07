@@ -11,6 +11,8 @@ import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 object KotlinXDateTimeTransformer : ValueTransformer {
     private val dateTimeTypes = listOf(
@@ -26,7 +28,7 @@ object KotlinXDateTimeTransformer : ValueTransformer {
                 targetKotlinType in dateTimeTypes
     }
 
-    @OptIn(FormatStringsInDatetimeFormats::class)
+    @OptIn(FormatStringsInDatetimeFormats::class, ExperimentalTime::class)
     override fun transform(
         targetKotlinType: String,
         value: Any,
@@ -36,7 +38,7 @@ object KotlinXDateTimeTransformer : ValueTransformer {
     ): Any {
         val pattern = LocalDateTime.Format { byUnicodePattern(dateTimeFormat ?: defaultDateFormat) }
         val localDateTime = if (value is Number) {
-            val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(value.toLong())
+            val instant = Instant.fromEpochMilliseconds(value.toLong())
             if (targetKotlinType == "kotlinx.datetime.Instant") {
                 return instant
             }

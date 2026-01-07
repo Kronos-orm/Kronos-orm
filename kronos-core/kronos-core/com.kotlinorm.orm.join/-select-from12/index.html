@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="no-js">
+<html class="no-js" lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>SelectFrom12</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
-    <script>var pathToRoot = "../../../";</script>
-    <script>document.documentElement.classList.replace("no-js","js");</script>
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
-    if (storage == null) {
+      if (storage == null) {
         const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         if (osDarkSchemePreferred === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    } else {
+      } else {
         const savedDarkMode = JSON.parse(storage)
-        if(savedDarkMode === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    }
+      }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
@@ -25,20 +25,18 @@
 <link href="../../../styles/main.css" rel="Stylesheet">
 <link href="../../../styles/prism.css" rel="Stylesheet">
 <link href="../../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
 <link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
 <script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
 <script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
 <script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
-<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
 </head>
 <body>
-    <div class="root">
-    <nav class="navigation theme-dark" id="navigation-wrapper">
-            <a class="library-name--link" href="../../../index.html">
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
                     kronos-core
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
@@ -48,8 +46,8 @@
         <div class="library-version" id="library-version">
 0.0.6-SNAPSHOT        </div>
         <div class="navigation-controls">
-        <div class="filter-section filter-section_loading" id="filter-section">
-                <button class="platform-tag platform-selector jvm-like" data-active=""
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
                         data-filter=":kronos-core/main">jvm</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
@@ -59,9 +57,9 @@
                         aria-expanded="false"
                         aria-label="Toggle source sets"
                 ></button>
-                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
-                    <div class="dropdown--header"><span>Platform filter</span>
-                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
                             <i class="ui-kit-icon ui-kit-icon_cross"></i>
                         </button>
                     </div>
@@ -76,7 +74,7 @@
                 </ul>
                 <div class="dropdown--overlay"></div>
             </div>
-        </div>
+        </ul>
             <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
                     type="button">Switch theme
             </button>
@@ -84,26 +82,28 @@
                 API
             </div>
         </div>
-    </nav>
-        <div id="container">
-            <div class="sidebar" id="leftColumn">
-                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
-                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
-                        data-role="dropdown-listbox">
-                        <div class="dropdown--header">
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
                             <span>
                                     kronos-core
                             </span>
-                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
-                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar--inner" id="sideMenu"></div>
-                    </ul>
-                    <div class="dropdown--overlay"></div>
-                </div>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
             </div>
-            <div id="main">
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
 <div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-core::com.kotlinorm.orm.join/SelectFrom12///PointingToDeclaration//1698863696">
   <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.orm.join</a><span class="delimiter">/</span><span class="current">SelectFrom12</span></div>
   <div class="cover ">
@@ -114,9 +114,9 @@
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
       <div data-togglable="CONSTRUCTOR">
-        <h2 class="">Constructors</h2>
+        <h2 class="tableheader">Constructors</h2>
         <div class="table"><a data-name="1725970050%2FConstructors%2F1698863696" anchor-label="SelectFrom12" id="1725970050%2FConstructors%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-select-from12.html"><span>Select</span><wbr></wbr><span><span>From12</span></span></a></div>
@@ -133,9 +133,9 @@
         </div>
       </div>
       <div data-togglable="PROPERTY">
-        <h2 class="">Properties</h2>
+        <h2 class="tableheader">Properties</h2>
         <div class="table"><a data-name="-1838166532%2FProperties%2F1698863696" anchor-label="allFields" id="-1838166532%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="all-fields.html"><span>all</span><wbr></wbr><span><span>Fields</span></span></a></div>
@@ -150,7 +150,7 @@
             </div>
           </div>
 <a data-name="1304032258%2FProperties%2F1698863696" anchor-label="limitCapacity" id="1304032258%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/limit-capacity.html"><span>limit</span><wbr></wbr><span><span>Capacity</span></span></a></div>
@@ -165,7 +165,7 @@
             </div>
           </div>
 <a data-name="1433902378%2FProperties%2F1698863696" anchor-label="listOfJoinable" id="1433902378%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/list-of-joinable.html"><span>list</span><wbr></wbr><span>Of</span><wbr></wbr><span><span>Joinable</span></span></a></div>
@@ -180,7 +180,7 @@
             </div>
           </div>
 <a data-name="1617914891%2FProperties%2F1698863696" anchor-label="listOfPojo" id="1617914891%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="list-of-pojo.html"><span>list</span><wbr></wbr><span>Of</span><wbr></wbr><span><span>Pojo</span></span></a></div>
@@ -195,7 +195,7 @@
             </div>
           </div>
 <a data-name="490571642%2FProperties%2F1698863696" anchor-label="logicDeleteStrategy" id="490571642%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="logic-delete-strategy.html"><span>logic</span><wbr></wbr><span>Delete</span><wbr></wbr><span><span>Strategy</span></span></a></div>
@@ -210,7 +210,7 @@
             </div>
           </div>
 <a data-name="-941396731%2FProperties%2F1698863696" anchor-label="pageEnabled" id="-941396731%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/page-enabled.html"><span>page</span><wbr></wbr><span><span>Enabled</span></span></a></div>
@@ -225,7 +225,7 @@
             </div>
           </div>
 <a data-name="728120629%2FProperties%2F1698863696" anchor-label="paramMap" id="728120629%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="param-map.html"><span>param</span><wbr></wbr><span><span>Map</span></span></a></div>
@@ -234,13 +234,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">var </span><a href="param-map.html">paramMap</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">var </span><a href="param-map.html">paramMap</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1602249326%2FProperties%2F1698863696" anchor-label="selectAll" id="-1602249326%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/select-all.html"><span>select</span><wbr></wbr><span><span>All</span></span></a></div>
@@ -255,7 +255,7 @@
             </div>
           </div>
 <a data-name="-718109938%2FProperties%2F1698863696" anchor-label="selectFields" id="-718109938%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/select-fields.html"><span>select</span><wbr></wbr><span><span>Fields</span></span></a></div>
@@ -264,13 +264,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">var </span><a href="../-select-from/select-fields.html">selectFields</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-field/index.html">Field</a><span class="token operator">&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">var </span><a href="../-select-from/select-fields.html">selectFields</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-linked-hash-set/index.html">LinkedHashSet</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.beans.dsl/-field/index.html">Field</a><span class="token operator">&gt;</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1020934777%2FProperties%2F1698863696" anchor-label="t1" id="-1020934777%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t1.html"><span><span>t1</span></span></a></div>
@@ -285,7 +285,7 @@
             </div>
           </div>
 <a data-name="-2096279293%2FProperties%2F1698863696" anchor-label="t10" id="-2096279293%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t10.html"><span><span>t10</span></span></a></div>
@@ -300,7 +300,7 @@
             </div>
           </div>
 <a data-name="-2065259486%2FProperties%2F1698863696" anchor-label="t11" id="-2065259486%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t11.html"><span><span>t11</span></span></a></div>
@@ -315,7 +315,7 @@
             </div>
           </div>
 <a data-name="-2034239679%2FProperties%2F1698863696" anchor-label="t12" id="-2034239679%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t12.html"><span><span>t12</span></span></a></div>
@@ -330,7 +330,7 @@
             </div>
           </div>
 <a data-name="-989914970%2FProperties%2F1698863696" anchor-label="t2" id="-989914970%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t2.html"><span><span>t2</span></span></a></div>
@@ -345,7 +345,7 @@
             </div>
           </div>
 <a data-name="-958895163%2FProperties%2F1698863696" anchor-label="t3" id="-958895163%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t3.html"><span><span>t3</span></span></a></div>
@@ -360,7 +360,7 @@
             </div>
           </div>
 <a data-name="-927875356%2FProperties%2F1698863696" anchor-label="t4" id="-927875356%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t4.html"><span><span>t4</span></span></a></div>
@@ -375,7 +375,7 @@
             </div>
           </div>
 <a data-name="-896855549%2FProperties%2F1698863696" anchor-label="t5" id="-896855549%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t5.html"><span><span>t5</span></span></a></div>
@@ -390,7 +390,7 @@
             </div>
           </div>
 <a data-name="-865835742%2FProperties%2F1698863696" anchor-label="t6" id="-865835742%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t6.html"><span><span>t6</span></span></a></div>
@@ -405,7 +405,7 @@
             </div>
           </div>
 <a data-name="-834815935%2FProperties%2F1698863696" anchor-label="t7" id="-834815935%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t7.html"><span><span>t7</span></span></a></div>
@@ -420,7 +420,7 @@
             </div>
           </div>
 <a data-name="-803796128%2FProperties%2F1698863696" anchor-label="t8" id="-803796128%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t8.html"><span><span>t8</span></span></a></div>
@@ -435,7 +435,7 @@
             </div>
           </div>
 <a data-name="-772776321%2FProperties%2F1698863696" anchor-label="t9" id="-772776321%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="t9.html"><span><span>t9</span></span></a></div>
@@ -450,7 +450,7 @@
             </div>
           </div>
 <a data-name="1414334237%2FProperties%2F1698863696" anchor-label="tableName" id="1414334237%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="table-name.html"><span>table</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -467,9 +467,9 @@
         </div>
       </div>
       <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
+        <h2 class="tableheader">Functions</h2>
         <div class="table"><a data-name="1980765116%2FFunctions%2F1698863696" anchor-label="build" id="1980765116%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/build.html"><span><span>build</span></span></a></div>
@@ -484,7 +484,7 @@
             </div>
           </div>
 <a data-name="110200666%2FFunctions%2F1698863696" anchor-label="by" id="110200666%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/by.html"><span><span>by</span></span></a></div>
@@ -493,13 +493,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/by.html"><span class="token function">by</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-select/index.html">ToSelect</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Executes the query logic defined in <a href="../-select-from/by.html">someFields</a> and builds the query condition.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/by.html"><span class="token function">by</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-select/index.html">ToSelect</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Executes the query logic defined in <a href="../-select-from/by.html">someFields</a> and builds the query condition.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1874599010%2FFunctions%2F1698863696" anchor-label="cascade" id="-1874599010%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/cascade.html"><span><span>cascade</span></span></a></div>
@@ -508,13 +508,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/cascade.html"><span class="token function">cascade</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/cascade.html"><span class="token function">cascade</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-reference/index.html">ToReference</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/cascade.html"><span class="token function">cascade</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/cascade.html"><span class="token function">cascade</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-reference/index.html">ToReference</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="188014366%2FFunctions%2F1698863696" anchor-label="crossJoin" id="188014366%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/cross-join.html"><span>cross</span><wbr></wbr><span><span>Join</span></span></a></div>
@@ -523,17 +523,17 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/cross-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/cross-join.html"><span class="token function">crossJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><a href="../-select-from/cross-join.html">T</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a cross join operation between two tables.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/cross-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/cross-join.html"><span class="token function">crossJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.orm.join/SelectFrom12/crossJoin/#TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])#kotlin.Function2[com.kotlinorm.beans.dsl.KTableForCondition[TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])],TypeParam(bounds=[com.kotlinorm.interfaces.KPojo]),kotlin.Boolean?]?/PointingToGenericParameters(0)/">T</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a cross join operation between two tables.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1990684731%2FFunctions%2F1698863696" anchor-label="db" id="1990684731%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="1556606163%2FFunctions%2F1698863696" anchor-label="db" id="1556606163%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/db.html"><span><span>db</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1990684731%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1556606163%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -544,7 +544,7 @@
             </div>
           </div>
 <a data-name="-1043422265%2FFunctions%2F1698863696" anchor-label="distinct" id="-1043422265%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/distinct.html"><span><span>distinct</span></span></a></div>
@@ -559,7 +559,7 @@
             </div>
           </div>
 <a data-name="-413342175%2FFunctions%2F1698863696" anchor-label="fullJoin" id="-413342175%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/full-join.html"><span>full</span><wbr></wbr><span><span>Join</span></span></a></div>
@@ -568,13 +568,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/full-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/full-join.html"><span class="token function">fullJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><a href="../-select-from/full-join.html">T</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a full join operation between two tables.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/full-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/full-join.html"><span class="token function">fullJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.orm.join/SelectFrom12/fullJoin/#TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])#kotlin.Function2[com.kotlinorm.beans.dsl.KTableForCondition[TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])],TypeParam(bounds=[com.kotlinorm.interfaces.KPojo]),kotlin.Boolean?]?/PointingToGenericParameters(0)/">T</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a full join operation between two tables.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1844536379%2FFunctions%2F1698863696" anchor-label="groupBy" id="-1844536379%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/group-by.html"><span>group</span><wbr></wbr><span><span>By</span></span></a></div>
@@ -583,13 +583,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/group-by.html"><span class="token function">groupBy</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-select/index.html">ToSelect</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the groupBy flag to true and checks if the <code class="lang-kotlin">someFields</code> parameter is null. If it is null, throws a EmptyFieldsException.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/group-by.html"><span class="token function">groupBy</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-select/index.html">ToSelect</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the groupBy flag to true and checks if the <code class="lang-kotlin">someFields</code> parameter is null. If it is null, throws a EmptyFieldsException.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-2070370967%2FFunctions%2F1698863696" anchor-label="having" id="-2070370967%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/having.html"><span><span>having</span></span></a></div>
@@ -598,13 +598,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/having.html"><span class="token function">having</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">selectCondition<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the condition for the HAVING clause based on the provided select condition.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/having.html"><span class="token function">having</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">selectCondition<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the condition for the HAVING clause based on the provided select condition.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-438052300%2FFunctions%2F1698863696" anchor-label="innerJoin" id="-438052300%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/inner-join.html"><span>inner</span><wbr></wbr><span><span>Join</span></span></a></div>
@@ -613,13 +613,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/inner-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/inner-join.html"><span class="token function">innerJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><a href="../-select-from/inner-join.html">T</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs an inner join operation between two tables.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/inner-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/inner-join.html"><span class="token function">innerJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.orm.join/SelectFrom12/innerJoin/#TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])#kotlin.Function2[com.kotlinorm.beans.dsl.KTableForCondition[TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])],TypeParam(bounds=[com.kotlinorm.interfaces.KPojo]),kotlin.Boolean?]?/PointingToGenericParameters(0)/">T</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs an inner join operation between two tables.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1756043367%2FFunctions%2F1698863696" anchor-label="leftJoin" id="-1756043367%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/left-join.html"><span>left</span><wbr></wbr><span><span>Join</span></span></a></div>
@@ -628,13 +628,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/left-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/left-join.html"><span class="token function">leftJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><a href="../-select-from/left-join.html">T</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a left join operation between two tables.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/left-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/left-join.html"><span class="token function">leftJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.orm.join/SelectFrom12/leftJoin/#TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])#kotlin.Function2[com.kotlinorm.beans.dsl.KTableForCondition[TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])],TypeParam(bounds=[com.kotlinorm.interfaces.KPojo]),kotlin.Boolean?]?/PointingToGenericParameters(0)/">T</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a left join operation between two tables.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="1664047418%2FFunctions%2F1698863696" anchor-label="limit" id="1664047418%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/limit.html"><span><span>limit</span></span></a></div>
@@ -649,7 +649,7 @@
             </div>
           </div>
 <a data-name="-2109457169%2FFunctions%2F1698863696" anchor-label="on" id="-2109457169%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/on.html"><span><span>on</span></span></a></div>
@@ -658,13 +658,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/on.html"><span class="token function">on</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/on.html"><span class="token function">on</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-170010250%2FFunctions%2F1698863696" anchor-label="orderBy" id="-170010250%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/order-by.html"><span>order</span><wbr></wbr><span><span>By</span></span></a></div>
@@ -673,13 +673,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/order-by.html"><span class="token function">orderBy</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-sort/index.html">ToSort</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Orders the result set by the specified fields.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/order-by.html"><span class="token function">orderBy</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-sort/index.html">ToSort</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Orders the result set by the specified fields.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="2060942059%2FFunctions%2F1698863696" anchor-label="page" id="2060942059%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/page.html"><span><span>page</span></span></a></div>
@@ -693,12 +693,12 @@
               </div>
             </div>
           </div>
-<a data-name="18727296%2FFunctions%2F1698863696" anchor-label="patch" id="18727296%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="-1203903472%2FFunctions%2F1698863696" anchor-label="patch" id="-1203903472%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/patch.html"><span><span>patch</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="18727296%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1203903472%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -709,7 +709,7 @@
             </div>
           </div>
 <a data-name="-1475351146%2FFunctions%2F1698863696" anchor-label="query" id="-1475351146%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/query.html"><span><span>query</span></span></a></div>
@@ -724,7 +724,7 @@
             </div>
           </div>
 <a data-name="-1667920153%2FFunctions%2F1698863696" anchor-label="queryList" id="-1667920153%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/query-list.html"><span>query</span><wbr></wbr><span><span>List</span></span></a></div>
@@ -733,13 +733,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;queryForList&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">fun </span><a href="../-select-from/query-list.html"><span class="token function">queryList</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token operator">&gt;</span></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/query-list.html">T</a><span class="token operator">&gt; </span><a href="../-select-from/query-list.html"><span class="token function">queryList</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>listOf()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../-select-from/query-list.html">T</a><span class="token operator">&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;queryForList&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">fun </span><a href="../-select-from/query-list.html"><span class="token function">queryList</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token operator">&gt;</span></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/query-list.html">T</a><span class="token operator">&gt; </span><a href="../-select-from/query-list.html"><span class="token function">queryList</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>listOf()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../-select-from/query-list.html">T</a><span class="token operator">&gt;</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="1144022390%2FFunctions%2F1698863696" anchor-label="queryMap" id="1144022390%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/query-map.html"><span>query</span><wbr></wbr><span><span>Map</span></span></a></div>
@@ -754,7 +754,7 @@
             </div>
           </div>
 <a data-name="1235777696%2FFunctions%2F1698863696" anchor-label="queryMapOrNull" id="1235777696%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/query-map-or-null.html"><span>query</span><wbr></wbr><span>Map</span><wbr></wbr><span>Or</span><wbr></wbr><span><span>Null</span></span></a></div>
@@ -769,7 +769,7 @@
             </div>
           </div>
 <a data-name="1842078905%2FFunctions%2F1698863696" anchor-label="queryOne" id="1842078905%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/query-one.html"><span>query</span><wbr></wbr><span><span>One</span></span></a></div>
@@ -778,13 +778,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;queryForObject&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">fun </span><a href="../-select-from/query-one.html"><span class="token function">queryOne</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">T1</a></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/query-one.html">T</a><span class="token operator">&gt; </span><a href="../-select-from/query-one.html"><span class="token function">queryOne</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>listOf()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-select-from/query-one.html">T</a></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;queryForObject&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">fun </span><a href="../-select-from/query-one.html"><span class="token function">queryOne</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">T1</a></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/query-one.html">T</a><span class="token operator">&gt; </span><a href="../-select-from/query-one.html"><span class="token function">queryOne</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>listOf()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-select-from/query-one.html">T</a></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-350904627%2FFunctions%2F1698863696" anchor-label="queryOneOrNull" id="-350904627%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/query-one-or-null.html"><span>query</span><wbr></wbr><span>One</span><wbr></wbr><span>Or</span><wbr></wbr><span><span>Null</span></span></a></div>
@@ -793,13 +793,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;queryForObjectOrNull&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">fun </span><a href="../-select-from/query-one-or-null.html"><span class="token function">queryOneOrNull</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">T1</a><span class="token operator">?</span></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/query-one-or-null.html">T</a><span class="token operator">&gt; </span><a href="../-select-from/query-one-or-null.html"><span class="token function">queryOneOrNull</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>listOf()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-select-from/query-one-or-null.html">T</a><span class="token operator">?</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-name/index.html"><span class="token annotation builtin">JvmName</span></a><span class="token punctuation">(</span><span>name<span class="token operator"> = </span><span class="breakable-word"><span class="token string">&quot;queryForObjectOrNull&quot;</span></span></span><wbr></wbr><span class="token punctuation">)</span></div></div><span class="token keyword">fun </span><a href="../-select-from/query-one-or-null.html"><span class="token function">queryOneOrNull</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">T1</a><span class="token operator">?</span></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/query-one-or-null.html">T</a><span class="token operator">&gt; </span><a href="../-select-from/query-one-or-null.html"><span class="token function">queryOneOrNull</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">wrapper<span class="token operator">: </span><a href="../../com.kotlinorm.interfaces/-kronos-data-source-wrapper/index.html">KronosDataSourceWrapper</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">isKPojo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">superTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>listOf()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-select-from/query-one-or-null.html">T</a><span class="token operator">?</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="355482362%2FFunctions%2F1698863696" anchor-label="rightJoin" id="355482362%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/right-join.html"><span>right</span><wbr></wbr><span><span>Join</span></span></a></div>
@@ -808,13 +808,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/right-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/right-join.html"><span class="token function">rightJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><a href="../-select-from/right-join.html">T</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a right join operation between two tables.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="../-select-from/right-join.html">T</a><span class="token operator"> : </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt; </span><a href="../-select-from/right-join.html"><span class="token function">rightJoin</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">another<span class="token operator">: </span><span data-unresolved-link="com.kotlinorm.orm.join/SelectFrom12/rightJoin/#TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])#kotlin.Function2[com.kotlinorm.beans.dsl.KTableForCondition[TypeParam(bounds=[com.kotlinorm.interfaces.KPojo])],TypeParam(bounds=[com.kotlinorm.interfaces.KPojo]),kotlin.Boolean?]?/PointingToGenericParameters(0)/">T</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">noinline </span>on<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Performs a right join operation between two tables.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1490912449%2FFunctions%2F1698863696" anchor-label="select" id="-1490912449%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/select.html"><span><span>select</span></span></a></div>
@@ -823,13 +823,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/select.html"><span class="token function">select</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-select/index.html">ToSelect</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Selects the specified fields from the table associated with the given KTableField.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/select.html"><span class="token function">select</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">someFields<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-select/index.html">ToSelect</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Selects the specified fields from the table associated with the given KTableField.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1759833317%2FFunctions%2F1698863696" anchor-label="where" id="-1759833317%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-select-from/where.html"><span><span>where</span></span></a></div>
@@ -838,13 +838,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/where.html"><span class="token function">where</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">selectCondition<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the condition for the query based on the provided select condition.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../-select-from/where.html"><span class="token function">where</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">selectCondition<span class="token operator">: </span><a href="../../com.kotlinorm.types/-to-filter/index.html">ToFilter</a><span class="token operator">&lt;</span><a href="index.html">T1</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the condition for the query based on the provided select condition.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1096243176%2FFunctions%2F1698863696" anchor-label="withTotal" id="-1096243176%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="with-total.html"><span>with</span><wbr></wbr><span><span>Total</span></span></a></div>
@@ -864,17 +864,21 @@
   </div>
 </div>
     <div class="footer">
-        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
-        <span>© 2025 Copyright</span>
-        <span class="pull-right">
-            <span>Generated by </span>
-            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
-                <span>dokka</span>
-            </a>
-        </span>
-    </div>
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

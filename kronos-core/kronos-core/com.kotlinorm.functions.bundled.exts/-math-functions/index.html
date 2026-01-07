@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="no-js">
+<html class="no-js" lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>MathFunctions</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
-    <script>var pathToRoot = "../../../";</script>
-    <script>document.documentElement.classList.replace("no-js","js");</script>
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
-    if (storage == null) {
+      if (storage == null) {
         const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         if (osDarkSchemePreferred === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    } else {
+      } else {
         const savedDarkMode = JSON.parse(storage)
-        if(savedDarkMode === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    }
+      }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
@@ -25,20 +25,18 @@
 <link href="../../../styles/main.css" rel="Stylesheet">
 <link href="../../../styles/prism.css" rel="Stylesheet">
 <link href="../../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
 <link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
 <script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
 <script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
 <script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
-<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
 </head>
 <body>
-    <div class="root">
-    <nav class="navigation theme-dark" id="navigation-wrapper">
-            <a class="library-name--link" href="../../../index.html">
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
                     kronos-core
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
@@ -48,8 +46,8 @@
         <div class="library-version" id="library-version">
 0.0.6-SNAPSHOT        </div>
         <div class="navigation-controls">
-        <div class="filter-section filter-section_loading" id="filter-section">
-                <button class="platform-tag platform-selector jvm-like" data-active=""
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
                         data-filter=":kronos-core/main">jvm</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
@@ -59,9 +57,9 @@
                         aria-expanded="false"
                         aria-label="Toggle source sets"
                 ></button>
-                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
-                    <div class="dropdown--header"><span>Platform filter</span>
-                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
                             <i class="ui-kit-icon ui-kit-icon_cross"></i>
                         </button>
                     </div>
@@ -76,7 +74,7 @@
                 </ul>
                 <div class="dropdown--overlay"></div>
             </div>
-        </div>
+        </ul>
             <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
                     type="button">Switch theme
             </button>
@@ -84,26 +82,28 @@
                 API
             </div>
         </div>
-    </nav>
-        <div id="container">
-            <div class="sidebar" id="leftColumn">
-                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
-                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
-                        data-role="dropdown-listbox">
-                        <div class="dropdown--header">
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
                             <span>
                                     kronos-core
                             </span>
-                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
-                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar--inner" id="sideMenu"></div>
-                    </ul>
-                    <div class="dropdown--overlay"></div>
-                </div>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
             </div>
-            <div id="main">
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
 <div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-core::com.kotlinorm.functions.bundled.exts/MathFunctions///PointingToDeclaration//1698863696">
   <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.functions.bundled.exts</a><span class="delimiter">/</span><span class="current">MathFunctions</span></div>
   <div class="cover ">
@@ -114,9 +114,9 @@
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
       <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
+        <h2 class="tableheader">Functions</h2>
         <div class="table"><a data-name="-1670821875%2FFunctions%2F1698863696" anchor-label="abs" id="-1670821875%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="abs.html"><span><span>abs</span></span></a></div>
@@ -130,12 +130,12 @@
               </div>
             </div>
           </div>
-<a data-name="1048919232%2FFunctions%2F1698863696" anchor-label="add" id="1048919232%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="-320155140%2FFunctions%2F1698863696" anchor-label="add" id="-320155140%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="add.html"><span><span>add</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1048919232%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-320155140%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -146,7 +146,7 @@
             </div>
           </div>
 <a data-name="1790835682%2FFunctions%2F1698863696" anchor-label="bin" id="1790835682%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="bin.html"><span><span>bin</span></span></a></div>
@@ -161,7 +161,7 @@
             </div>
           </div>
 <a data-name="-1712402152%2FFunctions%2F1698863696" anchor-label="ceiling" id="-1712402152%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="ceiling.html"><span><span>ceiling</span></span></a></div>
@@ -175,12 +175,12 @@
               </div>
             </div>
           </div>
-<a data-name="-333086544%2FFunctions%2F1698863696" anchor-label="div" id="-333086544%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="1693956588%2FFunctions%2F1698863696" anchor-label="div" id="1693956588%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="div.html"><span><span>div</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-333086544%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1693956588%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -191,7 +191,7 @@
             </div>
           </div>
 <a data-name="465484408%2FFunctions%2F1698863696" anchor-label="exp" id="465484408%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="exp.html"><span><span>exp</span></span></a></div>
@@ -206,7 +206,7 @@
             </div>
           </div>
 <a data-name="-1531342809%2FFunctions%2F1698863696" anchor-label="floor" id="-1531342809%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="floor.html"><span><span>floor</span></span></a></div>
@@ -220,12 +220,12 @@
               </div>
             </div>
           </div>
-<a data-name="1004829192%2FFunctions%2F1698863696" anchor-label="greatest" id="1004829192%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="-1371574972%2FFunctions%2F1698863696" anchor-label="greatest" id="-1371574972%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="greatest.html"><span><span>greatest</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1004829192%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1371574972%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -235,12 +235,12 @@
               </div>
             </div>
           </div>
-<a data-name="-137815928%2FFunctions%2F1698863696" anchor-label="least" id="-137815928%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="-1975292988%2FFunctions%2F1698863696" anchor-label="least" id="-1975292988%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="least.html"><span><span>least</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-137815928%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1975292988%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -251,7 +251,7 @@
             </div>
           </div>
 <a data-name="-516388563%2FFunctions%2F1698863696" anchor-label="ln" id="-516388563%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="ln.html"><span><span>ln</span></span></a></div>
@@ -266,7 +266,7 @@
             </div>
           </div>
 <a data-name="-1730441065%2FFunctions%2F1698863696" anchor-label="log" id="-1730441065%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="log.html"><span><span>log</span></span></a></div>
@@ -281,7 +281,7 @@
             </div>
           </div>
 <a data-name="169655705%2FFunctions%2F1698863696" anchor-label="mod" id="169655705%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="mod.html"><span><span>mod</span></span></a></div>
@@ -295,12 +295,12 @@
               </div>
             </div>
           </div>
-<a data-name="451842403%2FFunctions%2F1698863696" anchor-label="mul" id="451842403%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="1762373599%2FFunctions%2F1698863696" anchor-label="mul" id="1762373599%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="mul.html"><span><span>mul</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="451842403%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1762373599%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -311,7 +311,7 @@
             </div>
           </div>
 <a data-name="-504088947%2FFunctions%2F1698863696" anchor-label="pi" id="-504088947%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="pi.html"><span><span>pi</span></span></a></div>
@@ -326,7 +326,7 @@
             </div>
           </div>
 <a data-name="-458386759%2FFunctions%2F1698863696" anchor-label="rand" id="-458386759%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="rand.html"><span><span>rand</span></span></a></div>
@@ -341,7 +341,7 @@
             </div>
           </div>
 <a data-name="-2059457395%2FFunctions%2F1698863696" anchor-label="round" id="-2059457395%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="round.html"><span><span>round</span></span></a></div>
@@ -356,7 +356,7 @@
             </div>
           </div>
 <a data-name="881163304%2FFunctions%2F1698863696" anchor-label="sign" id="881163304%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="sign.html"><span><span>sign</span></span></a></div>
@@ -371,7 +371,7 @@
             </div>
           </div>
 <a data-name="-323298741%2FFunctions%2F1698863696" anchor-label="sqrt" id="-323298741%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="sqrt.html"><span><span>sqrt</span></span></a></div>
@@ -385,12 +385,12 @@
               </div>
             </div>
           </div>
-<a data-name="333608415%2FFunctions%2F1698863696" anchor-label="sub" id="333608415%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+<a data-name="1682627931%2FFunctions%2F1698863696" anchor-label="sub" id="1682627931%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="sub.html"><span><span>sub</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="333608415%2FFunctions%2F1698863696"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1682627931%2FFunctions%2F1698863696"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
@@ -401,7 +401,7 @@
             </div>
           </div>
 <a data-name="1425661349%2FFunctions%2F1698863696" anchor-label="truncate" id="1425661349%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="truncate.html"><span><span>truncate</span></span></a></div>
@@ -421,17 +421,21 @@
   </div>
 </div>
     <div class="footer">
-        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
-        <span>© 2025 Copyright</span>
-        <span class="pull-right">
-            <span>Generated by </span>
-            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
-                <span>dokka</span>
-            </a>
-        </span>
-    </div>
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

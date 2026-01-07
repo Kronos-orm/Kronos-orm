@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="no-js">
+<html class="no-js" lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>FunctionField</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
-    <script>var pathToRoot = "../../../";</script>
-    <script>document.documentElement.classList.replace("no-js","js");</script>
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
-    if (storage == null) {
+      if (storage == null) {
         const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         if (osDarkSchemePreferred === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    } else {
+      } else {
         const savedDarkMode = JSON.parse(storage)
-        if(savedDarkMode === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    }
+      }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
@@ -25,20 +25,18 @@
 <link href="../../../styles/main.css" rel="Stylesheet">
 <link href="../../../styles/prism.css" rel="Stylesheet">
 <link href="../../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
 <link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
 <script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
 <script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
 <script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
-<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
 </head>
 <body>
-    <div class="root">
-    <nav class="navigation theme-dark" id="navigation-wrapper">
-            <a class="library-name--link" href="../../../index.html">
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
                     kronos-core
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
@@ -48,8 +46,8 @@
         <div class="library-version" id="library-version">
 0.0.6-SNAPSHOT        </div>
         <div class="navigation-controls">
-        <div class="filter-section filter-section_loading" id="filter-section">
-                <button class="platform-tag platform-selector jvm-like" data-active=""
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
                         data-filter=":kronos-core/main">jvm</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
@@ -59,9 +57,9 @@
                         aria-expanded="false"
                         aria-label="Toggle source sets"
                 ></button>
-                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
-                    <div class="dropdown--header"><span>Platform filter</span>
-                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
                             <i class="ui-kit-icon ui-kit-icon_cross"></i>
                         </button>
                     </div>
@@ -76,7 +74,7 @@
                 </ul>
                 <div class="dropdown--overlay"></div>
             </div>
-        </div>
+        </ul>
             <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
                     type="button">Switch theme
             </button>
@@ -84,26 +82,28 @@
                 API
             </div>
         </div>
-    </nav>
-        <div id="container">
-            <div class="sidebar" id="leftColumn">
-                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
-                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
-                        data-role="dropdown-listbox">
-                        <div class="dropdown--header">
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
                             <span>
                                     kronos-core
                             </span>
-                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
-                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar--inner" id="sideMenu"></div>
-                    </ul>
-                    <div class="dropdown--overlay"></div>
-                </div>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
             </div>
-            <div id="main">
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
 <div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-core::com.kotlinorm.beans.dsl/FunctionField///PointingToDeclaration//1698863696">
   <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.beans.dsl</a><span class="delimiter">/</span><span class="current">FunctionField</span></div>
   <div class="cover ">
@@ -114,9 +114,9 @@
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION,EXTENSION_PROPERTY,EXTENSION_FUNCTION">Members &amp; Extensions</button></div>
     <div class="tabs-section-body">
       <div data-togglable="CONSTRUCTOR">
-        <h2 class="">Constructors</h2>
+        <h2 class="tableheader">Constructors</h2>
         <div class="table"><a data-name="-1009212480%2FConstructors%2F1698863696" anchor-label="FunctionField" id="-1009212480%2FConstructors%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-function-field.html"><span>Function</span><wbr></wbr><span><span>Field</span></span></a></div>
@@ -133,9 +133,9 @@
         </div>
       </div>
       <div data-togglable="PROPERTY">
-        <h2 class="">Properties</h2>
+        <h2 class="tableheader">Properties</h2>
         <div class="table"><a data-name="1144539213%2FProperties%2F1698863696" anchor-label="cascade" id="1144539213%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/cascade.html"><span><span>cascade</span></span></a></div>
@@ -144,13 +144,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/cascade.html">cascade</a><span class="token operator">: </span><a href="../-k-cascade/index.html">KCascade</a><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">the cascade of the field</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/cascade.html">cascade</a><span class="token operator">: </span><a href="../-k-cascade/index.html">KCascade</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">the cascade of the field</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-828500129%2FProperties%2F1698863696" anchor-label="cascadeIsCollectionOrArray" id="-828500129%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/cascade-is-collection-or-array.html"><span>cascade</span><wbr></wbr><span>Is</span><wbr></wbr><span>Collection</span><wbr></wbr><span>Or</span><wbr></wbr><span><span>Array</span></span></a></div>
@@ -159,13 +159,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/cascade-is-collection-or-array.html">cascadeIsCollectionOrArray</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span></div><div class="brief "><p class="paragraph">whether the cascade field is a collection or array</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/cascade-is-collection-or-array.html">cascadeIsCollectionOrArray</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">whether the cascade field is a collection or array</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="1433489560%2FProperties%2F1698863696" anchor-label="columnName" id="1433489560%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/column-name.html"><span>column</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -180,7 +180,7 @@
             </div>
           </div>
 <a data-name="645198548%2FProperties%2F1698863696" anchor-label="dateFormat" id="645198548%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/date-format.html"><span>date</span><wbr></wbr><span><span>Format</span></span></a></div>
@@ -189,13 +189,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/date-format.html">dateFormat</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">the format of the date field</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/date-format.html">dateFormat</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">the format of the date field</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1281622071%2FProperties%2F1698863696" anchor-label="defaultValue" id="-1281622071%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/default-value.html"><span>default</span><wbr></wbr><span><span>Value</span></span></a></div>
@@ -204,13 +204,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/default-value.html">defaultValue</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">the default value of the field</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/default-value.html">defaultValue</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">the default value of the field</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1683154968%2FProperties%2F1698863696" anchor-label="fields" id="-1683154968%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="fields.html"><span><span>fields</span></span></a></div>
@@ -225,7 +225,7 @@
             </div>
           </div>
 <a data-name="644920414%2FProperties%2F1698863696" anchor-label="functionName" id="644920414%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="function-name.html"><span>function</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -240,7 +240,7 @@
             </div>
           </div>
 <a data-name="-1686973209%2FProperties%2F1698863696" anchor-label="ignore" id="-1686973209%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/ignore.html"><span><span>ignore</span></span></a></div>
@@ -249,13 +249,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/ignore.html">ignore</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.enums/-ignore-action/index.html">IgnoreAction</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">whether the field should be ignored in some operations</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/ignore.html">ignore</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="../../com.kotlinorm.enums/-ignore-action/index.html">IgnoreAction</a><span class="token operator">&gt;</span><span class="token operator">?</span></div><div class="brief "><p class="paragraph">whether the field should be ignored in some operations</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-928284071%2FProperties%2F1698863696" anchor-label="isColumn" id="-928284071%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/is-column.html"><span>is</span><wbr></wbr><span><span>Column</span></span></a></div>
@@ -264,13 +264,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/is-column.html">isColumn</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span></div><div class="brief "><p class="paragraph">whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/is-column.html">isColumn</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-2111721652%2FProperties%2F1698863696" anchor-label="kClass" id="-2111721652%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/k-class.html"><span>k</span><wbr></wbr><span><span>Class</span></span></a></div>
@@ -279,13 +279,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/k-class.html">kClass</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</div><div class="brief "><p class="paragraph">the class of the cascade field</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/k-class.html">kClass</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="../../com.kotlinorm.interfaces/-k-pojo/index.html">KPojo</a><span class="token operator">&gt;</span><span class="token operator">?</span></div><div class="brief "><p class="paragraph">the class of the cascade field</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-1089576628%2FProperties%2F1698863696" anchor-label="kDoc" id="-1089576628%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/k-doc.html"><span>k</span><wbr></wbr><span><span>Doc</span></span></a></div>
@@ -294,13 +294,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/k-doc.html">kDoc</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/k-doc.html">kDoc</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-897993133%2FProperties%2F1698863696" anchor-label="length" id="-897993133%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/length.html"><span><span>length</span></span></a></div>
@@ -309,13 +309,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/length.html">length</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span></div><div class="brief "><p class="paragraph">the length of the field</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/length.html">length</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">the length of the field</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="331114830%2FProperties%2F1698863696" anchor-label="name" id="331114830%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/name.html"><span><span>name</span></span></a></div>
@@ -330,7 +330,7 @@
             </div>
           </div>
 <a data-name="-1247976648%2FProperties%2F1698863696" anchor-label="nullable" id="-1247976648%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/nullable.html"><span><span>nullable</span></span></a></div>
@@ -339,13 +339,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/nullable.html">nullable</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span></div><div class="brief "><p class="paragraph">whether the field is nullable</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/nullable.html">nullable</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">whether the field is nullable</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="729360924%2FProperties%2F1698863696" anchor-label="primaryKey" id="729360924%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/primary-key.html"><span>primary</span><wbr></wbr><span><span>Key</span></span></a></div>
@@ -360,7 +360,7 @@
             </div>
           </div>
 <a data-name="1152621431%2FProperties%2F1698863696" anchor-label="scale" id="1152621431%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/scale.html"><span><span>scale</span></span></a></div>
@@ -369,13 +369,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/scale.html">scale</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/scale.html">scale</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-2029946534%2FProperties%2F1698863696" anchor-label="serializable" id="-2029946534%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/serializable.html"><span><span>serializable</span></span></a></div>
@@ -384,13 +384,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/serializable.html">serializable</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-field/serializable.html">serializable</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="1495148667%2FProperties%2F1698863696" anchor-label="superTypes" id="1495148667%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/super-types.html"><span>super</span><wbr></wbr><span><span>Types</span></span></a></div>
@@ -405,7 +405,7 @@
             </div>
           </div>
 <a data-name="-1014296024%2FProperties%2F1698863696" anchor-label="tableName" id="-1014296024%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/table-name.html"><span>table</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -420,7 +420,7 @@
             </div>
           </div>
 <a data-name="1260889983%2FProperties%2F1698863696" anchor-label="type" id="1260889983%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/type.html"><span><span>type</span></span></a></div>
@@ -437,9 +437,9 @@
         </div>
       </div>
       <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
+        <h2 class="tableheader">Functions</h2>
         <div class="table"><a data-name="-1391105056%2FFunctions%2F1698863696" anchor-label="copy" id="-1391105056%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/copy.html"><span><span>copy</span></span></a></div>
@@ -454,7 +454,7 @@
             </div>
           </div>
 <a data-name="-188284888%2FFunctions%2F1698863696" anchor-label="equals" id="-188284888%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/equals.html"><span><span>equals</span></span></a></div>
@@ -469,7 +469,7 @@
             </div>
           </div>
 <a data-name="1194122174%2FFunctions%2F1698863696" anchor-label="hashCode" id="1194122174%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/hash-code.html"><span>hash</span><wbr></wbr><span><span>Code</span></span></a></div>
@@ -484,7 +484,7 @@
             </div>
           </div>
 <a data-name="144365886%2FFunctions%2F1698863696" anchor-label="plus" id="144365886%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/plus.html"><span><span>plus</span></span></a></div>
@@ -499,7 +499,7 @@
             </div>
           </div>
 <a data-name="593385125%2FFunctions%2F1698863696" anchor-label="quoted" id="593385125%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../../com.kotlinorm.database/-sql-manager/quoted.html"><span><span>quoted</span></span></a></div>
@@ -514,7 +514,7 @@
             </div>
           </div>
 <a data-name="889389192%2FFunctions%2F1698863696" anchor-label="refUseFor" id="889389192%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/ref-use-for.html"><span>ref</span><wbr></wbr><span>Use</span><wbr></wbr><span><span>For</span></span></a></div>
@@ -529,7 +529,7 @@
             </div>
           </div>
 <a data-name="1015956109%2FFunctions%2F1698863696" anchor-label="toString" id="1015956109%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-field/to-string.html"><span>to</span><wbr></wbr><span><span>String</span></span></a></div>
@@ -549,17 +549,21 @@
   </div>
 </div>
     <div class="footer">
-        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
-        <span>© 2025 Copyright</span>
-        <span class="pull-right">
-            <span>Generated by </span>
-            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
-                <span>dokka</span>
-            </a>
-        </span>
-    </div>
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

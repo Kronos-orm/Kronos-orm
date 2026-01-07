@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="no-js">
+<html class="no-js" lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>KColumnType</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
-    <script>var pathToRoot = "../../../";</script>
-    <script>document.documentElement.classList.replace("no-js","js");</script>
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
-    if (storage == null) {
+      if (storage == null) {
         const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         if (osDarkSchemePreferred === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    } else {
+      } else {
         const savedDarkMode = JSON.parse(storage)
-        if(savedDarkMode === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    }
+      }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
@@ -25,20 +25,18 @@
 <link href="../../../styles/main.css" rel="Stylesheet">
 <link href="../../../styles/prism.css" rel="Stylesheet">
 <link href="../../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
 <link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
 <script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
 <script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
 <script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
 <script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
-<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
 </head>
 <body>
-    <div class="root">
-    <nav class="navigation theme-dark" id="navigation-wrapper">
-            <a class="library-name--link" href="../../../index.html">
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
                     kronos-core
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
@@ -48,8 +46,8 @@
         <div class="library-version" id="library-version">
 0.0.6-SNAPSHOT        </div>
         <div class="navigation-controls">
-        <div class="filter-section filter-section_loading" id="filter-section">
-                <button class="platform-tag platform-selector jvm-like" data-active=""
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
                         data-filter=":kronos-core/main">jvm</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
@@ -59,9 +57,9 @@
                         aria-expanded="false"
                         aria-label="Toggle source sets"
                 ></button>
-                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
-                    <div class="dropdown--header"><span>Platform filter</span>
-                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
                             <i class="ui-kit-icon ui-kit-icon_cross"></i>
                         </button>
                     </div>
@@ -76,7 +74,7 @@
                 </ul>
                 <div class="dropdown--overlay"></div>
             </div>
-        </div>
+        </ul>
             <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
                     type="button">Switch theme
             </button>
@@ -84,26 +82,28 @@
                 API
             </div>
         </div>
-    </nav>
-        <div id="container">
-            <div class="sidebar" id="leftColumn">
-                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
-                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
-                        data-role="dropdown-listbox">
-                        <div class="dropdown--header">
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
                             <span>
                                     kronos-core
                             </span>
-                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
-                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar--inner" id="sideMenu"></div>
-                    </ul>
-                    <div class="dropdown--overlay"></div>
-                </div>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
             </div>
-            <div id="main">
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
 <div class="main-content" data-page-type="classlike" id="content" pageIds="kronos-core::com.kotlinorm.enums/KColumnType///PointingToDeclaration//1698863696">
   <div class="breadcrumbs"><a href="../../../index.html">kronos-core</a><span class="delimiter">/</span><a href="../index.html">com.kotlinorm.enums</a><span class="delimiter">/</span><span class="current">KColumnType</span></div>
   <div class="cover ">
@@ -114,9 +114,9 @@
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="ENTRY">Entries</button></div>
     <div class="tabs-section-body">
       <div data-togglable="ENTRY">
-        <h2 class="">Entries</h2>
+        <h2 class="tableheader">Entries</h2>
         <div class="table"><a data-name="-660104990%2FClasslikes%2F1698863696" anchor-label="UNDEFINED" id="-660104990%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-u-n-d-e-f-i-n-e-d/index.html">UNDEFINED</a></div>
@@ -131,7 +131,7 @@
             </div>
           </div>
 <a data-name="-1556737441%2FClasslikes%2F1698863696" anchor-label="BIT" id="-1556737441%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-b-i-t/index.html">BIT</a></div>
@@ -146,7 +146,7 @@
             </div>
           </div>
 <a data-name="1723528129%2FClasslikes%2F1698863696" anchor-label="TINYINT" id="1723528129%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-t-i-n-y-i-n-t/index.html">TINYINT</a></div>
@@ -161,7 +161,7 @@
             </div>
           </div>
 <a data-name="-68801730%2FClasslikes%2F1698863696" anchor-label="SMALLINT" id="-68801730%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-s-m-a-l-l-i-n-t/index.html">SMALLINT</a></div>
@@ -176,7 +176,7 @@
             </div>
           </div>
 <a data-name="-2041881151%2FClasslikes%2F1698863696" anchor-label="INT" id="-2041881151%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-i-n-t/index.html">INT</a></div>
@@ -191,7 +191,7 @@
             </div>
           </div>
 <a data-name="-933398811%2FClasslikes%2F1698863696" anchor-label="BIGINT" id="-933398811%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-b-i-g-i-n-t/index.html">BIGINT</a></div>
@@ -206,7 +206,7 @@
             </div>
           </div>
 <a data-name="-1014199852%2FClasslikes%2F1698863696" anchor-label="REAL" id="-1014199852%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-r-e-a-l/index.html">REAL</a></div>
@@ -221,7 +221,7 @@
             </div>
           </div>
 <a data-name="1278419950%2FClasslikes%2F1698863696" anchor-label="FLOAT" id="1278419950%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-f-l-o-a-t/index.html">FLOAT</a></div>
@@ -236,7 +236,7 @@
             </div>
           </div>
 <a data-name="-1128748985%2FClasslikes%2F1698863696" anchor-label="DOUBLE" id="-1128748985%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-d-o-u-b-l-e/index.html">DOUBLE</a></div>
@@ -251,7 +251,7 @@
             </div>
           </div>
 <a data-name="-523390301%2FClasslikes%2F1698863696" anchor-label="DECIMAL" id="-523390301%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-d-e-c-i-m-a-l/index.html">DECIMAL</a></div>
@@ -266,7 +266,7 @@
             </div>
           </div>
 <a data-name="1933922700%2FClasslikes%2F1698863696" anchor-label="CHAR" id="1933922700%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-c-h-a-r/index.html">CHAR</a></div>
@@ -281,7 +281,7 @@
             </div>
           </div>
 <a data-name="1419725135%2FClasslikes%2F1698863696" anchor-label="VARCHAR" id="1419725135%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-v-a-r-c-h-a-r/index.html">VARCHAR</a></div>
@@ -296,7 +296,7 @@
             </div>
           </div>
 <a data-name="-212001501%2FClasslikes%2F1698863696" anchor-label="TEXT" id="-212001501%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-t-e-x-t/index.html">TEXT</a></div>
@@ -311,7 +311,7 @@
             </div>
           </div>
 <a data-name="130681759%2FClasslikes%2F1698863696" anchor-label="LONGTEXT" id="130681759%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-l-o-n-g-t-e-x-t/index.html">LONGTEXT</a></div>
@@ -326,7 +326,7 @@
             </div>
           </div>
 <a data-name="-1436326940%2FClasslikes%2F1698863696" anchor-label="DATE" id="-1436326940%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-d-a-t-e/index.html">DATE</a></div>
@@ -341,7 +341,7 @@
             </div>
           </div>
 <a data-name="-2075520317%2FClasslikes%2F1698863696" anchor-label="TIME" id="-2075520317%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-t-i-m-e/index.html">TIME</a></div>
@@ -356,7 +356,7 @@
             </div>
           </div>
 <a data-name="-690977295%2FClasslikes%2F1698863696" anchor-label="DATETIME" id="-690977295%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-d-a-t-e-t-i-m-e/index.html">DATETIME</a></div>
@@ -371,7 +371,7 @@
             </div>
           </div>
 <a data-name="-734905816%2FClasslikes%2F1698863696" anchor-label="TIMESTAMP" id="-734905816%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-t-i-m-e-s-t-a-m-p/index.html">TIMESTAMP</a></div>
@@ -386,7 +386,7 @@
             </div>
           </div>
 <a data-name="-1328905097%2FClasslikes%2F1698863696" anchor-label="BINARY" id="-1328905097%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-b-i-n-a-r-y/index.html">BINARY</a></div>
@@ -401,7 +401,7 @@
             </div>
           </div>
 <a data-name="-1551526022%2FClasslikes%2F1698863696" anchor-label="VARBINARY" id="-1551526022%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-v-a-r-b-i-n-a-r-y/index.html">VARBINARY</a></div>
@@ -416,7 +416,7 @@
             </div>
           </div>
 <a data-name="1737905790%2FClasslikes%2F1698863696" anchor-label="LONGVARBINARY" id="1737905790%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-l-o-n-g-v-a-r-b-i-n-a-r-y/index.html">LONGVARBINARY</a></div>
@@ -431,7 +431,7 @@
             </div>
           </div>
 <a data-name="1230365587%2FClasslikes%2F1698863696" anchor-label="BLOB" id="1230365587%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-b-l-o-b/index.html">BLOB</a></div>
@@ -446,7 +446,7 @@
             </div>
           </div>
 <a data-name="-579537998%2FClasslikes%2F1698863696" anchor-label="CLOB" id="-579537998%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-c-l-o-b/index.html">CLOB</a></div>
@@ -461,7 +461,7 @@
             </div>
           </div>
 <a data-name="-1994209378%2FClasslikes%2F1698863696" anchor-label="JSON" id="-1994209378%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-j-s-o-n/index.html">JSON</a></div>
@@ -476,7 +476,7 @@
             </div>
           </div>
 <a data-name="1445925367%2FClasslikes%2F1698863696" anchor-label="ENUM" id="1445925367%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-e-n-u-m/index.html">ENUM</a></div>
@@ -491,7 +491,7 @@
             </div>
           </div>
 <a data-name="1352140357%2FClasslikes%2F1698863696" anchor-label="NVARCHAR" id="1352140357%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-n-v-a-r-c-h-a-r/index.html">NVARCHAR</a></div>
@@ -506,7 +506,7 @@
             </div>
           </div>
 <a data-name="1960880214%2FClasslikes%2F1698863696" anchor-label="NCHAR" id="1960880214%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-n-c-h-a-r/index.html">NCHAR</a></div>
@@ -521,7 +521,7 @@
             </div>
           </div>
 <a data-name="-552580484%2FClasslikes%2F1698863696" anchor-label="NCLOB" id="-552580484%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-n-c-l-o-b/index.html">NCLOB</a></div>
@@ -536,7 +536,7 @@
             </div>
           </div>
 <a data-name="-1744488655%2FClasslikes%2F1698863696" anchor-label="UUID" id="-1744488655%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-u-u-i-d/index.html">UUID</a></div>
@@ -551,7 +551,7 @@
             </div>
           </div>
 <a data-name="1126311722%2FClasslikes%2F1698863696" anchor-label="SERIAL" id="1126311722%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-s-e-r-i-a-l/index.html">SERIAL</a></div>
@@ -566,7 +566,7 @@
             </div>
           </div>
 <a data-name="-2102139853%2FClasslikes%2F1698863696" anchor-label="YEAR" id="-2102139853%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-y-e-a-r/index.html">YEAR</a></div>
@@ -581,7 +581,7 @@
             </div>
           </div>
 <a data-name="1569041004%2FClasslikes%2F1698863696" anchor-label="MEDIUMINT" id="1569041004%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-m-e-d-i-u-m-i-n-t/index.html">MEDIUMINT</a></div>
@@ -596,7 +596,7 @@
             </div>
           </div>
 <a data-name="-1076643489%2FClasslikes%2F1698863696" anchor-label="NUMERIC" id="-1076643489%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-n-u-m-e-r-i-c/index.html">NUMERIC</a></div>
@@ -611,7 +611,7 @@
             </div>
           </div>
 <a data-name="57435608%2FClasslikes%2F1698863696" anchor-label="MEDIUMTEXT" id="57435608%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-m-e-d-i-u-m-t-e-x-t/index.html">MEDIUMTEXT</a></div>
@@ -626,7 +626,7 @@
             </div>
           </div>
 <a data-name="1499802696%2FClasslikes%2F1698863696" anchor-label="MEDIUMBLOB" id="1499802696%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-m-e-d-i-u-m-b-l-o-b/index.html">MEDIUMBLOB</a></div>
@@ -641,7 +641,7 @@
             </div>
           </div>
 <a data-name="1573048847%2FClasslikes%2F1698863696" anchor-label="LONGBLOB" id="1573048847%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-l-o-n-g-b-l-o-b/index.html">LONGBLOB</a></div>
@@ -656,7 +656,7 @@
             </div>
           </div>
 <a data-name="144298740%2FClasslikes%2F1698863696" anchor-label="SET" id="144298740%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-s-e-t/index.html">SET</a></div>
@@ -671,7 +671,7 @@
             </div>
           </div>
 <a data-name="98120872%2FClasslikes%2F1698863696" anchor-label="GEOMETRY" id="98120872%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-g-e-o-m-e-t-r-y/index.html">GEOMETRY</a></div>
@@ -686,7 +686,7 @@
             </div>
           </div>
 <a data-name="757421090%2FClasslikes%2F1698863696" anchor-label="POINT" id="757421090%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-p-o-i-n-t/index.html">POINT</a></div>
@@ -701,7 +701,7 @@
             </div>
           </div>
 <a data-name="-891762309%2FClasslikes%2F1698863696" anchor-label="LINESTRING" id="-891762309%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-l-i-n-e-s-t-r-i-n-g/index.html">LINESTRING</a></div>
@@ -716,7 +716,7 @@
             </div>
           </div>
 <a data-name="1468071913%2FClasslikes%2F1698863696" anchor-label="XML" id="1468071913%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-x-m-l/index.html">XML</a></div>
@@ -731,7 +731,7 @@
             </div>
           </div>
 <a data-name="-747792370%2FClasslikes%2F1698863696" anchor-label="CUSTOM_CRITERIA_SQL" id="-747792370%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-c-u-s-t-o-m_-c-r-i-t-e-r-i-a_-s-q-l/index.html">CUSTOM_CRITERIA_SQL</a></div>
@@ -746,7 +746,7 @@
             </div>
           </div>
 <a data-name="-639955905%2FClasslikes%2F1698863696" anchor-label="SQL_FUNCTION" id="-639955905%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-s-q-l_-f-u-n-c-t-i-o-n/index.html">SQL_FUNCTION</a></div>
@@ -763,9 +763,9 @@
         </div>
       </div>
       <div data-togglable="TYPE">
-        <h2 class="">Types</h2>
+        <h2 class="tableheader">Types</h2>
         <div class="table"><a data-name="594171367%2FClasslikes%2F1698863696" anchor-label="Companion" id="594171367%2FClasslikes%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
@@ -782,9 +782,9 @@
         </div>
       </div>
       <div data-togglable="PROPERTY">
-        <h2 class="">Properties</h2>
+        <h2 class="tableheader">Properties</h2>
         <div class="table"><a data-name="1977556688%2FProperties%2F1698863696" anchor-label="entries" id="1977556688%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="entries.html"><span><span>entries</span></span></a></div>
@@ -799,7 +799,7 @@
             </div>
           </div>
 <a data-name="-372974862%2FProperties%2F1698863696" anchor-label="name" id="-372974862%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-sql-type/-i-n-s-e-r-t/index.html#-372974862%2FProperties%2F1698863696"><span><span>name</span></span></a></div>
@@ -814,7 +814,7 @@
             </div>
           </div>
 <a data-name="-739389684%2FProperties%2F1698863696" anchor-label="ordinal" id="-739389684%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="../-sql-type/-i-n-s-e-r-t/index.html#-739389684%2FProperties%2F1698863696"><span><span>ordinal</span></span></a></div>
@@ -829,7 +829,7 @@
             </div>
           </div>
 <a data-name="-17783040%2FProperties%2F1698863696" anchor-label="type" id="-17783040%2FProperties%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="type.html"><span><span>type</span></span></a></div>
@@ -846,9 +846,9 @@
         </div>
       </div>
       <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
+        <h2 class="tableheader">Functions</h2>
         <div class="table"><a data-name="-870231860%2FFunctions%2F1698863696" anchor-label="valueOf" id="-870231860%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="value-of.html"><span>value</span><wbr></wbr><span><span>Of</span></span></a></div>
@@ -863,7 +863,7 @@
             </div>
           </div>
 <a data-name="264975064%2FFunctions%2F1698863696" anchor-label="values" id="264975064%2FFunctions%2F1698863696" data-filterable-set=":kronos-core/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-core/main" data-filterable-set=":kronos-core/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="values.html"><span><span>values</span></span></a></div>
@@ -883,17 +883,21 @@
   </div>
 </div>
     <div class="footer">
-        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
-        <span>© 2025 Copyright</span>
-        <span class="pull-right">
-            <span>Generated by </span>
-            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
-                <span>dokka</span>
-            </a>
-        </span>
-    </div>
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

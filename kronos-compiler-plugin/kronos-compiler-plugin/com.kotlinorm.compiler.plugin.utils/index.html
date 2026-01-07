@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="no-js">
+<html class="no-js" lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>com.kotlinorm.compiler.plugin.utils</title>
     <link href="../../images/logo-icon.svg" rel="icon" type="image/svg">
-    <script>var pathToRoot = "../../";</script>
-    <script>document.documentElement.classList.replace("no-js","js");</script>
+        <script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
-    if (storage == null) {
+      if (storage == null) {
         const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         if (osDarkSchemePreferred === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    } else {
+      } else {
         const savedDarkMode = JSON.parse(storage)
-        if(savedDarkMode === true) {
-            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
         }
-    }
+      }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
 <script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async="async"></script>
@@ -25,20 +25,18 @@
 <link href="../../styles/main.css" rel="Stylesheet">
 <link href="../../styles/prism.css" rel="Stylesheet">
 <link href="../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../styles/font-jb-sans-auto.css" rel="Stylesheet">
 <link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/safe-local-storage_blocking.js"></script>
 <script type="text/javascript" src="../../scripts/navigation-loader.js" async="async"></script>
 <script type="text/javascript" src="../../scripts/platform-content-handler.js" async="async"></script>
 <script type="text/javascript" src="../../scripts/main.js" defer="defer"></script>
 <script type="text/javascript" src="../../scripts/prism.js" async="async"></script>
 <script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer="defer"></script>
-<script type="text/javascript" src="../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
 </head>
 <body>
-    <div class="root">
-    <nav class="navigation theme-dark" id="navigation-wrapper">
-            <a class="library-name--link" href="../../index.html">
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../index.html" tabindex="1">
                     kronos-compiler-plugin
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
@@ -48,8 +46,8 @@
         <div class="library-version" id="library-version">
 0.0.6-SNAPSHOT        </div>
         <div class="navigation-controls">
-        <div class="filter-section filter-section_loading" id="filter-section">
-                <button class="platform-tag platform-selector jvm-like" data-active=""
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
                         data-filter=":kronos-compiler-plugin/main">jvm</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
@@ -59,9 +57,9 @@
                         aria-expanded="false"
                         aria-label="Toggle source sets"
                 ></button>
-                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
-                    <div class="dropdown--header"><span>Platform filter</span>
-                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
                             <i class="ui-kit-icon ui-kit-icon_cross"></i>
                         </button>
                     </div>
@@ -76,7 +74,7 @@
                 </ul>
                 <div class="dropdown--overlay"></div>
             </div>
-        </div>
+        </ul>
             <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
                     type="button">Switch theme
             </button>
@@ -84,26 +82,28 @@
                 API
             </div>
         </div>
-    </nav>
-        <div id="container">
-            <div class="sidebar" id="leftColumn">
-                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
-                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
-                        data-role="dropdown-listbox">
-                        <div class="dropdown--header">
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
                             <span>
                                     kronos-compiler-plugin
                             </span>
-                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
-                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar--inner" id="sideMenu"></div>
-                    </ul>
-                    <div class="dropdown--overlay"></div>
-                </div>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
             </div>
-            <div id="main">
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
 <div class="main-content" data-page-type="package" id="content" pageIds="kronos-compiler-plugin::com.kotlinorm.compiler.plugin.utils////PointingToDeclaration//-548264962">
   <div class="breadcrumbs"><a href="../../index.html">kronos-compiler-plugin</a><span class="delimiter">/</span><span class="current">com.kotlinorm.compiler.plugin.utils</span></div>
   <div class="cover ">
@@ -113,9 +113,9 @@
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button><button class="section-tab" data-togglable="FUNCTION,EXTENSION_FUNCTION">Functions</button><button class="section-tab" data-togglable="PROPERTY,EXTENSION_PROPERTY">Properties</button></div>
     <div class="tabs-section-body">
       <div data-togglable="TYPE">
-        <h2 class="">Types</h2>
+        <h2 class="tableheader">Types</h2>
         <div class="table"><a data-name="-803976212%2FClasslikes%2F-548264962" anchor-label="KClassCreatorUtil" id="-803976212%2FClasslikes%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-k-class-creator-util/index.html"><span>KClass</span><wbr></wbr><span>Creator</span><wbr></wbr><span><span>Util</span></span></a></div>
@@ -130,7 +130,7 @@
             </div>
           </div>
 <a data-name="-1430849758%2FClasslikes%2F-548264962" anchor-label="KronosColumnValueType" id="-1430849758%2FClasslikes%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-kronos-column-value-type/index.html"><span>Kronos</span><wbr></wbr><span>Column</span><wbr></wbr><span>Value</span><wbr></wbr><span><span>Type</span></span></a></div>
@@ -145,7 +145,7 @@
             </div>
           </div>
 <a data-name="2072898082%2FClasslikes%2F-548264962" anchor-label="LRUCache" id="2072898082%2FClasslikes%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-l-r-u-cache/index.html"><span><span>LRUCache</span></span></a></div>
@@ -162,9 +162,9 @@
         </div>
       </div>
       <div data-togglable="PROPERTY">
-        <h2 class="">Properties</h2>
+        <h2 class="tableheader">Properties</h2>
         <div class="table"><a data-name="830299371%2FProperties%2F-548264962" anchor-label="ARRAY_OR_COLLECTION_FQ_NAMES" id="830299371%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-a-r-r-a-y_-o-r_-c-o-l-l-e-c-t-i-o-n_-f-q_-n-a-m-e-s.html"><span>ARRAY_</span><wbr></wbr><span>OR_</span><wbr></wbr><span>COLLECTION_</span><wbr></wbr><span>FQ_</span><wbr></wbr><span>NAMES</span></a></div>
@@ -179,7 +179,7 @@
             </div>
           </div>
 <a data-name="-1576107292%2FProperties%2F-548264962" anchor-label="CascadeAnnotationsFqName" id="-1576107292%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-cascade-annotations-fq-name.html"><span>Cascade</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -194,7 +194,7 @@
             </div>
           </div>
 <a data-name="-74571060%2FProperties%2F-548264962" anchor-label="ColumnAnnotationsFqName" id="-74571060%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-column-annotations-fq-name.html"><span>Column</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -209,7 +209,7 @@
             </div>
           </div>
 <a data-name="-1897187034%2FProperties%2F-548264962" anchor-label="ColumnTypeAnnotationsFqName" id="-1897187034%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-column-type-annotations-fq-name.html"><span>Column</span><wbr></wbr><span>Type</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -224,7 +224,7 @@
             </div>
           </div>
 <a data-name="1542633131%2FProperties%2F-548264962" anchor-label="CreateTimeFqName" id="1542633131%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-create-time-fq-name.html"><span>Create</span><wbr></wbr><span>Time</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -239,7 +239,7 @@
             </div>
           </div>
 <a data-name="-1803920152%2FProperties%2F-548264962" anchor-label="DateTimeFormatAnnotationsFqName" id="-1803920152%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-date-time-format-annotations-fq-name.html"><span>Date</span><wbr></wbr><span>Time</span><wbr></wbr><span>Format</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -254,7 +254,7 @@
             </div>
           </div>
 <a data-name="-1202769818%2FProperties%2F-548264962" anchor-label="DefaultValueAnnotationsFqName" id="-1202769818%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-default-value-annotations-fq-name.html"><span>Default</span><wbr></wbr><span>Value</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -269,7 +269,7 @@
             </div>
           </div>
 <a data-name="335640373%2FProperties%2F-548264962" anchor-label="fqNameOfSelectFromsRegexes" id="335640373%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="fq-name-of-select-froms-regexes.html"><span>fq</span><wbr></wbr><span>Name</span><wbr></wbr><span>Of</span><wbr></wbr><span>Select</span><wbr></wbr><span>Froms</span><wbr></wbr><span><span>Regexes</span></span></a></div>
@@ -278,13 +278,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="fq-name-of-select-froms-regexes.html">fqNameOfSelectFromsRegexes</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="fq-name-of-select-froms-regexes.html">fqNameOfSelectFromsRegexes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="563153279%2FProperties%2F-548264962" anchor-label="fqNameOfTypedQuery" id="563153279%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="fq-name-of-typed-query.html"><span>fq</span><wbr></wbr><span>Name</span><wbr></wbr><span>Of</span><wbr></wbr><span>Typed</span><wbr></wbr><span><span>Query</span></span></a></div>
@@ -293,13 +293,13 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="fq-name-of-typed-query.html">fqNameOfTypedQuery</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="fq-name-of-typed-query.html">fqNameOfTypedQuery</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span data-unresolved-link="org.jetbrains.kotlin.name/FqName///PointingToDeclaration/">FqName</span><span class="token operator">&gt;</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="1022915144%2FProperties%2F-548264962" anchor-label="IgnoreAnnotationsFqName" id="1022915144%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-ignore-annotations-fq-name.html"><span>Ignore</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -313,53 +313,53 @@
               </div>
             </div>
           </div>
-<a data-name="1712173707%2FProperties%2F-548264962" anchor-label="KPojoFqName" id="1712173707%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-399213795%2FProperties%2F-548264962" anchor-label="KPojoFqName" id="-399213795%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-k-pojo-fq-name.html"><span>KPojo</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1712173707%2FProperties%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-399213795%2FProperties%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="-k-pojo-fq-name.html">KPojoFqName</a><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.name/FqName///PointingToDeclaration/">FqName</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">val </span><a href="-k-pojo-fq-name.html">KPojoFqName</a><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.name/FqName///PointingToDeclaration/">FqName</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-329886423%2FProperties%2F-548264962" anchor-label="KPojoSymbol" id="-329886423%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="490732735%2FProperties%2F-548264962" anchor-label="KPojoSymbol" id="490732735%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-k-pojo-symbol.html"><span>KPojo</span><wbr></wbr><span><span>Symbol</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-329886423%2FProperties%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="490732735%2FProperties%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="-k-pojo-symbol.html">KPojoSymbol</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">val </span><a href="-k-pojo-symbol.html">KPojoSymbol</a><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.symbols/IrClassSymbol///PointingToDeclaration/">IrClassSymbol</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="2132389800%2FProperties%2F-548264962" anchor-label="KronosSymbol" id="2132389800%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="194661984%2FProperties%2F-548264962" anchor-label="KronosSymbol" id="194661984%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-kronos-symbol.html"><span>Kronos</span><wbr></wbr><span><span>Symbol</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2132389800%2FProperties%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="194661984%2FProperties%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="-kronos-symbol.html">KronosSymbol</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">val </span><a href="-kronos-symbol.html">KronosSymbol</a><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.symbols/IrClassSymbol///PointingToDeclaration/">IrClassSymbol</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-549801743%2FProperties%2F-548264962" anchor-label="LogicDeleteFqName" id="-549801743%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-logic-delete-fq-name.html"><span>Logic</span><wbr></wbr><span>Delete</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -374,7 +374,7 @@
             </div>
           </div>
 <a data-name="-1095613825%2FProperties%2F-548264962" anchor-label="NecessaryAnnotationsFqName" id="-1095613825%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-necessary-annotations-fq-name.html"><span>Necessary</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -389,7 +389,7 @@
             </div>
           </div>
 <a data-name="2069841660%2FProperties%2F-548264962" anchor-label="OptimisticLockFqName" id="2069841660%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-optimistic-lock-fq-name.html"><span>Optimistic</span><wbr></wbr><span>Lock</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -404,7 +404,7 @@
             </div>
           </div>
 <a data-name="-1962652109%2FProperties%2F-548264962" anchor-label="PrimaryKeyAnnotationsFqName" id="-1962652109%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-primary-key-annotations-fq-name.html"><span>Primary</span><wbr></wbr><span>Key</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -419,7 +419,7 @@
             </div>
           </div>
 <a data-name="-1625977648%2FProperties%2F-548264962" anchor-label="SerializeAnnotationsFqName" id="-1625977648%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-serialize-annotations-fq-name.html"><span>Serialize</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -434,7 +434,7 @@
             </div>
           </div>
 <a data-name="-617748802%2FProperties%2F-548264962" anchor-label="TableAnnotationsFqName" id="-617748802%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-table-annotations-fq-name.html"><span>Table</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -449,7 +449,7 @@
             </div>
           </div>
 <a data-name="2112191002%2FProperties%2F-548264962" anchor-label="TableIndexAnnotationsFqName" id="2112191002%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-table-index-annotations-fq-name.html"><span>Table</span><wbr></wbr><span>Index</span><wbr></wbr><span>Annotations</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -464,7 +464,7 @@
             </div>
           </div>
 <a data-name="-939990082%2FProperties%2F-548264962" anchor-label="UpdateTimeFqName" id="-939990082%2FProperties%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="-update-time-fq-name.html"><span>Update</span><wbr></wbr><span>Time</span><wbr></wbr><span>Fq</span><wbr></wbr><span><span>Name</span></span></a></div>
@@ -481,219 +481,219 @@
         </div>
       </div>
       <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
-        <div class="table"><a data-name="-1801081334%2FFunctions%2F-548264962" anchor-label="createFromMapValueFunction" id="-1801081334%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="1741927503%2FFunctions%2F-548264962" anchor-label="createFromMapValueFunction" id="1741927503%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-from-map-value-function.html"><span>create</span><wbr></wbr><span>From</span><wbr></wbr><span>Map</span><wbr></wbr><span>Value</span><wbr></wbr><span><span>Function</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1801081334%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1741927503%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-from-map-value-function.html"><span class="token function">createFromMapValueFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-from-map-value-function.html"><span class="token function">createFromMapValueFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates an IrBlockBody that sets the properties of an IrClass instance using values from a map.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-92681423%2FFunctions%2F-548264962" anchor-label="createGetFieldsFunction" id="-92681423%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-1910714726%2FFunctions%2F-548264962" anchor-label="createGetFieldsFunction" id="-1910714726%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-get-fields-function.html"><span>create</span><wbr></wbr><span>Get</span><wbr></wbr><span>Fields</span><wbr></wbr><span><span>Function</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-92681423%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1910714726%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-get-fields-function.html"><span class="token function">createGetFieldsFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-get-fields-function.html"><span class="token function">createGetFieldsFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates a safe from map value function for the given declaration and irFunction.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-707840747%2FFunctions%2F-548264962" anchor-label="createKClassFunction" id="-707840747%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="2088198710%2FFunctions%2F-548264962" anchor-label="createKClassFunction" id="2088198710%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-k-class-function.html"><span>create</span><wbr></wbr><span>KClass</span><wbr></wbr><span><span>Function</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-707840747%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2088198710%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-k-class-function.html"><span class="token function">createKClassFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-k-class-function.html"><span class="token function">createKClassFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates a new IrBlockBody that represents a function that returns the KClass of the given</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1696448253%2FFunctions%2F-548264962" anchor-label="createKronosComment" id="-1696448253%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-527275128%2FFunctions%2F-548264962" anchor-label="createKronosComment" id="-527275128%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-comment.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span><span>Comment</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1696448253%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-527275128%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-comment.html"><span class="token function">createKronosComment</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-comment.html"><span class="token function">createKronosComment</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-131119897%2FFunctions%2F-548264962" anchor-label="createKronosCreateTime" id="-131119897%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="675489060%2FFunctions%2F-548264962" anchor-label="createKronosCreateTime" id="675489060%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-create-time.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span>Create</span><wbr></wbr><span><span>Time</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-131119897%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="675489060%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-create-time.html"><span class="token function">createKronosCreateTime</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-create-time.html"><span class="token function">createKronosCreateTime</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates an IrBlockBody that contains an IrReturn statement with the result of calling the getValidStrategy function with the given IrClass declaration, globalCreateTimeSymbol, and CreateTimeFqName as arguments.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1304692345%2FFunctions%2F-548264962" anchor-label="createKronosLogicDelete" id="1304692345%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-1699193262%2FFunctions%2F-548264962" anchor-label="createKronosLogicDelete" id="-1699193262%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-logic-delete.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span>Logic</span><wbr></wbr><span><span>Delete</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1304692345%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1699193262%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-logic-delete.html"><span class="token function">createKronosLogicDelete</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-logic-delete.html"><span class="token function">createKronosLogicDelete</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates a function that returns a block body containing an irCall to createFieldListSymbol with the properties of the given IrClass as arguments.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-256859272%2FFunctions%2F-548264962" anchor-label="createKronosOptimisticLock" id="-256859272%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-2058715405%2FFunctions%2F-548264962" anchor-label="createKronosOptimisticLock" id="-2058715405%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-optimistic-lock.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span>Optimistic</span><wbr></wbr><span><span>Lock</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-256859272%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2058715405%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-optimistic-lock.html"><span class="token function">createKronosOptimisticLock</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-optimistic-lock.html"><span class="token function">createKronosOptimisticLock</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="2094863884%2FFunctions%2F-548264962" anchor-label="createKronosTableIndex" id="2094863884%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-2118603809%2FFunctions%2F-548264962" anchor-label="createKronosTableIndex" id="-2118603809%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-table-index.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span>Table</span><wbr></wbr><span><span>Index</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2094863884%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2118603809%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-table-index.html"><span class="token function">createKronosTableIndex</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-table-index.html"><span class="token function">createKronosTableIndex</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1631819287%2FFunctions%2F-548264962" anchor-label="createKronosTableName" id="-1631819287%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-809884446%2FFunctions%2F-548264962" anchor-label="createKronosTableName" id="-809884446%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-table-name.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span>Table</span><wbr></wbr><span><span>Name</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1631819287%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-809884446%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-table-name.html"><span class="token function">createKronosTableName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-table-name.html"><span class="token function">createKronosTableName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates an IrBlockBody that contains an IrReturn statement with the result of calling the getTableName function with the given IrClass declaration as an argument.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1178471354%2FFunctions%2F-548264962" anchor-label="createKronosUpdateTime" id="1178471354%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="1850274673%2FFunctions%2F-548264962" anchor-label="createKronosUpdateTime" id="1850274673%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-kronos-update-time.html"><span>create</span><wbr></wbr><span>Kronos</span><wbr></wbr><span>Update</span><wbr></wbr><span><span>Time</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1178471354%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1850274673%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-kronos-update-time.html"><span class="token function">createKronosUpdateTime</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-kronos-update-time.html"><span class="token function">createKronosUpdateTime</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates an IrBlockBody that contains an IrReturn statement with the result of calling the getValidStrategy function with the given IrClass declaration, globalUpdateTimeSymbol, and UpdateTimeFqName as arguments.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1685781345%2FFunctions%2F-548264962" anchor-label="createPropertyGetter" id="1685781345%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-1682246248%2FFunctions%2F-548264962" anchor-label="createPropertyGetter" id="-1682246248%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-property-getter.html"><span>create</span><wbr></wbr><span>Property</span><wbr></wbr><span><span>Getter</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1685781345%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1682246248%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-property-getter.html"><span class="token function">createPropertyGetter</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-property-getter.html"><span class="token function">createPropertyGetter</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1733151635%2FFunctions%2F-548264962" anchor-label="createPropertySetter" id="-1733151635%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-1059800820%2FFunctions%2F-548264962" anchor-label="createPropertySetter" id="-1059800820%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-property-setter.html"><span>create</span><wbr></wbr><span>Property</span><wbr></wbr><span><span>Setter</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1733151635%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1059800820%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-property-setter.html"><span class="token function">createPropertySetter</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-property-setter.html"><span class="token function">createPropertySetter</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1006476413%2FFunctions%2F-548264962" anchor-label="createSafeFromMapValueFunction" id="1006476413%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-1358792964%2FFunctions%2F-548264962" anchor-label="createSafeFromMapValueFunction" id="-1358792964%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-safe-from-map-value-function.html"><span>create</span><wbr></wbr><span>Safe</span><wbr></wbr><span>From</span><wbr></wbr><span>Map</span><wbr></wbr><span>Value</span><wbr></wbr><span><span>Function</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1006476413%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1358792964%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-safe-from-map-value-function.html"><span class="token function">createSafeFromMapValueFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-safe-from-map-value-function.html"><span class="token function">createSafeFromMapValueFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates a safe from map value function.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1191555238%2FFunctions%2F-548264962" anchor-label="createToMapFunction" id="1191555238%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="2067096627%2FFunctions%2F-548264962" anchor-label="createToMapFunction" id="2067096627%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="create-to-map-function.html"><span>create</span><wbr></wbr><span>To</span><wbr></wbr><span>Map</span><wbr></wbr><span><span>Function</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1191555238%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2067096627%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="create-to-map-function.html"><span class="token function">createToMapFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="create-to-map-function.html"><span class="token function">createToMapFunction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">declaration<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span><span class="token punctuation">, </span></span><span class="parameter ">irFunction<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrFunction///PointingToDeclaration/">IrFunction</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrBlockBody///PointingToDeclaration/">IrBlockBody</span></div><div class="brief "><p class="paragraph">Creates a new IrBlockBody that represents a function that converts an instance of an IrClass to a mutable map. The function takes in an IrClass and an IrFunction as parameters.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="1141446002%2FFunctions%2F-548264962" anchor-label="extractDeclarationComment" id="1141446002%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="extract-declaration-comment.html"><span>extract</span><wbr></wbr><span>Declaration</span><wbr></wbr><span><span>Comment</span></span></a></div>
@@ -707,113 +707,113 @@
               </div>
             </div>
           </div>
-<a data-name="-1423506590%2FFunctions%2F-548264962" anchor-label="getColumnName" id="-1423506590%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="138525556%2FFunctions%2F-548264962" anchor-label="getColumnName" id="138525556%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="get-column-name.html"><span>get</span><wbr></wbr><span>Column</span><wbr></wbr><span><span>Name</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1423506590%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="138525556%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-column-name.html"><span class="token function">getColumnName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-column-name.html"><span class="token function">getColumnName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">irProperty<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrProperty///PointingToDeclaration/">IrProperty</span><span class="token punctuation">, </span></span><span class="parameter ">propertyName<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span>irProperty.name.asString()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-column-name.html"><span class="token function">getColumnName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="brief "><p class="paragraph">Returns the column name of the given IrExpression.</p></div><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-column-name.html"><span class="token function">getColumnName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">irProperty<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrProperty///PointingToDeclaration/">IrProperty</span><span class="token punctuation">, </span></span><span class="parameter ">propertyName<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span>irProperty.name.asString()</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="brief "><p class="paragraph">Returns the column name of the given IrProperty.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-647889879%2FFunctions%2F-548264962" anchor-label="getColumnOrValue" id="-647889879%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-592050495%2FFunctions%2F-548264962" anchor-label="getColumnOrValue" id="-592050495%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="get-column-or-value.html"><span>get</span><wbr></wbr><span>Column</span><wbr></wbr><span>Or</span><wbr></wbr><span><span>Value</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-647889879%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-592050495%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-column-or-value.html"><span class="token function">getColumnOrValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBlockBuilder///PointingToDeclaration/">IrBlockBuilder</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-column-or-value.html"><span class="token function">getColumnOrValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Retrieves the column or value from the given IrExpression.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1659739081%2FFunctions%2F-548264962" anchor-label="getFunctionName" id="1659739081%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="2093901774%2FFunctions%2F-548264962" anchor-label="getFunctionName" id="2093901774%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="get-function-name.html"><span>get</span><wbr></wbr><span>Function</span><wbr></wbr><span><span>Name</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1659739081%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2093901774%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-function-name.html"><span class="token function">getFunctionName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-function-name.html"><span class="token function">getFunctionName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-336951918%2FFunctions%2F-548264962" anchor-label="getKDocString" id="-336951918%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="727055069%2FFunctions%2F-548264962" anchor-label="getKDocString" id="727055069%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="get-k-doc-string.html"><span>get</span><wbr></wbr><span>KDoc</span><wbr></wbr><span><span>String</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-336951918%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="727055069%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrDeclaration///PointingToDeclaration/">IrDeclaration</span><span class="token punctuation">.</span><a href="get-k-doc-string.html"><span class="token function">getKDocString</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrDeclaration///PointingToDeclaration/">IrDeclaration</span><span class="token punctuation">.</span><a href="get-k-doc-string.html"><span class="token function">getKDocString</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="brief "><p class="paragraph">Retrieves the KDoc string for the current IR declaration.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="211984800%2FFunctions%2F-548264962" anchor-label="getTableName" id="211984800%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="1524142674%2FFunctions%2F-548264962" anchor-label="getTableName" id="1524142674%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="get-table-name.html"><span>get</span><wbr></wbr><span>Table</span><wbr></wbr><span><span>Name</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="211984800%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1524142674%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-table-name.html"><span class="token function">getTableName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">irClass<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-table-name.html"><span class="token function">getTableName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-table-name.html"><span class="token function">getTableName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">irClass<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrClass///PointingToDeclaration/">IrClass</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="brief "><p class="paragraph">Returns the table name associated with the given IrClass.</p></div><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">_<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-table-name.html"><span class="token function">getTableName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">expression<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="brief "><p class="paragraph">Returns the table name associated with the given IrExpression.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1918013676%2FFunctions%2F-548264962" anchor-label="getValue" id="1918013676%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="-332923647%2FFunctions%2F-548264962" anchor-label="getValue" id="-332923647%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="get-value.html"><span>get</span><wbr></wbr><span><span>Value</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1918013676%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-332923647%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token punctuation">.</span><a href="get-value.html"><span class="token function">getValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">property<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrProperty///PointingToDeclaration/">IrProperty</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token punctuation">.</span><a href="get-value.html"><span class="token function">getValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">property<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrProperty///PointingToDeclaration/">IrProperty</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1422759528%2FFunctions%2F-548264962" anchor-label="irFieldOrNull" id="-1422759528%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="1393470959%2FFunctions%2F-548264962" anchor-label="irFieldOrNull" id="1393470959%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="ir-field-or-null.html"><span>ir</span><wbr></wbr><span>Field</span><wbr></wbr><span>Or</span><wbr></wbr><span><span>Null</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1422759528%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1393470959%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span><span class="token punctuation">.</span><a href="ir-field-or-null.html"><span class="token function">irFieldOrNull</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span><span class="token punctuation">.</span><a href="ir-field-or-null.html"><span class="token function">irFieldOrNull</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></div><div class="brief "><p class="paragraph">Returns the field expression if the given IrExpression is a KPojo, otherwise returns a null expression.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
 <a data-name="-876580743%2FFunctions%2F-548264962" anchor-label="kotlinTypeToKColumnType" id="-876580743%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="kotlin-type-to-k-column-type.html"><span>kotlin</span><wbr></wbr><span>Type</span><wbr></wbr><span>To</span><wbr></wbr><span>KColumn</span><wbr></wbr><span><span>Type</span></span></a></div>
@@ -828,7 +828,7 @@
             </div>
           </div>
 <a data-name="1078242554%2FFunctions%2F-548264962" anchor-label="realStartOffset" id="1078242554%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="real-start-offset.html"><span>real</span><wbr></wbr><span>Start</span><wbr></wbr><span><span>Offset</span></span></a></div>
@@ -842,32 +842,32 @@
               </div>
             </div>
           </div>
-<a data-name="-761906415%2FFunctions%2F-548264962" anchor-label="setValue" id="-761906415%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="827670940%2FFunctions%2F-548264962" anchor-label="setValue" id="827670940%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="set-value.html"><span>set</span><wbr></wbr><span><span>Value</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-761906415%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="827670940%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token punctuation">.</span><a href="set-value.html"><span class="token function">setValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">property<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrProperty///PointingToDeclaration/">IrProperty</span><span class="token punctuation">, </span></span><span class="parameter ">value<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBuilderWithScope///PointingToDeclaration/">IrBuilderWithScope</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token punctuation">.</span><a href="set-value.html"><span class="token function">setValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">property<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.declarations/IrProperty///PointingToDeclaration/">IrProperty</span><span class="token punctuation">, </span></span><span class="parameter ">value<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrExpression///PointingToDeclaration/">IrExpression</span><span class="token operator">?</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1698352763%2FFunctions%2F-548264962" anchor-label="updateTypedQueryParameters" id="-1698352763%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
-          <div class="table-row" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
+<a data-name="1399664427%2FFunctions%2F-548264962" anchor-label="updateTypedQueryParameters" id="1399664427%2FFunctions%2F-548264962" data-filterable-set=":kronos-compiler-plugin/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":kronos-compiler-plugin/main" data-filterable-set=":kronos-compiler-plugin/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="update-typed-query-parameters.html"><span>update</span><wbr></wbr><span>Typed</span><wbr></wbr><span>Query</span><wbr></wbr><span><span>Parameters</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1698352763%2FFunctions%2F-548264962"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1399664427%2FFunctions%2F-548264962"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="update-typed-query-parameters.html"><span class="token function">updateTypedQueryParameters</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">irCall<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrCall///PointingToDeclaration/">IrCall</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrCall///PointingToDeclaration/">IrCall</span></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kronos-compiler-plugin/main"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">context<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.backend.common.extensions/IrPluginContext///PointingToDeclaration/">IrPluginContext</span><span class="token punctuation">, </span></span><span class="parameter ">builder<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.builders/IrBlockBuilder///PointingToDeclaration/">IrBlockBuilder</span></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="update-typed-query-parameters.html"><span class="token function">updateTypedQueryParameters</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">irCall<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrCall///PointingToDeclaration/">IrCall</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.ir.expressions/IrCall///PointingToDeclaration/">IrCall</span></div></div></div>
                 </div>
               </div>
             </div>
@@ -878,17 +878,21 @@
   </div>
 </div>
     <div class="footer">
-        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
-        <span>© 2025 Copyright</span>
-        <span class="pull-right">
-            <span>Generated by </span>
-            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
-                <span>dokka</span>
-            </a>
-        </span>
-    </div>
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

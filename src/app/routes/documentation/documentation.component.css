@@ -39,6 +39,9 @@
 }
 
 /* ngde 相关样式 */
+:host ::ng-deep code span.ngde {
+  text-shadow: none;
+}
 :host ::ng-deep .ngde.title {
   color: var(--ng-doc-primary);
   font-size: inherit;
@@ -89,6 +92,11 @@
 
 :host ::ng-deep a img {
   display: inline-flex;
+}
+
+:host ::ng-deep .wiki.p-dialog .p-dialog-content {
+  padding: 1rem;
+  background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
 }
 
   /* Wiki 模式 */

@@ -100,10 +100,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin 和构建工具
 
 - **JDK 8+**
-- **Kotlin 2.1.0+**
+- **Kotlin 2.2.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.1.0 或更高版本。
+> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.2.0 或更高版本。
 >
 > 如果您在 **Intellij IDEA** 中构建失败，并使用 **Maven** 构建、
 > 请尝试启用以下设置: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner /

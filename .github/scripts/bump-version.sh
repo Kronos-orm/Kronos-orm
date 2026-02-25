@@ -45,12 +45,18 @@ incPatch() {
 setVersionInFiles() {
   local newv="$1"
   # publishing.gradle.kts
-  sed -i.bak -E "s/(project\.version\s*=\s*")[^"]+(".*)/\1${newv}\2/" "$PUBLISHING_KTS"
-  rm -f "$PUBLISHING_KTS.bak"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' -E "s/(project\.version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PUBLISHING_KTS"
+  else
+    sed -i -E "s/(project\.version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PUBLISHING_KTS"
+  fi
 
   # KronosGradlePlugin.kt
-  sed -i.bak -E "s/(version\s*=\s*")[^"]+(".*)/\1${newv}\2/" "$PLUGIN_KT"
-  rm -f "$PLUGIN_KT.bak"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' -E "s/(version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PLUGIN_KT"
+  else
+    sed -i -E "s/(version\s*=\s*\")[^\"]+(\".*)$/\1${newv}\2/" "$PLUGIN_KT"
+  fi
 }
 
 cmd=${1:-}

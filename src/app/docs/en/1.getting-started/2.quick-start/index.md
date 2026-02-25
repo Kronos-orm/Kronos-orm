@@ -21,21 +21,21 @@ Simply introduce the `kronos-core` module and the `kronos-compiler-plugin` plugi
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.4") // Provides basic ORM functionality
+    implementation("com.kotlinorm:kronos-core:0.0.6") // Provides basic ORM functionality
 }
 
 plugins {
-    id("com.kotlinorm:kronos-gradle-plugin") version "0.0.4" // Compile-time support is provided
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.6" // Compile-time support is provided
 }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.4' // Provides basic ORM functionality
+    implementation 'com.kotlinorm:kronos-core:0.0.6' // Provides basic ORM functionality
 }
 
 plugins {
-    id 'com.kotlinorm:kronos-gradle-plugin' version '0.0.4' // Compile-time support is provided
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.6' // Compile-time support is provided
 }
 ```
 
@@ -48,7 +48,7 @@ plugins {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.4</version>
+            <version>0.0.6</version>
         </dependency>
     </dependencies>
 
@@ -86,13 +86,13 @@ Introducing dependencies：
 
 ```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm:kronos-jdbc-wrappere:0.0.4") // Provides basic functions for database operations
+    implementation("com.kotlinorm:kronos-jdbc-wrappere:0.0.6") // Provides basic functions for database operations
 }
 ```
 
 ```groovy group="importDriver" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4' // Provides basic functions for database operations
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6' // Provides basic functions for database operations
 }
 ```
 
@@ -104,7 +104,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.0.4</version>
+            <version>0.0.6</version>
         </dependency>
     </dependencies>
 </project>
@@ -163,7 +163,7 @@ fun main() {
             username = "user"
             password = "******"
         }.let {
-            KronosBasicDataSourceWrapper(it)
+            KronosBasicWrapper(it)
         }
     }
     
@@ -235,7 +235,7 @@ data class Movie(
     @ColumnType(CHAR)
     var name: String? = "",
     var directorId: Long? = 0,
-    @Reference(["directorId"], ["id"])
+    @Cascade(["directorId"], ["id"])
     var director: Director? = null,
     @LogicDelete
     @Default("0")
@@ -255,8 +255,7 @@ Congratulations, you have completed the basic configuration of Kronos and are no
 fun main() {
     val director = Director(
         id = 1,
-        name = "Kronos",
-        age = 18
+        name = "Kronos"
     )
 
     director.insert().execute()

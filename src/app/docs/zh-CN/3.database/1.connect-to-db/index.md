@@ -12,13 +12,13 @@ Kronos访问数据库通过{{ $.keyword("concept/kronos-data-source-wrapper", ["
 
 ```kotlin group="import" name="gradle(kts)" icon="gradlekts"
 dependencies {
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.4")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.6")
 }
 ```
 
 ```groovy group="import" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6'
 }
 ```
 
@@ -28,7 +28,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.6</version>
     </dependency>
   </dependencies>
 </project>
@@ -47,7 +47,7 @@ dependencies {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("com.mysql:mysql-connector-j:latest.release")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.4")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.6")
 }
 ```
 
@@ -55,7 +55,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'com.mysql:mysql-connector-j:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6'
 }
 ```
 
@@ -75,7 +75,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.6</version>
     </dependency>
   </dependencies>
 </project>
@@ -84,7 +84,7 @@ dependencies {
 ```kotlin group="Mysql" name="MysqlKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 val wrapper by lazy {
-    KronosBasicDataSourceWrapper(
+    KronosBasicWrapper(
         BasicDataSource().apply {
                 // if your database version is 8.0 or later, you need to add the following configuration
                 driverClassName = "com.mysql.cj.jdbc.Driver"
@@ -107,7 +107,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("org.postgresql:postgresql:latest.release")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.4")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.6")
 }
 ```
 
@@ -115,7 +115,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'org.postgresql:postgresql:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6'
 }
 ```
 
@@ -136,7 +136,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.6</version>
     </dependency>
   </dependencies>
 </project>
@@ -146,7 +146,7 @@ dependencies {
 import com.kotlinorm.Kronos
 
 val wrapper by lazy {
-    KronosBasicDataSourceWrapper(
+    KronosBasicWrapper(
         BasicDataSource().apply {
             driverClassName = "org.postgresql.Driver"
             url = "jdbc:postgresql://localhost:5432/kronos"
@@ -167,7 +167,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("com.oracle.database.jdbc:ojdbc8:latest.release")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.4")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.6")
 }
 ```
 
@@ -175,7 +175,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'com.oracle.database.jdbc:ojdbc8:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6'
 }
 ```
 
@@ -195,7 +195,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.6</version>
     </dependency>
   </dependencies>
 </project>
@@ -204,7 +204,7 @@ dependencies {
 ```kotlin group="Oracle" name="OracleKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 val wrapper by lazy {
-    KronosBasicDataSourceWrapper(
+    KronosBasicWrapper(
         BasicDataSource().apply {
             driverClassName = "oracle.jdbc.OracleDriver"
             // replaece the following with your Oracle database connection information
@@ -225,7 +225,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview")
-    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.4")
+    implementation("com.kotlinorm.kronos-jdbc-wrapper:0.0.6")
 }
 ```
 
@@ -233,7 +233,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'com.microsoft.sqlserver:mssql-jdbc:12.7.0.jre8-preview'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6'
 }
 ```
 
@@ -253,7 +253,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.6</version>
     </dependency>
   </dependencies>
 </project>
@@ -262,7 +262,7 @@ dependencies {
 ```kotlin group="SQL Server" name="SQLServerKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 val wrapper by lazy {
-    KronosBasicDataSourceWrapper(
+    KronosBasicWrapper(
         BasicDataSource().apply {
             driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
             url = "jdbc:sqlserver://localhost:1433;databaseName=kronos;encrypt=true;trustServerCertificate=true"
@@ -282,7 +282,7 @@ Kronos.init {
 dependencies {
     implementation("org.apache.commons:commons-dbcp2:latest.release")
     implementation("org.xerial:sqlite-jdbc:latest.release")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.4")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.6")
 }
 ```
 
@@ -290,7 +290,7 @@ dependencies {
 dependencies {
     implementation 'org.apache.commons:commons-dbcp2:latest.release'
     implementation 'org.xerial:sqlite-jdbc:latest.release'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.4'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.0.6'
 }
 ```
 
@@ -311,7 +311,7 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.6</version>
     </dependency>
   </dependencies>
 </project>
@@ -320,7 +320,7 @@ dependencies {
 ```kotlin group="SQLite" name="SQLiteKronosConfig.kt" icon="kotlin"
 import com.kotlinorm.Kronos
 val wrapper by lazy {
-    KronosBasicDataSourceWrapper(
+    KronosBasicWrapper(
         BasicDataSource().apply {
             driverClassName = "org.sqlite.JDBC"
             url = "jdbc:sqlite:/path/to/your/database.db"

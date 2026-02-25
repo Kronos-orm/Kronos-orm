@@ -98,10 +98,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin and Build Tools
 
 - **JDK 8+**
-- **Kotlin 2.1.0+**
+- **Kotlin 2.2.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> Please make sure your kotlin plugin for ide supports kotlin 2.1.0 or higher.
+> Please make sure your kotlin plugin for ide supports kotlin 2.2.0 or higher.
 >
 > If you built failed in **Intellij IDEA** and build with **Maven**,
 > please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.
@@ -119,11 +119,11 @@ User(id = id).delete().execute()
 
 ```kotlin
 plugins {
-  id("com.kotlinorm.kronos-gradle-plugin") version "0.0.5"
+  id("com.kotlinorm.kronos-gradle-plugin") version "0.0.6"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.5")
+    implementation("com.kotlinorm:kronos-core:0.0.6")
 }
 ```
 
@@ -139,11 +139,11 @@ dependencies {
 
 ```groovy
 plugins {
-  id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.5'
+  id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.6'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.5'
+    implementation 'com.kotlinorm:kronos-core:0.0.6'
 }
 ```
 
@@ -164,7 +164,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.5</version>
+            <version>0.0.6</version>
         </dependency>
     </dependencies>
 
@@ -183,7 +183,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.0.5</version>
+                        <version>0.0.6</version>
                     </dependency>
                 </dependencies>
             </plugin>

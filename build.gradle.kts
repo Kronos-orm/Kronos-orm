@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -12,6 +13,9 @@ plugins {
 allprojects {
     plugins.withType<JavaPlugin> {
         extensions.configure<JavaPluginExtension> {
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(17))
+            }
             sourceCompatibility = JavaVersion.VERSION_1_8
             targetCompatibility = JavaVersion.VERSION_1_8
         }
@@ -20,6 +24,8 @@ allprojects {
     tasks.withType<KotlinCompile> {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_1_8)
+            apiVersion.set(KotlinVersion.KOTLIN_2_2)
+            languageVersion.set(KotlinVersion.KOTLIN_2_2)
         }
     }
 

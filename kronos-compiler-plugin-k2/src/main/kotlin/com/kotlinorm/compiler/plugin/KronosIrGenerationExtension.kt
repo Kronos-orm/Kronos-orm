@@ -1,0 +1,178 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.kotlinorm.compiler.plugin
+
+import com.kotlinorm.compiler.core.resolveAndLogAllSymbols
+import com.kotlinorm.compiler.utils.DebugLogger
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
+import org.jetbrains.kotlin.ir.util.CustomKotlinLikeDumpStrategy
+import org.jetbrains.kotlin.ir.util.FakeOverridesStrategy
+import org.jetbrains.kotlin.ir.util.KotlinLikeDumpOptions
+import org.jetbrains.kotlin.ir.util.LabelPrintingStrategy
+import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
+import java.io.File
+
+/**
+ * IR generation extension for the Kronos compiler plugin
+ *
+ * This is the main entry point for IR transformations
+ *
+ * @property dumpIr Whether IR dump is enabled
+ * @property dumpIrPath Path to save IR dump and debug log (default: build/tmp/kronosDebug)
+ * @property dumpIrMode IR dump mode: "kotlinLike" or "common"
+ * @property dumpIrFiles Comma-separated file patterns to filter (null means dump all files)
+ * @property debug Whether debug logging is enabled (JSON format only)
+ */
+class KronosIrGenerationExtension(
+    private val dumpIr: Boolean,
+    private val dumpIrPath: String,
+    private val dumpIrMode: String,
+    private val dumpIrFiles: String?,
+    private val debug: Boolean = false
+) : IrGenerationExtension {
+
+    override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+        println("[Kronos] Kronos compiler plugin K2 initialized")
+        
+        // Enable debug logging if requested
+        if (debug) {
+            val debugLogFile = File(dumpIrPath, "debug.json")
+            DebugLogger.enable(debugLogFile.absolutePath, DebugLogger.OutputFormat.JSON)
+            DebugLogger.logInfo("Kronos compiler plugin K2 started")
+            println("[Kronos] Debug logging enabled - output: ${debugLogFile.absolutePath}")
+        }
+        
+        try {
+            // Resolve and log all symbols if debug mode is enabled
+            if (debug) {
+                with(pluginContext) {
+                    resolveAndLogAllSymbols()
+                }
+            }
+            
+            // TODO: Apply transformations here
+            // For now, this is just a placeholder that will be filled in later phases
+            
+            // Dump IR if enabled
+            if (dumpIr) {
+                println("[Kronos] IR dump enabled - mode: $dumpIrMode, path: $dumpIrPath")
+                if (dumpIrFiles != null) {
+                    println("[Kronos] Filtering files: $dumpIrFiles")
+                } else {
+                    println("[Kronos] Dumping all files")
+                }
+                dumpIR(moduleFragment)
+            }
+        } finally {
+            // Flush and disable debug logging
+            if (debug) {
+                DebugLogger.logInfo("Kronos compiler plugin K2 finished")
+                println("[Kronos] Debug log stats: ${DebugLogger.getStats()}")
+                DebugLogger.disable()
+            }
+        }
+    }
+
+    /**
+     * Dumps the IR to files for debugging
+     *
+     * @param moduleFragment The module fragment to dump
+     */
+    private fun dumpIR(moduleFragment: IrModuleFragment) {
+        val filePatterns = dumpIrFiles?.split(",")?.map { it.trim() }
+        var dumpedFiles = 0
+        
+        moduleFragment.files.forEach { file ->
+            try {
+                val fullPath = file.fileEntry.name
+                val fileName = File(fullPath).name
+                
+                // Check if this file matches the filter
+                if (filePatterns != null && !matchesAnyPattern(fileName, filePatterns)) {
+                    return@forEach
+                }
+                
+                // Create IR dump directory if it doesn't exist
+                val dumpDir = File(dumpIrPath)
+                if (!dumpDir.exists()) {
+                    dumpDir.mkdirs()
+                }
+
+                val fileExtension = if (dumpIrMode.lowercase() == "kotlinlike") ".kt" else ".txt"
+                
+                val outputFileName = fileName.removeSuffix(".kt") + fileExtension
+                val outputFile = File(dumpDir, outputFileName)
+
+                val irDump = when (dumpIrMode.lowercase()) {
+                    "kotlinlike" -> {
+                        // Kotlin-like format
+                        val dumpOptions = KotlinLikeDumpOptions(
+                            CustomKotlinLikeDumpStrategy.Default,
+                            printRegionsPerFile = true,
+                            printFileName = true,
+                            printFilePath = true,
+                            useNamedArguments = true,
+                            labelPrintingStrategy = LabelPrintingStrategy.ALWAYS,
+                            printFakeOverridesStrategy = FakeOverridesStrategy.ALL,
+                            bodyPrintingStrategy = BodyPrintingStrategy.PRINT_BODIES,
+                            inferElseBranches = false,
+                            printMemberDeclarations = true,
+                            printUnitReturnType = true,
+                            stableOrder = true
+                        )
+                        file.module.dumpKotlinLike(dumpOptions)
+                    }
+                    "common" -> {
+                        // Plain IR text format
+                        file.dump()
+                    }
+                    else -> {
+                        println("[Kronos] Warning: Unknown dump mode '$dumpIrMode', using 'common' mode")
+                        file.dump()
+                    }
+                }
+                
+                outputFile.writeText(irDump)
+                dumpedFiles++
+            } catch (e: Exception) {
+                // Don't fail compilation if IR dump fails
+                println("[Kronos] Warning: Failed to dump IR for ${file.fileEntry.name}: ${e.message}")
+            }
+        }
+        
+        println("[Kronos] IR dump complete: $dumpedFiles file(s) saved to $dumpIrPath")
+    }
+    
+    /**
+     * Checks if a filename matches any of the given patterns
+     * Supports simple wildcard patterns with * (e.g., "*Service.kt", "User*.kt")
+     */
+    private fun matchesAnyPattern(fileName: String, patterns: List<String>): Boolean {
+        return patterns.any { pattern ->
+            val regex = pattern
+                .replace(".", "\\.")
+                .replace("*", ".*")
+                .toRegex()
+            regex.matches(fileName)
+        }
+    }
+}

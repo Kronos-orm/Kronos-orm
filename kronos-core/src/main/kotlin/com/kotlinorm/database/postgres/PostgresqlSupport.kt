@@ -40,9 +40,20 @@ import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace
+import com.kotlinorm.utils.getTypeSafeValue
+import com.kotlinorm.ast.*
+import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.SqlRenderer
+import com.kotlinorm.ast.UpdateStatement
 
 object PostgresqlSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")
+
+    /** PostgreSQL-specific SQL renderer for AST-based SQL generation. */
+    override val renderer: SqlRenderer = PostgresqlSqlRenderer()
 
     override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split("//").last().split("/").first()
 
@@ -327,102 +338,25 @@ object PostgresqlSupport : DatabasesSupport {
         """.trimWhitespace()
     }
 
-    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>) =
-        "INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { ":$it" }})"
+    override fun processParams(
+            wrapper: KronosDataSourceWrapper,
+            field: Field,
+            value: Any?
+    ): Any? {
+        if (value == null) return null
+        if (field.serializable) return com.kotlinorm.Kronos.serializeProcessor.serialize(value)
 
-    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
-        "DELETE FROM ${quote(tableName)}${whereClauseSql.orEmpty()}"
-
-    override fun getUpdateSql(
-        dataSource: KronosDataSourceWrapper,
-        tableName: String,
-        toUpdateFields: List<Field>,
-        whereClauseSql: String?,
-        plusAssigns: MutableList<Pair<Field, String>>,
-        minusAssigns: MutableList<Pair<Field, String>>
-    ) =
-        "UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + "New") }}" +
-                plusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} + :${it.second}" } +
-                minusAssigns.joinToString { ", ${quote(it.first)} = ${quote(it.first)} - :${it.second}" } +
-                whereClauseSql.orEmpty()
-
-    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
-        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause
-
-        if (!databaseName.isNullOrEmpty()) throw UnsupportedDatabaseTypeException(
-            DBType.Postgres,
-            "Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode"
-        )
-
-        val selectSql = selectFields.joinToString(", ") {
-            when {
-                it is FunctionField -> getBuiltFunctionField(it, dataSource)
-                it.type == CUSTOM_CRITERIA_SQL -> it.toString()
-                it.name != it.columnName -> "${quote(it.columnName)} AS ${quote(it.name)}"
-                else -> quote(it)
-            }
+        return when {
+            // Check if field is TIMESTAMP or PostgreSQL DATETIME
+            field.type == KColumnType.TIMESTAMP || 
+            (wrapper.dbType == DBType.Postgres && field.type == KColumnType.DATETIME) ->
+                    getTypeSafeValue("java.sql.Timestamp", value, field.superTypes, field.dateFormat)
+            
+            // PostgreSQL-specific: BIT type should be Boolean
+            wrapper.dbType == DBType.Postgres && field.type == KColumnType.BIT ->
+                    getTypeSafeValue("kotlin.Boolean", value, field.superTypes, field.dateFormat)
+            
+            else -> value
         }
-
-        val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
-        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
-        val distinctSql = if (distinct) " DISTINCT" else null
-        val lockSql = when (lock) {
-            PessimisticLock.X -> " FOR UPDATE"
-            PessimisticLock.S -> " FOR SHARE"
-            else -> null
-        }
-        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
-            quote(tableName)
-        }${
-            whereClauseSql.orEmpty()
-        }${
-            groupByClauseSql.orEmpty()
-        }${
-            havingClauseSql.orEmpty()
-        }${
-            orderByClauseSql.orEmpty()
-        }${
-            paginationSql ?: limitSql ?: ""
-        }${
-            lockSql.orEmpty()
-        }"
-    }
-
-    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
-        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause
-
-        if (databaseOfTable.isNotEmpty()) throw UnsupportedDatabaseTypeException(
-            DBType.Postgres,
-            "Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode"
-        )
-
-        val selectSql = selectFields.joinToString(", ") {
-            val field = it.second
-            when {
-                field is FunctionField -> getBuiltFunctionField(field, dataSource, true)
-                field.type == CUSTOM_CRITERIA_SQL -> field.toString()
-                field.name != field.columnName -> "${quote(field, true)} AS ${quote(field.name)}"
-                else -> "${quote(field, true)} AS ${MssqlSupport.quote(it.first)}"
-            }
-        }
-
-        val paginationSql = if (pagination) " LIMIT $ps OFFSET ${ps * (pi - 1)}" else null
-        val limitSql = if (paginationSql == null && limit != null && limit > 0) " LIMIT $limit" else null
-        val distinctSql = if (distinct) " DISTINCT" else null
-        return "SELECT${distinctSql.orEmpty()} $selectSql FROM ${
-            quote(tableName)
-        }${
-            joinSql.orEmpty()
-        }${
-            whereClauseSql.orEmpty()
-        }${
-            groupByClauseSql.orEmpty()
-        }${
-            havingClauseSql.orEmpty()
-        }${
-            orderByClauseSql.orEmpty()
-        }${
-            paginationSql ?: limitSql ?: ""
-        }"
     }
 }

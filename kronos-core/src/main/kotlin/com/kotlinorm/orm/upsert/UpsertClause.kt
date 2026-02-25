@@ -16,7 +16,7 @@
 
 package com.kotlinorm.orm.upsert
 
-import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.ast.CriteriaToAstConverter
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -35,7 +35,6 @@ import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -223,30 +222,42 @@ class UpsertClause<T : KPojo>(
 
                 lock = lock ?: PessimisticLock.X.takeIf { optimisticStrategy?.enabled != true }
 
-                if ((pojo.select()
-                        .cascade(enabled = false)
-                        .lock(lock)
-                        .apply {
-                            selectFields =
-                                linkedSetOf(Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL))
-                            selectAll = false
-                            condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
-                                .map {
-                                    it.eq(paramMap[it.name]).apply {
-                                        noValueStrategyType = NoValueStrategyType.JudgeNull
-                                    }
-                                }.toCriteria()
-                            logicDeleteStrategy = null
-                        }
-                        .queryOneOrNull<Int>() ?: 0)
-                    > 0
-                ) {
-                    pojo.update().cascade(cascadeEnabled)
+                val selectClause = pojo.select()
+                    .cascade(enabled = false)
+                    .lock(lock)
+                    .apply {
+                        selectFields =
+                            linkedSetOf(Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL))
+                        selectAll = false
+                        // Directly set statement.where using Criteria
+                        val criteriaParams = mutableMapOf<String, Any?>()
+                        statement.where = CriteriaToAstConverter.convert(
+                            onFields.filter { field -> field.isColumn && field.name in paramMap.keys }
+                                .map { field -> field.eq(paramMap[field.name]) }
+                                .toCriteria(),
+                            criteriaParams,
+                            KOperationType.SELECT
+                        )
+                    }
+
+                if ((selectClause.queryOneOrNull<Int>() ?: 0) > 0) {
+                    val updateClause = pojo.update().cascade(cascadeEnabled)
                         .apply {
                             this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
-                            this@apply.toUpdateFields = this@UpsertClause.toUpdateFields
-                            this@UpsertClause.toUpdateFields.forEach {
-                                this@apply.paramMapNew[it + "New"] = paramMap[it.name]
+                            // Directly set statement.where using Criteria
+                            val criteriaParams = mutableMapOf<String, Any?>()
+                            statement.where = CriteriaToAstConverter.convert(
+                                onFields.filter { field -> field.isColumn && field.name in paramMap.keys }
+                                    .map { field -> field.eq(paramMap[field.name]) }
+                                    .toCriteria(),
+                                criteriaParams,
+                                KOperationType.UPDATE
+                            )
+                            logicDeleteStrategy = null
+                        }
+                        .set {
+                            this@UpsertClause.toUpdateFields.forEach { field ->
+                                it[field.name] = paramMap[field.name]
                             }
                             this@UpsertClause.logicDeleteStrategy?.execute(
                                 defaultValue = getDefaultBoolean(
@@ -254,14 +265,11 @@ class UpsertClause<T : KPojo>(
                                     false
                                 )
                             ) { field, value ->
-                                this@apply.toUpdateFields += field
-                                this@apply.paramMapNew[field + "New"] = value
+                                this@UpsertClause.toUpdateFields += field
+                                it[(field + "New").name] = value
                             }
-                            condition = onFields.filter { it.isColumn && it.name in paramMap.keys }
-                                .map { it.eq(paramMap[it.name]) }.toCriteria()
-                            logicDeleteStrategy = null
                         }
-                        .execute(wrapper)
+                    updateClause.execute(wrapper)
                 } else {
                     pojo.insert().cascade(cascadeEnabled)
                         .apply {

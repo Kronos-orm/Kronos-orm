@@ -1,5 +1,5 @@
 /**
- * Copyright 2022-2025 kronos-orm
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,17 @@
 
 package com.kotlinorm.orm.delete
 
+import com.kotlinorm.ast.Assignment
+import com.kotlinorm.ast.BinaryExpression
+import com.kotlinorm.ast.ColumnReference
+import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.Literal
+import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.SqlOperator
+import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
@@ -31,11 +42,12 @@ import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
-import com.kotlinorm.database.SqlManager.getDeleteSql
-import com.kotlinorm.database.SqlManager.getUpdateSql
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.database.SqlManager.quoted
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeDeleteClause
@@ -150,12 +162,200 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     }
 
     /**
+     * Converts the DeleteClause to a DeleteStatement AST.
+     * This method constructs the complete AST representation including:
+     * - Table reference
+     * - WHERE clause expression (with logic delete conditions merged if applicable)
+     *
+     * @param wrapper Optional KronosDataSourceWrapper for processing
+     * @param parameterValues Mutable map to collect parameter values from Criteria
+     * @return Complete DeleteStatement AST
+     */
+    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): DeleteStatement {
+        val dataSource = wrapper.orDefault()
+        
+        // Build condition from paramMap if condition is null
+        var whereExpression: Expression? = if (condition == null) {
+            // Build default condition from all non-null fields
+            val nonNullFields = allColumns.mapNotNull { field ->
+                field.eq(paramMap[field.name]).takeIf { it.value != null }
+            }
+            if (nonNullFields.isNotEmpty()) {
+                CriteriaToAstConverter.convert(nonNullFields.toCriteria(), parameterValues, KOperationType.DELETE)
+            } else {
+                null
+            }
+        } else {
+            // Filter out empty criteria before converting
+            val filteredCondition = filterEmptyCriteria(condition!!)
+            if (filteredCondition != null) {
+                CriteriaToAstConverter.convert(filteredCondition, parameterValues, KOperationType.DELETE)
+            } else {
+                null
+            }
+        }
+        
+        // Apply logic delete strategy - merge logic delete conditions into WHERE clause
+        if (logic && logicDeleteStrategy != null) {
+            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value ->
+                // Build logic delete condition with literal value (not parameter)
+                // Logic delete values are fixed (0 or 1), so we use literals
+                val logicDeleteExpression = BinaryExpression(
+                    ColumnReference(database = null, tableAlias = null, columnName = field.columnName),
+                    SqlOperator.EQUAL,
+                    Literal.NumberLiteral(value.toString())
+                )
+                
+                whereExpression = if (whereExpression == null) {
+                    logicDeleteExpression
+                } else {
+                    BinaryExpression(
+                        whereExpression as Expression,
+                        SqlOperator.AND,
+                        logicDeleteExpression
+                    )
+                }
+            }
+        }
+        
+        // Build table reference
+        val table = TableName(
+            database = null,
+            schema = null,
+            table = tableName,
+            alias = null
+        )
+        
+        return DeleteStatement(
+            table = table,
+            where = whereExpression
+        )
+    }
+    
+    /**
+     * Filters out empty criteria (criteria with no children or only null children).
+     * Returns null if the criteria is empty.
+     */
+    private fun filterEmptyCriteria(criteria: Criteria): Criteria? {
+        // If it's a leaf criteria (has field), keep it
+        if (criteria.field != null && criteria.field.name.isNotEmpty()) {
+            return criteria
+        }
+        
+        // If it's a container criteria (AND/OR/ROOT), filter children
+        val filteredChildren = criteria.children.mapNotNull { child ->
+            child?.let { filterEmptyCriteria(it) }
+        }
+        
+        // If no children left, return null
+        if (filteredChildren.isEmpty()) {
+            return null
+        }
+        
+        // Return new criteria with filtered children
+        return Criteria(
+            field = criteria.field,
+            type = criteria.type,
+            not = criteria.not,
+            value = criteria.value,
+            tableName = criteria.tableName,
+            noValueStrategyType = criteria.noValueStrategyType,
+            children = filteredChildren.toMutableList()
+        )
+    }
+
+    /**
+     * Renders the DeleteStatement to SQL with processed parameters.
+     * This method handles parameter processing including field type conversion.
+     *
+     * @param wrapper Optional KronosDataSourceWrapper for rendering and parameter processing
+     * @return Pair of SQL string and processed parameter map
+     */
+    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair<String, Map<String, Any?>> {
+        val dataSource = wrapper.orDefault()
+        val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+
+        // Collect parameter values from Criteria during AST conversion
+        val criteriaParameterValues = mutableMapOf<String, Any?>()
+        
+        // Get complete statement with all parameters and checks applied
+        val finalStatement = toStatement(wrapper, criteriaParameterValues)
+
+        // Render AST to SQL with parameters
+        val renderedSql = support.getDeleteSqlWithParams(dataSource, finalStatement)
+
+        // Process parameters (field type conversion, etc.)
+        val paramMapNew = mutableMapOf<String, Any?>()
+        val fieldMap = fieldsMapCache[kClass]!!
+        
+        // First, add parameter values extracted from Criteria during AST conversion
+        criteriaParameterValues.forEach { (key, value) ->
+            if (value != null && renderedSql.sql.contains(":$key")) {
+                val field = fieldMap[key]
+                if (field != null) {
+                    paramMapNew[key] = support.processParams(dataSource, field, value)
+                } else {
+                    paramMapNew[key] = value
+                }
+            }
+        }
+        
+        // Then, merge rendered parameters (if any were added by the renderer)
+        renderedSql.parameters.forEach { (key, value) ->
+            if (!paramMapNew.containsKey(key) && value != null && renderedSql.sql.contains(":$key")) {
+                val field = fieldMap[key]
+                if (field != null) {
+                    paramMapNew[key] = support.processParams(dataSource, field, value)
+                } else {
+                    paramMapNew[key] = value
+                }
+            }
+        }
+        
+        // Add any additional patched parameters
+        this.paramMapNew.forEach { (key, value) ->
+            val field = fieldMap[key]
+            if (field != null && value != null) {
+                paramMapNew[key] = support.processParams(dataSource, field, value)
+            } else {
+                paramMapNew[key] = value
+            }
+        }
+
+        return Pair(renderedSql.sql, paramMapNew)
+    }
+
+    /**
      * 构建并返回一个KronosAtomicTask对象，用于执行数据库的原子操作。
      * 该方法根据设定的条件构建对应的UPDATE或DELETE SQL语句，并封装必要的参数与操作类型。
      *
      * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
      */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
+        // Use AST-based rendering for non-logic delete
+        if (!logic) {
+            // Render statement to SQL with processed parameters
+            val (sql, paramMap) = renderStatement(wrapper)
+
+            // Get where clause SQL for DeleteClauseInfo (for cascade)
+            val whereClauseSql = if (sql.contains(" WHERE ", ignoreCase = true)) {
+                val whereIndex = sql.indexOf(" WHERE ", ignoreCase = true)
+                sql.substring(whereIndex + 7) // " WHERE " is 7 characters
+            } else {
+                null
+            }
+
+            return CascadeDeleteClause.build(
+                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
+                    sql,
+                    paramMap,
+                    operationType = KOperationType.DELETE,
+                    DeleteClauseInfo(kClass, tableName, whereClauseSql)
+                )
+            )
+        }
+        
+        // For logic delete, use AST-based UPDATE (instead of DELETE)
         if (condition == null) {
             // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
             condition = allColumns.mapNotNull { field ->
@@ -163,77 +363,133 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }.toCriteria()
         }
 
-        // 设置逻辑删除的策略
-        if (logic) {
-            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
-                condition = listOfNotNull(
-                    condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
-                ).toCriteria()
+        // 处理逻辑删除时的更新字段逻辑
+        val toUpdateFields = mutableListOf<Field>()
+        val support = getDBSupport(wrapper.orDefault().dbType) ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)
+        val fieldMap = fieldsMapCache[kClass]!!
+        val paramMapForUpdate = mutableMapOf<String, Any?>()
+        
+        val updateFields = { strategy: KronosCommonStrategy, field: Field, value: Any? ->
+            toUpdateFields += field
+            paramMapForUpdate[field.name + "New"] = support.processParams(wrapper.orDefault(), field, value)
+        }
+        // 设置更新时间和逻辑删除字段的策略
+        updateTimeStrategy?.execute(true, afterExecute = updateFields)
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), true), afterExecute = updateFields)
+
+        var plusAssign: Pair<Field, String>? = null
+        optimisticStrategy?.execute { field, _ ->
+            if (toUpdateFields.any { it.columnName == field.columnName }) {
+                throw IllegalArgumentException("The version field cannot be updated manually.")
+            }
+
+            plusAssign = field to field.name + "2PlusNew"
+            paramMapForUpdate[field.name + "2PlusNew"] = 1
+        }
+        
+        // Build UpdateStatement AST for logic delete
+        val whereCondition = condition
+        val criteriaParameterValues = mutableMapOf<String, Any?>()
+        var whereExpression: Expression? = if (whereCondition != null) {
+            CriteriaToAstConverter.convert(whereCondition, criteriaParameterValues, KOperationType.DELETE)
+        } else {
+            null
+        }
+        
+        // Add logic delete condition to WHERE clause (to only update non-deleted records)
+        // Use literal value (not parameter) since logic delete values are fixed (0 or 1)
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
+            val logicDeleteExpression = BinaryExpression(
+                ColumnReference(database = null, tableAlias = null, columnName = field.columnName),
+                SqlOperator.EQUAL,
+                Literal.NumberLiteral(value.toString())
+            )
+            
+            whereExpression = if (whereExpression == null) {
+                logicDeleteExpression
+            } else {
+                BinaryExpression(
+                    whereExpression as Expression,
+                    SqlOperator.AND,
+                    logicDeleteExpression
+                )
             }
         }
-
-        // 构建条件SQL语句及参数映射
-        val (whereClauseSql, paramMap) = buildConditionSqlWithParams(KOperationType.DELETE, wrapper, condition)
-
-        val fieldMap = fieldsMapCache[kClass]!!
-        paramMapNew.forEach { (key, value) ->
+        
+        val updateStatement = UpdateStatement(
+            table = TableName(table = tableName),
+            assignments = toUpdateFields.map { field ->
+                Assignment(
+                    ColumnReference(database = null, tableAlias = null, columnName = field.columnName),
+                    Parameter.NamedParameter("${field.name}New")
+                )
+            }.toMutableList(),
+            where = whereExpression
+        )
+        
+        // Add optimistic lock increment if needed
+        plusAssign?.let { (field, paramName) ->
+            updateStatement.assignments.add(
+                Assignment(
+                    ColumnReference(database = null, tableAlias = null, columnName = field.columnName),
+                    BinaryExpression(
+                        ColumnReference(database = null, tableAlias = null, columnName = field.columnName),
+                        SqlOperator.ADD,
+                        Parameter.NamedParameter(paramName)
+                    )
+                )
+            )
+        }
+        
+        // Render to SQL
+        val rendered = support.getUpdateSqlWithParams(wrapper.orDefault(), updateStatement, fieldMap)
+        
+        // Build final parameter map
+        val finalParamMap = mutableMapOf<String, Any?>()
+        
+        // First, add criteria parameter values extracted during AST conversion
+        criteriaParameterValues.forEach { (key, value) ->
+            if (value != null && rendered.sql.contains(":$key")) {
+                val field = fieldMap[key]
+                if (field != null) {
+                    finalParamMap[key] = support.processParams(wrapper.orDefault(), field, value)
+                } else {
+                    finalParamMap[key] = value
+                }
+            }
+        }
+        
+        // Then, add update field parameters (updateTimeNew, deletedNew, etc.)
+        paramMapForUpdate.forEach { (key, value) ->
+            finalParamMap[key] = value
+        }
+        
+        // Add any additional patched parameters
+        this.paramMapNew.forEach { (key, value) ->
             val field = fieldMap[key]
             if (field != null && value != null) {
-                paramMap[key] = processParams(wrapper.orDefault(), field, value)
+                finalParamMap[key] = support.processParams(wrapper.orDefault(), field, value)
             } else {
-                paramMap[key] = value
+                finalParamMap[key] = value
             }
         }
-
-        paramMap.putAll(paramMapNew)
-        val whereSql = toWhereSql(whereClauseSql)
-
-        // 处理逻辑删除时的更新字段逻辑
-        if (logic) {
-            val toUpdateFields = mutableListOf<Field>()
-            val updateFields = { strategy: KronosCommonStrategy, field: Field, value: Any? ->
-                toUpdateFields += field
-                paramMap[field.name + "New"] = processParams(wrapper.orDefault(), field, value)
-            }
-            // 设置更新时间和逻辑删除字段的策略
-            updateTimeStrategy?.execute(true, afterExecute = updateFields)
-            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), true), afterExecute = updateFields)
-
-            var plusAssign: Pair<Field, String>? = null
-            optimisticStrategy?.execute { field, _ ->
-                if (toUpdateFields.any { it.columnName == field.columnName }) {
-                    throw IllegalArgumentException("The version field cannot be updated manually.")
-                }
-
-                plusAssign = field to field.name + "2PlusNew"
-                paramMap[field.name + "2PlusNew"] = 1
-            }
-            return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(
-                    getUpdateSql(
-                        wrapper.orDefault(),
-                        tableName,
-                        toUpdateFields,
-                        whereSql,
-                        if (plusAssign != null) mutableListOf(plusAssign) else mutableListOf(),
-                        mutableListOf()
-                    ),
-                    paramMap,
-                    operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(kClass, tableName, whereSql)
-                )
-            )
+        
+        // Get where clause SQL for DeleteClauseInfo (for cascade)
+        val whereClauseSql = if (rendered.sql.contains(" WHERE ", ignoreCase = true)) {
+            val whereIndex = rendered.sql.indexOf(" WHERE ", ignoreCase = true)
+            rendered.sql.substring(whereIndex + 7) // " WHERE " is 7 characters
         } else {
-            // 组装UPDATE语句并返回KronosAtomicTask对象
-            return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
-                    getDeleteSql(wrapper.orDefault(), tableName, whereSql),
-                    paramMap,
-                    operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(kClass, tableName, whereSql)
-                )
-            )
+            null
         }
+        
+        return CascadeDeleteClause.build(
+            cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, finalParamMap, true, KronosAtomicActionTask(
+                rendered.sql,
+                finalParamMap,
+                operationType = KOperationType.DELETE,
+                DeleteClauseInfo(kClass, tableName, whereClauseSql)
+            )
+        )
     }
 
     /**

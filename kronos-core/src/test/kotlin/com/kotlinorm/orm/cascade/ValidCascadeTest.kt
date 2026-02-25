@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ValidCascadeTest {
-
     init {
         Kronos.init {
             fieldNamingStrategy = lineHumpNamingStrategy

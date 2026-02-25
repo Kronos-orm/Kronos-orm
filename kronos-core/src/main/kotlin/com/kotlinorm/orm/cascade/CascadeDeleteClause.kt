@@ -117,13 +117,15 @@ object CascadeDeleteClause {
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper -> // 在执行前检查是否有引用
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
+                // Use SelectClause.toStatement() internally via queryList()
+                // This ensures AST-based SQL generation for cascade query operations
                 val toDeleteRecords =
                     pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
                         .apply {
                             this.cascadeAllowed = cascadeAllowed
                             this.operationType = KOperationType.DELETE
                         }
-                        .queryList(wrapper) //先查询出要删除的记录
+                        .queryList(wrapper) //先查询出要删除的记录 (queryList() internally calls toStatement())
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
                 // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
@@ -169,33 +171,37 @@ object CascadeDeleteClause {
                         }
                     }
                     atomicTasks.addAll(list.mapNotNull {
+                        // Use DeleteClause.toStatement() and UpdateClause.toStatement() internally via build()
+                        // This ensures AST-based SQL generation for cascade delete/update operations
                         when (it.data?.kCascade?.onDelete) {
                             NO_ACTION, RESTRICT -> null
-                            CASCADE, null -> it.kPojo.delete().logic(logic).cascade(enabled = false).build().atomicTasks
-                            SET_NULL -> it.kPojo.update().apply {
+                            CASCADE, null -> it.kPojo.delete().logic(logic).cascade(enabled = false).build().atomicTasks // build() internally calls toStatement()
+                            SET_NULL -> {
+                                val updateClause = it.kPojo.update()
                                 val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
                                 listOfValidCascade?.forEach { validCascade->
                                     validCascade.kCascade.properties.forEach{ property ->
-                                        val field =  allFields.first { f -> f.name == property }
-                                        toUpdateFields += field
-                                        paramMapNew[field + "New"] = null
+                                        // Use patch() to set field to null (AST-based approach)
+                                        updateClause.patch(property to null)
                                     }
                                 }
-                            }.build().atomicTasks
+                                updateClause.build().atomicTasks // build() internally calls toStatement()
+                            }
 
-                            SET_DEFAULT -> it.kPojo.update().apply {
+                            SET_DEFAULT -> {
+                                val updateClause = it.kPojo.update()
                                 val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
                                 listOfValidCascade?.forEach { validCascade->
                                     validCascade.kCascade.properties.forEachIndexed{ index, property ->
-                                        val field =  allFields.first { f -> f.name == property }
                                         val defaultValue = validCascade.kCascade.defaultValue.getOrNull(index)
                                         if(defaultValue != null && defaultValue != RESERVED) {
-                                            toUpdateFields += field
-                                            paramMapNew[field + "New"] = defaultValue
+                                            // Use patch() to set field to default value (AST-based approach)
+                                            updateClause.patch(property to defaultValue)
                                         }
                                     }
                                 }
-                            }.build().atomicTasks
+                                updateClause.build().atomicTasks // build() internally calls toStatement()
+                            }
                         }
                     }.flatten()) // 生成删除任务
                 }

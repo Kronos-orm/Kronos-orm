@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.ddl
 
+import com.kotlinorm.ast.DdlStatement
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.database.SqlHandler.execute
@@ -182,5 +183,175 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             }
         }
         return true
+    }
+
+    /**
+     * Build CreateTableStatement AST from KPojo instance
+     *
+     * @param instance Table instance
+     * @return CreateTableStatement AST node
+     */
+    inline fun <reified T : KPojo> buildCreateTableStatement(instance: T = T::class.createInstance()): DdlStatement.CreateTableStatement {
+        val columns = instance.kronosColumns()
+            .filter { it.isColumn }
+            .map { field ->
+                com.kotlinorm.ast.ColumnDefinition(
+                    name = field.columnName,
+                    type = field.type,
+                    length = field.length,
+                    scale = field.scale,
+                    nullable = field.nullable,
+                    primaryKey = field.primaryKey,
+                    defaultValue = field.defaultValue?.let { com.kotlinorm.ast.Literal.StringLiteral(it) }
+                )
+            }
+
+        return DdlStatement.CreateTableStatement(
+            tableName = instance.kronosTableName(),
+            columns = columns,
+            indexes = instance.kronosTableIndex(),
+            comment = instance.kronosTableComment()
+        )
+    }
+
+    /**
+     * Build DropTableStatement AST
+     *
+     * @param tableName Table name
+     * @param ifExists Whether to use IF EXISTS clause
+     * @return DropTableStatement AST node
+     */
+    fun buildDropTableStatement(tableName: String, ifExists: Boolean = false): DdlStatement.DropTableStatement {
+        return DdlStatement.DropTableStatement(
+            tableName = tableName,
+            ifExists = ifExists
+        )
+    }
+
+    /**
+     * Build DropTableStatement AST from KPojo instance
+     *
+     * @param instance Table instance
+     * @param ifExists Whether to use IF EXISTS clause
+     * @return DropTableStatement AST node
+     */
+    inline fun <reified T : KPojo> buildDropTableStatement(
+        instance: T = T::class.createInstance(),
+        ifExists: Boolean = false
+    ): DdlStatement.DropTableStatement {
+        return buildDropTableStatement(instance.kronosTableName(), ifExists)
+    }
+
+    /**
+     * Build TruncateTableStatement AST
+     *
+     * @param tableName Table name
+     * @param restartIdentity Whether to restart identity sequences
+     * @return TruncateTableStatement AST node
+     */
+    fun buildTruncateTableStatement(tableName: String, restartIdentity: Boolean = true): DdlStatement.TruncateTableStatement {
+        return DdlStatement.TruncateTableStatement(
+            tableName = tableName,
+            restartIdentity = restartIdentity
+        )
+    }
+
+    /**
+     * Build TruncateTableStatement AST from KPojo instance
+     *
+     * @param instance Table instance
+     * @param restartIdentity Whether to restart identity sequences
+     * @return TruncateTableStatement AST node
+     */
+    inline fun <reified T : KPojo> buildTruncateTableStatement(
+        instance: T = T::class.createInstance(),
+        restartIdentity: Boolean = true
+    ): DdlStatement.TruncateTableStatement {
+        return buildTruncateTableStatement(instance.kronosTableName(), restartIdentity)
+    }
+
+    /**
+     * Build CreateIndexStatement AST
+     *
+     * @param indexName Index name
+     * @param tableName Table name
+     * @param columns Column names to index
+     * @param unique Whether the index is unique
+     * @return CreateIndexStatement AST node
+     */
+    fun buildCreateIndexStatement(
+        indexName: String,
+        tableName: String,
+        columns: List<String>,
+        unique: Boolean = false
+    ): DdlStatement.CreateIndexStatement {
+        return DdlStatement.CreateIndexStatement(
+            indexName = indexName,
+            tableName = tableName,
+            columns = columns,
+            unique = unique
+        )
+    }
+
+    /**
+     * Build DropIndexStatement AST
+     *
+     * @param indexName Index name
+     * @param tableName Table name
+     * @return DropIndexStatement AST node
+     */
+    fun buildDropIndexStatement(indexName: String, tableName: String): DdlStatement.DropIndexStatement {
+        return DdlStatement.DropIndexStatement(
+            indexName = indexName,
+            tableName = tableName
+        )
+    }
+
+    /**
+     * Build AddColumnStatement AST
+     *
+     * @param tableName Table name
+     * @param column Column definition
+     * @return AddColumnStatement AST node
+     */
+    fun buildAddColumnStatement(
+        tableName: String,
+        column: com.kotlinorm.ast.ColumnDefinition
+    ): DdlStatement.AlterTableStatement.AddColumnStatement {
+        return DdlStatement.AlterTableStatement.AddColumnStatement(
+            tableName = tableName,
+            column = column
+        )
+    }
+
+    /**
+     * Build DropColumnStatement AST
+     *
+     * @param tableName Table name
+     * @param columnName Column name to drop
+     * @return DropColumnStatement AST node
+     */
+    fun buildDropColumnStatement(tableName: String, columnName: String): DdlStatement.AlterTableStatement.DropColumnStatement {
+        return DdlStatement.AlterTableStatement.DropColumnStatement(
+            tableName = tableName,
+            columnName = columnName
+        )
+    }
+
+    /**
+     * Build ModifyColumnStatement AST
+     *
+     * @param tableName Table name
+     * @param column Column definition
+     * @return ModifyColumnStatement AST node
+     */
+    fun buildModifyColumnStatement(
+        tableName: String,
+        column: com.kotlinorm.ast.ColumnDefinition
+    ): DdlStatement.AlterTableStatement.ModifyColumnStatement {
+        return DdlStatement.AlterTableStatement.ModifyColumnStatement(
+            tableName = tableName,
+            column = column
+        )
     }
 }

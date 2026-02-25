@@ -16,6 +16,13 @@
 
 package com.kotlinorm.orm.update
 
+import com.kotlinorm.ast.Assignment
+import com.kotlinorm.ast.ColumnReference
+import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.FieldToExpressionConverter
+import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
@@ -33,7 +40,6 @@ import com.kotlinorm.cache.kPojoCreateTimeCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
-import com.kotlinorm.database.SqlManager.getUpdateSql
 import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
@@ -44,6 +50,8 @@ import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSet
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
@@ -78,13 +86,29 @@ class UpdateClause<T : KPojo>(
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     internal var allFields = kPojoAllFieldsCache[kClass]!!
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
-    internal var toUpdateFields = linkedSetOf<Field>()
-    internal var condition: Criteria? = null
-    internal var paramMapNew = mutableMapOf<Field, Any?>()
-    private val plusAssigns = mutableListOf<Pair<Field, String>>()
-    private val minusAssigns = mutableListOf<Pair<Field, String>>()
     private var cascadeEnabled = true
     internal var cascadeAllowed: Set<Field>? = null
+
+    // AST UpdateStatement - all data stored here, directly modified without copy()
+    internal var statement: UpdateStatement = UpdateStatement(
+        table = TableName(table = tableName),
+        assignments = mutableListOf()
+    )
+
+    // Store parameter values for assignments (needed for parameter binding)
+    // Key: Field name, Value: parameter value
+    private val assignmentParams = mutableMapOf<String, Any?>()
+    
+    // Store parameter values extracted from Criteria (WHERE/BY clauses)
+    // Key: Parameter name, Value: parameter value
+    private val criteriaParams = mutableMapOf<String, Any?>()
+    
+    // Track whether where() method was called (even if condition was ignored)
+    private var whereCalled = false
+
+    // Store plus/minus assignments (for += and -= operations)
+    private val plusAssigns = mutableListOf<Pair<Field, String>>()
+    private val minusAssigns = mutableListOf<Pair<Field, String>>()
 
     /**
      * 初始化函数：用于配置更新字段和构建参数映射。
@@ -96,15 +120,226 @@ class UpdateClause<T : KPojo>(
     init {
         // 如果设置了更新字段，则进行字段配置和更新字段列表的构建
         if (setUpdateFields != null) {
-            pojo.afterSelect {
-                setUpdateFields!!(it) // 配置更新字段
-                toUpdateFields += fields // 将当前字段添加到更新字段列表
-            }
-            // 为每个更新字段在参数映射表中创建"New"版本的映射
-            toUpdateFields.forEach {
-                paramMapNew[it + "New"] = paramMap[it.name]
+            pojo.afterSelect { selectTable ->
+                setUpdateFields!!(selectTable) // 配置更新字段
+                // Add assignments to statement
+                fields.forEach { field ->
+                    val columnRef = fieldToColumnReference(field)
+                    val paramName = "${field.name}New"
+                    val param = Parameter.NamedParameter(paramName)
+                    statement.assignments.add(Assignment(columnRef, param))
+                    assignmentParams[paramName] = paramMap[field.name]
+                }
             }
         }
+    }
+
+    /**
+     * Converts a Field to a ColumnReference.
+     * In single-table operations, we should not use table prefix.
+     */
+    private fun fieldToColumnReference(field: Field): ColumnReference {
+        return FieldToExpressionConverter.fieldToColumnReference(field, useTableAlias = false)
+    }
+
+    /**
+     * Returns the AST UpdateStatement with all parameters and checks applied.
+     * 
+     * @param wrapper Optional KronosDataSourceWrapper for processing
+     * @param parameterValues Mutable map to collect parameter values from Criteria
+     * @return Complete UpdateStatement AST
+     */
+    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): UpdateStatement {
+        val dataSource = wrapper.orDefault()
+        val support = getDBSupport(dataSource.dbType)
+
+        // Build condition from paramMap if where is null AND where() was not called
+        if (statement.where == null && !whereCalled) {
+            // Build default condition from all fields
+            val buildCondition = allFields.asSequence().filter { it.isColumn }.mapNotNull { field ->
+                field.eq(paramMap[field.name]).takeIf { criteria -> criteria.value != null }
+            }.toList().toCriteria()
+
+            statement.where = CriteriaToAstConverter.convert(buildCondition, parameterValues, KOperationType.UPDATE)
+            // Note: statement.where can be null if buildCondition is empty
+        }
+
+        // If no assignments, add all fields
+        if (statement.assignments.isEmpty() && plusAssigns.isEmpty() && minusAssigns.isEmpty()) {
+            if (support != null) {
+                allFields.filter { it.isColumn }.forEach { field ->
+                    val columnRef = fieldToColumnReference(field)
+                    val paramName = "${field.name}New"
+                    val param = Parameter.NamedParameter(paramName)
+                    statement.assignments.add(Assignment(columnRef, param))
+                    assignmentParams[paramName] = support.processParams(dataSource, field, paramMap[field.name])
+                }
+            }
+        }
+
+        // Apply create time strategy (remove from assignments)
+        createTimeStrategy?.apply {
+            statement.assignments.removeAll { it.column.columnName == field.columnName }
+            // Also remove from assignmentParams
+            assignmentParams.remove("${field.name}New")
+        }
+
+        // Remove duplicates by column name (keep first occurrence)
+        // This must happen BEFORE update_time is added
+        val finalAssignments = mutableListOf<Assignment>()
+        val seenColumns = mutableSetOf<String>()
+        // Iterate forward to keep the first occurrence
+        statement.assignments.forEach { assignment ->
+            val columnName = assignment.column.columnName
+            if (!seenColumns.contains(columnName)) {
+                finalAssignments.add(assignment)
+                seenColumns.add(columnName)
+            }
+        }
+        statement.assignments.clear()
+        statement.assignments.addAll(finalAssignments)
+
+        // Apply update time strategy (add to assignments after deduplication)
+        // Insert update_time after the last non-arithmetic assignment (before +=/-= operations)
+        if (support != null) {
+            updateTimeStrategy?.execute(true) { field, value ->
+                val columnRef = fieldToColumnReference(field)
+                val paramName = "${field.name}New"
+                val param = Parameter.NamedParameter(paramName)
+                // Remove existing assignment if any
+                statement.assignments.removeAll { it.column.columnName == field.columnName }
+                
+                // Find the position to insert: after the last regular assignment, before arithmetic operations
+                val insertIndex = statement.assignments.indexOfLast { assignment ->
+                    // Check if this is a regular assignment (not arithmetic)
+                    assignment.value is Parameter.NamedParameter
+                }
+                
+                if (insertIndex >= 0) {
+                    statement.assignments.add(insertIndex + 1, Assignment(columnRef, param))
+                } else {
+                    statement.assignments.add(Assignment(columnRef, param))
+                }
+                assignmentParams[paramName] = support.processParams(dataSource, field, value)
+            }
+        }
+
+        // Apply logic delete strategy (remove from assignments and add to where) - always apply if strategy exists
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value ->
+                // Remove from assignments
+                statement.assignments.removeAll { it.column.columnName == field.columnName }
+                // Also remove from assignmentParams
+                assignmentParams.remove("${field.name}New")
+                // Build logic delete condition with literal value (not parameter)
+                // Logic delete values are fixed (0 or 1), so we use literals
+                val logicDeleteExpression = com.kotlinorm.ast.BinaryExpression(
+                    com.kotlinorm.ast.ColumnReference(database = null, tableAlias = null, columnName = field.columnName),
+                    com.kotlinorm.ast.SqlOperator.EQUAL,
+                    com.kotlinorm.ast.Literal.NumberLiteral(value.toString())
+                )
+
+                statement.where = if (statement.where == null) {
+                    logicDeleteExpression
+                } else {
+                    com.kotlinorm.ast.BinaryExpression(
+                        statement.where!!,
+                        com.kotlinorm.ast.SqlOperator.AND,
+                        logicDeleteExpression
+                    )
+                }
+        }
+
+        // Apply optimistic lock strategy (add += 1 assignment)
+        optimisticStrategy?.execute { field, _ ->
+            // Check if field is already in assignments
+            if (statement.assignments.any { it.column.columnName == field.columnName }) {
+                throw IllegalArgumentException("The version field cannot be updated manually.")
+            }
+
+            val columnRef = fieldToColumnReference(field)
+            val paramName = "${field.name}2PlusNew"
+            val param = Parameter.NamedParameter(paramName)
+            val addExpression = com.kotlinorm.ast.BinaryExpression(
+                columnRef,
+                com.kotlinorm.ast.SqlOperator.ADD,
+                param
+            )
+            statement.assignments.add(Assignment(columnRef, addExpression))
+            plusAssigns += field to paramName
+            assignmentParams[paramName] = 1
+        }
+
+        return statement
+    }
+
+    /**
+     * Renders the UpdateStatement to SQL with processed parameters.
+     */
+    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair<String, Map<String, Any?>> {
+        val dataSource = wrapper.orDefault()
+        val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+
+        // Collect parameter values from Criteria during AST conversion in toStatement()
+        val criteriaParameterValues = mutableMapOf<String, Any?>()
+        
+        // Get complete statement with all parameters and checks applied
+        val finalStatement = toStatement(wrapper, criteriaParameterValues)
+
+        // Render AST to SQL with parameters
+        val renderedSql = support.getUpdateSqlWithParams(dataSource, finalStatement)
+
+        // Process parameters
+        val paramMapNew = mutableMapOf<String, Any?>()
+        val fieldMap = fieldsMapCache[kClass]!!
+        
+        // First, add parameter values extracted from Criteria in where()/by() methods
+        // These parameters are guaranteed to be used in the WHERE clause
+        criteriaParams.forEach { (key, value) ->
+            val field = fieldMap[key]
+            if (field != null) {
+                paramMapNew[key] = support.processParams(dataSource, field, value)
+            } else {
+                paramMapNew[key] = value
+            }
+        }
+        
+        // Second, add parameter values extracted from Criteria during toStatement()
+        // These are from default WHERE conditions built from paramMap
+        criteriaParameterValues.forEach { (key, value) ->
+            if (!paramMapNew.containsKey(key)) {
+                val field = fieldMap[key]
+                if (field != null) {
+                    paramMapNew[key] = support.processParams(dataSource, field, value)
+                } else {
+                    paramMapNew[key] = value
+                }
+            }
+        }
+        
+        // Third, add assignment parameters (SET clause) - include null values
+        assignmentParams.forEach { (key, value) ->
+            val field =
+                allColumns.find { "${it.name}New" == key || "${it.name}2PlusNew" == key || "${it.name}2MinusNew" == key }
+            if (field != null) {
+                paramMapNew[key] = support.processParams(dataSource, field, value)
+            } else {
+                paramMapNew[key] = value
+            }
+        }
+        
+        // Fourth, merge rendered parameters (if any were added by the renderer)
+        renderedSql.parameters.forEach { (key, value) ->
+            if (!paramMapNew.containsKey(key) && value != null) {  // Only add if not already present
+                val field = fieldMap[key]
+                if (field != null) {
+                    paramMapNew[key] = support.processParams(dataSource, field, value)
+                } else {
+                    paramMapNew[key] = value
+                }
+            }
+        }
+
+        return Pair(renderedSql.sql, paramMapNew)
     }
 
     /**
@@ -118,25 +353,52 @@ class UpdateClause<T : KPojo>(
         newValue ?: throw EmptyFieldsException()
         pojo.afterSet {
             newValue(it)
-            val plusAssign = plusAssignFields
-            val minusAssign = minusAssignFields
+            val plusAssignMap = plusAssignFields.toMap()
+            val minusAssignMap = minusAssignFields.toMap()
 
-            plusAssign.forEach { assign ->
-                val assignField = assign.first
-                val assignKey = assignField.name + "2PlusNew"
-                plusAssigns += assignField to assignKey
-                paramMapNew[assignField + "2PlusNew"] = assign.second
+            // Process fields in order, checking if each is a plus/minus assign or regular assign
+            fields.forEach { field ->
+                when {
+                    plusAssignMap.containsKey(field) -> {
+                        // Handle plus assignment (column = column + value)
+                        val columnRef = fieldToColumnReference(field)
+                        val paramName = "${field.name}2PlusNew"
+                        val param = Parameter.NamedParameter(paramName)
+                        val addExpression = com.kotlinorm.ast.BinaryExpression(
+                            columnRef,
+                            com.kotlinorm.ast.SqlOperator.ADD,
+                            param
+                        )
+                        statement.assignments.add(Assignment(columnRef, addExpression))
+                        plusAssigns += field to paramName
+                        assignmentParams[paramName] = plusAssignMap[field]!!
+                    }
+                    minusAssignMap.containsKey(field) -> {
+                        // Handle minus assignment (column = column - value)
+                        val columnRef = fieldToColumnReference(field)
+                        val paramName = "${field.name}2MinusNew"
+                        val param = Parameter.NamedParameter(paramName)
+                        val subtractExpression = com.kotlinorm.ast.BinaryExpression(
+                            columnRef,
+                            com.kotlinorm.ast.SqlOperator.SUBTRACT,
+                            param
+                        )
+                        statement.assignments.add(Assignment(columnRef, subtractExpression))
+                        minusAssigns += field to paramName
+                        assignmentParams[paramName] = minusAssignMap[field]!!
+                    }
+                    else -> {
+                        // Handle regular field assignment
+                        val columnRef = fieldToColumnReference(field)
+                        val paramName = "${field.name}New"
+                        val param = Parameter.NamedParameter(paramName)
+                        statement.assignments.add(Assignment(columnRef, param))
+                        assignmentParams[paramName] = fieldParamMap[field]
+                    }
+                }
             }
-            minusAssign.forEach { assign ->
-                val assignField = assign.first
-                val assignKey = assignField.name + "2MinusNew"
-                minusAssigns += assignField to assignKey
-                paramMapNew[assignField + "2MinusNew"] = assign.second
-            }
-
-            toUpdateFields += fields.filter { field -> field !in plusAssign.map { item -> item.first } + minusAssign.map { item -> item.first } }
-            paramMapNew.putAll(fieldParamMap.filter { field -> field.key !in plusAssign.map { item -> item.first } + minusAssign.map { item -> item.first } }
-                .map { e -> e.key + "New" to e.value })
+            
+            // Note: update_time will be added in toStatement() after all user fields
         }
         return this
     }
@@ -174,13 +436,25 @@ class UpdateClause<T : KPojo>(
                 throw EmptyFieldsException()
             }
 
-            // 根据fields中的字段及其值构建删除条件
-            if (condition == null) {
-                condition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
-            } else {
-                condition!!.children.add(
-                    fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
-                )
+            // Build condition from fields and merge with existing where condition
+            val newCondition = fields.map { field -> field.eq(paramMap[field.name]) }.toCriteria()
+            val localCriteriaParams = mutableMapOf<String, Any?>()
+            val newExpression = CriteriaToAstConverter.convert(newCondition, localCriteriaParams, KOperationType.UPDATE)
+
+            // Store criteria parameters for later use in renderStatement
+            criteriaParams.putAll(localCriteriaParams)
+
+            // Only update where if newExpression is not null
+            if (newExpression != null) {
+                statement.where = if (statement.where == null) {
+                    newExpression
+                } else {
+                    com.kotlinorm.ast.BinaryExpression(
+                        statement.where!!,
+                        com.kotlinorm.ast.SqlOperator.AND,
+                        newExpression
+                    )
+                }
             }
         }
         return this
@@ -194,22 +468,46 @@ class UpdateClause<T : KPojo>(
      */
     fun where(updateCondition: ToFilter<T, Boolean?> = null): UpdateClause<T> {
         if (updateCondition == null) return this
-        pojo.afterFilter {
+        whereCalled = true  // Mark that where() was called
+        pojo.afterFilter { filterTable ->
             criteriaParamMap = paramMap // 更新 propParamMap
-            updateCondition(it)
+            updateCondition(filterTable)
             if (criteria == null) return@afterFilter
-            if (condition == null) {
-                condition = criteria
-            } else {
-                // 如果已经有条件，则将新条件添加到现有条件中
-                condition!!.children.addAll(criteria!!.children)
+
+            // Convert Criteria to Expression and merge with existing where condition
+            val localCriteriaParams = mutableMapOf<String, Any?>()
+            val newExpression = CriteriaToAstConverter.convert(criteria!!, localCriteriaParams, KOperationType.UPDATE)
+            
+            // Store criteria parameters for later use in renderStatement
+            criteriaParams.putAll(localCriteriaParams)
+            
+            // Only update where if newExpression is not null
+            if (newExpression != null) {
+                statement.where = if (statement.where == null) {
+                    newExpression
+                } else {
+                    com.kotlinorm.ast.BinaryExpression(
+                        statement.where!!,
+                        com.kotlinorm.ast.SqlOperator.AND,
+                        newExpression
+                    )
+                }
             }
         }
         return this
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): UpdateClause<T> {
-        paramMapNew.putAll(pairs.map { Field(it.first) to it.second })
+        pairs.forEach { (fieldName, value) ->
+            val field = allColumns.find { it.name == fieldName } ?: return@forEach
+            val columnRef = fieldToColumnReference(field)
+            val paramName = "${fieldName}New"
+            val param = Parameter.NamedParameter(paramName)
+            // Remove existing assignment for this field if any
+            statement.assignments.removeAll { it.column.columnName == field.columnName }
+            statement.assignments.add(Assignment(columnRef, param))
+            assignmentParams[paramName] = value
+        }
         return this
     }
 
@@ -229,81 +527,22 @@ class UpdateClause<T : KPojo>(
      * @return The constructed KronosAtomicTask.
      */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        if (condition == null) {
-            // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition = allFields.asSequence().filter { it.isColumn }.mapNotNull { field ->
-                field.eq(paramMap[field.name]).takeIf { it.value != null }
-            }.toList().toCriteria()
+        // Render statement to SQL with processed parameters
+        val (sql, paramMap) = renderStatement(wrapper)
+
+        // Get where clause SQL for UpdateClauseInfo (for cascade)
+        // Extract WHERE clause from SQL string
+        val whereClauseSql = if (sql.contains(" WHERE ", ignoreCase = true)) {
+            val whereIndex = sql.indexOf(" WHERE ", ignoreCase = true)
+            sql.substring(whereIndex + 7) // " WHERE " is 7 characters
+        } else {
+            null
         }
 
-        // 如果没有指定字段需要更新，则更新所有字段
-        if (toUpdateFields.isEmpty() && plusAssigns.isEmpty() && minusAssigns.isEmpty()) {
-            toUpdateFields = allFields
-            // 为所有字段生成新的参数映射
-            toUpdateFields.forEach {
-                paramMapNew[it + "New"] = processParams(wrapper.orDefault(), it, paramMap[it.name])
-            }
-        }
-
-        // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
-        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value ->
-            toUpdateFields -= field
-            paramMapNew -= field + "New"
-            // 构建逻辑删除的条件SQL
-            condition = listOfNotNull(
-                condition, "${field.quoted(wrapper.orDefault())} = $value".asSql()
-            ).toCriteria()
-        }
-
-        createTimeStrategy?.apply {
-            toUpdateFields -= field
-            paramMapNew -= field + "New"
-        }
-
-        // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
-        updateTimeStrategy?.execute(true) { field, value ->
-            toUpdateFields += field
-            paramMapNew[field + "New"] = processParams(wrapper.orDefault(), field, value)
-        }
-
-        toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()
-
-        optimisticStrategy?.execute { field, _ ->
-            if (toUpdateFields.any { it.columnName == field.columnName }) {
-                throw IllegalArgumentException("The version field cannot be updated manually.")
-            }
-
-            plusAssigns += field to field.name + "2PlusNew"
-            paramMapNew[field + "2PlusNew"] = 1
-        }
-
-        // 构建完整的更新SQL语句，包括条件部分
-        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(
-            KOperationType.UPDATE,
-            wrapper,
-            condition
-        )
-            .toWhereClause()
-
-        val sql = getUpdateSql(
-            wrapper.orDefault(),
-            tableName,
-            toUpdateFields.toList(),
-            whereClauseSql,
-            plusAssigns,
-            minusAssigns
-        )
-
-        // 合并参数映射，准备执行SQL所需的参数
-        val fieldMap = fieldsMapCache[kClass]!!
-        paramMapNew.forEach { (key, value) ->
-            val field = fieldMap[key.name]
-            if (field != null && value != null) {
-                paramMap[key.name] = processParams(wrapper.orDefault(), field, value)
-            } else {
-                paramMap[key.name] = value
-            }
-        }
+        // Get toUpdateFields from assignments for cascade compatibility
+        val toUpdateFields = statement.assignments.mapNotNull { assignment ->
+            allColumns.find { it.columnName == assignment.column.columnName }
+        }.toLinkedSet()
 
         // 返回构建好的KronosAtomicTask实例
         val rootTask = KronosAtomicActionTask(
@@ -322,7 +561,7 @@ class UpdateClause<T : KPojo>(
             cascadeAllowed,
             pojo,
             kClass,
-            paramMap.toMap(),
+            paramMap,
             toUpdateFields,
             whereClauseSql,
             rootTask

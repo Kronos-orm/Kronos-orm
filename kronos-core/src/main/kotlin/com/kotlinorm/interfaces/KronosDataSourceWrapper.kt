@@ -28,7 +28,7 @@ import kotlin.reflect.KClass
  * against a database. It serves as a bridge between the application and the underlying database, allowing the application
  * to interact with the database in a safe and efficient manner.
  *
- * @sample com.kotlinorm.beans.parser.NoneDataSourceWrapper
+ * @see com.kotlinorm.beans.parser.NoneDataSourceWrapper
  */
 interface KronosDataSourceWrapper {
     /**

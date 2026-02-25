@@ -1,8 +1,8 @@
 [versions]
-kotlin = "2.2.21"
-dsl = "6.4.2"
+kotlin = "2.3.0"
+dsl = "6.5.2"
 datetime = "0.7.1"
-serialization = "1.9.0"
+serialization = "1.10.0"
 dbcp2 = "2.14.0"
 mysql-jdbc-driver = "9.5.0"
 sqlite-jdbc-driver = "3.51.1.0"
@@ -10,11 +10,12 @@ mssql-jdbc-driver = "13.2.1.jre8"
 postgresql-jdbc-driver = "42.7.8"
 oracle-jdbc-driver = "23.26.0.0.0"
 gsonVer = "2.13.2"
-dokkaVer = "2.1.0"
+dokkaVer = "2.2.0-Beta"
 mavenCore = "3.9.12"
 autoService = "1.1.1"
-kotlinCompilerTest = "0.10.1"
+kotlinCompilerTest = "0.12.1"
 jackson = "2.20.1"
+kover = "0.9.7"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -52,4 +53,4 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokkaVer" }
 kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kronos-publishing = { id = "kronos.publishing" }
 kronos-dokka = { id = "kronos.dokka-convention" }
-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.9.1" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

@@ -191,18 +191,20 @@ object CascadeSelectClause {
             *listOfPair.toTypedArray()
         )
 
+        // Use SelectClause.toStatement() internally via queryList/queryOneOrNull
+        // This ensures AST-based SQL generation for cascade operations
         pojo[prop] = if (pojo.kronosColumns().first { it.name == prop }.cascadeIsCollectionOrArray) { // 判断属性是否为集合
             refPojo.select().apply {
                 this.operationType = operationType
                 this.cascadeAllowed = cascadeAllowed
                 this.cascadeSelectedProps = cascadeSelectedProps
-            }.queryList(wrapper) // 查询级联的POJO
+            }.queryList(wrapper) // 查询级联的POJO (internally calls toStatement())
         } else {
             refPojo.select().apply {
                 this.operationType = operationType
                 this.cascadeAllowed = cascadeAllowed
                 this.cascadeSelectedProps = cascadeSelectedProps
-            }.queryOneOrNull(wrapper) // 查询级联的POJO
+            }.queryOneOrNull(wrapper) // 查询级联的POJO (internally calls toStatement())
         }
     }
 }

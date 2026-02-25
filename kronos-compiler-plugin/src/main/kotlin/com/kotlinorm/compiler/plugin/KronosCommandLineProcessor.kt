@@ -31,21 +31,21 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         const val OPTION_DEBUG_MODE = "debug"
         const val OPTION_DEBUG_INFO_PATH = "debug-info-path"
 
-        val ARG_OPTION_DEBUG_MODE = CompilerConfigurationKey<Boolean>(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE)
-        val ARG_OPTION_DEBUG_INFO_PATH = CompilerConfigurationKey<String>(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH)
+        val ARG_OPTION_DEBUG_MODE = CompilerConfigurationKey<Boolean>(OPTION_DEBUG_MODE)
+        val ARG_OPTION_DEBUG_INFO_PATH = CompilerConfigurationKey<String>(OPTION_DEBUG_INFO_PATH)
     }
 
     override val pluginId: String = "kronos-compiler-plugin"
 
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption(
-            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE,
+            optionName = OPTION_DEBUG_MODE,
             valueDescription = "true or false",
             description = "Enable debug mode, print debug information",
             required = false,
         ),
         CliOption(
-            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH,
+            optionName = OPTION_DEBUG_INFO_PATH,
             valueDescription = "path",
             description = "Debug information output path",
             required = false,

@@ -24,14 +24,14 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 
 @OptIn(ExperimentalCompilerApi::class)
 @AutoService(CompilerPluginRegistrar::class)
-class KronosParserCompilerPluginRegistrar : CompilerPluginRegistrar() {
+class KronosParserCompilerPluginRegistrar(override val pluginId: String = "com.kotlinorm.compiler-plugin") : CompilerPluginRegistrar() {
 
     override val supportsK2: Boolean
         get() = true
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-        val debug = configuration.get(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.ARG_OPTION_DEBUG_MODE, false)
-        val debugInfoPath = configuration.get(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.ARG_OPTION_DEBUG_INFO_PATH, "build/tmp/kronosIrDebug")
+        val debug = configuration.get(KronosCommandLineProcessor.ARG_OPTION_DEBUG_MODE, false)
+        val debugInfoPath = configuration.get(KronosCommandLineProcessor.ARG_OPTION_DEBUG_INFO_PATH, "build/tmp/kronosIrDebug")
         IrGenerationExtension.registerExtension(KronosParserExtension(debug, debugInfoPath))
     }
 }

@@ -7,7 +7,6 @@ import {ActivatedRoute, Router, RouterLink} from "@angular/router";
 import {NgDocThemeToggleComponent} from "@ng-doc/app";
 import {NgDocButtonIconComponent, NgDocIconComponent, NgDocTooltipDirective} from "@ng-doc/ui-kit";
 import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
-import {OverlayPanel} from "primeng/overlaypanel";
 import {NG_DOC_ROUTING} from "@ng-doc/generated";
 import {WikiComponent} from "../../components/wiki.component";
 import {FooterComponent} from "../home/components/footer.component";

@@ -13,7 +13,7 @@ import {
 } from "@angular/router";
 import {Subject, takeUntil} from "rxjs";
 import {PrimeNG} from "primeng/config";
-import {updatePrimaryPalette} from "@primeng/themes";
+import {updatePrimaryPalette} from "@primeuix/themes";
 
 @Component({
     selector: 'app-root',

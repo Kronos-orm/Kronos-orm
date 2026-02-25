@@ -11,6 +11,12 @@
     font-size: 18px;
 }
 
+/* 隐藏 visible: false 的菜单项 */
+:host ::ng-deep .p-menu .p-submenu-header[style*="display: none"],
+:host ::ng-deep .p-menu .p-submenu-header.p-hidden {
+    display: none !important;
+}
+
 :host ::ng-deep .p-menu .p-submenu-header:hover .p-menu-header-content {
     color: var(--ng-doc-link-color) !important;
 }

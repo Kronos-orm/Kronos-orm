@@ -17,7 +17,7 @@ import {provideTransloco} from "@jsverse/transloco";
 import {TranslocoHttpLoader} from "./TranslocoHttpLoader";
 import {DocSearchEngine} from "./doc-search-engine";
 import {MARKED_OPTIONS, provideMarkdown} from "ngx-markdown";
-import Material from '@primeng/themes/material';
+import Material from '@primeuix/themes/material';
 import {providePrimeNG} from "primeng/config";
 
 export const appConfig: ApplicationConfig = {
@@ -62,8 +62,7 @@ export const appConfig: ApplicationConfig = {
                     breaks: false,
                     pedantic: false,
                 },
-            },
-            sanitize: SecurityContext.NONE // disable sanitization
+            }
         })
     ]
 };

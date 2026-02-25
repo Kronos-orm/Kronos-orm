@@ -363,7 +363,7 @@ export class LayoutMenuBarComponent implements OnInit {
 
     fixed = false
 
-    @HostListener('window:scroll', ['$event'])
+    @HostListener('window:scroll')
     onScroll() {
         this.fixed = window.scrollY > window.innerHeight - 100;
     }

@@ -5,9 +5,9 @@ import {RouterOutlet} from "@angular/router";
 import {ButtonModule} from "primeng/button";
 import {RippleModule} from 'primeng/ripple';
 import {MegaMenuModule} from "primeng/megamenu";
-import {DropdownModule} from "primeng/dropdown";
+import {SelectModule} from "primeng/select";
 import {FormsModule} from "@angular/forms";
-import {OverlayPanelModule} from "primeng/overlaypanel";
+import {PopoverModule} from "primeng/popover";
 import {TableModule} from "primeng/table";
 import {MenuModule} from "primeng/menu";
 import {SkeletonModule} from "primeng/skeleton";
@@ -21,8 +21,8 @@ const primengModules = [
   ButtonModule,
   RippleModule,
   MegaMenuModule,
-  DropdownModule,
-  OverlayPanelModule,
+  SelectModule,
+  PopoverModule,
   TableModule,
   MenuModule,
   SkeletonModule,

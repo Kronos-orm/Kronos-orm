@@ -55,7 +55,9 @@ export class KronosNgDocSidebarComponent {
     items: MenuItem[] = [];
 
     updateMenuState() {
-        this.items = this.context.navigation.sort(docSortFn).map((item, index) => {
+        this.items = this.context.navigation.sort(docSortFn)
+            .filter(item => item.route.startsWith(`/documentation/${this._app.language}/`))
+            .map((item, index) => {
             return {
                 label: item.title,
                 items: item.children?.sort(docSortFn).map(child => {
@@ -72,7 +74,6 @@ export class KronosNgDocSidebarComponent {
                     }
                 }),
                 routerLinkActiveOptions: {exact: true},
-                visible: item.route.startsWith(`/documentation/${this._app.language}/`),
             }
         });
 

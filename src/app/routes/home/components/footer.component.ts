@@ -25,7 +25,7 @@ import {AppService} from "../../../app.service";
           </div>
           <div class="mt-4 flex flex-col">
               <div class="flex">
-                  <span>Kronos-ORM © 2024</span>
+                  <span>Kronos-ORM © 2026</span>
               </div>
               <div class="flex mt-6">
                   <a href="https://www.apache.org/licenses/LICENSE-2.0">

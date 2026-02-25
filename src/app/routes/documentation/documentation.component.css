@@ -222,3 +222,8 @@
   --p-popover-background: var(--ng-doc-navbar-background) !important;
   --p-popover-border-color: var(--ng-doc-navbar-background) !important;
 }
+
+/* 语言切换文本颜色 */
+.lang-text {
+  color: var(--ng-doc-text);
+}

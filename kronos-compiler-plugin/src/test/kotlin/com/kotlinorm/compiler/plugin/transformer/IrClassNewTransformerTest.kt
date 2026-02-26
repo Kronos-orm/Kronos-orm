@@ -95,7 +95,7 @@ class IrClassNewTransformerTest {
                 }
             
                 val user = User::class.createInstance()
-                assertEquals(user.kronosTableName(), "tb_user")
+                assertEquals(user.__tableName, "tb_user")
                 assertNotNull(user.kronosColumns().find { it.name == "id" })
                 assertNotNull(user.kronosColumns().find { it.name == "username" })
                 assertNotNull(user.kronosColumns().find { it.name == "gender" })

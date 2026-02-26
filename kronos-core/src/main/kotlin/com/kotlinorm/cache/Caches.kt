@@ -58,7 +58,7 @@ val kPojoPrimaryKeyCache = LRUCache<KClass<out KPojo>, Field> { kClass ->
 
 val kPojoCreateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosCreateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
+        kPojo.kronosCreateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
             kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
@@ -66,7 +66,7 @@ val kPojoCreateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { 
 
 val kPojoUpdateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosUpdateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
+        kPojo.kronosUpdateTime().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
             kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
@@ -74,7 +74,7 @@ val kPojoUpdateTimeCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { 
 
 val kPojoLogicDeleteCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
+        kPojo.kronosLogicDelete().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
             kPojoAllColumnsCache[kClass]!!.any { it.name == field.name }
         }
     }
@@ -82,7 +82,7 @@ val kPojoLogicDeleteCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> {
 
 val kPojoOptimisticLockCache = LRUCache<KClass<out KPojo>, KronosCommonStrategy?> { kClass ->
     kPojoInstanceCache[kClass]!!.let { kPojo ->
-        kPojo.kronosOptimisticLock().takeIf { strategy -> strategy.enabled }?.bind(kPojo.kronosTableName())?.apply {
+        kPojo.kronosOptimisticLock().takeIf { strategy -> strategy.enabled }?.bind(kPojo.__tableName)?.apply {
             kPojoAllColumnsCache[kClass]!!.any { col-> col.name == field.name }
         }
     }

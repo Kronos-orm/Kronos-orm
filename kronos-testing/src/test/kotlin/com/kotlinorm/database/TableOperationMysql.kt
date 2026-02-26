@@ -183,12 +183,12 @@ class TableOperationMysql {
     fun testPojoComment() {
         dataSource.table.syncTable(user)
         val user = MysqlUser()
-        val comment = user.kronosTableComment()
+        val comment = user.__tableComment
         assertEquals("Kotlin Data Class for MysqlUser", comment, "表注释不正确")
         val realComment = wrapper.queryOne<String>(
             SqlManager.getTableCommentSql(wrapper),
             mapOf(
-                "tableName" to user.kronosTableName(),
+                "tableName" to user.__tableName,
                 "dbName" to "kronos_testing"
             )
         )

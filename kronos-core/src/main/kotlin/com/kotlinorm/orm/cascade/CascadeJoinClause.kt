@@ -107,7 +107,7 @@ object CascadeJoinClause {
                 columns.first,
                 columns.third,
                 KOperationType.SELECT,
-                cascadeAllowed?.filter { it.tableName == columns.second.kronosTableName() }?.map { it.name }?.toSet(),
+                cascadeAllowed?.filter { it.tableName == columns.second.__tableName }?.map { it.name }?.toSet(),
                 cascadeAllowed.isNullOrEmpty()
             ) // 获取所有的非数据库列、有关联注解且用于删除操作
         }

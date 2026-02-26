@@ -63,7 +63,7 @@ class SelectClause<T : KPojo>(
     override val pojo: T, setSelectFields: ToSelect<T, Any?> = null
 ) : KSelectable<T>(pojo) {
     private var kClass = pojo.kClass()
-    private var tableName = pojo.kronosTableName()
+    private var tableName = pojo.__tableName
     internal var paramMap = pojo.toDataMap()
     internal val patchedParamMap = mutableMapOf<String, Any?>()
     internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]

@@ -105,7 +105,7 @@ object CascadeDeleteClause {
         logic: Boolean,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
-        val tableName = pojo.kronosTableName()
+        val tableName = pojo.__tableName
         val validCascades = findValidRefs( // 获取有效的引用
             kClass,
             columns,
@@ -135,7 +135,7 @@ object CascadeDeleteClause {
                         if (valueOfPojo != null && !(valueOfPojo is Collection<*> && valueOfPojo.isEmpty())) {
                             throw UnsupportedOperationException(
                                 "The record cannot be deleted because it is restricted by a cascade." +
-                                        "${record.kronosTableName()}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, " +
+                                        "${record.__tableName}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, " +
                                         "and the value is ${valueOfPojo}."
                             )
                         }

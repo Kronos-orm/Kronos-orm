@@ -115,7 +115,7 @@ tasks.register("generateJoinClause") {
                         |    override var t1: T1,
                         |    ${range.drop(1).joinToString(", ") { "var t$it: T$it" }}
                         |) : SelectFrom<T1>(t1) {
-                        |    override var tableName = t1.kronosTableName()
+                        |    override var tableName = t1.__tableName
                         |    override var paramMap = (${range.joinToString(" + ") { "t$it.toDataMap()" }}).toMutableMap()
                         |    ${ range.joinToString("\n    ") { "private var kClass$it = t$it.kClass()" } }
                         |    override var logicDeleteStrategy = kPojoLogicDeleteCache[kClass1]

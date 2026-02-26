@@ -47,7 +47,7 @@ import com.kotlinorm.utils.processParams
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private val paramMap = pojo.toDataMap()
-    private val tableName = pojo.kronosTableName()
+    private val tableName = pojo.__tableName
     private var kClass = pojo.kClass()
     private var createTimeStrategy = kPojoCreateTimeCache[kClass]
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]

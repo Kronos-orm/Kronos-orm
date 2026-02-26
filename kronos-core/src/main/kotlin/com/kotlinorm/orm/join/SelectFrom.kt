@@ -160,7 +160,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
             criteriaMap.putAll(constMap)
             criteriaMap.keys.forEach { tableName ->
-                val (kClass, kPojo) = listOfPojo.first { it.second.kronosTableName() == tableName }
+                val (kClass, kPojo) = listOfPojo.first { it.second.__tableName == tableName }
                 listOfJoinable.add(
                     KJoinable(
                         tableName,
@@ -204,7 +204,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> leftJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
-        val tableName = another.kronosTableName()
+        val tableName = another.__tableName
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
@@ -222,7 +222,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> rightJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
-        val tableName = another.kronosTableName()
+        val tableName = another.__tableName
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
@@ -240,7 +240,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> crossJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
-        val tableName = another.kronosTableName()
+        val tableName = another.__tableName
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
@@ -258,7 +258,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> innerJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
-        val tableName = another.kronosTableName()
+        val tableName = another.__tableName
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
@@ -276,7 +276,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T : KPojo> fullJoin(another: T, noinline on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
-        val tableName = another.kronosTableName()
+        val tableName = another.__tableName
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
@@ -313,7 +313,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
 
     fun db(vararg databaseOfTables: Pair<KPojo, String>) {
         databaseOfTables.forEach {
-            databaseOfTable[it.first.kronosTableName()] = it.second
+            databaseOfTable[it.first.__tableName] = it.second
         }
     }
 

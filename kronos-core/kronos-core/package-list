@@ -1072,6 +1072,8 @@ $dokka.location:com.kotlinorm.interfaces/KLogger/isWarnEnabled/#/PointingToDecla
 $dokka.location:com.kotlinorm.interfaces/KLogger/trace/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-logger/trace.html
 $dokka.location:com.kotlinorm.interfaces/KLogger/warn/#kotlin.Array[com.kotlinorm.beans.logging.KLogMessage]#kotlin.Throwable?/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-logger/warn.html
 $dokka.location:com.kotlinorm.interfaces/KPojo///PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/index.html
+$dokka.location:com.kotlinorm.interfaces/KPojo/__tableComment/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/__table-comment.html
+$dokka.location:com.kotlinorm.interfaces/KPojo/__tableName/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/__table-name.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/fromMapData/#kotlin.collections.Map[kotlin.String,kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/from-map-data.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/get/#kotlin.String/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/get.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kClass/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/k-class.html
@@ -1080,9 +1082,7 @@ $dokka.location:com.kotlinorm.interfaces/KPojo/kronosCreateTime/#/PointingToDecl
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosLogicDelete/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-logic-delete.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosOptimisticLock/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-optimistic-lock.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosPrimaryKey/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-primary-key.html
-$dokka.location:com.kotlinorm.interfaces/KPojo/kronosTableComment/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-table-comment.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosTableIndex/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-table-index.html
-$dokka.location:com.kotlinorm.interfaces/KPojo/kronosTableName/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-table-name.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/kronosUpdateTime/#/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/kronos-update-time.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/safeFromMapData/#kotlin.collections.Map[kotlin.String,kotlin.Any?]/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/safe-from-map-data.html
 $dokka.location:com.kotlinorm.interfaces/KPojo/set/#kotlin.String#kotlin.Any?/PointingToDeclaration/kronos-core/com.kotlinorm.interfaces/-k-pojo/set.html

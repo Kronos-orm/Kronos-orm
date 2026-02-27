@@ -27,7 +27,7 @@ class SelectFrom12<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo, T6: KP
     override var t1: T1,
     var t2: T2, var t3: T3, var t4: T4, var t5: T5, var t6: T6, var t7: T7, var t8: T8, var t9: T9, var t10: T10, var t11: T11, var t12: T12
 ) : SelectFrom<T1>(t1) {
-    override var tableName = t1.kronosTableName()
+    override var tableName = t1.__tableName
     override var paramMap = (t1.toDataMap() + t2.toDataMap() + t3.toDataMap() + t4.toDataMap() + t5.toDataMap() + t6.toDataMap() + t7.toDataMap() + t8.toDataMap() + t9.toDataMap() + t10.toDataMap() + t11.toDataMap() + t12.toDataMap()).toMutableMap()
     private var kClass1 = t1.kClass()
     private var kClass2 = t2.kClass()

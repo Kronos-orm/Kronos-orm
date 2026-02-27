@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irBranch
 import org.jetbrains.kotlin.ir.builders.irElseBranch
 import org.jetbrains.kotlin.ir.builders.irEquals
+import org.jetbrains.kotlin.ir.builders.irExprBody
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.builders.irNull
@@ -173,7 +174,9 @@ fun createToMapFunction(
             context.irBuiltIns.stringType,
             context.irBuiltIns.anyNType,
             declaration.properties.filter {
-                return@filter !it.ignoreAnnotationValue().ignore("to_map") && !it.isSetter
+                return@filter !it.ignoreAnnotationValue().ignore("to_map") &&
+                        !it.ignoreAnnotationValue().ignore("all") &&
+                        !it.isSetter
             }.associate {
                 irString(it.name.asString()) to dispatcher.getValue(it)
             }
@@ -196,7 +199,8 @@ fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): Ir
         val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)
         +declaration.properties.toList().mapNotNull { property ->
             if (property.isDelegated || property.isGetter ||
-                property.ignoreAnnotationValue().ignore("from_map")
+                property.ignoreAnnotationValue().ignore("from_map") ||
+                property.ignoreAnnotationValue().ignore("all")
             ) {
                 return@mapNotNull null
             }
@@ -230,7 +234,8 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
         +irBlock {
             declaration.properties.toList().mapNotNull { property ->
                 if (property.isDelegated || property.isGetter ||
-                    property.ignoreAnnotationValue().ignore("from_map")
+                    property.ignoreAnnotationValue().ignore("from_map") ||
+                    property.ignoreAnnotationValue().ignore("all")
                 ) {
                     return@mapNotNull null
                 }
@@ -266,18 +271,10 @@ fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction)
  * @return an `IrBlockBody` containing an IrReturn statement with the generated table name
  */
 context(_: IrPluginContext, builder: IrBuilderWithScope)
-fun createKronosTableName(declaration: IrClass) = builder.irBlockBody {
-    +irReturn(
-        getTableName(declaration)
-    )
-}
+fun createTableName(kPojoDecl: IrClass) = builder.irExprBody(getTableName(kPojoDecl))
 
 context(_: IrPluginContext, builder: IrBuilderWithScope)
-fun createKronosComment(declaration: IrClass) = builder.irBlockBody {
-    +irReturn(
-        declaration.getKDocString()
-    )
-}
+fun createTableComment(kPojoDecl: IrClass) = builder.irExprBody(kPojoDecl.getKDocString())
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(_: IrPluginContext, builder: IrBuilderWithScope)
@@ -307,7 +304,9 @@ fun createGetFieldsFunction(declaration: IrClass) = builder.irBlockBody {
     +irReturn(
         irListOf(
             fieldSymbol.owner.defaultType,
-            declaration.properties.map {
+            declaration.properties.filterNot {
+                it.ignoreAnnotationValue().ignore("all")
+            }.map {
                 getColumnName(it)
             }.toList()
         )

@@ -70,7 +70,7 @@ class UpdateClause<T : KPojo>(
     private var setUpdateFields: ToSelect<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
-    private var tableName = pojo.kronosTableName()
+    private var tableName = pojo.__tableName
     private var kClass = pojo.kClass()
     private var createTimeStrategy = kPojoCreateTimeCache[kClass]
     private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]

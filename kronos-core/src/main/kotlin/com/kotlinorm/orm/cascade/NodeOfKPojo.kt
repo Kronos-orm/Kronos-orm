@@ -76,7 +76,7 @@ data class NodeOfKPojo(
     var insertIgnore = false // 该字段用于判断是否忽略插入
     internal val dataMap = kPojo.toDataMap()
     internal val validCascades by lazy {
-        val tableName = kPojo.kronosTableName()
+        val tableName = kPojo.__tableName
         findValidRefs(
             kPojo.kClass(),
             kPojo.kronosColumns(),
@@ -85,7 +85,7 @@ data class NodeOfKPojo(
             cascadeAllowed.isNullOrEmpty(),
         )
     }
-    val tableName by lazy { kPojo.kronosTableName() }
+    val tableName by lazy { kPojo.__tableName }
 
     init {
         // Patches data from the parent node to this node. This includes updating fields and parameters

@@ -96,7 +96,7 @@ fun findValidRefs(
         } else {
             val ref =
                 col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-            val tableName = ref.kronosTableName() // 获取引用所在的表名
+            val tableName = ref.__tableName // 获取引用所在的表名
             kPojoAllFieldsCache[col.kClass]!!.asSequence().filter {
                 it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.kClass == kClass
             }.map {

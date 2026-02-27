@@ -97,7 +97,7 @@ object CascadeSelectClause {
         prevTask: KronosAtomicQueryTask,
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
-        val tableName = pojo.kronosTableName()
+        val tableName = pojo.__tableName
         val validCascades = findValidRefs(
             kClass,
             columns,
@@ -173,7 +173,7 @@ object CascadeSelectClause {
         // 将KPojo转为Map，该map将用于级联查询
         val dataMap = pojo.toDataMap()
         // 获取KPojo对应的表名
-        val tableName = pojo.kronosTableName()
+        val tableName = pojo.__tableName
 
         // 获取Pair列表，用于将Map内的值填充到引用的类的POJO中
         // Pair的构建需要判断KPojo对象是ValidRef所在的表还是引用的表，然后根据不同的情况填充Pair

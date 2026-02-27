@@ -20,28 +20,34 @@ import com.kotlinorm.compiler.helpers.set
 import com.kotlinorm.compiler.plugin.utils.createFromMapValueFunction
 import com.kotlinorm.compiler.plugin.utils.createGetFieldsFunction
 import com.kotlinorm.compiler.plugin.utils.createKClassFunction
-import com.kotlinorm.compiler.plugin.utils.createKronosComment
 import com.kotlinorm.compiler.plugin.utils.createKronosCreateTime
 import com.kotlinorm.compiler.plugin.utils.createKronosLogicDelete
 import com.kotlinorm.compiler.plugin.utils.createKronosOptimisticLock
 import com.kotlinorm.compiler.plugin.utils.createKronosTableIndex
-import com.kotlinorm.compiler.plugin.utils.createKronosTableName
 import com.kotlinorm.compiler.plugin.utils.createKronosUpdateTime
 import com.kotlinorm.compiler.plugin.utils.createPropertyGetter
 import com.kotlinorm.compiler.plugin.utils.createPropertySetter
 import com.kotlinorm.compiler.plugin.utils.createSafeFromMapValueFunction
+import com.kotlinorm.compiler.plugin.utils.createTableComment
+import com.kotlinorm.compiler.plugin.utils.createTableName
 import com.kotlinorm.compiler.plugin.utils.createToMapFunction
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
+import org.jetbrains.kotlin.ir.builders.declarations.addDefaultGetter
+import org.jetbrains.kotlin.ir.builders.declarations.addDefaultSetter
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.parentAsClass
 import org.jetbrains.kotlin.ir.util.properties
 
 /**
@@ -59,7 +65,12 @@ import org.jetbrains.kotlin.ir.util.properties
  *         fake override fun toDataMap(): MutableMap<String, Any?>
  *         fake override fun safeFromMapData(data: Map<String, Any?>): Foo
  *         fake override fun fromMapData(data: Map<String, Any?>): Foo
- *         fake override fun kronosTableName(): String
+ *         var __tableName: String
+ *             get() = throw IllegalStateException()
+ *             set(value) {}
+ *         var __tableComment: String
+ *             get() = throw IllegalStateException()
+ *             set(value) {}
  *         fake override fun kronosTableComment(): String
  *         fake override fun kronosTableIndex(): List<KTableIndex>
  *         fake override fun kronosColumns(): List<Field>
@@ -95,13 +106,9 @@ import org.jetbrains.kotlin.ir.util.properties
  *              return this
  *         }
  *
- *         override fun kronosTableName(): String {
- *               return "foo"
- *         }
+ *         var __tableName: String = "foo"
  *
- *         override fun kronosTableComment(): String {
- *              return "file: Foo.kt"
- *         }
+ *         var __tableComment: String = "file: Foo.kt"
  *
  *         override fun kronosTableIndex(): List<KTableIndex> {
  *              return listOf()
@@ -151,8 +158,6 @@ class KronosIrClassNewTransformer(
                         "set" -> replaceFakeBody { createPropertySetter(irClass, declaration) }
                         "safeFromMapData" -> replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }
                         "fromMapData" -> replaceFakeBody { createFromMapValueFunction(irClass, declaration) }
-                        "kronosTableName" -> replaceFakeBody { createKronosTableName(irClass) }
-                        "kronosTableComment" -> replaceFakeBody { createKronosComment(irClass) }
                         "kronosTableIndex" -> replaceFakeBody { createKronosTableIndex(irClass) }
                         "kronosColumns" -> replaceFakeBody { createGetFieldsFunction(irClass) }
                         "kronosCreateTime" -> replaceFakeBody { createKronosCreateTime(irClass) }
@@ -164,5 +169,28 @@ class KronosIrClassNewTransformer(
             }
         }
         return super.visitFunctionNew(declaration)
+    }
+
+    override fun visitPropertyNew(declaration: IrProperty): IrStatement {
+        if (declaration.backingField == null) {
+            fun replaceFakeProp(initializer: () -> IrExpressionBody) {
+                declaration.isFakeOverride = false
+                declaration.addBackingField{ type = declaration.getter!!.returnType }
+                declaration.backingField!!.initializer = initializer()
+                declaration.getter = null
+                declaration.setter = null
+                declaration.addDefaultGetter(declaration.parentAsClass, pluginContext.irBuiltIns)
+                declaration.addDefaultSetter(declaration.parentAsClass, pluginContext.irBuiltIns)
+            }
+            with(DeclarationIrBuilder(pluginContext, declaration.symbol) as IrBuilderWithScope) {
+                with(pluginContext) {
+                    when (declaration.name.asString()) {
+                        "__tableName" -> replaceFakeProp { createTableName(irClass) }
+                        "__tableComment" -> replaceFakeProp { createTableComment(irClass) }
+                    }
+                }
+            }
+        }
+        return super.visitPropertyNew(declaration)
     }
 }

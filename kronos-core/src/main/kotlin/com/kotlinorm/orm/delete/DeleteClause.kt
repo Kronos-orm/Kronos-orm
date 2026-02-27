@@ -55,7 +55,7 @@ import com.kotlinorm.utils.processParams
 class DeleteClause<T : KPojo>(private val pojo: T) {
     private var kClass = pojo.kClass()
     private var paramMap = pojo.toDataMap()
-    private var tableName = pojo.kronosTableName()
+    private var tableName = pojo.__tableName
     private var condition: Criteria? = null
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true

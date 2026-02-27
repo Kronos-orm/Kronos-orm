@@ -42,7 +42,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      * @param instance Table instance
      */
     inline fun <reified T : KPojo> exists(instance: T = T::class.createInstance()) =
-        queryTableExistence(instance.kronosTableName(), dataSource)
+        queryTableExistence(instance.__tableName, dataSource)
 
     /**
      * Query table existence
@@ -59,16 +59,16 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      */
     inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
         dataSource.dbType,
-        instance.kronosTableName(),
-        instance.kronosTableComment(),
+        instance.__tableName,
+        instance.__tableComment,
         instance.kronosColumns().filter { it.isColumn },
         instance.kronosTableIndex()
     ).map {
         KronosAtomicActionTask(
             it,
-            mapOf("tableName" to instance.kronosTableName()),
+            mapOf("tableName" to instance.__tableName),
             KOperationType.CREATE,
-            DDLInfo(T::class, instance.kronosTableName())
+            DDLInfo(T::class, instance.__tableName)
         )
     }.toKronosActionTask().execute(dataSource)
 
@@ -79,10 +79,10 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      */
     inline fun <reified T : KPojo> dropTable(instance: T = T::class.createInstance()) =
         KronosAtomicActionTask(
-            getTableDropSql(dataSource.dbType, instance.kronosTableName()),
-            mapOf("tableName" to instance.kronosTableName()),
+            getTableDropSql(dataSource.dbType, instance.__tableName),
+            mapOf("tableName" to instance.__tableName),
             KOperationType.DROP,
-            DDLInfo(T::class, instance.kronosTableName())
+            DDLInfo(T::class, instance.__tableName)
         ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -112,12 +112,12 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
     ) = KronosAtomicActionTask(
         getTableTruncateSql(
             dataSource.dbType,
-            instance.kronosTableName(),
+            instance.__tableName,
             restartIdentity
         ),
-        mapOf("tableName" to instance.kronosTableName()),
+        mapOf("tableName" to instance.__tableName),
         KOperationType.TRUNCATE,
-        DDLInfo(T::class, instance.kronosTableName())
+        DDLInfo(T::class, instance.__tableName)
     ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -144,7 +144,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      */
     inline fun <reified T : KPojo> syncTable(instance: T = T::class.createInstance()): Boolean {
         // 表名
-        val tableName = instance.kronosTableName()
+        val tableName = instance.__tableName
 
         // 不存在就创建
         if (!queryTableExistence(tableName, dataSource)) {
@@ -165,7 +165,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         // 从实例中获取索引(oracle 需要 转大写)
         val kronosIndexes = instance.kronosTableIndex()
         val originalTableComment = queryTableComment(tableName, dataSource)
-        val tableComment = instance.kronosTableComment()
+        val tableComment = instance.__tableComment
 
         // 获取实际表字段信息
         val tableColumns = getTableColumns(dataSource, tableName)

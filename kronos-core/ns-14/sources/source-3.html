@@ -1,0 +1,172 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PostgresFunctionBuilder</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.functions.bundled.builders</a>
+</div>
+
+<h1>Coverage Summary for Class: PostgresFunctionBuilder (com.kotlinorm.functions.bundled.builders)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PostgresFunctionBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/58)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.functions.bundled.builders
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.FunctionField
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildField
+&nbsp;import com.kotlinorm.interfaces.FunctionBuilder
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;
+&nbsp;object PostgresFunctionBuilder : FunctionBuilder {
+<b class="nc">&nbsp;    override val supportFunctionNames: (String) -&gt; Array&lt;DBType&gt; = {</b>
+<b class="nc">&nbsp;        when (it) {</b>
+<b class="nc">&nbsp;            &quot;any&quot; -&gt; arrayOf(DBType.Postgres)</b>
+<b class="nc">&nbsp;            &quot;all&quot; -&gt; arrayOf(DBType.Postgres)</b>
+<b class="nc">&nbsp;            else -&gt; emptyArray()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun transform(
+&nbsp;        field: FunctionField,
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        showTable: Boolean,
+&nbsp;        showAlias: Boolean
+&nbsp;    ): String {
+<b class="nc">&nbsp;        return &quot;${field.functionName.uppercase()}(ARRAY${</b>
+<b class="nc">&nbsp;            buildField(field.fields.first(), dataSource, showTable)</b>
+&nbsp;        })&quot;
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

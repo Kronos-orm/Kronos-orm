@@ -1,0 +1,200 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SqlHandler</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlHandler (com.kotlinorm.database)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlHandler</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/332)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicBatchTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;
+&nbsp;object SqlHandler {
+<b class="nc">&nbsp;    fun KronosDataSourceWrapper.query(sql: String, paramMap: Map&lt;String, Any?&gt; = emptyMap()): List&lt;Map&lt;String, Any&gt;&gt; {</b>
+<b class="nc">&nbsp;        return this.forList(KronosAtomicQueryTask(sql, paramMap))</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun KronosDataSourceWrapper.queryMap(sql: String, paramMap: Map&lt;String, Any?&gt; = emptyMap()): Map&lt;String, Any&gt;? {</b>
+<b class="nc">&nbsp;        return this.forMap(KronosAtomicQueryTask(sql, paramMap))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; KronosDataSourceWrapper.queryList(</b>
+&nbsp;        sql: String,
+<b class="nc">&nbsp;        paramMap: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = emptyList()</b>
+&nbsp;    ): List&lt;T&gt; {
+<b class="nc">&nbsp;        return this.forList(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as List&lt;T&gt;</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; KronosDataSourceWrapper.queryOne(</b>
+<b class="nc">&nbsp;        sql: String, paramMap: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = emptyList()</b>
+&nbsp;    ): T {
+<b class="nc">&nbsp;        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?</b>
+<b class="nc">&nbsp;            ?: throw NoSuchElementException(&quot;No result found&quot;)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; KronosDataSourceWrapper.queryOneOrNull(</b>
+&nbsp;        sql: String,
+<b class="nc">&nbsp;        paramMap: Map&lt;String, Any?&gt; = emptyMap(),</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = emptyList()</b>
+&nbsp;    ): T? {
+<b class="nc">&nbsp;        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun KronosDataSourceWrapper.execute(sql: String, paramMap: Map&lt;String, Any?&gt; = emptyMap()): Int {</b>
+<b class="nc">&nbsp;        return this.update(KronosAtomicActionTask(sql, paramMap))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun KronosDataSourceWrapper.batchExecute(sql: String, paramMapList: Array&lt;Map&lt;String, Any?&gt;&gt;): IntArray {
+<b class="nc">&nbsp;        return this.batchUpdate(</b>
+<b class="nc">&nbsp;            KronosAtomicBatchTask(</b>
+<b class="nc">&nbsp;                sql, paramMapList</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

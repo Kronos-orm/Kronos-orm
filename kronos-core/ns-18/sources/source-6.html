@@ -1,0 +1,397 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > NodeInfo</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.cascade</a>
+</div>
+
+<h1>Coverage Summary for Class: NodeInfo (com.kotlinorm.orm.cascade)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">NodeInfo</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (37/37)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.cascade
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KCascade
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;
+&nbsp;/**
+&nbsp; * Holds information about a node in the ORM cascade operation tree.
+&nbsp; *
+&nbsp; * This data class is used to store contextual information about a node within the cascade operation tree,
+&nbsp; * including whether to update cascade values, the parent node, the field in the parent node that references this node,
+&nbsp; * and the depth of this node in the tree. The depth is calculated based on the parent&#39;s depth, allowing for easy traversal
+&nbsp; * and management of the cascade operation hierarchy.
+&nbsp; *
+&nbsp; * 保存有关 ORM 级联操作树中节点的信息。
+&nbsp; *
+&nbsp; * 此数据类用于存储有关级联操作树中节点的上下文信息，
+&nbsp; * 包括是否更新引用值、父节点、父节点中引用此节点的字段，
+&nbsp; * 以及此节点在树中的深度。深度是根据父节点的深度计算的，以便于遍历和管理级联操作层次结构。
+&nbsp; *
+&nbsp; * @property updateReferenceValue Indicates if the cascade value should be updated during the cascade operation.
+&nbsp; * @property parent The parent node in the cascade operation tree, or null if this is a root node.
+&nbsp; * @property fieldOfParent The field in the parent node that references this node, or null if this is a root node.
+&nbsp; */
+&nbsp;data class NodeInfo(
+<b class="fc">&nbsp;    val updateReferenceValue: Boolean = false,</b>
+<b class="fc">&nbsp;    var parent: NodeOfKPojo? = null,</b>
+<b class="fc">&nbsp;    var fieldOfParent: Field? = null,</b>
+<b class="fc">&nbsp;    var kCascade: KCascade? = null</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Represents a node within an ORM cascade operation tree, encapsulating the logic for managing a single entity and its relationships.
+&nbsp; *
+&nbsp; * This data class is central to handling cascade operations within an ORM framework, allowing for the representation
+&nbsp; * of an entity (KPojo) within a tree structure. It supports operations such as patching data from parent nodes,
+&nbsp; * initializing custom logic, and dynamically building child nodes based on the operation type and depth constraints.
+&nbsp; *
+&nbsp; * 表示 ORM 级联操作树中的节点，封装用于管理单个实体及其关系的逻辑。
+&nbsp; *
+&nbsp; * 此数据类是处理 ORM 框架内的级联操作的核心，允许在树结构中表示实体 (KPojo)。它支持从父节点获取并更新关联的数据项、初始化自定义逻辑以及根据操作类型和深度约束动态构建子节点等操作。
+&nbsp; *
+&nbsp; * @property kPojo The entity (KPojo) this node represents.
+&nbsp; * @property data Additional contextual information about this node, such as its parent, the field linking to the parent, and depth in the tree.
+&nbsp; * @property cascadeAllowed The maximum depth to which the tree should be built. A value of -1 indicates no limit.
+&nbsp; * @property operationType The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.
+&nbsp; * @property updateParams A map of parameters to be updated in the entity, used when patching data from the parent.
+&nbsp; * @property onInit An optional initialization block that can be executed upon node creation, allowing for custom logic.
+&nbsp; */
+&nbsp;data class NodeOfKPojo(
+&nbsp;    val kPojo: KPojo,
+&nbsp;    val data: NodeInfo? = null,
+&nbsp;    val cascadeAllowed: Set&lt;Field&gt;?,
+&nbsp;    val operationType: KOperationType,
+&nbsp;    val updateParams: MutableMap&lt;String, String&gt; = mutableMapOf(),
+&nbsp;    val children: MutableList&lt;NodeOfKPojo&gt; = mutableListOf(),
+&nbsp;    val onInit: (NodeOfKPojo.() -&gt; Unit)? = null
+&nbsp;) {
+&nbsp;    var insertIgnore = false // 该字段用于判断是否忽略插入
+&nbsp;    internal val dataMap = kPojo.toDataMap()
+&nbsp;    internal val validCascades by lazy {
+&nbsp;        val tableName = kPojo.__tableName
+&nbsp;        findValidRefs(
+&nbsp;            kPojo.kClass(),
+&nbsp;            kPojo.kronosColumns(),
+&nbsp;            operationType,
+&nbsp;            cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(),
+&nbsp;            cascadeAllowed.isNullOrEmpty(),
+&nbsp;        )
+&nbsp;    }
+&nbsp;    val tableName by lazy { kPojo.__tableName }
+&nbsp;
+&nbsp;    init {
+&nbsp;        // Patches data from the parent node to this node. This includes updating fields and parameters
+&nbsp;        // based on the parent&#39;s data, which is crucial for maintaining consistency in cascading operations.
+&nbsp;        patchFromParent()
+&nbsp;
+&nbsp;        // Executes an optional initialization block defined at the node creation. This allows for custom
+&nbsp;        // logic to be executed right after the node&#39;s basic initialization, providing flexibility in node setup.
+&nbsp;        onInit?.invoke(this)
+&nbsp;        buildChildren()
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Converts a [KPojo] instance into a [NodeOfKPojo] for use in an ORM cascade operation tree.
+&nbsp;         *
+&nbsp;         * This extension function facilitates the transformation of a [KPojo] entity into a node within the cascade operation tree,
+&nbsp;         * encapsulating the entity along with additional contextual information necessary for performing cascade operations.
+&nbsp;         * The function allows specifying various parameters that influence the behavior and structure of the resulting node,
+&nbsp;         * such as the depth limit for building the tree, the type of operation being performed, and any initialization logic.
+&nbsp;         *
+&nbsp;         * 将 [KPojo] 实例转换为 [NodeOfKPojo]，以用于 ORM 级联操作树。
+&nbsp;         *
+&nbsp;         * 此扩展函数有助于将 [KPojo] 实体转换为级联操作树中的节点，
+&nbsp;         * 将实体与执行级联操作所需的其他上下文信息一起封装。
+&nbsp;         * 该函数允许指定影响结果节点的行为和结构的各种参数，
+&nbsp;         * 例如构建树的深度限制、正在执行的操作类型以及任何初始化逻辑。
+&nbsp;         *
+&nbsp;         * @param data Optional [NodeInfo] providing additional context about the node, such as its parent and depth in the tree.
+&nbsp;         * @param cascadeAllowed The maximum depth to which the tree should be built. A value of -1 indicates no limit.
+&nbsp;         * @param operationType The type of ORM operation (e.g., DELETE) being performed, influencing how child nodes are built.
+&nbsp;         * @param updateParams A map of parameters to be updated in the entity, used when patching data from the parent.
+&nbsp;         * @param onInit An optional initialization block that can be executed upon node creation, allowing for custom logic.
+&nbsp;         * @return A [NodeOfKPojo] instance representing the [KPojo] within the cascade operation tree.
+&nbsp;         */
+&nbsp;        internal fun KPojo.toTreeNode(
+&nbsp;            data: NodeInfo? = null, cascadeAllowed: Set&lt;Field&gt;?,
+&nbsp;            operationType: KOperationType,
+&nbsp;            updateParams: MutableMap&lt;String, String&gt; = mutableMapOf(),
+&nbsp;            children: MutableList&lt;NodeOfKPojo&gt; = mutableListOf(),
+&nbsp;            onInit: (NodeOfKPojo.() -&gt; Unit)? = null
+&nbsp;        ): NodeOfKPojo {
+&nbsp;            return NodeOfKPojo(this, data, cascadeAllowed, operationType, updateParams, children, onInit)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Updates the current node&#39;s properties based on its parent&#39;s corresponding values.
+&nbsp;     *
+&nbsp;     * This function is responsible for synchronizing the current node&#39;s properties with its parent&#39;s values,
+&nbsp;     * specifically for the fields that are designated as valid references for cascade operations. It first checks
+&nbsp;     * if the current node has a parent and if the updateReferenceValue flag is set to true, indicating that the
+&nbsp;     * node&#39;s properties should be updated based on the parent&#39;s values. If these conditions are met, it proceeds
+&nbsp;     * to find the corresponding valid cascade in the parent node that matches the fieldOfParent property of the
+&nbsp;     * current node. For each target field in the valid cascade, it maps the target field&#39;s value from the parent&#39;s
+&nbsp;     * data map to the corresponding cascade field in the current node. If the current node&#39;s property value differs
+&nbsp;     * from the parent&#39;s, it updates the current node&#39;s property with the parent&#39;s value and also updates the
+&nbsp;     * updateParams map with the new value, ensuring that the cascade operation carries the updated values down the tree.
+&nbsp;     *
+&nbsp;     * 根据父节点的相应值更新当前节点的属性。
+&nbsp;     *
+&nbsp;     * 此函数负责将当前节点的属性与其父节点的值同步，
+&nbsp;     * 特别是针对指定为级联操作有效引用的字段。它首先检查当前节点是否有父节点，以及 updateReferenceValue 标志是否设置为 true，
+&nbsp;     * 这表示应根据父节点的值更新节点的属性。如果满足这些条件，它将继续在父节点中查找与当前节点的 fieldOfParent 属性匹配的相应有效引用。
+&nbsp;     * 对于有效引用中的每个目标字段，它将目标字段的值从父节点的数据映射映射到当前节点中的相应引用字段。
+&nbsp;     * 如果当前节点的属性值与父节点的属性值不同，它将使用父节点的值更新当前节点的属性，并使用新值更新updateParams 映射，确保级联操作将更新的值传递到树的下方。
+&nbsp;     */
+&nbsp;    private fun patchFromParent() {
+&nbsp;        if (data == null || !data.updateReferenceValue || data.parent?.insertIgnore != false) return
+&nbsp;        val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
+&nbsp;        val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, name -&gt;
+&nbsp;            if (tableName == validRef.tableName) {
+&nbsp;                validRef.kCascade.properties[index] to (data.parent!!.dataMap[name]
+&nbsp;                    ?: return@mapIndexedNotNull null)
+&nbsp;            } else {
+&nbsp;                name to (data.parent!!.dataMap[name] ?: return@mapIndexedNotNull null)
+&nbsp;            }
+&nbsp;        }
+&nbsp;        listOfPair.forEach { (prop, value) -&gt;
+&nbsp;            if (kPojo[prop] != value) {
+&nbsp;                kPojo[prop] = value
+&nbsp;                dataMap[prop] = value
+&nbsp;                validRef.kCascade.targetProperties.forEachIndexed { index, field -&gt;
+&nbsp;                    if (data.parent!!.updateParams[field] != null) {
+&nbsp;                        updateParams[validRef.kCascade.properties[index]] = data.parent!!.updateParams[field]!!
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        if (validCascades.filter { it.mapperByThis }.groupBy { it.field.tableName }
+&nbsp;                .values
+&nbsp;                .any { it.size &gt; 1 }
+&nbsp;        ) {
+&nbsp;            this.insertIgnore = true
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds child nodes for the current node based on valid references and operation type.
+&nbsp;     *
+&nbsp;     * This function iterates over the list of valid references (validCascades) to determine which references should
+&nbsp;     * result in the creation of child nodes. The decision is based on the current operation type (e.g., DELETE),
+&nbsp;     * whether the current node&#39;s data indicates that cascade values should be updated, and if the cascade&#39;s target fields
+&nbsp;     * are included in the update parameters of the current node.
+&nbsp;     *
+&nbsp;     * For each valid cascade, the function checks if the associated value in the current node&#39;s data map is non-null.
+&nbsp;     * If the value is a collection, it iterates over the collection, and for each item that is an instance of KPojo,
+&nbsp;     * it creates a new child node with the appropriate context and adds it to the children list of the current node.
+&nbsp;     * If the value is a single instance of KPojo, it directly creates a new child node and adds it to the children list.
+&nbsp;     *
+&nbsp;     * This process ensures that the ORM cascade operation tree is dynamically built according to the relationships
+&nbsp;     * defined in the entity classes, allowing for operations like cascading deletes or updates to be performed correctly.
+&nbsp;     *
+&nbsp;     * 根据有效引用和操作类型为当前节点构建子节点。
+&nbsp;     *
+&nbsp;     * 此函数遍历有效引用 (validCascades) 列表，以确定哪些引用应导致创建子节点。该决定基于当前操作类型（例如 DELETE）、
+&nbsp;     * 当前节点的数据是否指示应更新引用值，以及引用的目标字段是否包含在当前节点的更新参数中。
+&nbsp;     *
+&nbsp;     * 对于每个有效引用，该函数检查当前节点数据映射中的关联值是否为非空。
+&nbsp;     * 如果值是一个集合，它会遍历该集合，对于每个作为 KPojo 实例的项目，
+&nbsp;     * 它会创建一个具有适当上下文的新子节点，并将其添加到当前节点的子节点列表中。
+&nbsp;     * 如果值是 KPojo 的单个实例，它会直接创建一个新的子节点并将其添加到子节点列表中。
+&nbsp;     *
+&nbsp;     * 此过程确保根据实体类中定义的关系动态构建 ORM 级联操作树，从而允许正确执行级联删除或更新等操作。
+&nbsp;     */
+&nbsp;    private fun buildChildren() {
+&nbsp;        children.forEach {
+&nbsp;            it.data?.parent = this
+&nbsp;            it.data?.fieldOfParent = validCascades.find { cascade -&gt; cascade.field.tableName == tableName }?.field
+&nbsp;            it.patchFromParent()
+&nbsp;            it.insertIgnore = false
+&nbsp;            it.children.clear()
+&nbsp;            it.onInit?.invoke(it)
+&nbsp;        }
+&nbsp;        val cascades = validCascades.filter { ref -&gt;
+&nbsp;            (operationType == KOperationType.DELETE ||
+&nbsp;                    (null != data &amp;&amp; data.updateReferenceValue) ||
+&nbsp;                    ref.kCascade.targetProperties.any {
+&nbsp;                        updateParams.keys.contains(it)
+&nbsp;                    }) &amp;&amp; (
+&nbsp;                    cascadeAllowed.isNullOrEmpty() || cascadeAllowed.contains(ref.field)
+&nbsp;                    )
+&nbsp;        }
+&nbsp;
+&nbsp;        cascades.forEach { cascade -&gt;
+&nbsp;            val value = dataMap[cascade.field.name]
+&nbsp;
+&nbsp;            if (value != null) {
+&nbsp;                if (value is Collection&lt;*&gt;) {
+&nbsp;                    value.forEach { child -&gt;
+&nbsp;                        if (child is KPojo) {
+&nbsp;                            val node =
+&nbsp;                                child.toTreeNode(
+&nbsp;                                    NodeInfo(
+&nbsp;                                        data?.updateReferenceValue == true,
+&nbsp;                                        this,
+&nbsp;                                        cascade.field,
+&nbsp;                                        cascade.kCascade
+&nbsp;                                    ),
+&nbsp;                                    cascadeAllowed,
+&nbsp;                                    operationType,
+&nbsp;                                    mutableMapOf(),
+&nbsp;                                    if (insertIgnore) mutableListOf(this) else mutableListOf(),
+&nbsp;                                    onInit
+&nbsp;                                )
+&nbsp;                            children.add(node)
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                } else if (value is KPojo) {
+&nbsp;                    val node =
+&nbsp;                        value.toTreeNode(
+&nbsp;                            NodeInfo(
+&nbsp;                                data?.updateReferenceValue == true,
+&nbsp;                                this,
+&nbsp;                                cascade.field
+&nbsp;                            ),
+&nbsp;                            cascadeAllowed,
+&nbsp;                            operationType,
+&nbsp;                            mutableMapOf(),
+&nbsp;                            if (insertIgnore) mutableListOf(this) else mutableListOf(),
+&nbsp;                            onInit
+&nbsp;                        )
+&nbsp;                    children.add(node)
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

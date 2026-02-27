@@ -1,0 +1,230 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosDataSourceWrapper</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosDataSourceWrapper (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosDataSourceWrapper</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicBatchTask
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.exceptions.NoDataSourceException
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos Data Source Wrapper.
+&nbsp; *
+&nbsp; * The Kronos Data Source Wrapper is an interface that provides a set of methods for executing SQL queries and updates
+&nbsp; * against a database. It serves as a bridge between the application and the underlying database, allowing the application
+&nbsp; * to interact with the database in a safe and efficient manner.
+&nbsp; *
+&nbsp; * @sample com.kotlinorm.beans.parser.NoneDataSourceWrapper
+&nbsp; */
+&nbsp;interface KronosDataSourceWrapper {
+&nbsp;    /**
+&nbsp;     * The URL for database requests.
+&nbsp;     *
+&nbsp;     * This URL is used as the endpoint for all database interactions within the application.
+&nbsp;     * It is a read-only property, meaning once it is initialized, the value cannot be changed
+&nbsp;     * during the application&#39;s runtime. This ensures a consistent base URL for all database
+&nbsp;     * operations, enhancing security and stability.
+&nbsp;     */
+&nbsp;    val url: String
+&nbsp;
+&nbsp;    val userName: String
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The type of database being used.
+&nbsp;     *
+&nbsp;     * This property defines the database system that the application will connect to.
+&nbsp;     * Being an enum, the possible values are limited to the predefined database types,
+&nbsp;     * ensuring that only supported databases can be selected.
+&nbsp;     *
+&nbsp;     * The database types include:
+&nbsp;     * - Mysql
+&nbsp;     * - Oracle
+&nbsp;     * - Postgres
+&nbsp;     * - Mssql
+&nbsp;     * - SQLite
+&nbsp;     * - DB2
+&nbsp;     * - Sybase
+&nbsp;     * - H2
+&nbsp;     * - OceanBase
+&nbsp;     * - DM8
+&nbsp;     *
+&nbsp;     * This is a read-only property, which prevents changing the database type
+&nbsp;     * after it has been set, thereby promoting immutability and consistency within the application.
+&nbsp;     */
+&nbsp;    val dbType: DBType
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes a SQL query and returns the results as a list of maps, with each map representing a row of the result set.
+&nbsp;     * Each key in the map corresponds to a column name, and the associated value is the value of that column for the row.
+&nbsp;     *
+&nbsp;     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
+&nbsp;     * @return A list of maps, where each map represents a row of the result set. Each key in the map is a column name, and the
+&nbsp;     *         associated value is the value of that column for that row. If the query returns no rows, this method returns an
+&nbsp;     *         empty list.
+&nbsp;     * @throws NoDataSourceException If there is no data source configured for the current environment.
+&nbsp;     */
+&nbsp;    fun forList(task: KAtomicQueryTask): List&lt;Map&lt;String, Any&gt;&gt;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes a SQL query and returns the results as a list of objects. The type of objects in the list is determined
+&nbsp;     * by the specified class type parameter (`kClass`). Each object in the list represents a row of the result set,
+&nbsp;     * instantiated or converted according to the `kClass` parameter.
+&nbsp;     *
+&nbsp;     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
+&nbsp;     * @param kClass The Kotlin class (`KClass`) that specifies the type of objects to be returned in the list. The method
+&nbsp;     *               will attempt to instantiate or convert each row of the result set into an instance of this class.
+&nbsp;     * @return A list of objects of the type specified by `kClass`, where each object represents a row of the result set.
+&nbsp;     *         If the query returns no rows, or if instantiation/conversion to the specified type fails, this method
+&nbsp;     *         returns an empty list.
+&nbsp;     * @throws InstantiationException If there is an error instantiating objects of the specified type from the query
+&nbsp;     *                                results, such as due to a mismatch between the query result structure and the
+&nbsp;     *                                expected class fields or constructor parameters.
+&nbsp;     * @throws NoDataSourceException If there is no data source configured for the current environment.
+&nbsp;     */
+&nbsp;    fun forList(
+&nbsp;        task: KAtomicQueryTask,
+&nbsp;        kClass: KClass&lt;*&gt;,
+&nbsp;        isKPojo: Boolean,
+&nbsp;        superTypes: List&lt;String&gt;
+&nbsp;    ): List&lt;Any&gt;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes a SQL query and returns the result as a map, with each entry representing a column of the single row
+&nbsp;     * in the result set. The key in the map corresponds to a column name, and the associated value is the value of
+&nbsp;     * that column for the row.
+&nbsp;     *
+&nbsp;     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
+&nbsp;     * @return A map representing a single row of the result set, where each key is a column name and the associated
+&nbsp;     *         value is the value of that column for that row. If the query returns no rows, this method returns `null`.
+&nbsp;     * @throws NoDataSourceException If there is no data source configured for the current environment.
+&nbsp;     */
+&nbsp;    fun forMap(task: KAtomicQueryTask): Map&lt;String, Any&gt;?
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes a SQL query and attempts to convert the result set&#39;s single row into an instance of the specified Java class.
+&nbsp;     * The conversion aims to map the columns of the result set to the fields of the specified class, based on their names and types.
+&nbsp;     *
+&nbsp;     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
+&nbsp;     * @return An object of the specified type that represents the converted row of the result set. If the query results in no rows,
+&nbsp;     *         or if the conversion cannot be successfully performed (due to type mismatches, missing fields, etc.), this method
+&nbsp;     *         may return `null` or throw a relevant exception.
+&nbsp;     * @throws NoDataSourceException If there is no data source configured for the current environment.
+&nbsp;     */
+&nbsp;    fun forObject(
+&nbsp;        task: KAtomicQueryTask,
+&nbsp;        kClass: KClass&lt;*&gt;,
+&nbsp;        isKPojo: Boolean,
+&nbsp;        superTypes: List&lt;String&gt;
+&nbsp;    ): Any?
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes an SQL update operation (such as INSERT, UPDATE, or DELETE) using the provided SQL string and a map of parameters.
+&nbsp;     * This method is designed to facilitate the execution of dynamic SQL operations where the specific parameters can vary depending on runtime conditions.
+&nbsp;     *
+&nbsp;     * @param task The [KAtomicActionTask] that contains the SQL statement to be executed and the parameters to be bound to the update.
+&nbsp;     * @return The number of database rows affected by the execution of the SQL statement. This can be used to verify the success and impact of the
+&nbsp;     *         update operation, with a return value of 0 indicating that no rows were affected.
+&nbsp;     * @throws NoDataSourceException If there is no data source configured for the current environment.
+&nbsp;     */
+&nbsp;    fun update(task: KAtomicActionTask): Int
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes a batch of SQL update operations (such as INSERT, UPDATE, or DELETE) using a single SQL string and an array of parameter maps.
+&nbsp;     * This method allows for efficient execution of multiple update operations, making it ideal for bulk data modifications.
+&nbsp;     *
+&nbsp;     * @param task The [KronosAtomicBatchTask] that contains the SQL statement to be executed and the parameters to be bound to the update.
+&nbsp;     * @return An array of integers, where each element represents the number of rows affected by the corresponding update operation in the batch.
+&nbsp;     *         This can be used to verify the success and impact of each update operation within the batch.
+&nbsp;     * @throws NoDataSourceException If there is no data source configured for the current environment.
+&nbsp;     */
+&nbsp;    fun batchUpdate(task: KronosAtomicBatchTask): IntArray
+&nbsp;
+&nbsp;    fun transact(block: () -&gt; Any?): Any?
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

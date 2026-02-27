@@ -1,0 +1,261 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KTableForSelect</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: KTableForSelect (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KTableForSelect</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.6%
+  </span>
+  <span class="absValue">
+    (28/29)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KTableForSelect$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (7/8)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (10/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.2%
+  </span>
+  <span class="absValue">
+    (35/36)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.functions.FunctionHandler
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;
+&nbsp;/**
+&nbsp; * KTable
+&nbsp; *
+&nbsp; * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
+&nbsp; * to add Fields, you can use following:
+&nbsp; * 1. `it.&lt;field1&gt; + it.&lt;field2&gt;`
+&nbsp; * 2. `it.&lt;field1&gt; + it.&lt;field2&gt;.as_(&quot;&lt;alias&gt;&quot;)`
+&nbsp; * 3. `addField(Field(columnName, optionalName))`
+&nbsp; * 4. `Field(columnName, optionalName).setAlias(&quot;&lt;alias&gt;&quot;)`
+&nbsp; * 5. `count(it.&lt;field&gt;)` or `count(1)` or `count(it.&lt;field&gt;).as_(&quot;&lt;alias&gt;&quot;)`
+&nbsp; *
+&nbsp; * @param T the type of the table
+&nbsp; */
+<b class="fc">&nbsp;open class KTableForSelect&lt;T : KPojo&gt; {</b>
+<b class="fc">&nbsp;    val fields: MutableList&lt;Field&gt; = mutableListOf()</b>
+<b class="fc">&nbsp;    val f: FunctionHandler = FunctionHandler</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Overloaded operator function that adds two objects of type Any?.
+&nbsp;     *
+&nbsp;     * @param other the object to be added to this object.
+&nbsp;     * @return an integer value of 1.
+&nbsp;     */
+<b class="fc">&nbsp;    operator fun Any?.plus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?): Int = 1</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Overloaded operator function that adds two objects of type Any?.
+&nbsp;     *
+&nbsp;     * @return an integer value of 1.
+&nbsp;     */
+<b class="nc">&nbsp;    operator fun Any?.unaryPlus(): Int = 1</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Overloaded operator function that minus two objects of type Any?.
+&nbsp;     *
+&nbsp;     * @param other the object to be added to this object.
+&nbsp;     * @return an integer value of 1.
+&nbsp;     */
+<b class="fc">&nbsp;    operator fun KPojo?.minus(@Suppress(&quot;UNUSED_PARAMETER&quot;) other: Any?) = this</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets an alias for the given object.
+&nbsp;     *
+&nbsp;     * @param alias the alias to set for the object
+&nbsp;     * @return the provided alias
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+<b class="fc">&nbsp;    infix fun Any?.as_(alias: String): String = alias</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a field to the collection of fields.
+&nbsp;     *
+&nbsp;     * @param property the field to be added
+&nbsp;     */
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+&nbsp;    fun addField(property: Field) {
+<b class="fc">&nbsp;        fields += property</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun Field.setAlias(alias: String): Field {
+<b class="fc">&nbsp;        this.name = alias</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.
+&nbsp;         *
+&nbsp;         * @param T The type of the KPojo object.
+&nbsp;         * @param block The block of code to be applied to the KTable instance.
+&nbsp;         * @return The resulting KTable instance after applying the block.
+&nbsp;         */
+<b class="fc">&nbsp;        fun &lt;T : KPojo&gt; T.afterSelect(block: KTableForSelect&lt;T&gt;.(T) -&gt; Unit) = KTableForSelect&lt;T&gt;().block(this)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

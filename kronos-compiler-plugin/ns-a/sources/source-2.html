@@ -1,0 +1,239 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KTableForSetUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.utils.kTableForSet</a>
+</div>
+
+<h1>Coverage Summary for Class: KTableForSetUtilKt (com.kotlinorm.compiler.plugin.utils.kTableForSet)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KTableForSetUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (12/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (33/33)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (209/217)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.utils.kTableForSet
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.helpers.dispatchReceiverArgument
+&nbsp;import com.kotlinorm.compiler.helpers.extensionReceiver
+&nbsp;import com.kotlinorm.compiler.helpers.extensionReceiverArgument
+&nbsp;import com.kotlinorm.compiler.helpers.invoke
+&nbsp;import com.kotlinorm.compiler.helpers.valueArguments
+&nbsp;import com.kotlinorm.compiler.plugin.utils.getColumnName
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.IrElement
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;
+&nbsp;/**
+&nbsp; * Constructs a list of IR expressions by processing assignment statements and mapping them to field parameters.
+&nbsp; *
+&nbsp; * @return The list of IR expressions representing the parameter mapping.
+&nbsp; */
+&nbsp;context(_: IrPluginContext, builder: IrBlockBuilder)
+&nbsp;fun putFieldParamMap(irFunction: IrFunction) =
+<b class="fc">&nbsp;    putParamMapStatements(</b>
+<b class="fc">&nbsp;        irFunction,</b>
+<b class="fc">&nbsp;        builder.irGet(irFunction.parameters.extensionReceiver!!),</b>
+<b class="fc">&nbsp;        irFunction.body!!</b>
+&nbsp;    )
+&nbsp;
+&nbsp;/**
+&nbsp; * Constructs a list of IR expressions by processing assignment statements and mapping them to field parameters.
+&nbsp; *
+&nbsp; * @param irFunction The function to process for parameter mapping.
+&nbsp; * @param receiver The receiver [IrExpression] for the parameter mapping.
+&nbsp; * @param element The [IrElement] to process for parameter mapping.
+&nbsp; * @return The list of IR expressions representing the parameter mapping.
+&nbsp; */
+&nbsp;context(_: IrPluginContext, builder: IrBlockBuilder)
+&nbsp;fun putParamMapStatements(
+&nbsp;    irFunction: IrFunction,
+&nbsp;    receiver: IrExpression,
+&nbsp;    element: IrElement
+&nbsp;): MutableList&lt;IrExpression&gt; {
+<b class="fc">&nbsp;    val statements =</b>
+<b class="fc">&nbsp;        mutableListOf&lt;IrExpression&gt;()  // Initialize an empty list to hold the resulting IR expressions.</b>
+&nbsp;    // 初始化空列表，以保存结果 IR 表达式。
+<b class="fc">&nbsp;    when (element) {</b>
+<b class="fc">&nbsp;        is IrBlockBody -&gt; {</b>
+&nbsp;            // Recursively handle each statement within a block body.
+&nbsp;            // 递归处理块体内的每个语句。
+<b class="fc">&nbsp;            element.statements.forEach { statement -&gt;</b>
+<b class="fc">&nbsp;                statements.addAll(putParamMapStatements(irFunction, receiver, statement))</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        is IrCall -&gt; {</b>
+<b class="fc">&nbsp;            val extensionReceiver = element.extensionReceiverArgument</b>
+<b class="fc">&nbsp;            val dispatchReceiver = element.dispatchReceiverArgument</b>
+&nbsp;
+&nbsp;            // Handle assignment operations (EQ origin) to map field parameters.
+&nbsp;            // 处理赋值操作（EQ 原点）以映射字段参数。
+<b class="fc">&nbsp;            when (element.origin) { // Assignment statement</b>
+<b class="fc">&nbsp;                IrStatementOrigin.EQ -&gt; statements.add(</b>
+<b class="fc">&nbsp;                    setValueSymbol(</b>
+<b class="fc">&nbsp;                        receiver,</b>
+<b class="fc">&nbsp;                        getColumnName(element),</b>
+<b class="fc">&nbsp;                        element.valueArguments[0]</b>
+&nbsp;                    )
+&nbsp;                )
+&nbsp;
+<b class="fc">&nbsp;                IrStatementOrigin.PLUSEQ -&gt; statements.add(</b>
+<b class="fc">&nbsp;                    setAssignSymbol(</b>
+<b class="fc">&nbsp;                        receiver,</b>
+<b class="fc">&nbsp;                        builder.irString(&quot;+&quot;),</b>
+<b class="pc">&nbsp;                        getColumnName(extensionReceiver ?: dispatchReceiver!!),</b>
+<b class="fc">&nbsp;                        element.valueArguments[0]</b>
+&nbsp;                    )
+&nbsp;                )
+&nbsp;
+<b class="fc">&nbsp;                IrStatementOrigin.MINUSEQ -&gt; statements.add(</b>
+<b class="fc">&nbsp;                    setAssignSymbol(</b>
+<b class="fc">&nbsp;                        receiver,</b>
+<b class="fc">&nbsp;                        builder.irString(&quot;-&quot;),</b>
+<b class="pc">&nbsp;                        getColumnName(extensionReceiver ?: dispatchReceiver!!),</b>
+<b class="fc">&nbsp;                        element.valueArguments[0]</b>
+&nbsp;                    )
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return statements</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

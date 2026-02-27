@@ -1,0 +1,236 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UnionClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.union</a>
+</div>
+
+<h1>Coverage Summary for Class: UnionClause (com.kotlinorm.orm.union)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UnionClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (8/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70%
+  </span>
+  <span class="absValue">
+    (14/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.2%
+  </span>
+  <span class="absValue">
+    (47/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.5%
+  </span>
+  <span class="absValue">
+    (405/468)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.union
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.select.SelectClause
+&nbsp;import com.kotlinorm.utils.ConditionSqlBuilder
+&nbsp;
+<b class="fc">&nbsp;open class UnionClause(tasks: List&lt;SelectClause&lt;out KPojo&gt;&gt;) {</b>
+<b class="fc">&nbsp;    private val tasks = tasks.toMutableList()</b>
+<b class="fc">&nbsp;    private var builtTasks: List&lt;KronosQueryTask&gt; = listOf()</b>
+<b class="fc">&nbsp;    private var safeKeyList: List&lt;String&gt; = listOf()</b>
+<b class="fc">&nbsp;    private val fieldNameMapping = mutableMapOf&lt;String, MutableMap&lt;String, String&gt;&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    fun query(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any?&gt;&gt; {</b>
+<b class="fc">&nbsp;        return executeQuery { it.query(wrapper) }</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any?&gt; {</b>
+<b class="nc">&nbsp;        return executeQuery { listOf(it.queryMap(wrapper)) }.first()</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any?&gt;? {</b>
+<b class="nc">&nbsp;        return executeQuery { listOfNotNull(it.queryMapOrNull(wrapper)) }.firstOrNull()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun executeQuery(
+&nbsp;        queryFunction: (KronosQueryTask) -&gt; List&lt;Map&lt;String, Any?&gt;&gt;
+&nbsp;    ): List&lt;Map&lt;String, Any?&gt;&gt; {
+<b class="fc">&nbsp;        prepareTasks()</b>
+<b class="fc">&nbsp;        val safeKeyList = getUniqueTask(ConditionSqlBuilder.KeyCounter())</b>
+&nbsp;
+<b class="fc">&nbsp;        val resultMap = safeKeyList.mapIndexed { index, safeKey -&gt;</b>
+<b class="fc">&nbsp;            val result = queryFunction(builtTasks[index])</b>
+<b class="fc">&nbsp;            safeKey to result</b>
+<b class="fc">&nbsp;        }.toMap()</b>
+&nbsp;
+<b class="pc">&nbsp;        return if (resultMap.isEmpty()) emptyList() else union(resultMap)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun prepareTasks() {
+<b class="fc">&nbsp;        builtTasks = tasks.map { it.build() }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getUniqueTask(keyCounters: ConditionSqlBuilder.KeyCounter): List&lt;String&gt; {
+<b class="fc">&nbsp;        val fieldCountMap = mutableMapOf&lt;String, Int&gt;()</b>
+<b class="fc">&nbsp;        safeKeyList = tasks.map { task -&gt;</b>
+<b class="fc">&nbsp;            val safeKey = ConditionSqlBuilder.getSafeKey(</b>
+<b class="fc">&nbsp;                task.pojo::class.simpleName.toString(), keyCounters, mutableMapOf(), task</b>
+&nbsp;            )
+<b class="fc">&nbsp;            task.selectFields.forEach { field -&gt;</b>
+<b class="fc">&nbsp;                fieldCountMap[field.name] = fieldCountMap.getOrDefault(field.name, 0) + 1</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            safeKey</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        fieldNameMapping.clear()</b>
+<b class="fc">&nbsp;        tasks.forEachIndexed { index, task -&gt;</b>
+<b class="fc">&nbsp;            val safeKey = safeKeyList[index]</b>
+<b class="fc">&nbsp;            fieldNameMapping[safeKey] = task.selectFields.associate { field -&gt;</b>
+<b class="fc">&nbsp;                val fieldName = field.name</b>
+<b class="fc">&nbsp;                fieldName to if (fieldCountMap[fieldName]!! &gt; 1) &quot;$safeKey${capitalizeFirstLetter(fieldName)}&quot; else fieldName</b>
+<b class="fc">&nbsp;            }.toMutableMap()</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return safeKeyList</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun union(resultMap: Map&lt;String, List&lt;Map&lt;String, Any?&gt;&gt;&gt;): List&lt;Map&lt;String, Any?&gt;&gt; {
+<b class="pc">&nbsp;        val maxRowNum = resultMap.values.maxOfOrNull { it.size } ?: 0</b>
+&nbsp;
+<b class="fc">&nbsp;        val allFields = resultMap.flatMap { (safeKey, list) -&gt;</b>
+<b class="fc">&nbsp;            list.flatMap { it.keys.map { key -&gt; fieldNameMapping[safeKey]!![key]!! } }</b>
+<b class="fc">&nbsp;        }.toSet()</b>
+&nbsp;
+<b class="fc">&nbsp;        return List(maxRowNum) { index -&gt;</b>
+<b class="fc">&nbsp;            mutableMapOf&lt;String, Any?&gt;().apply {</b>
+<b class="fc">&nbsp;                allFields.forEach { this[it] = null }</b>
+&nbsp;
+<b class="fc">&nbsp;                resultMap.forEach { (safeKey, list) -&gt;</b>
+<b class="fc">&nbsp;                    val fieldNameMap = fieldNameMapping[safeKey]!!</b>
+<b class="fc">&nbsp;                    list.getOrNull(index)?.forEach { (key, value) -&gt;</b>
+<b class="fc">&nbsp;                        this[fieldNameMap[key]!!] = value</b>
+<b class="fc">&nbsp;                    }</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun capitalizeFirstLetter(s: String): String {
+<b class="pc">&nbsp;        return s.replaceFirstChar { it.uppercaseChar() }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

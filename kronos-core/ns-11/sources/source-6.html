@@ -1,0 +1,251 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KColumnType</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.enums</a>
+</div>
+
+<h1>Coverage Summary for Class: KColumnType (com.kotlinorm.enums)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KColumnType</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (44/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (321/321)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KColumnType$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/19)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.8%
+  </span>
+  <span class="absValue">
+    (44/45)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.4%
+  </span>
+  <span class="absValue">
+    (321/340)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.enums
+&nbsp;
+&nbsp;/**
+&nbsp; * Column types.
+&nbsp; */
+<b class="fc">&nbsp;enum class KColumnType(val type: String) {</b>
+<b class="fc">&nbsp;    UNDEFINED(&quot;UNDEFINED&quot;), // 未定义</b>
+<b class="fc">&nbsp;    BIT(&quot;BIT&quot;), // 存储 0/1</b>
+<b class="fc">&nbsp;    TINYINT(&quot;TINYINT&quot;), // 整数值（没有小数点），精度 3。</b>
+<b class="fc">&nbsp;    SMALLINT(&quot;SMALLINT&quot;), // 整数值（没有小数点）。精度 5。</b>
+<b class="fc">&nbsp;    INT(&quot;INT&quot;), // 整数值（没有小数点）。精度 p。</b>
+<b class="fc">&nbsp;    BIGINT(&quot;BIGINT&quot;), // 整数值（没有小数点）。精度 19。</b>
+<b class="fc">&nbsp;    REAL(&quot;REAL&quot;), // 近似数值，尾数精度 7。</b>
+<b class="fc">&nbsp;    FLOAT(&quot;FLOAT&quot;), // 近似数值，尾数精度 p。一个采用以 10 为基数的指数计数法的浮点数。该类型的 size 参数由一个指定最小精度的单一数字组成。</b>
+<b class="fc">&nbsp;    DOUBLE(&quot;DOUBLE&quot;), // 近似数值，尾数精度 16。</b>
+<b class="fc">&nbsp;    DECIMAL(&quot;DECIMAL&quot;), // 精确数值，精度 p，小数点后位数 s。例如：decimal(5,2) 是一个小数点前有 3 位数，小数点后有 2 位数的数字。</b>
+<b class="fc">&nbsp;    CHAR(&quot;CHAR&quot;), // 字符/字符串。固定长度 n。</b>
+<b class="fc">&nbsp;    VARCHAR(&quot;VARCHAR&quot;), // 字符/字符串。可变长度。最大长度 n。</b>
+<b class="fc">&nbsp;    TEXT(&quot;TEXT&quot;), // 字符/字符串。可变长度。</b>
+<b class="fc">&nbsp;    LONGTEXT(&quot;LONGTEXT&quot;), // 字符/字符串。可变长度。</b>
+<b class="fc">&nbsp;    DATE(&quot;DATE&quot;), // 存储年、月、日的值。</b>
+<b class="fc">&nbsp;    TIME(&quot;TIME&quot;), // 存储小时、分、秒的值。</b>
+<b class="fc">&nbsp;    DATETIME(&quot;DATETIME&quot;), // 存储年、月、日、小时、分、秒的值。</b>
+<b class="fc">&nbsp;    TIMESTAMP(&quot;TIMESTAMP&quot;), // 存储年、月、日、小时、分、秒的值。</b>
+<b class="fc">&nbsp;    BINARY(&quot;BINARY&quot;), // 二进制串。固定长度 n。</b>
+<b class="fc">&nbsp;    VARBINARY(&quot;VARBINARY&quot;), // 二进制串。可变长度。最大长度 n。</b>
+<b class="fc">&nbsp;    LONGVARBINARY(&quot;LONGVARBINARY&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    BLOB(&quot;BLOB&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    CLOB(&quot;CLOB&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    JSON(&quot;JSON&quot;), // 存储 JSON 数据</b>
+<b class="fc">&nbsp;    ENUM(&quot;ENUM&quot;), // 存储枚举值</b>
+<b class="fc">&nbsp;    NVARCHAR(&quot;NVARCHAR&quot;), // 字符/字符串。可变长度。最大长度 n。</b>
+<b class="fc">&nbsp;    NCHAR(&quot;NCHAR&quot;), // 字符/字符串。固定长度 n。</b>
+<b class="fc">&nbsp;    NCLOB(&quot;NCLOB&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    UUID(&quot;UUID&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    SERIAL(&quot;SERIAL&quot;), // 整数值（没有小数点），精度 p。</b>
+<b class="fc">&nbsp;    YEAR(&quot;YEAR&quot;), // 存储年份</b>
+<b class="fc">&nbsp;    MEDIUMINT(&quot;MEDIUMINT&quot;), // 整数值（没有小数点），精度 3。</b>
+<b class="fc">&nbsp;    NUMERIC(&quot;NUMERIC&quot;), // 精确数值，精度 p，小数点后位数 s。（与 DECIMAL 相同）</b>
+<b class="fc">&nbsp;    MEDIUMTEXT(&quot;MEDIUMTEXT&quot;), // 字符/字符串。可变长度。</b>
+<b class="fc">&nbsp;    MEDIUMBLOB(&quot;MEDIUMBLOB&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    LONGBLOB(&quot;LONGBLOB&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    SET(&quot;SET&quot;), // 一个元素的固定长度的有序集合</b>
+<b class="fc">&nbsp;    GEOMETRY(&quot;GEOMETRY&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    POINT(&quot;POINT&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    LINESTRING(&quot;LINESTRING&quot;), // 二进制串。可变长度。</b>
+<b class="fc">&nbsp;    XML(&quot;XML&quot;), // 存储 XML 数据</b>
+<b class="fc">&nbsp;    CUSTOM_CRITERIA_SQL(&quot;CUSTOM_CRITERIA_SQL&quot;), // 用于where查询的由String.asSql()产生的自定义SQL Field类型</b>
+<b class="fc">&nbsp;    SQL_FUNCTION(&quot;SQL_FUNCTION&quot;); // 用于查询操作时使用内置的一些SQL函数的类型</b>
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        fun fromString(type: String): KColumnType {
+<b class="nc">&nbsp;            return entries.firstOrNull { it.name == type.uppercase() } ?: UNDEFINED</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

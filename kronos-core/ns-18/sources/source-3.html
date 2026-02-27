@@ -1,0 +1,315 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CascadeJoinClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.cascade</a>
+</div>
+
+<h1>Coverage Summary for Class: CascadeJoinClause (com.kotlinorm.orm.cascade)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CascadeJoinClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (2/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    26.7%
+  </span>
+  <span class="absValue">
+    (4/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42.6%
+  </span>
+  <span class="absValue">
+    (23/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.3%
+  </span>
+  <span class="absValue">
+    (120/199)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">CascadeJoinClause$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (2/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    26.7%
+  </span>
+  <span class="absValue">
+    (4/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42.6%
+  </span>
+  <span class="absValue">
+    (23/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.3%
+  </span>
+  <span class="absValue">
+    (120/199)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.cascade
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.QueryType.QueryList
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOne
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOneOrNull
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Defines the logic for building and executing cascade join clauses in the context of ORM operations.
+&nbsp; *
+&nbsp; * This object encapsulates methods for constructing and executing tasks that perform cascading operations
+&nbsp; * on database entities. It supports operations where cascading is conditional based on the presence of
+&nbsp; * cascade flags and limit constraints. The primary functionality includes generating tasks for cascading
+&nbsp; * operations and setting values on target entities based on the results of these operations.
+&nbsp; */
+&nbsp;object CascadeJoinClause {
+&nbsp;    /**
+&nbsp;     * Builds a task for performing cascading operations based on the provided parameters.
+&nbsp;     *
+&nbsp;     * This function decides whether to proceed with generating a cascading task based on the `cascade` flag
+&nbsp;     * and the `limit` parameter. If cascading is enabled and the limit is not zero, it generates a task
+&nbsp;     * that performs cascading operations. Otherwise, it returns the root task without modifications.
+&nbsp;     *
+&nbsp;     * 根据提供的参数构建执行级联操作的任务。
+&nbsp;     *
+&nbsp;     * 此函数根据 `cascade` 标志 和 `limit` 参数决定是否继续生成级联任务。如果启用了级联且限制不为零，它将生成执行级联操作的任务。否则，它将返回不经修改的根任务。
+&nbsp;     *
+&nbsp;     * @param cascade Indicates whether cascading should be performed.
+&nbsp;     * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no cascading.
+&nbsp;     * @param listOfPojo A list of [KPojo] instances on which cascading operations are to be performed.
+&nbsp;     * @param rootTask The root [KronosAtomicQueryTask] from which cascading operations may be initiated.
+&nbsp;     * @param selectFields A map of field names to [Field] instances that are to be considered for cascading operations.
+&nbsp;     * @return A [KronosQueryTask] that represents the task to be executed, potentially including cascading operations.
+&nbsp;     */
+&nbsp;    fun build(
+&nbsp;        cascade: Boolean,
+<b class="nc">&nbsp;        cascadeAllowed: Set&lt;Field&gt;? = null,</b>
+&nbsp;        listOfPojo: List&lt;Pair&lt;KClass&lt;KPojo&gt;, KPojo&gt;&gt;,
+&nbsp;        rootTask: KronosAtomicQueryTask,
+&nbsp;        operationType: KOperationType,
+&nbsp;        selectFields: MutableMap&lt;String, Field&gt;,
+&nbsp;        cascadeSelectedProps: Set&lt;Field&gt;
+&nbsp;    ) =
+<b class="pc">&nbsp;        if (cascade) generateTask(</b>
+<b class="fc">&nbsp;            cascadeAllowed,</b>
+<b class="fc">&nbsp;            cascadeSelectedProps,</b>
+<b class="fc">&nbsp;            listOfPojo.map {</b>
+<b class="fc">&nbsp;                Triple(</b>
+<b class="fc">&nbsp;                    it.first,</b>
+<b class="fc">&nbsp;                    it.second,</b>
+<b class="fc">&nbsp;                    kPojoAllFieldsCache[it.first]!!.filter { col -&gt; selectFields.values.contains(col) }</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            },
+<b class="fc">&nbsp;            operationType,</b>
+<b class="fc">&nbsp;            rootTask</b>
+<b class="fc">&nbsp;        ) else rootTask.toKronosQueryTask()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates a task for performing cascading operations based on the provided parameters.
+&nbsp;     *
+&nbsp;     * This function constructs a task that performs cascading operations on a list of [KPojo] instances.
+&nbsp;     *
+&nbsp;     * 根据提供的参数生成执行级联操作的任务。
+&nbsp;     *
+&nbsp;     * 此函数构造一个任务，对 [KPojo] 实例列表执行级联操作。
+&nbsp;     *
+&nbsp;     * @param cascadeAllowed The maximum depth of cascading. A limit of 0 indicates no cascading.
+&nbsp;     * @param listOfColumns A list of [KPojo] instances and their associated columns to be considered for cascading operations.
+&nbsp;     * @param operationType The type of operation to be performed on the [KPojo] instances.
+&nbsp;     * @param prevTask The previous task in the chain of operations.
+&nbsp;     * @return A [KronosQueryTask] that represents the task to be executed, potentially including cascading operations.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    private fun generateTask(
+<b class="nc">&nbsp;        cascadeAllowed: Set&lt;Field&gt;? = null,</b>
+&nbsp;        cascadeSelectedProps: Set&lt;Field&gt;,
+&nbsp;        listOfColumns: List&lt;Triple&lt;KClass&lt;KPojo&gt;, KPojo, List&lt;Field&gt;&gt;&gt;,
+&nbsp;        operationType: KOperationType,
+&nbsp;        prevTask: KronosAtomicQueryTask
+&nbsp;    ): KronosQueryTask {
+<b class="fc">&nbsp;        val listOfValidReferences = listOfColumns.map { columns -&gt;</b>
+<b class="fc">&nbsp;            findValidRefs(</b>
+<b class="fc">&nbsp;                columns.first,</b>
+<b class="fc">&nbsp;                columns.third,</b>
+<b class="fc">&nbsp;                KOperationType.SELECT,</b>
+<b class="pc">&nbsp;                cascadeAllowed?.filter { it.tableName == columns.second.__tableName }?.map { it.name }?.toSet(),</b>
+<b class="pc">&nbsp;                cascadeAllowed.isNullOrEmpty()</b>
+<b class="fc">&nbsp;            ) // 获取所有的非数据库列、有关联注解且用于删除操作</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val validReferences = listOfValidReferences.flatten()</b>
+<b class="fc">&nbsp;        return prevTask.toKronosQueryTask().apply {</b>
+&nbsp;            // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
+&nbsp;            // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
+<b class="pc">&nbsp;            if (validReferences.isEmpty()) return@apply // 如果没有级联，直接返回</b>
+<b class="nc">&nbsp;            doAfterQuery { queryType, wrapper -&gt;</b>
+<b class="nc">&nbsp;                validReferences.forEach { validRef -&gt;</b>
+<b class="nc">&nbsp;                    when (queryType) {</b>
+&nbsp;                        QueryList -&gt; { // 若是查询KPojo列表
+<b class="nc">&nbsp;                            val lastStepResult = this as List&lt;KPojo&gt; // this为主表查询的结果</b>
+<b class="nc">&nbsp;                            if (lastStepResult.isEmpty()) return@forEach // 如果没有查询结果，直接返回</b>
+<b class="nc">&nbsp;                            val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students</b>
+<b class="nc">&nbsp;                            lastStepResult.forEach rowMapper@{</b>
+<b class="nc">&nbsp;                                setValues(</b>
+<b class="nc">&nbsp;                                    it,</b>
+<b class="nc">&nbsp;                                    propName,</b>
+<b class="nc">&nbsp;                                    validRef,</b>
+<b class="nc">&nbsp;                                    cascadeAllowed,</b>
+<b class="nc">&nbsp;                                    cascadeSelectedProps,</b>
+<b class="nc">&nbsp;                                    operationType,</b>
+<b class="nc">&nbsp;                                    wrapper</b>
+&nbsp;                                )
+<b class="nc">&nbsp;                            }</b>
+&nbsp;                        }
+&nbsp;
+&nbsp;                        QueryOne, QueryOneOrNull -&gt; {
+<b class="nc">&nbsp;                            val lastStepResult = this as KPojo? // this为主表查询的结果</b>
+<b class="nc">&nbsp;                            if (lastStepResult == null) return@forEach // 如果没有查询结果，直接返回</b>
+<b class="nc">&nbsp;                            val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students</b>
+<b class="nc">&nbsp;                            setValues(</b>
+<b class="nc">&nbsp;                                lastStepResult,</b>
+<b class="nc">&nbsp;                                propName,</b>
+<b class="nc">&nbsp;                                validRef,</b>
+<b class="nc">&nbsp;                                cascadeAllowed,</b>
+<b class="nc">&nbsp;                                cascadeSelectedProps,</b>
+<b class="nc">&nbsp;                                operationType,</b>
+<b class="nc">&nbsp;                                wrapper</b>
+&nbsp;                            )
+&nbsp;                        }
+&nbsp;
+&nbsp;                        else -&gt; {}
+&nbsp;                    }
+<b class="nc">&nbsp;                }</b>
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,228 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ValidCascade</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.cascade</a>
+</div>
+
+<h1>Coverage Summary for Class: ValidCascade (com.kotlinorm.orm.cascade)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ValidCascade</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (27/27)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.cascade
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KCascade
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.utils.createInstance
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Represents a valid cascade within the context of ORM operations.
+&nbsp; *
+&nbsp; * This data class encapsulates a field, its corresponding cascade, and the cascaded POJO. It is primarily used to
+&nbsp; * determine the cascade relationships between this property and other entities and the specifics of the cascade,
+&nbsp; * such as which fields are used to relate, maintain the relationship, where the cascade information is declared, etc.
+&nbsp; *
+&nbsp; * ORM 操作上下文中的有效引用。
+&nbsp; *
+&nbsp; * 此数据类封装了一个KPojo的属性及其关联关系信息。它主要用于在获取该属性与其他实体之间存在的引用关系及具体的引用细节，如通过哪些字段关联、维护端、关联信息声明在哪个表等。
+&nbsp; *
+&nbsp; * @property field The [Field] instance representing the field in the POJO that holds the cascade.
+&nbsp; * @property kCascade The [KCascade] instance representing the cascade details such as the target table and columns.
+&nbsp; * @property refPojo The [KPojo] instance of the cascaded POJO, providing access to its properties and methods.
+&nbsp; * @property tableName The [tableName] that this cascade be announced.
+&nbsp; */
+&nbsp;data class ValidCascade(
+<b class="fc">&nbsp;    val field: Field,</b>
+<b class="fc">&nbsp;    val kCascade: KCascade,</b>
+<b class="fc">&nbsp;    val refPojo: KPojo,</b>
+<b class="fc">&nbsp;    val tableName: String,</b>
+<b class="fc">&nbsp;    val mapperByThis: Boolean = true</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * Identifies and constructs a list of valid cascades for ORM operations based on the provided columns and operation type.
+&nbsp; *
+&nbsp; * This function filters through a list of [Field] objects to find those that are not directly mapped to database columns but have associated cascades.
+&nbsp; * It then uses reflection to instantiate the cascaded POJOs. Depending on whether the field has a cascade mapping and is applicable for the specified operation type,
+&nbsp; * it either returns the direct cascades or searches through the cascaded POJO&#39;s columns for any that have a cascade mapping back to the original table and are applicable for the operation.
+&nbsp; * This process constructs a list of [ValidCascade] objects, each encapsulating a field, its cascades, and the instantiated cascaded POJO, which are essential for operations like cascading deletes.
+&nbsp; *
+&nbsp; * This function is a core part of the ORM&#39;s cascading operations, used to extract valid, usable cascades in different cascade operations to build a tree-like structure of cascading operations.
+&nbsp; *
+&nbsp; * 根据提供的列和操作类型识别并构建 ORM 操作的有效引用列表。
+&nbsp; *
+&nbsp; * 此函数通过 [Field] 对象列表进行筛选，以查找未直接映射到数据库列但具有相关引用的对象。
+&nbsp; * 然后，它使用反射来实例化引用的 POJO。根据字段是否具有级联映射以及是否适用于指定的操作类型，
+&nbsp; * 它要么返回直接引用，要么在引用的 POJO 的列中搜索任何具有级联映射回原始表并适用于该操作的对象。
+&nbsp; * 此过程构造一个 [ValidCascade] 对象列表，每个对象都封装一个字段、其引用和实例化的引用 POJO，这些对象对于级联删除等操作至关重要。
+&nbsp; *
+&nbsp; * 此函数是 ORM 级联操作的核心部分，它用于在不同的级联操作中提取出有效的、可用的引用，以便构建级联操作的树形结构。
+&nbsp; *
+&nbsp; *
+&nbsp; * @param columns A list of [Field] objects representing the columns of a POJO, including those that are not directly mapped to database columns but have associated references.
+&nbsp; * @param operationType The [KOperationType] indicating the type of ORM operation (e.g., DELETE) for which the cascades are being validated.
+&nbsp; * @param allowed A set of strings representing the names of columns that are allowed for the specified operation type.
+&nbsp; * @param allowAll A boolean flag indicating whether not specifying any allowed columns means all columns are allowed.
+&nbsp; * @return A list of [ValidCascade] objects representing valid cascades for the specified operation type.
+&nbsp; */
+&nbsp;fun findValidRefs(
+&nbsp;    kClass: KClass&lt;out KPojo&gt;, columns: Collection&lt;Field&gt;, operationType: KOperationType, allowed: Set&lt;String&gt;?, allowAll: Boolean
+&nbsp;): List&lt;ValidCascade&gt; {
+&nbsp;    //columns 为的非数据库列、有关联注解且用于删除操作的Field
+&nbsp;    return columns.asSequence().filter { !it.isColumn &amp;&amp; (allowed == null || it.name in allowed || allowAll) &amp;&amp; it.kClass != null }.map { col -&gt;
+&nbsp;        //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
+&nbsp;        if (col.ignore?.contains(CASCADE_SELECT) == true &amp;&amp; allowAll &amp;&amp; operationType == KOperationType.SELECT) {
+&nbsp;            return@map listOf()
+&nbsp;        }
+&nbsp;
+&nbsp;        //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
+&nbsp;        return@map if ((col.cascade != null &amp;&amp; col.refUseFor(operationType)) || (operationType == KOperationType.SELECT &amp;&amp; col.cascade != null)) {
+&nbsp;            if (operationType == KOperationType.DELETE) return@map listOf() // 插入操作不允许子级向上级级联
+&nbsp;            val ref =
+&nbsp;                col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections&lt;KPojo&gt;
+&nbsp;            listOf(
+&nbsp;                ValidCascade(col, col.cascade, ref, col.tableName)
+&nbsp;            ) // 若有级联映射，返回引用
+&nbsp;        } else {
+&nbsp;            val ref =
+&nbsp;                col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections&lt;KPojo&gt;
+&nbsp;            val tableName = ref.__tableName // 获取引用所在的表名
+&nbsp;            kPojoAllFieldsCache[col.kClass]!!.asSequence().filter {
+&nbsp;                it.cascade != null &amp;&amp; it.tableName == tableName &amp;&amp; it.refUseFor(operationType) &amp;&amp; it.kClass == kClass
+&nbsp;            }.map {
+&nbsp;                ValidCascade(col, it.cascade!!, ref, tableName, false)
+&nbsp;            }.toList() // 若没有级联映射，返回引用的所有关于本表级联映射
+&nbsp;        }
+&nbsp;    }.toList().flatten()
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

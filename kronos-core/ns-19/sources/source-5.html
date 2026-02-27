@@ -1,0 +1,428 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > TableOperation</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.ddl</a>
+</div>
+
+<h1>Coverage Summary for Class: TableOperation (com.kotlinorm.orm.ddl)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TableOperation</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/72)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/671)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TableOperation$syncTable$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/32)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">TableOperation$syncTable$kronosColumns$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">TableOperation$syncTable$kronosColumns$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/79)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/720)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.ddl
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.database.SqlHandler.execute
+&nbsp;import com.kotlinorm.database.SqlManager.getTableColumns
+&nbsp;import com.kotlinorm.database.SqlManager.getTableCreateSqlList
+&nbsp;import com.kotlinorm.database.SqlManager.getTableDropSql
+&nbsp;import com.kotlinorm.database.SqlManager.getTableIndexes
+&nbsp;import com.kotlinorm.database.SqlManager.getTableSyncSqlList
+&nbsp;import com.kotlinorm.database.SqlManager.getTableTruncateSql
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.createInstance
+&nbsp;
+<b class="nc">&nbsp;class TableOperation(private val wrapper: KronosDataSourceWrapper) {</b>
+<b class="nc">&nbsp;    val dataSource by lazy { wrapper.orDefault() }</b>
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Query table existence
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; exists(instance: T = T::class.createInstance()) =</b>
+<b class="nc">&nbsp;        queryTableExistence(instance.__tableName, dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Query table existence
+&nbsp;     *
+&nbsp;     * @param tableName Table name
+&nbsp;     */
+<b class="nc">&nbsp;    fun exists(tableName: String) = queryTableExistence(tableName, dataSource)</b>
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Create table
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(</b>
+<b class="nc">&nbsp;        dataSource.dbType,</b>
+<b class="nc">&nbsp;        instance.__tableName,</b>
+<b class="nc">&nbsp;        instance.__tableComment,</b>
+<b class="nc">&nbsp;        instance.kronosColumns().filter { it.isColumn },</b>
+<b class="nc">&nbsp;        instance.kronosTableIndex()</b>
+<b class="nc">&nbsp;    ).map {</b>
+<b class="nc">&nbsp;        KronosAtomicActionTask(</b>
+<b class="nc">&nbsp;            it,</b>
+<b class="nc">&nbsp;            mapOf(&quot;tableName&quot; to instance.__tableName),</b>
+<b class="nc">&nbsp;            KOperationType.CREATE,</b>
+<b class="nc">&nbsp;            DDLInfo(T::class, instance.__tableName)</b>
+<b class="nc">&nbsp;        )</b>
+<b class="nc">&nbsp;    }.toKronosActionTask().execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Drop table
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; dropTable(instance: T = T::class.createInstance()) =</b>
+<b class="nc">&nbsp;        KronosAtomicActionTask(</b>
+<b class="nc">&nbsp;            getTableDropSql(dataSource.dbType, instance.__tableName),</b>
+<b class="nc">&nbsp;            mapOf(&quot;tableName&quot; to instance.__tableName),</b>
+<b class="nc">&nbsp;            KOperationType.DROP,</b>
+<b class="nc">&nbsp;            DDLInfo(T::class, instance.__tableName)</b>
+<b class="nc">&nbsp;        ).toKronosActionTask().execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Drop table
+&nbsp;     *
+&nbsp;     * @param tableNames Table names
+&nbsp;     */
+&nbsp;    fun dropTable(vararg tableNames: String) =
+<b class="nc">&nbsp;        tableNames.map { tableName -&gt;</b>
+<b class="nc">&nbsp;            KronosAtomicActionTask(</b>
+<b class="nc">&nbsp;                getTableDropSql(dataSource.dbType, tableName),</b>
+<b class="nc">&nbsp;                mapOf(&quot;tableName&quot; to tableName),</b>
+<b class="nc">&nbsp;                KOperationType.DROP,</b>
+<b class="nc">&nbsp;                DDLInfo(null, tableName)</b>
+<b class="nc">&nbsp;            )</b>
+<b class="nc">&nbsp;        }.toKronosActionTask().execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Truncate table
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; truncateTable(</b>
+<b class="nc">&nbsp;        instance: T = T::class.createInstance(),</b>
+<b class="nc">&nbsp;        restartIdentity: Boolean = true</b>
+<b class="nc">&nbsp;    ) = KronosAtomicActionTask(</b>
+<b class="nc">&nbsp;        getTableTruncateSql(</b>
+<b class="nc">&nbsp;            dataSource.dbType,</b>
+<b class="nc">&nbsp;            instance.__tableName,</b>
+<b class="nc">&nbsp;            restartIdentity</b>
+&nbsp;        ),
+<b class="nc">&nbsp;        mapOf(&quot;tableName&quot; to instance.__tableName),</b>
+<b class="nc">&nbsp;        KOperationType.TRUNCATE,</b>
+<b class="nc">&nbsp;        DDLInfo(T::class, instance.__tableName)</b>
+<b class="nc">&nbsp;    ).toKronosActionTask().execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Truncate table
+&nbsp;     *
+&nbsp;     * @param tableName Table name
+&nbsp;     * @param restartIdentity Whether to reset the auto-increment value，only for `PostgreSQL` and `sqlite` for `reset auto increment`, default is `true`
+&nbsp;     */
+<b class="nc">&nbsp;    fun truncateTable(vararg tableName: String, restartIdentity: Boolean = true) =</b>
+<b class="nc">&nbsp;        tableName.map { name -&gt;</b>
+<b class="nc">&nbsp;            KronosAtomicActionTask(</b>
+<b class="nc">&nbsp;                getTableTruncateSql(dataSource.dbType, name, restartIdentity),</b>
+<b class="nc">&nbsp;                mapOf(&quot;tableName&quot; to name),</b>
+<b class="nc">&nbsp;                KOperationType.TRUNCATE,</b>
+<b class="nc">&nbsp;                DDLInfo(null, name)</b>
+<b class="nc">&nbsp;            )</b>
+<b class="nc">&nbsp;        }.toKronosActionTask().execute(dataSource)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Synchronize table structure
+&nbsp;     *
+&nbsp;     * @param instance Table instance
+&nbsp;     * @return Whether the table is created
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T : KPojo&gt; syncTable(instance: T = T::class.createInstance()): Boolean {</b>
+&nbsp;        // 表名
+<b class="nc">&nbsp;        val tableName = instance.__tableName</b>
+&nbsp;
+&nbsp;        // 不存在就创建
+<b class="nc">&nbsp;        if (!queryTableExistence(tableName, dataSource)) {</b>
+<b class="nc">&nbsp;            createTable(instance)</b>
+&nbsp;            // Table does not exist, create it successfully and return false
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+&nbsp;        // 数据库类型
+<b class="nc">&nbsp;        val dbType = dataSource.dbType</b>
+&nbsp;
+&nbsp;        // 实体类列信息
+<b class="nc">&nbsp;        val kronosColumns = instance.kronosColumns().asSequence().filter { it.isColumn }.map { col -&gt;</b>
+<b class="nc">&nbsp;            if (dbType == DBType.Oracle) {</b>
+<b class="nc">&nbsp;                col.columnName = col.columnName.uppercase()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            col</b>
+<b class="nc">&nbsp;        }.toList()</b>
+&nbsp;        // 从实例中获取索引(oracle 需要 转大写)
+<b class="nc">&nbsp;        val kronosIndexes = instance.kronosTableIndex()</b>
+<b class="nc">&nbsp;        val originalTableComment = queryTableComment(tableName, dataSource)</b>
+<b class="nc">&nbsp;        val tableComment = instance.__tableComment</b>
+&nbsp;
+&nbsp;        // 获取实际表字段信息
+<b class="nc">&nbsp;        val tableColumns = getTableColumns(dataSource, tableName)</b>
+&nbsp;        // 获取实际表索引信息
+<b class="nc">&nbsp;        val tableIndexes = getTableIndexes(dataSource, tableName)</b>
+&nbsp;
+&nbsp;        // 新增、修改、删除字段
+<b class="nc">&nbsp;        val diffColumns = columnDiffer(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }</b>
+<b class="nc">&nbsp;        val diffIndexes = indexDiffer(kronosIndexes, tableIndexes)</b>
+&nbsp;
+<b class="nc">&nbsp;        dataSource.transact {</b>
+<b class="nc">&nbsp;            getTableSyncSqlList(dataSource, tableName, originalTableComment, tableComment, diffColumns, diffIndexes).forEach {</b>
+<b class="nc">&nbsp;                dataSource.execute(it)</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

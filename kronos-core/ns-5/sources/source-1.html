@@ -1,0 +1,362 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > BundledSimpleLoggerAdapter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.logging</a>
+</div>
+
+<h1>Coverage Summary for Class: BundledSimpleLoggerAdapter (com.kotlinorm.beans.logging)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">BundledSimpleLoggerAdapter</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.2%
+  </span>
+  <span class="absValue">
+    (16/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (8/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93%
+  </span>
+  <span class="absValue">
+    (66/71)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.7%
+  </span>
+  <span class="absValue">
+    (372/377)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">BundledSimpleLoggerAdapter$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (2/8)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (3/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.7%
+  </span>
+  <span class="absValue">
+    (33/51)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    62.1%
+  </span>
+  <span class="absValue">
+    (18/29)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (8/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.2%
+  </span>
+  <span class="absValue">
+    (69/80)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (405/428)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.logging
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos.logPath
+&nbsp;import com.kotlinorm.enums.KLogLevel
+&nbsp;import com.kotlinorm.interfaces.KLogger
+&nbsp;import com.kotlinorm.interfaces.PrintCode
+&nbsp;import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+&nbsp;import java.nio.file.Files
+&nbsp;import java.util.concurrent.ConcurrentLinkedQueue
+&nbsp;import java.util.concurrent.locks.ReentrantLock
+&nbsp;import kotlin.io.path.Path
+&nbsp;
+&nbsp;/**
+&nbsp; * BundledSimpleLoggerAdapter
+&nbsp; *
+&nbsp; * Bundled Simple Logger Adapter by Kronos ORM, support color print on console and write to file.
+&nbsp; *
+&nbsp; * @property tagName the name of the logger
+&nbsp; */
+<b class="fc">&nbsp;class BundledSimpleLoggerAdapter(private val tagName: String) : KLogger {</b>
+&nbsp;    companion object {
+<b class="fc">&nbsp;        private val synchronized = ReentrantLock()</b>
+<b class="fc">&nbsp;        private var logTaskList = ConcurrentLinkedQueue&lt;LogTask&gt;() // log task queue</b>
+&nbsp;        private const val SEMICOLON = &quot;;&quot;
+&nbsp;
+<b class="pc">&nbsp;        var logDateTimeFormat = &quot;yyyy-MM-dd HH:mm:ss.SSS&quot;</b>
+<b class="pc">&nbsp;        var traceEnabled = true</b>
+<b class="pc">&nbsp;        var debugEnabled = true</b>
+<b class="pc">&nbsp;        var infoEnabled = true</b>
+<b class="pc">&nbsp;        var warnEnabled = true</b>
+<b class="pc">&nbsp;        var errorEnabled = true</b>
+<b class="fc">&nbsp;        var logFileNameRule = { &quot;kronos-log-${currentDateTime(&quot;yyyy-MM-dd&quot;)}.log&quot; }</b>
+&nbsp;
+&nbsp;        /**
+&nbsp;         * 格式化信息
+&nbsp;         *
+&nbsp;         * @param txt  the text to format
+&nbsp;         * @param codes the style codes
+&nbsp;         * @return the formatted text
+&nbsp;         */
+&nbsp;        internal fun format(txt: String, codes: Array&lt;PrintCode&gt;): String {
+<b class="fc">&nbsp;            val codeStr = codes.joinToString(SEMICOLON) { it.code.toString() }</b>
+<b class="fc">&nbsp;            return 27.toChar().toString() + &quot;[&quot; + codeStr + &quot;m&quot; + txt + 27.toChar() + &quot;[0m&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private val current get() = currentDateTime(logDateTimeFormat)</b>
+&nbsp;
+&nbsp;    override fun isTraceEnabled(): Boolean {
+<b class="nc">&nbsp;        return traceEnabled</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun trace(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+<b class="fc">&nbsp;        logTaskList.add(</b>
+<b class="fc">&nbsp;            LogTask(</b>
+<b class="fc">&nbsp;                KLogLevel.TRACE,</b>
+<b class="fc">&nbsp;                log {</b>
+<b class="fc">&nbsp;                    -&quot;[$current] [trace] [$tagName] &quot;[blue]</b>
+<b class="fc">&nbsp;                    -messages</b>
+&nbsp;                }
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        executeLogTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun isDebugEnabled(): Boolean {
+<b class="nc">&nbsp;        return debugEnabled</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun debug(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+<b class="fc">&nbsp;        logTaskList.add(</b>
+<b class="fc">&nbsp;            LogTask(</b>
+<b class="fc">&nbsp;                KLogLevel.DEBUG,</b>
+<b class="fc">&nbsp;                log {</b>
+<b class="fc">&nbsp;                    -&quot;[$current] [debug] [$tagName] &quot;[magenta]</b>
+<b class="fc">&nbsp;                    -messages</b>
+&nbsp;                }
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;       executeLogTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun isInfoEnabled(): Boolean {
+<b class="nc">&nbsp;        return infoEnabled</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun info(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+<b class="fc">&nbsp;        logTaskList.add(</b>
+<b class="fc">&nbsp;            LogTask(</b>
+<b class="fc">&nbsp;                KLogLevel.INFO,</b>
+<b class="fc">&nbsp;                log {</b>
+<b class="fc">&nbsp;                    -&quot;[$current] [info] [$tagName] &quot;[cyan]</b>
+<b class="fc">&nbsp;                    -messages</b>
+&nbsp;                }
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        executeLogTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun isWarnEnabled(): Boolean {
+<b class="nc">&nbsp;        return warnEnabled</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun warn(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+<b class="fc">&nbsp;        logTaskList.add(</b>
+<b class="fc">&nbsp;            LogTask(</b>
+<b class="fc">&nbsp;                KLogLevel.WARN,</b>
+<b class="fc">&nbsp;                log {</b>
+<b class="fc">&nbsp;                    -&quot;[$current] [warn] [$tagName] &quot;[yellow]</b>
+<b class="fc">&nbsp;                    -messages</b>
+&nbsp;                }
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        executeLogTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun isErrorEnabled(): Boolean {
+<b class="nc">&nbsp;        return errorEnabled</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun error(messages: Array&lt;KLogMessage&gt;, e: Throwable?) {
+<b class="fc">&nbsp;        logTaskList.add(</b>
+<b class="fc">&nbsp;            LogTask(</b>
+<b class="fc">&nbsp;                KLogLevel.ERROR,</b>
+<b class="fc">&nbsp;                log {</b>
+<b class="fc">&nbsp;                    -&quot;[$current] [error] [$tagName] &quot;[red]</b>
+<b class="fc">&nbsp;                    -messages</b>
+&nbsp;                }
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;        executeLogTask()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes the log task asynchronously.
+&nbsp;     */
+&nbsp;    private fun executeLogTask() {
+<b class="pc">&nbsp;        if(logPath.isEmpty()) return</b>
+<b class="pc">&nbsp;        if (synchronized.tryLock()) { // 尝试获取锁</b>
+<b class="fc">&nbsp;            Runnable {</b>
+&nbsp;                try {
+<b class="fc">&nbsp;                    while (logTaskList.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                        val logTask = logTaskList.poll()</b>
+<b class="fc">&nbsp;                        logPath.forEach { path -&gt;</b>
+<b class="fc">&nbsp;                            if (path == &quot;console&quot;) {</b>
+<b class="fc">&nbsp;                                logTask.messages.forEach { message -&gt;</b>
+<b class="fc">&nbsp;                                    message.print(logTask.level)</b>
+<b class="fc">&nbsp;                                }</b>
+&nbsp;                            } else {
+<b class="fc">&nbsp;                                val directory = Path(path)</b>
+<b class="fc">&nbsp;                                if (!Files.exists(directory)) {</b>
+<b class="fc">&nbsp;                                    Files.createDirectories(directory)</b>
+&nbsp;                                }
+<b class="fc">&nbsp;                                val logFileName = logFileNameRule()</b>
+<b class="fc">&nbsp;                                logTask.messages.forEach { message -&gt;</b>
+<b class="fc">&nbsp;                                    message.write(Path(path, logFileName))</b>
+<b class="fc">&nbsp;                                }</b>
+&nbsp;                            }
+<b class="fc">&nbsp;                        }</b>
+&nbsp;                    }
+&nbsp;                } finally {
+<b class="fc">&nbsp;                    synchronized.unlock()</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }.run()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

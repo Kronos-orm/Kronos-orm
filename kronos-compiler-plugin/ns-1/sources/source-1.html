@@ -1,0 +1,210 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrCallHelperKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.helpers</a>
+</div>
+
+<h1>Coverage Summary for Class: IrCallHelperKt (com.kotlinorm.compiler.helpers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrCallHelperKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (105/105)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.helpers
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;
+&nbsp;typealias IrTypes = List&lt;IrType&gt;
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates an IR function access expression using the given function symbol and arguments.
+&nbsp; *
+&nbsp; * @param args The arguments to pass to the function call.
+&nbsp; * @param types The types of the arguments.
+&nbsp; * @param operator An optional origin for the function call, such as an operator like `invoke`.
+&nbsp; * @return An IR function access expression representing the function call.
+&nbsp; */
+&nbsp;context(builder: IrBuilderWithScope)
+&nbsp;internal operator fun IrFunctionSymbol.invoke(
+&nbsp;    vararg args: IrExpression?,
+<b class="fc">&nbsp;    types: IrTypes = emptyList(),</b>
+<b class="fc">&nbsp;    operator: IrStatementOrigin? = null,</b>
+&nbsp;): IrFunctionAccessExpression {
+<b class="fc">&nbsp;    return builder.irCall(this).apply {</b>
+<b class="fc">&nbsp;        origin = operator</b>
+<b class="fc">&nbsp;        args.forEachIndexed { i, arg -&gt; arguments[i] = arg }</b>
+<b class="fc">&nbsp;        types.forEachIndexed { i, type -&gt; typeArguments[i] = type }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Casts the current IrExpression to the specified type T.
+&nbsp; *
+&nbsp; * @param T The target type to cast to, which must be a subtype of IrExpression.
+&nbsp; * @return The current IrExpression cast to type T.
+&nbsp; */
+&nbsp;internal inline fun &lt;reified T : IrExpression&gt; IrExpression.irCast(): T {
+&nbsp;    return try {
+<b class="fc">&nbsp;        this as T</b>
+&nbsp;    } catch (e: ClassCastException) {
+<b class="fc">&nbsp;        throw IllegalArgumentException(&quot;Expected IrExpression to be of type ${T::class.java}, but was ${this::class.java}&quot;, e)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Finds the first IrConstructorCall in the iterable that has a containing descriptor with the given fqName.
+&nbsp; *
+&nbsp; * @param fqName The fully qualified name of the containing descriptor to search for.
+&nbsp; * @return The first IrConstructorCall that matches the given fqName, or null if none is found.
+&nbsp; */
+&nbsp;internal fun &lt;T : IrFunctionAccessExpression&gt; Iterable&lt;T&gt;.findByFqName(fqName: FqName): T? =
+<b class="fc">&nbsp;    find { it.type.classFqName == fqName }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Finds the first IrConstructorCall in the iterable that has a containing descriptor with the given fqName.
+&nbsp; *
+&nbsp; * @param fqName The fully qualified name of the containing descriptor to search for.
+&nbsp; * @return The first IrConstructorCall that matches the given fqName, or null if none is found.
+&nbsp; */
+&nbsp;internal fun &lt;T : IrFunctionAccessExpression&gt; Iterable&lt;T&gt;.filterByFqName(fqName: FqName): List&lt;T&gt; =
+<b class="fc">&nbsp;    filter { it.type.classFqName == fqName }</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

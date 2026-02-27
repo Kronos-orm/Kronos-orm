@@ -1,0 +1,346 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosActionTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosActionTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosActionTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (10/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    63.6%
+  </span>
+  <span class="absValue">
+    (14/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.2%
+  </span>
+  <span class="absValue">
+    (32/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.1%
+  </span>
+  <span class="absValue">
+    (204/268)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosActionTask$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (9/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (122/129)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (13/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.6%
+  </span>
+  <span class="absValue">
+    (23/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.5%
+  </span>
+  <span class="absValue">
+    (46/52)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.1%
+  </span>
+  <span class="absValue">
+    (326/397)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;
+&nbsp;/**
+&nbsp; * KronosActionTask class represents a Kronos action task used to execute multiple Kronos atomic action tasks.
+&nbsp; */
+<b class="fc">&nbsp;class KronosActionTask {</b>
+<b class="fc">&nbsp;    internal val atomicTasks: MutableList&lt;KronosAtomicActionTask&gt; = mutableListOf() //原子任务列表</b>
+&nbsp;    private var beforeExecute: (KronosActionTask.(KronosDataSourceWrapper) -&gt; Unit)? = null //在执行之前执行的操作
+<b class="fc">&nbsp;    var afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -&gt; Unit)? =</b>
+&nbsp;        null //在执行之后执行的操作(返回一个新的KronosActionTask)
+&nbsp;
+&nbsp;    fun doBeforeExecute(beforeExecute: KronosActionTask.(KronosDataSourceWrapper) -&gt; Unit): KronosActionTask { //设置在执行之前执行的操作
+<b class="fc">&nbsp;        this.beforeExecute = beforeExecute</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun doAfterExecute(afterExecute: (KronosOperationResult.(KronosDataSourceWrapper) -&gt; Unit)?): KronosActionTask { //设置在执行之前执行的操作
+<b class="fc">&nbsp;        this.afterExecute = afterExecute</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Groups a list of KronosAtomicActionTask by their SQL statements.
+&nbsp;     *
+&nbsp;     * This function takes a list of KronosAtomicActionTask as input and groups them by their SQL statements.
+&nbsp;     * It uses the fold function to iterate over the list of tasks and groups them into sublists.
+&nbsp;     * If the accumulator list is empty or the SQL statement of the last task in the last sublist is not the same as the SQL statement of the current task,
+&nbsp;     * it adds a new sublist to the accumulator list with the current task as its first element.
+&nbsp;     * Otherwise, it adds the current task to the last sublist in the accumulator list.
+&nbsp;     * The function returns the accumulator list which is a list of sub lists of tasks grouped by their SQL statements.
+&nbsp;     *
+&nbsp;     * 保证只有连续的sql语句才会被分组，[a, a, b, b, b, c, c, a, a] =&gt; [[a, a], [b, b, b], [c, c], [a, a]]
+&nbsp;     *
+&nbsp;     * @param listOfTask List&lt;KronosAtomicActionTask&gt; the list of KronosAtomicActionTask to group.
+&nbsp;     * @return List&lt;List&lt;KronosAtomicActionTask&gt;&gt; returns a list of sub lists of KronosAtomicActionTask grouped by their SQL statements.
+&nbsp;     */
+&nbsp;    private fun groupBySql(listOfTask: List&lt;KronosAtomicActionTask&gt;): List&lt;List&lt;KronosAtomicActionTask&gt;&gt; {
+<b class="fc">&nbsp;        return listOfTask.fold(mutableListOf&lt;MutableList&lt;KronosAtomicActionTask&gt;&gt;()) { acc, task -&gt;</b>
+<b class="pc">&nbsp;            if (acc.isEmpty() || acc.last().last().sql != task.sql) {</b>
+<b class="fc">&nbsp;                acc.add(mutableListOf(task))</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                acc.last().add(task)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            acc</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault() //获取数据源</b>
+<b class="fc">&nbsp;        beforeExecute?.invoke(this, dataSource) // 在执行之前执行的操作</b>
+&nbsp;
+<b class="fc">&nbsp;        val groupedTasks = groupBySql(atomicTasks).map { //按照sql分组</b>
+<b class="fc">&nbsp;            val first = it.first()</b>
+<b class="pc">&nbsp;            if (it.size &gt; 1) { //如果有多个任务</b>
+<b class="nc">&nbsp;                KronosAtomicBatchTask( //创建一个批量任务</b>
+<b class="nc">&nbsp;                    first.sql,</b>
+<b class="nc">&nbsp;                    it.map { task -&gt; task.paramMap }.toTypedArray(),</b>
+<b class="nc">&nbsp;                    first.operationType,</b>
+<b class="nc">&nbsp;                    first.actionInfo</b>
+&nbsp;                )
+&nbsp;            } else { //如果只有一个任务
+<b class="fc">&nbsp;                first</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;        val results = dataSource.transact { //执行事务</b>
+<b class="fc">&nbsp;            groupedTasks.map {</b>
+<b class="fc">&nbsp;                it.execute(dataSource)</b>
+&nbsp;            }
+&nbsp;        } as List&lt;KronosOperationResult&gt;
+<b class="fc">&nbsp;        val affectRows = results.sumOf { it.affectedRows } //受影响的行数</b>
+<b class="fc">&nbsp;        return KronosOperationResult(affectRows).apply {</b>
+<b class="fc">&nbsp;            afterExecute?.invoke(this, dataSource) //在执行之后执行的操作</b>
+<b class="fc">&nbsp;            if(results.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        fun List&lt;KronosAtomicActionTask&gt;.toKronosActionTask(): KronosActionTask {
+<b class="fc">&nbsp;            return KronosActionTask().also {</b>
+<b class="fc">&nbsp;                it.atomicTasks.addAll(this)</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Converts a KronosAtomicActionTask to a KronosActionTask.
+&nbsp;         *
+&nbsp;         * This function creates a new KronosActionTask and adds the current KronosAtomicActionTask to it.
+&nbsp;         * It also copies the stash from the current task to the new task.
+&nbsp;         *
+&nbsp;         * @receiver KronosAtomicActionTask the current KronosAtomicActionTask to convert.
+&nbsp;         * @return KronosActionTask returns a new KronosActionTask with the current task added to it.
+&nbsp;         */
+&nbsp;        fun KronosAtomicActionTask.toKronosActionTask(): KronosActionTask {
+<b class="fc">&nbsp;            return KronosActionTask().also {</b>
+<b class="fc">&nbsp;                it.atomicTasks.add(this)</b>
+<b class="fc">&nbsp;                it.atomicTasks.forEach { task -&gt; task.stash.putAll(stash) }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Merges a list of KronosActionTask into a single KronosActionTask.
+&nbsp;         *
+&nbsp;         * This function creates a new KronosActionTask and adds all the atomic tasks from each KronosActionTask in the list to it.
+&nbsp;         * It uses the flatMap function to flatten the list of atomic tasks from each KronosActionTask into a single list.
+&nbsp;         * The flattened list of atomic tasks is then added to the atomic tasks of the new KronosActionTask.
+&nbsp;         *
+&nbsp;         * @receiver List&lt;KronosActionTask&gt; the list of KronosActionTask to merge.
+&nbsp;         * @return KronosActionTask returns a new KronosActionTask with all the atomic tasks from each KronosActionTask in the list.
+&nbsp;         */
+&nbsp;        fun List&lt;KronosActionTask&gt;.merge(): KronosActionTask {
+<b class="fc">&nbsp;            return KronosActionTask().apply {</b>
+<b class="fc">&nbsp;                atomicTasks.addAll(flatMap { it.atomicTasks })</b>
+<b class="fc">&nbsp;                if(any { it.beforeExecute != null }) {</b>
+<b class="pc">&nbsp;                    beforeExecute = { wrapper -&gt; forEach { it.beforeExecute?.invoke(this, wrapper) } }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (any { it.afterExecute != null }) {</b>
+<b class="pc">&nbsp;                    afterExecute = { wrapper -&gt; forEach { it.afterExecute?.invoke(this, wrapper) } }</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private val firstTask by lazy { atomicTasks.firstOrNull() }</b>
+&nbsp;
+&nbsp;    operator fun component1(): String {
+<b class="pc">&nbsp;        return firstTask?.sql ?: &quot;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component2(): Map&lt;String, Any?&gt; {
+<b class="pc">&nbsp;        return firstTask?.paramMap ?: mapOf()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component3(): MutableList&lt;KronosAtomicActionTask&gt; {
+<b class="fc">&nbsp;        return atomicTasks</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

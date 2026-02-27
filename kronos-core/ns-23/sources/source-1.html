@@ -1,0 +1,352 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CommonUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: CommonUtilKt (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CommonUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    63.2%
+  </span>
+  <span class="absValue">
+    (24/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.7%
+  </span>
+  <span class="absValue">
+    (49/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (221/272)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">CommonUtilKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    63.2%
+  </span>
+  <span class="absValue">
+    (24/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.7%
+  </span>
+  <span class="absValue">
+    (49/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (221/272)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos.defaultDateFormat
+&nbsp;import com.kotlinorm.Kronos.serializeProcessor
+&nbsp;import com.kotlinorm.Kronos.strictSetValue
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DateTimeUtil.currentDateTime
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; *@program: kronos-orm
+&nbsp; *@author: Jieyao Lu
+&nbsp; *@description:
+&nbsp; *@create: 2024/5/7 16:01
+&nbsp; **/
+&nbsp;
+&nbsp;fun KronosCommonStrategy.execute(
+<b class="fc">&nbsp;    timeStrategy: Boolean = false,</b>
+<b class="fc">&nbsp;    defaultValue: Any = 0,</b>
+&nbsp;    afterExecute: KronosCommonStrategy.(field: Field, value: Any?) -&gt; Unit
+&nbsp;) {
+<b class="fc">&nbsp;    afterExecute(</b>
+<b class="fc">&nbsp;        field,</b>
+<b class="fc">&nbsp;        if (timeStrategy) {</b>
+<b class="fc">&nbsp;            currentDateTime(field.dateFormat ?: defaultDateFormat)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            defaultValue</b>
+&nbsp;        }
+&nbsp;    )
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;fun &lt;T&gt; Collection&lt;T&gt;.toLinkedSet(): LinkedHashSet&lt;T&gt; = linkedSetOf&lt;T&gt;().apply { addAll(this@toLinkedSet) }</b>
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Converts a given value to a type-safe value based on the provided Kotlin type.
+&nbsp; *
+&nbsp; * @param kotlinType The target Kotlin type to convert the value to.
+&nbsp; * @param value The value to be converted.
+&nbsp; * @param superTypes A list of super types for the value&#39;s class.
+&nbsp; * @param dateTimeFormat An optional date-time format to use for date-time conversions.
+&nbsp; * @param kClassOfVal The KClass of the value.
+&nbsp; * @return The converted value, or null if the conversion is not possible.
+&nbsp; */
+&nbsp;fun getTypeSafeValue(
+&nbsp;    kotlinType: String,
+&nbsp;    value: Any,
+<b class="fc">&nbsp;    superTypes: List&lt;String&gt; = listOf(),</b>
+<b class="fc">&nbsp;    dateTimeFormat: String? = null,</b>
+<b class="fc">&nbsp;    kClassOfVal: KClass&lt;*&gt; = value::class</b>
+<b class="fc">&nbsp;): Any = getValueTransformed(</b>
+<b class="fc">&nbsp;    kotlinType,</b>
+<b class="fc">&nbsp;    value,</b>
+<b class="fc">&nbsp;    superTypes,</b>
+<b class="fc">&nbsp;    dateTimeFormat,</b>
+<b class="fc">&nbsp;    kClassOfVal</b>
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * getSafeValue
+&nbsp; * 1.类型转换 Any-&gt;String,Long-&gt;Int, Short-&gt;Int, Int-&gt;Short, Int-&gt;Boolean...
+&nbsp; *
+&nbsp; * 2.日期转换 String-&gt;Date, Long-&gt;Date, String-&gt; LocalDateTime, Long-&gt;LocalDateTime
+&nbsp; *
+&nbsp; * 3.将String使用serialize resolver转为指定类型
+&nbsp; *
+&nbsp; * 4.若columnLabel在map中的值为null，尝试查找columnName在map中的值存入KPojo
+&nbsp; *
+&nbsp; * @param kPojo
+&nbsp; * @param kClass
+&nbsp; * @param superTypes
+&nbsp; * @param map
+&nbsp; * @param key
+&nbsp; * @param serializable
+&nbsp; * @return
+&nbsp; */
+&nbsp;@Suppress(&quot;UNUSED&quot;)
+&nbsp;fun getSafeValue(
+&nbsp;    kPojo: KPojo,
+&nbsp;    kClass: KClass&lt;*&gt;,
+&nbsp;    superTypes: List&lt;String&gt;,
+&nbsp;    map: Map&lt;String, Any?&gt;,
+&nbsp;    key: String,
+&nbsp;    serializable: Boolean
+&nbsp;): Any? {
+<b class="pc">&nbsp;    if (strictSetValue) {</b>
+<b class="nc">&nbsp;        return map[key]</b>
+&nbsp;    }
+<b class="pc">&nbsp;    return map[key]?.let { value -&gt;</b>
+<b class="fc">&nbsp;        val kClassOfVal = value::class</b>
+<b class="fc">&nbsp;        if (kClass != kClassOfVal) {</b>
+<b class="pc">&nbsp;            if (serializable) {</b>
+<b class="nc">&nbsp;                serializeProcessor.deserialize(</b>
+<b class="nc">&nbsp;                    value.toString(), kClass</b>
+&nbsp;                )
+&nbsp;            } else {
+<b class="pc">&nbsp;                val column = kPojo.kronosColumns().find { it.name == key }!!</b>
+<b class="fc">&nbsp;                getTypeSafeValue(</b>
+<b class="fc">&nbsp;                    kClass.qualifiedName!!,</b>
+<b class="fc">&nbsp;                    value,</b>
+<b class="fc">&nbsp;                    superTypes,</b>
+<b class="fc">&nbsp;                    column.dateFormat,</b>
+<b class="fc">&nbsp;                    kClassOfVal</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        } else {
+<b class="fc">&nbsp;            value</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;fun String.trimWhitespace(): String {
+<b class="fc">&nbsp;    return replace(&quot;\\s+&quot;.toRegex(), &quot; &quot;).trim()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Extracts numbers enclosed in parentheses from the input string.
+&nbsp; *
+&nbsp; * The function looks for patterns in the format `(number[,number])` where:
+&nbsp; * - `number` is one or more digits.
+&nbsp; * - The second number (after a comma) is optional.
+&nbsp; *
+&nbsp; * @param input The input string to search for the pattern.
+&nbsp; * @return A `Pair` of integers:
+&nbsp; * - The first integer corresponds to the first number inside the parentheses.
+&nbsp; * - The second integer corresponds to the second number inside the parentheses, or 0 if it is not present.
+&nbsp; * - If no match is found, returns `(0, 0)`.
+&nbsp; */
+&nbsp;fun extractNumberInParentheses(input: String): Pair&lt;Int, Int&gt; {
+<b class="fc">&nbsp;    val regex = Regex(&quot;&quot;&quot;\s*\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)\s*&quot;&quot;&quot;) // Regular expression to match the pattern.</b>
+<b class="fc">&nbsp;    val matchResult = regex.find(input) // Finds the first match in the input string.</b>
+&nbsp;
+<b class="fc">&nbsp;    if (matchResult != null) {</b>
+<b class="fc">&nbsp;        val (length, scale) = matchResult.destructured // Extracts matched groups.</b>
+<b class="fc">&nbsp;        return Pair(length.toInt(), scale.toIntOrNull() ?: 0) // Converts to integers and handles optional second number.</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return Pair(0, 0) // Returns default values if no match is found.</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun Field.isTimestampOrPostgresDatetime(wrapper: KronosDataSourceWrapper): Boolean {
+<b class="pc">&nbsp;    return type == KColumnType.TIMESTAMP ||</b>
+<b class="pc">&nbsp;            (wrapper.dbType == DBType.Postgres &amp;&amp; type == KColumnType.DATETIME)</b>
+&nbsp;}
+&nbsp;
+&nbsp;fun processParams(
+&nbsp;    wrapper: KronosDataSourceWrapper,
+&nbsp;    field: Field,
+&nbsp;    value: Any?
+&nbsp;): Any? {
+<b class="fc">&nbsp;    if (value == null) return null</b>
+<b class="pc">&nbsp;    if (field.serializable) return serializeProcessor.serialize(value)</b>
+&nbsp;
+<b class="fc">&nbsp;    return when {</b>
+<b class="pc">&nbsp;        field.isTimestampOrPostgresDatetime(wrapper) -&gt;</b>
+<b class="nc">&nbsp;            getTypeSafeValue(&quot;java.sql.Timestamp&quot;, value, field.superTypes, field.dateFormat)</b>
+&nbsp;
+<b class="pc">&nbsp;        wrapper.dbType == DBType.Postgres &amp;&amp; field.type == KColumnType.BIT -&gt;</b>
+<b class="nc">&nbsp;            getTypeSafeValue(&quot;kotlin.Boolean&quot;, value, field.superTypes, field.dateFormat)</b>
+&nbsp;
+<b class="fc">&nbsp;        else -&gt; value</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;fun getDefaultBoolean(
+&nbsp;    wrapper: KronosDataSourceWrapper,
+&nbsp;    boolean: Boolean
+&nbsp;): Any {
+<b class="fc">&nbsp;    return when (wrapper.dbType) {</b>
+<b class="pc">&nbsp;        DBType.Postgres -&gt; boolean</b>
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            if (boolean) 1 else 0</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

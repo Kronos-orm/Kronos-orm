@@ -1,0 +1,300 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosQueryTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosQueryTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosQueryTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    47.6%
+  </span>
+  <span class="absValue">
+    (10/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20%
+  </span>
+  <span class="absValue">
+    (2/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38.6%
+  </span>
+  <span class="absValue">
+    (17/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    34.9%
+  </span>
+  <span class="absValue">
+    (148/424)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosQueryTask$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (11/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20%
+  </span>
+  <span class="absValue">
+    (2/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (18/45)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    35.5%
+  </span>
+  <span class="absValue">
+    (152/428)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.enums.QueryType
+&nbsp;import com.kotlinorm.enums.QueryType.Query
+&nbsp;import com.kotlinorm.enums.QueryType.QueryList
+&nbsp;import com.kotlinorm.enums.QueryType.QueryMap
+&nbsp;import com.kotlinorm.enums.QueryType.QueryMapOrNull
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOne
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOneOrNull
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.logAndReturn
+&nbsp;
+&nbsp;/**
+&nbsp; * KronosQueryTask class represents a collection of Kronos atomic query tasks used to execute SELECT operations.
+&nbsp; * It provides functionality to manage and execute a batch of read-only SQL queries.
+&nbsp; */
+<b class="fc">&nbsp;class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务</b>
+<b class="fc">&nbsp;    var beforeQuery: (KronosQueryTask.() -&gt; Any?)? = null //在执行之前执行的操作</b>
+<b class="fc">&nbsp;    var afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -&gt; Any?)? = null //在执行之后执行的操作</b>
+&nbsp;
+&nbsp;    fun doBeforeQuery(beforeQuery: KronosQueryTask.() -&gt; Any?): KronosQueryTask { //设置在执行之前执行的操作
+<b class="nc">&nbsp;        this.beforeQuery = beforeQuery</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun doAfterQuery(afterQuery: (Any?.(QueryType, KronosDataSourceWrapper) -&gt; Any?)): KronosQueryTask { // 设置在执行之后执行的操作(返回一个新的KronosQueryTask)
+<b class="nc">&nbsp;        this.afterQuery = afterQuery</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;T&gt; executeQuery(
+&nbsp;        wrapper: KronosDataSourceWrapper?,
+&nbsp;        queryType: QueryType,
+&nbsp;        crossinline queryAction: (KronosDataSourceWrapper) -&gt; T
+&nbsp;    ): T {
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="pc">&nbsp;        beforeQuery?.invoke(this)</b>
+<b class="fc">&nbsp;        QueryEvent.beforeQueryEvents.forEach { it(atomicTask, dataSource) }</b>
+&nbsp;
+<b class="fc">&nbsp;        val result = atomicTask.logAndReturn(queryAction(dataSource), queryType)</b>
+&nbsp;
+<b class="fc">&nbsp;        QueryEvent.afterQueryEvents.forEach { it(atomicTask, dataSource) }</b>
+<b class="pc">&nbsp;        afterQuery?.invoke(result, queryType, dataSource)</b>
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun query(wrapper: KronosDataSourceWrapper? = null) = executeQuery(wrapper, Query) {</b>
+<b class="fc">&nbsp;        it.forList(atomicTask)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryList(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = emptyList()</b>
+<b class="nc">&nbsp;    ) = executeQuery(wrapper, QueryList) {</b>
+<b class="nc">&nbsp;        it.forList(atomicTask, T::class, isKPojo, superTypes) as List&lt;T&gt;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun queryMap(
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null</b>
+<b class="nc">&nbsp;    ) = executeQuery(wrapper, QueryMap) {</b>
+<b class="nc">&nbsp;        it.forMap(atomicTask) ?: throw NoSuchElementException(&quot;No result found for query: ${atomicTask.sql}&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun queryMapOrNull(
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null</b>
+<b class="nc">&nbsp;    ) = executeQuery(wrapper, QueryMapOrNull) {</b>
+<b class="nc">&nbsp;        it.forMap(atomicTask)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryOne(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+<b class="nc">&nbsp;    ) = executeQuery(wrapper, QueryOne) {</b>
+<b class="nc">&nbsp;        it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?</b>
+<b class="nc">&nbsp;            ?: throw NoSuchElementException(&quot;No result found for query: ${atomicTask.sql}&quot;)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryOneOrNull(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+<b class="fc">&nbsp;    ) = executeQuery(wrapper, QueryOneOrNull) {</b>
+<b class="fc">&nbsp;        it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        fun KronosAtomicQueryTask.toKronosQueryTask(): KronosQueryTask {
+<b class="fc">&nbsp;            return KronosQueryTask(this)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component1(): String {
+<b class="fc">&nbsp;        return atomicTask.sql</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun component2(): Map&lt;String, Any?&gt; {
+<b class="fc">&nbsp;        return atomicTask.paramMap</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    operator fun component3() = this</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,282 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > Field</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: Field (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">Field</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (6/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (8/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (33/66)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.7%
+  </span>
+  <span class="absValue">
+    (237/309)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos.fieldNamingStrategy
+&nbsp;import com.kotlinorm.enums.IgnoreAction
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.KColumnType.UNDEFINED
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Field
+&nbsp; *
+&nbsp; * Basic class of Kronos, which represents the field of a database table.
+&nbsp; *
+&nbsp; * @property columnName the name of the column in the database table
+&nbsp; * @property name the name of the field in Kotlin
+&nbsp; * @property type [KColumnType] of the field, default is UNDEFINED
+&nbsp; * @property primaryKey whether the field is a primary key and primary key type: none, default, identity, uuid, snowflake
+&nbsp; * @property dateFormat the format of the date field
+&nbsp; * @property tableName the name of the table
+&nbsp; * @property cascade the cascade of the field
+&nbsp; * @property cascadeIsCollectionOrArray whether the cascade field is a collection or array
+&nbsp; * @property kClass the class of the cascade field
+&nbsp; * @property isColumn whether the field is a column of database, KPojo/Collection&lt;KPojo&gt; fields are not columns of database
+&nbsp; * @property length the length of the field
+&nbsp; * @property defaultValue the default value of the field
+&nbsp; * @property nullable whether the field is nullable
+&nbsp; * @property ignore whether the field should be ignored in some operations
+&nbsp; *
+&nbsp; * @author: OUSC
+&nbsp; */
+&nbsp;open class Field(
+<b class="fc">&nbsp;    var columnName: String,</b>
+<b class="fc">&nbsp;    var name: String = fieldNamingStrategy.db2k(columnName),</b>
+<b class="fc">&nbsp;    val type: KColumnType = UNDEFINED,</b>
+<b class="fc">&nbsp;    var primaryKey: PrimaryKeyType = PrimaryKeyType.NOT,</b>
+<b class="fc">&nbsp;    val dateFormat: String? = null,</b>
+<b class="fc">&nbsp;    var tableName: String = &quot;&quot;,</b>
+<b class="fc">&nbsp;    val cascade: KCascade? = null,</b>
+<b class="fc">&nbsp;    val cascadeIsCollectionOrArray: Boolean = false,</b>
+<b class="fc">&nbsp;    val kClass: KClass&lt;out KPojo&gt;? = null,</b>
+<b class="fc">&nbsp;    val superTypes: List&lt;String&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    val ignore: Array&lt;IgnoreAction&gt;? = null,</b>
+<b class="fc">&nbsp;    val isColumn: Boolean = true,</b>
+<b class="fc">&nbsp;    val length: Int = 0,</b>
+<b class="fc">&nbsp;    val scale: Int = 0,</b>
+<b class="fc">&nbsp;    val defaultValue: String? = null,</b>
+<b class="fc">&nbsp;    val nullable: Boolean = true,</b>
+<b class="fc">&nbsp;    val serializable: Boolean = false,</b>
+<b class="fc">&nbsp;    val kDoc: String? = null</b>
+&nbsp;) {
+&nbsp;    // Returns the name of the field as a string
+&nbsp;    override fun toString(): String {
+<b class="fc">&nbsp;        return name</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if this object is equal to another object.
+&nbsp;     *
+&nbsp;     * @param other the object to compare with
+&nbsp;     * @return true if the objects are equal, false otherwise
+&nbsp;     */
+&nbsp;    override fun equals(other: Any?): Boolean {
+<b class="fc">&nbsp;        if (this === other) return true</b>
+<b class="fc">&nbsp;        other as Field</b>
+<b class="fc">&nbsp;        if (columnName != other.columnName) return false</b>
+<b class="pc">&nbsp;        if (name != other.name) return false</b>
+<b class="fc">&nbsp;        if (tableName != other.tableName) return false</b>
+<b class="fc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the hash code value for the object.
+&nbsp;     *
+&nbsp;     * @return the hash code value of the object.
+&nbsp;     */
+&nbsp;    override fun hashCode(): Int {
+<b class="fc">&nbsp;        var result = columnName.hashCode()</b>
+<b class="fc">&nbsp;        result = 31 * result + name.hashCode()</b>
+<b class="fc">&nbsp;        result = 31 * result + tableName.hashCode()</b>
+<b class="fc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Concatenates the current field name with the given string and returns a new Field object.
+&nbsp;     *
+&nbsp;     * @param other the string to concatenate with the field name
+&nbsp;     * @return a new Field object with the concatenated name
+&nbsp;     */
+<b class="fc">&nbsp;    operator fun plus(other: String?): Field = Field(</b>
+<b class="fc">&nbsp;        columnName,</b>
+<b class="fc">&nbsp;        name + other</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun refUseFor(usage: KOperationType): Boolean {
+<b class="pc">&nbsp;        return cascade != null &amp;&amp; cascade.usage.contains(usage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun copy(
+<b class="nc">&nbsp;        columnName: String = this.columnName,</b>
+<b class="nc">&nbsp;        name: String = this.name,</b>
+<b class="nc">&nbsp;        type: KColumnType = this.type,</b>
+<b class="nc">&nbsp;        primaryKey: PrimaryKeyType = this.primaryKey,</b>
+<b class="nc">&nbsp;        dateFormat: String? = this.dateFormat,</b>
+<b class="nc">&nbsp;        tableName: String = this.tableName,</b>
+<b class="nc">&nbsp;        cascade: KCascade? = this.cascade,</b>
+<b class="nc">&nbsp;        cascadeIsCollectionOrArray: Boolean = this.cascadeIsCollectionOrArray,</b>
+<b class="nc">&nbsp;        kClass: KClass&lt;out KPojo&gt;? = this.kClass,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = this.superTypes,</b>
+<b class="nc">&nbsp;        ignore: Array&lt;IgnoreAction&gt;? = this.ignore,</b>
+<b class="nc">&nbsp;        isColumn: Boolean = this.isColumn,</b>
+<b class="nc">&nbsp;        length: Int = this.length,</b>
+<b class="nc">&nbsp;        scale: Int = this.scale,</b>
+<b class="nc">&nbsp;        defaultValue: String? = this.defaultValue,</b>
+<b class="nc">&nbsp;        nullable: Boolean = this.nullable</b>
+&nbsp;    ): Field {
+<b class="nc">&nbsp;        return Field(</b>
+<b class="nc">&nbsp;            columnName,</b>
+<b class="nc">&nbsp;            name,</b>
+<b class="nc">&nbsp;            type,</b>
+<b class="nc">&nbsp;            primaryKey,</b>
+<b class="nc">&nbsp;            dateFormat,</b>
+<b class="nc">&nbsp;            tableName,</b>
+<b class="nc">&nbsp;            cascade,</b>
+<b class="nc">&nbsp;            cascadeIsCollectionOrArray,</b>
+<b class="nc">&nbsp;            kClass,</b>
+<b class="nc">&nbsp;            superTypes,</b>
+<b class="nc">&nbsp;            ignore,</b>
+<b class="nc">&nbsp;            isColumn,</b>
+<b class="nc">&nbsp;            length,</b>
+<b class="nc">&nbsp;            scale,</b>
+<b class="nc">&nbsp;            defaultValue,</b>
+<b class="nc">&nbsp;            nullable</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

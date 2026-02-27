@@ -1,0 +1,240 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > FieldIRKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.beans</a>
+</div>
+
+<h1>Coverage Summary for Class: FieldIRKt (com.kotlinorm.compiler.plugin.beans)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FieldIRKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.beans
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.helpers.invoke
+&nbsp;import com.kotlinorm.compiler.helpers.irEnum
+&nbsp;import com.kotlinorm.compiler.helpers.irListOf
+&nbsp;import com.kotlinorm.compiler.helpers.referenceClass
+&nbsp;import com.kotlinorm.compiler.plugin.utils.fieldSymbol
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBoolean
+&nbsp;import org.jetbrains.kotlin.ir.builders.irInt
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the symbol for the PrimaryKeyType enum class.
+&nbsp; */
+&nbsp;context(_: IrPluginContext)
+&nbsp;internal val primaryKeyTypeSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;com.kotlinorm.enums.PrimaryKeyType&quot;)!!</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * IrField
+&nbsp; *
+&nbsp; * Constructing a field IR, which contains all the information of a field by reading the Property information
+&nbsp; *
+&nbsp; * 读取Property信息构造一个Field IR，包含一个字段的所有信息
+&nbsp; *
+&nbsp; * @property columnName The name of the column
+&nbsp; * @property name The name of the field
+&nbsp; * @property type The type of the column
+&nbsp; * @property primaryKey whether the field is a primary key and primary key type: none, default, identity, uuid, snowflake
+&nbsp; * @property dateTimeFormat The format of the date time
+&nbsp; * @property tableName The name of the table
+&nbsp; * @property cascade The cascade type
+&nbsp; * @property cascadeIsArrayOrCollection Whether the cascade is an array or collection
+&nbsp; * @property kClass The KClass of the cascade type
+&nbsp; * @property ignore operations should be ignored
+&nbsp; * @property isColumn Whether the field is a column
+&nbsp; * @property columnTypeLength The length of the column type
+&nbsp; * @property columnTypeScale The scale of the column type
+&nbsp; * @property columnDefaultValue The default value of the column
+&nbsp; * @property nullable Whether the field is nullable
+&nbsp; * @property serializable Whether the field is serializable
+&nbsp; * @property kDoc The documentation of the field
+&nbsp; *
+&nbsp; */
+&nbsp;class FieldIR(
+&nbsp;    internal val columnName: IrExpression,
+&nbsp;    internal val name: String,
+&nbsp;    internal val type: IrExpression,
+&nbsp;    internal val primaryKey: String,
+&nbsp;    internal val dateTimeFormat: IrExpression?,
+&nbsp;    internal val tableName: IrExpression,
+&nbsp;    internal val cascade: IrExpression,
+&nbsp;    internal val cascadeIsArrayOrCollection: Boolean,
+&nbsp;    internal val kClass: IrExpression,
+&nbsp;    internal val superTypes: List&lt;IrConstImpl&gt;,
+&nbsp;    internal val ignore: IrExpression?,
+&nbsp;    internal val isColumn: Boolean,
+&nbsp;    internal val columnTypeLength: IrExpression?,
+&nbsp;    internal val columnTypeScale: IrExpression?,
+&nbsp;    internal val columnDefaultValue: IrExpression?,
+&nbsp;    internal val nullable: Boolean,
+&nbsp;    internal val serializable: Boolean,
+&nbsp;    internal val kDoc: IrExpression
+&nbsp;){
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts the current object to an IrVariable by creating a criteria using the provided propertyeters.
+&nbsp;     *
+&nbsp;     * @return an IrVariable representing the created criteria
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;    fun build(): IrExpression {
+&nbsp;        return fieldSymbol.constructors.first()(
+&nbsp;            columnName,
+&nbsp;            builder.irString(name),
+&nbsp;            type,
+&nbsp;            irEnum(primaryKeyTypeSymbol, primaryKey),
+&nbsp;            dateTimeFormat ?: builder.irNull(),
+&nbsp;            tableName,
+&nbsp;            cascade,
+&nbsp;            builder.irBoolean(cascadeIsArrayOrCollection),
+&nbsp;            kClass,
+&nbsp;            irListOf(context.irBuiltIns.stringType, superTypes),
+&nbsp;            ignore ?: builder.irNull(),
+&nbsp;            builder.irBoolean(isColumn),
+&nbsp;            columnTypeLength ?: builder.irInt(0),
+&nbsp;            columnTypeScale ?: builder.irInt(0),
+&nbsp;            columnDefaultValue ?: builder.irNull(),
+&nbsp;            builder.irBoolean(nullable),
+&nbsp;            builder.irBoolean(serializable),
+&nbsp;            kDoc
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

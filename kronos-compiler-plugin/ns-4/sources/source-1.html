@@ -1,0 +1,324 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosIrClassNewTransformer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.transformer</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosIrClassNewTransformer (com.kotlinorm.compiler.plugin.transformer)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosIrClassNewTransformer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (20/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (44/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (408/408)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.transformer
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.helpers.set
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createFromMapValueFunction
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createGetFieldsFunction
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createKClassFunction
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createKronosCreateTime
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createKronosLogicDelete
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createKronosOptimisticLock
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createKronosTableIndex
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createKronosUpdateTime
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createPropertyGetter
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createPropertySetter
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createSafeFromMapValueFunction
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createTableComment
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createTableName
+&nbsp;import com.kotlinorm.compiler.plugin.utils.createToMapFunction
+&nbsp;import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.IrStatement
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addDefaultGetter
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.addDefaultSetter
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.util.parentAsClass
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos Parser Transformer
+&nbsp; *
+&nbsp; * @author OUSC, Jieyao Lu
+&nbsp; *
+&nbsp; * Roughly speaking, the transform will turn the following:
+&nbsp; *
+&nbsp; *     // file: Foo.kt
+&nbsp; *     class Foo : KPojo {
+&nbsp; *         var username: String {get set}
+&nbsp; *         var password: String {get set}
+&nbsp; *
+&nbsp; *         fake override fun toDataMap(): MutableMap&lt;String, Any?&gt;
+&nbsp; *         fake override fun safeFromMapData(data: Map&lt;String, Any?&gt;): Foo
+&nbsp; *         fake override fun fromMapData(data: Map&lt;String, Any?&gt;): Foo
+&nbsp; *         var __tableName: String
+&nbsp; *             get() = throw IllegalStateException()
+&nbsp; *             set(value) {}
+&nbsp; *         var __tableComment: String
+&nbsp; *             get() = throw IllegalStateException()
+&nbsp; *             set(value) {}
+&nbsp; *         fake override fun kronosTableComment(): String
+&nbsp; *         fake override fun kronosTableIndex(): List&lt;KTableIndex&gt;
+&nbsp; *         fake override fun kronosColumns(): List&lt;Field&gt;
+&nbsp; *         fake override fun kronosCreateTime(): KronosCommonStrategy
+&nbsp; *         fake override fun kronosUpdateTime(): KronosCommonStrategy
+&nbsp; *         fake override fun kronosLogicDelete(): KronosCommonStrategy
+&nbsp; *         fake override fun kronosOptimisticLock(): KronosCommonStrategy
+&nbsp; *     }
+&nbsp; *
+&nbsp; * into the following equivalent representation:
+&nbsp; *
+&nbsp; *    // file: Foo.kt
+&nbsp; *     class Foo : KPojo {
+&nbsp; *         var username: String {get set}
+&nbsp; *         var password: String {get set}
+&nbsp; *
+&nbsp; *         override fun toDataMap(): MutableMap&lt;String, Any?&gt; {
+&nbsp; *             return mutableMapOf(
+&nbsp; *                 &quot;username&quot; to username,
+&nbsp; *                 &quot;password&quot; to password
+&nbsp; *             )
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun safeFromMapData(data: Map&lt;String, Any?&gt;): Foo {
+&nbsp; *              try this.username = getSafeValue(data, &quot;username&quot;) catch (e: Exception) e.printStackTrace()
+&nbsp; *              try this.password = getSafeValue(data, &quot;password&quot;) catch (e: Exception) e.printStackTrace()
+&nbsp; *              return this
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun fromMapData(data: Map&lt;String, Any?&gt;): Foo {
+&nbsp; *              this.username = data[&quot;username&quot;]
+&nbsp; *              this.password = data[&quot;password&quot;]
+&nbsp; *              return this
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         var __tableName: String = &quot;foo&quot;
+&nbsp; *
+&nbsp; *         var __tableComment: String = &quot;file: Foo.kt&quot;
+&nbsp; *
+&nbsp; *         override fun kronosTableIndex(): List&lt;KTableIndex&gt; {
+&nbsp; *              return listOf()
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun kronosColumns(): List&lt;Field&gt; {
+&nbsp; *              return listOf(Field(&quot;username&quot;), Field(&quot;password&quot;))
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun kronosCreateTime(): KronosCommonStrategy {
+&nbsp; *              return KronosCommonStrategy(&quot;create_time&quot;)
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun kronosUpdateTime(): KronosCommonStrategy {
+&nbsp; *              return KronosCommonStrategy(&quot;update_time&quot;)
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun kronosLogicDelete(): KronosCommonStrategy {
+&nbsp; *              return KronosCommonStrategy(&quot;deleted&quot;)
+&nbsp; *         }
+&nbsp; *
+&nbsp; *         override fun kronosOptimisticLock(): KronosCommonStrategy {
+&nbsp; *              return KronosCommonStrategy(&quot;version&quot;)
+&nbsp; *         }
+&nbsp; */
+<b class="fc">&nbsp;class KronosIrClassNewTransformer(</b>
+<b class="fc">&nbsp;    private val pluginContext: IrPluginContext, private val irClass: IrClass</b>
+&nbsp;) : IrElementTransformerVoidWithContext() {
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+<b class="fc">&nbsp;        if (declaration is IrSimpleFunction &amp;&amp; declaration.isFakeOverride) {</b>
+<b class="fc">&nbsp;            irClass.properties.forEach {</b>
+<b class="fc">&nbsp;                it.isVar = true</b>
+<b class="fc">&nbsp;                it.isConst = false</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;            fun replaceFakeBody(functionBodyFactory: () -&gt; IrBlockBody) {
+<b class="fc">&nbsp;                declaration.isFakeOverride = false</b>
+<b class="fc">&nbsp;                declaration[IrParameterKind.DispatchReceiver] = irClass.thisReceiver</b>
+<b class="fc">&nbsp;                declaration.body = functionBodyFactory()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            with(DeclarationIrBuilder(pluginContext, declaration.symbol) as IrBuilderWithScope) {</b>
+<b class="fc">&nbsp;                with(pluginContext) {</b>
+<b class="fc">&nbsp;                    when (declaration.name.asString()) {</b>
+<b class="fc">&nbsp;                        &quot;kClass&quot; -&gt; replaceFakeBody { createKClassFunction(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;toDataMap&quot; -&gt; replaceFakeBody { createToMapFunction(irClass, declaration) }</b>
+<b class="fc">&nbsp;                        &quot;get&quot; -&gt; replaceFakeBody { createPropertyGetter(irClass, declaration) }</b>
+<b class="fc">&nbsp;                        &quot;set&quot; -&gt; replaceFakeBody { createPropertySetter(irClass, declaration) }</b>
+<b class="fc">&nbsp;                        &quot;safeFromMapData&quot; -&gt; replaceFakeBody { createSafeFromMapValueFunction(irClass, declaration) }</b>
+<b class="fc">&nbsp;                        &quot;fromMapData&quot; -&gt; replaceFakeBody { createFromMapValueFunction(irClass, declaration) }</b>
+<b class="fc">&nbsp;                        &quot;kronosTableIndex&quot; -&gt; replaceFakeBody { createKronosTableIndex(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;kronosColumns&quot; -&gt; replaceFakeBody { createGetFieldsFunction(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;kronosCreateTime&quot; -&gt; replaceFakeBody { createKronosCreateTime(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;kronosUpdateTime&quot; -&gt; replaceFakeBody { createKronosUpdateTime(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;kronosLogicDelete&quot; -&gt; replaceFakeBody { createKronosLogicDelete(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;kronosOptimisticLock&quot; -&gt; replaceFakeBody { createKronosOptimisticLock(irClass) }</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return super.visitFunctionNew(declaration)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun visitPropertyNew(declaration: IrProperty): IrStatement {
+<b class="fc">&nbsp;        if (declaration.backingField == null) {</b>
+&nbsp;            fun replaceFakeProp(initializer: () -&gt; IrExpressionBody) {
+<b class="fc">&nbsp;                declaration.isFakeOverride = false</b>
+<b class="fc">&nbsp;                declaration.addBackingField{ type = declaration.getter!!.returnType }</b>
+<b class="fc">&nbsp;                declaration.backingField!!.initializer = initializer()</b>
+<b class="fc">&nbsp;                declaration.getter = null</b>
+<b class="fc">&nbsp;                declaration.setter = null</b>
+<b class="fc">&nbsp;                declaration.addDefaultGetter(declaration.parentAsClass, pluginContext.irBuiltIns)</b>
+<b class="fc">&nbsp;                declaration.addDefaultSetter(declaration.parentAsClass, pluginContext.irBuiltIns)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            with(DeclarationIrBuilder(pluginContext, declaration.symbol) as IrBuilderWithScope) {</b>
+<b class="fc">&nbsp;                with(pluginContext) {</b>
+<b class="pc">&nbsp;                    when (declaration.name.asString()) {</b>
+<b class="fc">&nbsp;                        &quot;__tableName&quot; -&gt; replaceFakeProp { createTableName(irClass) }</b>
+<b class="fc">&nbsp;                        &quot;__tableComment&quot; -&gt; replaceFakeProp { createTableComment(irClass) }</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return super.visitPropertyNew(declaration)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

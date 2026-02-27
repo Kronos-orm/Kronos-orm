@@ -1,0 +1,239 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > LastInsertIdPlugin</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.plugins</a>
+</div>
+
+<h1>Coverage Summary for Class: LastInsertIdPlugin (com.kotlinorm.plugins)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">LastInsertIdPlugin</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    74.2%
+  </span>
+  <span class="absValue">
+    (23/31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.1%
+  </span>
+  <span class="absValue">
+    (27/31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.4%
+  </span>
+  <span class="absValue">
+    (119/141)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">LastInsertIdPlugin$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    74.2%
+  </span>
+  <span class="absValue">
+    (23/31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.1%
+  </span>
+  <span class="absValue">
+    (27/31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.4%
+  </span>
+  <span class="absValue">
+    (119/141)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.plugins
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.beans.task.registerTaskEventPlugin
+&nbsp;import com.kotlinorm.beans.task.unregisterTaskEventPlugin
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.TaskEventPlugin
+&nbsp;import com.kotlinorm.orm.insert.InsertClause
+&nbsp;import com.kotlinorm.types.ActionTaskEvent
+&nbsp;import com.kotlinorm.types.QueryTaskEvent
+&nbsp;
+&nbsp;object LastInsertIdPlugin : TaskEventPlugin {
+&nbsp;    private var loaded = false
+&nbsp;    var enabled
+<b class="fc">&nbsp;        get() = loaded</b>
+&nbsp;        set(value) {
+<b class="pc">&nbsp;            if (value &amp;&amp; !loaded) {</b>
+<b class="fc">&nbsp;                registerTaskEventPlugin(LastInsertIdPlugin)</b>
+<b class="fc">&nbsp;                loaded = true</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (!value &amp;&amp; loaded) {</b>
+<b class="nc">&nbsp;                unregisterTaskEventPlugin(LastInsertIdPlugin)</b>
+<b class="nc">&nbsp;                loaded = false</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;    val KronosOperationResult.lastInsertId
+<b class="fc">&nbsp;        get() = this.stash[&quot;lastInsertId&quot;] as? Long</b>
+&nbsp;
+&nbsp;    // Generates the SQL statement needed to obtain the last inserted ID based on the provided database type.
+&nbsp;    fun lastInsertIdObtainSql(dbType: DBType): String {
+<b class="fc">&nbsp;        return when (dbType) {</b>
+<b class="fc">&nbsp;            DBType.Mysql, DBType.H2, DBType.OceanBase -&gt; &quot;SELECT LAST_INSERT_ID()&quot;</b>
+<b class="fc">&nbsp;            DBType.Oracle -&gt; &quot;SELECT * FROM DUAL&quot;</b>
+<b class="fc">&nbsp;            DBType.Mssql -&gt; &quot;SELECT SCOPE_IDENTITY()&quot;</b>
+<b class="fc">&nbsp;            DBType.Postgres -&gt; &quot;SELECT LASTVAL()&quot;</b>
+<b class="fc">&nbsp;            DBType.DB2 -&gt; &quot;SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1&quot;</b>
+<b class="fc">&nbsp;            DBType.Sybase -&gt; &quot;SELECT @@IDENTITY&quot;</b>
+<b class="fc">&nbsp;            DBType.SQLite -&gt; &quot;SELECT last_insert_rowid()&quot;</b>
+<b class="fc">&nbsp;            else -&gt; throw UnsupportedOperationException(&quot;Unsupported database type: $dbType&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    override val doBeforeQuery: QueryTaskEvent? = null</b>
+<b class="fc">&nbsp;    override val doAfterQuery: QueryTaskEvent? = null</b>
+<b class="fc">&nbsp;    override val doBeforeAction: ActionTaskEvent? = null</b>
+&nbsp;
+<b class="fc">&nbsp;    override val doAfterAction: ActionTaskEvent = { task, wrapper -&gt;</b>
+<b class="fc">&nbsp;        if (task.operationType == KOperationType.INSERT &amp;&amp;</b>
+<b class="pc">&nbsp;            (task.stash[&quot;queryId&quot;] == true || (task.stash[&quot;queryId&quot;] == null &amp;&amp; enabled))</b>
+<b class="fc">&nbsp;            &amp;&amp; task.stash[&quot;useIdentity&quot;] == true // 目前仅支持自增主键</b>
+&nbsp;        ) {
+<b class="pc">&nbsp;            task.stash[&quot;lastInsertId&quot;] = (wrapper.forObject(</b>
+<b class="fc">&nbsp;                KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.dbType)),</b>
+&nbsp;                kClass = Long::class,
+<b class="fc">&nbsp;                false,</b>
+<b class="fc">&nbsp;                listOf()</b>
+<b class="fc">&nbsp;            ) ?: 0L) as Long</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun InsertClause&lt;*&gt;.withId(): InsertClause&lt;*&gt; {
+<b class="nc">&nbsp;        stash[&quot;queryId&quot;] = true</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

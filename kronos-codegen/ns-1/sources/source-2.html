@@ -1,0 +1,299 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-codegen Coverage Report > DataSourceHelperKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-codegen<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.codegen</a>
+</div>
+
+<h1>Coverage Summary for Class: DataSourceHelperKt (com.kotlinorm.codegen)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">DataSourceHelperKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (6/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    40.7%
+  </span>
+  <span class="absValue">
+    (35/86)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (48/80)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    49.4%
+  </span>
+  <span class="absValue">
+    (426/863)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.codegen
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.beans.logging.log
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import java.lang.reflect.Method
+&nbsp;import java.util.Locale
+&nbsp;import javax.sql.DataSource
+&nbsp;
+&nbsp;fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceWrapper {
+<b class="pc">&nbsp;    val className = className ?: run {</b>
+<b class="nc">&nbsp;        Kronos.defaultLogger(dataSource).warn(</b>
+<b class="nc">&nbsp;            log { +&quot;wrapperClassName is not set, using default: com.kotlinorm.KronosBasicWrapper&quot; }</b>
+&nbsp;        )
+<b class="nc">&nbsp;        &quot;com.kotlinorm.KronosBasicWrapper&quot;</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val clazz: Class&lt;*&gt;</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        clazz = Class.forName(className)</b>
+&nbsp;    } catch (e: ClassNotFoundException) {
+<b class="nc">&nbsp;        throw IllegalStateException(&quot;Wrapper class not found: &quot; + className, e)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val ctor = try {</b>
+<b class="fc">&nbsp;        clazz.getDeclaredConstructor(dataSource::class.java)</b>
+&nbsp;    } catch (_: NoSuchMethodException) {
+&nbsp;        try {
+<b class="nc">&nbsp;            clazz.getDeclaredConstructor(DataSource::class.java)</b>
+&nbsp;        } catch (e: NoSuchMethodException) {
+<b class="nc">&nbsp;            throw IllegalStateException(&quot;No compatible constructor found for $className. Expected (${&quot;${dataSource::class.java.name}&quot;} or ${DataSource::class.java.name}).&quot;, e)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    return try {
+<b class="fc">&nbsp;        ctor.newInstance(dataSource) as KronosDataSourceWrapper</b>
+&nbsp;    } catch (e: ClassCastException) {
+<b class="nc">&nbsp;        throw IllegalStateException(&quot;Failed to create wrapper for $className&quot;, e)</b>
+&nbsp;    } catch (e: ReflectiveOperationException) {
+<b class="fc">&nbsp;        throw IllegalStateException(&quot;Failed to create wrapper for $className&quot;, e)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;fun initialDataSource(config: Map&lt;String, Any?&gt;): DataSource {
+<b class="fc">&nbsp;    val dataSource =</b>
+<b class="fc">&nbsp;        Class.forName(</b>
+<b class="pc">&nbsp;            config[&quot;dataSourceClassName&quot;]?.toString() ?: run {</b>
+<b class="fc">&nbsp;                Kronos.defaultLogger(config).warn(</b>
+<b class="fc">&nbsp;                    log { +&quot;dataSourceClassName is not set, using default: org.apache.commons.dbcp2.BasicDataSource&quot; }</b>
+&nbsp;                )
+<b class="fc">&nbsp;                &quot;org.apache.commons.dbcp2.BasicDataSource&quot;</b>
+&nbsp;            }
+&nbsp;        )
+<b class="fc">&nbsp;            .getDeclaredConstructor()</b>
+<b class="fc">&nbsp;            .newInstance() as DataSource</b>
+&nbsp;
+<b class="fc">&nbsp;    dataSource.apply {</b>
+<b class="fc">&nbsp;        config.entries.forEach { (key, value) -&gt;</b>
+<b class="fc">&nbsp;            if (key in arrayOf(&quot;dataSourceClassName&quot;, &quot;wrapperClassName&quot;)) return@forEach</b>
+&nbsp;            try {
+&nbsp;                // 生成可能的setter方法名（兼容不同命名风格）
+<b class="fc">&nbsp;                val methodNames = listOf(</b>
+<b class="pc">&nbsp;                    &quot;set${key.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}&quot;,</b>
+<b class="fc">&nbsp;                    &quot;set${key.uppercase(Locale.ROOT)}&quot;,</b>
+<b class="fc">&nbsp;                    &quot;set${key.lowercase(Locale.ROOT)}&quot;</b>
+&nbsp;                )
+&nbsp;
+<b class="fc">&nbsp;                val targetMethod = methodNames.firstNotNullOfOrNull { name -&gt;</b>
+<b class="fc">&nbsp;                    findCompatibleMethod(this.javaClass, name, value)</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                targetMethod?.apply {</b>
+<b class="fc">&nbsp;                    invoke(dataSource, convertValue(value, targetMethod.parameterTypes[0]))</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;                    ?: Kronos.defaultLogger(this).warn(</b>
+<b class="fc">&nbsp;                        log {</b>
+<b class="fc">&nbsp;                            &quot;Setter for &#39;$key&#39; not found in ${this::class.java.name}&quot;</b>
+&nbsp;                        }
+&nbsp;                    )
+&nbsp;            } catch (e: IllegalArgumentException) {
+<b class="nc">&nbsp;                Kronos.defaultLogger(this).warn(</b>
+<b class="nc">&nbsp;                    log {</b>
+<b class="nc">&nbsp;                        &quot;Error setting property &#39;$key&#39;: ${e.message?.replace(&#39;\n&#39;, &#39; &#39;)}&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            } catch (e: ReflectiveOperationException) {
+<b class="nc">&nbsp;                Kronos.defaultLogger(this).warn(</b>
+<b class="nc">&nbsp;                    log {</b>
+<b class="nc">&nbsp;                        &quot;Error setting property &#39;$key&#39;: ${e.message?.replace(&#39;\n&#39;, &#39; &#39;)}&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            } catch (e: ClassCastException) {
+<b class="nc">&nbsp;                Kronos.defaultLogger(this).warn(</b>
+<b class="nc">&nbsp;                    log {</b>
+<b class="nc">&nbsp;                        &quot;Error setting property &#39;$key&#39;: ${e.message?.replace(&#39;\n&#39;, &#39; &#39;)}&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            } catch (e: TypeCastException) {
+<b class="nc">&nbsp;                Kronos.defaultLogger(this).warn(</b>
+<b class="nc">&nbsp;                    log {</b>
+<b class="nc">&nbsp;                        &quot;Error setting property &#39;$key&#39;: ${e.message?.replace(&#39;\n&#39;, &#39; &#39;)}&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            } catch (e: SecurityException) {
+<b class="nc">&nbsp;                Kronos.defaultLogger(this).warn(</b>
+<b class="nc">&nbsp;                    log {</b>
+<b class="nc">&nbsp;                        &quot;Error setting property &#39;$key&#39;: ${e.message?.replace(&#39;\n&#39;, &#39; &#39;)}&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    return dataSource</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun findCompatibleMethod(clazz: Class&lt;*&gt;, methodName: String, value: Any?): Method? {
+&nbsp;    return try {
+<b class="fc">&nbsp;        clazz.methods.firstOrNull { method -&gt;</b>
+<b class="fc">&nbsp;            method.name == methodName &amp;&amp;</b>
+<b class="pc">&nbsp;                    method.parameterCount == 1 &amp;&amp;</b>
+<b class="fc">&nbsp;                    isTypeCompatible(method.parameterTypes[0], value)</b>
+&nbsp;        }
+&nbsp;    } catch (_: SecurityException) {
+<b class="fc">&nbsp;        null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun isTypeCompatible(targetType: Class&lt;*&gt;, value: Any?): Boolean {
+<b class="pc">&nbsp;    if (value == null) return !targetType.isPrimitive</b>
+<b class="fc">&nbsp;    return when (targetType) {</b>
+<b class="pc">&nbsp;        Int::class.java, Integer.TYPE -&gt; value is Number</b>
+<b class="pc">&nbsp;        Long::class.java, java.lang.Long.TYPE -&gt; value is Number</b>
+<b class="pc">&nbsp;        Boolean::class.java, java.lang.Boolean.TYPE -&gt; value is Boolean</b>
+<b class="pc">&nbsp;        String::class.java -&gt; true</b>
+<b class="nc">&nbsp;        else -&gt; targetType.isAssignableFrom(value.javaClass)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun convertValue(value: Any?, targetType: Class&lt;*&gt;): Any? {
+<b class="pc">&nbsp;    if (value == null) return null</b>
+&nbsp;
+<b class="pc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        targetType.isAssignableFrom(value.javaClass) -&gt; value</b>
+<b class="pc">&nbsp;        targetType == Int::class.java || targetType == Integer.TYPE -&gt; (value as? Number)?.toInt()</b>
+<b class="nc">&nbsp;        targetType == Long::class.java || targetType == java.lang.Long.TYPE -&gt; (value as? Number)?.toLong()</b>
+<b class="nc">&nbsp;        targetType == Boolean::class.java || targetType == java.lang.Boolean.TYPE -&gt; value.toString().toBoolean()</b>
+<b class="nc">&nbsp;        targetType == String::class.java -&gt; value.toString()</b>
+<b class="nc">&nbsp;        targetType.isEnum -&gt; enumValueOfSafe(targetType, value.toString())</b>
+<b class="nc">&nbsp;        else -&gt; throw IllegalArgumentException(&quot;Unsupported type conversion: ${value.javaClass} to $targetType&quot;)</b>
+<b class="nc">&nbsp;    } ?: throw TypeCastException(&quot;Cannot convert $value (${value.javaClass}) to $targetType&quot;)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun enumValueOfSafe(enumClass: Class&lt;*&gt;, value: String): Any {
+<b class="nc">&nbsp;    return enumClass.enumConstants?.firstOrNull {</b>
+<b class="nc">&nbsp;        (it as Enum&lt;*&gt;).name.equals(value, ignoreCase = true)</b>
+<b class="nc">&nbsp;    } ?: throw IllegalArgumentException(&quot;Invalid enum value &#39;$value&#39; for ${enumClass.simpleName}&quot;)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

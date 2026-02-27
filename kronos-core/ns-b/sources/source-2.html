@@ -1,0 +1,172 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > RegisteredDBTypeManager</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database</a>
+</div>
+
+<h1>Coverage Summary for Class: RegisteredDBTypeManager (com.kotlinorm.database)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">RegisteredDBTypeManager</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (7/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (40/45)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database
+&nbsp;
+&nbsp;import com.kotlinorm.database.mssql.MssqlSupport
+&nbsp;import com.kotlinorm.database.mysql.MysqlSupport
+&nbsp;import com.kotlinorm.database.oracle.OracleSupport
+&nbsp;import com.kotlinorm.database.postgres.PostgresqlSupport
+&nbsp;import com.kotlinorm.database.sqlite.SqliteSupport
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.DBType.Mysql
+&nbsp;import com.kotlinorm.enums.DBType.Postgres
+&nbsp;import com.kotlinorm.enums.DBType.SQLite
+&nbsp;import com.kotlinorm.enums.DBType.Mssql
+&nbsp;import com.kotlinorm.enums.DBType.Oracle
+&nbsp;import com.kotlinorm.interfaces.DatabasesSupport
+&nbsp;
+&nbsp;// Used to generate SQL that is independent of database type, including dialect differences.
+&nbsp;object RegisteredDBTypeManager {
+<b class="fc">&nbsp;    private val dBTypeSupport: MutableMap&lt;DBType, DatabasesSupport&gt; = mutableMapOf(</b>
+<b class="fc">&nbsp;        Mysql to MysqlSupport,</b>
+<b class="fc">&nbsp;        Postgres to PostgresqlSupport,</b>
+<b class="fc">&nbsp;        SQLite to SqliteSupport,</b>
+<b class="fc">&nbsp;        Mssql to MssqlSupport,</b>
+<b class="fc">&nbsp;        Oracle to OracleSupport</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    @Suppress(&quot;UNUSED&quot;)
+&nbsp;    // Custom functions for generating SQL that is independent of database type, including dialect differences.
+&nbsp;    fun registerDBTypeSupport(dbType: DBType, support: DatabasesSupport) {
+<b class="nc">&nbsp;        dBTypeSupport[dbType] = support</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun getDBSupport(dbType: DBType): DatabasesSupport? {
+<b class="fc">&nbsp;        return dBTypeSupport[dbType]</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

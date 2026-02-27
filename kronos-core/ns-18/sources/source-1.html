@@ -1,0 +1,360 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CascadeDeleteClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.cascade</a>
+</div>
+
+<h1>Coverage Summary for Class: CascadeDeleteClause (com.kotlinorm.orm.cascade)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CascadeDeleteClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    5.9%
+  </span>
+  <span class="absValue">
+    (3/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    22.8%
+  </span>
+  <span class="absValue">
+    (21/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    15.8%
+  </span>
+  <span class="absValue">
+    (86/545)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">CascadeDeleteClause$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    5.9%
+  </span>
+  <span class="absValue">
+    (3/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    22.8%
+  </span>
+  <span class="absValue">
+    (21/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    15.8%
+  </span>
+  <span class="absValue">
+    (86/545)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.cascade
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.Cascade.Companion.RESERVED
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.enums.CascadeDeleteAction.*
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
+&nbsp;import com.kotlinorm.orm.delete.delete
+&nbsp;import com.kotlinorm.orm.select.select
+&nbsp;import com.kotlinorm.orm.update.update
+&nbsp;import com.kotlinorm.utils.KStack
+&nbsp;import com.kotlinorm.utils.pop
+&nbsp;import com.kotlinorm.utils.push
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Used to build a cascade delete clause.
+&nbsp; *
+&nbsp; * 构建级联删除子句。
+&nbsp; *
+&nbsp; * This object is used to construct a cascade delete clause for a database operation.
+&nbsp; * It contains a nested Counter class for counting operations, a nested ValidCascade data class for storing cascades and cascaded POJOs,
+&nbsp; * and several functions for building the cascade delete clause and generating SQL statements.
+&nbsp; *
+&nbsp; * The main function is build, which takes a POJO, a SQL where clause, a logic flag, a parameter map, and a delete task,
+&nbsp; * and returns an array of KronosAtomicActionTask objects representing the cascade delete operations.
+&nbsp; *
+&nbsp; * The other functions are helper functions used by build. They include findValidRefs, which finds valid cascades in a list of fields,
+&nbsp; * generateCascadeDeleteSql, which generates a delete SQL statement for a cascaded POJO, and getDefaultUpdates, which generates a default update SQL clause.
+&nbsp; *
+&nbsp; */
+&nbsp;object CascadeDeleteClause {
+&nbsp;    /**
+&nbsp;     * Build a cascade delete clause.
+&nbsp;     * 构建级联删除子句。
+&nbsp;     *
+&nbsp;     * @param cascade Whether the cascade is enabled.
+&nbsp;     * @param cascadeAllowed The properties that are allowed to cascade.
+&nbsp;     * @param pojo The pojo to be deleted.
+&nbsp;     * @param whereClauseSql The condition to be met.
+&nbsp;     * @param logic The logic to be used.
+&nbsp;     * @param rootTask The delete task.
+&nbsp;     * @return The list of atomic tasks.
+&nbsp;     */
+&nbsp;    fun &lt;T : KPojo&gt; build(
+&nbsp;        cascade: Boolean,
+&nbsp;        cascadeAllowed: Set&lt;Field&gt;?,
+&nbsp;        kClass: KClass&lt;KPojo&gt;,
+&nbsp;        pojo: T,
+&nbsp;        whereClauseSql: String?,
+&nbsp;        paramMap: Map&lt;String, Any?&gt;,
+&nbsp;        logic: Boolean,
+&nbsp;        rootTask: KronosAtomicActionTask
+&nbsp;    ) =
+<b class="pc">&nbsp;        if (cascade) generateTask(</b>
+<b class="fc">&nbsp;            cascadeAllowed,</b>
+<b class="fc">&nbsp;            kClass,</b>
+<b class="fc">&nbsp;            pojo,</b>
+<b class="fc">&nbsp;            whereClauseSql,</b>
+<b class="fc">&nbsp;            paramMap,</b>
+<b class="fc">&nbsp;            pojo.kronosColumns(),</b>
+<b class="fc">&nbsp;            logic,</b>
+<b class="fc">&nbsp;            rootTask</b>
+<b class="fc">&nbsp;        ) else rootTask.toKronosActionTask()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generate a task for a cascade delete operation.
+&nbsp;     *
+&nbsp;     * @param cascadeAllowed The properties that are allowed to cascade.
+&nbsp;     * @param pojo The pojo to be deleted.
+&nbsp;     * @param whereClauseSql The condition to be met.
+&nbsp;     * @param paramMap The parameter map.
+&nbsp;     * @param columns The columns of the pojo.
+&nbsp;     * @param logic The logic to be used.
+&nbsp;     * @param rootTask The delete task.
+&nbsp;     *
+&nbsp;     * **/
+&nbsp;    private fun &lt;T : KPojo&gt; generateTask(
+&nbsp;        cascadeAllowed: Set&lt;Field&gt;?,
+&nbsp;        kClass: KClass&lt;KPojo&gt;,
+&nbsp;        pojo: T,
+&nbsp;        whereClauseSql: String?,
+&nbsp;        paramMap: Map&lt;String, Any?&gt;,
+&nbsp;        columns: List&lt;Field&gt;,
+&nbsp;        logic: Boolean,
+&nbsp;        rootTask: KronosAtomicActionTask
+&nbsp;    ): KronosActionTask {
+<b class="fc">&nbsp;        val tableName = pojo.__tableName</b>
+<b class="fc">&nbsp;        val validCascades = findValidRefs( // 获取有效的引用</b>
+<b class="fc">&nbsp;            kClass,</b>
+<b class="fc">&nbsp;            columns,</b>
+<b class="fc">&nbsp;            KOperationType.DELETE,</b>
+<b class="pc">&nbsp;            cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性</b>
+<b class="pc">&nbsp;            cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联</b>
+<b class="fc">&nbsp;        ).filter { !it.mapperByThis }</b>
+&nbsp;
+<b class="fc">&nbsp;        return rootTask.toKronosActionTask().apply {</b>
+<b class="fc">&nbsp;            doBeforeExecute { wrapper -&gt; // 在执行前检查是否有引用</b>
+<b class="nc">&nbsp;                if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回</b>
+<b class="nc">&nbsp;                val toDeleteRecords =</b>
+<b class="nc">&nbsp;                    pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())</b>
+<b class="nc">&nbsp;                        .apply {</b>
+<b class="nc">&nbsp;                            this.cascadeAllowed = cascadeAllowed</b>
+<b class="nc">&nbsp;                            this.operationType = KOperationType.DELETE</b>
+<b class="nc">&nbsp;                        }</b>
+<b class="nc">&nbsp;                        .queryList(wrapper) //先查询出要删除的记录</b>
+<b class="nc">&nbsp;                if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回</b>
+&nbsp;
+&nbsp;                // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
+<b class="nc">&nbsp;                val restrictCascades =</b>
+<b class="nc">&nbsp;                    validCascades.filter { it.kCascade.onDelete == RESTRICT }</b>
+<b class="nc">&nbsp;                toDeleteRecords.forEach { record -&gt;</b>
+<b class="nc">&nbsp;                    restrictCascades.forEach { cascade -&gt;</b>
+<b class="nc">&nbsp;                        val valueOfPojo = record.toDataMap()[cascade.field.name]</b>
+<b class="nc">&nbsp;                        if (valueOfPojo != null &amp;&amp; !(valueOfPojo is Collection&lt;*&gt; &amp;&amp; valueOfPojo.isEmpty())) {</b>
+<b class="nc">&nbsp;                            throw UnsupportedOperationException(</b>
+<b class="nc">&nbsp;                                &quot;The record cannot be deleted because it is restricted by a cascade.&quot; +</b>
+<b class="nc">&nbsp;                                        &quot;${record.__tableName}.${cascade.kCascade.properties} is restricted by ${cascade.kCascade.targetProperties}, &quot; +</b>
+<b class="nc">&nbsp;                                        &quot;and the value is ${valueOfPojo}.&quot;</b>
+&nbsp;                            )
+&nbsp;                        }
+<b class="nc">&nbsp;                    }</b>
+<b class="nc">&nbsp;                }</b>
+&nbsp;
+&nbsp;                // 生成树结构，后序遍历所有的子节点，将所有的子节点压入list，最后由子到父执行删除操作
+<b class="nc">&nbsp;                val forestOfKPojo = toDeleteRecords.map {</b>
+<b class="nc">&nbsp;                    it.toTreeNode(</b>
+<b class="nc">&nbsp;                        operationType = KOperationType.DELETE,</b>
+<b class="nc">&nbsp;                        cascadeAllowed = cascadeAllowed</b>
+<b class="nc">&nbsp;                    )</b>
+&nbsp;                }
+<b class="nc">&nbsp;                if (forestOfKPojo.any { it.children.isNotEmpty() }) {</b>
+<b class="nc">&nbsp;                    this.atomicTasks.clear() // 清空原有的任务</b>
+<b class="nc">&nbsp;                    val list = mutableListOf&lt;NodeOfKPojo&gt;()</b>
+<b class="nc">&nbsp;                    forestOfKPojo.forEach { tree -&gt;</b>
+<b class="nc">&nbsp;                        val stack = KStack&lt;NodeOfKPojo&gt;() // 用于深度优先遍历</b>
+<b class="nc">&nbsp;                        val all = KStack&lt;NodeOfKPojo&gt;() // 用于存储所有的节点</b>
+<b class="nc">&nbsp;                        stack.push(tree) // 将根节点压入栈</b>
+<b class="nc">&nbsp;                        var tmp: NodeOfKPojo</b>
+<b class="nc">&nbsp;                        while (!stack.isEmpty()) { // 深度优先遍历</b>
+<b class="nc">&nbsp;                            tmp = stack.pop()</b>
+<b class="nc">&nbsp;                            all.push(tmp)</b>
+<b class="nc">&nbsp;                            tmp.children.forEach {</b>
+<b class="nc">&nbsp;                                stack.push(it) // 将子节点压入栈</b>
+<b class="nc">&nbsp;                            }</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        while (!all.isEmpty()) {</b>
+<b class="nc">&nbsp;                            list.add(all.pop()) // 将所有节点压入list</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                    }</b>
+<b class="nc">&nbsp;                    atomicTasks.addAll(list.mapNotNull {</b>
+<b class="nc">&nbsp;                        when (it.data?.kCascade?.onDelete) {</b>
+<b class="nc">&nbsp;                            NO_ACTION, RESTRICT -&gt; null</b>
+<b class="nc">&nbsp;                            CASCADE, null -&gt; it.kPojo.delete().logic(logic).cascade(enabled = false).build().atomicTasks</b>
+<b class="nc">&nbsp;                            SET_NULL -&gt; it.kPojo.update().apply {</b>
+<b class="nc">&nbsp;                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-&gt; cascade.field == it.data.fieldOfParent }</b>
+<b class="nc">&nbsp;                                listOfValidCascade?.forEach { validCascade-&gt;</b>
+<b class="nc">&nbsp;                                    validCascade.kCascade.properties.forEach{ property -&gt;</b>
+<b class="nc">&nbsp;                                        val field =  allFields.first { f -&gt; f.name == property }</b>
+<b class="nc">&nbsp;                                        toUpdateFields += field</b>
+<b class="nc">&nbsp;                                        paramMapNew[field + &quot;New&quot;] = null</b>
+<b class="nc">&nbsp;                                    }</b>
+<b class="nc">&nbsp;                                }</b>
+<b class="nc">&nbsp;                            }.build().atomicTasks</b>
+&nbsp;
+<b class="nc">&nbsp;                            SET_DEFAULT -&gt; it.kPojo.update().apply {</b>
+<b class="nc">&nbsp;                                val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-&gt; cascade.field == it.data.fieldOfParent }</b>
+<b class="nc">&nbsp;                                listOfValidCascade?.forEach { validCascade-&gt;</b>
+<b class="nc">&nbsp;                                    validCascade.kCascade.properties.forEachIndexed{ index, property -&gt;</b>
+<b class="nc">&nbsp;                                        val field =  allFields.first { f -&gt; f.name == property }</b>
+<b class="nc">&nbsp;                                        val defaultValue = validCascade.kCascade.defaultValue.getOrNull(index)</b>
+<b class="nc">&nbsp;                                        if(defaultValue != null &amp;&amp; defaultValue != RESERVED) {</b>
+<b class="nc">&nbsp;                                            toUpdateFields += field</b>
+<b class="nc">&nbsp;                                            paramMapNew[field + &quot;New&quot;] = defaultValue</b>
+&nbsp;                                        }
+<b class="nc">&nbsp;                                    }</b>
+<b class="nc">&nbsp;                                }</b>
+<b class="nc">&nbsp;                            }.build().atomicTasks</b>
+<b class="nc">&nbsp;                        }</b>
+<b class="nc">&nbsp;                    }.flatten()) // 生成删除任务</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

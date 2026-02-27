@@ -1,0 +1,518 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrNewClassUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: IrNewClassUtilKt (com.kotlinorm.compiler.plugin.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrNewClassUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (26/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.3%
+  </span>
+  <span class="absValue">
+    (22/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.6%
+  </span>
+  <span class="absValue">
+    (139/141)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.3%
+  </span>
+  <span class="absValue">
+    (880/895)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.utils
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.helpers.IrTryBuilder.Companion.irTry
+&nbsp;import com.kotlinorm.compiler.helpers.dispatchReceiver
+&nbsp;import com.kotlinorm.compiler.helpers.filterByFqName
+&nbsp;import com.kotlinorm.compiler.helpers.invoke
+&nbsp;import com.kotlinorm.compiler.helpers.irListOf
+&nbsp;import com.kotlinorm.compiler.helpers.irMutableMapOf
+&nbsp;import com.kotlinorm.compiler.helpers.mapGetterSymbol
+&nbsp;import com.kotlinorm.compiler.helpers.referenceClass
+&nbsp;import com.kotlinorm.compiler.helpers.referenceFunctions
+&nbsp;import com.kotlinorm.compiler.helpers.toKClass
+&nbsp;import com.kotlinorm.compiler.helpers.valueArguments
+&nbsp;import com.kotlinorm.compiler.helpers.valueParameters
+&nbsp;import com.kotlinorm.compiler.plugin.utils.kTableForCondition.ignore
+&nbsp;import com.kotlinorm.compiler.plugin.utils.kTableForCondition.ignoreAnnotationValue
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBoolean
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irElseBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irEquals
+&nbsp;import org.jetbrains.kotlin.ir.builders.irExprBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGetField
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irReturn
+&nbsp;import org.jetbrains.kotlin.ir.builders.irSetField
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.builders.irWhen
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrFail
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.getClass
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.ir.util.isGetter
+&nbsp;import org.jetbrains.kotlin.ir.util.isSetter
+&nbsp;import org.jetbrains.kotlin.ir.util.kotlinFqName
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import kotlin.contracts.ExperimentalContracts
+&nbsp;
+&nbsp;context(_: IrPluginContext)
+&nbsp;val KronosSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;com.kotlinorm.Kronos&quot;)!!</b>
+&nbsp;
+&nbsp;context(_: IrPluginContext)
+&nbsp;private val getSafeValueSymbol
+<b class="fc">&nbsp;    get() = referenceFunctions(&quot;com.kotlinorm.utils&quot;, &quot;getSafeValue&quot;).first()</b>
+&nbsp;
+&nbsp;context(_: IrPluginContext)
+&nbsp;private val KTableIndexSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;com.kotlinorm.beans.dsl.KTableIndex&quot;)!!</b>
+&nbsp;
+&nbsp;context(_: IrPluginContext)
+&nbsp;val KPojoFqName
+<b class="fc">&nbsp;    get() = FqName(&quot;com.kotlinorm.interfaces.KPojo&quot;)</b>
+&nbsp;
+&nbsp;context(_: IrPluginContext)
+&nbsp;val KPojoSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;com.kotlinorm.interfaces.KPojo&quot;)!!</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun createPropertyGetter(
+&nbsp;    declaration: IrClass,
+&nbsp;    irFunction: IrFunction
+&nbsp;): IrBlockBody {
+<b class="fc">&nbsp;    val dispatcher = builder.irGet(irFunction.dispatchReceiverParameter!!)</b>
+<b class="fc">&nbsp;    return builder.irBlockBody {</b>
+<b class="fc">&nbsp;        +irReturn(</b>
+<b class="fc">&nbsp;            irWhen(</b>
+<b class="fc">&nbsp;                context.irBuiltIns.anyNType,</b>
+<b class="fc">&nbsp;                declaration.properties.map {</b>
+<b class="fc">&nbsp;                    irBranch(</b>
+<b class="fc">&nbsp;                        irEquals(</b>
+<b class="fc">&nbsp;                            irString(it.name.asString()),</b>
+<b class="fc">&nbsp;                            irGet(irFunction.parameters.valueParameters[0])</b>
+&nbsp;                        ),
+<b class="fc">&nbsp;                        dispatcher.getValue(it)</b>
+&nbsp;                    )
+<b class="fc">&nbsp;                }.toList() + irElseBranch(</b>
+<b class="fc">&nbsp;                    irNull()</b>
+&nbsp;                )
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun createPropertySetter(
+&nbsp;    declaration: IrClass,
+&nbsp;    irFunction: IrFunction
+&nbsp;): IrBlockBody {
+<b class="fc">&nbsp;    val dispatcher = builder.irGet(irFunction.dispatchReceiverParameter!!)</b>
+<b class="fc">&nbsp;    return builder.irBlockBody {</b>
+<b class="fc">&nbsp;        +irWhen(</b>
+<b class="fc">&nbsp;            context.irBuiltIns.unitType,</b>
+<b class="fc">&nbsp;            declaration.properties.map {</b>
+<b class="fc">&nbsp;                irBranch(</b>
+<b class="fc">&nbsp;                    irEquals(</b>
+<b class="fc">&nbsp;                        irString(it.name.asString()),</b>
+<b class="fc">&nbsp;                        irGet(irFunction.parameters.valueParameters[0])</b>
+&nbsp;                    ),
+<b class="fc">&nbsp;                    irBlock {</b>
+<b class="pc">&nbsp;                        +(dispatcher.setValue(</b>
+<b class="fc">&nbsp;                            it,</b>
+<b class="fc">&nbsp;                            irGet(irFunction.parameters.valueParameters[1])</b>
+<b class="fc">&nbsp;                        ) ?: irNull())</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }.toList() + irElseBranch(</b>
+<b class="fc">&nbsp;                irNull()</b>
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a new IrBlockBody that represents a function that returns the KClass of the given
+&nbsp; *
+&nbsp; * @param declaration The IrClass to be converted to a KClass.
+&nbsp; * @return the `IrBlockBody` that represents the function.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun createKClassFunction(
+&nbsp;    declaration: IrClass
+<b class="fc">&nbsp;) = builder.irBlockBody { +irReturn(declaration.symbol.toKClass()) }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a new IrBlockBody that represents a function that converts an instance of an IrClass
+&nbsp; * to a mutable map. The function takes in an IrClass and an IrFunction as parameters.
+&nbsp; *
+&nbsp; * @param declaration The IrClass to be converted to a map.
+&nbsp; * @param irFunction The IrFunction that contains the instance of the IrClass.
+&nbsp; * @return the `IrBlockBody` that represents the function.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun createToMapFunction(
+&nbsp;    declaration: IrClass,
+&nbsp;    irFunction: IrFunction
+<b class="fc">&nbsp;) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        irMutableMapOf(</b>
+<b class="fc">&nbsp;            context.irBuiltIns.stringType,</b>
+<b class="fc">&nbsp;            context.irBuiltIns.anyNType,</b>
+<b class="fc">&nbsp;            declaration.properties.filter {</b>
+<b class="fc">&nbsp;                return@filter !it.ignoreAnnotationValue().ignore(&quot;to_map&quot;) &amp;&amp;</b>
+<b class="fc">&nbsp;                        !it.ignoreAnnotationValue().ignore(&quot;all&quot;) &amp;&amp;</b>
+<b class="fc">&nbsp;                        !it.isSetter</b>
+<b class="fc">&nbsp;            }.associate {</b>
+<b class="fc">&nbsp;                irString(it.name.asString()) to dispatcher.getValue(it)</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates an IrBlockBody that sets the properties of an IrClass instance using values from a map.
+&nbsp; *
+&nbsp; * @param declaration the IrClass instance whose properties will be set
+&nbsp; * @param irFunction the IrFunction that contains the map parameter
+&nbsp; * @return an `IrBlockBody` that sets the properties of the IrClass instance using values from the map
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun createFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
+<b class="fc">&nbsp;    val map = irFunction.parameters.valueParameters.first()</b>
+<b class="fc">&nbsp;    return builder.irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.dispatchReceiverParameter!!)</b>
+<b class="fc">&nbsp;        +declaration.properties.toList().mapNotNull { property -&gt;</b>
+<b class="pc">&nbsp;            if (property.isDelegated || property.isGetter ||</b>
+<b class="fc">&nbsp;                property.ignoreAnnotationValue().ignore(&quot;from_map&quot;) ||</b>
+<b class="fc">&nbsp;                property.ignoreAnnotationValue().ignore(&quot;all&quot;)</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                return@mapNotNull null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            dispatcher.setValue(</b>
+<b class="fc">&nbsp;                property, mapGetterSymbol(</b>
+<b class="fc">&nbsp;                    irGet(map),</b>
+<b class="fc">&nbsp;                    irString(property.name.asString())</b>
+&nbsp;                )
+<b class="fc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        +irReturn(</b>
+<b class="fc">&nbsp;            irGet(irFunction.dispatchReceiverParameter!!)</b>
+&nbsp;        )
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a safe from map value function.
+&nbsp; *
+&nbsp; * @param declaration The IrClass declaration.
+&nbsp; * @param irFunction The IrFunction to create the safe from map value function for.
+&nbsp; * @return an `IrBlockBody` containing the generated code.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalContracts::class)
+&nbsp;context(context: IrPluginContext, builder: IrBuilderWithScope)
+&nbsp;fun createSafeFromMapValueFunction(declaration: IrClass, irFunction: IrFunction): IrBlockBody {
+<b class="fc">&nbsp;    val map = irFunction.parameters.valueParameters.first()</b>
+<b class="fc">&nbsp;    return builder.irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)</b>
+<b class="fc">&nbsp;        +irBlock {</b>
+<b class="fc">&nbsp;            declaration.properties.toList().mapNotNull { property -&gt;</b>
+<b class="pc">&nbsp;                if (property.isDelegated || property.isGetter ||</b>
+<b class="fc">&nbsp;                    property.ignoreAnnotationValue().ignore(&quot;from_map&quot;) ||</b>
+<b class="fc">&nbsp;                    property.ignoreAnnotationValue().ignore(&quot;all&quot;)</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    return@mapNotNull null</b>
+&nbsp;                }
+<b class="fc">&nbsp;                dispatcher.setValue(</b>
+<b class="fc">&nbsp;                    property, getSafeValueSymbol(</b>
+<b class="fc">&nbsp;                        irGet(irFunction.parameters.dispatchReceiver!!),</b>
+<b class="fc">&nbsp;                        property.backingField!!.type.classOrFail.toKClass(),</b>
+<b class="fc">&nbsp;                        irListOf(</b>
+<b class="fc">&nbsp;                            context.irBuiltIns.stringType,</b>
+<b class="fc">&nbsp;                            property.backingField!!.type.getClass()!!.superTypes.map { type -&gt;</b>
+<b class="fc">&nbsp;                                irString(type.getClass()!!.kotlinFqName.asString())</b>
+&nbsp;                            }
+&nbsp;                        ),
+<b class="fc">&nbsp;                        irGet(map),</b>
+<b class="fc">&nbsp;                        irString(property.name.asString()),</b>
+<b class="fc">&nbsp;                        irBoolean(property.hasAnnotation(SerializeAnnotationsFqName))</b>
+&nbsp;                    )
+<b class="pc">&nbsp;                )?.let {</b>
+<b class="fc">&nbsp;                    +irTry(it, context.irBuiltIns.unitType).catch().build()</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        +irReturn(dispatcher)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates an IrBlockBody that contains an IrReturn statement with the result of calling the
+&nbsp; * getTableName function with the given IrClass declaration as an argument.
+&nbsp; *
+&nbsp; * @param declaration the IrClass declaration to generate the table name for
+&nbsp; * @return an `IrBlockBody` containing an IrReturn statement with the generated table name
+&nbsp; */
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createTableName(kPojoDecl: IrClass) = builder.irExprBody(getTableName(kPojoDecl))</b>
+&nbsp;
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createTableComment(kPojoDecl: IrClass) = builder.irExprBody(kPojoDecl.getKDocString())</b>
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createKronosTableIndex(declaration: IrClass) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    val indexesAnnotations = declaration.annotations.filterByFqName(TableIndexAnnotationsFqName)</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        irListOf(</b>
+<b class="fc">&nbsp;            KTableIndexSymbol.defaultType,</b>
+<b class="fc">&nbsp;            indexesAnnotations.map {</b>
+<b class="fc">&nbsp;                KTableIndexSymbol.constructors.first()(</b>
+<b class="fc">&nbsp;                    *it.valueArguments.toTypedArray()</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a safe from map value function for the given declaration and irFunction.
+&nbsp; *
+&nbsp; * @param declaration The IrClass declaration.
+&nbsp; * @return an `IrBlockBody` containing the generated code.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createGetFieldsFunction(declaration: IrClass) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        irListOf(</b>
+<b class="fc">&nbsp;            fieldSymbol.owner.defaultType,</b>
+<b class="fc">&nbsp;            declaration.properties.filterNot {</b>
+<b class="fc">&nbsp;                it.ignoreAnnotationValue().ignore(&quot;all&quot;)</b>
+<b class="fc">&nbsp;            }.map {</b>
+<b class="fc">&nbsp;                getColumnName(it)</b>
+<b class="fc">&nbsp;            }.toList()</b>
+&nbsp;        )
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates an IrBlockBody that contains an IrReturn statement with the result of calling the
+&nbsp; * getValidStrategy function with the given IrClass declaration, globalCreateTimeSymbol, and
+&nbsp; * CreateTimeFqName as arguments.
+&nbsp; *
+&nbsp; * @param declaration The IrClass declaration to generate the IrBlockBody for.
+&nbsp; * @return an `IrBlockBody` containing the generated code.
+&nbsp; */
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createKronosCreateTime(declaration: IrClass) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        getValidStrategy(declaration, createTimeStrategySymbol, CreateTimeFqName)</b>
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates an IrBlockBody that contains an IrReturn statement with the result of calling the
+&nbsp; * getValidStrategy function with the given IrClass declaration, globalUpdateTimeSymbol, and
+&nbsp; * UpdateTimeFqName as arguments.
+&nbsp; *
+&nbsp; * @param declaration The IrClass declaration to generate the IrBlockBody for.
+&nbsp; * @return an `IrBlockBody` containing the generated code.
+&nbsp; */
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createKronosUpdateTime(declaration: IrClass) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        getValidStrategy(declaration, updateTimeStrategySymbol, UpdateTimeFqName)</b>
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Creates a function that returns a block body containing an irCall to createFieldListSymbol
+&nbsp; * with the properties of the given IrClass as arguments.
+&nbsp; *
+&nbsp; * @param declaration the IrClass whose properties will be used as arguments for createFieldListSymbol
+&nbsp; * @return an `IrBlockBody` containing an irCall to createFieldListSymbol
+&nbsp; */
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createKronosLogicDelete(declaration: IrClass) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        getValidStrategy(declaration, logicDeleteStrategySymbol, LogicDeleteFqName)</b>
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;context(_: IrPluginContext, builder: IrBuilderWithScope)
+<b class="fc">&nbsp;fun createKronosOptimisticLock(declaration: IrClass) = builder.irBlockBody {</b>
+<b class="fc">&nbsp;    +irReturn(</b>
+<b class="fc">&nbsp;        getValidStrategy(declaration, optimisticLockStrategySymbol, OptimisticLockFqName)</b>
+&nbsp;    )
+<b class="fc">&nbsp;}</b>
+&nbsp;
+&nbsp;context(builder: IrBuilderWithScope)
+&nbsp;fun IrExpression.getValue(property: IrProperty): IrExpression {
+<b class="pc">&nbsp;    return if (property.getter != null) {</b>
+<b class="fc">&nbsp;        property.getter!!.symbol(this@getValue)</b>
+&nbsp;    } else {
+<b class="nc">&nbsp;        builder.irGetField(</b>
+<b class="nc">&nbsp;            this@getValue, property.backingField!!</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;context(builder: IrBuilderWithScope)
+&nbsp;fun IrExpression.setValue(property: IrProperty, value: IrExpression): IrExpression? {
+<b class="fc">&nbsp;    with(builder) {</b>
+<b class="pc">&nbsp;        if (property.isDelegated) return null</b>
+<b class="fc">&nbsp;        return if (property.setter != null) {</b>
+<b class="fc">&nbsp;            property.setter!!.symbol(this@setValue, value)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            irSetField(</b>
+<b class="fc">&nbsp;                this@setValue, property.backingField!!, value</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

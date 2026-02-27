@@ -1,0 +1,591 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KTableForCondition</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: KTableForCondition (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KTableForCondition</td>
+<td class="coverageStat">
+  <span class="percent">
+    9.8%
+  </span>
+  <span class="absValue">
+    (5/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    14.8%
+  </span>
+  <span class="absValue">
+    (8/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.5%
+  </span>
+  <span class="absValue">
+    (40/88)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KTableForCondition$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    11.5%
+  </span>
+  <span class="absValue">
+    (6/52)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    16.4%
+  </span>
+  <span class="absValue">
+    (9/55)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    49.5%
+  </span>
+  <span class="absValue">
+    (47/95)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;@file:Suppress(&quot;INVISIBLE_MEMBER&quot;, &quot;INVISIBLE_REFERENCE&quot;, &quot;UNUSED&quot;, &quot;UnusedReceiverParameter&quot;)
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.UnsafeCriteria
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType
+&nbsp;import com.kotlinorm.functions.FunctionHandler
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;
+&nbsp;/**
+&nbsp; * kTableForCondition
+&nbsp; *
+&nbsp; * DSL Class of Kronos, which the compiler plugin use to generate the `where` code.
+&nbsp; *
+&nbsp; * @param T the type of the table
+&nbsp; */
+<b class="fc">&nbsp;open class KTableForCondition&lt;T : KPojo&gt; {</b>
+<b class="fc">&nbsp;    var criteria: Criteria? = null</b>
+<b class="fc">&nbsp;    var criteriaParamMap: MutableMap&lt;String, Any?&gt; = mutableMapOf()</b>
+<b class="fc">&nbsp;    val f: FunctionHandler = FunctionHandler</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Retrieves the value from the &#39;propParamMap&#39; based on the provided &#39;fieldName&#39;.
+&nbsp;     *
+&nbsp;     * @param fieldName the name of the field to retrieve the value for
+&nbsp;     * @return the value associated with the provided &#39;fieldName&#39;, or null if not found
+&nbsp;     */
+&nbsp;    fun getValueByFieldName(fieldName: String): Any? {
+<b class="fc">&nbsp;        return criteriaParamMap[fieldName]</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val &lt;T : Any?&gt; T?.value get() = this</b>
+&nbsp;
+&nbsp;    @get:JvmName(&quot;valueN&quot;)
+<b class="nc">&nbsp;    val &lt;T: Any&gt; T.value get() = this</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the iterable contains the element
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * This expression always return `true` whether the iterable contains the element or not
+&nbsp;     *
+&nbsp;     * @param other the element to check
+&nbsp;     * @return `true`
+&nbsp;     */
+&nbsp;
+<b class="nc">&nbsp;    operator fun &lt;K&gt; Iterable&lt;K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true</b>
+&nbsp;
+&nbsp;    @JvmName(&quot;containsOutK&quot;)
+<b class="nc">&nbsp;    operator fun &lt;K&gt; Collection&lt;K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun &lt;K&gt; Array&lt;K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true</b>
+&nbsp;
+&nbsp;    @JvmName(&quot;containsOutK&quot;)
+<b class="nc">&nbsp;    operator fun &lt;K&gt; Array&lt;out K?&gt;?.contains(other: @kotlin.internal.NoInfer K?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun IntArray?.contains(other: @kotlin.internal.NoInfer Number?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun LongArray?.contains(other: @kotlin.internal.NoInfer Number?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun FloatArray?.contains(other: @kotlin.internal.NoInfer Number?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun DoubleArray?.contains(other: @kotlin.internal.NoInfer Number?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun CharArray?.contains(other: @kotlin.internal.NoInfer Char?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun BooleanArray?.contains(other: @kotlin.internal.NoInfer Boolean?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun CharSequence?.contains(other: @kotlin.internal.NoInfer Char?) = true</b>
+&nbsp;    
+<b class="nc">&nbsp;    operator fun CharSequence?.contains(other: CharSequence): Boolean = true</b>
+&nbsp;
+<b class="nc">&nbsp;    val CharSequence?.contains get() = true</b>
+&nbsp;
+<b class="nc">&nbsp;    fun &lt;T&gt; T?.cast() = this as Any?</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun KPojo.minus(field: Any?) = this</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the Comparable&lt;*&gt; is greater than the specified
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return 1 whether which one is greater
+&nbsp;     *
+&nbsp;     * @param other The Comparable&lt;*&gt; to compare with.
+&nbsp;     * @param T The type of the Comparable&lt;*&gt; to compare with.
+&nbsp;     * @return `1`
+&nbsp;     */
+<b class="nc">&nbsp;    operator fun &lt;T&gt; Comparable&lt;T&gt;?.compareTo(other: Comparable&lt;T&gt;?) = 1</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the Comparable&lt;*&gt; is greater than the specified
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return 1 whether which one is greater
+&nbsp;     *
+&nbsp;     * @param other The Comparable&lt;*&gt; to compare with.
+&nbsp;     * @param T The type of the Comparable&lt;*&gt; to compare with.
+&nbsp;     * @param R The type of the Comparable&lt;*&gt; to compare with.
+&nbsp;     * @return `1`
+&nbsp;     */
+&nbsp;    @JvmName(&quot;compareToDifferentType&quot;)
+&nbsp;    @UnsafeCriteria(&quot;It&#39;s not safe to compare different Type, use `.cast()` to declare that the expression is safe.&quot;)
+<b class="nc">&nbsp;    operator fun &lt;T, R&gt; Comparable&lt;T&gt;?.compareTo(other: Comparable&lt;R&gt;?) = 1</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Check if the Comparable&lt;*&gt; is greater than the specified
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return 1 whether which one is greater
+&nbsp;     *
+&nbsp;     * @param other The Comparable&lt;*&gt; to compare with.
+&nbsp;     * @return `1`
+&nbsp;     */
+<b class="nc">&nbsp;    operator fun Any?.compareTo(other: Any?) = 1</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Set the no value strategy
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return 1 whether which strategy is used
+&nbsp;     *
+&nbsp;     * @param strategy The no value strategy
+&nbsp;     * @return `1`
+&nbsp;     */
+<b class="nc">&nbsp;    fun Boolean?.ifNoValue(strategy: NoValueStrategyType) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Take the value if the condition is true
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return the value itself whether which condition is true or not
+&nbsp;     *
+&nbsp;     * @param block The condition block
+&nbsp;     * @return The value itself
+&nbsp;     */
+<b class="nc">&nbsp;    fun Boolean?.takeIf(boolean: Boolean) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is like the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is like the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.like(other: String?) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is not like the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is not like the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.notLike(other: String?) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is between the specified range.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is between the range or not
+&nbsp;     *
+&nbsp;     * @param other The range to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.between(other: ClosedRange&lt;*&gt;?) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is not between the specified range.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is not between the range or not
+&nbsp;     *
+&nbsp;     * @param other The range to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.notBetween(other: ClosedRange&lt;*&gt;?) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value matches the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value matches the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.startsWith(other: String?) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value matches the specified string.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value matches the string or not
+&nbsp;     *
+&nbsp;     * @param other The string to compare with.
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.endsWith(other: String?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.regexp(other: String?) = true</b>
+&nbsp;
+<b class="nc">&nbsp;    infix fun Comparable&lt;*&gt;?.notRegexp(other: String?) = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    fun String?.asSql() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    fun Boolean?.asSql() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.eq get() = true</b>
+&nbsp;
+<b class="nc">&nbsp;    val KPojo.eq get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.neq get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.like get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.notLike get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.startsWith get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.endsWith get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Any?.isNull get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Any?.notNull get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.lt get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.gt get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.le get() = true</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if the given value is null.
+&nbsp;     *
+&nbsp;     * Only for compiler plugin to parse to [Criteria]
+&nbsp;     *
+&nbsp;     * Return `true` whether the value is null or not
+&nbsp;     *
+&nbsp;     * @return `true`
+&nbsp;     */
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.ge get() = true</b>
+&nbsp;
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.regexp get() = true</b>
+&nbsp;
+<b class="nc">&nbsp;    val Comparable&lt;*&gt;?.notRegexp get() = true</b>
+&nbsp;
+&nbsp;    fun buildContainsStr(str: String?): String? {
+<b class="pc">&nbsp;        return if(str == null) null</b>
+<b class="fc">&nbsp;        else &quot;%$str%&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Runs the given block on a new instance of [KTableForCondition] with the given [T] object as the data source.
+&nbsp;         *
+&nbsp;         * @param T The type of the KPojo object.
+&nbsp;         * @param block The block of code to be applied to the [KTableForCondition] instance.
+&nbsp;         * @return The resulting [KTableForCondition] instance after applying the block.
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; T.afterFilter(block: KTableForCondition&lt;T&gt;.(T) -&gt; Unit) =
+<b class="fc">&nbsp;            KTableForCondition&lt;T&gt;().block(this)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

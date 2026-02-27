@@ -1,0 +1,249 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosCommandLineProcessor</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosCommandLineProcessor (com.kotlinorm.compiler.plugin)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosCommandLineProcessor</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.4%
+  </span>
+  <span class="absValue">
+    (19/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (88/110)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosCommandLineProcessor$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (21/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.4%
+  </span>
+  <span class="absValue">
+    (90/112)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin
+&nbsp;
+&nbsp;import com.google.auto.service.AutoService
+&nbsp;import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
+&nbsp;import org.jetbrains.kotlin.compiler.plugin.CliOption
+&nbsp;import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
+&nbsp;import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfiguration
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfigurationKey
+&nbsp;
+<b class="fc">&nbsp;@OptIn(ExperimentalCompilerApi::class)</b>
+&nbsp;@AutoService(CommandLineProcessor::class)
+&nbsp;class KronosCommandLineProcessor : CommandLineProcessor {
+&nbsp;    companion object {
+&nbsp;        const val OPTION_DEBUG_MODE = &quot;debug&quot;
+&nbsp;        const val OPTION_DEBUG_INFO_PATH = &quot;debug-info-path&quot;
+&nbsp;
+<b class="fc">&nbsp;        val ARG_OPTION_DEBUG_MODE = CompilerConfigurationKey&lt;Boolean&gt;(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE)</b>
+<b class="fc">&nbsp;        val ARG_OPTION_DEBUG_INFO_PATH = CompilerConfigurationKey&lt;String&gt;(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    override val pluginId: String = &quot;kronos-compiler-plugin&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    override val pluginOptions: Collection&lt;AbstractCliOption&gt; = listOf(</b>
+<b class="fc">&nbsp;        CliOption(</b>
+<b class="fc">&nbsp;            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE,</b>
+<b class="fc">&nbsp;            valueDescription = &quot;true or false&quot;,</b>
+<b class="fc">&nbsp;            description = &quot;Enable debug mode, print debug information&quot;,</b>
+<b class="fc">&nbsp;            required = false,</b>
+&nbsp;        ),
+<b class="fc">&nbsp;        CliOption(</b>
+<b class="fc">&nbsp;            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH,</b>
+<b class="fc">&nbsp;            valueDescription = &quot;path&quot;,</b>
+<b class="fc">&nbsp;            description = &quot;Debug information output path&quot;,</b>
+<b class="fc">&nbsp;            required = false,</b>
+&nbsp;        )
+&nbsp;    )
+&nbsp;
+&nbsp;    override fun processOption(
+&nbsp;        option: AbstractCliOption,
+&nbsp;        value: String,
+&nbsp;        configuration: CompilerConfiguration
+&nbsp;    ) {
+<b class="fc">&nbsp;        println(&quot;processOption:: option=$option value=$value&quot;)</b>
+<b class="fc">&nbsp;        return when (option.optionName) {</b>
+<b class="pc">&nbsp;            OPTION_DEBUG_MODE -&gt; configuration.put(</b>
+<b class="fc">&nbsp;                ARG_OPTION_DEBUG_MODE, value.lowercase() == &quot;true&quot;)</b>
+<b class="nc">&nbsp;            OPTION_DEBUG_INFO_PATH -&gt; configuration.put(</b>
+<b class="nc">&nbsp;                ARG_OPTION_DEBUG_INFO_PATH, value)</b>
+<b class="nc">&nbsp;            else -&gt; throw IllegalArgumentException(&quot;Unexpected config option ${option.optionName}&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

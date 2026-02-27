@@ -1,0 +1,584 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UpdateClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.update</a>
+</div>
+
+<h1>Coverage Summary for Class: UpdateClause (com.kotlinorm.orm.update)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UpdateClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    56.5%
+  </span>
+  <span class="absValue">
+    (13/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.7%
+  </span>
+  <span class="absValue">
+    (27/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (116/147)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.2%
+  </span>
+  <span class="absValue">
+    (738/1022)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">UpdateClause$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (5/10)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (5/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    52.5%
+  </span>
+  <span class="absValue">
+    (53/101)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    54.5%
+  </span>
+  <span class="absValue">
+    (18/33)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.7%
+  </span>
+  <span class="absValue">
+    (27/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.1%
+  </span>
+  <span class="absValue">
+    (121/157)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.4%
+  </span>
+  <span class="absValue">
+    (791/1123)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.update
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.cache.fieldsMapCache
+&nbsp;import com.kotlinorm.cache.kPojoAllColumnsCache
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.cache.kPojoCreateTimeCache
+&nbsp;import com.kotlinorm.cache.kPojoLogicDeleteCache
+&nbsp;import com.kotlinorm.cache.kPojoOptimisticLockCache
+&nbsp;import com.kotlinorm.cache.kPojoUpdateTimeCache
+&nbsp;import com.kotlinorm.database.SqlManager.getUpdateSql
+&nbsp;import com.kotlinorm.database.SqlManager.quoted
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.cascade.CascadeUpdateClause
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.types.ToSet
+&nbsp;import com.kotlinorm.utils.ConditionSqlBuilder
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.Extensions.asSql
+&nbsp;import com.kotlinorm.utils.Extensions.eq
+&nbsp;import com.kotlinorm.utils.Extensions.toCriteria
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.getDefaultBoolean
+&nbsp;import com.kotlinorm.utils.processParams
+&nbsp;import com.kotlinorm.utils.toLinkedSet
+&nbsp;
+&nbsp;/**
+&nbsp; * Update Clause
+&nbsp; *
+&nbsp; * Creates an update clause for the given pojo.
+&nbsp; *
+&nbsp; * @param T the type of the pojo
+&nbsp; *
+&nbsp; * @property pojo the pojo for the update
+&nbsp; * @param setUpdateFields the fields to update
+&nbsp; * @author yf, OUSC
+&nbsp; */
+&nbsp;class UpdateClause&lt;T : KPojo&gt;(
+<b class="fc">&nbsp;    private val pojo: T,</b>
+<b class="fc">&nbsp;    private var setUpdateFields: ToSelect&lt;T, Any?&gt; = null</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private var paramMap = pojo.toDataMap()</b>
+<b class="fc">&nbsp;    private var tableName = pojo.__tableName</b>
+<b class="fc">&nbsp;    private var kClass = pojo.kClass()</b>
+<b class="fc">&nbsp;    private var createTimeStrategy = kPojoCreateTimeCache[kClass]</b>
+<b class="fc">&nbsp;    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]</b>
+<b class="fc">&nbsp;    internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]</b>
+<b class="fc">&nbsp;    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]</b>
+<b class="fc">&nbsp;    internal var allFields = kPojoAllFieldsCache[kClass]!!</b>
+<b class="fc">&nbsp;    internal var allColumns = kPojoAllColumnsCache[kClass]!!</b>
+<b class="fc">&nbsp;    internal var toUpdateFields = linkedSetOf&lt;Field&gt;()</b>
+<b class="nc">&nbsp;    internal var condition: Criteria? = null</b>
+<b class="fc">&nbsp;    internal var paramMapNew = mutableMapOf&lt;Field, Any?&gt;()</b>
+<b class="fc">&nbsp;    private val plusAssigns = mutableListOf&lt;Pair&lt;Field, String&gt;&gt;()</b>
+<b class="fc">&nbsp;    private val minusAssigns = mutableListOf&lt;Pair&lt;Field, String&gt;&gt;()</b>
+<b class="fc">&nbsp;    private var cascadeEnabled = true</b>
+<b class="nc">&nbsp;    internal var cascadeAllowed: Set&lt;Field&gt;? = null</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 初始化函数：用于配置更新字段和构建参数映射。
+&nbsp;     * 该函数不接受参数，也不返回任何值。
+&nbsp;     * 主要完成以下功能：
+&nbsp;     * 1. 如果设置了更新字段，则对更新字段进行配置，并添加到更新字段列表中；
+&nbsp;     * 2. 遍历更新字段列表，将字段名拼接为&quot;New&quot;格式，并映射到参数映射表中。
+&nbsp;     */
+<b class="fc">&nbsp;    init {</b>
+&nbsp;        // 如果设置了更新字段，则进行字段配置和更新字段列表的构建
+<b class="fc">&nbsp;        if (setUpdateFields != null) {</b>
+<b class="fc">&nbsp;            pojo.afterSelect {</b>
+<b class="fc">&nbsp;                setUpdateFields!!(it) // 配置更新字段</b>
+<b class="fc">&nbsp;                toUpdateFields += fields // 将当前字段添加到更新字段列表</b>
+&nbsp;            }
+&nbsp;            // 为每个更新字段在参数映射表中创建&quot;New&quot;版本的映射
+<b class="fc">&nbsp;            toUpdateFields.forEach {</b>
+<b class="fc">&nbsp;                paramMapNew[it + &quot;New&quot;] = paramMap[it.name]</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the new value for the update clause.
+&nbsp;     *
+&nbsp;     * @param newValue the new value to be set
+&nbsp;     * @throws EmptyFieldsException if the new value is null
+&nbsp;     * @return the updated UpdateClause object
+&nbsp;     */
+&nbsp;    fun set(newValue: ToSet&lt;T, Unit&gt;): UpdateClause&lt;T&gt; {
+<b class="pc">&nbsp;        newValue ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        pojo.afterSet {</b>
+<b class="fc">&nbsp;            newValue(it)</b>
+<b class="fc">&nbsp;            val plusAssign = plusAssignFields</b>
+<b class="fc">&nbsp;            val minusAssign = minusAssignFields</b>
+&nbsp;
+<b class="fc">&nbsp;            plusAssign.forEach { assign -&gt;</b>
+<b class="fc">&nbsp;                val assignField = assign.first</b>
+<b class="fc">&nbsp;                val assignKey = assignField.name + &quot;2PlusNew&quot;</b>
+<b class="fc">&nbsp;                plusAssigns += assignField to assignKey</b>
+<b class="fc">&nbsp;                paramMapNew[assignField + &quot;2PlusNew&quot;] = assign.second</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;            minusAssign.forEach { assign -&gt;</b>
+<b class="nc">&nbsp;                val assignField = assign.first</b>
+<b class="nc">&nbsp;                val assignKey = assignField.name + &quot;2MinusNew&quot;</b>
+<b class="nc">&nbsp;                minusAssigns += assignField to assignKey</b>
+<b class="nc">&nbsp;                paramMapNew[assignField + &quot;2MinusNew&quot;] = assign.second</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;
+<b class="fc">&nbsp;            toUpdateFields += fields.filter { field -&gt; field !in plusAssign.map { item -&gt; item.first } + minusAssign.map { item -&gt; item.first } }</b>
+<b class="fc">&nbsp;            paramMapNew.putAll(fieldParamMap.filter { field -&gt; field.key !in plusAssign.map { item -&gt; item.first } + minusAssign.map { item -&gt; item.first } }</b>
+<b class="fc">&nbsp;                .map { e -&gt; e.key + &quot;New&quot; to e.value })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): UpdateClause&lt;T&gt; {
+<b class="nc">&nbsp;        cascadeEnabled = enabled</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(someFields: ToReference&lt;T, Any?&gt;): UpdateClause&lt;T&gt; {
+<b class="nc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        cascadeEnabled = true</b>
+<b class="nc">&nbsp;        pojo.afterReference {</b>
+<b class="nc">&nbsp;            someFields(it)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            cascadeAllowed = fields.toSet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the condition for the update clause based on the provided fields.
+&nbsp;     *
+&nbsp;     * @param someFields the fields to set the condition for
+&nbsp;     * @throws EmptyFieldsException if the provided fields are null
+&nbsp;     * @return the updated UpdateClause object
+&nbsp;     */
+&nbsp;    fun by(someFields: ToSelect&lt;T, Any?&gt;): UpdateClause&lt;T&gt; {
+<b class="pc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        pojo.afterSelect {</b>
+<b class="fc">&nbsp;            someFields(it)</b>
+<b class="pc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // 根据fields中的字段及其值构建删除条件
+<b class="pc">&nbsp;            if (condition == null) {</b>
+<b class="fc">&nbsp;                condition = fields.map { field -&gt; field.eq(paramMap[field.name]) }.toCriteria()</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                condition!!.children.add(</b>
+<b class="nc">&nbsp;                    fields.map { field -&gt; field.eq(paramMap[field.name]) }.toCriteria()</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the condition for the update clause based on the provided update condition.
+&nbsp;     *
+&nbsp;     * @param updateCondition the condition for the update clause. Defaults to null.
+&nbsp;     * @return the updated UpdateClause object.
+&nbsp;     */
+<b class="nc">&nbsp;    fun where(updateCondition: ToFilter&lt;T, Boolean?&gt; = null): UpdateClause&lt;T&gt; {</b>
+<b class="pc">&nbsp;        if (updateCondition == null) return this</b>
+<b class="fc">&nbsp;        pojo.afterFilter {</b>
+<b class="fc">&nbsp;            criteriaParamMap = paramMap // 更新 propParamMap</b>
+<b class="fc">&nbsp;            updateCondition(it)</b>
+<b class="pc">&nbsp;            if (criteria == null) return@afterFilter</b>
+<b class="pc">&nbsp;            if (condition == null) {</b>
+<b class="fc">&nbsp;                condition = criteria</b>
+&nbsp;            } else {
+&nbsp;                // 如果已经有条件，则将新条件添加到现有条件中
+<b class="nc">&nbsp;                condition!!.children.addAll(criteria!!.children)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): UpdateClause&lt;T&gt; {
+<b class="nc">&nbsp;        paramMapNew.putAll(pairs.map { Field(it.first) to it.second })</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds a KronosAtomicTask based on the current state of the UpdateClause.
+&nbsp;     *
+&nbsp;     * This function generates a KronosAtomicTask object based on the current state of the UpdateClause. It performs the following steps:
+&nbsp;     * 1. If `isExcept` is true, removes the fields in `toUpdateFields` from `allFields` and updates `paramMapNew` accordingly.
+&nbsp;     * 2. If `toUpdateFields` is empty, updates `toUpdateFields` with all the fields in `allFields` and updates `paramMapNew` accordingly.
+&nbsp;     * 3. Sets the logic delete strategy by removing the field from `toUpdateFields`, updating `paramMapNew`, and modifying the `condition` accordingly.
+&nbsp;     * 4. Sets the update time strategy by updating `paramMapNew` with the new value.
+&nbsp;     * 5. Constructs the SQL query string for the update operation.
+&nbsp;     * 6. Constructs the parameter map for the SQL query.
+&nbsp;     * 7. Merges the `paramMapNew` into the `paramMap`.
+&nbsp;     * 8. Returns a KronosAtomicTask object with the constructed SQL query, parameter map, and operation type.
+&nbsp;     *
+&nbsp;     * @return The constructed KronosAtomicTask.
+&nbsp;     */
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;        if (condition == null) {</b>
+&nbsp;            // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
+<b class="fc">&nbsp;            condition = allFields.asSequence().filter { it.isColumn }.mapNotNull { field -&gt;</b>
+<b class="fc">&nbsp;                field.eq(paramMap[field.name]).takeIf { it.value != null }</b>
+<b class="fc">&nbsp;            }.toList().toCriteria()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 如果没有指定字段需要更新，则更新所有字段
+<b class="pc">&nbsp;        if (toUpdateFields.isEmpty() &amp;&amp; plusAssigns.isEmpty() &amp;&amp; minusAssigns.isEmpty()) {</b>
+<b class="fc">&nbsp;            toUpdateFields = allFields</b>
+&nbsp;            // 为所有字段生成新的参数映射
+<b class="fc">&nbsp;            toUpdateFields.forEach {</b>
+<b class="fc">&nbsp;                paramMapNew[it + &quot;New&quot;] = processParams(wrapper.orDefault(), it, paramMap[it.name])</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
+<b class="fc">&nbsp;        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value -&gt;</b>
+<b class="fc">&nbsp;            toUpdateFields -= field</b>
+<b class="fc">&nbsp;            paramMapNew -= field + &quot;New&quot;</b>
+&nbsp;            // 构建逻辑删除的条件SQL
+<b class="fc">&nbsp;            condition = listOfNotNull(</b>
+<b class="fc">&nbsp;                condition, &quot;${field.quoted(wrapper.orDefault())} = $value&quot;.asSql()</b>
+<b class="fc">&nbsp;            ).toCriteria()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        createTimeStrategy?.apply {</b>
+<b class="fc">&nbsp;            toUpdateFields -= field</b>
+<b class="fc">&nbsp;            paramMapNew -= field + &quot;New&quot;</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+&nbsp;        // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
+<b class="fc">&nbsp;        updateTimeStrategy?.execute(true) { field, value -&gt;</b>
+<b class="fc">&nbsp;            toUpdateFields += field</b>
+<b class="fc">&nbsp;            paramMapNew[field + &quot;New&quot;] = processParams(wrapper.orDefault(), field, value)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        toUpdateFields = toUpdateFields.asSequence().distinctBy { it.columnName }.filter { it.isColumn }.toList().toLinkedSet()</b>
+&nbsp;
+<b class="pc">&nbsp;        optimisticStrategy?.execute { field, _ -&gt;</b>
+<b class="nc">&nbsp;            if (toUpdateFields.any { it.columnName == field.columnName }) {</b>
+<b class="nc">&nbsp;                throw IllegalArgumentException(&quot;The version field cannot be updated manually.&quot;)</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            plusAssigns += field to field.name + &quot;2PlusNew&quot;</b>
+<b class="nc">&nbsp;            paramMapNew[field + &quot;2PlusNew&quot;] = 1</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 构建完整的更新SQL语句，包括条件部分
+<b class="fc">&nbsp;        val (whereClauseSql, paramMap) = ConditionSqlBuilder.buildConditionSqlWithParams(</b>
+<b class="fc">&nbsp;            KOperationType.UPDATE,</b>
+<b class="fc">&nbsp;            wrapper,</b>
+<b class="fc">&nbsp;            condition</b>
+&nbsp;        )
+<b class="fc">&nbsp;            .toWhereClause()</b>
+&nbsp;
+<b class="fc">&nbsp;        val sql = getUpdateSql(</b>
+<b class="fc">&nbsp;            wrapper.orDefault(),</b>
+<b class="fc">&nbsp;            tableName,</b>
+<b class="fc">&nbsp;            toUpdateFields.toList(),</b>
+<b class="fc">&nbsp;            whereClauseSql,</b>
+<b class="fc">&nbsp;            plusAssigns,</b>
+<b class="fc">&nbsp;            minusAssigns</b>
+&nbsp;        )
+&nbsp;
+&nbsp;        // 合并参数映射，准备执行SQL所需的参数
+<b class="fc">&nbsp;        val fieldMap = fieldsMapCache[kClass]!!</b>
+<b class="fc">&nbsp;        paramMapNew.forEach { (key, value) -&gt;</b>
+<b class="fc">&nbsp;            val field = fieldMap[key.name]</b>
+<b class="pc">&nbsp;            if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                paramMap[key.name] = processParams(wrapper.orDefault(), field, value)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                paramMap[key.name] = value</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+&nbsp;        // 返回构建好的KronosAtomicTask实例
+<b class="fc">&nbsp;        val rootTask = KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;            sql,</b>
+<b class="fc">&nbsp;            paramMap,</b>
+<b class="fc">&nbsp;            operationType = KOperationType.UPDATE,</b>
+<b class="fc">&nbsp;            UpdateClauseInfo(</b>
+<b class="fc">&nbsp;                kClass,</b>
+<b class="fc">&nbsp;                tableName,</b>
+<b class="fc">&nbsp;                whereClauseSql</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        return CascadeUpdateClause.build(</b>
+<b class="fc">&nbsp;            cascadeEnabled,</b>
+<b class="fc">&nbsp;            cascadeAllowed,</b>
+<b class="fc">&nbsp;            pojo,</b>
+<b class="fc">&nbsp;            kClass,</b>
+<b class="fc">&nbsp;            paramMap.toMap(),</b>
+<b class="fc">&nbsp;            toUpdateFields,</b>
+<b class="fc">&nbsp;            whereClauseSql,</b>
+<b class="fc">&nbsp;            rootTask</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes the update operation using the provided data source wrapper.
+&nbsp;     *
+&nbsp;     * @param wrapper The data source wrapper to use for the update operation. If not provided, a default data source wrapper will be used.
+&nbsp;     * @return The result of the update operation.
+&nbsp;     */
+<b class="nc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="nc">&nbsp;        return build().execute(wrapper)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Sets the given row data for each update clause in the list.
+&nbsp;         *
+&nbsp;         * @param rowData the row data to set
+&nbsp;         * @return a list of UpdateClause objects with the updated row data
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.set(rowData: ToSet&lt;T, Unit&gt;): List&lt;UpdateClause&lt;T&gt;&gt; {
+<b class="fc">&nbsp;            return map { it.set(rowData) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.cascade(
+&nbsp;            enabled: Boolean
+&nbsp;        ): List&lt;UpdateClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.cascade(
+&nbsp;            someFields: ToReference&lt;T, Any?&gt;
+&nbsp;        ): List&lt;UpdateClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `by` operation to each update clause in the list based on the provided fields.
+&nbsp;         *
+&nbsp;         * @param someFields the fields to set the condition for
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.by(someFields: ToSelect&lt;T, Any?&gt;): List&lt;UpdateClause&lt;T&gt;&gt; {
+<b class="fc">&nbsp;            return map { it.by(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `where` operation to each update clause in the list based on the provided update condition.
+&nbsp;         *
+&nbsp;         * @param updateCondition the condition for the update clause. Defaults to null.
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.where(updateCondition: ToFilter&lt;T, Boolean?&gt; = null): List&lt;UpdateClause&lt;T&gt;&gt; {</b>
+<b class="fc">&nbsp;            return map { it.where(updateCondition) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds a KronosAtomicBatchTask from a list of UpdateClause objects.
+&nbsp;         *
+&nbsp;         * @param T The type of KPojo objects in the list.
+&nbsp;         * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
+&nbsp;         */
+<b class="fc">&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;            return map { it.build(wrapper) }.merge()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Executes a list of UpdateClause objects and returns the result of the execution.
+&nbsp;         *
+&nbsp;         * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
+&nbsp;         * @return The KronosOperationResult of the execution.
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpdateClause&lt;T&gt;&gt;.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="nc">&nbsp;            return build().execute(wrapper)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

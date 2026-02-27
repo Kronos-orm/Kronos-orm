@@ -1,0 +1,485 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UpsertClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.upsert</a>
+</div>
+
+<h1>Coverage Summary for Class: UpsertClause (com.kotlinorm.orm.upsert)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UpsertClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    65%
+  </span>
+  <span class="absValue">
+    (13/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42%
+  </span>
+  <span class="absValue">
+    (21/50)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.5%
+  </span>
+  <span class="absValue">
+    (89/130)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.8%
+  </span>
+  <span class="absValue">
+    (548/833)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">UpsertClause$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.1%
+  </span>
+  <span class="absValue">
+    (4/7)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    57.1%
+  </span>
+  <span class="absValue">
+    (4/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58%
+  </span>
+  <span class="absValue">
+    (40/69)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    63%
+  </span>
+  <span class="absValue">
+    (17/27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    42%
+  </span>
+  <span class="absValue">
+    (21/50)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.9%
+  </span>
+  <span class="absValue">
+    (93/137)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.2%
+  </span>
+  <span class="absValue">
+    (588/902)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.upsert
+&nbsp;
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.cache.fieldsMapCache
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.cache.kPojoCreateTimeCache
+&nbsp;import com.kotlinorm.cache.kPojoLogicDeleteCache
+&nbsp;import com.kotlinorm.cache.kPojoOptimisticLockCache
+&nbsp;import com.kotlinorm.cache.kPojoUpdateTimeCache
+&nbsp;import com.kotlinorm.database.ConflictResolver
+&nbsp;import com.kotlinorm.database.SqlManager
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType
+&nbsp;import com.kotlinorm.enums.PessimisticLock
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.insert.insert
+&nbsp;import com.kotlinorm.orm.select.select
+&nbsp;import com.kotlinorm.orm.update.update
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.Extensions.eq
+&nbsp;import com.kotlinorm.utils.Extensions.toCriteria
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.getDefaultBoolean
+&nbsp;import com.kotlinorm.utils.processParams
+&nbsp;import com.kotlinorm.utils.toLinkedSet
+&nbsp;
+&nbsp;/**
+&nbsp; * Update Clause
+&nbsp; *
+&nbsp; * Creates an update clause for the given pojo.
+&nbsp; *
+&nbsp; * @param T the type of the pojo
+&nbsp; *
+&nbsp; * @property pojo the pojo for the update
+&nbsp; * @param setUpsertFields the fields to update
+&nbsp; * @author Jieyao Lu, OUSC
+&nbsp; */
+&nbsp;class UpsertClause&lt;T : KPojo&gt;(
+<b class="fc">&nbsp;    private val pojo: T,</b>
+<b class="fc">&nbsp;    private var setUpsertFields: ToSelect&lt;T, Any?&gt; = null</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private var paramMap = pojo.toDataMap()</b>
+<b class="fc">&nbsp;    private var tableName = pojo.__tableName</b>
+<b class="fc">&nbsp;    private var kClass = pojo.kClass()</b>
+<b class="fc">&nbsp;    private var createTimeStrategy = kPojoCreateTimeCache[kClass]</b>
+<b class="fc">&nbsp;    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]</b>
+<b class="fc">&nbsp;    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]</b>
+<b class="fc">&nbsp;    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]</b>
+<b class="fc">&nbsp;    internal var allFields = kPojoAllFieldsCache[kClass]!!</b>
+&nbsp;    private var onConflict = false
+<b class="fc">&nbsp;    private var toInsertFields = linkedSetOf&lt;Field&gt;()</b>
+<b class="fc">&nbsp;    private var toUpdateFields = linkedSetOf&lt;Field&gt;()</b>
+<b class="fc">&nbsp;    private var onFields = linkedSetOf&lt;Field&gt;()</b>
+<b class="fc">&nbsp;    private var cascadeEnabled = true</b>
+&nbsp;    private var cascadeAllowed: Set&lt;Field&gt;? = null
+&nbsp;    private var lock: PessimisticLock? = null
+<b class="fc">&nbsp;    private var paramMapNew = mutableMapOf&lt;Field, Any?&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        if (setUpsertFields != null) {</b>
+<b class="fc">&nbsp;            pojo.afterSelect {</b>
+<b class="fc">&nbsp;                setUpsertFields!!(it)</b>
+<b class="pc">&nbsp;                if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                    throw EmptyFieldsException()</b>
+&nbsp;                }
+<b class="fc">&nbsp;                toUpdateFields += fields</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Set the fields on which the update clause will be applied.
+&nbsp;     *
+&nbsp;     * @param someFields on which the update clause will be applied
+&nbsp;     * @throws EmptyFieldsException if the new value is null
+&nbsp;     * @return the upsert UpdateClause object
+&nbsp;     */
+&nbsp;    fun on(someFields: ToSelect&lt;T, Any?&gt;): UpsertClause&lt;T&gt; {
+<b class="pc">&nbsp;        if (null == someFields) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        pojo.afterSelect {</b>
+<b class="fc">&nbsp;            someFields(it)</b>
+<b class="pc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            onFields += fields.toSet()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * On duplicate key update
+&nbsp;     *
+&nbsp;     * **Please define constraints before using onConflict**
+&nbsp;     *
+&nbsp;     * @return the upsert UpdateClause object
+&nbsp;     */
+&nbsp;    fun onConflict(): UpsertClause&lt;T&gt; {
+<b class="fc">&nbsp;        onConflict = true</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): UpsertClause&lt;T&gt; {
+<b class="nc">&nbsp;        this.cascadeEnabled = enabled</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(someFields: ToReference&lt;T, Any?&gt;): UpsertClause&lt;T&gt; {
+<b class="nc">&nbsp;        if (someFields == null) throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        cascadeEnabled = true</b>
+<b class="nc">&nbsp;        pojo.afterReference {</b>
+<b class="nc">&nbsp;            someFields(it)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            cascadeAllowed = fields.toSet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun lock(lock: PessimisticLock = PessimisticLock.X): UpsertClause&lt;T&gt; {</b>
+<b class="nc">&nbsp;        optimisticStrategy?.enabled = false</b>
+<b class="nc">&nbsp;        this.lock = lock</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): UpsertClause&lt;T&gt; {
+<b class="nc">&nbsp;        paramMapNew.putAll(pairs.map { Field(it.first) to it.second })</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="fc">&nbsp;        return build(wrapper).execute(wrapper)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (toInsertFields.isEmpty()) {</b>
+<b class="fc">&nbsp;            toInsertFields = allFields.filter { null != paramMap[it.name] }.toLinkedSet()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (toUpdateFields.isEmpty()) {</b>
+<b class="fc">&nbsp;            toUpdateFields = allFields</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 合并参数映射，准备执行SQL所需的参数
+<b class="fc">&nbsp;        val fieldMap = fieldsMapCache[kClass]!!</b>
+<b class="fc">&nbsp;        paramMapNew.forEach { (key, value) -&gt;</b>
+<b class="nc">&nbsp;            val field = fieldMap[key.name]</b>
+<b class="nc">&nbsp;            if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                paramMap[key.name] = processParams(wrapper.orDefault(), field, value)</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                paramMap[key.name] = value</b>
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        val paramMap = (paramMap.filter { it.key in (toUpdateFields + toInsertFields + onFields).map { f -&gt; f.name } }).toMutableMap()</b>
+&nbsp;
+<b class="fc">&nbsp;        if (onConflict) {</b>
+<b class="fc">&nbsp;            onFields += toUpdateFields</b>
+&nbsp;            // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
+<b class="pc">&nbsp;            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value -&gt;</b>
+<b class="fc">&nbsp;                toInsertFields += field</b>
+<b class="fc">&nbsp;                paramMap[field.name] = value</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            createTimeStrategy?.execute{ field, value -&gt;</b>
+<b class="fc">&nbsp;                onFields -= field</b>
+<b class="fc">&nbsp;                toInsertFields += field</b>
+<b class="fc">&nbsp;                paramMap[field.name] = value</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // 设置更新时间策略，将更新时间字段添加到更新字段列表，并更新参数映射
+<b class="pc">&nbsp;            updateTimeStrategy?.execute(true) { field, value -&gt;</b>
+<b class="fc">&nbsp;                onFields -= field</b>
+<b class="fc">&nbsp;                toInsertFields += field</b>
+<b class="fc">&nbsp;                toUpdateFields += field</b>
+<b class="fc">&nbsp;                paramMap[field.name] = value</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;                SqlManager.getOnConflictSql(</b>
+<b class="fc">&nbsp;                    dataSource, ConflictResolver(</b>
+<b class="fc">&nbsp;                        tableName,</b>
+<b class="fc">&nbsp;                        onFields,</b>
+<b class="fc">&nbsp;                        toUpdateFields,</b>
+<b class="fc">&nbsp;                        toInsertFields</b>
+&nbsp;                    )
+&nbsp;                ),
+<b class="fc">&nbsp;                paramMap,</b>
+<b class="fc">&nbsp;                operationType = KOperationType.UPSERT</b>
+<b class="fc">&nbsp;            ).toKronosActionTask()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            return listOf&lt;KronosAtomicActionTask&gt;().toKronosActionTask().doBeforeExecute {</b>
+&nbsp;
+<b class="pc">&nbsp;                lock = lock ?: PessimisticLock.X.takeIf { optimisticStrategy?.enabled != true }</b>
+&nbsp;
+<b class="pc">&nbsp;                if ((pojo.select()</b>
+<b class="fc">&nbsp;                        .cascade(enabled = false)</b>
+<b class="fc">&nbsp;                        .lock(lock)</b>
+<b class="fc">&nbsp;                        .apply {</b>
+<b class="fc">&nbsp;                            selectFields =</b>
+<b class="fc">&nbsp;                                linkedSetOf(Field(&quot;COUNT(1)&quot;, &quot;COUNT(1)&quot;, type = KColumnType.CUSTOM_CRITERIA_SQL))</b>
+<b class="fc">&nbsp;                            selectAll = false</b>
+<b class="pc">&nbsp;                            condition = onFields.filter { it.isColumn &amp;&amp; it.name in paramMap.keys }</b>
+<b class="fc">&nbsp;                                .map {</b>
+<b class="fc">&nbsp;                                    it.eq(paramMap[it.name]).apply {</b>
+<b class="fc">&nbsp;                                        noValueStrategyType = NoValueStrategyType.JudgeNull</b>
+<b class="fc">&nbsp;                                    }</b>
+<b class="fc">&nbsp;                                }.toCriteria()</b>
+<b class="fc">&nbsp;                            logicDeleteStrategy = null</b>
+<b class="fc">&nbsp;                        }</b>
+<b class="fc">&nbsp;                        .queryOneOrNull&lt;Int&gt;() ?: 0)</b>
+<b class="fc">&nbsp;                    &gt; 0</b>
+&nbsp;                ) {
+<b class="nc">&nbsp;                    pojo.update().cascade(cascadeEnabled)</b>
+<b class="nc">&nbsp;                        .apply {</b>
+<b class="nc">&nbsp;                            this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed</b>
+<b class="nc">&nbsp;                            this@apply.toUpdateFields = this@UpsertClause.toUpdateFields</b>
+<b class="nc">&nbsp;                            this@UpsertClause.toUpdateFields.forEach {</b>
+<b class="nc">&nbsp;                                this@apply.paramMapNew[it + &quot;New&quot;] = paramMap[it.name]</b>
+<b class="nc">&nbsp;                            }</b>
+<b class="nc">&nbsp;                            this@UpsertClause.logicDeleteStrategy?.execute(</b>
+<b class="nc">&nbsp;                                defaultValue = getDefaultBoolean(</b>
+<b class="nc">&nbsp;                                    wrapper.orDefault(),</b>
+<b class="nc">&nbsp;                                    false</b>
+&nbsp;                                )
+&nbsp;                            ) { field, value -&gt;
+<b class="nc">&nbsp;                                this@apply.toUpdateFields += field</b>
+<b class="nc">&nbsp;                                this@apply.paramMapNew[field + &quot;New&quot;] = value</b>
+&nbsp;                            }
+<b class="nc">&nbsp;                            condition = onFields.filter { it.isColumn &amp;&amp; it.name in paramMap.keys }</b>
+<b class="nc">&nbsp;                                .map { it.eq(paramMap[it.name]) }.toCriteria()</b>
+<b class="nc">&nbsp;                            logicDeleteStrategy = null</b>
+<b class="nc">&nbsp;                        }</b>
+<b class="nc">&nbsp;                        .execute(wrapper)</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    pojo.insert().cascade(cascadeEnabled)</b>
+<b class="fc">&nbsp;                        .apply {</b>
+<b class="fc">&nbsp;                            this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed</b>
+<b class="fc">&nbsp;                        }</b>
+<b class="fc">&nbsp;                        .execute(wrapper)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpsertClause&lt;T&gt;&gt;.on(someFields: ToSelect&lt;T, Any?&gt;): List&lt;UpsertClause&lt;T&gt;&gt; {
+<b class="fc">&nbsp;            return map { it.on(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpsertClause&lt;T&gt;&gt;.onConflict(): List&lt;UpsertClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.onConflict() }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpsertClause&lt;T&gt;&gt;.cascade(
+&nbsp;            enabled: Boolean
+&nbsp;        ): List&lt;UpsertClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpsertClause&lt;T&gt;&gt;.cascade(
+&nbsp;            someFields: ToReference&lt;T, Any?&gt;
+&nbsp;        ): List&lt;UpsertClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpsertClause&lt;T&gt;&gt;.build(): KronosActionTask {
+<b class="fc">&nbsp;            return map { it.build() }.merge()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        fun &lt;T : KPojo&gt; List&lt;UpsertClause&lt;T&gt;&gt;.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="fc">&nbsp;            return build().execute(wrapper)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

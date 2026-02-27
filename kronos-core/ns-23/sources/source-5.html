@@ -1,0 +1,215 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > Extensions</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: Extensions (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">Extensions</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (5/15)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    26.3%
+  </span>
+  <span class="absValue">
+    (5/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.1%
+  </span>
+  <span class="absValue">
+    (46/139)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.enums.ConditionType
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.And
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;object Extensions {
+&nbsp;
+&nbsp;    fun Map&lt;String, Any?&gt;.safeMapperTo(kClass: KClass&lt;KPojo&gt;): Any {
+<b class="nc">&nbsp;        return kClass.createInstance().safeFromMapData(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun Map&lt;String, Any?&gt;.mapperTo(kClass: KClass&lt;KPojo&gt;): Any {
+<b class="nc">&nbsp;        return kClass.createInstance().fromMapData(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;safeMapperToOutKClass&quot;)
+&nbsp;    fun Map&lt;String, Any?&gt;.safeMapperTo(kClass: KClass&lt;out KPojo&gt;): Any {
+<b class="nc">&nbsp;        return kClass.createInstance().safeFromMapData(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;mapperToOutKClass&quot;)
+&nbsp;    fun Map&lt;String, Any?&gt;.mapperTo(kClass: KClass&lt;out KPojo&gt;): Any {
+<b class="nc">&nbsp;        return kClass.createInstance().fromMapData(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;reified K : KPojo&gt; Map&lt;String, Any?&gt;.safeMapperTo(): K {
+<b class="fc">&nbsp;        return K::class.createInstance().safeFromMapData(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;reified K : KPojo&gt; Map&lt;String, Any?&gt;.mapperTo(): K {
+<b class="nc">&nbsp;        return K::class.createInstance().fromMapData(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun KPojo.safeMapperTo(kClass: KClass&lt;KPojo&gt;): Any {
+<b class="nc">&nbsp;        return kClass.createInstance().safeFromMapData(toDataMap())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun KPojo.mapperTo(kClass: KClass&lt;KPojo&gt;): Any {
+<b class="nc">&nbsp;        return kClass.createInstance().fromMapData(toDataMap())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;reified K : KPojo&gt; KPojo.safeMapperTo(): K {
+<b class="nc">&nbsp;        return K::class.createInstance().safeFromMapData(toDataMap())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    inline fun &lt;reified K : KPojo&gt; KPojo.mapperTo(): K {
+<b class="fc">&nbsp;        return K::class.createInstance().fromMapData(toDataMap())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun KPojo.patchTo(kClass: KClass&lt;KPojo&gt;, vararg data: Pair&lt;String, Any?&gt;): KPojo {
+<b class="nc">&nbsp;        return this.toDataMap().apply {</b>
+<b class="nc">&nbsp;            data.forEach { (k, v) -&gt; this[k] = v }</b>
+<b class="nc">&nbsp;        }.mapperTo(kClass) as KPojo</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;mapperPatchToOutKClass&quot;)
+&nbsp;    fun KPojo.patchTo(kClass: KClass&lt;out KPojo&gt;, vararg data: Pair&lt;String, Any?&gt;): KPojo {
+<b class="nc">&nbsp;        return this.toDataMap().apply {</b>
+<b class="nc">&nbsp;            data.forEach { (k, v) -&gt; this[k] = v }</b>
+<b class="nc">&nbsp;        }.mapperTo(kClass) as KPojo</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    internal fun List&lt;Criteria&gt;.toCriteria(): Criteria {
+<b class="fc">&nbsp;        return Criteria(type = And, children = toMutableList())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    internal infix fun Field.eq(value: Any?): Criteria {
+<b class="fc">&nbsp;        return Criteria(this, ConditionType.EQUAL, false, value)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    internal fun String.asSql(): Criteria {
+<b class="fc">&nbsp;        return Criteria(type = ConditionType.SQL, value = this)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

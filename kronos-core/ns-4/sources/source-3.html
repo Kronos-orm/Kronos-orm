@@ -1,0 +1,225 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UUIDGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.generator</a>
+</div>
+
+<h1>Coverage Summary for Class: UUIDGenerator (com.kotlinorm.beans.generator)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UUIDGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.generator
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.KIdGenerator
+&nbsp;
+&nbsp;object UUIDGenerator : KIdGenerator&lt;String&gt; {
+<b class="nc">&nbsp;    override fun nextId(): String = java.util.UUID.randomUUID().toString()</b>
+&nbsp;}
+&nbsp;
+&nbsp;object SnowflakeIdGenerator : KIdGenerator&lt;Long&gt; {
+&nbsp;    private const val SEQUENCE_BITS = 12
+&nbsp;    private const val WORKER_ID_BITS = 5
+&nbsp;    private const val DATACENTER_ID_BITS = 5
+&nbsp;
+&nbsp;    private const val MAX_WORKER_ID = (1 shl WORKER_ID_BITS) - 1
+&nbsp;    private const val MAX_DATACENTER_ID = (1 shl DATACENTER_ID_BITS) - 1
+&nbsp;
+&nbsp;    private const val TIMESTAMP_LEFT_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS
+&nbsp;    private const val DATACENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS
+&nbsp;    private const val WORKER_ID_SHIFT = SEQUENCE_BITS
+&nbsp;
+&nbsp;    private var sequence: Long = 0
+&nbsp;    private var lastTimestamp: Long = -1
+&nbsp;    private var _datacenterId: Long = 1
+&nbsp;    private var _workerId: Long = 1
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The unique id of the datacenter in which the application is running.
+&nbsp;     * This value must be unique for each datacenter.
+&nbsp;     *
+&nbsp;     * The default value is 1.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+&nbsp;    var datacenterId
+&nbsp;        get() = _datacenterId
+&nbsp;        set(value) = run {
+&nbsp;            require(value in 0..MAX_DATACENTER_ID) { &quot;Datacenter id must be less than $MAX_DATACENTER_ID&quot; }
+&nbsp;            _datacenterId = value
+&nbsp;        }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * The unique id of the worker in which the application is running.
+&nbsp;     * This value must be unique for each worker.
+&nbsp;     *
+&nbsp;     * The default value is 1.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+&nbsp;    var workerId
+&nbsp;        get() = _workerId
+&nbsp;        set(value) = run {
+&nbsp;            require(value in 0..MAX_WORKER_ID) { &quot;Worker id must be less than $MAX_WORKER_ID&quot; }
+&nbsp;            _workerId = value
+&nbsp;        }
+&nbsp;
+&nbsp;    @Synchronized
+&nbsp;    override fun nextId(): Long {
+&nbsp;        var timestamp = System.currentTimeMillis()
+&nbsp;
+&nbsp;        if (timestamp &lt; lastTimestamp) {
+&nbsp;            error(&quot;Clock moved backwards. Refusing to generate id for ${lastTimestamp - timestamp} milliseconds.&quot;)
+&nbsp;        }
+&nbsp;
+&nbsp;        if (lastTimestamp == timestamp) {
+&nbsp;            sequence = (sequence + 1) and (((1 shl SEQUENCE_BITS) - 1).toLong())
+&nbsp;            if (sequence == 0L) {
+&nbsp;                timestamp = waitNextMillis(lastTimestamp)
+&nbsp;            }
+&nbsp;        } else {
+&nbsp;            sequence = 0
+&nbsp;        }
+&nbsp;
+&nbsp;        lastTimestamp = timestamp
+&nbsp;
+&nbsp;        return ((timestamp shl TIMESTAMP_LEFT_SHIFT) or
+&nbsp;                (datacenterId shl DATACENTER_ID_SHIFT) or
+&nbsp;                (workerId shl WORKER_ID_SHIFT) or
+&nbsp;                sequence)
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun waitNextMillis(lastTimestamp: Long): Long {
+&nbsp;        var timestamp = System.currentTimeMillis()
+&nbsp;        while (timestamp &lt;= lastTimestamp) {
+&nbsp;            timestamp = System.currentTimeMillis()
+&nbsp;        }
+&nbsp;        return timestamp
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;var customIdGenerator: KIdGenerator&lt;*&gt;? = null
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

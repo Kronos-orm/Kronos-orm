@@ -1,0 +1,208 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PagedClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.pagination</a>
+</div>
+
+<h1>Coverage Summary for Class: PagedClause (com.kotlinorm.orm.pagination)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PagedClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (3/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (4/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    41.2%
+  </span>
+  <span class="absValue">
+    (14/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    41%
+  </span>
+  <span class="absValue">
+    (111/271)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.pagination
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+&nbsp;import com.kotlinorm.enums.QueryType.QueryList
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.logAndReturn
+&nbsp;
+<b class="fc">&nbsp;class PagedClause&lt;K : KPojo, T : KSelectable&lt;K&gt;&gt;(</b>
+<b class="fc">&nbsp;    private val selectClause: T</b>
+&nbsp;) {
+<b class="nc">&nbsp;    fun query(wrapper: KronosDataSourceWrapper? = null): Pair&lt;Int, List&lt;Map&lt;String, Any&gt;&gt;&gt; {</b>
+<b class="nc">&nbsp;        val tasks = this.build(wrapper)</b>
+<b class="nc">&nbsp;        val total = tasks.first.queryOne&lt;Int&gt;()</b>
+<b class="nc">&nbsp;        val records = tasks.second.query()</b>
+<b class="nc">&nbsp;        return total to records</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified E : KPojo&gt; queryList(wrapper: KronosDataSourceWrapper? = null): Pair&lt;Int, List&lt;E&gt;&gt; {</b>
+<b class="nc">&nbsp;        val tasks = this.build(wrapper)</b>
+<b class="nc">&nbsp;        val total = tasks.first.queryOne&lt;Int&gt;()</b>
+<b class="nc">&nbsp;        val records = tasks.second.queryList&lt;E&gt;()</b>
+<b class="nc">&nbsp;        return total to records</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;queryForList&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair&lt;Int, List&lt;K&gt;&gt; {</b>
+<b class="nc">&nbsp;        val tasks = this.build()</b>
+<b class="nc">&nbsp;        val total = tasks.first.queryOne&lt;Int&gt;()</b>
+<b class="nc">&nbsp;        with(tasks.second) {</b>
+<b class="nc">&nbsp;            beforeQuery?.invoke(this)</b>
+<b class="nc">&nbsp;            val records =</b>
+<b class="nc">&nbsp;                atomicTask.logAndReturn(</b>
+<b class="nc">&nbsp;                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class, true, listOf()), QueryList</b>
+&nbsp;                )
+&nbsp;
+<b class="nc">&nbsp;            afterQuery?.invoke(records, QueryList, wrapper.orDefault())</b>
+<b class="nc">&nbsp;            return total to records as List&lt;K&gt;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): Pair&lt;KronosQueryTask, KronosQueryTask&gt; {</b>
+<b class="fc">&nbsp;        val recordsTask = selectClause.build(wrapper)</b>
+<b class="fc">&nbsp;        selectClause.pageEnabled = false</b>
+<b class="fc">&nbsp;        selectClause.limitCapacity = 0</b>
+<b class="pc">&nbsp;        if(selectClause.selectAll || selectClause.selectFields.none { it.type == CUSTOM_CRITERIA_SQL }) {</b>
+&nbsp;            // 不能直接将 select字段变成1，因为查询的字段可能在where条件中使用
+&nbsp;            // 例如：select (select count(1) from table1) as count from table2 where count &gt; 0
+&nbsp;            // 只有查询的字段为空或者没有自定义sql时才能将select字段变成1
+<b class="fc">&nbsp;            selectClause.selectFields = linkedSetOf(Field(&quot;1&quot;, type = CUSTOM_CRITERIA_SQL))</b>
+<b class="fc">&nbsp;            selectClause.selectAll = false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val cntTask = selectClause.build(wrapper)</b>
+<b class="fc">&nbsp;        cntTask.atomicTask.sql = &quot;SELECT COUNT(*) FROM (${cntTask.atomicTask.sql}) AS total_count&quot;</b>
+<b class="fc">&nbsp;        cntTask.beforeQuery = null</b>
+<b class="fc">&nbsp;        cntTask.afterQuery = null</b>
+<b class="fc">&nbsp;        return cntTask to recordsTask</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

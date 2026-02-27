@@ -1,0 +1,180 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrSqlTypeUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: IrSqlTypeUtilKt (com.kotlinorm.compiler.plugin.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrSqlTypeUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (5/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    44.4%
+  </span>
+  <span class="absValue">
+    (8/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.9%
+  </span>
+  <span class="absValue">
+    (41/121)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.utils
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.helpers.referenceClass
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;
+&nbsp;/**
+&nbsp; * Get the symbol for the KColumnType enum class.
+&nbsp; */
+&nbsp;context(_: IrPluginContext)
+&nbsp;internal val kColumnTypeSymbol
+<b class="fc">&nbsp;    get() = referenceClass(&quot;com.kotlinorm.enums.KColumnType&quot;)!!</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Get the SQL type of the given property type.
+&nbsp; *
+&nbsp; * @param propertyType the kotlin type of the property
+&nbsp; * @return the Kronos SQL type of the property
+&nbsp; */
+<b class="pc">&nbsp;fun kotlinTypeToKColumnType(propertyType: String) = when (propertyType) {</b>
+<b class="fc">&nbsp;    &quot;kotlin.Boolean&quot; -&gt; &quot;BIT&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.Byte&quot; -&gt; &quot;TINYINT&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.Short&quot; -&gt; &quot;SMALLINT&quot;</b>
+<b class="fc">&nbsp;    &quot;kotlin.Int&quot; -&gt; &quot;INT&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.Long&quot; -&gt; &quot;BIGINT&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.Float&quot; -&gt; &quot;FLOAT&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.Double&quot; -&gt; &quot;DOUBLE&quot;</b>
+<b class="nc">&nbsp;    &quot;java.math.BigDecimal&quot; -&gt; &quot;DECIMAL&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.Char&quot; -&gt; &quot;CHAR&quot;</b>
+<b class="fc">&nbsp;    &quot;kotlin.String&quot; -&gt; &quot;VARCHAR&quot;</b>
+<b class="nc">&nbsp;    &quot;java.util.Date&quot;, &quot;java.sql.Date&quot;, &quot;java.time.LocalDate&quot;, &quot;kotlinx.datetime.LocalDate&quot; -&gt; &quot;DATE&quot;</b>
+<b class="nc">&nbsp;    &quot;java.time.LocalTime&quot;, &quot;kotlinx.datetime.LocalTime&quot; -&gt; &quot;TIME&quot;</b>
+<b class="fc">&nbsp;    &quot;java.time.LocalDateTime&quot;, &quot;kotlinx.datetime.LocalDateTime&quot; -&gt; &quot;DATETIME&quot;</b>
+<b class="nc">&nbsp;    &quot;kotlin.ByteArray&quot; -&gt; &quot;BLOB&quot;</b>
+<b class="fc">&nbsp;    &quot;CUSTOM_CRITERIA_SQL&quot; -&gt; &quot;CUSTOM_CRITERIA_SQL&quot;</b>
+<b class="fc">&nbsp;    else -&gt; &quot;VARCHAR&quot;</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

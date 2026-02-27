@@ -1,0 +1,217 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KronosAtomicBatchTask</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosAtomicBatchTask (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosAtomicBatchTask</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/178)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
+&nbsp;import com.kotlinorm.beans.parser.ParsedSql
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.interfaces.KActionInfo
+&nbsp;import com.kotlinorm.interfaces.KAtomicActionTask
+&nbsp;import com.kotlinorm.interfaces.KBatchTask
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos Atomic Batch Task
+&nbsp; *
+&nbsp; * Batch execution task for [com.kotlinorm.interfaces.KronosDataSourceWrapper.batchUpdate]
+&nbsp; * Created by ousc on 2024/4/18 23:10
+&nbsp; */
+&nbsp;data class KronosAtomicBatchTask(
+<b class="nc">&nbsp;    override val sql: String,</b>
+<b class="nc">&nbsp;    override val paramMapArr: Array&lt;Map&lt;String, Any?&gt;&gt;? = null,</b>
+<b class="nc">&nbsp;    override val operationType: KOperationType = KOperationType.UPDATE,</b>
+<b class="nc">&nbsp;    override val actionInfo: KActionInfo? = null,</b>
+<b class="nc">&nbsp;    override val stash: MutableMap&lt;String, Any?&gt; = mutableMapOf()</b>
+&nbsp;) : KAtomicActionTask, KBatchTask {
+&nbsp;
+&nbsp;    @Deprecated(&quot;Please use &#39;paramMapArr&#39; instead.&quot;)
+<b class="nc">&nbsp;    override val paramMap: Map&lt;String, Any?&gt; = mapOf()</b>
+&nbsp;
+&nbsp;    override fun parsed(): ParsedSql {
+<b class="nc">&nbsp;        throw UnsupportedOperationException(&quot;Please use `parsedArr()` instead of `parsed()`&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Parses the SQL statement and returns a pair of JDBC SQL and a list of JDBC parameter lists.
+&nbsp;     *
+&nbsp;     * @return a pair of JDBC SQL and a list of JDBC parameter lists. If paramMapArr is null, an empty array is used.
+&nbsp;     */
+<b class="nc">&nbsp;    fun parsedArr() = (paramMapArr ?: arrayOf()).map { parseSqlStatement(sql, it) }.let {</b>
+<b class="nc">&nbsp;        Pair(it.firstOrNull()?.jdbcSql, it.map { parsedSql -&gt; parsedSql.jdbcParamList })</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Checks if this object is equal to another object.
+&nbsp;     *
+&nbsp;     * @param other the object to compare to
+&nbsp;     * @return true if the objects are equal, false otherwise
+&nbsp;     */
+&nbsp;    override fun equals(other: Any?): Boolean {
+<b class="nc">&nbsp;        if (this === other) return true</b>
+<b class="nc">&nbsp;        if (javaClass != other?.javaClass) return false</b>
+&nbsp;
+<b class="nc">&nbsp;        other as KronosAtomicBatchTask</b>
+&nbsp;
+<b class="nc">&nbsp;        if (sql != other.sql) return false</b>
+<b class="nc">&nbsp;        if (paramMapArr != null) {</b>
+<b class="nc">&nbsp;            if (other.paramMapArr == null) return false</b>
+<b class="nc">&nbsp;            if (!paramMapArr.contentEquals(other.paramMapArr)) return false</b>
+<b class="nc">&nbsp;        } else if (other.paramMapArr != null) return false</b>
+<b class="nc">&nbsp;        if (operationType != other.operationType) return false</b>
+&nbsp;
+<b class="nc">&nbsp;        return true</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Calculates the hash code value for the object.
+&nbsp;     *
+&nbsp;     * @return the hash code value of the object.
+&nbsp;     */
+&nbsp;    override fun hashCode(): Int {
+<b class="nc">&nbsp;        var result = sql.hashCode()</b>
+<b class="nc">&nbsp;        result = 31 * result + (paramMapArr?.contentHashCode() ?: 0)</b>
+<b class="nc">&nbsp;        result = 31 * result + operationType.hashCode()</b>
+<b class="nc">&nbsp;        return result</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

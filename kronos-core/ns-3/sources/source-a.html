@@ -1,0 +1,278 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KTableForSet</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.dsl</a>
+</div>
+
+<h1>Coverage Summary for Class: KTableForSet (com.kotlinorm.beans.dsl)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KTableForSet</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (5/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (12/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.3%
+  </span>
+  <span class="absValue">
+    (69/87)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KTableForSet$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (6/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (13/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.9%
+  </span>
+  <span class="absValue">
+    (76/94)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.dsl
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;
+&nbsp;/**
+&nbsp; * KTable
+&nbsp; *
+&nbsp; * DSL Class of Kronos, which the compiler plugin use to generate the `set` code.
+&nbsp; * to set values, you can use following:
+&nbsp; * 1. `it.&lt;field1&gt; = value`
+&nbsp; * 2. `Field(columnName, optionalName).setValue(value)`
+&nbsp; * 3. `it::&lt;field1&gt;.setValue(value)`
+&nbsp; * 4. `setValue(Field(columnName, optionalName), value)`
+&nbsp; * 5. `it[&quot;columnName&quot;] = value`
+&nbsp; *
+&nbsp; * for plusAssign and minusAssign, you can use
+&nbsp; * 1. `it.&lt;field1&gt; += inc` or `it.&lt;field1&gt; -= dec`
+&nbsp; * 2. `Field(columnName, optionalName) += inc` or `Field(columnName, optionalName) -= dec`
+&nbsp; * 3. `it[&quot;columnName&quot;] += inc` or `it[&quot;columnName&quot;] -= dec`
+&nbsp; * 4. `it::&lt;field1&gt; += inc` or `it::&lt;field1&gt; -= dec`
+&nbsp; *
+&nbsp; * @param T the type of the table
+&nbsp; */
+<b class="fc">&nbsp;open class KTableForSet&lt;T : KPojo&gt; {</b>
+<b class="fc">&nbsp;    val fields: MutableList&lt;Field&gt; = mutableListOf()</b>
+<b class="fc">&nbsp;    val fieldParamMap: MutableMap&lt;Field, Any?&gt; = mutableMapOf()</b>
+<b class="fc">&nbsp;    val plusAssignFields: MutableList&lt;Pair&lt;Field, Number&gt;&gt; = mutableListOf()</b>
+<b class="fc">&nbsp;    val minusAssignFields: MutableList&lt;Pair&lt;Field, Number&gt;&gt; = mutableListOf()</b>
+&nbsp;
+<b class="fc">&nbsp;    operator fun Any?.plusAssign(@Suppress(&quot;UNUSED&quot;) other: Number) {}</b>
+&nbsp;
+<b class="nc">&nbsp;    operator fun Any?.minusAssign(@Suppress(&quot;UNUSED&quot;) other: Number) {}</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the value of a Field with the given value.
+&nbsp;     *
+&nbsp;     * @param value the value to set the Field to
+&nbsp;     * @return the updated value of the Field
+&nbsp;     */
+&nbsp;    @JvmName(&quot;FieldSetValue&quot;)
+<b class="nc">&nbsp;    fun Field.setValue(value: Any?) = setValue(this, value)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a field to the collection of fields.
+&nbsp;     *
+&nbsp;     * @param property the field to be added
+&nbsp;     */
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+&nbsp;    fun addField(property: Field) {
+<b class="fc">&nbsp;        fields += property</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the value of a Field with the given value.
+&nbsp;     *
+&nbsp;     * @param property the Field to set the value for
+&nbsp;     * @param value the value to set the Field to
+&nbsp;     */
+&nbsp;    fun setValue(property: Field, value: Any?) {
+<b class="fc">&nbsp;        addField(property) // Add the property to the field list</b>
+<b class="fc">&nbsp;        fieldParamMap[property] = value</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;, &quot;UNUSED&quot;)
+&nbsp;    fun setAssign(type: String, property: Field, value: Number) {
+<b class="fc">&nbsp;        addField(property)</b>
+<b class="fc">&nbsp;        when (type) {</b>
+<b class="pc">&nbsp;            &quot;+&quot; -&gt; plusAssignFields += Pair(property, value)</b>
+<b class="nc">&nbsp;            &quot;-&quot; -&gt; minusAssignFields += Pair(property, value)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Creates a KTable instance with the given KPojo object as the data source and applies the given block to it.
+&nbsp;         *
+&nbsp;         * @param T The type of the KPojo object.
+&nbsp;         * @param block The block of code to be applied to the KTable instance.
+&nbsp;         * @return The resulting KTable instance after applying the block.
+&nbsp;         */
+<b class="fc">&nbsp;        fun &lt;T : KPojo&gt; T.afterSet(block: KTableForSet&lt;T&gt;.(T) -&gt; Unit) = KTableForSet&lt;T&gt;().block(this)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

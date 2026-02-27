@@ -1,0 +1,343 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrKDocUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: IrKDocUtilKt (com.kotlinorm.compiler.plugin.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrKDocUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.4%
+  </span>
+  <span class="absValue">
+    (58/74)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.9%
+  </span>
+  <span class="absValue">
+    (70/73)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.9%
+  </span>
+  <span class="absValue">
+    (460/470)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin.utils
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclaration
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.util.file
+&nbsp;import org.jetbrains.kotlin.ir.util.sourceElement
+&nbsp;import java.io.File
+&nbsp;import kotlin.text.Charsets.UTF_8
+&nbsp;
+&nbsp;/**
+&nbsp; * Calculates the real start offset of the source code, skipping over comments and annotations.
+&nbsp; *
+&nbsp; * This function iterates through the source code lines starting from the given offset and skips
+&nbsp; * lines that are annotations, single-line comments, or multi-line comments. It returns the first
+&nbsp; * line that is not a comment or annotation.
+&nbsp; *
+&nbsp; * @param source The list of source code lines.
+&nbsp; * @param startOffset The initial offset to start checking from.
+&nbsp; * @return The real start offset after skipping comments and annotations.
+&nbsp; */
+&nbsp;fun realStartOffset(source: List&lt;String&gt;, startOffset: Int): Int {
+<b class="fc">&nbsp;    var realStartOffset = startOffset</b>
+<b class="fc">&nbsp;    var multiLineCommentFlag = false</b>
+&nbsp;    while (
+<b class="fc">&nbsp;        source[realStartOffset].trimStart().startsWith(&quot;@&quot;) ||</b>
+<b class="pc">&nbsp;        source[realStartOffset].trimStart().startsWith(&quot;//&quot;) ||</b>
+<b class="pc">&nbsp;        source[realStartOffset].trimStart().startsWith(&quot;/*&quot;) ||</b>
+<b class="pc">&nbsp;        multiLineCommentFlag</b>
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (source[realStartOffset].trimStart().startsWith(&quot;/*&quot;)) {</b>
+<b class="nc">&nbsp;            multiLineCommentFlag = true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (source[realStartOffset].trimStart().endsWith(&quot;*/&quot;)) {</b>
+<b class="nc">&nbsp;            multiLineCommentFlag = false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        realStartOffset++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return realStartOffset</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal const val SOURCE_FILE_CACHE_SIZE = 128
+<b class="fc">&nbsp;internal val sourceFileCache: LRUCache&lt;String, List&lt;String&gt;&gt; = LRUCache(SOURCE_FILE_CACHE_SIZE)</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Extract the comment content within the specified range.
+&nbsp; *
+&nbsp; * This function will extract single-line or multi-line comments within the specified range from the given list of lines.
+&nbsp; * If no comments are found within the specified range, the function will search upwards to the beginning of the file to find possible comments.
+&nbsp; *
+&nbsp; * 提取指定范围内的注释内容。
+&nbsp; *
+&nbsp; * 此函数会从给定的行列表中提取位于指定范围内的单行或多行注释。
+&nbsp; * 如果在指定范围内没有找到注释，函数将向上查找直到文件的开头，以获取可能的注释。
+&nbsp; *
+&nbsp; * @param lines a list of code lines 包含代码行的列表
+&nbsp; * @param range the range of lines to check 指定要检查的行范围
+&nbsp; * @return the extracted comment content, or null if no comment is found 找到的注释内容，如果没有找到则返回 null
+&nbsp; */
+&nbsp;fun extractDeclarationComment(lines: List&lt;String&gt;, range: IntRange): String? {
+<b class="fc">&nbsp;    val startIndex = range.first</b>
+<b class="fc">&nbsp;    val endIndex = range.last</b>
+&nbsp;
+<b class="fc">&nbsp;    var comment: String? = null</b>
+<b class="fc">&nbsp;    val commentIgnore = { char: Char -&gt; char == &#39;*&#39; || char == &#39; &#39; }</b>
+&nbsp;
+&nbsp;    // Find single-line or multi-line comments within the specified range
+&nbsp;    // 在指定范围内查找单行或多行注释
+<b class="fc">&nbsp;    for (i in startIndex..endIndex) {</b>
+<b class="pc">&nbsp;        val line = lines.getOrNull(i)?.trim() ?: continue</b>
+&nbsp;
+&nbsp;        // Extract single-line comments
+&nbsp;        // 提取单行注释
+<b class="fc">&nbsp;        val singleLineComment = line.substringAfter(&quot;//&quot;, &quot;&quot;).substringBefore(&quot;//&quot;).trim()</b>
+&nbsp;        // Extract multi-line comments
+&nbsp;        // 查找多行注释的起始和结束位置
+<b class="fc">&nbsp;        val multiLineCommentStart = line.indexOf(&quot;/*&quot;)</b>
+<b class="fc">&nbsp;        val multiLineCommentEnd = line.indexOf(&quot;*/&quot;)</b>
+&nbsp;
+&nbsp;        // If a single-line comment is found
+&nbsp;        // 如果找到单行注释
+<b class="fc">&nbsp;        if (singleLineComment.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            comment = singleLineComment</b>
+&nbsp;            break
+&nbsp;        }
+&nbsp;
+&nbsp;        // If a multi-line comment is found
+&nbsp;        // 如果找到多行注释
+<b class="pc">&nbsp;        else if (multiLineCommentStart != -1 &amp;&amp; multiLineCommentEnd != -1) {</b>
+<b class="fc">&nbsp;            comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim(commentIgnore)</b>
+&nbsp;            break
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // If no comments are found within the specified range, search upwards
+&nbsp;    // 如果在指定范围内没有找到注释，向上查找
+<b class="fc">&nbsp;    if (comment == null) {</b>
+<b class="fc">&nbsp;        var multiLineCommentFlag = false</b>
+<b class="fc">&nbsp;        var singleLineCommentFlag = false</b>
+<b class="fc">&nbsp;        for (i in (startIndex - 1) downTo 0) {</b>
+<b class="pc">&nbsp;            val line = lines.getOrNull(i)?.trim() ?: continue</b>
+<b class="fc">&nbsp;            if (line.startsWith(&quot;@&quot;)) continue</b>
+<b class="fc">&nbsp;            val singleLineComment = line.substringAfter(&quot;//&quot;, &quot;&quot;).trim()</b>
+<b class="fc">&nbsp;            val multiLineCommentStart = line.indexOf(&quot;/*&quot;)</b>
+<b class="fc">&nbsp;            val multiLineCommentEnd = line.indexOf(&quot;*/&quot;)</b>
+&nbsp;
+&nbsp;            // Handle single-line comments
+&nbsp;            // 处理单行注释
+<b class="pc">&nbsp;            if (line.startsWith(&quot;//&quot;) &amp;&amp; singleLineComment.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                if (singleLineCommentFlag) {</b>
+<b class="fc">&nbsp;                    comment = singleLineComment + comment</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    comment = singleLineComment</b>
+<b class="fc">&nbsp;                    singleLineCommentFlag = true</b>
+&nbsp;                }
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            // Handle multi-line comments
+&nbsp;            // 处理多行注释
+<b class="fc">&nbsp;            else if (multiLineCommentStart != -1 &amp;&amp; multiLineCommentEnd != -1) {</b>
+<b class="fc">&nbsp;                comment = line.substring(multiLineCommentStart + 2, multiLineCommentEnd).trim(commentIgnore)</b>
+&nbsp;                break
+&nbsp;            }
+&nbsp;            // Handle multi-line comments that start but do not end
+&nbsp;            // 处理多行注释开始但未结束的情况
+<b class="pc">&nbsp;            else if (multiLineCommentStart != -1 &amp;&amp; multiLineCommentFlag) {</b>
+<b class="fc">&nbsp;                comment = line.substring(multiLineCommentStart + 2).trim(commentIgnore) + comment</b>
+&nbsp;                break
+&nbsp;            }
+&nbsp;            // Handle multi-line comments that end but do not start
+&nbsp;            // 处理多行注释结束的情况
+<b class="fc">&nbsp;            else if (multiLineCommentEnd != -1) {</b>
+<b class="fc">&nbsp;                comment = line.substring(0, multiLineCommentEnd).trim(commentIgnore)</b>
+<b class="fc">&nbsp;                multiLineCommentFlag = true</b>
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            // Handle non-empty lines
+&nbsp;            // 处理非空行
+<b class="fc">&nbsp;            else if (line.isNotBlank()) {</b>
+<b class="fc">&nbsp;                if (multiLineCommentFlag) {</b>
+<b class="fc">&nbsp;                    comment = line.trim(commentIgnore) + comment</b>
+&nbsp;                    continue
+&nbsp;                }
+<b class="pc">&nbsp;                if (line.startsWith(&quot;@&quot;)) { // 如果是注解</b>
+&nbsp;                    continue
+&nbsp;                }
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return comment</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Retrieves the KDoc string for the current IR declaration.
+&nbsp; *
+&nbsp; * This function attempts to extract the KDoc comment associated with the current IR declaration.
+&nbsp; * It uses the source offsets to locate the relevant lines in the source file and then extracts
+&nbsp; * the comment content.
+&nbsp; *
+&nbsp; * @receiver The IR declaration for which to retrieve the KDoc string.
+&nbsp; * @return An IR expression containing the KDoc string, or null if no KDoc comment is found.
+&nbsp; */
+&nbsp;context(builder: IrBuilderWithScope)
+&nbsp;fun IrDeclaration.getKDocString(): IrExpression {
+<b class="fc">&nbsp;    val declaration = this</b>
+<b class="fc">&nbsp;    val sourceOffsets = sourceElement()</b>
+<b class="pc">&nbsp;    if (sourceOffsets != null) {</b>
+<b class="fc">&nbsp;        val startOffset = sourceOffsets.startOffset</b>
+<b class="fc">&nbsp;        val endOffset = sourceOffsets.endOffset</b>
+<b class="fc">&nbsp;        val fileEntry = file.fileEntry</b>
+<b class="fc">&nbsp;        val sourceRange = fileEntry.getSourceRangeInfo(startOffset, endOffset)</b>
+<b class="fc">&nbsp;        val source = sourceFileCache.getOrPut(fileEntry.name) {</b>
+<b class="fc">&nbsp;            File(sourceRange.filePath).readLines(UTF_8)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val realStartOffset = realStartOffset(source, sourceRange.startLineNumber)</b>
+<b class="fc">&nbsp;        val comment = when (declaration) {</b>
+<b class="fc">&nbsp;            is IrProperty -&gt; extractDeclarationComment(</b>
+<b class="fc">&nbsp;                source,</b>
+<b class="fc">&nbsp;                realStartOffset..sourceRange.endLineNumber</b>
+&nbsp;            )
+&nbsp;
+<b class="pc">&nbsp;            is IrClass -&gt; extractDeclarationComment(</b>
+<b class="fc">&nbsp;                source,</b>
+<b class="fc">&nbsp;                sourceRange.startLineNumber..realStartOffset</b>
+&nbsp;            )
+&nbsp;
+<b class="nc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (comment != null) {</b>
+<b class="fc">&nbsp;            return builder.irString(comment)</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return builder.irString(&quot;&quot;)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,240 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > KLogMessageBuilderKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.logging</a>
+</div>
+
+<h1>Coverage Summary for Class: KLogMessageBuilderKt (com.kotlinorm.beans.logging)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KLogMessageBuilderKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.beans.logging
+&nbsp;
+&nbsp;import com.kotlinorm.enums.PrintBackground
+&nbsp;import com.kotlinorm.enums.PrintColor
+&nbsp;import com.kotlinorm.enums.PrintStyle
+&nbsp;import com.kotlinorm.interfaces.PrintCode
+&nbsp;
+&nbsp;class KLogMessageBuilder {
+&nbsp;    private val _lines = mutableListOf&lt;KLogMessage&gt;()
+&nbsp;    val lines: List&lt;KLogMessage&gt; get() = _lines
+&nbsp;
+&nbsp;    val black = PrintColor.BLACK
+&nbsp;    val red = PrintColor.RED
+&nbsp;    val green = PrintColor.GREEN
+&nbsp;    val yellow = PrintColor.YELLOW
+&nbsp;    val blue = PrintColor.BLUE
+&nbsp;    val magenta = PrintColor.MAGENTA
+&nbsp;    val cyan = PrintColor.CYAN
+&nbsp;    val grey = PrintColor.GREY
+&nbsp;
+&nbsp;    val bgBlack = PrintBackground.BLACK_BACKGROUND
+&nbsp;    val bgRed = PrintBackground.RED_BACKGROUND
+&nbsp;    val bgGreen = PrintBackground.GREEN_BACKGROUND
+&nbsp;    val bgYellow = PrintBackground.YELLOW_BACKGROUND
+&nbsp;    val bgBlue = PrintBackground.BLUE_BACKGROUND
+&nbsp;    val bgMagenta = PrintBackground.MAGENTA_BACKGROUND
+&nbsp;    val bgCyan = PrintBackground.CYAN_BACKGROUND
+&nbsp;    val bgGrey = PrintBackground.GREY_BACKGROUND
+&nbsp;
+&nbsp;    val bold = PrintStyle.BOLD
+&nbsp;    val italic = PrintStyle.ITALIC
+&nbsp;    val underline = PrintStyle.UNDERLINE
+&nbsp;    val blink = PrintStyle.BLINK
+&nbsp;    val reverse = PrintStyle.REVERSE
+&nbsp;    val hidden = PrintStyle.HIDDEN
+&nbsp;
+&nbsp;    fun add(element: KLogMessage) {
+&nbsp;        _lines.add(element)
+&nbsp;    }
+&nbsp;
+&nbsp;    // 添加消息的核心方法
+&nbsp;    private fun addElement(element: Any) {
+&nbsp;        when (element) {
+&nbsp;            is KLogMessage -&gt; _lines.add(element)
+&nbsp;            is Array&lt;*&gt; -&gt; element.forEach {
+&nbsp;                if (it is KLogMessage) _lines.add(it)
+&nbsp;            }
+&nbsp;
+&nbsp;            is List&lt;*&gt; -&gt; element.forEach {
+&nbsp;                if (it is KLogMessage) _lines.add(it)
+&nbsp;            }
+&nbsp;            else -&gt; throw IllegalArgumentException(&quot;Unsupported type: ${element::class.java}&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // 字符串消息
+&nbsp;    operator fun String.unaryMinus(): KLogMessageBuilder {
+&nbsp;        addElement(KLogMessage(this))
+&nbsp;        return this@KLogMessageBuilder
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun String.unaryPlus(): KLogMessageBuilder {
+&nbsp;        addElement(KLogMessage(this, newLine = true))
+&nbsp;        return this@KLogMessageBuilder
+&nbsp;    }
+&nbsp;
+&nbsp;    // 日志消息对象
+&nbsp;    operator fun KLogMessage.unaryMinus(): KLogMessageBuilder {
+&nbsp;        addElement(this)
+&nbsp;        return this@KLogMessageBuilder
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun KLogMessage.unaryPlus(): KLogMessageBuilder {
+&nbsp;        addElement(apply { newLine = true })
+&nbsp;        return this@KLogMessageBuilder
+&nbsp;    }
+&nbsp;
+&nbsp;    // 数组消息
+&nbsp;    operator fun Array&lt;KLogMessage&gt;.unaryMinus(): KLogMessageBuilder {
+&nbsp;        addElement(this)
+&nbsp;        return this@KLogMessageBuilder
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun Array&lt;KLogMessage&gt;.unaryPlus(): KLogMessageBuilder {
+&nbsp;        addElement(onEach { it.newLine = true })
+&nbsp;        return this@KLogMessageBuilder
+&nbsp;    }
+&nbsp;
+&nbsp;    // 样式应用
+&nbsp;    operator fun String.get(vararg codes: PrintCode) = KLogMessage(this, codes.toList().toTypedArray())
+&nbsp;    operator fun KLogMessage.get(vararg codes: PrintCode) =
+&nbsp;        KLogMessage(text, codes.toList().toTypedArray(), newLine = newLine)
+&nbsp;
+&nbsp;    operator fun Array&lt;KLogMessage&gt;.get(vararg codes: PrintCode) = map {
+&nbsp;        KLogMessage(it.text, codes.toList().toTypedArray(), newLine = it.newLine)
+&nbsp;    }.toTypedArray()
+&nbsp;}
+&nbsp;
+&nbsp;// 修改后的log函数
+&nbsp;fun log(buildLog: KLogMessageBuilder.() -&gt; Unit): Array&lt;KLogMessage&gt; {
+<b class="fc">&nbsp;    val builder = KLogMessageBuilder()</b>
+<b class="fc">&nbsp;    builder.buildLog()</b>
+<b class="fc">&nbsp;    return builder.lines.toTypedArray()</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

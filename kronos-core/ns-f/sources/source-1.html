@@ -1,0 +1,583 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PostgresqlSupport</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database.postgres</a>
+</div>
+
+<h1>Coverage Summary for Class: PostgresqlSupport (com.kotlinorm.database.postgres)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PostgresqlSupport</td>
+<td class="coverageStat">
+  <span class="percent">
+    4.2%
+  </span>
+  <span class="absValue">
+    (1/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/192)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0.5%
+  </span>
+  <span class="absValue">
+    (1/197)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0.4%
+  </span>
+  <span class="absValue">
+    (9/2142)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">PostgresqlSupport$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    4.2%
+  </span>
+  <span class="absValue">
+    (1/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/192)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0.5%
+  </span>
+  <span class="absValue">
+    (1/197)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0.4%
+  </span>
+  <span class="absValue">
+    (9/2142)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database.postgres
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.FunctionField
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.database.ConflictResolver
+&nbsp;import com.kotlinorm.database.SqlManager.columnCreateDefSql
+&nbsp;import com.kotlinorm.database.SqlManager.getDBNameFrom
+&nbsp;import com.kotlinorm.database.SqlManager.getKotlinColumnType
+&nbsp;import com.kotlinorm.database.SqlManager.indexCreateDefSql
+&nbsp;import com.kotlinorm.database.mssql.MssqlSupport
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.KColumnType.*
+&nbsp;import com.kotlinorm.enums.PessimisticLock
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+&nbsp;import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
+&nbsp;import com.kotlinorm.interfaces.DatabasesSupport
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.ddl.TableColumnDiff
+&nbsp;import com.kotlinorm.orm.ddl.TableIndexDiff
+&nbsp;import com.kotlinorm.orm.join.JoinClauseInfo
+&nbsp;import com.kotlinorm.orm.select.SelectClauseInfo
+&nbsp;import com.kotlinorm.utils.trimWhitespace
+&nbsp;
+&nbsp;object PostgresqlSupport : DatabasesSupport {
+<b class="fc">&nbsp;    override var quotes = Pair(&quot;\&quot;&quot;, &quot;\&quot;&quot;)</b>
+&nbsp;
+<b class="nc">&nbsp;    override fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper) = wrapper.url.split(&quot;//&quot;).last().split(&quot;/&quot;).first()</b>
+&nbsp;
+&nbsp;    override fun getColumnType(type: KColumnType, length: Int, scale: Int): String {
+<b class="nc">&nbsp;        return when (type) {</b>
+&nbsp;            // 布尔类型
+<b class="nc">&nbsp;            BIT -&gt; &quot;BOOLEAN&quot;</b>
+&nbsp;
+&nbsp;            // 整数类型（优化SERIAL处理）
+<b class="nc">&nbsp;            TINYINT -&gt; &quot;SMALLINT&quot;  // PostgreSQL无TINYINT，用SMALLINT(-32768 to 32767)</b>
+<b class="nc">&nbsp;            SMALLINT -&gt; &quot;SMALLINT&quot;</b>
+<b class="nc">&nbsp;            INT, MEDIUMINT -&gt; &quot;INTEGER&quot;</b>
+<b class="nc">&nbsp;            BIGINT -&gt; &quot;BIGINT&quot;</b>
+<b class="nc">&nbsp;            SERIAL -&gt; &quot;SERIAL&quot;      // 自动递增整数(INTEGER)</b>
+<b class="nc">&nbsp;            YEAR -&gt; &quot;INTEGER&quot;       // 年份用整数存储</b>
+&nbsp;
+&nbsp;            // 浮点类型（支持精度指定）
+<b class="nc">&nbsp;            REAL -&gt; &quot;REAL&quot;          // 4字节浮点</b>
+<b class="nc">&nbsp;            FLOAT -&gt; if (length &gt; 0) &quot;FLOAT($length)&quot; else &quot;DOUBLE PRECISION&quot;</b>
+<b class="nc">&nbsp;            DOUBLE -&gt; &quot;DOUBLE PRECISION&quot;</b>
+&nbsp;
+&nbsp;            // 精确数值（必须处理精度）
+<b class="nc">&nbsp;            DECIMAL -&gt; when {</b>
+<b class="nc">&nbsp;                length &gt; 0 &amp;&amp; scale &gt; 0 -&gt; &quot;DECIMAL($length,$scale)&quot;</b>
+<b class="nc">&nbsp;                length &gt; 0 -&gt; &quot;DECIMAL($length,0)&quot;</b>
+<b class="nc">&nbsp;                else -&gt; &quot;DECIMAL&quot;   // 不指定精度时使用默认</b>
+&nbsp;            }
+<b class="nc">&nbsp;            NUMERIC -&gt; when {</b>
+<b class="nc">&nbsp;                length &gt; 0 &amp;&amp; scale &gt; 0 -&gt; &quot;NUMERIC($length,$scale)&quot;</b>
+<b class="nc">&nbsp;                length &gt; 0 -&gt; &quot;NUMERIC($length,0)&quot;</b>
+<b class="nc">&nbsp;                else -&gt; &quot;NUMERIC&quot;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // 字符类型（处理超长情况）
+<b class="nc">&nbsp;            CHAR -&gt; &quot;CHAR(${length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="nc">&nbsp;            NCHAR -&gt; &quot;CHAR(${length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="nc">&nbsp;            VARCHAR -&gt; if (length &gt; 0 &amp;&amp; length &lt;= 10485760) &quot;VARCHAR($length)&quot; else &quot;TEXT&quot;</b>
+<b class="nc">&nbsp;            NVARCHAR -&gt; if (length &gt; 0 &amp;&amp; length &lt;= 10485760) &quot;VARCHAR($length)&quot; else &quot;TEXT&quot;</b>
+<b class="nc">&nbsp;            TEXT, CLOB, MEDIUMTEXT, LONGTEXT -&gt; &quot;TEXT&quot;</b>
+&nbsp;
+&nbsp;            // 二进制类型
+<b class="nc">&nbsp;            BINARY -&gt; &quot;BYTEA&quot;</b>
+<b class="nc">&nbsp;            VARBINARY -&gt; &quot;BYTEA&quot;</b>
+<b class="nc">&nbsp;            LONGVARBINARY, BLOB, MEDIUMBLOB, LONGBLOB -&gt; &quot;BYTEA&quot;</b>
+&nbsp;
+&nbsp;            // 时间类型（支持精度）
+<b class="nc">&nbsp;            DATE -&gt; &quot;DATE&quot;</b>
+<b class="nc">&nbsp;            TIME -&gt; &quot;TIME(${scale.coerceIn(0, 6)})&quot;  // 支持0-6位小数秒</b>
+<b class="nc">&nbsp;            DATETIME -&gt; &quot;TIMESTAMP(${scale.coerceIn(0, 6)})&quot;</b>
+<b class="nc">&nbsp;            TIMESTAMP -&gt; &quot;TIMESTAMP(${scale.coerceIn(0, 6)})&quot;</b>
+&nbsp;
+&nbsp;            // 特殊类型
+<b class="nc">&nbsp;            JSON -&gt; &quot;JSONB&quot;         // 推荐使用JSONB（二进制存储）</b>
+<b class="nc">&nbsp;            XML -&gt; &quot;XML&quot;</b>
+<b class="nc">&nbsp;            UUID -&gt; &quot;UUID&quot;</b>
+<b class="nc">&nbsp;            ENUM -&gt; if (length &gt; 0) &quot;VARCHAR($length)&quot; else &quot;VARCHAR(255)&quot;  // 或创建自定义ENUM类型</b>
+<b class="nc">&nbsp;            SET -&gt; &quot;TEXT&quot;           // 集合类型用TEXT或数组类型</b>
+&nbsp;
+&nbsp;            // 空间类型
+<b class="nc">&nbsp;            GEOMETRY -&gt; &quot;GEOMETRY&quot;  // PostGIS扩展</b>
+<b class="nc">&nbsp;            POINT -&gt; &quot;POINT&quot;</b>
+<b class="nc">&nbsp;            LINESTRING -&gt; &quot;LINESTRING&quot;</b>
+&nbsp;
+&nbsp;            // 默认类型
+<b class="nc">&nbsp;            else -&gt; &quot;TEXT&quot;          // PostgreSQL更推荐TEXT而非VARCHAR</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
+<b class="nc">&nbsp;        return when (type) {</b>
+<b class="nc">&nbsp;            &quot;INTEGER&quot; -&gt; INT</b>
+<b class="nc">&nbsp;            &quot;BYTEA&quot; -&gt; BLOB</b>
+<b class="nc">&nbsp;            &quot;BOOLEAN&quot; -&gt; BIT</b>
+<b class="nc">&nbsp;            else -&gt; super.getKColumnType(type, length, scale)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getColumnCreateSql(dbType: DBType, column: Field): String {
+<b class="nc">&nbsp;        return &quot;${</b>
+<b class="nc">&nbsp;            quote(column.columnName)</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            if (column.primaryKey == PrimaryKeyType.IDENTITY) &quot; SERIAL&quot; else &quot; ${getColumnType(column.type, column.length, column.scale)}&quot;</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            if (column.nullable) &quot;&quot; else &quot; NOT NULL&quot;</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            if (column.primaryKey != PrimaryKeyType.NOT) &quot; PRIMARY KEY&quot; else &quot;&quot;</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            if (column.defaultValue != null) &quot; DEFAULT ${column.defaultValue.ifEmpty { &quot;\&quot;\&quot;&quot; }}&quot; else &quot;&quot;</b>
+&nbsp;        }&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getTableExistenceSql(dbType: DBType): String =
+<b class="nc">&nbsp;        &quot;select count(1) from pg_class where relname = :tableName&quot;</b>
+&nbsp;
+&nbsp;    override fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean) =
+<b class="nc">&nbsp;        &quot;TRUNCATE ${quote(tableName)} ${if (restartIdentity) &quot;RESTART IDENTITY&quot; else &quot;&quot;}&quot;</b>
+&nbsp;
+<b class="nc">&nbsp;    override fun getTableDropSql(dbType: DBType, tableName: String) = &quot;DROP TABLE IF EXISTS ${quote(tableName)}&quot;</b>
+&nbsp;
+&nbsp;    override fun getTableCommentSql(dbType: DBType) =
+<b class="nc">&nbsp;        &quot;select cast(obj_description(relfilenode, &#39;pg_class&#39;) as varchar) as comment  from pg_class c  where relname = :tableName&quot;</b>
+&nbsp;
+&nbsp;    override fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex) =
+<b class="nc">&nbsp;        &quot;CREATE${if (index.type.isNotEmpty()) &quot; ${index.type} &quot; else &quot; &quot;}INDEX${(if (index.concurrently) &quot; CONCURRENTLY&quot; else &quot;&quot;)} ${index.name} ON ${</b>
+<b class="nc">&nbsp;            tableName</b>
+<b class="nc">&nbsp;        }${if (index.method.isNotEmpty()) &quot; USING ${index.method}&quot; else &quot;&quot;} (${</b>
+<b class="nc">&nbsp;            index.columns.joinToString(</b>
+<b class="nc">&nbsp;                &quot;, &quot;</b>
+<b class="nc">&nbsp;            ) { quote(it) }</b>
+&nbsp;        })&quot;
+&nbsp;
+&nbsp;    override fun getTableCreateSqlList(
+&nbsp;        dbType: DBType,
+&nbsp;        tableName: String,
+&nbsp;        tableComment: String?,
+&nbsp;        columns: List&lt;Field&gt;,
+&nbsp;        indexes: List&lt;KTableIndex&gt;
+&nbsp;    ): List&lt;String&gt; {
+<b class="nc">&nbsp;        val columnsSql = columns.joinToString(&quot;,&quot;) { columnCreateDefSql(dbType, it) }</b>
+<b class="nc">&nbsp;        val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }</b>
+<b class="nc">&nbsp;        return listOfNotNull(</b>
+<b class="nc">&nbsp;            &quot;CREATE TABLE IF NOT EXISTS \&quot;public\&quot;.${quote(tableName)} ($columnsSql)&quot;,</b>
+<b class="nc">&nbsp;            *indexesSql.toTypedArray(),</b>
+<b class="nc">&nbsp;            *columns.asSequence().filter { !it.kDoc.isNullOrEmpty() }.map {</b>
+<b class="nc">&nbsp;                &quot;COMMENT ON COLUMN \&quot;public\&quot;.${quote(tableName)}.${quote(it.columnName)} IS &#39;${it.kDoc}&#39;&quot;</b>
+<b class="nc">&nbsp;            }.toList().toTypedArray(),</b>
+<b class="nc">&nbsp;            if (tableComment.isNullOrEmpty()) null else &quot;COMMENT ON TABLE \&quot;public\&quot;.${quote(tableName)} IS &#39;$tableComment&#39;&quot;</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    override fun getTableColumns(dataSource: KronosDataSourceWrapper, tableName: String): List&lt;Field&gt; {
+<b class="nc">&nbsp;        return dataSource.forList(</b>
+<b class="nc">&nbsp;            KronosAtomicQueryTask(</b>
+<b class="nc">&nbsp;                &quot;&quot;&quot;</b>
+&nbsp;                SELECT 
+&nbsp;                    c.column_name AS COLUMN_NAME,
+&nbsp;					col_description((current_schema() || &#39;.&#39; || c.table_name)::regclass::oid, c.ordinal_position) AS COLUMN_COMMENT,
+&nbsp;                    CASE 
+&nbsp;                        WHEN c.data_type IN (&#39;character varying&#39;, &#39;varchar&#39;) THEN &#39;VARCHAR&#39;
+&nbsp;                        WHEN c.data_type IN (&#39;integer&#39;, &#39;int&#39;) THEN &#39;INT&#39;
+&nbsp;                        WHEN c.data_type IN (&#39;bigint&#39;) THEN &#39;BIGINT&#39;
+&nbsp;                        WHEN c.data_type IN (&#39;smallint&#39;) THEN &#39;TINYINT&#39;
+&nbsp;                        WHEN c.data_type IN (&#39;decimal&#39;, &#39;numeric&#39;) THEN &#39;DECIMAL&#39;
+&nbsp;                        WHEN c.data_type IN (&#39;double precision&#39;, &#39;real&#39;) THEN &#39;DOUBLE&#39;
+&nbsp;                        WHEN c.data_type IN (&#39;boolean&#39;) THEN &#39;BOOLEAN&#39;
+&nbsp;                        WHEN c.data_type LIKE &#39;timestamp%&#39; THEN &#39;TIMESTAMP&#39;
+&nbsp;                        WHEN c.data_type LIKE &#39;date&#39; THEN &#39;DATE&#39;
+&nbsp;                        ELSE c.data_type
+&nbsp;                    END AS DATA_TYPE,
+&nbsp;                    c.character_maximum_length AS LENGTH,
+&nbsp;                    c.numeric_precision AS SCALE,
+&nbsp;                    c.is_nullable = &#39;YES&#39; AS IS_NULLABLE,
+&nbsp;                    c.column_default AS COLUMN_DEFAULT,
+&nbsp;                    EXISTS (
+&nbsp;                        SELECT 1 
+&nbsp;                        FROM information_schema.key_column_usage kcu
+&nbsp;                        INNER JOIN information_schema.table_constraints tc 
+&nbsp;                            ON kcu.constraint_name = tc.constraint_name
+&nbsp;                            AND kcu.constraint_schema = tc.constraint_schema
+&nbsp;                        WHERE 
+&nbsp;                            tc.constraint_type = &#39;PRIMARY KEY&#39; AND
+&nbsp;                            kcu.table_schema = c.table_schema AND 
+&nbsp;                            kcu.table_name = c.table_name AND 
+&nbsp;                            kcu.column_name = c.column_name
+&nbsp;                    ) OR (c.column_name = &#39;id&#39; AND c.data_type LIKE &#39;serial%&#39;) AS PRIMARY_KEY
+&nbsp;                FROM 
+&nbsp;                    information_schema.columns c
+&nbsp;                WHERE 
+&nbsp;                    c.table_schema = current_schema() AND 
+&nbsp;                    c.table_name = :tableName
+<b class="nc">&nbsp;            &quot;&quot;&quot;.trimWhitespace(), mapOf(&quot;tableName&quot; to tableName, &quot;dbName&quot; to getDBNameFrom(dataSource))</b>
+&nbsp;            )
+<b class="nc">&nbsp;        ).map {</b>
+<b class="nc">&nbsp;            Field(</b>
+<b class="nc">&nbsp;                columnName = it[&quot;column_name&quot;].toString(),</b>
+<b class="nc">&nbsp;                type = getKotlinColumnType(DBType.Postgres, it[&quot;data_type&quot;].toString(), it[&quot;length&quot;] as Int? ?: 0, it[&quot;scale&quot;] as Int? ?: 0),</b>
+<b class="nc">&nbsp;                length = it[&quot;length&quot;] as Int? ?: 0,</b>
+<b class="nc">&nbsp;                scale = it[&quot;scale&quot;] as Int? ?: 0,</b>
+<b class="nc">&nbsp;                tableName = tableName,</b>
+<b class="nc">&nbsp;                nullable = it[&quot;is_nullable&quot;] == true,</b>
+<b class="nc">&nbsp;                primaryKey = when{</b>
+<b class="nc">&nbsp;                    it[&quot;primary_key&quot;] == false -&gt; PrimaryKeyType.NOT</b>
+<b class="nc">&nbsp;                    it[&quot;column_default&quot;]?.toString()?.startsWith(&quot;nextval(&quot;) == true -&gt; PrimaryKeyType.IDENTITY</b>
+<b class="nc">&nbsp;                    else -&gt; PrimaryKeyType.DEFAULT</b>
+&nbsp;                },
+&nbsp;                // 如果defaultValue =  &quot;(&#39;${tableName}_id_seq&#39;::regclass)&quot; 设置成 null
+<b class="nc">&nbsp;                defaultValue = if (it[&quot;column_default&quot;]?.toString()?.startsWith(&quot;nextval(&quot;) == true) {</b>
+<b class="nc">&nbsp;                    null</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    it[&quot;column_default&quot;] as String?</b>
+&nbsp;                },
+<b class="nc">&nbsp;                kDoc = it[&quot;column_comment&quot;] as String?</b>
+<b class="nc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getTableIndexes(
+&nbsp;        dataSource: KronosDataSourceWrapper, tableName: String
+&nbsp;    ): List&lt;KTableIndex&gt; {
+<b class="nc">&nbsp;        return dataSource.forList(</b>
+<b class="nc">&nbsp;            KronosAtomicQueryTask(</b>
+<b class="nc">&nbsp;                &quot;&quot;&quot;</b>
+&nbsp;                SELECT indexname AS name
+&nbsp;                FROM pg_indexes 
+&nbsp;                WHERE tablename = :tableName AND 
+&nbsp;                    schemaname = &#39;public&#39; AND 
+&nbsp;                    indexname NOT LIKE CONCAT(tablename, &#39;_pkey&#39;);
+<b class="nc">&nbsp;                 &quot;&quot;&quot;.trimWhitespace(),</b>
+<b class="nc">&nbsp;                mapOf(</b>
+<b class="nc">&nbsp;                    &quot;tableName&quot; to tableName</b>
+&nbsp;                )
+&nbsp;            )
+<b class="nc">&nbsp;        ).map {</b>
+<b class="nc">&nbsp;            KTableIndex(it[&quot;name&quot;] as String, arrayOf(), &quot;&quot;, &quot;&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getTableSyncSqlList(
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        tableName: String,
+&nbsp;        originalTableComment: String?,
+&nbsp;        tableComment: String?,
+&nbsp;        columns: TableColumnDiff,
+&nbsp;        indexes: TableIndexDiff
+&nbsp;    ): List&lt;String&gt; {
+<b class="nc">&nbsp;        val syncSqlList = mutableListOf&lt;String&gt;()</b>
+&nbsp;
+<b class="nc">&nbsp;        if (originalTableComment.orEmpty() != tableComment.orEmpty()) {</b>
+<b class="nc">&nbsp;            syncSqlList.add(&quot;COMMENT ON TABLE ${quote(&quot;public&quot;)}.${quote(tableName)} IS &#39;${tableComment.orEmpty()}&#39;&quot;)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        syncSqlList.addAll(</b>
+<b class="nc">&nbsp;            indexes.toDelete.map {</b>
+<b class="nc">&nbsp;                &quot;DROP INDEX ${quote(&quot;public&quot;)}.${it.name};&quot;</b>
+<b class="nc">&nbsp;            } + columns.toAdd.map {</b>
+<b class="nc">&nbsp;                &quot;ALTER TABLE ${quote(&quot;public&quot;)}.${quote(tableName)} ADD COLUMN ${</b>
+<b class="nc">&nbsp;                    columnCreateDefSql(</b>
+<b class="nc">&nbsp;                        DBType.Postgres, it.first</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                }&quot;</b>
+<b class="nc">&nbsp;            } + columns.toModified.map {</b>
+<b class="nc">&nbsp;                &quot;ALTER TABLE ${quote(&quot;public&quot;)}.${quote(tableName)} ALTER COLUMN ${it.first.columnName} TYPE ${</b>
+<b class="nc">&nbsp;                    getColumnType(it.first.type, it.first.length, it.first.scale)</b>
+<b class="nc">&nbsp;                } ${if (it.first.defaultValue != null) &quot;,AlTER COLUMN ${it.first.columnName} SET DEFAULT ${it.first.defaultValue}&quot; else &quot;&quot;} ${</b>
+<b class="nc">&nbsp;                    if (it.first.nullable) &quot;,ALTER COLUMN ${it.first.columnName} DROP NOT NULL&quot; else &quot;,ALTER COLUMN ${it.first.columnName} SET NOT NULL&quot;</b>
+<b class="nc">&nbsp;                }&quot;</b>
+<b class="nc">&nbsp;            } + columns.toModified.map {</b>
+<b class="nc">&nbsp;                if(it.first.kDoc.isNullOrEmpty()) {</b>
+<b class="nc">&nbsp;                    &quot;COMMENT ON COLUMN ${quote(&quot;public&quot;)}.${quote(tableName)}.${quote(it.first.columnName)} IS NULL&quot;</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    &quot;COMMENT ON COLUMN ${quote(&quot;public&quot;)}.${quote(tableName)}.${quote(it.first.columnName)} IS &#39;${it.first.kDoc}&#39;&quot;</b>
+<b class="nc">&nbsp;                }</b>
+<b class="nc">&nbsp;            } + columns.toDelete.map {</b>
+<b class="nc">&nbsp;                &quot;ALTER TABLE ${quote(&quot;public&quot;)}.${quote(tableName)} DROP COLUMN ${it.columnName}&quot;</b>
+<b class="nc">&nbsp;            } + indexes.toAdd.map {</b>
+<b class="nc">&nbsp;                getIndexCreateSql(DBType.Postgres, &quot;${quote(&quot;public&quot;)}.${quote(tableName)}&quot;, it)</b>
+&nbsp;            }
+&nbsp;        )
+<b class="nc">&nbsp;        return syncSqlList</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getOnConflictSql(conflictResolver: ConflictResolver): String {
+<b class="nc">&nbsp;        val (tableName, onFields, toUpdateFields, toInsertFields) = conflictResolver</b>
+<b class="nc">&nbsp;        return &quot;&quot;&quot;</b>
+&nbsp;        INSERT INTO ${
+<b class="nc">&nbsp;            quote(tableName)</b>
+<b class="nc">&nbsp;        } (${</b>
+<b class="nc">&nbsp;            toInsertFields.joinToString { quote(it) }</b>
+<b class="nc">&nbsp;        }) SELECT  ${</b>
+<b class="nc">&nbsp;            toInsertFields.joinToString(&quot;, &quot;) { &quot;:$it&quot; }</b>
+<b class="nc">&nbsp;        } WHERE NOT EXISTS (</b>
+&nbsp;               SELECT 1 FROM ${
+<b class="nc">&nbsp;            quote(tableName)</b>
+<b class="nc">&nbsp;        } WHERE ${onFields.joinToString(&quot; AND &quot;) { equation(it) }}</b>
+&nbsp;            );
+<b class="nc">&nbsp;            UPDATE ${quote(tableName)} SET ${</b>
+<b class="nc">&nbsp;            toUpdateFields.joinToString(&quot;, &quot;) { equation(it) }</b>
+<b class="nc">&nbsp;        } WHERE ${</b>
+<b class="nc">&nbsp;            onFields.joinToString(&quot; AND &quot;) { equation(it) }</b>
+<b class="nc">&nbsp;        };</b>
+<b class="nc">&nbsp;        &quot;&quot;&quot;.trimWhitespace()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getInsertSql(dataSource: KronosDataSourceWrapper, tableName: String, columns: List&lt;Field&gt;) =
+<b class="nc">&nbsp;        &quot;INSERT INTO ${quote(tableName)} (${columns.joinToString { quote(it) }}) VALUES (${columns.joinToString { &quot;:$it&quot; }})&quot;</b>
+&nbsp;
+&nbsp;    override fun getDeleteSql(dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?) =
+<b class="nc">&nbsp;        &quot;DELETE FROM ${quote(tableName)}${whereClauseSql.orEmpty()}&quot;</b>
+&nbsp;
+&nbsp;    override fun getUpdateSql(
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        tableName: String,
+&nbsp;        toUpdateFields: List&lt;Field&gt;,
+&nbsp;        whereClauseSql: String?,
+&nbsp;        plusAssigns: MutableList&lt;Pair&lt;Field, String&gt;&gt;,
+&nbsp;        minusAssigns: MutableList&lt;Pair&lt;Field, String&gt;&gt;
+&nbsp;    ) =
+<b class="nc">&nbsp;        &quot;UPDATE ${quote(tableName)} SET ${toUpdateFields.joinToString { equation(it + &quot;New&quot;) }}&quot; +</b>
+<b class="nc">&nbsp;                plusAssigns.joinToString { &quot;, ${quote(it.first)} = ${quote(it.first)} + :${it.second}&quot; } +</b>
+<b class="nc">&nbsp;                minusAssigns.joinToString { &quot;, ${quote(it.first)} = ${quote(it.first)} - :${it.second}&quot; } +</b>
+<b class="nc">&nbsp;                whereClauseSql.orEmpty()</b>
+&nbsp;
+&nbsp;    override fun getSelectSql(dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo): String {
+<b class="nc">&nbsp;        val (databaseName, tableName, selectFields, distinct, pagination, pi, ps, limit, lock, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql) = selectClause</b>
+&nbsp;
+<b class="nc">&nbsp;        if (!databaseName.isNullOrEmpty()) throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;            DBType.Postgres,</b>
+<b class="nc">&nbsp;            &quot;Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode&quot;</b>
+&nbsp;        )
+&nbsp;
+<b class="nc">&nbsp;        val selectSql = selectFields.joinToString(&quot;, &quot;) {</b>
+<b class="nc">&nbsp;            when {</b>
+<b class="nc">&nbsp;                it is FunctionField -&gt; getBuiltFunctionField(it, dataSource)</b>
+<b class="nc">&nbsp;                it.type == CUSTOM_CRITERIA_SQL -&gt; it.toString()</b>
+<b class="nc">&nbsp;                it.name != it.columnName -&gt; &quot;${quote(it.columnName)} AS ${quote(it.name)}&quot;</b>
+<b class="nc">&nbsp;                else -&gt; quote(it)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        val paginationSql = if (pagination) &quot; LIMIT $ps OFFSET ${ps * (pi - 1)}&quot; else null</b>
+<b class="nc">&nbsp;        val limitSql = if (paginationSql == null &amp;&amp; limit != null &amp;&amp; limit &gt; 0) &quot; LIMIT $limit&quot; else null</b>
+<b class="nc">&nbsp;        val distinctSql = if (distinct) &quot; DISTINCT&quot; else null</b>
+<b class="nc">&nbsp;        val lockSql = when (lock) {</b>
+<b class="nc">&nbsp;            PessimisticLock.X -&gt; &quot; FOR UPDATE&quot;</b>
+<b class="nc">&nbsp;            PessimisticLock.S -&gt; &quot; FOR SHARE&quot;</b>
+<b class="nc">&nbsp;            else -&gt; null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return &quot;SELECT${distinctSql.orEmpty()} $selectSql FROM ${</b>
+<b class="nc">&nbsp;            quote(tableName)</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            whereClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            groupByClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            havingClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            orderByClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            paginationSql ?: limitSql ?: &quot;&quot;</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            lockSql.orEmpty()</b>
+&nbsp;        }&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getJoinSql(dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo): String {
+<b class="nc">&nbsp;        val (tableName, selectFields, distinct, pagination, pi, ps, limit, databaseOfTable, whereClauseSql, groupByClauseSql, orderByClauseSql, havingClauseSql, joinSql) = joinClause</b>
+&nbsp;
+<b class="nc">&nbsp;        if (databaseOfTable.isNotEmpty()) throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;            DBType.Postgres,</b>
+<b class="nc">&nbsp;            &quot;Postgresql does not support databaseName in select clause because of its dblink-liked configuration mode&quot;</b>
+&nbsp;        )
+&nbsp;
+<b class="nc">&nbsp;        val selectSql = selectFields.joinToString(&quot;, &quot;) {</b>
+<b class="nc">&nbsp;            val field = it.second</b>
+<b class="nc">&nbsp;            when {</b>
+<b class="nc">&nbsp;                field is FunctionField -&gt; getBuiltFunctionField(field, dataSource, true)</b>
+<b class="nc">&nbsp;                field.type == CUSTOM_CRITERIA_SQL -&gt; field.toString()</b>
+<b class="nc">&nbsp;                field.name != field.columnName -&gt; &quot;${quote(field, true)} AS ${quote(field.name)}&quot;</b>
+<b class="nc">&nbsp;                else -&gt; &quot;${quote(field, true)} AS ${MssqlSupport.quote(it.first)}&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        val paginationSql = if (pagination) &quot; LIMIT $ps OFFSET ${ps * (pi - 1)}&quot; else null</b>
+<b class="nc">&nbsp;        val limitSql = if (paginationSql == null &amp;&amp; limit != null &amp;&amp; limit &gt; 0) &quot; LIMIT $limit&quot; else null</b>
+<b class="nc">&nbsp;        val distinctSql = if (distinct) &quot; DISTINCT&quot; else null</b>
+<b class="nc">&nbsp;        return &quot;SELECT${distinctSql.orEmpty()} $selectSql FROM ${</b>
+<b class="nc">&nbsp;            quote(tableName)</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            joinSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            whereClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            groupByClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            havingClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            orderByClauseSql.orEmpty()</b>
+&nbsp;        }${
+<b class="nc">&nbsp;            paginationSql ?: limitSql ?: &quot;&quot;</b>
+&nbsp;        }&quot;
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

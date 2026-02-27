@@ -1,0 +1,213 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > BasicTypeTransformer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: BasicTypeTransformer (com.kotlinorm.beans.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">BasicTypeTransformer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (18/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.6%
+  </span>
+  <span class="absValue">
+    (25/27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.8%
+  </span>
+  <span class="absValue">
+    (181/195)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.interfaces.ValueTransformer
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Transformer for basic types.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;object BasicTypeTransformer : ValueTransformer {
+<b class="fc">&nbsp;    private val basicTypes = listOf(</b>
+<b class="fc">&nbsp;        &quot;kotlin.Int&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Long&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Double&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Float&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Boolean&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Char&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Byte&quot;,</b>
+<b class="fc">&nbsp;        &quot;kotlin.Short&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Safely casts the value to the target type.
+&nbsp;     *
+&nbsp;     * @param fromNumber A lambda to convert from a Number.
+&nbsp;     * @param fromStr A lambda to convert from a String.
+&nbsp;     * @return The value cast to the target type.
+&nbsp;     */
+&nbsp;    private fun &lt;T&gt; Any.safeCast(fromNumber: Number.() -&gt; T, fromStr: String.() -&gt; T): T {
+<b class="fc">&nbsp;        return if (this is Number) {</b>
+<b class="fc">&nbsp;            fromNumber()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            toString().fromStr()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun Any.toChar(): Char {
+<b class="fc">&nbsp;        return if (this is Number) {</b>
+<b class="fc">&nbsp;            toInt().toChar()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            toString().first()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun isMatch(targetKotlinType: String, superTypesOfValue: List&lt;String&gt;, kClassOfValue: KClass&lt;*&gt;): Boolean {
+<b class="fc">&nbsp;        return targetKotlinType in basicTypes</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun transform(
+&nbsp;        targetKotlinType: String,
+&nbsp;        value: Any,
+&nbsp;        superTypesOfValue: List&lt;String&gt;,
+&nbsp;        dateTimeFormat: String?,
+&nbsp;        kClassOfValue: KClass&lt;*&gt;
+&nbsp;    ): Any {
+<b class="pc">&nbsp;        return when (targetKotlinType) {</b>
+<b class="fc">&nbsp;            &quot;kotlin.Int&quot; -&gt; value.safeCast(Number::toInt, String::toInt)</b>
+<b class="fc">&nbsp;            &quot;kotlin.Long&quot; -&gt; value.safeCast(Number::toLong, String::toLong)</b>
+<b class="fc">&nbsp;            &quot;kotlin.Short&quot; -&gt; value.safeCast(Number::toShort, String::toShort)</b>
+<b class="fc">&nbsp;            &quot;kotlin.Float&quot; -&gt; value.safeCast(Number::toFloat, String::toFloat)</b>
+<b class="fc">&nbsp;            &quot;kotlin.Double&quot; -&gt; value.safeCast(Number::toDouble, String::toDouble)</b>
+<b class="fc">&nbsp;            &quot;kotlin.Byte&quot; -&gt; value.safeCast(Number::toByte, String::toByte)</b>
+<b class="fc">&nbsp;            &quot;kotlin.Char&quot; -&gt; value.toChar()</b>
+<b class="pc">&nbsp;            &quot;kotlin.Boolean&quot; -&gt; (value is Number &amp;&amp; value != 0) || value.toString().ifBlank { &quot;false&quot; }.toBoolean()</b>
+<b class="nc">&nbsp;            else -&gt; null</b>
+<b class="nc">&nbsp;        } ?: throw IllegalArgumentException(&quot;Invalid type: $targetKotlinType&quot;)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

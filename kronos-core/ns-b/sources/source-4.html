@@ -1,0 +1,292 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SqlManager</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlManager (com.kotlinorm.database)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlManager</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (13/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    28.7%
+  </span>
+  <span class="absValue">
+    (27/94)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (25/50)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.1%
+  </span>
+  <span class="absValue">
+    (242/537)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.database
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.ddl.TableColumnDiff
+&nbsp;import com.kotlinorm.orm.ddl.TableIndexDiff
+&nbsp;import com.kotlinorm.orm.join.JoinClauseInfo
+&nbsp;import com.kotlinorm.orm.select.SelectClauseInfo
+&nbsp;
+&nbsp;// Used to generate SQL that is independent of database type, including dialect differences.
+&nbsp;object SqlManager {
+<b class="fc">&nbsp;    private val DBType.dbSupport get() = getDBSupport(this)</b>
+&nbsp;
+&nbsp;    internal fun getDBNameFrom(wrapper: KronosDataSourceWrapper) =
+<b class="pc">&nbsp;        wrapper.dbType.dbSupport?.getDBNameFromUrl(wrapper) ?: throw UnsupportedDatabaseTypeException(wrapper.dbType)</b>
+&nbsp;
+&nbsp;    fun sqlColumnType(
+&nbsp;        dbType: DBType, type: KColumnType, length: Int, scale: Int
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getColumnType(type, length, scale) ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun getKotlinColumnType(
+&nbsp;        dbType: DBType, sqlType: String, length: Int, scale: Int
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getKColumnType(sqlType, length, scale) ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun columnCreateDefSql(
+&nbsp;        dbType: DBType, column: Field
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getColumnCreateSql(dbType, column) ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun indexCreateDefSql(
+&nbsp;        dbType: DBType, tableName: String, kTableIndex: KTableIndex
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getIndexCreateSql(dbType, tableName, kTableIndex) ?: throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;        dbType</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun getTableCreateSqlList(
+&nbsp;        dbType: DBType, tableName: String, tableComment: String?, columns: List&lt;Field&gt;, indexes: List&lt;KTableIndex&gt;
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getTableCreateSqlList(dbType, tableName, tableComment, columns, indexes)</b>
+<b class="nc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun getTableExistenceSql(
+&nbsp;        dbType: DBType
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getTableExistenceSql(dbType) ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun getTableTruncateSql(
+&nbsp;        dbType: DBType, tableName: String, restartIdentity: Boolean
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getTableTruncateSql(dbType, tableName, restartIdentity)</b>
+<b class="nc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun getTableDropSql(
+&nbsp;        dbType: DBType, tableName: String
+<b class="nc">&nbsp;    ) = dbType.dbSupport?.getTableDropSql(dbType, tableName) ?: throw UnsupportedDatabaseTypeException(dbType)</b>
+&nbsp;
+&nbsp;    fun getTableCommentSql(
+&nbsp;        dataSource: KronosDataSourceWrapper
+<b class="nc">&nbsp;    ) = dataSource.dbType.dbSupport?.getTableCommentSql(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;        dataSource.dbType</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun getTableColumns(
+&nbsp;        dataSource: KronosDataSourceWrapper, tableName: String
+<b class="nc">&nbsp;    ) = dataSource.dbType.dbSupport?.getTableColumns(dataSource, tableName) ?: throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;        dataSource.dbType</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun getTableIndexes(
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        tableName: String,
+<b class="nc">&nbsp;    ) = dataSource.dbType.dbSupport?.getTableIndexes(dataSource, tableName) ?: throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;        dataSource.dbType</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun getTableSyncSqlList(
+&nbsp;        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
+<b class="nc">&nbsp;    ) = dataSource.dbType.dbSupport?.getTableSyncSqlList(dataSource, tableName, originalTableComment,  tableComment, columns, indexes)</b>
+<b class="nc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+&nbsp;    fun getOnConflictSql(
+&nbsp;        dataSource: KronosDataSourceWrapper, conflictResolver: ConflictResolver
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.getOnConflictSql(conflictResolver) ?: throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;        dataSource.dbType</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun Field.quoted(
+<b class="fc">&nbsp;        dataSource: KronosDataSourceWrapper, showTable: Boolean = false</b>
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.quote(this, showTable) ?: throw UnsupportedDatabaseTypeException(</b>
+<b class="nc">&nbsp;        dataSource.dbType</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun quote(
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        tableName: String,
+<b class="nc">&nbsp;        showTable: Boolean = false,</b>
+<b class="fc">&nbsp;        columnName: String? = null,</b>
+<b class="nc">&nbsp;        map: Map&lt;String, String&gt; = emptyMap()</b>
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val databaseName = map[tableName]</b>
+<b class="pc">&nbsp;        val support = dataSource.dbType.dbSupport ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+<b class="fc">&nbsp;        return listOfNotNull(</b>
+<b class="fc">&nbsp;            if (databaseName.isNullOrBlank()) null else support.quote(databaseName),</b>
+<b class="pc">&nbsp;            if (!showTable &amp;&amp; databaseName.isNullOrBlank()) null else support.quote(tableName),</b>
+<b class="fc">&nbsp;            columnName?.let { support.quote(it) }</b>
+<b class="fc">&nbsp;        ).joinToString(&quot;.&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun quote(
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        field: Field,
+<b class="nc">&nbsp;        showTable: Boolean = false,</b>
+<b class="nc">&nbsp;        map: Map&lt;String, String&gt; = emptyMap()</b>
+<b class="fc">&nbsp;    ) = quote(dataSource, field.tableName, showTable, field.columnName, map)</b>
+&nbsp;
+&nbsp;    fun getInsertSql(
+&nbsp;        dataSource: KronosDataSourceWrapper, tableName: String, columns: List&lt;Field&gt;
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.getInsertSql(dataSource, tableName, columns)</b>
+<b class="fc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+&nbsp;    fun getDeleteSql(
+&nbsp;        dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.getDeleteSql(dataSource, tableName, whereClauseSql)</b>
+<b class="fc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+&nbsp;    fun getUpdateSql(
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        tableName: String,
+&nbsp;        toUpdateFields: List&lt;Field&gt;,
+&nbsp;        whereClauseSql: String?,
+&nbsp;        plusAssigns: MutableList&lt;Pair&lt;Field, String&gt;&gt;,
+&nbsp;        minusAssigns: MutableList&lt;Pair&lt;Field, String&gt;&gt;
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.getUpdateSql(</b>
+<b class="fc">&nbsp;        dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns</b>
+<b class="fc">&nbsp;    ) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+&nbsp;    fun getSelectSql(
+&nbsp;        dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, selectClause)</b>
+<b class="fc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+&nbsp;    fun getJoinSql(
+&nbsp;        dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
+<b class="pc">&nbsp;    ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)</b>
+<b class="fc">&nbsp;        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

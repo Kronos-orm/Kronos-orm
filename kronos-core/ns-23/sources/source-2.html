@@ -1,0 +1,624 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > ConditionSqlBuilder</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: ConditionSqlBuilder (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ConditionSqlBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (11/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.1%
+  </span>
+  <span class="absValue">
+    (129/179)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.2%
+  </span>
+  <span class="absValue">
+    (162/188)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.1%
+  </span>
+  <span class="absValue">
+    (1233/1483)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ConditionSqlBuilder$KeyCounter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (23/23)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ConditionSqlBuilder$KotoBuildResultSet</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (10/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.2%
+  </span>
+  <span class="absValue">
+    (51/53)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ConditionSqlBuilder$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    94.1%
+  </span>
+  <span class="absValue">
+    (16/17)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.6%
+  </span>
+  <span class="absValue">
+    (131/183)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.1%
+  </span>
+  <span class="absValue">
+    (174/202)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.8%
+  </span>
+  <span class="absValue">
+    (1307/1559)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos.noValueStrategy
+&nbsp;import com.kotlinorm.Kronos.serializeProcessor
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.FunctionField
+&nbsp;import com.kotlinorm.database.SqlManager.quote
+&nbsp;import com.kotlinorm.enums.ConditionType
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType.Ignore
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType.False
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType.True
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType.JudgeNull
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType.Auto
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.And
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Between
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Equal
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Ge
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Gt
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.In
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.IsNull
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Le
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Like
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Lt
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Or
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Regexp
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Root
+&nbsp;import com.kotlinorm.enums.ConditionType.Companion.Sql
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType
+&nbsp;import com.kotlinorm.enums.Postgres
+&nbsp;import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;
+&nbsp;/**
+&nbsp; * 工具类，用于根据条件对象构建 SQL 查询中的 WHERE 条件部分。
+&nbsp; */
+&nbsp;object ConditionSqlBuilder {
+&nbsp;
+<b class="fc">&nbsp;    data class KotoBuildResultSet(</b>
+<b class="fc">&nbsp;        val sql: String?,</b>
+<b class="fc">&nbsp;        val paramMap: MutableMap&lt;String, Any?&gt;</b>
+&nbsp;    ) {
+&nbsp;        fun toWhereClause(): Pair&lt;String?, MutableMap&lt;String, Any?&gt;&gt; {
+<b class="fc">&nbsp;            return toWhereSql(sql) to paramMap</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun toOnClause(): Pair&lt;String?, MutableMap&lt;String, Any?&gt;&gt; {
+<b class="pc">&nbsp;            return if (sql != null) {</b>
+<b class="fc">&nbsp;                &quot; ON $sql&quot;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                null</b>
+<b class="fc">&nbsp;            } to paramMap</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun toHavingClause(): Pair&lt;String?, MutableMap&lt;String, Any?&gt;&gt; {
+<b class="pc">&nbsp;            return if (sql != null) {</b>
+<b class="fc">&nbsp;                &quot; HAVING $sql&quot;</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                null</b>
+<b class="fc">&nbsp;            } to paramMap</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    data class KeyCounter(
+<b class="fc">&nbsp;        var initialized: Boolean = false,</b>
+<b class="fc">&nbsp;        var metaOfMap: MutableMap&lt;String, MutableMap&lt;Int, Any?&gt;&gt; = mutableMapOf()</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun toWhereSql(sql: String?): String? {
+<b class="fc">&nbsp;        return if (sql != null) {</b>
+<b class="fc">&nbsp;            &quot; WHERE $sql&quot;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            null</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun MutableMap&lt;String, Any?&gt;.update(
+&nbsp;        field: Field,
+&nbsp;        key: String,
+&nbsp;        value: Any?
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (value != null &amp;&amp; value !is FunctionField) {</b>
+<b class="fc">&nbsp;            this[key] = when {</b>
+<b class="pc">&nbsp;                field.serializable -&gt; serializeProcessor.serialize(value)</b>
+<b class="fc">&nbsp;                else -&gt; value</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据给定的条件类型构建对应的SQL查询条件。这里处理的是逻辑操作符（AND, OR）的情况。
+&nbsp;     *
+&nbsp;     * @param condition 当前处理的条件对象，包含逻辑操作类型和子条件。
+&nbsp;     * @param paramMap 查询参数映射表。
+&nbsp;     * @param needBrackets 判断是否需要在子条件周围添加括号。当子条件为逻辑操作符且与当前条件类型不同时，需要添加括号。
+&nbsp;     * @param keyCounters 用于生成唯一键名的计数器。
+&nbsp;     * @return 返回构建好的SQL条件字符串，如果条件为空则返回null。
+&nbsp;     */
+&nbsp;    fun buildConditionSqlWithParams(
+&nbsp;        operationType: KOperationType,
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+&nbsp;        condition: Criteria?,
+<b class="fc">&nbsp;        paramMap: MutableMap&lt;String, Any?&gt; = mutableMapOf(),</b>
+<b class="fc">&nbsp;        needBrackets: Boolean = false,</b>
+<b class="fc">&nbsp;        keyCounters: KeyCounter = KeyCounter(),</b>
+<b class="fc">&nbsp;        showTable: Boolean = false,</b>
+<b class="fc">&nbsp;        databaseOfTable: Map&lt;String, String&gt; = mapOf()</b>
+&nbsp;    ): KotoBuildResultSet {
+<b class="fc">&nbsp;        if (condition == null) { // 如果条件为 null，则直接返回</b>
+<b class="fc">&nbsp;            return KotoBuildResultSet(null, paramMap)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if ((condition.value == null &amp;&amp; condition.valueAcceptable) ||</b>
+<b class="pc">&nbsp;            (condition.value.isEmptyArrayOrCollection() &amp;&amp; condition.type == In)</b>
+&nbsp;        ) { // 如果值为 null，且条件不允许值为 null，则进入无值策略处理
+<b class="fc">&nbsp;            if (handleNoValueStrategy(condition, operationType, paramMap) != null)</b>
+<b class="fc">&nbsp;                return KotoBuildResultSet(null, paramMap)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (condition.field is FunctionField) paramMap.remove(condition.field.name)</b>
+<b class="fc">&nbsp;        if (condition.value is FunctionField) paramMap.remove((condition.value as FunctionField).name)</b>
+&nbsp;
+<b class="fc">&nbsp;        val sql = when (condition.type) {</b>
+<b class="fc">&nbsp;            Root -&gt; {</b>
+<b class="fc">&nbsp;                listOf(</b>
+<b class="fc">&nbsp;                    buildConditionSqlWithParams(</b>
+<b class="fc">&nbsp;                        operationType,</b>
+<b class="fc">&nbsp;                        wrapper,</b>
+<b class="fc">&nbsp;                        condition.children.firstOrNull(),</b>
+<b class="fc">&nbsp;                        paramMap,</b>
+<b class="fc">&nbsp;                        showTable = showTable,</b>
+<b class="fc">&nbsp;                        databaseOfTable = databaseOfTable</b>
+<b class="fc">&nbsp;                    ).sql</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            Equal -&gt; {</b>
+<b class="fc">&nbsp;                if (condition.value is Field) listOfNotNull(</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="pc">&nbsp;                    &quot;!=&quot;.takeIf { condition.not } ?: &quot;=&quot;,</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.value as Field, wrapper.orDefault(), showTable, databaseOfTable))</b>
+&nbsp;                else {
+<b class="fc">&nbsp;                    val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                    paramMap.update(condition.field, safeKey, condition.value)</b>
+<b class="fc">&nbsp;                    listOfNotNull(</b>
+<b class="fc">&nbsp;                        getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                        &quot;!=&quot;.takeIf { condition.not } ?: &quot;=&quot;,</b>
+<b class="pc">&nbsp;                        if (condition.value is FunctionField) getParialCriteriaSql(</b>
+<b class="nc">&nbsp;                            condition.value as FunctionField,</b>
+<b class="nc">&nbsp;                            wrapper.orDefault(),</b>
+<b class="nc">&nbsp;                            showTable,</b>
+<b class="nc">&nbsp;                            databaseOfTable</b>
+<b class="fc">&nbsp;                        ) else &quot;:${safeKey}&quot;</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            IsNull -&gt; listOfNotNull(</b>
+<b class="fc">&nbsp;                getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                &quot;IS&quot;, &quot;NOT&quot;.takeIf { condition.not }, &quot;NULL&quot;</b>
+&nbsp;            )
+&nbsp;
+<b class="fc">&nbsp;            Sql -&gt; listOf(condition.value.toString())</b>
+&nbsp;
+<b class="fc">&nbsp;            Like -&gt; {</b>
+<b class="fc">&nbsp;                val safeKey = getSafeKey(condition.field.name, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                paramMap.update(condition.field, safeKey, condition.value)</b>
+<b class="fc">&nbsp;                listOfNotNull(</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                    &quot;NOT&quot;.takeIf { condition.not },</b>
+<b class="fc">&nbsp;                    &quot;LIKE&quot;,</b>
+<b class="fc">&nbsp;                    if (condition.value is FunctionField) getParialCriteriaSql(</b>
+<b class="fc">&nbsp;                        condition.value as FunctionField,</b>
+<b class="fc">&nbsp;                        wrapper.orDefault(),</b>
+<b class="fc">&nbsp;                        showTable,</b>
+<b class="fc">&nbsp;                        databaseOfTable</b>
+<b class="fc">&nbsp;                    ) else &quot;:${safeKey}&quot;</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            In -&gt; {</b>
+<b class="fc">&nbsp;                val safeKey = getSafeKey(condition.field.name + &quot;List&quot;, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                paramMap.update(condition.field, safeKey, condition.value)</b>
+<b class="fc">&nbsp;                listOfNotNull(</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                    &quot;NOT&quot;.takeIf { condition.not },</b>
+<b class="pc">&nbsp;                    if(wrapper.orDefault().dbType == Postgres.type){</b>
+<b class="nc">&nbsp;                        &quot;=&quot;</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        &quot;IN&quot;</b>
+&nbsp;                    },
+<b class="pc">&nbsp;                    if(wrapper.orDefault().dbType == Postgres.type){</b>
+<b class="nc">&nbsp;                        &quot;ANY(:${safeKey})&quot;</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        &quot;(:${safeKey})&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            Gt, Ge, Lt, Le -&gt; {</b>
+<b class="fc">&nbsp;                if (condition.value is Field) listOfNotNull(</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                    condition.type.value,</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.value as Field, wrapper.orDefault(), showTable, databaseOfTable)</b>
+&nbsp;                )
+&nbsp;                else {
+<b class="fc">&nbsp;                    val suffix = &quot;Min&quot;.takeIf { condition.type in listOf(Gt, Ge) } ?: &quot;Max&quot;</b>
+<b class="fc">&nbsp;                    val safeKey = getSafeKey(condition.field.name + suffix, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                    paramMap.update(condition.field, safeKey, condition.value)</b>
+<b class="fc">&nbsp;                    listOf(</b>
+<b class="fc">&nbsp;                        getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                        condition.type.value,</b>
+<b class="pc">&nbsp;                        if (condition.value is FunctionField) getParialCriteriaSql(</b>
+<b class="nc">&nbsp;                            condition.value as FunctionField,</b>
+<b class="nc">&nbsp;                            wrapper.orDefault(),</b>
+<b class="nc">&nbsp;                            showTable,</b>
+<b class="nc">&nbsp;                            databaseOfTable</b>
+<b class="fc">&nbsp;                        ) else &quot;:${safeKey}&quot;</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            Between -&gt; {</b>
+<b class="fc">&nbsp;                val safeKeyMin = getSafeKey(condition.field.name + &quot;Min&quot;, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                val safeKeyMax = getSafeKey(condition.field.name + &quot;Max&quot;, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                val rangeValue = condition.value as ClosedRange&lt;*&gt;</b>
+<b class="fc">&nbsp;                paramMap[safeKeyMin] = rangeValue.start</b>
+<b class="fc">&nbsp;                paramMap[safeKeyMax] = rangeValue.endInclusive</b>
+<b class="fc">&nbsp;                listOfNotNull(</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="fc">&nbsp;                    &quot;NOT&quot;.takeIf { condition.not },</b>
+<b class="fc">&nbsp;                    &quot;BETWEEN&quot;,</b>
+<b class="fc">&nbsp;                    &quot;:${safeKeyMin}&quot;,</b>
+<b class="fc">&nbsp;                    &quot;AND&quot;,</b>
+<b class="fc">&nbsp;                    &quot;:${safeKeyMax}&quot;</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            Regexp -&gt; {</b>
+<b class="fc">&nbsp;                val safeKey = getSafeKey(condition.field.name + &quot;Pattern&quot;, keyCounters, paramMap, condition)</b>
+<b class="fc">&nbsp;                paramMap.update(condition.field, safeKey, condition.value)</b>
+<b class="fc">&nbsp;                listOfNotNull(</b>
+<b class="fc">&nbsp;                    getParialCriteriaSql(condition.field, wrapper.orDefault(), showTable, databaseOfTable),</b>
+<b class="pc">&nbsp;                    &quot;NOT&quot;.takeIf { condition.not },</b>
+<b class="fc">&nbsp;                    &quot;REGEXP&quot;,</b>
+<b class="pc">&nbsp;                    if (condition.value is FunctionField) getParialCriteriaSql(</b>
+<b class="nc">&nbsp;                        condition.value as FunctionField,</b>
+<b class="nc">&nbsp;                        wrapper.orDefault(),</b>
+<b class="nc">&nbsp;                        showTable,</b>
+<b class="nc">&nbsp;                        databaseOfTable</b>
+<b class="fc">&nbsp;                    ) else &quot;:${safeKey}&quot;</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            And, Or -&gt; {</b>
+&nbsp;                // 将子条件转换为SQL字符串，并根据需要添加括号。
+<b class="fc">&nbsp;                val branches = condition.children.mapNotNull { child -&gt;</b>
+<b class="fc">&nbsp;                    val (childSql, _) = buildConditionSqlWithParams(</b>
+<b class="fc">&nbsp;                        operationType,</b>
+<b class="fc">&nbsp;                        wrapper,</b>
+<b class="fc">&nbsp;                        child,</b>
+<b class="fc">&nbsp;                        paramMap,</b>
+<b class="pc">&nbsp;                        needBrackets = child?.type.isLogicalOperator() &amp;&amp; child?.type != condition.type,</b>
+<b class="fc">&nbsp;                        keyCounters,</b>
+<b class="fc">&nbsp;                        showTable = showTable,</b>
+<b class="fc">&nbsp;                        databaseOfTable = databaseOfTable</b>
+&nbsp;                    )
+<b class="fc">&nbsp;                    childSql</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                // 当没有子条件时返回null，否则根据逻辑操作类型（AND, OR）连接所有子条件SQL。
+<b class="fc">&nbsp;                val joinKeyword = &quot; ${condition.type.name} &quot;</b>
+<b class="fc">&nbsp;                listOf(</b>
+<b class="fc">&nbsp;                    branches.joinToString(joinKeyword).let {</b>
+<b class="fc">&nbsp;                        &quot;($it)&quot;.takeIf { needBrackets } ?: it</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; throw IllegalArgumentException(&quot;Unsupported condition type: ${condition.type}&quot;)</b>
+<b class="fc">&nbsp;        }.filterNotNull().joinToString(&quot; &quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;        return KotoBuildResultSet(sql.ifEmpty { null }, paramMap)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // 辅助扩展函数，用于判断是否为逻辑操作符类型
+<b class="fc">&nbsp;    private fun ConditionType?.isLogicalOperator(): Boolean = this == And || this == Or</b>
+&nbsp;
+&nbsp;    // 这个函数用于生成一个安全的键名，以避免与现有的键名冲突
+&nbsp;    fun getSafeKey(
+&nbsp;        keyName: String,
+&nbsp;        keyCounters: KeyCounter,
+&nbsp;        dataMap: MutableMap&lt;String, Any?&gt;,
+&nbsp;        data: Any
+&nbsp;    ): String {
+&nbsp;        // 如果 keyCounters 尚未初始化，则进行初始化
+<b class="fc">&nbsp;        if (!keyCounters.initialized) {</b>
+<b class="fc">&nbsp;            keyCounters.initialized = true</b>
+&nbsp;            // 遍历paramMap中的所有键
+<b class="fc">&nbsp;            dataMap.keys.forEach { key -&gt;</b>
+&nbsp;                // 使用解构声明从字符串中提取键和计数器
+<b class="nc">&nbsp;                val (k, c) = if (key.contains(&quot;@&quot;)) {</b>
+<b class="nc">&nbsp;                    val split = key.split(&quot;@&quot;)</b>
+<b class="nc">&nbsp;                    split[0] to split[1].toInt()</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    key to 0</b>
+&nbsp;                }
+&nbsp;                // 使用getOrPut函数简化向metaOfMap中添加新条目的过程
+<b class="nc">&nbsp;                keyCounters.metaOfMap.getOrPut(k) { mutableMapOf() }[c] = dataMap[key]</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 获取与条件值匹配的键计数对
+<b class="pc">&nbsp;        val keyCount = keyCounters.metaOfMap[keyName]?.toList()?.firstOrNull { it.second == getValue(data) }</b>
+&nbsp;
+&nbsp;        // 如果没有匹配的键计数对，则创建新的键计数对
+<b class="pc">&nbsp;        return if (keyCount == null) {</b>
+&nbsp;            // 获取键的最大计数器值，如果不存在则默认为-1
+<b class="pc">&nbsp;            val counter = keyCounters.metaOfMap[keyName]?.keys?.maxOrNull() ?: -1</b>
+&nbsp;            // 添加新的键计数对
+<b class="fc">&nbsp;            keyCounters.metaOfMap.getOrPut(keyName) { mutableMapOf() }[counter + 1] = getValue(dataMap)</b>
+<b class="fc">&nbsp;            if (counter + 1 == 0) keyName else &quot;${keyName}@${counter + 1}&quot;</b>
+&nbsp;        } else {
+&nbsp;            // 如果存在匹配的键计数对，则返回相应的键名
+<b class="nc">&nbsp;            if (keyCount.first == 0) keyName else &quot;${keyName}@${keyCount.first}&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getValue(data: Any): Any? {
+<b class="fc">&nbsp;        return when (data) {</b>
+<b class="fc">&nbsp;            is Criteria -&gt; data.value</b>
+<b class="fc">&nbsp;            else -&gt; data</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun handleNoValueStrategy(
+&nbsp;        condition: Criteria,
+&nbsp;        operationType: KOperationType,
+&nbsp;        paramMap: MutableMap&lt;String, Any?&gt;
+&nbsp;    ): KotoBuildResultSet? {
+&nbsp;        fun handleStrategy(strategy: NoValueStrategyType): KotoBuildResultSet? {
+<b class="pc">&nbsp;            when (strategy) {</b>
+<b class="fc">&nbsp;                Ignore -&gt; return KotoBuildResultSet(null, paramMap) // 直接返回</b>
+<b class="fc">&nbsp;                JudgeNull -&gt; condition.type = IsNull // 条件转为 ISNULL</b>
+&nbsp;                True, False -&gt; {
+<b class="fc">&nbsp;                    condition.type = Sql</b>
+<b class="fc">&nbsp;                    condition.value = strategy.value</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                else -&gt; throw IllegalArgumentException(&quot;NoValueStrategyType:$strategy not supported&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        return when (condition.noValueStrategyType) {</b>
+<b class="fc">&nbsp;            Ignore, JudgeNull, True, False -&gt; handleStrategy(condition.noValueStrategyType!!)</b>
+<b class="fc">&nbsp;            null, Auto -&gt; handleStrategy(noValueStrategy.ifNoValue(operationType, condition))</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    internal fun Any?.isEmptyArrayOrCollection(): Boolean {
+<b class="fc">&nbsp;        return when (this) {</b>
+<b class="fc">&nbsp;            is Iterable&lt;*&gt; -&gt; this.spliterator().exactSizeIfKnown == 0L</b>
+<b class="pc">&nbsp;            is Array&lt;*&gt; -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is IntArray -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is LongArray -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is ShortArray -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is FloatArray -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is DoubleArray -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is BooleanArray -&gt; this.isEmpty()</b>
+<b class="pc">&nbsp;            is ByteArray -&gt; this.isEmpty()</b>
+<b class="fc">&nbsp;            else -&gt; false</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getParialCriteriaSql(
+&nbsp;        field: Field,
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        showTable: Boolean = false,</b>
+<b class="nc">&nbsp;        databaseOfTable: Map&lt;String, String&gt; = mapOf()</b>
+<b class="fc">&nbsp;    ) = if (field is FunctionField) getBuiltFunctionField(</b>
+<b class="fc">&nbsp;        field,</b>
+<b class="fc">&nbsp;        wrapper.orDefault(),</b>
+<b class="fc">&nbsp;        showTable,</b>
+<b class="fc">&nbsp;        false</b>
+<b class="fc">&nbsp;    ) else quote(wrapper.orDefault(), field, showTable, databaseOfTable)</b>
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

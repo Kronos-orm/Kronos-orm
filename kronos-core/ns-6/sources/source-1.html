@@ -1,0 +1,630 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > NamedParameterUtils</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: NamedParameterUtils (com.kotlinorm.beans.parser)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">NamedParameterUtils</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.9%
+  </span>
+  <span class="absValue">
+    (13/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.6%
+  </span>
+  <span class="absValue">
+    (142/193)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.4%
+  </span>
+  <span class="absValue">
+    (192/210)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.5%
+  </span>
+  <span class="absValue">
+    (974/1126)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">NamedParameterUtils$ParameterHolder</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    93.3%
+  </span>
+  <span class="absValue">
+    (14/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.6%
+  </span>
+  <span class="absValue">
+    (142/193)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.5%
+  </span>
+  <span class="absValue">
+    (193/211)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.7%
+  </span>
+  <span class="absValue">
+    (991/1143)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.parser
+&nbsp;
+&nbsp;import com.kotlinorm.cache.namedSqlCache
+&nbsp;import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
+&nbsp;import com.kotlinorm.exceptions.InvalidParameterException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Created by OUSC on 2022/11/4 11:32
+&nbsp; *
+&nbsp; * Codes based on &lt;a href=&quot;https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/main/java/org/springframework/jdbc/core/namedparam/NamedParameterUtils.java&quot;&gt;NamedParameterUtils&lt;/a&gt;
+&nbsp; *
+&nbsp; * Add path parse support for NamedParameterParameterSource
+&nbsp; *
+&nbsp; * Such as `:array[0].list[1].map[KPojo].id`
+&nbsp; *
+&nbsp; * All rights reserved.
+&nbsp; */
+&nbsp;object NamedParameterUtils {
+<b class="fc">&nbsp;    private val START_SKIP = arrayOf(&quot;&#39;&quot;, &quot;\&quot;&quot;, &quot;--&quot;, &quot;/*&quot;, &quot;`&quot;)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Set of characters that are the corresponding comment or quotes ending characters.
+&nbsp;     */
+<b class="fc">&nbsp;    private val STOP_SKIP = arrayOf(&quot;&#39;&quot;, &quot;\&quot;&quot;, &quot;\n&quot;, &quot;*/&quot;, &quot;`&quot;)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Set of characters that qualify as parameter separators,
+&nbsp;     * indicating that a parameter name in an SQL String has ended.
+&nbsp;     */
+&nbsp;    private const val PARAMETER_SEPARATORS = &quot;\&quot;&#39;:&amp;,;()|=+-*%/\\&lt;&gt;^&quot;
+&nbsp;
+&nbsp;    private const val SEPARATOR_INDEX_SIZE = 128
+&nbsp;
+&nbsp;    /**
+&nbsp;     * An index with separator flags per character code.
+&nbsp;     * Technically only needed between 34 and 124 at this point.
+&nbsp;     */
+<b class="fc">&nbsp;    private val separatorIndex = BooleanArray(SEPARATOR_INDEX_SIZE)</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        for (i in PARAMETER_SEPARATORS.indices) {</b>
+<b class="fc">&nbsp;            separatorIndex[PARAMETER_SEPARATORS[i].code] = true</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    //-------------------------------------------------------------------------
+&nbsp;    // Core methods used by NamedParameterJdbcTemplate and SqlQuery/SqlUpdate
+&nbsp;    //-------------------------------------------------------------------------
+&nbsp;
+&nbsp;    //-------------------------------------------------------------------------
+&nbsp;    // Core methods used by NamedParameterJdbcTemplate and SqlQuery/SqlUpdate
+&nbsp;    //-------------------------------------------------------------------------
+&nbsp;    /**
+&nbsp;     * Parse the SQL statement and locate any placeholders or named parameters.
+&nbsp;     * Named parameters are substituted for a JDBC placeholder.
+&nbsp;     * @param sql the SQL statement
+&nbsp;     * @return the parsed statement, represented as com.kotlinorm.beans.parser.ParsedSql instance
+&nbsp;     */
+&nbsp;    @Suppress(&quot;ComplexMethod&quot;)
+<b class="fc">&nbsp;    fun parseSqlStatement(sql: String, paramMap: Map&lt;String, Any?&gt; = mapOf()): ParsedSql {</b>
+<b class="fc">&nbsp;        val original = namedSqlCache[sql]</b>
+<b class="fc">&nbsp;        if (original != null) {</b>
+&nbsp;            // Rebuild ParsedSql and recompute jdbcSql using current paramMap to ensure correct placeholder expansion
+<b class="fc">&nbsp;            val parsed = ParsedSql(</b>
+<b class="fc">&nbsp;                sql,</b>
+<b class="fc">&nbsp;                paramMap,</b>
+<b class="fc">&nbsp;                original.parameterNames,</b>
+<b class="fc">&nbsp;                original.parameterIndexes,</b>
+<b class="fc">&nbsp;                original.namedParameterCount,</b>
+<b class="fc">&nbsp;                original.unnamedParameterCount,</b>
+<b class="fc">&nbsp;                original.totalParameterCount,</b>
+<b class="fc">&nbsp;                &quot;&quot;</b>
+&nbsp;            )
+<b class="fc">&nbsp;            parsed.jdbcSql = substituteNamedParameters(parsed, paramMap)</b>
+<b class="fc">&nbsp;            return parsed</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val namedParameters: MutableSet&lt;String&gt; = HashSet()</b>
+<b class="fc">&nbsp;        val sqlToUse = StringBuilder(sql)</b>
+<b class="fc">&nbsp;        val parameterList: MutableList&lt;ParameterHolder&gt; = ArrayList()</b>
+<b class="fc">&nbsp;        val statement = sql.toCharArray()</b>
+<b class="fc">&nbsp;        var namedParameterCount = 0</b>
+<b class="fc">&nbsp;        var unnamedParameterCount = 0</b>
+<b class="fc">&nbsp;        var totalParameterCount = 0</b>
+<b class="fc">&nbsp;        var escapes = 0</b>
+<b class="fc">&nbsp;        var i = 0</b>
+<b class="fc">&nbsp;        while (i &lt; statement.size) {</b>
+<b class="fc">&nbsp;            var skipToPosition: Int</b>
+<b class="fc">&nbsp;            while (i &lt; statement.size) {</b>
+<b class="fc">&nbsp;                skipToPosition = skipCommentsAndQuotes(statement, i)</b>
+<b class="fc">&nbsp;                if (i == skipToPosition) {</b>
+&nbsp;                    break
+&nbsp;                } else {
+<b class="fc">&nbsp;                    i = skipToPosition</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            if (i &gt;= statement.size) {</b>
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            var c = statement[i]</b>
+<b class="fc">&nbsp;            if (c == &#39;:&#39; || c == &#39;&amp;&#39;) {</b>
+<b class="fc">&nbsp;                var j = i + 1</b>
+<b class="pc">&nbsp;                if ((c == &#39;:&#39;) &amp;&amp; j &lt; statement.size &amp;&amp; statement[j] == &#39;:&#39;) {</b>
+&nbsp;                    // Postgres-style &quot;::&quot; casting operator should be skipped
+<b class="fc">&nbsp;                    i += 2</b>
+&nbsp;                    continue
+&nbsp;                }
+<b class="fc">&nbsp;                var parameter: String?</b>
+<b class="pc">&nbsp;                if ((c == &#39;:&#39; &amp;&amp; j &lt; statement.size) &amp;&amp; statement[j] == &#39;{&#39;) {</b>
+&nbsp;                    // :{x} style parameter
+<b class="fc">&nbsp;                    while (statement[j] != &#39;}&#39;) {</b>
+<b class="fc">&nbsp;                        j++</b>
+<b class="fc">&nbsp;                        if (j &gt;= statement.size) {</b>
+<b class="fc">&nbsp;                            throw InvalidParameterException(</b>
+<b class="fc">&nbsp;                                &quot;Non-terminated named parameter declaration &quot; +</b>
+<b class="fc">&nbsp;                                        &quot;at position &quot; + i + &quot; in statement: &quot; + sql</b>
+&nbsp;                            )
+&nbsp;                        }
+<b class="pc">&nbsp;                        if (statement[j] == &#39;:&#39; || statement[j] == &#39;{&#39;) {</b>
+<b class="nc">&nbsp;                            throw InvalidParameterException(</b>
+<b class="nc">&nbsp;                                (&quot;Parameter name contains invalid character &#39;&quot; +</b>
+<b class="nc">&nbsp;                                        statement[j] + &quot;&#39; at position &quot; + i + &quot; in statement: &quot; + sql)</b>
+&nbsp;                            )
+&nbsp;                        }
+&nbsp;                    }
+<b class="fc">&nbsp;                    if (j - i &gt; 2) {</b>
+<b class="fc">&nbsp;                        parameter = sql.substring(i + 2, j)</b>
+<b class="fc">&nbsp;                        namedParameterCount = addNewNamedParameter(namedParameters, namedParameterCount, parameter)</b>
+<b class="fc">&nbsp;                        totalParameterCount = addNamedParameter(</b>
+<b class="fc">&nbsp;                            parameterList, totalParameterCount, escapes, i, j + 1, parameter</b>
+&nbsp;                        )
+&nbsp;                    }
+<b class="fc">&nbsp;                    j++</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    var paramWithSquareBrackets = false</b>
+<b class="fc">&nbsp;                    while (j &lt; statement.size) {</b>
+<b class="fc">&nbsp;                        c = statement[j]</b>
+<b class="fc">&nbsp;                        if (isParameterSeparator(c)) {</b>
+&nbsp;                            break
+&nbsp;                        }
+<b class="pc">&nbsp;                        if (c == &#39;[&#39;) {</b>
+<b class="fc">&nbsp;                            paramWithSquareBrackets = true</b>
+&nbsp;                        } else if (c == &#39;]&#39;) {
+<b class="fc">&nbsp;                            if (!paramWithSquareBrackets) {</b>
+&nbsp;                                break
+&nbsp;                            }
+<b class="fc">&nbsp;                            paramWithSquareBrackets = false</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        j++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    if (j - i &gt; 1) {</b>
+<b class="fc">&nbsp;                        parameter = sql.substring(i + 1, j)</b>
+<b class="fc">&nbsp;                        namedParameterCount = addNewNamedParameter(namedParameters, namedParameterCount, parameter)</b>
+<b class="fc">&nbsp;                        totalParameterCount = addNamedParameter(</b>
+<b class="fc">&nbsp;                            parameterList, totalParameterCount, escapes, i, j, parameter</b>
+&nbsp;                        )
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                i = j - 1</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                if (c == &#39;\\&#39;) {</b>
+<b class="fc">&nbsp;                    val j = i + 1</b>
+<b class="pc">&nbsp;                    if (j &lt; statement.size &amp;&amp; statement[j] == &#39;:&#39;) {</b>
+&nbsp;                        // escaped &quot;:&quot; should be skipped
+<b class="fc">&nbsp;                        sqlToUse.deleteCharAt(i - escapes)</b>
+<b class="fc">&nbsp;                        escapes++</b>
+<b class="fc">&nbsp;                        i += 2</b>
+&nbsp;                        continue
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                if (c == &#39;?&#39;) {</b>
+<b class="fc">&nbsp;                    val j = i + 1</b>
+<b class="fc">&nbsp;                    if (j &lt; statement.size &amp;&amp; ((statement[j] == &#39;?&#39;) || (statement[j] == &#39;|&#39;) || (statement[j] == &#39;&amp;&#39;))) {</b>
+&nbsp;                        // Postgres-style &quot;??&quot;, &quot;?|&quot;, &quot;?&amp;&quot; operator should be skipped
+<b class="fc">&nbsp;                        i += 2</b>
+&nbsp;                        continue
+&nbsp;                    }
+<b class="fc">&nbsp;                    unnamedParameterCount++</b>
+<b class="fc">&nbsp;                    totalParameterCount++</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            i++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val parsedSql = ParsedSql(sqlToUse.toString(), paramMap)</b>
+<b class="fc">&nbsp;        for (ph: ParameterHolder in parameterList) {</b>
+<b class="fc">&nbsp;            parsedSql.addNamedParameter(ph.parameterName, ph.startIndex, ph.endIndex)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        parsedSql.namedParameterCount = namedParameterCount</b>
+<b class="fc">&nbsp;        parsedSql.unnamedParameterCount = unnamedParameterCount</b>
+<b class="fc">&nbsp;        parsedSql.totalParameterCount = totalParameterCount</b>
+<b class="fc">&nbsp;        parsedSql.jdbcSql = substituteNamedParameters(parsedSql, paramMap)</b>
+<b class="fc">&nbsp;        namedSqlCache[sql] = parsedSql</b>
+&nbsp;
+<b class="fc">&nbsp;        return parsedSql</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun addNamedParameter(
+&nbsp;        parameterList: MutableList&lt;ParameterHolder&gt;,
+&nbsp;        totalParameterCount: Int,
+&nbsp;        escapes: Int,
+&nbsp;        i: Int,
+&nbsp;        j: Int,
+&nbsp;        parameter: String
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        parameterList.add(ParameterHolder(parameter, i - escapes, j - escapes))</b>
+<b class="fc">&nbsp;        return totalParameterCount + 1</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun addNewNamedParameter(
+&nbsp;        namedParameters: MutableSet&lt;String&gt;,
+&nbsp;        namedParameterCount: Int,
+&nbsp;        parameter: String
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (!namedParameters.contains(parameter)) {</b>
+<b class="fc">&nbsp;            namedParameters.add(parameter)</b>
+<b class="fc">&nbsp;            return namedParameterCount + 1</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return namedParameterCount</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Skip over comments and quoted names present in an SQL statement.
+&nbsp;     * @param statement character array containing SQL statement
+&nbsp;     * @param position current position of statement
+&nbsp;     * @return next position to process after any comments or quotes are skipped
+&nbsp;     */
+&nbsp;    private fun skipCommentsAndQuotes(statement: CharArray, position: Int): Int {
+<b class="fc">&nbsp;        for (i in START_SKIP.indices) {</b>
+<b class="fc">&nbsp;            if (statement[position] == START_SKIP[i][0]) {</b>
+<b class="fc">&nbsp;                var match = true</b>
+<b class="fc">&nbsp;                for (j in 1 until START_SKIP[i].length) {</b>
+<b class="fc">&nbsp;                    if (statement[position + j] != START_SKIP[i][j]) {</b>
+<b class="fc">&nbsp;                        match = false</b>
+&nbsp;                        break
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                if (match) {</b>
+<b class="fc">&nbsp;                    val offset: Int = START_SKIP[i].length</b>
+<b class="fc">&nbsp;                    for (m in position + offset until statement.size) {</b>
+<b class="fc">&nbsp;                        if (statement[m] == STOP_SKIP[i][0]) {</b>
+<b class="fc">&nbsp;                            var endMatch = true</b>
+<b class="fc">&nbsp;                            var endPos = m</b>
+<b class="fc">&nbsp;                            for (n in 1 until STOP_SKIP[i].length) {</b>
+<b class="fc">&nbsp;                                if (m + n &gt;= statement.size) {</b>
+&nbsp;                                    // last comment isn&#39;t closed properly
+<b class="fc">&nbsp;                                    return statement.size</b>
+&nbsp;                                }
+<b class="pc">&nbsp;                                if (statement[m + n] != STOP_SKIP[i][n]) {</b>
+<b class="nc">&nbsp;                                    endMatch = false</b>
+&nbsp;                                    break
+&nbsp;                                }
+<b class="fc">&nbsp;                                endPos = m + n</b>
+&nbsp;                            }
+<b class="pc">&nbsp;                            if (endMatch) {</b>
+&nbsp;                                // found character sequence ending comment or quote
+<b class="fc">&nbsp;                                return endPos + 1</b>
+&nbsp;                            }
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                    // character sequence ending comment or quote isn&#39;t found
+<b class="fc">&nbsp;                    return statement.size</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return position</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Determine whether a parameter name ends at the current position,
+&nbsp;     * that is, whether the given character qualifies as a separator.
+&nbsp;     */
+&nbsp;    private fun isParameterSeparator(c: Char): Boolean {
+<b class="fc">&nbsp;        return (c.code &lt; SEPARATOR_INDEX_SIZE &amp;&amp; separatorIndex[c.code]) || Character.isWhitespace(c)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;    internal class ParameterHolder(val parameterName: String, val startIndex: Int, val endIndex: Int)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Parse the SQL statement and locate any placeholders or named parameters. Named
+&nbsp;     * parameters are substituted for a JDBC placeholder, and any select list is expanded
+&nbsp;     * to the required number of placeholders. Select lists may contain an array of
+&nbsp;     * objects, and in that case the placeholders will be grouped and enclosed with
+&nbsp;     * parentheses. This allows for the use of &quot;expression lists&quot; in the SQL statement
+&nbsp;     * like: &lt;br&gt;&lt;/br&gt;&lt;br&gt;&lt;/br&gt;
+&nbsp;     * `select id, name, state from table where (name, age) in ((&#39;John&#39;, 35), (&#39;Ann&#39;, 50))`
+&nbsp;     *
+&nbsp;     * The parameter values passed in are used to determine the number of
+&nbsp;     * placeholders to be used for a select list. Select lists should not be empty
+&nbsp;     * and should be limited to 100 or fewer elements. An empty list or a larger
+&nbsp;     * number of elements is not guaranteed to be supported by the database and
+&nbsp;     * is strictly vendor-dependent.
+&nbsp;     * @param parsedSql the parsed representation of the SQL statement
+&nbsp;     * @param paramSource the source for named parameters
+&nbsp;     * @return the SQL statement with substituted parameters
+&nbsp;     * @see .parseSqlStatement
+&nbsp;     */
+<b class="nc">&nbsp;    fun substituteNamedParameters(parsedSql: ParsedSql, paramSource: Map&lt;String, Any?&gt;? = null): String {</b>
+<b class="fc">&nbsp;        val originalSql: String = parsedSql.originalSql</b>
+<b class="fc">&nbsp;        val paramNames: List&lt;String&gt; = parsedSql.parameterNames</b>
+<b class="fc">&nbsp;        if (paramNames.isEmpty()) {</b>
+<b class="fc">&nbsp;            return originalSql</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val actualSql = java.lang.StringBuilder(originalSql.length)</b>
+<b class="fc">&nbsp;        var lastIndex = 0</b>
+<b class="fc">&nbsp;        for (i in paramNames.indices) {</b>
+<b class="fc">&nbsp;            val paramName = paramNames[i]</b>
+<b class="fc">&nbsp;            val indexes: IntArray = parsedSql.parameterIndexes[i]</b>
+<b class="fc">&nbsp;            val startIndex = indexes[0]</b>
+<b class="fc">&nbsp;            val endIndex = indexes[1]</b>
+<b class="fc">&nbsp;            actualSql.append(originalSql, lastIndex, startIndex)</b>
+<b class="pc">&nbsp;            if (paramSource != null) {</b>
+<b class="fc">&nbsp;                val raw = getValueFromMap(paramSource, paramName)</b>
+<b class="fc">&nbsp;                val list = if (raw != null) toList(raw) else emptyList()</b>
+<b class="fc">&nbsp;                if (list.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                    list.forEachIndexed { k, entryItem -&gt;</b>
+<b class="fc">&nbsp;                        if (k &gt; 0) actualSql.append(&quot;, &quot;)</b>
+<b class="pc">&nbsp;                        if (entryItem is Array&lt;*&gt;) {</b>
+<b class="nc">&nbsp;                            actualSql.append(&#39;(&#39;)</b>
+<b class="nc">&nbsp;                            for (m in entryItem.indices) {</b>
+<b class="nc">&nbsp;                                if (m &gt; 0) actualSql.append(&quot;, &quot;)</b>
+<b class="nc">&nbsp;                                actualSql.append(&#39;?&#39;)</b>
+&nbsp;                            }
+<b class="nc">&nbsp;                            actualSql.append(&#39;)&#39;)</b>
+&nbsp;                        } else {
+<b class="fc">&nbsp;                            actualSql.append(&#39;?&#39;)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    actualSql.append(&#39;?&#39;)</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="fc">&nbsp;                actualSql.append(&#39;?&#39;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            lastIndex = endIndex</b>
+&nbsp;        }
+<b class="fc">&nbsp;        actualSql.append(originalSql, lastIndex, originalSql.length)</b>
+<b class="fc">&nbsp;        return actualSql.toString()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Convert a Map of named parameter values to a corresponding array.
+&nbsp;     * @param parsedSql the parsed SQL statement
+&nbsp;     * @param paramSource the source for named parameters
+&nbsp;     * (maybe `null`). If specified, the parameter metadata will
+&nbsp;     * be built into the value array in the form of SqlParameterValue objects.
+&nbsp;     * @return the array of values
+&nbsp;     */
+&nbsp;    fun buildValueArray(
+&nbsp;        parsedSql: ParsedSql, paramSource: Map&lt;String, Any?&gt;
+&nbsp;    ): Array&lt;Any?&gt; {
+<b class="pc">&nbsp;        if (parsedSql.namedParameterCount &gt; 0 &amp;&amp; parsedSql.unnamedParameterCount &gt; 0) {</b>
+<b class="fc">&nbsp;            throw InvalidDataAccessApiUsageException(</b>
+<b class="fc">&nbsp;                &quot;Not allowed to mix named and traditional ? placeholders. You have &quot; +</b>
+<b class="fc">&nbsp;                        parsedSql.namedParameterCount + &quot; named parameter(s) and &quot; +</b>
+<b class="fc">&nbsp;                        parsedSql.unnamedParameterCount + &quot; traditional placeholder(s) in statement: &quot; +</b>
+<b class="fc">&nbsp;                        parsedSql.originalSql</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val params = mutableListOf&lt;Any?&gt;()</b>
+<b class="fc">&nbsp;        val paramNames: List&lt;String&gt; = parsedSql.parameterNames</b>
+<b class="fc">&nbsp;        for (i in paramNames.indices) {</b>
+<b class="fc">&nbsp;            val v = getValueFromMap(paramSource, paramNames[i])</b>
+<b class="fc">&nbsp;            val list = toList(v)</b>
+&nbsp;            // If list elements are arrays (tuple case), flatten their contents
+<b class="pc">&nbsp;            if (list.firstOrNull() is Array&lt;*&gt;) {</b>
+<b class="nc">&nbsp;                list.forEach { tuple -&gt;</b>
+<b class="nc">&nbsp;                    if (tuple is Array&lt;*&gt;) {</b>
+<b class="nc">&nbsp;                        tuple.forEach { params.add(it) }</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        params.add(tuple)</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                }</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                params.addAll(list)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return params.toTypedArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun getValueFromMap(map: Map&lt;String, Any?&gt;, path: String): Any? {
+&nbsp;        // 解析路径
+<b class="fc">&nbsp;        val keys = parsePath(path)</b>
+&nbsp;
+&nbsp;        // 逐级取值
+<b class="fc">&nbsp;        var current: Any? = map</b>
+<b class="fc">&nbsp;        for (key in keys) {</b>
+<b class="fc">&nbsp;            current = when (current) {</b>
+<b class="fc">&nbsp;                is Map&lt;*, *&gt; -&gt; current[key] // 如果当前值是 Map，取出对应的值</b>
+<b class="fc">&nbsp;                is KPojo -&gt; current.toDataMap()[key] // 如果当前值是 KPojo，取出对应的值</b>
+<b class="pc">&nbsp;                is Iterable&lt;*&gt;, is Array&lt;*&gt;, is IntArray, is LongArray, is ShortArray, is ByteArray, is DoubleArray, is FloatArray, is BooleanArray -&gt;</b>
+&nbsp;                    // 如果当前值是 List，取出对应的索引
+<b class="pc">&nbsp;                    key.toIntOrNull()?.let {</b>
+<b class="fc">&nbsp;                        when (current) {</b>
+<b class="pc">&nbsp;                            is IntArray, is LongArray, is ShortArray, is ByteArray, is DoubleArray, is FloatArray, is BooleanArray, is Array&lt;*&gt;, is Iterable&lt;*&gt; -&gt; toList(</b>
+<b class="fc">&nbsp;                                current</b>
+<b class="fc">&nbsp;                            )[it]</b>
+<b class="nc">&nbsp;                            else -&gt; throw InvalidDataAccessApiUsageException(</b>
+<b class="nc">&nbsp;                                &quot;Collection named &#39;$key&#39; in parameter source is not an Iterable or Array&quot;</b>
+&nbsp;                            )
+<b class="fc">&nbsp;                        }</b>
+&nbsp;                    } // 如果当前值是 List，取出对应的索引
+<b class="nc">&nbsp;                else -&gt; null // 其他类型则返回 null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (current == null) break // 如果中途遇到 null，停止</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return current</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun parsePath(path: String): List&lt;String&gt; {
+&nbsp;        // 使用正则表达式解析路径
+<b class="fc">&nbsp;        val regex = &quot;&quot;&quot;\.|(\[([0-9]+)])|(?&lt;key&gt;[^.\[\]]+)&quot;&quot;&quot;.toRegex()</b>
+<b class="fc">&nbsp;        return regex.findAll(path).mapNotNull {</b>
+<b class="pc">&nbsp;            it.groups[&quot;key&quot;]?.value ?: it.groups[2]?.value</b>
+<b class="fc">&nbsp;        }.toList()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private fun toList(value: Any?): List&lt;Any?&gt; = when (value) {</b>
+<b class="fc">&nbsp;        null -&gt; listOf(null)</b>
+<b class="fc">&nbsp;        is Iterable&lt;*&gt; -&gt; value.toList()</b>
+<b class="fc">&nbsp;        is Array&lt;*&gt; -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is IntArray -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is LongArray -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is ShortArray -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is ByteArray -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is DoubleArray -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is FloatArray -&gt; value.toList()</b>
+<b class="pc">&nbsp;        is BooleanArray -&gt; value.toList()</b>
+<b class="fc">&nbsp;        else -&gt; listOf(value)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

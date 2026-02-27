@@ -1,0 +1,350 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrTryBuilder</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.helpers</a>
+</div>
+
+<h1>Coverage Summary for Class: IrTryBuilder (com.kotlinorm.compiler.helpers)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrTryBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (6/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (2/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (21/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.3%
+  </span>
+  <span class="absValue">
+    (132/202)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">IrTryBuilder$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.5%
+  </span>
+  <span class="absValue">
+    (5/11)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    63.6%
+  </span>
+  <span class="absValue">
+    (7/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (2/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71%
+  </span>
+  <span class="absValue">
+    (22/31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.3%
+  </span>
+  <span class="absValue">
+    (137/213)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.helpers
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.irCatch
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildVariable
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irTry
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrVariable
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCatch
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrTry
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.getSimpleFunction
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import kotlin.contracts.ExperimentalContracts
+&nbsp;import kotlin.contracts.InvocationKind
+&nbsp;import kotlin.contracts.contract
+&nbsp;
+&nbsp;/**
+&nbsp; * Provides utilities to build `try-catch-finally` blocks in Kotlin IR.
+&nbsp; */
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the symbol for the `java.lang.Exception` class.
+&nbsp; *
+&nbsp; * @return The symbol for the `java.lang.Exception` class.
+&nbsp; */
+&nbsp;context(_: IrPluginContext)
+&nbsp;val JavaLangExceptionSymbol
+&nbsp;    get() = referenceClass(&quot;java.lang.Exception&quot;)!!
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the symbol for the `printStackTrace` function of the `java.lang.Throwable` class.
+&nbsp; *
+&nbsp; * @return The symbol for the `printStackTrace` function.
+&nbsp; */
+&nbsp;@UnsafeDuringIrConstructionAPI
+&nbsp;context(_: IrPluginContext)
+&nbsp;val printStackTraceSymbol
+&nbsp;    get() = referenceClass(&quot;java.lang.Throwable&quot;)!!.getSimpleFunction(&quot;printStackTrace&quot;)!!
+&nbsp;
+&nbsp;/**
+&nbsp; * A builder class for constructing `IrTry` expressions with multiple `catch` blocks and an optional `finally` block.
+&nbsp; *
+&nbsp; * @property result The main expression to be executed within the `try` block.
+&nbsp; * @property type The type of the `try` expression, defaulting to the type of the `result`.
+&nbsp; */
+&nbsp;class IrTryBuilder(
+<b class="fc">&nbsp;    val result: IrExpression,</b>
+<b class="fc">&nbsp;    val type: IrType = result.type</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private val catches = mutableListOf&lt;IrCatch&gt;()</b>
+<b class="fc">&nbsp;    private val caughtTypes = mutableSetOf&lt;IrType&gt;()</b>
+&nbsp;    private var finallyExpression: IrExpression? = null
+&nbsp;        set(value) {
+<b class="nc">&nbsp;            if (field != null) error(&quot;Finally block already set&quot;)</b>
+<b class="nc">&nbsp;            field = value</b>
+&nbsp;        }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a `catch` block to the `try` expression for the specified throwable type.
+&nbsp;     *
+&nbsp;     * @param throwableType The type of exception to catch. Defaults to `java.lang.Exception`.
+&nbsp;     * @param body A lambda that defines the body of the `catch` block, receiving the caught exception variable.
+&nbsp;     * @throws IllegalArgumentException if the `throwableType` does not inherit from `kotlin.Throwable`
+&nbsp;     */
+&nbsp;    @ExperimentalContracts
+&nbsp;    @UnsafeDuringIrConstructionAPI
+&nbsp;    context(builder: IrBuilderWithScope, context: IrPluginContext)
+&nbsp;    private fun irCatch(
+<b class="nc">&nbsp;        throwableType: IrType = JavaLangExceptionSymbol.defaultType,</b>
+<b class="nc">&nbsp;        body: IrBuilderWithScope.(IrVariable) -&gt; IrExpression = { printStackTraceSymbol(irGet(it)) }</b>
+&nbsp;    ) {
+&nbsp;        contract { callsInPlace(body, InvocationKind.EXACTLY_ONCE) }
+<b class="pc">&nbsp;        if (throwableType.sub() == builder.context.irBuiltIns.throwableType &amp;&amp; throwableType != builder.context.irBuiltIns.throwableType) error(</b>
+<b class="nc">&nbsp;            &quot;Can only catch types that inherit from kotlin.Throwable&quot;</b>
+&nbsp;        )
+&nbsp;
+<b class="pc">&nbsp;        if (!caughtTypes.add(throwableType)) error(&quot;Already caught type $throwableType&quot;)</b>
+&nbsp;
+<b class="fc">&nbsp;        val catchVariable = buildVariable(</b>
+<b class="fc">&nbsp;            builder.scope.getLocalDeclarationParent(),</b>
+<b class="fc">&nbsp;            builder.startOffset,</b>
+<b class="fc">&nbsp;            builder.endOffset,</b>
+<b class="fc">&nbsp;            IrDeclarationOrigin.CATCH_PARAMETER,</b>
+<b class="fc">&nbsp;            Name.identifier(&quot;e_${catches.size}&quot;),</b>
+<b class="fc">&nbsp;            throwableType</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        catches += builder.irCatch(catchVariable, builder.body(catchVariable))</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a `catch` block to the `try` expression that catches all exceptions.
+&nbsp;     * The body of the `catch` block is defined by the provided lambda.
+&nbsp;     *
+&nbsp;     * @param expression A lambda that defines the body of the `catch` block.
+&nbsp;     * @return The current `IrTryBuilder` instance for chaining.
+&nbsp;     */
+&nbsp;    @ExperimentalContracts
+&nbsp;    @UnsafeDuringIrConstructionAPI
+&nbsp;    context(builder: IrBuilderWithScope, _: IrPluginContext)
+<b class="fc">&nbsp;    fun catch(expression: IrTryBuilder.() -&gt; Unit = {}): IrTryBuilder {</b>
+<b class="fc">&nbsp;        irCatch(builder.context.irBuiltIns.throwableType) {</b>
+<b class="fc">&nbsp;            builder.irBlock {</b>
+<b class="fc">&nbsp;                expression()</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the `finally` block for the `try` expression.
+&nbsp;     *
+&nbsp;     * @param expression The expression to be executed in the `finally` block.
+&nbsp;     * @return The current `IrTryBuilder` instance for chaining.
+&nbsp;     * @throws IllegalStateException if a `finally` block has already been set.
+&nbsp;     */
+&nbsp;    @ExperimentalContracts
+&nbsp;    @UnsafeDuringIrConstructionAPI
+&nbsp;    fun finally(expression: IrExpression): IrTryBuilder {
+<b class="nc">&nbsp;        finallyExpression = expression</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds the `IrTry` expression using the configured `try`, `catch`, and `finally` blocks.
+&nbsp;     *
+&nbsp;     * @return The constructed `IrTry` expression.
+&nbsp;     */
+&nbsp;    context(builder: IrBuilderWithScope, _: IrPluginContext)
+&nbsp;    fun build(): IrTry =
+<b class="fc">&nbsp;        builder.irTry(type, result, catches, finallyExpression)</b>
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Creates a new `IrTryBuilder` instance with the specified result expression and type.
+&nbsp;         *
+&nbsp;         * @param result The main expression to be executed within the `try` block. Defaults to an empty block.
+&nbsp;         * @param type The type of the `try` expression, defaulting to the type of the `result`.
+&nbsp;         * @return A new `IrTryBuilder` instance.
+&nbsp;         */
+&nbsp;        context(builder: IrBuilderWithScope, _: IrPluginContext)
+&nbsp;        fun irTry(
+<b class="nc">&nbsp;            result: IrExpression = builder.irBlock {},</b>
+<b class="nc">&nbsp;            type: IrType = result.type,</b>
+<b class="fc">&nbsp;        ): IrTryBuilder = IrTryBuilder(result, type)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

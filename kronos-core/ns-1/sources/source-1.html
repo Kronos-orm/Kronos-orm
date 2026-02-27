@@ -1,0 +1,238 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > Kronos</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm</a>
+</div>
+
+<h1>Coverage Summary for Class: Kronos (com.kotlinorm)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">Kronos</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.7%
+  </span>
+  <span class="absValue">
+    (22/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (2/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (26/27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.1%
+  </span>
+  <span class="absValue">
+    (289/307)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm
+&nbsp;
+&nbsp;import com.kotlinorm.annotations.KronosInit
+&nbsp;import com.kotlinorm.beans.config.DefaultNoValueStrategy
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.config.LineHumpNamingStrategy
+&nbsp;import com.kotlinorm.beans.config.NoneNamingStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
+&nbsp;import com.kotlinorm.beans.logging.log
+&nbsp;import com.kotlinorm.beans.parser.NoneDataSourceWrapper
+&nbsp;import com.kotlinorm.beans.serialize.NoneSerializeProcessor
+&nbsp;import com.kotlinorm.enums.KLoggerType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.interfaces.KronosNamingStrategy
+&nbsp;import com.kotlinorm.interfaces.KronosSerializeProcessor
+&nbsp;import com.kotlinorm.interfaces.NoValueStrategy
+&nbsp;import com.kotlinorm.plugins.LastInsertIdPlugin
+&nbsp;import com.kotlinorm.types.KLoggerFactory
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import java.time.ZoneId
+&nbsp;
+&nbsp;object Kronos {
+&nbsp;    // 默认日志适配器
+<b class="fc">&nbsp;    var defaultLogger: KLoggerFactory =</b>
+<b class="fc">&nbsp;        {</b>
+<b class="fc">&nbsp;            BundledSimpleLoggerAdapter(</b>
+<b class="pc">&nbsp;                it as? String ?: it::class.simpleName!!</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;    // 日志类型
+<b class="fc">&nbsp;    var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER</b>
+&nbsp;
+&nbsp;    // 日志路径
+<b class="fc">&nbsp;    var logPath = listOf(&quot;console&quot;)</b>
+&nbsp;
+&nbsp;    // 无值策略
+<b class="fc">&nbsp;    var noValueStrategy: NoValueStrategy = DefaultNoValueStrategy</b>
+&nbsp;
+&nbsp;    // 数据源
+<b class="fc">&nbsp;    var dataSource: () -&gt; KronosDataSourceWrapper = { NoneDataSourceWrapper }</b>
+&nbsp;
+<b class="nc">&nbsp;    fun transact(wrapper: KronosDataSourceWrapper? = null, block: () -&gt; Any?) = wrapper.orDefault().transact(block)</b>
+&nbsp;
+&nbsp;    // 严格模式（将提高性能，但当数据库类型与字段类型不匹配时会抛出异常，而不是尝试进行转换）
+<b class="fc">&nbsp;    var strictSetValue = false</b>
+&nbsp;
+&nbsp;    // 当前时区
+<b class="fc">&nbsp;    var timeZone: ZoneId = ZoneId.systemDefault()</b>
+&nbsp;
+&nbsp;    // 序列化
+<b class="fc">&nbsp;    var serializeProcessor: KronosSerializeProcessor = NoneSerializeProcessor</b>
+&nbsp;
+<b class="fc">&nbsp;    val lineHumpNamingStrategy by lazy { LineHumpNamingStrategy() }</b>
+&nbsp;
+&nbsp;    @Suppress(&quot;MemberVisibilityCanBePrivate&quot;)
+<b class="fc">&nbsp;    val noneNamingStrategy by lazy { NoneNamingStrategy() }</b>
+&nbsp;
+&nbsp;    // 列名策略
+<b class="fc">&nbsp;    var fieldNamingStrategy: KronosNamingStrategy = noneNamingStrategy</b>
+&nbsp;
+&nbsp;    // 表名策略
+<b class="fc">&nbsp;    var tableNamingStrategy: KronosNamingStrategy = noneNamingStrategy</b>
+&nbsp;
+&nbsp;    // 主键策略
+<b class="fc">&nbsp;    var primaryKeyStrategy = KronosCommonStrategy(false, Field(&quot;id&quot;, &quot;id&quot;, primaryKey = PrimaryKeyType.IDENTITY))</b>
+&nbsp;
+&nbsp;    // 更新时间策略
+<b class="fc">&nbsp;    var updateTimeStrategy = KronosCommonStrategy(false, Field(&quot;update_time&quot;, &quot;updateTime&quot;))</b>
+&nbsp;
+&nbsp;    // 创建时间策略
+<b class="fc">&nbsp;    var createTimeStrategy = KronosCommonStrategy(false, Field(&quot;create_time&quot;, &quot;createTime&quot;))</b>
+&nbsp;
+&nbsp;    // 逻辑删除策略
+<b class="fc">&nbsp;    var logicDeleteStrategy = KronosCommonStrategy(false, Field(&quot;deleted&quot;))</b>
+&nbsp;
+<b class="fc">&nbsp;    var optimisticLockStrategy = KronosCommonStrategy(false, Field(&quot;version&quot;))</b>
+&nbsp;
+&nbsp;    // 默认日期格式
+<b class="fc">&nbsp;    var defaultDateFormat = &quot;yyyy-MM-dd HH:mm:ss&quot;</b>
+&nbsp;
+&nbsp;    @KronosInit
+&nbsp;    fun init(action: Kronos.() -&gt; Unit) {
+<b class="fc">&nbsp;        LastInsertIdPlugin.enabled = true</b>
+<b class="fc">&nbsp;        this.action()</b>
+<b class="fc">&nbsp;        defaultLogger(this).info(</b>
+<b class="fc">&nbsp;            log {</b>
+<b class="fc">&nbsp;                +&quot;Kronos ORM Framework started.&quot;[green]</b>
+&nbsp;            }
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

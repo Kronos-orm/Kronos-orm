@@ -1,0 +1,333 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-codegen Coverage Report > KronosTemplate</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-codegen<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.codegen</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosTemplate (com.kotlinorm.codegen)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosTemplate</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.5%
+  </span>
+  <span class="absValue">
+    (5/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (35/70)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (70/98)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.3%
+  </span>
+  <span class="absValue">
+    (507/711)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">KronosTemplate$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    62.5%
+  </span>
+  <span class="absValue">
+    (5/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (35/70)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (70/98)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.3%
+  </span>
+  <span class="absValue">
+    (507/711)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.codegen
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.Kronos.primaryKeyStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;
+<b class="fc">&nbsp;class KronosTemplate(</b>
+<b class="fc">&nbsp;    val packageName: String,</b>
+<b class="fc">&nbsp;    val tableName: String,</b>
+<b class="fc">&nbsp;    val className: String,</b>
+<b class="fc">&nbsp;    val tableComment: String,</b>
+<b class="fc">&nbsp;    val fields: List&lt;Field&gt;,</b>
+<b class="fc">&nbsp;    val indexes: List&lt;KTableIndex&gt;,</b>
+<b class="fc">&nbsp;    val tableCommentLineWords: Int, // Default value if not specified</b>
+&nbsp;) {
+<b class="fc">&nbsp;    var content = &quot;&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;    var imports = linkedSetOf(</b>
+<b class="fc">&nbsp;        &quot;com.kotlinorm.annotations.Table&quot;,</b>
+<b class="fc">&nbsp;        &quot;com.kotlinorm.interfaces.KPojo&quot;</b>
+&nbsp;    )
+&nbsp;
+&nbsp;
+&nbsp;    fun Field.annotations(): List&lt;String&gt; {
+<b class="fc">&nbsp;        val annotations = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;        if(primaryKeyStrategy.field.columnName == columnName) {</b>
+<b class="fc">&nbsp;            primaryKey = PrimaryKeyType.IDENTITY</b>
+&nbsp;        }
+<b class="pc">&nbsp;        when (primaryKey) {</b>
+&nbsp;            PrimaryKeyType.IDENTITY -&gt; {
+<b class="fc">&nbsp;                annotations.add(&quot;@PrimaryKey(identity = true)&quot;)</b>
+<b class="fc">&nbsp;                imports.add(&quot;com.kotlinorm.annotations.PrimaryKey&quot;)</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            PrimaryKeyType.DEFAULT -&gt; {
+<b class="fc">&nbsp;                annotations.add(&quot;@PrimaryKey&quot;)</b>
+<b class="fc">&nbsp;                imports.add(&quot;com.kotlinorm.annotations.PrimaryKey&quot;)</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {}
+&nbsp;        }
+<b class="pc">&nbsp;        if (!nullable &amp;&amp; primaryKey == PrimaryKeyType.NOT) {</b>
+<b class="nc">&nbsp;            annotations.add(&quot;@Necessary&quot;)</b>
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.Necessary&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (defaultValue != null) {</b>
+<b class="nc">&nbsp;            annotations.add(&quot;@Default(\&quot;$defaultValue\&quot;)&quot;)</b>
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.Default&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val isNumber = type in listOf(</b>
+<b class="fc">&nbsp;            KColumnType.TINYINT,</b>
+<b class="fc">&nbsp;            KColumnType.INT,</b>
+<b class="fc">&nbsp;            KColumnType.BIGINT,</b>
+<b class="fc">&nbsp;            KColumnType.FLOAT,</b>
+<b class="fc">&nbsp;            KColumnType.DOUBLE,</b>
+<b class="fc">&nbsp;            KColumnType.DECIMAL</b>
+&nbsp;        )
+<b class="pc">&nbsp;        val isBool = type == KColumnType.BIT</b>
+<b class="pc">&nbsp;        val isString = type == KColumnType.VARCHAR &amp;&amp; length == 255 &amp;&amp; scale == 0</b>
+<b class="fc">&nbsp;        if (</b>
+<b class="pc">&nbsp;            !isString &amp;&amp; !isBool &amp;&amp; (length != 0 || scale != 0) &amp;&amp; (scale != 10 || !isNumber)</b>
+&nbsp;        ) {
+<b class="nc">&nbsp;            val params = mutableListOf&lt;String&gt;()</b>
+<b class="nc">&nbsp;            if (length != 0) {</b>
+<b class="nc">&nbsp;                params.add(&quot;length = $length&quot;)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (scale != 0) {</b>
+<b class="nc">&nbsp;                params.add(&quot;scale = $scale&quot;)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            annotations.add(</b>
+<b class="nc">&nbsp;                &quot;@ColumnType(type = KColumnType.${type}, ${params.joinToString(&quot;, &quot;)})&quot;</b>
+&nbsp;            )
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.ColumnType&quot;)</b>
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.enums.KColumnType&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (Kronos.createTimeStrategy.field.columnName == columnName) {</b>
+<b class="nc">&nbsp;            annotations.add(&quot;@CreateTime&quot;)</b>
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.CreateTime&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (Kronos.updateTimeStrategy.field.columnName == columnName) {</b>
+<b class="nc">&nbsp;            annotations.add(&quot;@UpdateTime&quot;)</b>
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.UpdateTime&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (Kronos.logicDeleteStrategy.field.columnName == columnName) {</b>
+<b class="fc">&nbsp;            annotations.add(&quot;@LogicDelete&quot;)</b>
+<b class="fc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.LogicDelete&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (Kronos.optimisticLockStrategy.field.columnName == columnName) {</b>
+<b class="nc">&nbsp;            annotations.add(&quot;@Version&quot;)</b>
+<b class="nc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.Version&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return annotations</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun KTableIndex.toAnnotations(): String {
+<b class="fc">&nbsp;        val params = mutableListOf&lt;String&gt;()</b>
+<b class="pc">&nbsp;        if (name.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            params.add(&quot;name = \&quot;$name\&quot;&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (columns.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            params.add(&quot;columns = [${columns.joinToString(&quot;, &quot;) { &quot;\&quot;$it\&quot;&quot; }}]&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (type.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            params.add(&quot;type = \&quot;$type\&quot;&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (method.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            params.add(&quot;method = \&quot;$method\&quot;&quot;)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (concurrently) {</b>
+<b class="nc">&nbsp;            params.add(&quot;concurrently = $concurrently&quot;)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return &quot;@TableIndex(${params.joinToString(&quot;, &quot;)})&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun List&lt;KTableIndex&gt;.toAnnotations(): String? {
+<b class="pc">&nbsp;        if (isNotEmpty()) {</b>
+<b class="fc">&nbsp;            imports.add(&quot;com.kotlinorm.annotations.TableIndex&quot;)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return joinToString(&quot;\n&quot;) { it.toAnnotations() }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        fields.forEach { it.annotations() }</b>
+<b class="fc">&nbsp;        indexes.toAnnotations()</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+<b class="fc">&nbsp;    val formatedComment by lazy {</b>
+<b class="pc">&nbsp;        if (tableComment.isEmpty()) {</b>
+<b class="nc">&nbsp;            &quot;&quot;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val words = tableComment.split(&quot; &quot;)</b>
+<b class="fc">&nbsp;            val lines = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;            var currentLine = &quot;&quot;</b>
+<b class="fc">&nbsp;            for (word in words) {</b>
+<b class="pc">&nbsp;                if (currentLine.length + word.length + 1 &gt; tableCommentLineWords) {</b>
+<b class="nc">&nbsp;                    lines.add(currentLine.trim())</b>
+<b class="nc">&nbsp;                    currentLine = &quot;&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;                currentLine += &quot;$word &quot;</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (currentLine.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                lines.add(currentLine.trim())</b>
+&nbsp;            }
+<b class="fc">&nbsp;            lines.joinToString(&quot;\n&quot;) { &quot;// $it&quot; }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun indent(num: Int = 1): String {</b>
+<b class="nc">&nbsp;        return &quot; &quot;.repeat(num)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    operator fun String?.unaryPlus() {
+<b class="nc">&nbsp;        if (this == null) return</b>
+<b class="nc">&nbsp;        content += this</b>
+<b class="nc">&nbsp;        content += &quot;\n&quot;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

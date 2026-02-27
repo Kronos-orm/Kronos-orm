@@ -1,0 +1,287 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > TaskUtilKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: TaskUtilKt (com.kotlinorm.utils)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TaskUtilKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (13/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69%
+  </span>
+  <span class="absValue">
+    (40/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.4%
+  </span>
+  <span class="absValue">
+    (430/689)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TaskUtilKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (13/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69%
+  </span>
+  <span class="absValue">
+    (40/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.4%
+  </span>
+  <span class="absValue">
+    (430/689)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.utils
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.Kronos.defaultLogger
+&nbsp;import com.kotlinorm.beans.logging.KLogMessage
+&nbsp;import com.kotlinorm.beans.logging.log
+&nbsp;import com.kotlinorm.beans.task.ActionEvent
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicBatchTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.enums.KOperationType.SELECT
+&nbsp;import com.kotlinorm.enums.QueryType
+&nbsp;import com.kotlinorm.enums.QueryType.Query
+&nbsp;import com.kotlinorm.enums.QueryType.QueryList
+&nbsp;import com.kotlinorm.enums.QueryType.QueryMap
+&nbsp;import com.kotlinorm.enums.QueryType.QueryMapOrNull
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOne
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOneOrNull
+&nbsp;import com.kotlinorm.interfaces.KAtomicActionTask
+&nbsp;import com.kotlinorm.interfaces.KAtomicTask
+&nbsp;import com.kotlinorm.interfaces.KBatchTask
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;
+&nbsp;/**
+&nbsp; * Executes the given atomic action task using the provided data source wrapper.
+&nbsp; *
+&nbsp; * @param wrapper The data source wrapper to use for executing the task. Can be null.
+&nbsp; * @return A KronosOperationResult object containing the number of affected rows and the last inserted ID (if applicable).
+&nbsp; *         If the ID of the operation is specified by the user, the ID after the previous auto-increment is returned
+&nbsp; */
+&nbsp;fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperationResult {
+<b class="fc">&nbsp;    val task = this</b>
+<b class="fc">&nbsp;    var affectRows: Int</b>
+<b class="fc">&nbsp;    val dataSource = wrapper.orDefault()</b>
+<b class="fc">&nbsp;    ActionEvent.beforeActionEvents.forEach { e -&gt; e.invoke(task, dataSource) }</b>
+<b class="pc">&nbsp;    affectRows = if (task is KBatchTask) {</b>
+<b class="nc">&nbsp;        dataSource.batchUpdate(task as KronosAtomicBatchTask).sum()</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        dataSource.update(task)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    ActionEvent.afterActionEvents.forEach { e -&gt; e.invoke(task, dataSource) }</b>
+<b class="fc">&nbsp;    stash.putAll(task.stash)</b>
+<b class="fc">&nbsp;    return logAndReturn(KronosOperationResult(affectRows).apply {</b>
+<b class="fc">&nbsp;        stash.putAll(task.stash)</b>
+<b class="fc">&nbsp;    })</b>
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) -&gt; Unit = { task, result, queryType -&gt;</b>
+&nbsp;    fun resultArr(): Array&lt;KLogMessage&gt; {
+<b class="fc">&nbsp;        return when (task.operationType) {</b>
+<b class="pc">&nbsp;            SELECT -&gt; when (queryType) {</b>
+<b class="fc">&nbsp;                QueryList, Query -&gt; log {</b>
+<b class="fc">&nbsp;                    -&quot;Found rows: ${(result as List&lt;*&gt;?)!!.size}&quot;[black, bold]</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                QueryMap, QueryMapOrNull, QueryOne, QueryOneOrNull -&gt; log {</b>
+<b class="fc">&nbsp;                    -&quot;Found rows: 1&quot;[black, bold]</b>
+&nbsp;                }
+&nbsp;
+&nbsp;                else -&gt; arrayOf()
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="fc">&nbsp;                result as KronosOperationResult</b>
+<b class="fc">&nbsp;                log {</b>
+<b class="fc">&nbsp;                    -&quot;Affected rows: ${result.affectedRows}&quot;[black, bold]</b>
+<b class="pc">&nbsp;                    if (result.lastInsertId != null &amp;&amp; result.lastInsertId != 0L) {</b>
+<b class="nc">&nbsp;                        +&quot;Last insert ID: ${result.lastInsertId}&quot;[black, bold]</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    defaultLogger(Kronos).info(</b>
+<b class="pc">&nbsp;        if (task is KronosAtomicBatchTask) {</b>
+<b class="nc">&nbsp;            log {</b>
+<b class="nc">&nbsp;                -&quot;Executing [&quot;[green]</b>
+<b class="nc">&nbsp;                -task.operationType.name[red, bold]</b>
+<b class="nc">&nbsp;                +&quot;] task:&quot;[green]</b>
+<b class="nc">&nbsp;                -&quot; ♦ &quot;[cyan]</b>
+<b class="nc">&nbsp;                +&quot;SQL:\t\t&quot;[black, bold]</b>
+<b class="nc">&nbsp;                +task.sql[blue]</b>
+<b class="nc">&nbsp;                -&quot; ♦ &quot;[cyan]</b>
+<b class="nc">&nbsp;                +&quot;PARAMS:\t&quot;[black, bold]</b>
+<b class="nc">&nbsp;                task.paramMapArr</b>
+<b class="nc">&nbsp;                    ?.map { it.filterValues { v -&gt; v != null }.toString() }</b>
+<b class="nc">&nbsp;                    ?.forEach {</b>
+<b class="nc">&nbsp;                        +it[magenta]</b>
+<b class="nc">&nbsp;                    }</b>
+<b class="nc">&nbsp;                +resultArr()</b>
+<b class="nc">&nbsp;                +&quot;-----------------------&quot;[black, bold]</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="fc">&nbsp;            log {</b>
+<b class="fc">&nbsp;                -&quot;Executing [&quot;[green]</b>
+<b class="fc">&nbsp;                -task.operationType.name[red, bold]</b>
+<b class="fc">&nbsp;                +&quot;] task:&quot;[green]</b>
+<b class="fc">&nbsp;                -&quot; ♦ &quot;[cyan]</b>
+<b class="fc">&nbsp;                +&quot;SQL:\t&quot;[black, bold]</b>
+<b class="fc">&nbsp;                +task.sql[blue]</b>
+<b class="fc">&nbsp;                -&quot; ♦ &quot;[cyan]</b>
+<b class="fc">&nbsp;                +&quot;PARAMS:\t&quot;[black, bold]</b>
+<b class="fc">&nbsp;                +task.paramMap.filterNot { it.value == null }.toString()[magenta]</b>
+<b class="fc">&nbsp;                +resultArr()</b>
+<b class="fc">&nbsp;                +&quot;-----------------------&quot;[black, bold]</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;fun &lt;T : Any?&gt; KAtomicTask.logAndReturn(
+<b class="fc">&nbsp;    result: T, queryType: QueryType? = null</b>
+<b class="fc">&nbsp;) = result.also {</b>
+<b class="fc">&nbsp;    handleLogResult(this, it, queryType)</b>
+<b class="fc">&nbsp;}</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

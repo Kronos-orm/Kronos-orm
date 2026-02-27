@@ -1,0 +1,292 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > IrTryCatchHelperKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.helpers</a>
+</div>
+
+<h1>Coverage Summary for Class: IrTryCatchHelperKt (com.kotlinorm.compiler.helpers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">IrTryCatchHelperKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/14)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.helpers
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.irCatch
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildVariable
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irTry
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrVariable
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCatch
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrTry
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.IrType
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.getSimpleFunction
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import kotlin.contracts.ExperimentalContracts
+&nbsp;import kotlin.contracts.InvocationKind
+&nbsp;import kotlin.contracts.contract
+&nbsp;
+&nbsp;/**
+&nbsp; * Provides utilities to build `try-catch-finally` blocks in Kotlin IR.
+&nbsp; */
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the symbol for the `java.lang.Exception` class.
+&nbsp; *
+&nbsp; * @return The symbol for the `java.lang.Exception` class.
+&nbsp; */
+&nbsp;context(_: IrPluginContext)
+&nbsp;val JavaLangExceptionSymbol
+<b class="nc">&nbsp;    get() = referenceClass(&quot;java.lang.Exception&quot;)!!</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the symbol for the `printStackTrace` function of the `java.lang.Throwable` class.
+&nbsp; *
+&nbsp; * @return The symbol for the `printStackTrace` function.
+&nbsp; */
+&nbsp;@UnsafeDuringIrConstructionAPI
+&nbsp;context(_: IrPluginContext)
+&nbsp;val printStackTraceSymbol
+<b class="nc">&nbsp;    get() = referenceClass(&quot;java.lang.Throwable&quot;)!!.getSimpleFunction(&quot;printStackTrace&quot;)!!</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * A builder class for constructing `IrTry` expressions with multiple `catch` blocks and an optional `finally` block.
+&nbsp; *
+&nbsp; * @property result The main expression to be executed within the `try` block.
+&nbsp; * @property type The type of the `try` expression, defaulting to the type of the `result`.
+&nbsp; */
+&nbsp;class IrTryBuilder(
+&nbsp;    val result: IrExpression,
+&nbsp;    val type: IrType = result.type
+&nbsp;) {
+&nbsp;    private val catches = mutableListOf&lt;IrCatch&gt;()
+&nbsp;    private val caughtTypes = mutableSetOf&lt;IrType&gt;()
+&nbsp;    private var finallyExpression: IrExpression? = null
+&nbsp;        set(value) {
+&nbsp;            if (field != null) error(&quot;Finally block already set&quot;)
+&nbsp;            field = value
+&nbsp;        }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a `catch` block to the `try` expression for the specified throwable type.
+&nbsp;     *
+&nbsp;     * @param throwableType The type of exception to catch. Defaults to `java.lang.Exception`.
+&nbsp;     * @param body A lambda that defines the body of the `catch` block, receiving the caught exception variable.
+&nbsp;     * @throws IllegalArgumentException if the `throwableType` does not inherit from `kotlin.Throwable`
+&nbsp;     */
+&nbsp;    @ExperimentalContracts
+&nbsp;    @UnsafeDuringIrConstructionAPI
+&nbsp;    context(builder: IrBuilderWithScope, context: IrPluginContext)
+&nbsp;    private fun irCatch(
+&nbsp;        throwableType: IrType = JavaLangExceptionSymbol.defaultType,
+&nbsp;        body: IrBuilderWithScope.(IrVariable) -&gt; IrExpression = { printStackTraceSymbol(irGet(it)) }
+&nbsp;    ) {
+&nbsp;        contract { callsInPlace(body, InvocationKind.EXACTLY_ONCE) }
+&nbsp;        if (throwableType.sub() == builder.context.irBuiltIns.throwableType &amp;&amp; throwableType != builder.context.irBuiltIns.throwableType) error(
+&nbsp;            &quot;Can only catch types that inherit from kotlin.Throwable&quot;
+&nbsp;        )
+&nbsp;
+&nbsp;        if (!caughtTypes.add(throwableType)) error(&quot;Already caught type $throwableType&quot;)
+&nbsp;
+&nbsp;        val catchVariable = buildVariable(
+&nbsp;            builder.scope.getLocalDeclarationParent(),
+&nbsp;            builder.startOffset,
+&nbsp;            builder.endOffset,
+&nbsp;            IrDeclarationOrigin.CATCH_PARAMETER,
+&nbsp;            Name.identifier(&quot;e_${catches.size}&quot;),
+&nbsp;            throwableType
+&nbsp;        )
+&nbsp;
+&nbsp;        catches += builder.irCatch(catchVariable, builder.body(catchVariable))
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Adds a `catch` block to the `try` expression that catches all exceptions.
+&nbsp;     * The body of the `catch` block is defined by the provided lambda.
+&nbsp;     *
+&nbsp;     * @param expression A lambda that defines the body of the `catch` block.
+&nbsp;     * @return The current `IrTryBuilder` instance for chaining.
+&nbsp;     */
+&nbsp;    @ExperimentalContracts
+&nbsp;    @UnsafeDuringIrConstructionAPI
+&nbsp;    context(builder: IrBuilderWithScope, _: IrPluginContext)
+&nbsp;    fun catch(expression: IrTryBuilder.() -&gt; Unit = {}): IrTryBuilder {
+&nbsp;        irCatch(builder.context.irBuiltIns.throwableType) {
+&nbsp;            builder.irBlock {
+&nbsp;                expression()
+&nbsp;            }
+&nbsp;        }
+&nbsp;        return this
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets the `finally` block for the `try` expression.
+&nbsp;     *
+&nbsp;     * @param expression The expression to be executed in the `finally` block.
+&nbsp;     * @return The current `IrTryBuilder` instance for chaining.
+&nbsp;     * @throws IllegalStateException if a `finally` block has already been set.
+&nbsp;     */
+&nbsp;    @ExperimentalContracts
+&nbsp;    @UnsafeDuringIrConstructionAPI
+&nbsp;    fun finally(expression: IrExpression): IrTryBuilder {
+&nbsp;        finallyExpression = expression
+&nbsp;        return this
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds the `IrTry` expression using the configured `try`, `catch`, and `finally` blocks.
+&nbsp;     *
+&nbsp;     * @return The constructed `IrTry` expression.
+&nbsp;     */
+&nbsp;    context(builder: IrBuilderWithScope, _: IrPluginContext)
+&nbsp;    fun build(): IrTry =
+&nbsp;        builder.irTry(type, result, catches, finallyExpression)
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Creates a new `IrTryBuilder` instance with the specified result expression and type.
+&nbsp;         *
+&nbsp;         * @param result The main expression to be executed within the `try` block. Defaults to an empty block.
+&nbsp;         * @param type The type of the `try` expression, defaulting to the type of the `result`.
+&nbsp;         * @return A new `IrTryBuilder` instance.
+&nbsp;         */
+&nbsp;        context(builder: IrBuilderWithScope, _: IrPluginContext)
+&nbsp;        fun irTry(
+&nbsp;            result: IrExpression = builder.irBlock {},
+&nbsp;            type: IrType = result.type,
+&nbsp;        ): IrTryBuilder = IrTryBuilder(result, type)
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:27</div>
+</div>
+</body>
+</html>

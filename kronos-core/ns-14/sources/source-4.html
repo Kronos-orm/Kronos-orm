@@ -1,0 +1,390 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > StringFunctionBuilder</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.functions.bundled.builders</a>
+</div>
+
+<h1>Coverage Summary for Class: StringFunctionBuilder (com.kotlinorm.functions.bundled.builders)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">StringFunctionBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    13.9%
+  </span>
+  <span class="absValue">
+    (5/36)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20.3%
+  </span>
+  <span class="absValue">
+    (13/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    16.4%
+  </span>
+  <span class="absValue">
+    (87/530)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">StringFunctionBuilder$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    13.9%
+  </span>
+  <span class="absValue">
+    (5/36)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20.3%
+  </span>
+  <span class="absValue">
+    (13/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    16.4%
+  </span>
+  <span class="absValue">
+    (87/530)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.functions.bundled.builders
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.FunctionField
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildAlias
+&nbsp;import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildField
+&nbsp;import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildFields
+&nbsp;import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildOperations
+&nbsp;import com.kotlinorm.interfaces.FunctionBuilder
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;
+&nbsp;object StringFunctionBuilder : FunctionBuilder {
+<b class="fc">&nbsp;    private val all = arrayOf(</b>
+<b class="fc">&nbsp;        DBType.Mysql, DBType.Postgres, DBType.SQLite, DBType.Oracle, DBType.Mssql</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override val supportFunctionNames: (String) -&gt; Array&lt;DBType&gt; = {</b>
+<b class="pc">&nbsp;        when (it) {</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的长度
+&nbsp;             * return the length of a string
+&nbsp;             * exp: length(&quot;hello&quot;) =&gt; 5
+&nbsp;             * Mysql: LENGTH(x) SQLite: LENGTH(x) Oracle: LENGTH(x) Postgres: LENGTH(x) Mssql: LEN(x)
+&nbsp;             */
+<b class="fc">&nbsp;            &quot;length&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的大写形式
+&nbsp;             * return the uppercase form of a string
+&nbsp;             * exp: upper(&quot;hello&quot;) =&gt; &quot;HELLO&quot;
+&nbsp;             * Mysql: UPPER(x) SQLite: UPPER(x) Oracle: UPPER(x) Postgres: UPPER(x) Mssql: UPPER(x)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;upper&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的小写形式
+&nbsp;             * return the lowercase form of a string
+&nbsp;             * exp: lower(&quot;HELLO&quot;) =&gt; &quot;hello&quot;
+&nbsp;             * Mysql: LOWER(x) SQLite: LOWER(x) Oracle: LOWER(x) Postgres: LOWER(x) Mssql: LOWER(x)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;lower&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的子串
+&nbsp;             * return a substring of a string
+&nbsp;             * exp: substr(&quot;hello&quot;, 2, 3) =&gt; &quot;ell&quot;
+&nbsp;             * Mysql: SUBSTRING(x, y, z) SQLite: SUBSTR(x, y, z) Oracle: SUBSTR(x, y, z) Postgres: SUBSTRING(x FROM y FOR z) Mssql: SUBSTRING(x, y, z)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;substr&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 替换字符串中的子串
+&nbsp;             * replace a substring in a string
+&nbsp;             * exp: replace(&quot;hello&quot;, &quot;l&quot;, &quot;L&quot;) =&gt; &quot;heLLo&quot;
+&nbsp;             * Mysql: REPLACE(x, y, z) SQLite: REPLACE(x, y, z) Oracle: REPLACE(x, y, z) Postgres: REPLACE(x, y, z) Mssql: REPLACE(x, y, z)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;replace&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的左边部分
+&nbsp;             * return the leftmost part of a string
+&nbsp;             * exp: left(&quot;hello&quot;, 2) =&gt; &quot;he&quot;
+&nbsp;             * Mysql: LEFT(x, y) SQLite: LEFT(x, y) Oracle: SUBSTR(x, 1, y) Postgres: SUBSTRING(x FROM 1 FOR y) Mssql: LEFT(x, y)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;left&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的右边部分
+&nbsp;             * return the rightmost part of a string
+&nbsp;             * exp: right(&quot;hello&quot;, 2) =&gt; &quot;lo&quot;
+&nbsp;             * Mysql: RIGHT(x, y) SQLite: RIGHT(x, y) Oracle: SUBSTR(x, -y) Postgres: SUBSTRING(x FROM -y) Mssql: RIGHT(x, y)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;right&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的重复
+&nbsp;             * return a repeated string
+&nbsp;             * exp: repeat(&quot;hello&quot;, 2) =&gt; &quot;hellohello&quot;
+&nbsp;             * Mysql: REPEAT(x, y) SQLite: REPEAT(x, y) Oracle: RPAD(x, LENGTH(x) * y， x) Postgres: REPEAT(x, y) Mssql: REPLICATE(x, y)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;repeat&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的逆序
+&nbsp;             * return the reverse of a string
+&nbsp;             * exp: reverse(&quot;hello&quot;) =&gt; &quot;olleh&quot;
+&nbsp;             * Mysql: REVERSE(x) SQLite: REVERSE(x) Oracle: REVERSE(x) Postgres: REVERSE(x) Mssql: REVERSE(x)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;reverse&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的去除空格
+&nbsp;             * return a string with leading and trailing whitespace removed
+&nbsp;             * exp: trim(&quot; hello &quot;) =&gt; &quot;hello&quot;
+&nbsp;             * Mysql: TRIM(x) SQLite: TRIM(x) Oracle: TRIM(x) Postgres: TRIM(x) Mssql: TRIM(x)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;trim&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的去除左空格
+&nbsp;             * return a string with leading whitespace removed
+&nbsp;             * exp: trimStart(&quot; hello &quot;) =&gt; &quot;hello &quot;
+&nbsp;             * Mysql: LTRIM(x) SQLite: LTRIM(x) Oracle: LTRIM(x) Postgres: LTRIM(x) Mssql: LTRIM(x)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;ltrim&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 返回字符串的去除右空格
+&nbsp;             * return a string with trailing whitespace removed
+&nbsp;             * exp: trimEnd(&quot; hello &quot;) =&gt; &quot; hello&quot;
+&nbsp;             * Mysql: RTRIM(x) SQLite: RTRIM(x) Oracle: RTRIM(x) Postgres: RTRIM(x) Mssql: RTRIM(x)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;rtrim&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 连接字符串
+&nbsp;             * concatenate strings
+&nbsp;             * join(x1, x2, ...)
+&nbsp;             * exp: join(&quot;a&quot;, &quot;b&quot;, &quot;c&quot;) =&gt; &quot;a, b, c&quot;
+&nbsp;             * Mysql: CONCAT(x, y, z) SQLite: CONCAT(x, y, z) Oracle: CONCAT(x, y, z) Postgres: CONCAT(x, y, z) Mssql: CONCAT(x, y, z)
+&nbsp;             */
+<b class="fc">&nbsp;            &quot;concat&quot; -&gt; all</b>
+&nbsp;            /**
+&nbsp;             * 连接字符串
+&nbsp;             * concatenate strings
+&nbsp;             * join(separator, x1, x2, ...)
+&nbsp;             * exp: join(&quot;, &quot;, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;) =&gt; &quot;a, b, c&quot;
+&nbsp;             * Mysql: CONCAT_WS(separator, x, y, z) SQLite: CONCAT_WS(separator, x, y, z) Oracle: x || separator || y || separator || z Postgres: CONCAT_WS(separator, x, y, z) Mssql: CONCAT_WS(separator, x, y, z)
+&nbsp;             */
+<b class="nc">&nbsp;            &quot;join&quot; -&gt; all</b>
+<b class="nc">&nbsp;            else -&gt; emptyArray()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun transform(
+&nbsp;        field: FunctionField,
+&nbsp;        dataSource: KronosDataSourceWrapper,
+&nbsp;        showTable: Boolean,
+&nbsp;        showAlias: Boolean
+&nbsp;    ): String {
+<b class="pc">&nbsp;        val alias = if (showAlias) field.name else &quot;&quot;</b>
+<b class="pc">&nbsp;        field.functionName = when (field.functionName) {</b>
+&nbsp;            &quot;join&quot; -&gt; {
+<b class="nc">&nbsp;                if (dataSource.dbType == DBType.Oracle) {</b>
+<b class="nc">&nbsp;                    val separator = field.fields.first().second</b>
+<b class="nc">&nbsp;                    val fields: List&lt;Pair&lt;Field?, Any?&gt;&gt; =</b>
+<b class="nc">&nbsp;                        field.fields.drop(1).flatMap { listOf(Pair(null, separator), it) }.drop(1)</b>
+<b class="nc">&nbsp;                    return buildOperations(&quot;||&quot;, alias, fields, dataSource, showTable)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    field.fields = field.fields.drop(1)</b>
+<b class="nc">&nbsp;                    &quot;CONCAT_WS&quot;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            &quot;repeat&quot; -&gt; {
+<b class="nc">&nbsp;                when (dataSource.dbType) {</b>
+&nbsp;                    DBType.Oracle -&gt; {
+<b class="nc">&nbsp;                        val f = buildField(field.fields[0], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val times = buildField(field.fields[1], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        return buildAlias(</b>
+<b class="nc">&nbsp;                            &quot;RPAD($f, $times * LENGTH($f, $times), $f)&quot;,</b>
+<b class="nc">&nbsp;                            alias</b>
+&nbsp;                        )
+&nbsp;                    }
+&nbsp;
+<b class="nc">&nbsp;                    DBType.Mssql -&gt; &quot;REPLICATE&quot;</b>
+<b class="nc">&nbsp;                    else -&gt; &quot;REPEAT&quot;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            &quot;right&quot; -&gt; {
+<b class="nc">&nbsp;                when (dataSource.dbType) {</b>
+&nbsp;                    DBType.Oracle -&gt; {
+<b class="nc">&nbsp;                        val f = buildField(field.fields[0], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val length = buildField(field.fields[1], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        return buildAlias(&quot;SUBSTR($f, -$length)&quot;, alias)</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    DBType.Postgres -&gt; {
+<b class="nc">&nbsp;                        val f = buildField(field.fields[0], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val length = buildField(field.fields[1], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        return buildAlias(&quot;SUBSTRING($f FROM -$length)&quot;, alias)</b>
+&nbsp;                    }
+&nbsp;
+<b class="nc">&nbsp;                    else -&gt; &quot;RIGHT&quot;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            &quot;left&quot; -&gt; {
+<b class="nc">&nbsp;                when (dataSource.dbType) {</b>
+&nbsp;                    DBType.Oracle -&gt; {
+<b class="nc">&nbsp;                        val f = buildField(field.fields[0], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val length = buildField(field.fields[1], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        return buildAlias(&quot;SUBSTR($f, 1, $length)&quot;, alias)</b>
+&nbsp;                    }
+&nbsp;
+&nbsp;                    DBType.Postgres -&gt; {
+<b class="nc">&nbsp;                        val f = buildField(field.fields[0], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val length = buildField(field.fields[1], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        return buildAlias(&quot;SUBSTRING($f FROM 1 FOR $length)&quot;, alias)</b>
+&nbsp;                    }
+&nbsp;
+<b class="nc">&nbsp;                    else -&gt; &quot;LEFT&quot;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+&nbsp;            &quot;substr&quot; -&gt; {
+<b class="nc">&nbsp;                when (dataSource.dbType) {</b>
+<b class="nc">&nbsp;                    DBType.Postgres -&gt; {</b>
+<b class="nc">&nbsp;                        val f = buildField(field.fields[0], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val start = buildField(field.fields[1], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        val length = buildField(field.fields[2], dataSource, showTable)</b>
+<b class="nc">&nbsp;                        return buildAlias(&quot;SUBSTRING(${f} FROM $start FOR $length)&quot;, alias)</b>
+&nbsp;                    }
+&nbsp;
+<b class="nc">&nbsp;                    else -&gt; &quot;SUBSTR&quot;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            &quot;length&quot; -&gt; when (dataSource.dbType) {</b>
+<b class="pc">&nbsp;                DBType.Mssql -&gt; &quot;LEN&quot;</b>
+<b class="fc">&nbsp;                else -&gt; &quot;LENGTH&quot;</b>
+&nbsp;            }
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; field.functionName.uppercase()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return buildFields(field.functionName, alias, field.fields, dataSource, showTable)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,193 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > NoneDataSourceWrapper</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.parser</a>
+</div>
+
+<h1>Coverage Summary for Class: NoneDataSourceWrapper (com.kotlinorm.beans.parser)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">NoneDataSourceWrapper</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/10)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/60)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.parser
+&nbsp;
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicBatchTask
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.exceptions.NoDataSourceException
+&nbsp;import com.kotlinorm.i18n.Noun.noDataSourceMessage
+&nbsp;import com.kotlinorm.interfaces.KAtomicActionTask
+&nbsp;import com.kotlinorm.interfaces.KAtomicQueryTask
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * None DataSource Wrapper.
+&nbsp; *
+&nbsp; * Default implementation of [KronosDataSourceWrapper] for when no data source is provided.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; * @see [KronosDataSourceWrapper]
+&nbsp; *
+&nbsp; */
+&nbsp;object NoneDataSourceWrapper : KronosDataSourceWrapper {
+&nbsp;    override val url: String
+<b class="nc">&nbsp;        get() = throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    override val userName: String
+<b class="nc">&nbsp;        get() = throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    override val dbType: DBType
+<b class="nc">&nbsp;        get() = throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;
+&nbsp;    override fun forList(task: KAtomicQueryTask): List&lt;Map&lt;String, Any&gt;&gt; {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun forList(task: KAtomicQueryTask, kClass: KClass&lt;*&gt;, isKPojo: Boolean, superTypes: List&lt;String&gt;): List&lt;Any&gt; {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun forMap(task: KAtomicQueryTask): Map&lt;String, Any&gt;? {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun forObject(task: KAtomicQueryTask, kClass: KClass&lt;*&gt;, isKPojo: Boolean, superTypes: List&lt;String&gt;): Any? {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun update(task: KAtomicActionTask): Int {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun batchUpdate(task: KronosAtomicBatchTask): IntArray {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun transact(block: () -&gt; Any?): Any? {
+<b class="nc">&nbsp;        throw NoDataSourceException(noDataSourceMessage)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

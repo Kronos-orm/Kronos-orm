@@ -1,0 +1,545 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > DeleteClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.delete</a>
+</div>
+
+<h1>Coverage Summary for Class: DeleteClause (com.kotlinorm.orm.delete)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">DeleteClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    52.6%
+  </span>
+  <span class="absValue">
+    (10/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (22/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.7%
+  </span>
+  <span class="absValue">
+    (70/99)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66%
+  </span>
+  <span class="absValue">
+    (454/688)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DeleteClause$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    18.2%
+  </span>
+  <span class="absValue">
+    (4/22)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    18.2%
+  </span>
+  <span class="absValue">
+    (4/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    19%
+  </span>
+  <span class="absValue">
+    (40/210)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    34.1%
+  </span>
+  <span class="absValue">
+    (14/41)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (22/44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    61.2%
+  </span>
+  <span class="absValue">
+    (74/121)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    55%
+  </span>
+  <span class="absValue">
+    (494/898)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.delete
+&nbsp;
+&nbsp;import com.kotlinorm.beans.config.KronosCommonStrategy
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicActionTask
+&nbsp;import com.kotlinorm.beans.task.KronosOperationResult
+&nbsp;import com.kotlinorm.cache.fieldsMapCache
+&nbsp;import com.kotlinorm.cache.kPojoAllColumnsCache
+&nbsp;import com.kotlinorm.cache.kPojoLogicDeleteCache
+&nbsp;import com.kotlinorm.cache.kPojoOptimisticLockCache
+&nbsp;import com.kotlinorm.cache.kPojoUpdateTimeCache
+&nbsp;import com.kotlinorm.database.SqlManager.getDeleteSql
+&nbsp;import com.kotlinorm.database.SqlManager.getUpdateSql
+&nbsp;import com.kotlinorm.database.SqlManager.quoted
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.cascade.CascadeDeleteClause
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
+&nbsp;import com.kotlinorm.utils.ConditionSqlBuilder.toWhereSql
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.Extensions.asSql
+&nbsp;import com.kotlinorm.utils.Extensions.eq
+&nbsp;import com.kotlinorm.utils.Extensions.toCriteria
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.getDefaultBoolean
+&nbsp;import com.kotlinorm.utils.processParams
+&nbsp;
+<b class="fc">&nbsp;class DeleteClause&lt;T : KPojo&gt;(private val pojo: T) {</b>
+<b class="fc">&nbsp;    private var kClass = pojo.kClass()</b>
+<b class="fc">&nbsp;    private var paramMap = pojo.toDataMap()</b>
+<b class="fc">&nbsp;    private var tableName = pojo.__tableName</b>
+&nbsp;    private var condition: Criteria? = null
+<b class="fc">&nbsp;    internal var allColumns = kPojoAllColumnsCache[kClass]!!</b>
+<b class="fc">&nbsp;    private var cascadeEnabled = true</b>
+&nbsp;    private var cascadeAllowed: Set&lt;Field&gt;? = null
+<b class="fc">&nbsp;    private var paramMapNew = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;    private var updateTimeStrategy = kPojoUpdateTimeCache[kClass]</b>
+<b class="fc">&nbsp;    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]</b>
+<b class="fc">&nbsp;    private var optimisticStrategy = kPojoOptimisticLockCache[kClass]</b>
+<b class="pc">&nbsp;    private var logic = logicDeleteStrategy?.enabled ?: false</b>
+&nbsp;
+<b class="nc">&nbsp;    fun logic(enabled: Boolean = true): DeleteClause&lt;T&gt; {</b>
+<b class="fc">&nbsp;        this.logic = enabled</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据指定的字段构建删除语句的条件部分。
+&nbsp;     *
+&nbsp;     * @param someFields KTableField类型，表示要用于删除条件的字段。不可为null。
+&nbsp;     * @return DeleteClause类型，表示构建完成的删除语句实例。
+&nbsp;     * @throws EmptyFieldsException 如果someFields为空或者最终没有有效的字段用于构建条件时抛出。
+&nbsp;     */
+&nbsp;    fun by(someFields: ToSelect&lt;T, Any?&gt;): DeleteClause&lt;T&gt; {
+&nbsp;        // 检查传入的someFields是否为null，若为null则抛出异常
+<b class="pc">&nbsp;        if (someFields == null) throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        pojo.afterSelect {</b>
+<b class="fc">&nbsp;            someFields(it)</b>
+&nbsp;            // 若fields为空，则抛出异常，表示需要至少一个字段来构建删除条件
+<b class="pc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            // 根据fields中的字段及其值构建删除条件
+<b class="pc">&nbsp;            if (condition == null) {</b>
+<b class="fc">&nbsp;                condition = fields.map { field -&gt; field.eq(paramMap[field.name]) }.toCriteria()</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                condition!!.children.add(</b>
+<b class="nc">&nbsp;                    fields.map { field -&gt; field.eq(paramMap[field.name]) }.toCriteria()</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): DeleteClause&lt;T&gt; {
+<b class="nc">&nbsp;        this.cascadeEnabled = enabled</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(someFields: ToReference&lt;T, Any?&gt;): DeleteClause&lt;T&gt; {
+<b class="nc">&nbsp;        if (someFields == null) throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        cascadeEnabled = true</b>
+<b class="nc">&nbsp;        pojo.afterReference {</b>
+<b class="nc">&nbsp;            someFields(it)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            cascadeAllowed = fields.toSet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 构建删除语句的条件部分。
+&nbsp;     *
+&nbsp;     * 该函数允许用户指定一个删除条件，用于过滤需要被删除的数据。如果未指定条件，则默认删除所有匹配的数据。
+&nbsp;     *
+&nbsp;     * @param deleteCondition 一个函数，用于定义删除操作的条件。该函数接收一个 [ToFilter] 类型的参数，
+&nbsp;     *                        并返回一个 [Boolean?] 类型的值，用于指示是否满足删除条件。如果为 null，则表示删除所有数据。
+&nbsp;     * @return [DeleteClause] 类型的实例，用于链式调用其它删除操作。
+&nbsp;     */
+<b class="nc">&nbsp;    fun where(deleteCondition: ToFilter&lt;T, Boolean?&gt; = null): DeleteClause&lt;T&gt; {</b>
+<b class="pc">&nbsp;        if (deleteCondition == null) return this</b>
+&nbsp;        // 如果指定了删除条件，执行条件函数，并设置条件
+<b class="fc">&nbsp;        pojo.afterFilter {</b>
+<b class="fc">&nbsp;            criteriaParamMap = paramMap</b>
+<b class="fc">&nbsp;            deleteCondition(it)</b>
+<b class="pc">&nbsp;            if (criteria == null) return@afterFilter</b>
+<b class="pc">&nbsp;            if (condition == null) {</b>
+<b class="fc">&nbsp;                condition = criteria</b>
+&nbsp;            } else {
+&nbsp;                // 如果已经有条件，则将新条件添加到现有条件中
+<b class="nc">&nbsp;                condition!!.children.addAll(criteria!!.children)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): DeleteClause&lt;T&gt; {
+<b class="nc">&nbsp;        paramMapNew.putAll(pairs)</b>
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 构建并返回一个KronosAtomicTask对象，用于执行数据库的原子操作。
+&nbsp;     * 该方法根据设定的条件构建对应的UPDATE或DELETE SQL语句，并封装必要的参数与操作类型。
+&nbsp;     *
+&nbsp;     * @return [KronosAtomicActionTask] 一个包含SQL语句、参数映射以及操作类型的原子任务对象。
+&nbsp;     */
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;        if (condition == null) {</b>
+&nbsp;            // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
+<b class="fc">&nbsp;            condition = allColumns.mapNotNull { field -&gt;</b>
+<b class="fc">&nbsp;                field.eq(paramMap[field.name]).takeIf { it.value != null }</b>
+<b class="fc">&nbsp;            }.toCriteria()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 设置逻辑删除的策略
+<b class="fc">&nbsp;        if (logic) {</b>
+<b class="pc">&nbsp;            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { field, value -&gt;</b>
+<b class="fc">&nbsp;                condition = listOfNotNull(</b>
+<b class="fc">&nbsp;                    condition, &quot;${field.quoted(wrapper.orDefault())} = $value&quot;.asSql()</b>
+<b class="fc">&nbsp;                ).toCriteria()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // 构建条件SQL语句及参数映射
+<b class="fc">&nbsp;        val (whereClauseSql, paramMap) = buildConditionSqlWithParams(KOperationType.DELETE, wrapper, condition)</b>
+&nbsp;
+<b class="fc">&nbsp;        val fieldMap = fieldsMapCache[kClass]!!</b>
+<b class="fc">&nbsp;        paramMapNew.forEach { (key, value) -&gt;</b>
+<b class="nc">&nbsp;            val field = fieldMap[key]</b>
+<b class="nc">&nbsp;            if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                paramMap[key] = processParams(wrapper.orDefault(), field, value)</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                paramMap[key] = value</b>
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        paramMap.putAll(paramMapNew)</b>
+<b class="fc">&nbsp;        val whereSql = toWhereSql(whereClauseSql)</b>
+&nbsp;
+&nbsp;        // 处理逻辑删除时的更新字段逻辑
+<b class="fc">&nbsp;        if (logic) {</b>
+<b class="fc">&nbsp;            val toUpdateFields = mutableListOf&lt;Field&gt;()</b>
+<b class="fc">&nbsp;            val updateFields = { strategy: KronosCommonStrategy, field: Field, value: Any? -&gt;</b>
+<b class="fc">&nbsp;                toUpdateFields += field</b>
+<b class="fc">&nbsp;                paramMap[field.name + &quot;New&quot;] = processParams(wrapper.orDefault(), field, value)</b>
+&nbsp;            }
+&nbsp;            // 设置更新时间和逻辑删除字段的策略
+<b class="pc">&nbsp;            updateTimeStrategy?.execute(true, afterExecute = updateFields)</b>
+<b class="pc">&nbsp;            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), true), afterExecute = updateFields)</b>
+&nbsp;
+<b class="fc">&nbsp;            var plusAssign: Pair&lt;Field, String&gt;? = null</b>
+<b class="pc">&nbsp;            optimisticStrategy?.execute { field, _ -&gt;</b>
+<b class="nc">&nbsp;                if (toUpdateFields.any { it.columnName == field.columnName }) {</b>
+<b class="nc">&nbsp;                    throw IllegalArgumentException(&quot;The version field cannot be updated manually.&quot;)</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;                plusAssign = field to field.name + &quot;2PlusNew&quot;</b>
+<b class="nc">&nbsp;                paramMap[field.name + &quot;2PlusNew&quot;] = 1</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return CascadeDeleteClause.build(</b>
+<b class="fc">&nbsp;                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, true, KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;                    getUpdateSql(</b>
+<b class="fc">&nbsp;                        wrapper.orDefault(),</b>
+<b class="fc">&nbsp;                        tableName,</b>
+<b class="fc">&nbsp;                        toUpdateFields,</b>
+<b class="fc">&nbsp;                        whereSql,</b>
+<b class="pc">&nbsp;                        if (plusAssign != null) mutableListOf(plusAssign) else mutableListOf(),</b>
+<b class="fc">&nbsp;                        mutableListOf()</b>
+&nbsp;                    ),
+<b class="fc">&nbsp;                    paramMap,</b>
+<b class="fc">&nbsp;                    operationType = KOperationType.DELETE,</b>
+<b class="fc">&nbsp;                    DeleteClauseInfo(kClass, tableName, whereSql)</b>
+&nbsp;                )
+&nbsp;            )
+&nbsp;        } else {
+&nbsp;            // 组装UPDATE语句并返回KronosAtomicTask对象
+<b class="fc">&nbsp;            return CascadeDeleteClause.build(</b>
+<b class="fc">&nbsp;                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(</b>
+<b class="fc">&nbsp;                    getDeleteSql(wrapper.orDefault(), tableName, whereSql),</b>
+<b class="fc">&nbsp;                    paramMap,</b>
+<b class="fc">&nbsp;                    operationType = KOperationType.DELETE,</b>
+<b class="fc">&nbsp;                    DeleteClauseInfo(kClass, tableName, whereSql)</b>
+&nbsp;                )
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 执行Kronos操作的函数。
+&nbsp;     *
+&nbsp;     * @param wrapper 可选参数，KronosDataSourceWrapper的实例，用于提供数据源配置和上下文。
+&nbsp;     *                如果为null，函数将使用默认配置执行操作。
+&nbsp;     * @return 返回KronosOperationResult对象，包含操作的结果信息。
+&nbsp;     */
+<b class="nc">&nbsp;    fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+&nbsp;        // 构建并执行Kronos操作，根据提供的wrapper配置执行，如果没有提供则使用默认配置
+<b class="nc">&nbsp;        return build(wrapper).execute(wrapper)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `by` operation to each update clause in the list based on the provided fields.
+&nbsp;         *
+&nbsp;         * @param someFields the fields to set the condition for
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.by(someFields: ToSelect&lt;T, Any?&gt;): List&lt;DeleteClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.by(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `where` operation to each update clause in the list based on the provided update condition.
+&nbsp;         *
+&nbsp;         * @param updateCondition the condition for the update clause. Defaults to null.
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.where(updateCondition: ToFilter&lt;T, Boolean?&gt; = null): List&lt;DeleteClause&lt;T&gt;&gt; {</b>
+<b class="fc">&nbsp;            return map { it.where(updateCondition) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.logic(enabled: Boolean = true): List&lt;DeleteClause&lt;T&gt;&gt; {</b>
+<b class="fc">&nbsp;            return map { it.logic(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.cascade(
+&nbsp;            enabled: Boolean
+&nbsp;        ): List&lt;DeleteClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.cascade(
+&nbsp;            someFields: ToReference&lt;T, Any?&gt;,
+&nbsp;        ): List&lt;DeleteClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds a KronosAtomicBatchTask from a list of UpdateClause objects.
+&nbsp;         *
+&nbsp;         * @param T The type of KPojo objects in the list.
+&nbsp;         * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
+&nbsp;         */
+<b class="fc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="fc">&nbsp;            return map { it.build(wrapper) }.merge()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Executes an array of UpdateClause objects and returns the result of the execution.
+&nbsp;         *
+&nbsp;         * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
+&nbsp;         * @return The KronosOperationResult of the execution.
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;DeleteClause&lt;T&gt;&gt;.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="nc">&nbsp;            return build().execute(wrapper)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `by` operation to each update clause in the array based on the provided fields.
+&nbsp;         *
+&nbsp;         * @param someFields the fields to set the condition for
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.by(someFields: ToSelect&lt;T, Any?&gt;): List&lt;DeleteClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.by(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `where` operation to each update clause in the array based on the provided update condition.
+&nbsp;         *
+&nbsp;         * @param updateCondition the condition for the update clause. Defaults to null.
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.where(updateCondition: ToFilter&lt;T, Boolean?&gt; = null): List&lt;DeleteClause&lt;T&gt;&gt; {</b>
+<b class="nc">&nbsp;            return map { it.where(updateCondition) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.logic(enabled: Boolean = true): List&lt;DeleteClause&lt;T&gt;&gt; {</b>
+<b class="nc">&nbsp;            return map { it.logic(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.cascade(
+&nbsp;            enabled: Boolean
+&nbsp;        ): List&lt;DeleteClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.cascade(
+&nbsp;            someFields: ToReference&lt;T, Any?&gt;,
+&nbsp;        ): List&lt;DeleteClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds a KronosAtomicBatchTask from an array of UpdateClause objects.
+&nbsp;         *
+&nbsp;         * @param T The type of KPojo objects in the list.
+&nbsp;         * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {</b>
+<b class="nc">&nbsp;            return map { it.build(wrapper) }.merge()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Executes an array of UpdateClause objects and returns the result of the execution.
+&nbsp;         *
+&nbsp;         * @param wrapper The KronosDataSourceWrapper to use for the execution. Defaults to null.
+&nbsp;         * @return The KronosOperationResult of the execution.
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Array&lt;DeleteClause&lt;T&gt;&gt;.execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {</b>
+<b class="nc">&nbsp;            return build().execute(wrapper)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-02-27 03:26</div>
+</div>
+</body>
+</html>

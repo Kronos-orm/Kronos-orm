@@ -36,7 +36,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         pluginId = "com.kotlinorm.kronos-compiler-gradle-plugin"
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
-        version = "0.0.8-SNAPSHOT"
+        version = "0.1.0-SNAPSHOT"
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {

@@ -16,7 +16,6 @@
 
 package com.kotlinorm.compiler.core
 
-import com.kotlinorm.compiler.utils.DebugLogger
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.dispatchReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
@@ -86,7 +85,6 @@ fun analyzeAndBuildFields(
         else -> {
             // Unsupported expression type - don't report error, just return empty list
             // This allows the original expression to be preserved
-            DebugLogger.logInfo("Unsupported field expression type: ${expression::class.simpleName}")
             emptyList()
         }
     }
@@ -171,7 +169,6 @@ private fun analyzeCallFields(
                         listOf(buildFunctionField(irFunction, call, errorReporter))
                     } else {
                         // Unknown function call - don't report error
-                        DebugLogger.logInfo("Unknown function call in field analysis: $functionName")
                         emptyList()
                     }
                 }
@@ -209,7 +206,6 @@ fun buildFieldFromPropertyAccess(
         val errorMsg = "Cannot find class for property access: $propertyName. " +
                       "Receiver type: ${receiverType?.classFqName?.asString() ?: "unknown"}. " +
                       "This usually means the property is accessed on a non-KPojo type."
-        DebugLogger.logInfo(errorMsg)
         errorReporter.reportWarning(call, errorMsg)
         // Return a simple field with just the name
         return buildSimpleField(propertyName, "VARCHAR")
@@ -222,7 +218,6 @@ fun buildFieldFromPropertyAccess(
         val errorMsg = "Cannot find property '$propertyName' in class ${irClass.name.asString()}. " +
                       "Available properties: ${irClass.properties.joinToString { it.name.asString() }}. " +
                       "Make sure the property exists and is accessible."
-        DebugLogger.logInfo(errorMsg)
         errorReporter.reportWarning(call, errorMsg)
         // Return a simple field with just the name
         return buildSimpleField(propertyName, "VARCHAR")
@@ -341,7 +336,6 @@ context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildFieldWithAlias(fieldExpr: IrExpression, alias: String): IrExpression {
     // For now, just return the field as-is
     // TODO: Implement setAlias call when we have the method symbol
-    DebugLogger.logInfo("Alias not yet implemented: $alias")
     return fieldExpr
 }
 
@@ -405,7 +399,6 @@ fun analyzeMinusFields(
         val errorMsg = "Cannot find class for minus operation. " +
                       "Receiver type: ${receiverType?.classFqName?.asString() ?: "unknown"}. " +
                       "The minus operation (it - User::field) requires a KPojo instance on the left side."
-        DebugLogger.logInfo(errorMsg)
         errorReporter.reportWarning(call, errorMsg)
         return emptyList()
     }
@@ -424,7 +417,6 @@ fun analyzeMinusFields(
     if (columnProperties.isEmpty()) {
         val errorMsg = "No column properties found in class ${irClass.name.asString()} for minus operation. " +
                       "Make sure the class has properties annotated as columns."
-        DebugLogger.logInfo(errorMsg)
         errorReporter.reportWarning(call, errorMsg)
     }
     
@@ -433,9 +425,6 @@ fun analyzeMinusFields(
             fields.add(buildFieldFromProperty(prop))
         }
     }
-    
-    DebugLogger.logInfo("Minus operation: ${columnProperties.size} total properties, " +
-                       "${excludedFields.size} excluded, ${fields.size} included")
     
     return fields
 }
@@ -497,13 +486,11 @@ fun analyzeGetValueFields(
     val irClass = valueType.classOrNull?.owner
     
     if (irClass == null) {
-        DebugLogger.logInfo("Cannot find class for getValue expression")
         return emptyList()
     }
     
     // Check if it's a KPojo type
     if (!valueType.isKPojoType()) {
-        DebugLogger.logInfo("getValue type is not KPojo: ${irClass.name}")
         return emptyList()
     }
     

@@ -17,7 +17,6 @@
 package com.kotlinorm.compiler.core
 
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
-import com.kotlinorm.compiler.utils.DebugLogger
 import com.kotlinorm.compiler.utils.FieldClassId
 import com.kotlinorm.compiler.utils.FieldFqName
 import com.kotlinorm.compiler.utils.FunctionFieldClassId
@@ -108,7 +107,6 @@ context(context: IrPluginContext)
 val kPojoClassSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KPojoClassId)
-        DebugLogger.logSymbolResolution("kPojoClassSymbol", symbol != null, KPojoFqName.asString())
         return symbol ?: error("KPojo interface not found: ${KPojoFqName.asString()}")
     }
 
@@ -119,7 +117,6 @@ context(context: IrPluginContext)
 val fieldClassSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(FieldClassId)
-        DebugLogger.logSymbolResolution("fieldClassSymbol", symbol != null, FieldFqName.asString())
         return symbol ?: error("Field class not found: ${FieldFqName.asString()}")
     }
 
@@ -139,7 +136,6 @@ context(context: IrPluginContext)
 val functionFieldClassSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(FunctionFieldClassId)
-        DebugLogger.logSymbolResolution("functionFieldClassSymbol", symbol != null, FunctionFieldFqName.asString())
         return symbol ?: error("FunctionField class not found: ${FunctionFieldFqName.asString()}")
     }
 
@@ -159,7 +155,6 @@ context(context: IrPluginContext)
 val pairClassSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(PairClassId)
-        DebugLogger.logSymbolResolution("pairClassSymbol", symbol != null, PairFqName.asString())
         return symbol ?: error("Pair class not found: ${PairFqName.asString()}")
     }
 
@@ -198,7 +193,6 @@ context(context: IrPluginContext)
 val criteriaClassSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(CriteriaClassId)
-        DebugLogger.logSymbolResolution("criteriaClassSymbol", symbol != null, CriteriaFqName.asString())
         return symbol ?: error("Criteria class not found: ${CriteriaFqName.asString()}")
     }
 
@@ -218,7 +212,6 @@ context(context: IrPluginContext)
 val kColumnTypeSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KColumnTypeClassId)
-        DebugLogger.logSymbolResolution("kColumnTypeSymbol", symbol != null, KColumnTypeFqName.asString())
         return symbol ?: error("KColumnType enum not found: ${KColumnTypeFqName.asString()}")
     }
 
@@ -229,7 +222,6 @@ context(context: IrPluginContext)
 val kTableForSelectSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KTableForSelectClassId)
-        DebugLogger.logSymbolResolution("kTableForSelectSymbol", symbol != null, KTableForSelectFqName.asString())
         return symbol ?: error("KTableForSelect class not found: ${KTableForSelectFqName.asString()}")
     }
 
@@ -240,7 +232,6 @@ context(context: IrPluginContext)
 val kTableForSetSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KTableForSetClassId)
-        DebugLogger.logSymbolResolution("kTableForSetSymbol", symbol != null, KTableForSetFqName.asString())
         return symbol ?: error("KTableForSet class not found: ${KTableForSetFqName.asString()}")
     }
 
@@ -251,7 +242,6 @@ context(context: IrPluginContext)
 val kTableForConditionSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KTableForConditionClassId)
-        DebugLogger.logSymbolResolution("kTableForConditionSymbol", symbol != null, KTableForConditionFqName.asString())
         return symbol ?: error("KTableForCondition class not found: ${KTableForConditionFqName.asString()}")
     }
 
@@ -262,7 +252,6 @@ context(context: IrPluginContext)
 val kTableForSortSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KTableForSortClassId)
-        DebugLogger.logSymbolResolution("kTableForSortSymbol", symbol != null, KTableForSortFqName.asString())
         return symbol ?: error("KTableForSort class not found: ${KTableForSortFqName.asString()}")
     }
 
@@ -273,7 +262,6 @@ context(context: IrPluginContext)
 val kTableForReferenceSymbol: IrClassSymbol
     get() {
         val symbol = context.referenceClass(KTableForReferenceClassId)
-        DebugLogger.logSymbolResolution("kTableForReferenceSymbol", symbol != null, KTableForReferenceFqName.asString())
         return symbol ?: error("KTableForReference class not found: ${KTableForReferenceFqName.asString()}")
     }
 
@@ -289,7 +277,6 @@ context(context: IrPluginContext)
 val addFieldMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForSelectSymbol.getSimpleFunction("addField")
-        DebugLogger.logSymbolResolution("addFieldMethodSymbol", symbol != null, null)
         return symbol ?: error("addField method not found in KTableForSelect")
     }
 
@@ -301,7 +288,6 @@ context(context: IrPluginContext)
 val setValueMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForSetSymbol.getSimpleFunction("setValue")
-        DebugLogger.logSymbolResolution("setValueMethodSymbol", symbol != null, null)
         return symbol ?: error("setValue method not found in KTableForSet")
     }
 
@@ -313,7 +299,6 @@ context(context: IrPluginContext)
 val setAssignMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForSetSymbol.getSimpleFunction("setAssign")
-        DebugLogger.logSymbolResolution("setAssignMethodSymbol", symbol != null, null)
         return symbol ?: error("setAssign method not found in KTableForSet")
     }
 
@@ -328,7 +313,6 @@ context(context: IrPluginContext)
 val setCriteriaMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForConditionSymbol.getPropertySetter("criteria")
-        DebugLogger.logSymbolResolution("setCriteriaMethodSymbol", symbol != null, null)
         return symbol ?: error("criteria property setter not found in KTableForCondition")
     }
 
@@ -340,7 +324,6 @@ context(context: IrPluginContext)
 val addSortFieldMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForSortSymbol.getSimpleFunction("addSortField")
-        DebugLogger.logSymbolResolution("addSortFieldMethodSymbol", symbol != null, null)
         return symbol ?: error("addSortField method not found in KTableForSort")
     }
 
@@ -364,7 +347,6 @@ fun IrType.isKPojoType(): Boolean {
         else -> "not KPojo"
     }
     
-    DebugLogger.logTypeJudgment(this, "isKPojoType", result, reason)
     return result
 }
 
@@ -403,19 +385,16 @@ fun IrProperty.isColumnType(): Boolean {
     
     // @Ignore means not a column
     if (hasAnnotation(IgnoreAnnotationFqName)) {
-        DebugLogger.logPropertyJudgment(this, "isColumnType", false, "has @Ignore annotation")
         return false
     }
     
     // @Cascade means it's a relationship, not a column
     if (hasAnnotation(CascadeAnnotationFqName)) {
-        DebugLogger.logPropertyJudgment(this, "isColumnType", false, "has @Cascade annotation")
         return false
     }
     
     // @Serialize forces it to be a column (will be serialized to JSON/text)
     if (hasAnnotation(SerializeAnnotationFqName)) {
-        DebugLogger.logPropertyJudgment(this, "isColumnType", true, "has @Serialize annotation")
         return true
     }
     
@@ -424,18 +403,15 @@ fun IrProperty.isColumnType(): Boolean {
     
     // If the type is KPojo, it's a relationship, not a column
     if (propertyType.isKPojoType()) {
-        DebugLogger.logPropertyJudgment(this, "isColumnType", false, "type is KPojo")
         return false
     }
     
     // If it's a collection/array of KPojo, it's also a relationship
     val elementType = propertyType.firstTypeArgument()
     if (elementType?.isKPojoType() == true) {
-        DebugLogger.logPropertyJudgment(this, "isColumnType", false, "type is List<KPojo>")
         return false
     }
     
     // Otherwise, it's a regular column
-    DebugLogger.logPropertyJudgment(this, "isColumnType", true, "regular column type")
     return true
 }

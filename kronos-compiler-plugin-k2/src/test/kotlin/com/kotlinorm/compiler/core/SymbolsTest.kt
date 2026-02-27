@@ -227,37 +227,38 @@ class SymbolsTest {
     @Test
     fun `test symbol resolution is consistent across compilations`() {
         // 编译两次，验证符号解析结果一致
-        val context1 = IrTestFramework.compile(
+        var symbol1: Any? = null
+        var symbol2: Any? = null
+        
+        IrTestFramework.testInIrGeneration(
             IrTestFramework.source("Test.kt", """
                 package test
                 import com.kotlinorm.interfaces.KPojo
                 data class User(val id: Int) : KPojo
             """)
-        )
-        
-        val context2 = IrTestFramework.compile(
-            IrTestFramework.source("Test.kt", """
-                package test
-                import com.kotlinorm.interfaces.KPojo
-                data class User(val id: Int) : KPojo
-            """)
-        )
-
-        context1.assertSuccess()
-        context2.assertSuccess()
-        
-        println("\n=== Symbol Resolution Consistency Test ===")
-        
-        // 验证两次编译的符号解析结果一致
-        with(context1.pluginContext) {
-            val symbol1 = kPojoClassSymbol
-            
-            with(context2.pluginContext) {
-                val symbol2 = kPojoClassSymbol
-                assertNotNull(symbol1, "First compilation should resolve KPojo")
-                assertNotNull(symbol2, "Second compilation should resolve KPojo")
-                println("✓ Symbol resolution is consistent across compilations")
+        ) { ctx, pluginContext ->
+            ctx.assertSuccess()
+            with(pluginContext) {
+                symbol1 = kPojoClassSymbol
             }
         }
+        
+        IrTestFramework.testInIrGeneration(
+            IrTestFramework.source("Test.kt", """
+                package test
+                import com.kotlinorm.interfaces.KPojo
+                data class User(val id: Int) : KPojo
+            """)
+        ) { ctx, pluginContext ->
+            ctx.assertSuccess()
+            with(pluginContext) {
+                symbol2 = kPojoClassSymbol
+            }
+        }
+        
+        println("\n=== Symbol Resolution Consistency Test ===")
+        assertNotNull(symbol1, "First compilation should resolve KPojo")
+        assertNotNull(symbol2, "Second compilation should resolve KPojo")
+        println("✓ Symbol resolution is consistent across compilations")
     }
 }

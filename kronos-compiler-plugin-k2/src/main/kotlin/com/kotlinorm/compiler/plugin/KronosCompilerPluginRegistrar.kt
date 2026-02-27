@@ -47,15 +47,12 @@ class KronosCompilerPluginRegistrar : CompilerPluginRegistrar() {
         )
         val dumpIrFiles = configuration.get(KronosCommandLineProcessor.ARG_OPTION_DUMP_IR_FILES)
         
-        val debug = configuration.get(KronosCommandLineProcessor.ARG_OPTION_DEBUG, false)
-        
         IrGenerationExtension.registerExtension(
             KronosIrGenerationExtension(
                 dumpIr = dumpIr,
                 dumpIrPath = dumpIrPath,
                 dumpIrMode = dumpIrMode,
-                dumpIrFiles = dumpIrFiles,
-                debug = debug
+                dumpIrFiles = dumpIrFiles
             )
         )
     }

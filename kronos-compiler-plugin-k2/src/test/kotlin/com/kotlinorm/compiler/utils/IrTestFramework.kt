@@ -145,9 +145,9 @@ object IrTestFramework {
      * IR 测试上下文 - 包含编译结果和收集的 IR 元素
      */
     data class IrTestContext(
-        val pluginContext: IrPluginContext,
+        val pluginContext: IrPluginContext?,
         val collector: IrCollector,
-        val moduleFragment: IrModuleFragment,
+        val moduleFragment: IrModuleFragment?,
         val exitCode: KotlinCompilation.ExitCode
     ) {
         fun assertSuccess() {
@@ -167,6 +167,7 @@ object IrTestFramework {
          */
         @OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
         fun getKPojoClasses(): List<IrClass> {
+            requireNotNull(moduleFragment) { "Module fragment not available (compilation may have failed)" }
             val classes = mutableListOf<IrClass>()
             moduleFragment.acceptChildrenVoid(object : IrVisitorVoid() {
                 override fun visitClass(declaration: IrClass) {
@@ -188,6 +189,7 @@ object IrTestFramework {
          */
         @OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
         fun findClass(name: String): IrClass? {
+            requireNotNull(moduleFragment) { "Module fragment not available (compilation may have failed)" }
             var result: IrClass? = null
             moduleFragment.acceptChildrenVoid(object : IrVisitorVoid() {
                 override fun visitClass(declaration: IrClass) {
@@ -205,6 +207,7 @@ object IrTestFramework {
          */
         @OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
         fun findFunction(name: String): IrFunction? {
+            requireNotNull(moduleFragment) { "Module fragment not available (compilation may have failed)" }
             var result: IrFunction? = null
             moduleFragment.acceptChildrenVoid(object : IrVisitorVoid() {
                 override fun visitFunction(declaration: IrFunction) {
@@ -303,9 +306,9 @@ object IrTestFramework {
         val result = compilation.compile()
         
         return IrTestContext(
-            pluginContext = capturedContext ?: throw IllegalStateException("Failed to capture IrPluginContext"),
+            pluginContext = capturedContext,
             collector = collector,
-            moduleFragment = capturedModule ?: throw IllegalStateException("Failed to capture IrModuleFragment"),
+            moduleFragment = capturedModule,
             exitCode = result.exitCode
         )
     }

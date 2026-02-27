@@ -16,8 +16,6 @@
 
 package com.kotlinorm.compiler.plugin
 
-import com.kotlinorm.compiler.core.resolveAndLogAllSymbols
-import com.kotlinorm.compiler.utils.DebugLogger
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
@@ -28,7 +26,6 @@ import org.jetbrains.kotlin.ir.util.KotlinLikeDumpOptions
 import org.jetbrains.kotlin.ir.util.LabelPrintingStrategy
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
-import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import java.io.File
 
 /**
@@ -37,58 +34,32 @@ import java.io.File
  * This is the main entry point for IR transformations
  *
  * @property dumpIr Whether IR dump is enabled
- * @property dumpIrPath Path to save IR dump and debug log (default: build/tmp/kronosDebug)
+ * @property dumpIrPath Path to save IR dump (default: build/tmp/kronosDebug)
  * @property dumpIrMode IR dump mode: "kotlinLike" or "common"
  * @property dumpIrFiles Comma-separated file patterns to filter (null means dump all files)
- * @property debug Whether debug logging is enabled (JSON format only)
  */
 class KronosIrGenerationExtension(
     private val dumpIr: Boolean,
     private val dumpIrPath: String,
     private val dumpIrMode: String,
-    private val dumpIrFiles: String?,
-    private val debug: Boolean = false
+    private val dumpIrFiles: String?
 ) : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         println("[Kronos] Kronos compiler plugin K2 initialized")
         
-        // Enable debug logging if requested
-        if (debug) {
-            val debugLogFile = File(dumpIrPath, "debug.json")
-            DebugLogger.enable(debugLogFile.absolutePath, DebugLogger.OutputFormat.JSON)
-            DebugLogger.logInfo("Kronos compiler plugin K2 started")
-            println("[Kronos] Debug logging enabled - output: ${debugLogFile.absolutePath}")
-        }
+        // TODO: Apply transformations here
+        // For now, this is just a placeholder that will be filled in later phases
         
-        try {
-            // Resolve and log all symbols if debug mode is enabled
-            if (debug) {
-                with(pluginContext) {
-                    resolveAndLogAllSymbols()
-                }
+        // Dump IR if enabled
+        if (dumpIr) {
+            println("[Kronos] IR dump enabled - mode: $dumpIrMode, path: $dumpIrPath")
+            if (dumpIrFiles != null) {
+                println("[Kronos] Filtering files: $dumpIrFiles")
+            } else {
+                println("[Kronos] Dumping all files")
             }
-            
-            // TODO: Apply transformations here
-            // For now, this is just a placeholder that will be filled in later phases
-            
-            // Dump IR if enabled
-            if (dumpIr) {
-                println("[Kronos] IR dump enabled - mode: $dumpIrMode, path: $dumpIrPath")
-                if (dumpIrFiles != null) {
-                    println("[Kronos] Filtering files: $dumpIrFiles")
-                } else {
-                    println("[Kronos] Dumping all files")
-                }
-                dumpIR(moduleFragment)
-            }
-        } finally {
-            // Flush and disable debug logging
-            if (debug) {
-                DebugLogger.logInfo("Kronos compiler plugin K2 finished")
-                println("[Kronos] Debug log stats: ${DebugLogger.getStats()}")
-                DebugLogger.disable()
-            }
+            dumpIR(moduleFragment)
         }
     }
 

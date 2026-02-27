@@ -291,7 +291,7 @@ class FieldAnalysisTest {
             """)
         )
 
-        // 应该编译失败
+        // 应该编译失败（因为 unknownField 不存在）
         context.assertFailure()
         
         println("\n=== Error Case Test (Unknown Property) ===")

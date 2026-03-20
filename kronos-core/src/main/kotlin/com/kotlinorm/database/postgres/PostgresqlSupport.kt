@@ -124,7 +124,7 @@ object PostgresqlSupport : DatabasesSupport {
         return "${
             quote(column.columnName)
         }${
-            if (column.primaryKey == PrimaryKeyType.IDENTITY) " SERIAL" else " ${getColumnType(column.type, column.length, column.scale)}"
+            if (column.primaryKey == PrimaryKeyType.IDENTITY) " ${ if(column.type == BIGINT){ "BIGSERIAL" } else { "SERIAL" }}" else " ${getColumnType(column.type, column.length, column.scale)}"
         }${
             if (column.nullable) "" else " NOT NULL"
         }${

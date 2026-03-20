@@ -13,7 +13,7 @@ gsonVer = "2.13.2"
 dokkaVer = "2.1.0"
 mavenCore = "3.9.12"
 autoService = "1.1.1"
-kotlinCompilerTest = "0.10.1"
+kotlinCompilerTest = "0.12.1"
 jackson = "2.20.1"
 
 [libraries]

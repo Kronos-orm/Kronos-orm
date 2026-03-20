@@ -257,7 +257,7 @@ fun buildFieldFromPropertyRef(
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
-private fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
+fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     val propertyName = irProperty.name.asString()
     
     // Get property type
@@ -483,12 +483,8 @@ fun analyzeGetValueFields(
 ): List<IrExpression> {
     // Check if this is the extension receiver parameter (it)
     val valueType = getValue.type
-    val irClass = valueType.classOrNull?.owner
-    
-    if (irClass == null) {
-        return emptyList()
-    }
-    
+    val irClass = valueType.classOrNull?.owner ?: return emptyList()
+
     // Check if it's a KPojo type
     if (!valueType.isKPojoType()) {
         return emptyList()

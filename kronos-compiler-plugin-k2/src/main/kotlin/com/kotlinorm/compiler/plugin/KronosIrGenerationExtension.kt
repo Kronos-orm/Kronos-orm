@@ -16,8 +16,10 @@
 
 package com.kotlinorm.compiler.plugin
 
+import com.kotlinorm.compiler.transformers.KronosParserTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
 import org.jetbrains.kotlin.ir.util.CustomKotlinLikeDumpStrategy
@@ -33,12 +35,14 @@ import java.io.File
  *
  * This is the main entry point for IR transformations
  *
+ * @property messageCollector Message collector for compilation messages
  * @property dumpIr Whether IR dump is enabled
  * @property dumpIrPath Path to save IR dump (default: build/tmp/kronosDebug)
  * @property dumpIrMode IR dump mode: "kotlinLike" or "common"
  * @property dumpIrFiles Comma-separated file patterns to filter (null means dump all files)
  */
 class KronosIrGenerationExtension(
+    private val messageCollector: MessageCollector,
     private val dumpIr: Boolean,
     private val dumpIrPath: String,
     private val dumpIrMode: String,
@@ -48,8 +52,9 @@ class KronosIrGenerationExtension(
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         println("[Kronos] Kronos compiler plugin K2 initialized")
         
-        // TODO: Apply transformations here
-        // For now, this is just a placeholder that will be filled in later phases
+        // Apply transformations
+        val transformer = KronosParserTransformer(pluginContext, messageCollector)
+        moduleFragment.transform(transformer, null)
         
         // Dump IR if enabled
         if (dumpIr) {

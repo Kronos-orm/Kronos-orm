@@ -35,7 +35,7 @@ rootProject.name = "kronos-orm"
 
 include("kronos-codegen")
 include("kronos-compiler-plugin")
-include("kronos-compiler-plugin-k2")
+include("kronos-compiler-plugin-legacy")
 include("kronos-core")
 include("kronos-jdbc-wrapper")
 include("kronos-logging")

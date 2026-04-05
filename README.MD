@@ -379,7 +379,7 @@ user.delete()
 
 - Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
 - Kronos provides functions to easily convert between `KPojo` and `Map`.
-- Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
+- Kronos provides classes inheriting the `KPojo` interface with a number of properties including `__tableName` and functions like `kronosColumns` for obtaining meta information such as table names and columns.
 
 ```kotlin
 val instance = Movie::class.newInstance() // -> Movie() ,dynamic create KPojo instance by reference, NO REFLECTION used
@@ -389,7 +389,7 @@ val movie = Movie(1)
 val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), NO REFLECTION used
 val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class), NO REFLECTION used
 
-val tableName = movie.kronosTable() // "tb_movie", NO REFLECTION used
+val tableName = movie.__tableName // "tb_movie", readable and writable, NO REFLECTION used
 val columns = movie.kronosColumns() // [Field(id), Field(name), ...], NO REFLECTION used
 // We actually provide more functions such as getting the table creation time, update time, logical deletion of field settings and so on
 

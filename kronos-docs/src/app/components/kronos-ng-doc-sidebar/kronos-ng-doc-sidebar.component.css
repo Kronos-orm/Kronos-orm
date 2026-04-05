@@ -1,9 +1,11 @@
 :host ::ng-deep .p-menu {
-    height: calc(100vh - 60px);
+    height: calc(100vh - var(--ng-doc-navbar-height, 60px));
+    max-height: calc(100vh - var(--ng-doc-navbar-height, 60px));
     overflow-y: auto;
     overflow-x: hidden;
     display: block;
     border: none !important;
+    padding-bottom: 2rem;
 }
 
 :host ::ng-deep .p-menu .p-menu-submenu-label {

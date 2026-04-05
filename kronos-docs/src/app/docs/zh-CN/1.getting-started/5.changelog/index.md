@@ -8,6 +8,13 @@
 
 ### 0.0.7
 
+- 🔧 升级 Gradle 至 9.4.1，Kotlin 至 2.3.0 ([#201](https://github.com/Kronos-orm/Kronos-orm/pull/201))
+- 🐛 修复 PostgreSQL 自增主键对 BIGINT 列使用 BIGSERIAL ([#201](https://github.com/Kronos-orm/Kronos-orm/pull/201))
+- 💪 重构表名和表注释从函数改为属性（`__tableName`、`__tableComment`）([#198](https://github.com/Kronos-orm/Kronos-orm/pull/198))
+- 🔧 修复 bump-version.sh 在 Linux CI 环境下的 sed 语法问题 ([#197](https://github.com/Kronos-orm/Kronos-orm/pull/197))
+
+### 0.0.6
+
 - ✨ 更新 Kotlin 版本至 `2.2.21`，添加对 `kotlin.time.Instant` 的支持 ([#191](https://github.com/Kronos-orm/Kronos-orm/pull/191))
 - ✨ 为 select 子句添加 patch 功能 ([#192](https://github.com/Kronos-orm/Kronos-orm/pull/192))
 - ✨ 添加 `takeIf` 条件支持，用于条件查询处理 ([#178](https://github.com/Kronos-orm/Kronos-orm/pull/178))

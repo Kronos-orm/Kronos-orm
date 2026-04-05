@@ -9,6 +9,13 @@
 
 ### 0.0.7
 
+- 🔧 Upgrade Gradle to 9.4.1 and Kotlin to 2.3.0 ([#201](https://github.com/Kronos-orm/Kronos-orm/pull/201))
+- 🐛 Fix PostgreSQL identity primary key to use BIGSERIAL for BIGINT columns ([#201](https://github.com/Kronos-orm/Kronos-orm/pull/201))
+- 💪 Refactor table name and comment from functions to properties (`__tableName`, `__tableComment`) ([#198](https://github.com/Kronos-orm/Kronos-orm/pull/198))
+- 🔧 Fix bump-version.sh sed syntax for Linux CI environments ([#197](https://github.com/Kronos-orm/Kronos-orm/pull/197))
+
+### 0.0.6
+
 - ✨ Update Kotlin version to `2.2.21`, add support for `kotlin.time.Instant` ([#191](https://github.com/Kronos-orm/Kronos-orm/pull/191))
 - ✨ Add patch functionality to select clause ([#192](https://github.com/Kronos-orm/Kronos-orm/pull/192))
 - ✨ Add `takeIf` condition support for conditional query handling ([#178](https://github.com/Kronos-orm/Kronos-orm/pull/178))

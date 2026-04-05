@@ -42,7 +42,7 @@ bin/
 .DS_Store
 
 ### Build artifacts ###
-docs/
+/docs/
 
 ### kronos-docs (Angular/Node.js) ###
 kronos-docs/node_modules/

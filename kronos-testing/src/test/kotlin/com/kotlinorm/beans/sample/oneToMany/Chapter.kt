@@ -21,6 +21,7 @@ import com.kotlinorm.annotations.Cascade
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.LogicDelete
+import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.annotations.Version
@@ -30,6 +31,7 @@ import java.time.LocalDateTime
 
 @Table("tb_chapter")
 data class Chapter(
+    @PrimaryKey(identity = true)
     val id: Int? = null,
     val bookId: Int? = null, // 外键，关联到 Book'
     @Cascade(["bookId"], ["id"]) val book: Book? = null, // 一对多级联

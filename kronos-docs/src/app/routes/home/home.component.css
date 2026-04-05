@@ -1,0 +1,86 @@
+.section-detail {
+    text-align: center;
+    color: var(--ng-doc-primary);
+    font-weight: 500;
+    font-size: 1.25rem;
+    margin: 1.5rem 0 0;
+    padding: 0 2rem;
+}
+
+:host {
+    display: block;
+    position: relative;
+    min-height: 100vh;
+    color: #FFF;
+    font-size: 14px;
+    font-family: "Inter var", sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-variation-settings: normal;
+    background: #0a0a0f;
+    overflow-x: hidden;
+
+    ::ng-deep {
+        .p-terminal-input {
+            font-family: Hack, sans-serif;
+        }
+    }
+}
+
+/* Hero section with animated mesh gradient */
+.landing-hero {
+    position: relative;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(127, 82, 255, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 50%, rgba(0, 200, 255, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(127, 82, 255, 0.08), transparent);
+}
+
+.landing-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+    pointer-events: none;
+}
+
+/* Glow orb decoration */
+.landing-hero::after {
+    content: "";
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(127, 82, 255, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    animation: pulse-glow 6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+    0% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+}
+
+/* Section dividers */
+.section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(127, 82, 255, 0.3), rgba(0, 200, 255, 0.2), transparent);
+    margin: 3rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .landing-hero::after {
+        width: 300px;
+        height: 300px;
+        top: -100px;
+    }
+}
+
+

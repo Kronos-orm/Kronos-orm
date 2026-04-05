@@ -21,7 +21,7 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 
 基于KCP实现的表达式树解析和协程，Kronos拥有**强大的性能、表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.2.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -37,7 +37,7 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.7-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.8-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -100,10 +100,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin 和构建工具
 
 - **JDK 8+**
-- **Kotlin 2.2.0+**
+- **Kotlin 2.3.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.2.0 或更高版本。
+> 请确保用于 IDE 的 kotlin 插件支持 kotlin 2.3.0 或更高版本。
 >
 > 如果您在 **Intellij IDEA** 中构建失败，并使用 **Maven** 构建、
 > 请尝试启用以下设置: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner /
@@ -122,11 +122,11 @@ Delegate IDE build/run actions to Maven**.
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.5"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.7"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.5")
+    implementation("com.kotlinorm:kronos-core:0.0.7")
 }
 ```
 
@@ -142,11 +142,11 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.5'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.7'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.5'
+    implementation 'com.kotlinorm:kronos-core:0.0.7'
 }
 ```
 
@@ -167,7 +167,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.5</version>
+            <version>0.0.7</version>
         </dependency>
     </dependencies>
 
@@ -186,7 +186,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.0.5</version>
+                        <version>0.0.7</version>
                     </dependency>
                 </dependencies>
             </plugin>

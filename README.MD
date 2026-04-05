@@ -21,7 +21,7 @@ Kronos is a modern ORM framework designed for Kotlin based on the compiler plugi
 
 Based on the KCP implementation of expression tree parsing and concatenation, Kronos has **powerful performance, expressiveness, and a concise, semantic writing style**, make the operation of the database has become **more simple**.
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.2.21-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -37,7 +37,7 @@ Based on the KCP implementation of expression tree parsing and concatenation, Kr
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.7-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.8-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [Official Website](https://www.kotlinorm.com) | [Documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start) | [Getting Started (Repo)](./develop-docs/getting-started.md) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -98,10 +98,10 @@ User(id = id).delete().execute()
 ## 🖥 JDK、Kotlin and Build Tools
 
 - **JDK 8+**
-- **Kotlin 2.2.0+**
+- **Kotlin 2.3.0+**
 - **Maven 3.6.3+** or **Gradle 6.8.3+**
 
-> Please make sure your kotlin plugin for ide supports kotlin 2.2.0 or higher.
+> Please make sure your kotlin plugin for ide supports kotlin 2.3.0 or higher.
 >
 > If you built failed in **Intellij IDEA** and build with **Maven**,
 > please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.

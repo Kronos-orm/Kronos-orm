@@ -1,6 +1,7 @@
 .gradle
 .kiro
 .kotlin/
+.claude/
 envsetup.sh
 build/
 !gradle/wrapper/gradle-wrapper.jar

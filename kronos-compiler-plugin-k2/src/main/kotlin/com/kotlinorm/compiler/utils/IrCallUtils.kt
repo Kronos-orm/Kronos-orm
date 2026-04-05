@@ -16,11 +16,15 @@
 
 package com.kotlinorm.compiler.utils
 
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.getSimpleFunction
 
 /**
  * IrCall utility functions
@@ -87,3 +91,31 @@ val IrCall.valueArguments: List<IrExpression?>
             arguments.getOrNull(paramIndex)
         }
     }
+
+/**
+ * Builds a string concatenation IR expression (left + right)
+ *
+ * @param left The left string expression
+ * @param right The right string expression
+ * @return String concatenation IR expression
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+fun buildStringConcat(
+    left: IrExpression,
+    right: IrExpression
+): IrExpression {
+    // Get String.plus(Any?) function
+    val stringClass = context.referenceClass(StringClassId)
+    val plusFunction = stringClass?.getSimpleFunction("plus")
+    
+    if (plusFunction != null) {
+        return builder.irCall(plusFunction).apply {
+            dispatchReceiver = left
+            arguments[0] = right
+        }
+    }
+    
+    // Fallback: just return left if plus function not found
+    return left
+}

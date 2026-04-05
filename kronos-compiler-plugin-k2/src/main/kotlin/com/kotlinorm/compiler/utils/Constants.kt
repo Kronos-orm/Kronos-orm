@@ -38,10 +38,13 @@ val KTableForReferenceFqName = FqName("com.kotlinorm.beans.dsl.KTableForReferenc
 
 // Kotlin standard library
 val PairFqName = FqName("kotlin.Pair")
+val StringFqName = FqName("kotlin.String")
 val FunctionHandlerFqName = FqName("com.kotlinorm.functions.FunctionHandler")
 
 // Enums
 val KColumnTypeFqName = FqName("com.kotlinorm.enums.KColumnType")
+val ConditionTypeFqName = FqName("com.kotlinorm.enums.ConditionType")
+val NoValueStrategyTypeFqName = FqName("com.kotlinorm.enums.NoValueStrategyType")
 
 // Annotations
 val TableAnnotationFqName = FqName("com.kotlinorm.annotations.Table")
@@ -75,6 +78,9 @@ val KTableForReferenceClassId = ClassId.topLevel(KTableForReferenceFqName)
 
 // Kotlin standard library
 val PairClassId = ClassId.topLevel(PairFqName)
+val StringClassId = ClassId.topLevel(StringFqName)
 
 // Enums
 val KColumnTypeClassId = ClassId.topLevel(KColumnTypeFqName)
+val ConditionTypeClassId = ClassId.topLevel(ConditionTypeFqName)
+val NoValueStrategyTypeClassId = ClassId.topLevel(NoValueStrategyTypeFqName)

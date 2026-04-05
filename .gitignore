@@ -56,3 +56,4 @@ kronos-docs/ng-doc/
 *.key
 */bin/*
 **/test-output.log
+**/*-output.log

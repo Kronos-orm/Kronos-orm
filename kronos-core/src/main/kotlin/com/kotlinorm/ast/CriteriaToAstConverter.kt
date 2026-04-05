@@ -89,7 +89,6 @@ object CriteriaToAstConverter {
                 }
                 else -> criteria.noValueStrategyType
             }
-            
             if (strategy == NoValueStrategyType.Ignore) {
                 return null  // Skip this criteria entirely
             }
@@ -109,64 +108,13 @@ object CriteriaToAstConverter {
                 return Literal.BooleanLiteral(criteria.not)
             }
         }
-        
-        // Handle ROOT type - process children
-        if (criteria.type == ConditionType.ROOT) {
-            val expressions = criteria.children
-                .filterNotNull()
-                .mapNotNull { convertCriteria(it, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases) }
-            
-            return when {
-                expressions.isEmpty() -> null  // Empty root - return null instead of TRUE
-                expressions.size == 1 -> expressions.first()
-                else -> expressions.reduce { acc, expr -> BinaryExpression(acc, SqlOperator.AND, expr) }
-            }
+
+        // Handle ROOT/AND/OR - combine children with logical operators
+        if (criteria.type == ConditionType.ROOT || criteria.type == ConditionType.AND || criteria.type == ConditionType.OR) {
+            return combineChildren(criteria, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases)
         }
 
-        // Handle AND/OR - combine children
-        if (criteria.type == ConditionType.AND) {
-            val expressions = criteria.children
-                .filterNotNull()
-                .mapNotNull { convertCriteria(it, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases) }
-            
-            return when {
-                expressions.isEmpty() -> null  // Empty AND - return null instead of TRUE
-                expressions.size == 1 -> expressions.first()
-                else -> expressions.reduce { acc, expr -> BinaryExpression(acc, SqlOperator.AND, expr) }
-            }
-        }
-
-        if (criteria.type == ConditionType.OR) {
-            val expressions = criteria.children
-                .filterNotNull()
-                .mapNotNull { convertCriteria(it, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases) }
-            
-            return when {
-                expressions.isEmpty() -> null  // Empty OR - return null instead of FALSE
-                expressions.size == 1 -> expressions.first()
-                else -> expressions.reduce { acc, expr -> BinaryExpression(acc, SqlOperator.OR, expr) }
-            }
-        }
-
-        // Create column reference
-        // Note: For join conditions, we need to use table alias to distinguish columns from different tables
-        // The tableName in Criteria is the actual table name, which we use as the alias
-        // For cross-database queries, we also need to include the database name
-        
-        // Handle FunctionField - convert to FunctionCall expression
-        val columnRef: Expression = if (criteria.field is com.kotlinorm.beans.dsl.FunctionField) {
-            FieldToExpressionConverter.fieldToExpression(criteria.field, useTableAlias = useTableAliases)
-        } else {
-            // Use table alias only when explicitly requested (for JOIN queries)
-            // For single-table queries, don't use table alias even if tableName is set
-            val shouldUseAlias = useTableAliases && !criteria.field.tableName.isNullOrEmpty()
-            val database = if (shouldUseAlias) databaseOfTable[criteria.field.tableName] else null
-            ColumnReference(
-                database = database,
-                tableAlias = if (shouldUseAlias) criteria.field.tableName else null,
-                columnName = criteria.field.columnName
-            )
-        }
+        val columnRef = buildColumnRef(criteria, databaseOfTable, useTableAliases)
 
         // Handle different condition types
         val expression = when (criteria.type) {
@@ -295,32 +243,95 @@ object CriteriaToAstConverter {
             }
         }
 
-        // Apply NOT if needed (for expressions that don't have built-in NOT support)
-        // SpecialExpression types (LikeExpression, IsNullExpression, BetweenExpression, InExpression)
-        // already handle NOT in their constructors, so we don't need to wrap them again
-        return if (criteria.not && expression !is SpecialExpression && criteria.type != ConditionType.REGEXP) {
-            // REGEXP already handles NOT by selecting NOT_REGEXP operator
-            // Wrap in UnaryExpression.NOT if the expression doesn't already handle NOT
-            when (expression) {
-                is BinaryExpression -> {
-                    // Check if operator already has NOT variant
-                    val notOperator = when (expression.operator) {
-                        SqlOperator.EQUAL -> SqlOperator.NOT_EQUAL
-                        SqlOperator.LIKE -> SqlOperator.NOT_LIKE
-                        SqlOperator.ILIKE -> SqlOperator.NOT_ILIKE
-                        else -> null
-                    }
-                    if (notOperator != null) {
-                        BinaryExpression(expression.left, notOperator, expression.right)
-                    } else {
-                        UnaryExpression(UnaryOperator.NOT, expression)
-                    }
-                }
-                else -> UnaryExpression(UnaryOperator.NOT, expression)
-            }
-        } else {
-            expression
+        return applyNot(criteria, expression)
+    }
+
+    /**
+     * Applies NOT negation to an expression if the criteria requires it.
+     * SpecialExpression types (LikeExpression, IsNullExpression, BetweenExpression, InExpression)
+     * already handle NOT in their constructors, so they are not wrapped again.
+     * REGEXP also handles NOT by selecting NOT_REGEXP operator.
+     *
+     * @param criteria The criteria containing the NOT flag and type
+     * @param expression The expression to potentially negate
+     * @return The expression, possibly wrapped with NOT
+     */
+    private fun applyNot(criteria: Criteria, expression: Expression): Expression {
+        if (!criteria.not || expression is SpecialExpression || criteria.type == ConditionType.REGEXP) {
+            return expression
         }
+        return when (expression) {
+            is BinaryExpression -> {
+                val notOperator = when (expression.operator) {
+                    SqlOperator.EQUAL -> SqlOperator.NOT_EQUAL
+                    SqlOperator.LIKE -> SqlOperator.NOT_LIKE
+                    SqlOperator.ILIKE -> SqlOperator.NOT_ILIKE
+                    else -> null
+                }
+                if (notOperator != null) {
+                    BinaryExpression(expression.left, notOperator, expression.right)
+                } else {
+                    UnaryExpression(UnaryOperator.NOT, expression)
+                }
+            }
+            else -> UnaryExpression(UnaryOperator.NOT, expression)
+        }
+    }
+
+    /**
+     * Combines children of a ROOT/AND/OR criteria into a single expression using the appropriate logical operator.
+     *
+     * @param criteria The criteria whose children to combine
+     * @param parameterValues Mutable map to collect parameter values during conversion
+     * @param paramNameCounter Mutable map to track parameter name usage for deduplication
+     * @param operationType Operation type for Auto NoValueStrategy resolution
+     * @param databaseOfTable Map of table name to database name (for cross-database queries)
+     * @param useTableAliases Whether to use table aliases in column references
+     * @return The combined expression, or null if no children produce expressions
+     */
+    private fun combineChildren(
+        criteria: Criteria,
+        parameterValues: MutableMap<String, Any?>,
+        paramNameCounter: MutableMap<String, Int>,
+        operationType: KOperationType,
+        databaseOfTable: Map<String, String>,
+        useTableAliases: Boolean
+    ): Expression? {
+        val operator = if (criteria.type == ConditionType.OR) SqlOperator.OR else SqlOperator.AND
+        val expressions = criteria.children
+            .filterNotNull()
+            .mapNotNull { convertCriteria(it, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases) }
+        return when {
+            expressions.isEmpty() -> null
+            expressions.size == 1 -> expressions.first()
+            else -> expressions.reduce { acc, expr -> BinaryExpression(acc, operator, expr) }
+        }
+    }
+
+    /**
+     * Builds a column reference expression from a criteria's field.
+     * Handles FunctionField conversion and table alias resolution for JOIN queries.
+     *
+     * @param criteria The criteria containing the field
+     * @param databaseOfTable Map of table name to database name
+     * @param useTableAliases Whether to use table aliases
+     * @return The column reference expression
+     */
+    private fun buildColumnRef(
+        criteria: Criteria,
+        databaseOfTable: Map<String, String>,
+        useTableAliases: Boolean
+    ): Expression {
+        if (criteria.field is FunctionField) {
+            return FieldToExpressionConverter.fieldToExpression(criteria.field, useTableAlias = useTableAliases)
+        }
+        val shouldUseAlias = useTableAliases && !criteria.field.tableName.isNullOrEmpty()
+        val database = if (shouldUseAlias) databaseOfTable[criteria.field.tableName] else null
+        return ColumnReference(
+            database = database,
+            tableAlias = if (shouldUseAlias) criteria.field.tableName else null,
+            columnName = criteria.field.columnName
+        )
     }
 
     /**

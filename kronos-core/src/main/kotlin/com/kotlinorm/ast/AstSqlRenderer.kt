@@ -14,6 +14,7 @@
 package com.kotlinorm.ast
 
 import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
@@ -43,9 +44,9 @@ object AstSqlRenderer {
             support: DatabasesSupport,
             criteria: Criteria
     ): String {
-        // This is a placeholder - actual implementation would convert Criteria to AST
-        // For now, we'll return an empty string or delegate to existing implementation
-        // TODO: Implement Criteria to AST conversion
-        return ""
+        val expression = CriteriaToAstConverter.convert(criteria, operationType = KOperationType.SELECT)
+            ?: return ""
+        val context = RenderContext(quotes = support.quotes)
+        return support.renderer.renderExpression(expression, context)
     }
 }

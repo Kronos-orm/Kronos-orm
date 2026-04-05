@@ -278,96 +278,14 @@ private fun analyzeMethodCriteria(
             }
             buildCriteriaNode(field = fieldExpr, type = "BETWEEN", not = funcName == "notBetween", value = range, tableName = extractTableNameExpr(receiver))
         }
-        "like", "notLike" -> {
-            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
-                errorReporter.reportError(call, ErrorMessages.missingReceiverFor(funcName))
-                return null
-            }
-            val pattern = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
-            val tblName = extractTableNameExpr(receiver)
-            if (pattern != null) {
-                // With argument: it.username.like("A%") or it.username like f.concat(...)
-                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = funcName == "notLike", value = resolveValueExpression(irFunction, pattern, errorReporter), tableName = tblName)
-            } else {
-                // No-arg form: it.username.like
-                buildNoArgLikeCriteria(irFunction, call, not = funcName == "notLike", errorReporter = errorReporter)
-            }
-        }
-        "startsWith" -> {
-            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
-                errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_STARTSWITH)
-                return null
-            }
-            val prefix = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
-            val tblName = extractTableNameExpr(receiver)
-            if (prefix != null) {
-                // With argument: it.username.startsWith("A")
-                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(prefix, builder.irString("%")), tableName = tblName)
-            } else {
-                // No-arg form: it.username.startsWith
-                buildNoArgStartsWithCriteria(irFunction, call, setNot, errorReporter)
-            }
-        }
-        "endsWith" -> {
-            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
-                errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_ENDSWITH)
-                return null
-            }
-            val suffix = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
-            val tblName = extractTableNameExpr(receiver)
-            if (suffix != null) {
-                // With argument: it.username.endsWith("A")
-                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(builder.irString("%"), suffix), tableName = tblName)
-            } else {
-                // No-arg form: it.username.endsWith
-                buildNoArgEndsWithCriteria(irFunction, call, setNot, errorReporter)
-            }
-        }
-        "contains" -> {
-            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
-                errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_CONTAINS)
-                return null
-            }
-            val arg = call.getValueArgumentSafe(0)
-            if (arg != null) {
-                // With argument: it.username.contains("A")
-                if (receiver.type.classFqName?.asString() == "kotlin.String") {
-                    // String.contains(it.field) -> LIKE %value%
-                    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
-                    val pattern = concatIrString(concatIrString(builder.irString("%"), arg), builder.irString("%"))
-                    buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = pattern, tableName = extractTableNameExpr(receiver))
-                } else {
-                    // collection.contains(it.field) -> IN
-                    val fieldExpr = extractFieldExpression(irFunction, arg, errorReporter) ?: return null
-                    buildCriteriaNode(field = fieldExpr, type = "IN", not = setNot, value = receiver, tableName = extractTableNameExpr(arg))
-                }
-            } else {
-                // No-arg form: it.username.contains
-                buildNoArgContainsCriteria(irFunction, call, setNot, errorReporter)
-            }
-        }
+        "like", "notLike", "startsWith", "endsWith", "contains", "regexp", "notRegexp" ->
+            analyzeStringMatchCriteria(irFunction, call, funcName, extensionReceiver, dispatchReceiver, errorReporter, setNot)
         "asSql" -> {
             val receiver = extensionReceiver ?: dispatchReceiver ?: run {
                 errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_ASSQL)
                 return null
             }
             buildCriteriaNode(field = null, type = "SQL", not = false, value = receiver)
-        }
-        "regexp", "notRegexp" -> {
-            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
-                errorReporter.reportError(call, ErrorMessages.missingReceiverFor(funcName))
-                return null
-            }
-            val arg = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
-            if (arg != null) {
-                buildCriteriaNode(field = fieldExpr, type = "REGEXP", not = funcName == "notRegexp", value = arg, tableName = extractTableNameExpr(receiver))
-            } else {
-                buildNoArgRegexpCriteria(irFunction, call, not = funcName == "notRegexp", errorReporter = errorReporter)
-            }
         }
         "ifNoValue" -> {
             val receiver = extensionReceiver ?: dispatchReceiver ?: run {
@@ -416,6 +334,99 @@ private fun analyzeMethodCriteria(
             )
             null
         }
+    }
+}
+
+/**
+ * Handles string-matching condition functions: like, notLike, startsWith, endsWith, contains, regexp, notRegexp.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun analyzeStringMatchCriteria(
+    irFunction: IrFunction,
+    call: IrCall,
+    funcName: String,
+    extensionReceiver: IrExpression?,
+    dispatchReceiver: IrExpression?,
+    errorReporter: ErrorReporter,
+    setNot: Boolean
+): IrExpression? {
+    return when (funcName) {
+        "like", "notLike" -> {
+            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
+                errorReporter.reportError(call, ErrorMessages.missingReceiverFor(funcName))
+                return null
+            }
+            val pattern = call.getValueArgumentSafe(0)
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            val tblName = extractTableNameExpr(receiver)
+            if (pattern != null) {
+                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = funcName == "notLike", value = resolveValueExpression(irFunction, pattern, errorReporter), tableName = tblName)
+            } else {
+                buildNoArgLikeCriteria(irFunction, call, not = funcName == "notLike", errorReporter = errorReporter)
+            }
+        }
+        "startsWith" -> {
+            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
+                errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_STARTSWITH)
+                return null
+            }
+            val prefix = call.getValueArgumentSafe(0)
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            val tblName = extractTableNameExpr(receiver)
+            if (prefix != null) {
+                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(prefix, builder.irString("%")), tableName = tblName)
+            } else {
+                buildNoArgStartsWithCriteria(irFunction, call, setNot, errorReporter)
+            }
+        }
+        "endsWith" -> {
+            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
+                errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_ENDSWITH)
+                return null
+            }
+            val suffix = call.getValueArgumentSafe(0)
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            val tblName = extractTableNameExpr(receiver)
+            if (suffix != null) {
+                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(builder.irString("%"), suffix), tableName = tblName)
+            } else {
+                buildNoArgEndsWithCriteria(irFunction, call, setNot, errorReporter)
+            }
+        }
+        "contains" -> {
+            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
+                errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_CONTAINS)
+                return null
+            }
+            val arg = call.getValueArgumentSafe(0)
+            if (arg != null) {
+                if (receiver.type.classFqName?.asString() == "kotlin.String") {
+                    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+                    val pattern = concatIrString(concatIrString(builder.irString("%"), arg), builder.irString("%"))
+                    buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = pattern, tableName = extractTableNameExpr(receiver))
+                } else {
+                    val fieldExpr = extractFieldExpression(irFunction, arg, errorReporter) ?: return null
+                    buildCriteriaNode(field = fieldExpr, type = "IN", not = setNot, value = receiver, tableName = extractTableNameExpr(arg))
+                }
+            } else {
+                buildNoArgContainsCriteria(irFunction, call, setNot, errorReporter)
+            }
+        }
+        "regexp", "notRegexp" -> {
+            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
+                errorReporter.reportError(call, ErrorMessages.missingReceiverFor(funcName))
+                return null
+            }
+            val arg = call.getValueArgumentSafe(0)
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            if (arg != null) {
+                buildCriteriaNode(field = fieldExpr, type = "REGEXP", not = funcName == "notRegexp", value = arg, tableName = extractTableNameExpr(receiver))
+            } else {
+                buildNoArgRegexpCriteria(irFunction, call, not = funcName == "notRegexp", errorReporter = errorReporter)
+            }
+        }
+        else -> null
     }
 }
 

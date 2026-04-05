@@ -41,13 +41,7 @@ import com.kotlinorm.orm.join.JoinClauseInfo
 import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace
 import com.kotlinorm.utils.getTypeSafeValue
-import com.kotlinorm.ast.*
-import com.kotlinorm.ast.DeleteStatement
-import com.kotlinorm.ast.InsertStatement
-import com.kotlinorm.ast.RenderContext
-import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.ast.SqlRenderer
-import com.kotlinorm.ast.UpdateStatement
 
 object PostgresqlSupport : DatabasesSupport {
     override var quotes = Pair("\"", "\"")

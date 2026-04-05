@@ -140,8 +140,7 @@ class KronosIrGenerationExtension(
                 
                 outputFile.writeText(irDump)
                 dumpedFiles++
-            } catch (e: Exception) {
-                // Don't fail compilation if IR dump fails
+            } catch (e: RuntimeException) {
                 println("[Kronos] Warning: Failed to dump IR for ${file.fileEntry.name}: ${e.message}")
             }
         }

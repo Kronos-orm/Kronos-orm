@@ -74,7 +74,7 @@ class ErrorReporter(
     private fun dumpElement(element: IrElement): String {
         return try {
             element.dumpKotlinLike(errorDumpOptions).lines().take(5).joinToString("\n")
-        } catch (e: Exception) {
+        } catch (e: RuntimeException) {
             "<IR dump failed: ${e.message}>"
         }
     }

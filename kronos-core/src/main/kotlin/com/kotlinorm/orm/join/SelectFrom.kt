@@ -16,7 +16,18 @@
 
 package com.kotlinorm.orm.join
 
-import com.kotlinorm.ast.*
+import com.kotlinorm.ast.ColumnReference
+import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FieldToExpressionConverter
+import com.kotlinorm.ast.JoinTable
+import com.kotlinorm.ast.LimitClause
+import com.kotlinorm.ast.Literal
+import com.kotlinorm.ast.OrderByItem
+import com.kotlinorm.ast.SelectItem
+import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.TableReference
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable

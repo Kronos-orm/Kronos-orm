@@ -366,7 +366,7 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
         builder.irNull()
     }
 
-    val ARRAY_OR_COLLECTION_FQ_NAMES = arrayOf(
+    val arrayOrCollectionFqNames = arrayOf(
         FqName("kotlin.collections.Collection"),
         FqName("kotlin.collections.Iterator"),
         FqName("kotlin.Array"),
@@ -379,7 +379,7 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
         FqName("kotlin.ByteArray"),
         FqName("kotlin.BooleanArray"),
     )
-    val cascadeIsCollectionOrArray = propertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
+    val cascadeIsCollectionOrArray = propertyType.superTypes().any { it.classFqName in arrayOrCollectionFqNames }
 
     val propKClass = propertyType.classOrNull
     val kClassExpr: IrExpression = if (irProperty.isDelegated) {

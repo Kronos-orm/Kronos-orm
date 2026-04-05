@@ -92,7 +92,7 @@ class ConditionTransformer(
                     // Condition transformer does NOT preserve the original return
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: RuntimeException) {
             errorReporter.reportError(
                 expression,
                 ErrorMessages.failedToTransformCondition(e.message),

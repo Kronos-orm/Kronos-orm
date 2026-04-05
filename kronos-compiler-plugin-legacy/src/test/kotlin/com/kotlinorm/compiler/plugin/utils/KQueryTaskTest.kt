@@ -151,7 +151,9 @@ class KQueryTaskTest {
     @Language("kotlin")
     private val mainKt = """
             import com.kotlinorm.beans.task.KronosAtomicBatchTask
+            import com.kotlinorm.beans.task.TransactionScope
             import com.kotlinorm.enums.DBType
+            import com.kotlinorm.enums.TransactionIsolation
             import com.kotlinorm.interfaces.KAtomicActionTask
             import com.kotlinorm.interfaces.KAtomicQueryTask
             import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -223,7 +225,7 @@ class KQueryTaskTest {
                     TODO("Not yet implemented")
                 }
         
-                override fun transact(block: () -> Any?): Any? {
+                override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
                     TODO("Not yet implemented")
                 }
         

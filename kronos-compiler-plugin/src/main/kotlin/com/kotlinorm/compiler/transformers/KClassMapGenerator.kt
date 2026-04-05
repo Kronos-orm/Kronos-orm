@@ -134,7 +134,7 @@ object KClassMapGenerator {
                         irWhen(
                             kPojoNullableType,
                             kPojoClasses
-                                .distinctBy { it.fqNameWhenAvailable }
+                                .distinctBy { it.fqNameWhenAvailable ?: it.symbol }
                                 .mapNotNull { klass ->
                                     // Only include classes with a no-arg constructor
                                     val ctor = klass.constructors.firstOrNull { ctor ->
@@ -179,6 +179,96 @@ object KClassMapGenerator {
             declaration.body = irBuiltIns.createIrBuilder(declaration.symbol).irBlockBody {
                 +irCall(kClassCreatorSetterSymbol).apply {
                     arguments[0] = lambdaExpr
+                }
+                originalBody.statements.forEach { +it }
+            }
+        }
+    }
+
+    /**
+     * Generates kClassCreator assignment for a call-site lambda.
+     * Used when the @KronosInit function is already compiled (e.g., test compilation)
+     * and we intercept the call site `Kronos.init { ... }` instead.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun generateForCallSite(
+        pluginContext: IrPluginContext,
+        lambdaFunction: IrFunction,
+        kPojoClasses: Set<IrClass>,
+        errorReporter: ErrorReporter
+    ) {
+        with(pluginContext) {
+            val kPojoType = kPojoClassSymbol.defaultType
+            val kPojoNullableType = kPojoType.makeNullable()
+            val kClassOfKPojoType = kClassSymbol.typeWith(kPojoType)
+
+            val creatorLambda = irFactory.buildFun {
+                origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA
+                name = SpecialNames.ANONYMOUS
+                visibility = DescriptorVisibilities.LOCAL
+                returnType = kPojoNullableType
+                modality = Modality.FINAL
+            }.apply {
+                parent = lambdaFunction
+                val kClassParam = irFactory.buildValueParameter(
+                    IrValueParameterBuilder().apply {
+                        name = Name.identifier("kClass")
+                        type = kClassOfKPojoType
+                        kind = IrParameterKind.Regular
+                    },
+                    this
+                )
+                parameters = parameters + kClassParam
+
+                body = irBuiltIns.createIrBuilder(symbol).irBlockBody {
+                    +irReturn(
+                        irWhen(
+                            kPojoNullableType,
+                            kPojoClasses
+                                .distinctBy { it.fqNameWhenAvailable ?: it.symbol }
+                                .mapNotNull { klass ->
+                                    val ctor = klass.constructors.firstOrNull { ctor ->
+                                        ctor.parameters.none { p ->
+                                            p.kind == IrParameterKind.Regular && p.defaultValue == null
+                                        }
+                                    } ?: run {
+                                        errorReporter.reportWarning(
+                                            klass,
+                                            ErrorMessages.kpojoNoNoArgConstructor(klass.fqNameWhenAvailable)
+                                        )
+                                        return@mapNotNull null
+                                    }
+
+                                    val classRef = IrClassReferenceImpl(
+                                        UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+                                        kClassOfKPojoType,
+                                        klass.symbol,
+                                        klass.defaultType
+                                    )
+
+                                    irBranch(
+                                        irEquals(irGet(kClassParam), classRef),
+                                        irCall(ctor.symbol)
+                                    )
+                                } + irElseBranch(irNull())
+                        )
+                    )
+                }
+            }
+
+            val kFunctionType = irBuiltIns.functionN(1).typeWith(kClassOfKPojoType, kPojoNullableType)
+            val creatorLambdaExpr = IrFunctionExpressionImpl(
+                UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+                kFunctionType,
+                creatorLambda,
+                IrStatementOrigin.LAMBDA
+            )
+
+            // Prepend kClassCreator assignment to the lambda body
+            val originalBody = lambdaFunction.body as? IrBlockBody ?: return
+            lambdaFunction.body = irBuiltIns.createIrBuilder(lambdaFunction.symbol).irBlockBody {
+                +irCall(kClassCreatorSetterSymbol).apply {
+                    arguments[0] = creatorLambdaExpr
                 }
                 originalBody.statements.forEach { +it }
             }

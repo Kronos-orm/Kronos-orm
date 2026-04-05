@@ -16,6 +16,8 @@
 
 package com.kotlinorm.compiler.plugin
 
+import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.transformers.KClassMapGenerator
 import com.kotlinorm.compiler.transformers.KronosParserTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -55,6 +57,15 @@ class KronosIrGenerationExtension(
         // Apply transformations
         val transformer = KronosParserTransformer(pluginContext, messageCollector)
         moduleFragment.transform(transformer, null)
+
+        // Process @KronosInit call-site lambdas (for test compilation where the
+        // @KronosInit function declaration is already compiled in the main jar)
+        val errorReporter = ErrorReporter(messageCollector)
+        transformer.initCallSiteLambdas.forEach { lambdaFunction ->
+            KClassMapGenerator.generateForCallSite(
+                pluginContext, lambdaFunction, transformer.kPojoClasses, errorReporter
+            )
+        }
         
         // Dump IR if enabled
         if (dumpIr) {

@@ -29,6 +29,7 @@ val KPojoFqName = FqName("com.kotlinorm.interfaces.KPojo")
 // DSL classes
 val FieldFqName = FqName("com.kotlinorm.beans.dsl.Field")
 val FunctionFieldFqName = FqName("com.kotlinorm.beans.dsl.FunctionField")
+val KCascadeFqName = FqName("com.kotlinorm.beans.dsl.KCascade")
 val CriteriaFqName = FqName("com.kotlinorm.beans.dsl.Criteria")
 val KTableForSelectFqName = FqName("com.kotlinorm.beans.dsl.KTableForSelect")
 val KTableForSetFqName = FqName("com.kotlinorm.beans.dsl.KTableForSet")
@@ -58,6 +59,8 @@ val DefaultValueAnnotationFqName = FqName("com.kotlinorm.annotations.Default")
 val NecessaryAnnotationFqName = FqName("com.kotlinorm.annotations.Necessary")
 val SerializeAnnotationFqName = FqName("com.kotlinorm.annotations.Serialize")
 val KronosInitAnnotationFqName = FqName("com.kotlinorm.annotations.KronosInit")
+val KronosCommonStrategyFqName = FqName("com.kotlinorm.beans.config.KronosCommonStrategy")
+val KronosObjectFqName = FqName("com.kotlinorm.Kronos")
 
 // Annotation FqNames grouped for class transformer
 object AnnotationFqNames {
@@ -88,6 +91,7 @@ val KPojoClassId = ClassId.topLevel(KPojoFqName)
 // DSL classes
 val FieldClassId = ClassId.topLevel(FieldFqName)
 val FunctionFieldClassId = ClassId.topLevel(FunctionFieldFqName)
+val KCascadeClassId = ClassId.topLevel(KCascadeFqName)
 val CriteriaClassId = ClassId.topLevel(CriteriaFqName)
 val KTableForSelectClassId = ClassId.topLevel(KTableForSelectFqName)
 val KTableForSetClassId = ClassId.topLevel(KTableForSetFqName)
@@ -103,3 +107,7 @@ val StringClassId = ClassId.topLevel(StringFqName)
 val KColumnTypeClassId = ClassId.topLevel(KColumnTypeFqName)
 val ConditionTypeClassId = ClassId.topLevel(ConditionTypeFqName)
 val NoValueStrategyTypeClassId = ClassId.topLevel(NoValueStrategyTypeFqName)
+
+// Config
+val KronosCommonStrategyClassId = ClassId.topLevel(KronosCommonStrategyFqName)
+val KronosObjectClassId = ClassId.topLevel(KronosObjectFqName)

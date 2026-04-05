@@ -22,13 +22,16 @@ import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
 import com.kotlinorm.compiler.utils.getValueArgumentSafe
+import com.kotlinorm.compiler.utils.isKronosFunction
 import com.kotlinorm.compiler.utils.valueArguments
+import com.kotlinorm.compiler.transformers.getTableNameExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irIfThenElse
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
@@ -48,8 +51,10 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.superTypes
 
 /**
  * Condition analysis and construction
@@ -109,18 +114,34 @@ private fun analyzeCallCriteria(
                 errorReporter.reportError(call, ErrorMessages.MISSING_RIGHT_OPERAND_EQ)
                 return null
             }
-            buildEqualCriteria(left, right, not = setNot, errorReporter = errorReporter)
+            buildEqualCriteria(irFunction, left, right, not = setNot, errorReporter = errorReporter)
         }
         IrStatementOrigin.EXCLEQ -> {
-            val left = call.getValueArgumentSafe(0) ?: run {
-                errorReporter.reportError(call, ErrorMessages.MISSING_LEFT_OPERAND_NEQ)
-                return null
+            // In K2 IR, `a != b` is lowered to `EQEQ(a, b).not()` with EXCLEQ origin on BOTH calls.
+            // The outer not() has 1 arg (the inner EQEQ), the inner EQEQ has 2 args.
+            val funcName = call.symbol.owner.name.asString()
+            if (funcName == "EQEQ" || funcName == "ieee754equals") {
+                // This is the inner equality call — extract operands directly
+                val left = call.getValueArgumentSafe(0) ?: run {
+                    errorReporter.reportError(call, ErrorMessages.MISSING_LEFT_OPERAND_NEQ)
+                    return null
+                }
+                val right = call.getValueArgumentSafe(1) ?: run {
+                    errorReporter.reportError(call, ErrorMessages.MISSING_RIGHT_OPERAND_NEQ)
+                    return null
+                }
+                buildEqualCriteria(irFunction, left, right, not = !setNot, errorReporter = errorReporter)
+            } else {
+                // This is the outer not() call — delegate to the inner EQEQ without flipping not
+                // (the inner EQEQ branch above handles the negation)
+                val inner = call.arguments.firstOrNull { it != null } as? IrCall
+                if (inner != null) {
+                    analyzeCallCriteria(irFunction, inner, errorReporter, setNot)
+                } else {
+                    errorReporter.reportError(call, ErrorMessages.MISSING_LEFT_OPERAND_NEQ)
+                    null
+                }
             }
-            val right = call.getValueArgumentSafe(1) ?: run {
-                errorReporter.reportError(call, ErrorMessages.MISSING_RIGHT_OPERAND_NEQ)
-                return null
-            }
-            buildEqualCriteria(left, right, not = !setNot, errorReporter = errorReporter)
         }
         IrStatementOrigin.ANDAND -> {
             val left = call.getValueArgumentSafe(0)?.let { analyzeAndBuildCriteria(irFunction, it, errorReporter, setNot) }
@@ -182,22 +203,22 @@ private fun analyzeMethodCriteria(
                 errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_ISNULL)
                 return null
             }
-            val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: run {
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: run {
                 errorReporter.reportError(call, ErrorMessages.CANNOT_EXTRACT_FIELD_ISNULL)
                 return null
             }
-            buildCriteriaNode(field = fieldExpr, type = "ISNULL", not = setNot)
+            buildCriteriaNode(field = fieldExpr, type = "ISNULL", not = setNot, tableName = extractTableNameExpr(receiver))
         }
         "notNull" -> {
             val receiver = extensionReceiver ?: dispatchReceiver ?: run {
                 errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_NOTNULL)
                 return null
             }
-            val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: run {
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: run {
                 errorReporter.reportError(call, ErrorMessages.CANNOT_EXTRACT_FIELD_NOTNULL)
                 return null
             }
-            buildCriteriaNode(field = fieldExpr, type = "ISNULL", not = !setNot)
+            buildCriteriaNode(field = fieldExpr, type = "ISNULL", not = !setNot, tableName = extractTableNameExpr(receiver))
         }
         "lt", "gt", "le", "ge" -> {
             // Check if this is a binary comparison (it.age < 18) or no-arg form (it.age.lt)
@@ -222,10 +243,10 @@ private fun analyzeMethodCriteria(
             val arg = call.getValueArgumentSafe(0)
             if (arg != null) {
                 // With argument: it.age.eq("value")
-                buildEqualCriteria(receiver, arg, not = setNot, errorReporter = errorReporter)
+                buildEqualCriteria(irFunction, receiver, arg, not = setNot, errorReporter = errorReporter)
             } else {
-                // No-arg form: it.age.eq
-                buildNoArgEqualCriteria(irFunction, call, not = setNot, errorReporter = errorReporter)
+                // No-arg form: it.age.eq or (it - it.gender).eq or it.eq
+                buildKPojoOrFieldEq(irFunction, call, receiver, not = setNot, errorReporter = errorReporter)
             }
         }
         "neq" -> {
@@ -236,10 +257,10 @@ private fun analyzeMethodCriteria(
             val arg = call.getValueArgumentSafe(0)
             if (arg != null) {
                 // With argument: it.age.neq("value")
-                buildEqualCriteria(receiver, arg, not = !setNot, errorReporter = errorReporter)
+                buildEqualCriteria(irFunction, receiver, arg, not = !setNot, errorReporter = errorReporter)
             } else {
-                // No-arg form: it.age.neq
-                buildNoArgEqualCriteria(irFunction, call, not = !setNot, errorReporter = errorReporter)
+                // No-arg form: it.age.neq or (it - it.gender).neq
+                buildKPojoOrFieldEq(irFunction, call, receiver, not = !setNot, errorReporter = errorReporter)
             }
         }
         "between", "notBetween" -> {
@@ -251,11 +272,11 @@ private fun analyzeMethodCriteria(
                 errorReporter.reportError(call, ErrorMessages.missingRangeArgFor(funcName))
                 return null
             }
-            val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: run {
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: run {
                 errorReporter.reportError(call, ErrorMessages.cannotExtractFieldFor(funcName))
                 return null
             }
-            buildCriteriaNode(field = fieldExpr, type = "BETWEEN", not = funcName == "notBetween", value = range)
+            buildCriteriaNode(field = fieldExpr, type = "BETWEEN", not = funcName == "notBetween", value = range, tableName = extractTableNameExpr(receiver))
         }
         "like", "notLike" -> {
             val receiver = extensionReceiver ?: dispatchReceiver ?: run {
@@ -263,10 +284,11 @@ private fun analyzeMethodCriteria(
                 return null
             }
             val pattern = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            val tblName = extractTableNameExpr(receiver)
             if (pattern != null) {
-                // With argument: it.username.like("A%")
-                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = funcName == "notLike", value = pattern)
+                // With argument: it.username.like("A%") or it.username like f.concat(...)
+                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = funcName == "notLike", value = resolveValueExpression(irFunction, pattern, errorReporter), tableName = tblName)
             } else {
                 // No-arg form: it.username.like
                 buildNoArgLikeCriteria(irFunction, call, not = funcName == "notLike", errorReporter = errorReporter)
@@ -278,10 +300,11 @@ private fun analyzeMethodCriteria(
                 return null
             }
             val prefix = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            val tblName = extractTableNameExpr(receiver)
             if (prefix != null) {
                 // With argument: it.username.startsWith("A")
-                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(prefix, builder.irString("%")))
+                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(prefix, builder.irString("%")), tableName = tblName)
             } else {
                 // No-arg form: it.username.startsWith
                 buildNoArgStartsWithCriteria(irFunction, call, setNot, errorReporter)
@@ -293,10 +316,11 @@ private fun analyzeMethodCriteria(
                 return null
             }
             val suffix = call.getValueArgumentSafe(0)
-            val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            val tblName = extractTableNameExpr(receiver)
             if (suffix != null) {
                 // With argument: it.username.endsWith("A")
-                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(builder.irString("%"), suffix))
+                buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = concatIrString(builder.irString("%"), suffix), tableName = tblName)
             } else {
                 // No-arg form: it.username.endsWith
                 buildNoArgEndsWithCriteria(irFunction, call, setNot, errorReporter)
@@ -312,13 +336,13 @@ private fun analyzeMethodCriteria(
                 // With argument: it.username.contains("A")
                 if (receiver.type.classFqName?.asString() == "kotlin.String") {
                     // String.contains(it.field) -> LIKE %value%
-                    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+                    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
                     val pattern = concatIrString(concatIrString(builder.irString("%"), arg), builder.irString("%"))
-                    buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = pattern)
+                    buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = pattern, tableName = extractTableNameExpr(receiver))
                 } else {
                     // collection.contains(it.field) -> IN
-                    val fieldExpr = extractFieldExpression(arg, errorReporter) ?: return null
-                    buildCriteriaNode(field = fieldExpr, type = "IN", not = setNot, value = receiver)
+                    val fieldExpr = extractFieldExpression(irFunction, arg, errorReporter) ?: return null
+                    buildCriteriaNode(field = fieldExpr, type = "IN", not = setNot, value = receiver, tableName = extractTableNameExpr(arg))
                 }
             } else {
                 // No-arg form: it.username.contains
@@ -332,22 +356,58 @@ private fun analyzeMethodCriteria(
             }
             buildCriteriaNode(field = null, type = "SQL", not = false, value = receiver)
         }
+        "regexp", "notRegexp" -> {
+            val receiver = extensionReceiver ?: dispatchReceiver ?: run {
+                errorReporter.reportError(call, ErrorMessages.missingReceiverFor(funcName))
+                return null
+            }
+            val arg = call.getValueArgumentSafe(0)
+            val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+            if (arg != null) {
+                buildCriteriaNode(field = fieldExpr, type = "REGEXP", not = funcName == "notRegexp", value = arg, tableName = extractTableNameExpr(receiver))
+            } else {
+                buildNoArgRegexpCriteria(irFunction, call, not = funcName == "notRegexp", errorReporter = errorReporter)
+            }
+        }
         "ifNoValue" -> {
             val receiver = extensionReceiver ?: dispatchReceiver ?: run {
                 errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_IFNOVALUE)
                 return null
             }
-            analyzeAndBuildCriteria(irFunction, receiver, errorReporter, setNot)
+            val strategyArg = call.getValueArgumentSafe(0)
+            val innerCriteria = analyzeAndBuildCriteria(irFunction, receiver, errorReporter, setNot) ?: return null
+            // Set noValueStrategyType on the criteria
+            if (strategyArg != null) {
+                val setter = criteriaClassSymbol.owner.declarations
+                    .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrProperty>()
+                    .first { it.name.asString() == "noValueStrategyType" }
+                    .setter!!.symbol
+                val tmpVar = builder.irTemporary(innerCriteria, nameHint = "criteriaWithStrategy")
+                builder.run {
+                    +irCall(setter).apply {
+                        this.dispatchReceiver = irGet(tmpVar)
+                        arguments[1] = strategyArg
+                    }
+                }
+                builder.irGet(tmpVar)
+            } else {
+                innerCriteria
+            }
         }
         "takeIf" -> {
             val receiver = extensionReceiver ?: dispatchReceiver ?: run {
                 errorReporter.reportError(call, ErrorMessages.MISSING_RECEIVER_TAKEIF)
                 return null
             }
-            // If the predicate is a constant false, takeIf returns null — skip this condition
-            val predicate = call.getValueArgumentSafe(0)
-            if (predicate is IrConst && predicate.value == false) return null
-            analyzeAndBuildCriteria(irFunction, receiver, errorReporter, setNot)
+            val predicate = call.getValueArgumentSafe(0) ?: return null
+            // Generate runtime: if (predicate) criteria else null
+            val criteriaExpr = analyzeAndBuildCriteria(irFunction, receiver, errorReporter, setNot) ?: return null
+            builder.irIfThenElse(
+                criteriaClassSymbol.defaultType.makeNullable(),
+                predicate,
+                criteriaExpr,
+                builder.irNull()
+            )
         }
         else -> {
             errorReporter.reportWarning(
@@ -359,7 +419,10 @@ private fun analyzeMethodCriteria(
     }
 }
 
-// In K2 IR, && and || are lowered to IrWhen
+// In K2 IR, && and || are lowered to IrWhen:
+//   a && b  →  when(ANDAND) { a -> b; else -> false }
+//   a || b  →  when(OROR)   { a -> true; else -> b }
+// We process both condition and result of each branch, skipping boolean constants.
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun analyzeWhenCriteria(
@@ -368,17 +431,29 @@ private fun analyzeWhenCriteria(
     errorReporter: ErrorReporter,
     setNot: Boolean
 ): IrExpression? {
-    val children = expression.branches.mapNotNull { branch ->
-        // Skip the else-false branch that K2 adds for &&
-        val cond = branch.condition
-        if (cond is IrConst && cond.value == false) return@mapNotNull null
-        errorReporter.reportWarning(irFunction, ErrorMessages.debugAnalyzeWhenCriteria(branch.result.dumpKotlinLike().take(100), cond.dumpKotlinLike().take(100)))
-        analyzeAndBuildCriteria(irFunction, branch.result, errorReporter, setNot)
-            ?: analyzeAndBuildCriteria(irFunction, branch.condition, errorReporter, setNot)
+    // Determine logical operator from origin, applying De Morgan's when negated
+    val logicalOp = when (expression.origin) {
+        IrStatementOrigin.OROR -> if (setNot) "AND" else "OR"
+        IrStatementOrigin.ANDAND -> if (setNot) "OR" else "AND"
+        else -> "AND"
     }
+
+    val children = mutableListOf<IrExpression>()
+    for (branch in expression.branches) {
+        val cond = branch.condition
+        val result = branch.result
+        // Skip boolean constants (true/false) that K2 inserts as lowering artifacts
+        if (cond !is IrConst || cond.value !is Boolean) {
+            analyzeAndBuildCriteria(irFunction, cond, errorReporter, setNot)?.let { children.add(it) }
+        }
+        if (result !is IrConst || result.value !is Boolean) {
+            analyzeAndBuildCriteria(irFunction, result, errorReporter, setNot)?.let { children.add(it) }
+        }
+    }
+
     if (children.isEmpty()) return null
     if (children.size == 1) return children.first()
-    return buildLogicalCriteria(if (expression.branches.size <= 2) "AND" else "OR", children)
+    return buildLogicalCriteria(logicalOp, children)
 }
 
 // ============================================================================
@@ -387,15 +462,64 @@ private fun analyzeWhenCriteria(
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
-internal fun extractFieldExpression(expression: IrExpression, errorReporter: ErrorReporter): IrExpression? {
+internal fun extractFieldExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression? {
     return when (expression) {
-        is IrCall -> if (expression.origin == IrStatementOrigin.GET_PROPERTY)
-            buildFieldFromPropertyAccess(expression, errorReporter) else null
+        is IrCall -> when {
+            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
+                // Skip `.value` property — it's a KTableForCondition helper that returns the raw value
+                val propName = expression.symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
+                if (propName == "value") null
+                else buildFieldFromPropertyAccess(expression, errorReporter)
+            }
+            expression.isKronosFunction() ->
+                buildFunctionField(irFunction, expression, errorReporter)
+            else -> null
+        }
         is IrPropertyReference -> buildFieldFromPropertyRef(expression, errorReporter)
         // Handle !! (not-null assertion) — unwrap and extract from the inner expression
-        is IrTypeOperatorCall -> extractFieldExpression(expression.argument, errorReporter)
+        is IrTypeOperatorCall -> extractFieldExpression(irFunction, expression.argument, errorReporter)
         else -> null
     }
+}
+
+/**
+ * Extracts the table name expression from a field-producing expression.
+ * For property access (it.age), gets the table name from the dispatch receiver's class.
+ * For Kronos function calls (f.length(it.username)), extracts from the first field argument.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
+    return when (expression) {
+        is IrCall -> when {
+            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
+                val receiverType = expression.dispatchReceiver?.type
+                val irClass = receiverType?.classOrNull?.owner ?: return null
+                if (irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
+                    builder.getTableNameExpr(irClass)
+                } else null
+            }
+            expression.isKronosFunction() -> {
+                // For function calls, try to extract table name from the first field argument
+                expression.valueArguments.filterNotNull().firstNotNullOfOrNull { arg ->
+                    extractTableNameExpr(arg)
+                }
+            }
+            else -> null
+        }
+        is IrTypeOperatorCall -> extractTableNameExpr(expression.argument)
+        else -> null
+    }
+}
+
+/**
+ * Resolves a value expression: if it's a field expression (property access on KPojo or
+ * Kronos function call), convert to Field/FunctionField; otherwise return as-is.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun resolveValueExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression {
+    return extractFieldExpression(irFunction, expression, errorReporter) ?: expression
 }
 
 // ============================================================================
@@ -415,25 +539,24 @@ private fun buildLogicalCriteria(operator: String, children: List<IrExpression>)
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildEqualCriteria(
+    irFunction: IrFunction,
     left: IrExpression,
     right: IrExpression,
     not: Boolean,
     errorReporter: ErrorReporter
 ): IrExpression? {
-    val leftField = extractFieldExpression(left, errorReporter)
-    val rightField = extractFieldExpression(right, errorReporter)
+    val leftField = extractFieldExpression(irFunction, left, errorReporter)
+    val rightField = extractFieldExpression(irFunction, right, errorReporter)
 
     return when {
-        leftField != null -> buildCriteriaNode(field = leftField, type = "EQUAL", not = not, value = right)
-        rightField != null -> buildCriteriaNode(field = rightField, type = "EQUAL", not = not, value = left)
+        leftField != null -> buildCriteriaNode(field = leftField, type = "EQUAL", not = not, value = resolveValueExpression(irFunction, right, errorReporter), tableName = extractTableNameExpr(left))
+        rightField != null -> buildCriteriaNode(field = rightField, type = "EQUAL", not = not, value = resolveValueExpression(irFunction, left, errorReporter), tableName = extractTableNameExpr(right))
         left.type.isKPojoType() -> buildKPojoEqualCriteria(left, right, not, errorReporter)
         right.type.isKPojoType() -> buildKPojoEqualCriteria(right, left, not, errorReporter)
         else -> {
-            errorReporter.reportError(
-                left,
-                ErrorMessages.CANNOT_BUILD_EQUALITY
-            )
-            null
+            // Neither side is a field or KPojo — this is a pure runtime expression (e.g., 1 == another.id.value)
+            // Generate a SQL "true" / "false" criteria so it appears in the WHERE clause
+            buildCriteriaNode(field = null, type = "SQL", not = false, value = builder.irBoolean(!not))
         }
     }
 }
@@ -460,7 +583,7 @@ private fun buildKPojoEqualCriteria(
         val fieldExpr = buildFieldFromProperty(prop)
         val getter = prop.getter ?: return@mapNotNull null
         val getterCall = builder.irCall(getter.symbol).apply { dispatchReceiver = valueExpr }
-        buildCriteriaNode(field = fieldExpr, type = "EQUAL", not = not, value = getterCall)
+        buildCriteriaNode(field = fieldExpr, type = "EQUAL", not = not, value = getterCall, tableName = builder.getTableNameExpr(irClass))
     }
     return buildLogicalCriteria("AND", children)
 }
@@ -500,19 +623,19 @@ private fun buildBinaryComparisonCriteria(
         val fieldAccess = extReceiver ?: dispatchReceiver
 
         if (fieldAccess != null && compareValue != null) {
-            val leftField = extractFieldExpression(fieldAccess, errorReporter)
+            val leftField = extractFieldExpression(irFunction, fieldAccess, errorReporter)
             if (leftField != null) {
-                return buildCriteriaNode(field = leftField, type = operator, not = not, value = compareValue)
+                return buildCriteriaNode(field = leftField, type = operator, not = not, value = resolveValueExpression(irFunction, compareValue, errorReporter), tableName = extractTableNameExpr(fieldAccess))
             }
 
             // Try reversed: maybe fieldAccess is actually the value and compareValue is the field
-            val rightField = extractFieldExpression(compareValue, errorReporter)
+            val rightField = extractFieldExpression(irFunction, compareValue, errorReporter)
             if (rightField != null) {
                 val reversedOp = when (operator) {
                     "GT" -> "LT"; "LT" -> "GT"; "GE" -> "LE"; "LE" -> "GE"
                     else -> operator
                 }
-                return buildCriteriaNode(field = rightField, type = reversedOp, not = not, value = fieldAccess)
+                return buildCriteriaNode(field = rightField, type = reversedOp, not = not, value = resolveValueExpression(irFunction, fieldAccess, errorReporter), tableName = extractTableNameExpr(compareValue))
             }
         }
     }
@@ -547,62 +670,147 @@ private fun getNoArgValue(irFunction: IrFunction, call: IrCall): IrExpression? {
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgEqualCriteria(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
-    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
     val valueExpr = getNoArgValue(irFunction, call) ?: return null
-    return buildCriteriaNode(field = fieldExpr, type = "EQUAL", not = not, value = valueExpr)
+    return buildCriteriaNode(field = fieldExpr, type = "EQUAL", not = not, value = valueExpr, tableName = extractTableNameExpr(receiver))
+}
+
+/**
+ * Handles no-arg `.eq` / `.neq` on either a single field or a KPojo (with optional minus).
+ * - `it.age.eq` → single field equal criteria
+ * - `it.eq` or `(it - it.gender).eq` → AND criteria for all (non-excluded) column properties
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildKPojoOrFieldEq(
+    irFunction: IrFunction,
+    call: IrCall,
+    receiver: IrExpression,
+    not: Boolean,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    // Check if receiver is a KPojo or a MINUS expression on a KPojo
+    val (kPojoExpr, excludes) = analyzeKPojoOrMinus(receiver)
+    if (kPojoExpr != null) {
+        val irClass = kPojoExpr.type.classOrNull?.owner ?: return null
+        val columnProps = irClass.properties.filter { it.isColumnType() && it.name.asString() !in excludes }.toList()
+        if (columnProps.isEmpty()) return null
+        val children = columnProps.mapNotNull { prop ->
+            val fieldExpr = buildFieldFromProperty(prop)
+            val propName = prop.name.asString()
+            val tableParam = irFunction.parameters.extensionReceiver ?: return@mapNotNull null
+            val valueExpr = builder.irCall(getValueByFieldNameMethodSymbol).apply {
+                dispatchReceiver = builder.irGet(tableParam)
+                arguments[1] = builder.irString(propName)
+            }
+            buildCriteriaNode(field = fieldExpr, type = "EQUAL", not = not, value = valueExpr, tableName = builder.getTableNameExpr(irClass))
+        }
+        if (children.isEmpty()) return null
+        if (children.size == 1) return children.first()
+        return buildLogicalCriteria("AND", children)
+    }
+    // Not a KPojo — fall back to single field eq
+    return buildNoArgEqualCriteria(irFunction, call, not, errorReporter)
+}
+
+/**
+ * Analyzes an expression to determine if it's a KPojo or a MINUS expression on a KPojo.
+ * Returns the KPojo expression and the list of excluded field names.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun analyzeKPojoOrMinus(expression: IrExpression): Pair<IrExpression?, List<String>> {
+    if (expression.type.isKPojoType()) {
+        if (expression is IrCall && expression.origin == IrStatementOrigin.MINUS) {
+            val (base, excludes) = collectMinusExcludes(expression)
+            return base to excludes
+        }
+        return expression to emptyList()
+    }
+    return null to emptyList()
+}
+
+/**
+ * Recursively collects excluded field names from chained minus expressions.
+ * `(it - it.gender - it.age)` → base=it, excludes=["gender", "age"]
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun collectMinusExcludes(call: IrCall): Pair<IrExpression, List<String>> {
+    val excludes = mutableListOf<String>()
+    val arg = call.getValueArgumentSafe(0)
+    if (arg is IrCall && arg.origin == IrStatementOrigin.GET_PROPERTY) {
+        val propName = arg.symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
+        if (propName != null) excludes.add(propName)
+    }
+    val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
+    return if (receiver is IrCall && receiver.origin == IrStatementOrigin.MINUS) {
+        val (base, innerExcludes) = collectMinusExcludes(receiver)
+        base to (innerExcludes + excludes)
+    } else {
+        (receiver ?: call) to excludes
+    }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgComparisonCriteria(irFunction: IrFunction, call: IrCall, operator: String, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
-    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
     val valueExpr = getNoArgValue(irFunction, call) ?: return null
-    return buildCriteriaNode(field = fieldExpr, type = operator, not = not, value = valueExpr)
+    return buildCriteriaNode(field = fieldExpr, type = operator, not = not, value = valueExpr, tableName = extractTableNameExpr(receiver))
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgLikeCriteria(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
-    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
     val rawValue = getNoArgValue(irFunction, call) ?: return null
     // Convert Any? to String via "".plus(value)
     val valueStr = concatIrString(builder.irString(""), rawValue)
-    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = valueStr)
+    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = valueStr, tableName = extractTableNameExpr(receiver))
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgStartsWithCriteria(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
-    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
     val rawValue = getNoArgValue(irFunction, call) ?: return null
     val valueStr = concatIrString(builder.irString(""), rawValue)
     val pattern = concatIrString(valueStr, builder.irString("%"))
-    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = pattern)
+    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = pattern, tableName = extractTableNameExpr(receiver))
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgEndsWithCriteria(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
-    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
     val rawValue = getNoArgValue(irFunction, call) ?: return null
     val valueStr = concatIrString(builder.irString(""), rawValue)
     val pattern = concatIrString(builder.irString("%"), valueStr)
-    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = pattern)
+    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = pattern, tableName = extractTableNameExpr(receiver))
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun buildNoArgContainsCriteria(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
-    val fieldExpr = extractFieldExpression(receiver, errorReporter) ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
     val rawValue = getNoArgValue(irFunction, call) ?: return null
     val valueStr = concatIrString(builder.irString(""), rawValue)
     val pattern = concatIrString(concatIrString(builder.irString("%"), valueStr), builder.irString("%"))
-    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = pattern)
+    return buildCriteriaNode(field = fieldExpr, type = "LIKE", not = not, value = pattern, tableName = extractTableNameExpr(receiver))
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildNoArgRegexpCriteria(irFunction: IrFunction, call: IrCall, not: Boolean, errorReporter: ErrorReporter): IrExpression? {
+    val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument ?: return null
+    val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
+    val rawValue = getNoArgValue(irFunction, call) ?: return null
+    return buildCriteriaNode(field = fieldExpr, type = "REGEXP", not = not, value = rawValue, tableName = extractTableNameExpr(receiver))
 }
 
 // ============================================================================
@@ -617,7 +825,9 @@ fun buildCriteriaNode(
     type: String,
     not: Boolean,
     value: IrExpression? = null,
-    children: List<IrExpression> = emptyList()
+    children: List<IrExpression> = emptyList(),
+    noValueStrategyType: IrExpression? = null,
+    tableName: IrExpression? = null
 ): IrExpression {
     val conditionTypeEnum = conditionTypeEnumSymbol.owner
     val enumEntry = conditionTypeEnum.declarations
@@ -645,8 +855,8 @@ fun buildCriteriaNode(
             arguments[1] = conditionTypeValue
             arguments[2] = builder.irBoolean(not)
             arguments[3] = value ?: builder.irNull()
-            arguments[4] = builder.irString("") // tableName
-            arguments[5] = builder.irNull() // noValueStrategyType
+            arguments[4] = tableName ?: builder.irString("") // tableName
+            arguments[5] = noValueStrategyType ?: builder.irNull() // noValueStrategyType
             // children uses default value - don't pass it explicitly to avoid vararg issues
         }
     )

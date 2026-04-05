@@ -16,7 +16,16 @@
 
 package com.kotlinorm.compiler.core
 
+import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
+import com.kotlinorm.compiler.utils.ColumnAnnotationFqName
+import com.kotlinorm.compiler.utils.ColumnTypeAnnotationFqName
+import com.kotlinorm.compiler.utils.DateTimeFormatAnnotationFqName
+import com.kotlinorm.compiler.utils.DefaultValueAnnotationFqName
 import com.kotlinorm.compiler.utils.ErrorMessages
+import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+import com.kotlinorm.compiler.utils.NecessaryAnnotationFqName
+import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationFqName
+import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.dispatchReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
@@ -26,21 +35,30 @@ import com.kotlinorm.compiler.utils.irPairOf
 import com.kotlinorm.compiler.utils.isKronosFunction
 import com.kotlinorm.compiler.utils.mapTypeToKColumnType
 import com.kotlinorm.compiler.utils.valueArguments
+import com.kotlinorm.compiler.transformers.getTableNameExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBlock
+import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.builders.irTemporary
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrVararg
+import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrNull
@@ -48,7 +66,11 @@ import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.types.typeWith
+import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.superTypes
+import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * Field analysis and construction
@@ -256,26 +278,229 @@ fun buildFieldFromPropertyRef(
 context(context: IrPluginContext, builder: IrBuilderWithScope)
 fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     val propertyName = irProperty.name.asString()
-    
+
     // Get property type
     val propertyType = irProperty.backingField?.type ?: context.irBuiltIns.anyNType
-    
+
     // Map type to KColumnType
     val columnTypeName = mapTypeToKColumnType(propertyType)
-    
-    // Build simple field (for now, we'll expand this later with annotations)
-    return buildSimpleField(propertyName, columnTypeName)
+
+    // Check @Column annotation for custom column name
+    val columnAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == ColumnAnnotationFqName
+    }
+
+    // columnName: @Column("custom") or Kronos.fieldNamingStrategy.k2db(propertyName)
+    val columnNameExpr: IrExpression = if (columnAnnotation != null) {
+        val customName = columnAnnotation.arguments[0]
+        if (customName != null) {
+            customName
+        } else {
+            buildNamingStrategyCall(propertyName)
+        }
+    } else {
+        buildNamingStrategyCall(propertyName)
+    }
+
+    // Check @ColumnType annotation
+    val columnTypeAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == ColumnTypeAnnotationFqName
+    }
+    val columnTypeExpr = columnTypeAnnotation?.arguments?.get(0) ?: buildKColumnTypeEnum(columnTypeName)
+    val columnLengthExpr = columnTypeAnnotation?.arguments?.getOrNull(1)
+    val columnScaleExpr = columnTypeAnnotation?.arguments?.getOrNull(2)
+
+    // Check @PrimaryKey annotation
+    val primaryKeyAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == PrimaryKeyAnnotationFqName
+    }
+    val primaryKeyExpr = buildPrimaryKeyType(primaryKeyAnnotation)
+
+    // Check @DateTimeFormat annotation
+    val dateTimeFormatAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == DateTimeFormatAnnotationFqName
+    }
+    val dateFormatExpr = dateTimeFormatAnnotation?.arguments?.get(0)
+
+    // Table name
+    val parent = irProperty.parent as? IrClass
+    val tableNameExpr = if (parent != null) builder.getTableNameExpr(parent) else builder.irString("")
+
+    // Check @Default annotation
+    val defaultValueAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == DefaultValueAnnotationFqName
+    }
+    val defaultValueExpr = defaultValueAnnotation?.arguments?.get(0)
+
+    // Check @Necessary annotation
+    val necessaryAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == NecessaryAnnotationFqName
+    }
+    val nullable = necessaryAnnotation == null && primaryKeyAnnotation == null
+
+    // Check @Serialize annotation
+    val serializeAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == SerializeAnnotationFqName
+    }
+    val serializable = serializeAnnotation != null
+
+    // Check @Cascade annotation
+    val cascadeAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == CascadeAnnotationFqName
+    }
+
+    // Check @Ignore annotation
+    val ignoreAnnotation = irProperty.annotations.firstOrNull {
+        it.symbol.owner.returnType.classFqName == IgnoreAnnotationFqName
+    }
+
+    // Cascade-related fields (following legacy plugin's getColumnName)
+    val cascadeExpr: IrExpression = if (cascadeAnnotation != null) {
+        builder.irCall(kCascadeConstructorSymbol).apply {
+            // KCascade constructor params match @Cascade annotation params 1:1
+            for (i in cascadeAnnotation.arguments.indices) {
+                arguments[i] = cascadeAnnotation.arguments[i]
+            }
+        }
+    } else {
+        builder.irNull()
+    }
+
+    val ARRAY_OR_COLLECTION_FQ_NAMES = arrayOf(
+        FqName("kotlin.collections.Collection"),
+        FqName("kotlin.collections.Iterator"),
+        FqName("kotlin.Array"),
+        FqName("kotlin.IntArray"),
+        FqName("kotlin.LongArray"),
+        FqName("kotlin.ShortArray"),
+        FqName("kotlin.DoubleArray"),
+        FqName("kotlin.FloatArray"),
+        FqName("kotlin.CharArray"),
+        FqName("kotlin.ByteArray"),
+        FqName("kotlin.BooleanArray"),
+    )
+    val cascadeIsCollectionOrArray = propertyType.superTypes().any { it.classFqName in ARRAY_OR_COLLECTION_FQ_NAMES }
+
+    val propKClass = propertyType.classOrNull
+    val kClassExpr: IrExpression = if (irProperty.isDelegated) {
+        builder.irNull()
+    } else {
+        val targetClassSymbol = if (cascadeIsCollectionOrArray) {
+            propertyType.firstTypeArgument()?.classOrNull
+        } else {
+            propKClass
+        }
+        if (targetClassSymbol != null) {
+            val classType = targetClassSymbol.defaultType
+            IrClassReferenceImpl(
+                builder.startOffset, builder.endOffset,
+                context.irBuiltIns.kClassClass.typeWith(classType),
+                targetClassSymbol,
+                classType
+            )
+        } else {
+            builder.irNull()
+        }
+    }
+
+    val superTypesExprs = propKClass?.owner?.superTypes?.mapNotNull {
+        it.classFqName?.asString()?.let { fqn -> builder.irString(fqn) }
+    } ?: emptyList()
+    val superTypesExpr = irListOf(context.irBuiltIns.stringType, superTypesExprs)
+
+    val ignoreExpr: IrExpression = ignoreAnnotation?.arguments?.get(0) ?: builder.irNull()
+
+    val isColumn = irProperty.isColumnType()
+
+    // Build Field constructor call with all parameters
+    return builder.irCall(fieldConstructorSymbol).apply {
+        arguments[0] = columnNameExpr                          // columnName
+        arguments[1] = builder.irString(propertyName)          // name
+        arguments[2] = columnTypeExpr                          // type
+        arguments[3] = primaryKeyExpr                          // primaryKey
+        arguments[4] = dateFormatExpr                          // dateFormat
+        arguments[5] = tableNameExpr                           // tableName
+        arguments[6] = cascadeExpr                             // cascade
+        arguments[7] = builder.irBoolean(cascadeIsCollectionOrArray) // cascadeIsCollectionOrArray
+        arguments[8] = kClassExpr                              // kClass
+        arguments[9] = superTypesExpr                          // superTypes
+        arguments[10] = ignoreExpr                             // ignore
+        arguments[11] = builder.irBoolean(isColumn)            // isColumn
+        if (columnLengthExpr != null) arguments[12] = columnLengthExpr  // length
+        if (columnScaleExpr != null) arguments[13] = columnScaleExpr    // scale
+        arguments[14] = defaultValueExpr                       // defaultValue
+        arguments[15] = builder.irBoolean(nullable)            // nullable
+        arguments[16] = builder.irBoolean(serializable)        // serializable
+    }
 }
 
 /**
- * Builds a simple Field IR with name and type
- *
- * Constructs a Field constructor call with minimal parameters.
- *
- * @param name The field name
- * @param columnTypeName The KColumnType enum name
- * @return Field IR expression
+ * Generates: Kronos.fieldNamingStrategy.k2db(propertyName)
  */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildNamingStrategyCall(propertyName: String): IrExpression {
+    val strategyGetter = builder.irCall(fieldNamingStrategyGetterSymbol).apply {
+        dispatchReceiver = builder.irGetObject(kronosObjectSymbol)
+    }
+    return builder.irCall(k2dbFunctionSymbol).apply {
+        dispatchReceiver = strategyGetter
+        arguments[1] = builder.irString(propertyName)
+    }
+}
+
+/**
+ * Builds a KColumnType enum value expression
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildKColumnTypeEnum(columnTypeName: String): IrExpression {
+    val kColumnTypeEnumSymbol = kColumnTypeSymbol
+    val kColumnTypeEnum = kColumnTypeEnumSymbol.owner
+    val enumEntry = kColumnTypeEnum.declarations
+        .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrEnumEntry>()
+        .firstOrNull { it.name.asString() == columnTypeName }
+        ?: kColumnTypeEnum.declarations
+            .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrEnumEntry>()
+            .first { it.name.asString() == "VARCHAR" }
+    return IrGetEnumValueImpl(
+        builder.startOffset, builder.endOffset,
+        kColumnTypeEnumSymbol.defaultType,
+        enumEntry.symbol
+    )
+}
+
+/**
+ * Builds a PrimaryKeyType enum value from @PrimaryKey annotation
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildPrimaryKeyType(primaryKeyAnnotation: IrConstructorCall?): IrExpression {
+    val primaryKeyTypeClassId = ClassId.topLevel(FqName("com.kotlinorm.enums.PrimaryKeyType"))
+    val primaryKeyTypeSymbol = context.referenceClass(primaryKeyTypeClassId) ?: error("PrimaryKeyType not found")
+    val entries = primaryKeyTypeSymbol.owner.declarations
+        .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrEnumEntry>()
+
+    val entryName = if (primaryKeyAnnotation == null) {
+        "NOT"
+    } else {
+        val propsOfPrimaryKey = arrayOf("identity", "uuid", "snowflake", "custom")
+        val enabledIndex = primaryKeyAnnotation.arguments
+            .indexOfFirst { it is IrConst && it.value == true }
+        when {
+            enabledIndex < 0 -> "DEFAULT"
+            else -> propsOfPrimaryKey.getOrNull(enabledIndex)?.uppercase() ?: "DEFAULT"
+        }
+    }
+
+    val entry = entries.firstOrNull { it.name.asString() == entryName } ?: entries.first { it.name.asString() == "NOT" }
+    return IrGetEnumValueImpl(
+        builder.startOffset, builder.endOffset,
+        primaryKeyTypeSymbol.defaultType,
+        entry.symbol
+    )
+}
+
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBuilderWithScope)
 private fun buildSimpleField(name: String, columnTypeName: String): IrExpression {
@@ -331,9 +556,20 @@ private fun buildSimpleField(name: String, columnTypeName: String): IrExpression
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBuilderWithScope)
 private fun buildFieldWithAlias(fieldExpr: IrExpression, alias: String): IrExpression {
-    // For now, just return the field as-is
-    // TODO: Implement setAlias call when we have the method symbol
-    return fieldExpr
+    // Field.name is a var — use the setter to set the alias
+    val nameSetter = fieldClassSymbol.owner.declarations
+        .filterIsInstance<IrProperty>()
+        .first { it.name.asString() == "name" }
+        .setter!!.symbol
+    // Call setName on the field and return it using also { it.name = alias }
+    return builder.irBlock {
+        val fieldVar = irTemporary(fieldExpr, nameHint = "aliasedField")
+        +irCall(nameSetter).apply {
+            dispatchReceiver = irGet(fieldVar)
+            arguments[1] = irString(alias)
+        }
+        +irGet(fieldVar)
+    }
 }
 
 /**
@@ -442,16 +678,20 @@ private fun collectExcludedFieldNames(
         is IrPropertyReference -> {
             excludedFields.add(expression.symbol.owner.name.asString())
         }
-        
+
         is IrCall -> {
             if (expression.origin == IrStatementOrigin.PLUS) {
                 // Handle multiple exclusions: User::password + User::email
                 val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiverArgument
                 collectExcludedFieldNames(receiver, excludedFields)
                 collectExcludedFieldNames(expression.getValueArgumentSafe(0), excludedFields)
+            } else if (expression.origin == IrStatementOrigin.GET_PROPERTY) {
+                // Handle property access: it.username
+                val propName = expression.symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
+                if (propName != null) excludedFields.add(propName)
             }
         }
-        
+
         else -> {
             // Ignore other expression types
         }
@@ -554,48 +794,53 @@ fun buildFunctionField(
     errorReporter: ErrorReporter
 ): IrExpression {
     val functionName = call.funcName()
-    
+
     // Build argument list: List<Pair<Field?, Any?>>
     val argumentPairs = mutableListOf<IrExpression>()
-    
+
     // Get Field? type (nullable Field)
     val nullableFieldType = fieldClassSymbol.typeWith().makeNullable()
     val anyNullableType = context.irBuiltIns.anyNType
-    
-    // Process each value argument
+
+    fun processArg(arg: IrExpression) {
+        // Check if argument is a Field (KPojo property or nested function)
+        val fieldExpr = if (arg.isKPojoProperty() || arg.isKronosFunction()) {
+            val fields = analyzeAndBuildFields(irFunction, arg, errorReporter)
+            if (fields.isNotEmpty()) fields.first() else builder.irNull()
+        } else {
+            builder.irNull()
+        }
+
+        // Create Pair<Field?, Any?>(fieldExpr, arg)
+        argumentPairs.add(irPairOf(nullableFieldType, anyNullableType, fieldExpr, arg))
+    }
+
+    // Process each value argument, unpacking varargs
     call.valueArguments.forEach { arg ->
         if (arg != null) {
-            // Check if argument is a Field (KPojo property or nested function)
-            val fieldExpr = if (arg.isKPojoProperty() || arg.isKronosFunction()) {
-                // Recursively analyze to get Field
-                val fields = analyzeAndBuildFields(irFunction, arg, errorReporter)
-                if (fields.isNotEmpty()) fields.first() else builder.irNull()
+            if (arg is IrVararg) {
+                // Unpack vararg elements
+                arg.elements.forEach { element ->
+                    if (element is IrExpression) {
+                        processArg(element)
+                    }
+                }
             } else {
-                builder.irNull()
+                processArg(arg)
             }
-            
-            // Create Pair<Field?, Any?>(fieldExpr, arg)
-            val pairExpr = irPairOf(
-                nullableFieldType,
-                anyNullableType,
-                fieldExpr,
-                arg
-            )
-            
-            argumentPairs.add(pairExpr)
         }
     }
-    
+
     // Build List<Pair<Field?, Any?>>
     val pairType = pairClassSymbol.typeWith(nullableFieldType, anyNullableType)
-    
+
     val listExpr = irListOf(pairType, argumentPairs)
-    
+
     // Construct FunctionField(functionName, fields)
     return builder.irCall(functionFieldConstructorSymbol).apply {
         // Parameter 0: functionName (String)
         arguments[0] = builder.irString(functionName)
-        
+
         // Parameter 1: fields (List<Pair<Field?, Any?>>)
         arguments[1] = listExpr
     }
@@ -607,8 +852,7 @@ fun buildFunctionField(
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrExpression.isKPojoProperty(): Boolean {
     return when (this) {
-        is IrCall -> this.origin == IrStatementOrigin.GET_PROPERTY && 
-                     this.dispatchReceiver?.type?.classFqName == null // Simple property access
+        is IrCall -> this.origin == IrStatementOrigin.GET_PROPERTY
         is IrPropertyReference -> true
         else -> false
     }

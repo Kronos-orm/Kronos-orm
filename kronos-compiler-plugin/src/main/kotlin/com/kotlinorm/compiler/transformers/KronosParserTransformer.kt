@@ -23,6 +23,7 @@ import com.kotlinorm.compiler.core.kTableForSelectSymbol
 import com.kotlinorm.compiler.core.kTableForSetSymbol
 import com.kotlinorm.compiler.core.kTableForSortSymbol
 import com.kotlinorm.compiler.utils.KPojoFqName
+import com.kotlinorm.compiler.utils.KronosInitAnnotationFqName
 import com.kotlinorm.compiler.utils.extensionReceiver
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -32,15 +33,18 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
@@ -70,6 +74,12 @@ class KronosParserTransformer(
 
     private val errorReporter = ErrorReporter(messageCollector)
     val kPojoClasses = mutableSetOf<IrClass>()
+    val initCallSiteLambdas = mutableListOf<IrFunction>()
+
+    override fun visitFileNew(declaration: IrFile): IrFile {
+        errorReporter.currentFileEntry = declaration.fileEntry
+        return super.visitFileNew(declaration)
+    }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitClassNew(declaration: IrClass): IrStatement {
@@ -106,6 +116,13 @@ class KronosParserTransformer(
             val cls = expression.typeArguments[i]?.getClass()
             if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
                 kPojoClasses.add(cls)
+            }
+        }
+        // Detect calls to @KronosInit-annotated functions and collect the lambda argument
+        if (expression.symbol.owner.hasAnnotation(KronosInitAnnotationFqName)) {
+            val lambdaArg = expression.arguments.firstNotNullOfOrNull { it as? IrFunctionExpression }
+            if (lambdaArg != null) {
+                initCallSiteLambdas.add(lambdaArg.function)
             }
         }
         // Fix typed query parameters (isKPojo + superTypes injection)

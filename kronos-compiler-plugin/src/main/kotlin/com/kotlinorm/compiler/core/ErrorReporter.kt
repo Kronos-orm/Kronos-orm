@@ -16,25 +16,73 @@
 
 package com.kotlinorm.compiler.core
 
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.IrFileEntry
+import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
+import org.jetbrains.kotlin.ir.util.CustomKotlinLikeDumpStrategy
+import org.jetbrains.kotlin.ir.util.KotlinLikeDumpOptions
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 
 /**
  * Unified error reporting utility for the Kronos compiler plugin
  *
- * Responsible for reporting compilation errors to the Kotlin compiler with friendly error messages
+ * Reports compilation errors/warnings in standard compiler error format:
+ *   file:line:col: error: message
  *
  * @property messageCollector The Kotlin compiler's message collector
  */
 class ErrorReporter(
     private val messageCollector: MessageCollector
 ) {
+    var currentFileEntry: IrFileEntry? = null
+
+    companion object {
+        /** Concise dump options for error messages — no file info, compact bodies */
+        private val errorDumpOptions = KotlinLikeDumpOptions(
+            CustomKotlinLikeDumpStrategy.Default,
+            printRegionsPerFile = false,
+            printFileName = false,
+            printFilePath = false,
+            useNamedArguments = false,
+            bodyPrintingStrategy = BodyPrintingStrategy.NO_BODIES,
+            printMemberDeclarations = false,
+            printUnitReturnType = false,
+            stableOrder = false
+        )
+    }
+
+    /**
+     * Extracts source location from an IR element using the current file entry.
+     */
+    private fun locationOf(element: IrElement): CompilerMessageLocation? {
+        val entry = currentFileEntry ?: return null
+        val offset = element.startOffset
+        if (offset < 0) return null
+        return try {
+            val line = entry.getLineNumber(offset) + 1
+            val col = entry.getColumnNumber(offset) + 1
+            CompilerMessageLocation.create(entry.name, line, col, null)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** Compact IR dump for error context */
+    private fun dumpElement(element: IrElement): String {
+        return try {
+            element.dumpKotlinLike(errorDumpOptions).lines().take(5).joinToString("\n")
+        } catch (e: Exception) {
+            "<IR dump failed: ${e.message}>"
+        }
+    }
+
     /**
      * Reports an error
      *
-     * @param element IR element (used for context)
+     * @param element IR element (used for source location)
      * @param message Error message
      * @param suggestion Optional fix suggestion
      */
@@ -43,28 +91,24 @@ class ErrorReporter(
         message: String,
         suggestion: String? = null
     ) {
-        val irDump = try { element.dumpKotlinLike() } catch (e: Exception) { "<IR dump failed: ${e.message}>" }
         val fullMessage = buildString {
-            append(message)
-            append("\nIR element: ${element::class.simpleName}")
-            append("\nIR dump:\n$irDump")
+            append("[Kronos] $message")
+            append("\n  IR: ${dumpElement(element)}")
             if (suggestion != null) {
-                append("\n")
-                append("Suggestion: ")
-                append(suggestion)
+                append("\n  Fix: $suggestion")
             }
         }
         messageCollector.report(
             CompilerMessageSeverity.ERROR,
             fullMessage,
-            null
+            locationOf(element)
         )
     }
 
     /**
      * Reports an error with exception details
      *
-     * @param element IR element (used for context)
+     * @param element IR element (used for source location)
      * @param message Error message
      * @param e The exception that occurred
      * @param suggestion Optional fix suggestion
@@ -75,30 +119,25 @@ class ErrorReporter(
         e: Exception,
         suggestion: String? = null
     ) {
-        val irDump = try { element.dumpKotlinLike() } catch (dumpEx: Exception) { "<IR dump failed: ${dumpEx.message}>" }
         val fullMessage = buildString {
-            append(message)
-            append("\nException: ${e::class.simpleName}: ${e.message}")
-            append("\nStack trace:\n${e.stackTraceToString().take(500)}")
-            append("\nIR element: ${element::class.simpleName}")
-            append("\nIR dump:\n$irDump")
+            append("[Kronos] $message")
+            append("\n  Exception: ${e::class.simpleName}: ${e.message}")
+            append("\n  IR: ${dumpElement(element)}")
             if (suggestion != null) {
-                append("\n")
-                append("Suggestion: ")
-                append(suggestion)
+                append("\n  Fix: $suggestion")
             }
         }
         messageCollector.report(
             CompilerMessageSeverity.ERROR,
             fullMessage,
-            null
+            locationOf(element)
         )
     }
 
     /**
      * Reports a warning
      *
-     * @param element IR element (used for context)
+     * @param element IR element (used for source location)
      * @param message Warning message
      */
     fun reportWarning(
@@ -107,8 +146,8 @@ class ErrorReporter(
     ) {
         messageCollector.report(
             CompilerMessageSeverity.WARNING,
-            message,
-            null
+            "[Kronos] $message",
+            locationOf(element)
         )
     }
 
@@ -120,7 +159,7 @@ class ErrorReporter(
     fun reportInfo(message: String) {
         messageCollector.report(
             CompilerMessageSeverity.INFO,
-            message,
+            "[Kronos] $message",
             null
         )
     }

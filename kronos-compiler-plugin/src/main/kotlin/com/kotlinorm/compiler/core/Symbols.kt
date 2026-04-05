@@ -23,10 +23,14 @@ import com.kotlinorm.compiler.utils.FieldFqName
 import com.kotlinorm.compiler.utils.FunctionFieldClassId
 import com.kotlinorm.compiler.utils.FunctionFieldFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+import com.kotlinorm.compiler.utils.KCascadeClassId
+import com.kotlinorm.compiler.utils.KCascadeFqName
 import com.kotlinorm.compiler.utils.KColumnTypeClassId
 import com.kotlinorm.compiler.utils.KColumnTypeFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
 import com.kotlinorm.compiler.utils.KPojoFqName
+import com.kotlinorm.compiler.utils.KronosCommonStrategyClassId
+import com.kotlinorm.compiler.utils.KronosObjectClassId
 import com.kotlinorm.compiler.utils.KTableForConditionClassId
 import com.kotlinorm.compiler.utils.KTableForConditionFqName
 import com.kotlinorm.compiler.utils.KTableForReferenceClassId
@@ -62,6 +66,7 @@ import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
@@ -133,6 +138,25 @@ val fieldConstructorSymbol: IrConstructorSymbol
         ?: error("Field constructor not found")
 
 /**
+ * KCascade class symbol
+ */
+context(context: IrPluginContext)
+val kCascadeClassSymbol: IrClassSymbol
+    get() {
+        val symbol = context.referenceClass(KCascadeClassId)
+        return symbol ?: error("KCascade class not found: ${KCascadeFqName.asString()}")
+    }
+
+/**
+ * KCascade constructor symbol
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val kCascadeConstructorSymbol: IrConstructorSymbol
+    get() = kCascadeClassSymbol.constructors.firstOrNull()
+        ?: error("KCascade constructor not found")
+
+/**
  * FunctionField class symbol
  */
 context(context: IrPluginContext)
@@ -169,6 +193,72 @@ context(context: IrPluginContext)
 val pairConstructorSymbol: IrConstructorSymbol
     get() = pairClassSymbol.constructors.firstOrNull()
         ?: error("Pair constructor not found")
+
+/**
+ * KronosCommonStrategy class symbol
+ */
+context(context: IrPluginContext)
+val kronosCommonStrategyClassSymbol: IrClassSymbol
+    get() {
+        val symbol = context.referenceClass(KronosCommonStrategyClassId)
+        return symbol ?: error("KronosCommonStrategy class not found")
+    }
+
+/**
+ * KronosCommonStrategy constructor symbol
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val kronosCommonStrategyConstructorSymbol: IrConstructorSymbol
+    get() = kronosCommonStrategyClassSymbol.constructors.firstOrNull()
+        ?: error("KronosCommonStrategy constructor not found")
+
+/**
+ * Kronos object symbol
+ */
+context(context: IrPluginContext)
+val kronosObjectSymbol: IrClassSymbol
+    get() {
+        val symbol = context.referenceClass(KronosObjectClassId)
+        return symbol ?: error("Kronos object not found")
+    }
+
+/**
+ * Kronos.fieldNamingStrategy property getter symbol
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val fieldNamingStrategyGetterSymbol: IrSimpleFunctionSymbol
+    get() = kronosObjectSymbol.owner.declarations
+        .filterIsInstance<IrProperty>()
+        .first { it.name.asString() == "fieldNamingStrategy" }
+        .getter!!.symbol
+
+/**
+ * Kronos.tableNamingStrategy property getter symbol
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val tableNamingStrategyGetterSymbol: IrSimpleFunctionSymbol
+    get() = kronosObjectSymbol.owner.declarations
+        .filterIsInstance<IrProperty>()
+        .first { it.name.asString() == "tableNamingStrategy" }
+        .getter!!.symbol
+
+/**
+ * KronosNamingStrategy.k2db function symbol
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val k2dbFunctionSymbol: IrSimpleFunctionSymbol
+    get() {
+        val namingStrategyClassId = ClassId.topLevel(FqName("com.kotlinorm.interfaces.KronosNamingStrategy"))
+        val cls = context.referenceClass(namingStrategyClassId) ?: error("KronosNamingStrategy not found")
+        return cls.owner.declarations
+            .filterIsInstance<org.jetbrains.kotlin.ir.declarations.IrSimpleFunction>()
+            .first { it.name.asString() == "k2db" }
+            .symbol
+    }
 
 /**
  * listOf function symbol (kotlin.collections.listOf with vararg)
@@ -444,6 +534,15 @@ val kClassCreatorSetterSymbol: IrSimpleFunctionSymbol
         ).firstOrNull() ?: error("kClassCreator property not found in com.kotlinorm.utils")
         return prop.owner.setter?.symbol ?: error("kClassCreator has no setter")
     }
+
+/**
+ * getSafeValue function symbol from com.kotlinorm.utils.CommonUtil
+ */
+context(context: IrPluginContext)
+val getSafeValueSymbol: IrSimpleFunctionSymbol
+    get() = context.referenceFunctions(
+        CallableId(FqName("com.kotlinorm.utils"), null, Name.identifier("getSafeValue"))
+    ).firstOrNull() ?: error("getSafeValue function not found in com.kotlinorm.utils")
 
 // ============================================================================
 // Type Judgment Extension Functions

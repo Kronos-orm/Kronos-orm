@@ -75,7 +75,7 @@ class ErrorReporterTest {
         assertTrue(messages.size == 1)
         assertTrue(messages[0].first == CompilerMessageSeverity.ERROR)
         assertTrue(messages[0].second.contains(message))
-        assertTrue(messages[0].second.contains("Suggestion: $suggestion"))
+        assertTrue(messages[0].second.contains("Fix: $suggestion"))
     }
 
     @Test
@@ -104,7 +104,7 @@ class ErrorReporterTest {
         // Then
         assertTrue(messages.size == 1)
         assertTrue(messages[0].first == CompilerMessageSeverity.INFO)
-        assertTrue(messages[0].second == message)
+        assertTrue(messages[0].second == "[Kronos] $message")
     }
 
     @Test

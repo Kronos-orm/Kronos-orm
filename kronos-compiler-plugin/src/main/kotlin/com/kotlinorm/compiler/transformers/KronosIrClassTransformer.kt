@@ -121,7 +121,7 @@ class KronosIrClassTransformer(
                 "get" -> replaceFakeBody { createPropertyGetter(irClass, declaration) }
                 "set" -> replaceFakeBody { createPropertySetter(irClass, declaration) }
                 "fromMapData" -> replaceFakeBody { createFromMapData(irClass, declaration) }
-                "safeFromMapData" -> replaceFakeBody { createFromMapData(irClass, declaration) }
+                "safeFromMapData" -> replaceFakeBody { createSafeFromMapData(irClass, declaration) }
             }
         }
 

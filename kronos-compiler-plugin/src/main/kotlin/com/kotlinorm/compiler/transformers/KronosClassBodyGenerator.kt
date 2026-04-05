@@ -18,10 +18,18 @@ package com.kotlinorm.compiler.transformers
 
 import com.kotlinorm.compiler.core.buildFieldFromProperty
 import com.kotlinorm.compiler.core.fieldClassSymbol
+import com.kotlinorm.compiler.core.fieldConstructorSymbol
 import com.kotlinorm.compiler.core.isColumnType
+import com.kotlinorm.compiler.core.getSafeValueSymbol
+import com.kotlinorm.compiler.core.kronosCommonStrategyConstructorSymbol
+import com.kotlinorm.compiler.core.kronosObjectSymbol
+import com.kotlinorm.compiler.core.k2dbFunctionSymbol
+import com.kotlinorm.compiler.core.tableNamingStrategyGetterSymbol
+import com.kotlinorm.compiler.core.kClassSymbol
 import com.kotlinorm.compiler.core.pairClassSymbol
 import com.kotlinorm.compiler.utils.AnnotationFqNames
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import com.kotlinorm.compiler.utils.TableAnnotationFqName
 import com.kotlinorm.compiler.utils.dispatchReceiver
 import com.kotlinorm.compiler.utils.valueParameters
@@ -37,6 +45,7 @@ import org.jetbrains.kotlin.ir.builders.irEquals
 import org.jetbrains.kotlin.ir.builders.irExprBody
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
+import org.jetbrains.kotlin.ir.builders.irGetObject
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.builders.irSetField
@@ -47,6 +56,7 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
@@ -58,7 +68,10 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrTypeOperatorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.defaultType
@@ -66,6 +79,7 @@ import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -101,7 +115,7 @@ import org.jetbrains.kotlin.name.Name
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createKronosColumns(irClass: IrClass): IrBlockBody {
     val fields = irClass.properties
-        .filter { it.isColumnType() }
+        .filter { !it.isIgnoredForAll() }
         .map { buildFieldFromProperty(it) }
         .toList()
     return irBlockBody {
@@ -138,18 +152,85 @@ fun DeclarationIrBuilder.createKronosTableIndex(@Suppress("UNUSED_PARAMETER") ir
     }
 
 /**
- * Generates: override fun kronosCreateTime/UpdateTime/LogicDelete/OptimisticLock() = field or null
+ * Generates: override fun kronosCreateTime/UpdateTime/LogicDelete/OptimisticLock(): KronosCommonStrategy
+ *
+ * If a property with the given annotation is found:
+ *   return KronosCommonStrategy(enabled, Field("column_name", "propertyName"))
+ * Otherwise:
+ *   return the global default strategy from Kronos object
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createKronosSpecialField(irClass: IrClass, annotationFqName: FqName): IrBlockBody {
-    val prop = irClass.properties.firstOrNull { it.hasAnnotation(annotationFqName) }
-    val fieldExpr = if (prop != null) buildFieldFromProperty(prop) else null
-    return irBlockBody {
-        if (fieldExpr != null) {
-            +irReturn(fieldExpr)
+    // Check class-level annotation first (e.g., @CreateTime(enable = false) on the class)
+    val classAnno = irClass.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
+    if (classAnno != null) {
+        val classEnabled = if (classAnno.arguments.isNotEmpty()) {
+            val firstArg = classAnno.arguments[0]
+            !(firstArg is IrConst && firstArg.value == false)
         } else {
-            +irReturn(irNull())
+            true
+        }
+        if (!classEnabled) {
+            // Class-level annotation explicitly disables the strategy
+            return irBlockBody {
+                +irReturn(
+                    irCall(kronosCommonStrategyConstructorSymbol).apply {
+                        arguments[0] = irBoolean(false)
+                        arguments[1] = irCall(fieldConstructorSymbol).apply {
+                            arguments[0] = irString("")
+                            arguments[1] = irString("")
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    val prop = irClass.properties.firstOrNull { it.hasAnnotation(annotationFqName) }
+    return irBlockBody {
+        if (prop != null) {
+            // Check if annotation explicitly disables the strategy: @LogicDelete(false)
+            val anno = prop.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }
+            val enabled = if (anno != null && anno.arguments.isNotEmpty()) {
+                val firstArg = anno.arguments[0]
+                !(firstArg is IrConst && firstArg.value == false)
+            } else {
+                true
+            }
+            val fieldExpr = buildFieldFromProperty(prop)
+            +irReturn(
+                irCall(kronosCommonStrategyConstructorSymbol).apply {
+                    arguments[0] = irBoolean(enabled)
+                    arguments[1] = fieldExpr
+                }
+            )
+        } else {
+            // No annotated property — return the global default from Kronos object
+            val strategyName = when (annotationFqName) {
+                AnnotationFqNames.CreateTime -> "createTimeStrategy"
+                AnnotationFqNames.UpdateTime -> "updateTimeStrategy"
+                AnnotationFqNames.LogicDelete -> "logicDeleteStrategy"
+                AnnotationFqNames.Version -> "optimisticLockStrategy"
+                else -> null
+            }
+            if (strategyName != null) {
+                val getter = kronosObjectSymbol.owner.declarations
+                    .filterIsInstance<IrProperty>()
+                    .firstOrNull { it.name.asString() == strategyName }
+                    ?.getter
+                if (getter != null) {
+                    +irReturn(
+                        irCall(getter.symbol).apply {
+                            dispatchReceiver = irGetObject(kronosObjectSymbol)
+                        }
+                    )
+                } else {
+                    +irReturn(irNull())
+                }
+            } else {
+                +irReturn(irNull())
+            }
         }
     }
 }
@@ -231,6 +312,8 @@ fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFu
         val branches = irClass.properties
             .filter { it.backingField != null && !it.isDelegated && it.isVar }
             .map { prop ->
+                val fieldType = prop.backingField!!.type
+                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
                 irBranch(
                     irEquals(nameParam, irString(prop.name.asString())),
                     irSetField(
@@ -238,9 +321,9 @@ fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFu
                         prop.backingField!!,
                         IrTypeOperatorCallImpl(
                             startOffset, endOffset,
-                            prop.backingField!!.type,
+                            castType,
                             IrTypeOperator.SAFE_CAST,
-                            prop.backingField!!.type,
+                            castType,
                             valueParam
                         )
                     )
@@ -272,12 +355,66 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
                     dispatchReceiver = mapParam
                     arguments[1] = irString(prop.name.asString())
                 }
+                val fieldType = prop.backingField!!.type
+                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
                 val cast = IrTypeOperatorCallImpl(
                     startOffset, endOffset,
-                    prop.backingField!!.type,
+                    castType,
                     IrTypeOperator.SAFE_CAST,
-                    prop.backingField!!.type,
+                    castType,
                     mapGet
+                )
+                +irSetField(dispatcher, prop.backingField!!, cast)
+            }
+        +irReturn(dispatcher)
+    }
+
+/**
+ * Generates: override fun safeFromMapData(map: Map<String, Any?>): KPojo { ... }
+ * Uses getSafeValue() for type-safe conversion (handles enum, date, etc.)
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
+    irBlockBody {
+        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
+        val mapParam = irGet(irFunction.parameters.valueParameters.first())
+
+        irClass.properties
+            .filter { it.backingField != null && !it.isDelegated && it.isVar && !it.isIgnoredForAll() }
+            .forEach { prop ->
+                val fieldType = prop.backingField!!.type
+                // Build: getSafeValue(this, FieldType::class, listOf(supertype1, ...), map, "propName", isSerializable)
+                val kClassRef = IrClassReferenceImpl(
+                    startOffset, endOffset,
+                    kClassSymbol.typeWith(fieldType),
+                    fieldType.classOrNull ?: context.irBuiltIns.anyClass,
+                    fieldType
+                )
+                val superTypesList = buildListOf(
+                    context.irBuiltIns.stringType,
+                    (fieldType.classOrNull?.owner?.superTypes ?: emptyList()).mapNotNull { st ->
+                        st.classFqName?.asString()?.let { irString(it) }
+                    }
+                )
+                val isSerializable = irBoolean(prop.hasAnnotation(SerializeAnnotationFqName))
+
+                val safeValueCall = irCall(getSafeValueSymbol).apply {
+                    arguments[0] = dispatcher
+                    arguments[1] = kClassRef
+                    arguments[2] = superTypesList
+                    arguments[3] = mapParam
+                    arguments[4] = irString(prop.name.asString())
+                    arguments[5] = isSerializable
+                }
+
+                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
+                val cast = IrTypeOperatorCallImpl(
+                    startOffset, endOffset,
+                    castType,
+                    IrTypeOperator.SAFE_CAST,
+                    castType,
+                    safeValueCall
                 )
                 +irSetField(dispatcher, prop.backingField!!, cast)
             }
@@ -290,14 +427,29 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-private fun IrBuilderWithScope.getTableNameExpr(irClass: IrClass): IrExpression {
+internal fun IrBuilderWithScope.getTableNameExpr(irClass: IrClass): IrExpression {
     val tableAnnotation = irClass.annotations.firstOrNull {
         it.symbol.owner.returnType.classFqName == TableAnnotationFqName
     }
     return if (tableAnnotation != null && tableAnnotation.arguments.isNotEmpty()) {
-        tableAnnotation.arguments[0] ?: irString(irClass.name.asString())
+        tableAnnotation.arguments[0] ?: buildTableNamingStrategyCall(irClass.name.asString())
     } else {
-        irString(irClass.name.asString())
+        buildTableNamingStrategyCall(irClass.name.asString())
+    }
+}
+
+/**
+ * Generates: Kronos.tableNamingStrategy.k2db(className)
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+private fun IrBuilderWithScope.buildTableNamingStrategyCall(className: String): IrExpression {
+    val strategyGetter = irCall(tableNamingStrategyGetterSymbol).apply {
+        dispatchReceiver = irGetObject(kronosObjectSymbol)
+    }
+    return irCall(k2dbFunctionSymbol).apply {
+        dispatchReceiver = strategyGetter
+        arguments[1] = irString(className)
     }
 }
 

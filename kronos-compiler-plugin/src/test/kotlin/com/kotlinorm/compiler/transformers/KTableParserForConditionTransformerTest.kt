@@ -254,6 +254,39 @@ class KTableParserForConditionTransformerTest {
         """
     }
 
+    @Test
+    fun `test function field as left operand in GT`() {
+        "FuncGt" testCompile """
+            fun test(){
+                val result = where { f.length(it.username) > 5 }
+                assertNotNull(result)
+                assertEquals(ConditionType.GT, result!!.type)
+            }
+        """
+    }
+
+    @Test
+    fun `test function field on both sides of GT`() {
+        "FuncBothSides" testCompile """
+            fun test(){
+                val result = where { f.add(it.age, 1) > f.sub(it.age, 1) }
+                assertNotNull(result)
+                assertEquals(ConditionType.GT, result!!.type)
+            }
+        """
+    }
+
+    @Test
+    fun `test function field in equality`() {
+        "FuncEq" testCompile """
+            fun test(){
+                val result = where { f.length(it.username) == 5 }
+                assertNotNull(result)
+                assertEquals(ConditionType.EQUAL, result!!.type)
+            }
+        """
+    }
+
     @Language("kotlin")
     private val mainKt = """
         import com.kotlinorm.Kronos
@@ -267,8 +300,12 @@ class KTableParserForConditionTransformerTest {
         import com.kotlinorm.types.ToFilter
         import java.time.LocalDateTime
         import kotlin.test.assertEquals
+        import kotlin.test.assertNotNull
         import com.kotlinorm.functions.FunctionManager.registerFunctionBuilder
         import com.kotlinorm.functions.bundled.builders.PostgresFunctionBuilder
+        import com.kotlinorm.functions.bundled.exts.MathFunctions.add
+        import com.kotlinorm.functions.bundled.exts.MathFunctions.sub
+        import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 
         @Table(name = "tb_user")
         data class User(

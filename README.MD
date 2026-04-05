@@ -330,7 +330,7 @@ val instance = Movie::class.newInstance()
 val dataMap: Map<String, Any?> = movie.toDataMap()
 val movie2: Movie = dataMap.mapperTo<Movie>()
 
-val tableName = movie.kronosTable()
+val tableName = movie.__tableName // readable and writable
 val columns = movie.kronosColumns()
 
 instance["fieldName"]

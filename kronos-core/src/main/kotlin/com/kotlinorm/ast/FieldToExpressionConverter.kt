@@ -45,20 +45,29 @@ object FieldToExpressionConverter {
     fun fieldToExpression(field: Field, useTableAlias: Boolean = false): Expression {
         // Handle FunctionField - convert to FunctionCall
         if (field is FunctionField) {
-            val arguments = field.fields.map { (argField, argValue) ->
+            val arguments = field.fields.flatMap { (argField, argValue) ->
                 when {
                     // If argField is present, it's a column reference
-                    argField != null -> fieldToExpression(argField, useTableAlias)
+                    argField != null -> listOf(fieldToExpression(argField, useTableAlias))
                     // If argValue is present, convert it to a literal
                     argValue != null -> {
                         when (argValue) {
-                            is String -> Literal.StringLiteral(argValue)
-                            is Number -> Literal.NumberLiteral(argValue.toString())
-                            is Boolean -> Literal.BooleanLiteral(argValue)
-                            else -> Literal.StringLiteral(argValue.toString())
+                            is String -> listOf(Literal.StringLiteral(argValue))
+                            is Number -> listOf(Literal.NumberLiteral(argValue.toString()))
+                            is Boolean -> listOf(Literal.BooleanLiteral(argValue))
+                            is Collection<*> -> argValue.filterNotNull().map { convertValueToExpression(it) }
+                            is Array<*> -> argValue.filterNotNull().map { convertValueToExpression(it) }
+                            is IntArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
+                            is LongArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
+                            is ShortArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
+                            is FloatArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
+                            is DoubleArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
+                            is BooleanArray -> argValue.map { Literal.BooleanLiteral(it) }
+                            is ByteArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
+                            else -> listOf(Literal.StringLiteral(argValue.toString()))
                         }
                     }
-                    else -> Literal.NullLiteral
+                    else -> listOf(Literal.NullLiteral)
                 }
             }
             return FunctionCall(

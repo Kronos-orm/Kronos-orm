@@ -16,6 +16,9 @@
 
 package com.kotlinorm.functions.bundled.builders
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FunctionCall
+import com.kotlinorm.ast.RenderContext
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildField
@@ -40,5 +43,14 @@ object PostgresFunctionBuilder : FunctionBuilder {
         return "${field.functionName.uppercase()}(ARRAY${
             buildField(field.fields.first(), dataSource, showTable)
         })"
+    }
+
+    override fun transformAst(
+        function: FunctionCall,
+        context: RenderContext,
+        renderExpression: (Expression, RenderContext) -> String
+    ): String {
+        val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+        return "${function.functionName.uppercase()}(ARRAY[$args])"
     }
 }

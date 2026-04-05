@@ -230,34 +230,39 @@ class UpsertClause<T : KPojo>(
                             linkedSetOf(Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL))
                         selectAll = false
                         // Directly set statement.where using Criteria
-                        val criteriaParams = mutableMapOf<String, Any?>()
+                        val localCriteriaParams = mutableMapOf<String, Any?>()
                         statement.where = CriteriaToAstConverter.convert(
-                            onFields.filter { field -> field.isColumn && field.name in paramMap.keys }
-                                .map { field -> field.eq(paramMap[field.name]) }
+                            onFields.filter { field -> field.isColumn && field.name in this@UpsertClause.paramMap.keys }
+                                .map { field -> field.eq(this@UpsertClause.paramMap[field.name]) }
                                 .toCriteria(),
-                            criteriaParams,
+                            localCriteriaParams,
                             KOperationType.SELECT
                         )
+                        criteriaParams.putAll(localCriteriaParams)
                     }
+                // Disable logic delete filter for upsert existence check
+                // (must find soft-deleted rows to avoid duplicate key on INSERT)
+                selectClause.logicDeleteStrategy = null
 
                 if ((selectClause.queryOneOrNull<Int>() ?: 0) > 0) {
                     val updateClause = pojo.update().cascade(cascadeEnabled)
                         .apply {
                             this@apply.cascadeAllowed = this@UpsertClause.cascadeAllowed
                             // Directly set statement.where using Criteria
-                            val criteriaParams = mutableMapOf<String, Any?>()
+                            val localCriteriaParams = mutableMapOf<String, Any?>()
                             statement.where = CriteriaToAstConverter.convert(
                                 onFields.filter { field -> field.isColumn && field.name in paramMap.keys }
                                     .map { field -> field.eq(paramMap[field.name]) }
                                     .toCriteria(),
-                                criteriaParams,
+                                localCriteriaParams,
                                 KOperationType.UPDATE
                             )
+                            criteriaParams.putAll(localCriteriaParams)
                             logicDeleteStrategy = null
                         }
                         .set {
                             this@UpsertClause.toUpdateFields.forEach { field ->
-                                it[field.name] = paramMap[field.name]
+                                setValue(field, paramMap[field.name])
                             }
                             this@UpsertClause.logicDeleteStrategy?.execute(
                                 defaultValue = getDefaultBoolean(
@@ -266,7 +271,7 @@ class UpsertClause<T : KPojo>(
                                 )
                             ) { field, value ->
                                 this@UpsertClause.toUpdateFields += field
-                                it[(field + "New").name] = value
+                                setValue(field + "New", value)
                             }
                         }
                     updateClause.execute(wrapper)

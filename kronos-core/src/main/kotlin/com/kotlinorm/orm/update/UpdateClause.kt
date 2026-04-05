@@ -52,7 +52,6 @@ import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSet
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
-import com.kotlinorm.utils.ConditionSqlBuilder
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
@@ -101,7 +100,7 @@ class UpdateClause<T : KPojo>(
     
     // Store parameter values extracted from Criteria (WHERE/BY clauses)
     // Key: Parameter name, Value: parameter value
-    private val criteriaParams = mutableMapOf<String, Any?>()
+    internal val criteriaParams = mutableMapOf<String, Any?>()
     
     // Track whether where() method was called (even if condition was ignored)
     private var whereCalled = false

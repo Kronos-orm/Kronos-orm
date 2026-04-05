@@ -1,6 +1,6 @@
 package com.kotlinorm.compiler.plugin.utils
 
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class IrKDocUtilTest {

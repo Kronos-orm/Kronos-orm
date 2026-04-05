@@ -58,20 +58,27 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
      *
      * @param instance Table instance
      */
-    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) = getTableCreateSqlList(
-        dataSource.dbType,
-        instance.__tableName,
-        instance.__tableComment,
-        instance.kronosColumns().filter { it.isColumn },
-        instance.kronosTableIndex()
-    ).map {
-        KronosAtomicActionTask(
-            it,
-            mapOf("tableName" to instance.__tableName),
-            KOperationType.CREATE,
-            DDLInfo(T::class, instance.__tableName)
+    inline fun <reified T : KPojo> createTable(instance: T = T::class.createInstance()) {
+        val allSql = getTableCreateSqlList(
+            dataSource.dbType,
+            instance.__tableName,
+            instance.__tableComment,
+            instance.kronosColumns().filter { it.isColumn },
+            instance.kronosTableIndex()
         )
-    }.toKronosActionTask().execute(dataSource)
+        // Separate CONCURRENTLY index statements (Postgres doesn't allow them inside transactions)
+        val (concurrentSql, transactionalSql) = allSql.partition { it.contains("CONCURRENTLY") }
+        transactionalSql.map {
+            KronosAtomicActionTask(
+                it,
+                mapOf("tableName" to instance.__tableName),
+                KOperationType.CREATE,
+                DDLInfo(T::class, instance.__tableName)
+            )
+        }.toKronosActionTask().execute(dataSource)
+        // Execute CONCURRENTLY index statements outside the transaction
+        concurrentSql.forEach { dataSource.execute(it) }
+    }
 
     /**
      * Drop table
@@ -177,11 +184,18 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val diffColumns = columnDiffer(dbType, kronosColumns, tableColumns).apply { doLog(tableName) }
         val diffIndexes = indexDiffer(kronosIndexes, tableIndexes)
 
-        dataSource.transact {
-            getTableSyncSqlList(dataSource, tableName, originalTableComment, tableComment, diffColumns, diffIndexes).forEach {
-                dataSource.execute(it)
+        val allSqlList = getTableSyncSqlList(dataSource, tableName, originalTableComment, tableComment, diffColumns, diffIndexes)
+        // Separate CONCURRENTLY index statements (Postgres doesn't allow them inside transactions)
+        val (concurrentSql, transactionalSql) = allSqlList.partition {
+            it.contains("CONCURRENTLY")
+        }
+        if (transactionalSql.isNotEmpty()) {
+            dataSource.transact {
+                transactionalSql.forEach { dataSource.execute(it) }
             }
         }
+        // Execute CONCURRENTLY index statements outside the transaction
+        concurrentSql.forEach { dataSource.execute(it) }
         return true
     }
 

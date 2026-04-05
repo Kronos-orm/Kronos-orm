@@ -47,8 +47,6 @@ import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
-import com.kotlinorm.utils.ConditionSqlBuilder
-import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
@@ -84,7 +82,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     override var selectAll: Boolean = false
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
-    private var keyCounters: ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()
+    private var keyCounters: KeyCounter = KeyCounter()
     val listOfJoinable: MutableList<KJoinable> = mutableListOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
@@ -303,10 +301,9 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             }
             selectFields += fields
             fields.forEach { field ->
-                val safeKey = ConditionSqlBuilder.getSafeKey(
+                val safeKey = getSafeKey(
                     field.name,
                     keyCounters,
-                    selectFieldsWithNames as MutableMap<String, Any?>,
                     field
                 )
                 selectFieldsWithNames[safeKey] = field
@@ -807,5 +804,30 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 renderedSql.sql, paramMapNew, operationType = KOperationType.SELECT
             ), operationType, selectFieldsWithNames, cascadeSelectedProps ?: mutableSetOf()
         )
+    }
+
+    /**
+     * Counter for generating unique field alias keys when multiple joined tables
+     * have columns with the same name. Tracks value-to-index mappings per key name
+     * so that identical values reuse the same alias.
+     */
+    private data class KeyCounter(
+        val metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
+    )
+
+    private fun getSafeKey(
+        keyName: String,
+        keyCounters: KeyCounter,
+        data: Any?
+    ): String {
+        // Find existing entry with the same value
+        val existing = keyCounters.metaOfMap[keyName]?.entries?.firstOrNull { it.value == data }
+        if (existing != null) {
+            return if (existing.key == 0) keyName else "$keyName@${existing.key}"
+        }
+        // Allocate a new index
+        val counter = (keyCounters.metaOfMap[keyName]?.keys?.maxOrNull() ?: -1) + 1
+        keyCounters.metaOfMap.getOrPut(keyName) { mutableMapOf() }[counter] = data
+        return if (counter == 0) keyName else "$keyName@$counter"
     }
 }

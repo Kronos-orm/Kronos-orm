@@ -17,7 +17,7 @@
 package com.kotlinorm.compiler.utils
 
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -47,7 +47,7 @@ class AnnotationUtilsTest {
                     val name: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -83,7 +83,7 @@ class AnnotationUtilsTest {
                     val name: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -113,7 +113,7 @@ class AnnotationUtilsTest {
                     val password: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -147,7 +147,7 @@ class AnnotationUtilsTest {
                     val createdAt: LocalDateTime
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val eventClass = ctx.findClass("Event")
@@ -178,7 +178,7 @@ class AnnotationUtilsTest {
                     val status: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -209,7 +209,7 @@ class AnnotationUtilsTest {
                     val email: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -242,7 +242,7 @@ class AnnotationUtilsTest {
                     val name: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -268,7 +268,7 @@ class AnnotationUtilsTest {
                     val name: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")
@@ -299,7 +299,7 @@ class AnnotationUtilsTest {
                     val name: String
                 ) : KPojo
             """)
-        ) { ctx, pluginContext ->
+        ) { ctx, _ ->
             ctx.assertSuccess()
             
             val userClass = ctx.findClass("User")

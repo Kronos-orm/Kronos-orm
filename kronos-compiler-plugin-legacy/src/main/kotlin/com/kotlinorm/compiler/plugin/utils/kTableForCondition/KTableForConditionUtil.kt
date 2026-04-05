@@ -331,15 +331,26 @@ private fun handleEqualOp(
     args: List<IrExpression?>
 ) {
     state.not = state.not xor element.valueArguments.isEmpty()
-    val irCall = args[0]!!.irCast<IrCall>()
-    val (left, _, right) = runExpressionAnalysis(
-        irCall,
-        funcName,
-        args[1]
-    )
-    state.paramName = left
-    state.value = right
-    state.tableName = getTableName(irCall.dispatchReceiverArgument ?: return)
+    val index = when {
+        args[0].isKPojo() -> 0
+        args[1].isKPojo() -> 1
+        else -> {
+            state.type = "sql"
+            state.value = element
+            -1
+        }
+    }
+    if (index != -1) {
+        val irCall = args[index]!!.irCast<IrCall>()
+        val (left, _, right) = runExpressionAnalysis(
+            irCall,
+            funcName,
+            args[1 - index]
+        )
+        state.paramName = left
+        state.value = right
+        state.tableName = getTableName(irCall.dispatchReceiverArgument!!)
+    }
 }
 
 /**
@@ -666,12 +677,21 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
  */
 context(_: IrPluginContext)
 fun IrExpression.findKronosColumn(): IrExpression? {
-    if (this !is IrCall) return null
-    return when {
-        isKPojo() -> this
-        extensionReceiverArgument is IrCall -> extensionReceiverArgument!!.findKronosColumn()
-        dispatchReceiverArgument is IrCall -> dispatchReceiverArgument!!.findKronosColumn()
-        else -> valueArguments.find { it is IrCall }?.findKronosColumn()
+    if (this is IrBlock && origin == IrStatementOrigin.SAFE_CALL) return null
+    if (this !is IrCall) return this
+    if (isKPojo()) {
+        return this
+    } else if (extensionReceiverArgument is IrCall) {
+        return extensionReceiverArgument!!.findKronosColumn()
+    } else if (dispatchReceiverArgument is IrCall) {
+        return dispatchReceiverArgument!!.findKronosColumn()
+    } else {
+        for (arg in valueArguments) {
+            if (arg is IrCall) {
+                return arg.findKronosColumn()
+            }
+        }
+        return this
     }
 }
 

@@ -20,7 +20,7 @@ import com.kotlinorm.compiler.utils.KotlinSourceDynamicCompiler.compile
 import com.kotlinorm.compiler.utils.testBaseName
 import com.tschuchort.compiletesting.KotlinCompilation
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCompilerApi::class)

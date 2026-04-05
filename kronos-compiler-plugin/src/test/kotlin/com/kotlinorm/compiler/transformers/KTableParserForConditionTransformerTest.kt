@@ -21,7 +21,7 @@ import com.kotlinorm.compiler.utils.testBaseName
 import com.tschuchort.compiletesting.KotlinCompilation
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCompilerApi::class)

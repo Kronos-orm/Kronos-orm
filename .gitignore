@@ -1,5 +1,6 @@
 .gradle
 .kiro
+.kotlin/
 envsetup.sh
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -54,3 +55,4 @@ kronos-docs/ng-doc/
 *.gpg
 *.key
 */bin/*
+**/test-output.log

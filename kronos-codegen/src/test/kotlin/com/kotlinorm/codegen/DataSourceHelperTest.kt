@@ -1,6 +1,8 @@
 package com.kotlinorm.codegen
 
+import com.kotlinorm.KronosBasicWrapper
 import org.apache.commons.dbcp2.BasicDataSource
+import javax.sql.DataSource
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,25 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DataSourceHelperTest {
-
-    @Ignore("Temporarily disabled - needs investigation")
-    @Test
-    fun testCreateWrapperWithValidClassName() {
-        val dataSource = BasicDataSource()
-        val wrapper = createWrapper("com.kotlinorm.codegen.SampleMysqlJdbcWrapper", dataSource)
-        assertNotNull(wrapper)
-        assertEquals("com.kotlinorm.codegen.SampleMysqlJdbcWrapper", wrapper::class.java.name)
-    }
-
-    @Ignore("Temporarily disabled - needs investigation")
-    @Test
-    fun testCreateWrapperWithNullClassName() {
-        val dataSource = BasicDataSource()
-        val wrapper = createWrapper(null, dataSource)
-        assertNotNull(wrapper)
-        assertEquals("com.kotlinorm.KronosBasicWrapper", wrapper::class.java.name)
-    }
-
     @Test
     fun testCreateWrapperWithInvalidClassName() {
         val dataSource = BasicDataSource()

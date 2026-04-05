@@ -60,7 +60,6 @@ import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
-import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
@@ -78,7 +77,7 @@ class SelectClause<T : KPojo>(
     private var tableName = pojo.__tableName
     internal var paramMap = pojo.toDataMap()
     private val patchParamMap = mutableMapOf<String, Any?>()
-    private var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
+    internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var allFields = kPojoAllFieldsCache[kClass]!!
     private var allColumns = kPojoAllColumnsCache[kClass]!!
 
@@ -101,7 +100,7 @@ class SelectClause<T : KPojo>(
     
     // Store parameter values extracted from Criteria (WHERE/BY/HAVING clauses)
     // Key: Parameter name, Value: parameter value
-    private val criteriaParams = mutableMapOf<String, Any?>()
+    internal val criteriaParams = mutableMapOf<String, Any?>()
     
     // Track whether logic delete condition has been applied to avoid duplication
     // when toStatement() is called multiple times (e.g., in PagedClause)

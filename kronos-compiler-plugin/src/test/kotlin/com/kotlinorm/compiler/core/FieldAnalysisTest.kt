@@ -18,7 +18,7 @@ package com.kotlinorm.compiler.core
 
 import com.kotlinorm.compiler.utils.IrTestFramework
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue

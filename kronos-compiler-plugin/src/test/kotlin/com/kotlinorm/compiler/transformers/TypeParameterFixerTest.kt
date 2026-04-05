@@ -18,7 +18,7 @@ package com.kotlinorm.compiler.transformers
 
 import com.kotlinorm.compiler.transformers.shouldFix
 import org.jetbrains.kotlin.name.FqName
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 

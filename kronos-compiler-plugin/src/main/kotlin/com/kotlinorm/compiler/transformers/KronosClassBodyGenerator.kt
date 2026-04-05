@@ -32,6 +32,8 @@ import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import com.kotlinorm.compiler.utils.TableAnnotationFqName
 import com.kotlinorm.compiler.utils.dispatchReceiver
+import com.kotlinorm.compiler.utils.getKDocString
+import com.kotlinorm.compiler.utils.invoke
 import com.kotlinorm.compiler.utils.valueParameters
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -127,28 +129,48 @@ fun DeclarationIrBuilder.createKronosColumns(irClass: IrClass): IrBlockBody {
  * Generates: var __tableName: String = "table_name"
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-context(context: IrPluginContext)
+context(_: IrPluginContext)
 fun DeclarationIrBuilder.createTableName(irClass: IrClass): IrExpressionBody =
     irExprBody(getTableNameExpr(irClass))
 
 /**
- * Generates: var __tableComment: String = ""
+ * Generates: var __tableComment: String = "extracted KDoc comment"
  */
-context(context: IrPluginContext)
-fun DeclarationIrBuilder.createTableComment(@Suppress("UNUSED_PARAMETER") irClass: IrClass): IrExpressionBody =
-    irExprBody(irString(""))
+context(_: IrPluginContext)
+fun DeclarationIrBuilder.createTableComment(irClass: IrClass): IrExpressionBody =
+    irExprBody(irClass.getKDocString())
 
 /**
- * Generates: override fun kronosTableIndex() = listOf()
+ * Generates: override fun kronosTableIndex() = listOf(KTableIndex(...), ...)
+ *
+ * Reads @TableIndex annotations from the class and constructs KTableIndex instances.
+ * The @TableIndex annotation parameters (name, columns, type, method, concurrently)
+ * map directly to the KTableIndex constructor parameters.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKronosTableIndex(@Suppress("UNUSED_PARAMETER") irClass: IrClass): IrBlockBody =
+fun DeclarationIrBuilder.createKronosTableIndex(irClass: IrClass): IrBlockBody =
     irBlockBody {
         val kTableIndexClassId = ClassId.topLevel(FqName("com.kotlinorm.beans.dsl.KTableIndex"))
         val kTableIndexSymbol = context.referenceClass(kTableIndexClassId)
-        val listType = kTableIndexSymbol?.defaultType ?: context.irBuiltIns.anyType
-        +irReturn(buildListOf(listType, emptyList()))
+            ?: error("KTableIndex class not found")
+        val kTableIndexConstructor = kTableIndexSymbol.constructors.first()
+        val listType = kTableIndexSymbol.defaultType
+
+        val tableIndexAnnotations = irClass.annotations.filter {
+            it.symbol.owner.returnType.classFqName == AnnotationFqNames.TableIndex
+        }
+
+        val indexExpressions = tableIndexAnnotations.map { annotation ->
+            // Extract value arguments from the annotation (skip non-value parameters like dispatch receiver)
+            val valueArgs = annotation.symbol.owner.parameters.valueParameters.mapIndexed { i, param ->
+                val paramIndex = annotation.symbol.owner.parameters.indexOf(param)
+                annotation.arguments.getOrNull(paramIndex)
+            }.toTypedArray()
+            kTableIndexConstructor(this@irBlockBody, *valueArgs)
+        }
+
+        +irReturn(buildListOf(listType, indexExpressions))
     }
 
 /**

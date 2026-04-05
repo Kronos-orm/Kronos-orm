@@ -95,4 +95,19 @@ object Extensions {
     internal fun String.asSql(): Criteria {
         return Criteria(type = ConditionType.SQL, value = this)
     }
+
+    internal fun Any?.isEmptyArrayOrCollection(): Boolean {
+        return when (this) {
+            is Iterable<*> -> this.spliterator().exactSizeIfKnown == 0L
+            is Array<*> -> this.isEmpty()
+            is IntArray -> this.isEmpty()
+            is LongArray -> this.isEmpty()
+            is ShortArray -> this.isEmpty()
+            is FloatArray -> this.isEmpty()
+            is DoubleArray -> this.isEmpty()
+            is BooleanArray -> this.isEmpty()
+            is ByteArray -> this.isEmpty()
+            else -> false
+        }
+    }
 }

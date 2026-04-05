@@ -54,8 +54,6 @@ import com.kotlinorm.orm.cascade.CascadeDeleteClause
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
-import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
-import com.kotlinorm.utils.ConditionSqlBuilder.toWhereSql
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq

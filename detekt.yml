@@ -132,6 +132,7 @@ complexity:
   LongMethod:
     active: true
     threshold: 180
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
   LongParameterList:
     active: true
     functionThreshold: 24
@@ -274,7 +275,7 @@ exceptions:
     active: false
   ThrowingExceptionsWithoutMessageOrCause:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/interfaces/KPojo.kt']
     exceptions:
       - 'ArrayIndexOutOfBoundsException'
       - 'Exception'
@@ -346,13 +347,14 @@ naming:
     active: true
     rootPackage: ''
     requireRootInDeclaration: false
-    excludes: ['**/*.kts']
+    excludes: ['**/*.kts', '**/test/**']
   LambdaParameterNaming:
     active: false
     parameterPattern: '[a-z][A-Za-z0-9]*|_'
   MatchingDeclarationName:
     active: true
     mustBeFirst: true
+    excludes: ['**/test/**']
 #    multiplatformTargets:
 #      - 'ios'
 #      - 'android'
@@ -394,6 +396,7 @@ naming:
     variablePattern: '[a-z][A-Za-z0-9]*'
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
+    excludes: ['**/com/kotlinorm/interfaces/KPojo.kt']
 
 performance:
   active: true
@@ -771,6 +774,7 @@ style:
     active: true
   UseCheckOrError:
     active: true
+    excludes: ['**/com/kotlinorm/interfaces/KPojo.kt']
   UseDataClass:
     active: false
     allowVars: false

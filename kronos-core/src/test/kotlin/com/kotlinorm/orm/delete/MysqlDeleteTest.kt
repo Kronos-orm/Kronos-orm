@@ -1,25 +1,17 @@
 package com.kotlinorm.orm.delete
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.databases.MysqlUser
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
+import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MysqlDeleteTest {
-    init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { sampleMysqlJdbcWrapper }
-        }
-    }
+class MysqlDeleteTest : MysqlTestBase() {
 
-    private val user = MysqlUser(1)
-    private val testUser = MysqlUser(1, "username")
+    private val user by lazy { MysqlUser(1) }
+    private val testUser by lazy { MysqlUser(1, "username") }
 
     @Test
     fun testDelete() {

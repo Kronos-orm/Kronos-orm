@@ -17,7 +17,9 @@
 package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.NoDataSourceException
 import kotlin.reflect.KClass
 
@@ -153,5 +155,21 @@ interface KronosDataSourceWrapper {
      */
     fun batchUpdate(task: KronosAtomicBatchTask): IntArray
 
-    fun transact(block: () -> Any?): Any?
+    /**
+     * Executes a block of code within a database transaction.
+     *
+     * The block is executed as a [TransactionScope] receiver, providing access to savepoint operations.
+     * If the block completes successfully, the transaction is committed.
+     * If an exception occurs, the transaction is rolled back and the exception is rethrown.
+     *
+     * @param isolation The transaction isolation level, or `null` to use the connection default.
+     * @param timeout The transaction timeout in seconds, or `null` for no timeout.
+     * @param block The block of code to execute within the transaction.
+     * @return The result of the block execution.
+     */
+    fun transact(
+        isolation: TransactionIsolation? = null,
+        timeout: Int? = null,
+        block: TransactionScope.() -> Any?
+    ): Any?
 }

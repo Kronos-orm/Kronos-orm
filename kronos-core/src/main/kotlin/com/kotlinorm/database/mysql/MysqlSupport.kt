@@ -314,9 +314,11 @@ object MysqlSupport : DatabasesSupport {
                     DBType.Mysql, it.first
                 ).replace(" PRIMARY KEY", "")
             } ${if (it.second != null) "AFTER ${quote(it.second!!)}" else "FIRST"} ${
-                if (it.first.primaryKey != PrimaryKeyType.NOT) ", DROP PRIMARY KEY, ADD PRIMARY KEY (${
+                if (it.first.primaryKey != PrimaryKeyType.NOT) ", ${
+                    if (it.third.primaryKey != PrimaryKeyType.NOT) "DROP PRIMARY KEY, " else ""
+                }ADD PRIMARY KEY (${
                     quote(
-                        it.first
+                        it.first.columnName
                     )
                 })" else ""
             }"

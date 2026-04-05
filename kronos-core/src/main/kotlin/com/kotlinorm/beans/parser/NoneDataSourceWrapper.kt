@@ -17,7 +17,9 @@
 package com.kotlinorm.beans.parser
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.NoDataSourceException
 import com.kotlinorm.i18n.Noun.noDataSourceMessage
 import com.kotlinorm.interfaces.KAtomicActionTask
@@ -66,7 +68,7 @@ object NoneDataSourceWrapper : KronosDataSourceWrapper {
         throw NoDataSourceException(noDataSourceMessage)
     }
 
-    override fun transact(block: () -> Any?): Any? {
+    override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
         throw NoDataSourceException(noDataSourceMessage)
     }
 }

@@ -66,7 +66,7 @@ fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): S
 
 data class TableColumnDiff(
     val toAdd: List<Pair<Field, Field?>>, // 新增字段与其前一个字段
-    val toModified: List<Pair<Field, Field?>>,
+    val toModified: List<Triple<Field, Field?, Field>>, // (expected, previous, current)
     val toDelete: List<Field>
 )
 
@@ -102,7 +102,7 @@ fun columnDiffer(
         val tableColumn = current.find { col.columnName == it.columnName }
         if (tableColumn != null && (columnCreateDefSql(dbType, col) != columnCreateDefSql(dbType, tableColumn) || col.columnName in need2Move)
         ) {
-            Pair(col, if (index == 0) null else expect[index - 1])
+            Triple(col, if (index == 0) null else expect[index - 1], tableColumn)
         } else null
     }
 

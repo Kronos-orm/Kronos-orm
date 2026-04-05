@@ -26,8 +26,10 @@ import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.serialize.NoneSerializeProcessor
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.KLoggerType
 import com.kotlinorm.enums.PrimaryKeyType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeProcessor
@@ -58,7 +60,21 @@ object Kronos {
     // 数据源
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }
 
-    fun transact(wrapper: KronosDataSourceWrapper? = null, block: () -> Any?) = wrapper.orDefault().transact(block)
+    /**
+     * Executes a block of code within a database transaction.
+     *
+     * @param wrapper The data source wrapper to use, or `null` to use the default data source.
+     * @param isolation The transaction isolation level, or `null` to use the connection default.
+     * @param timeout The transaction timeout in seconds, or `null` for no timeout.
+     * @param block The block of code to execute within the transaction, with [TransactionScope] as receiver.
+     * @return The result of the block execution.
+     */
+    fun transact(
+        wrapper: KronosDataSourceWrapper? = null,
+        isolation: TransactionIsolation? = null,
+        timeout: Int? = null,
+        block: TransactionScope.() -> Any?
+    ) = wrapper.orDefault().transact(isolation, timeout, block)
 
     // 严格模式（将提高性能，但当数据库类型与字段类型不匹配时会抛出异常，而不是尝试进行转换）
     var strictSetValue = false

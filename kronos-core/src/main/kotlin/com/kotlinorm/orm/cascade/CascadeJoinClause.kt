@@ -123,17 +123,15 @@ object CascadeJoinClause {
                             val lastStepResult = this as List<KPojo> // this为主表查询的结果
                             if (lastStepResult.isEmpty()) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
-                            lastStepResult.forEach rowMapper@{
-                                setValues(
-                                    it,
-                                    propName,
-                                    validRef,
-                                    cascadeAllowed,
-                                    cascadeSelectedProps,
-                                    operationType,
-                                    wrapper
-                                )
-                            }
+                            setValues(
+                                lastStepResult,
+                                propName,
+                                validRef,
+                                cascadeAllowed,
+                                cascadeSelectedProps,
+                                operationType,
+                                wrapper
+                            )
                         }
 
                         QueryOne, QueryOneOrNull -> {
@@ -141,7 +139,7 @@ object CascadeJoinClause {
                             if (lastStepResult == null) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
                             setValues(
-                                lastStepResult,
+                                listOf(lastStepResult),
                                 propName,
                                 validRef,
                                 cascadeAllowed,

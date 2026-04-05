@@ -69,14 +69,18 @@ object Extensions {
 
     fun KPojo.patchTo(kClass: KClass<KPojo>, vararg data: Pair<String, Any?>): KPojo {
         return this.toDataMap().apply {
-            data.forEach { (k, v) -> this[k] = v }
+            data.forEach { (k, v) ->
+                try { this[k] = v } catch (_: NoSuchElementException) {}
+            }
         }.mapperTo(kClass) as KPojo
     }
 
     @JvmName("mapperPatchToOutKClass")
     fun KPojo.patchTo(kClass: KClass<out KPojo>, vararg data: Pair<String, Any?>): KPojo {
         return this.toDataMap().apply {
-            data.forEach { (k, v) -> this[k] = v }
+            data.forEach { (k, v) ->
+                try { this[k] = v } catch (_: NoSuchElementException) {}
+            }
         }.mapperTo(kClass) as KPojo
     }
 

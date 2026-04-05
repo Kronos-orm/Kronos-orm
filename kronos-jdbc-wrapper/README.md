@@ -1,4 +1,3 @@
-# Module kronos-jdbc-wrapper
+# kronos-jdbc-wrapper
 
-Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple
-databases.
+JDBC-based data source wrapper for Kronos ORM. Wraps any standard `javax.sql.DataSource` into a `KronosDataSourceWrapper`, providing named parameter binding, batch operations, and transaction management across multiple database dialects.

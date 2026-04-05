@@ -1,4 +1,3 @@
-# Module kronos-core
+# kronos-core
 
-Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of
-Kronos, which provides basic ORM functions.
+Core module of the Kronos ORM framework. Provides the DSL for CRUD operations, condition building, join queries, table operations (DDL), and the annotation-driven model definition system. All SQL generation is AST-based with zero runtime reflection.

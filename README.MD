@@ -17,9 +17,7 @@ A modern ORM framework designed for Kotlin.
 </h3>
 <div align="center">
 
-Kronos is a modern ORM framework designed for Kotlin based on the compiler plugin, which is **suitable for both backend and mobile applications, support multi-database. Powerful, high performance, easy to use**.
-
-Based on the KCP implementation of expression tree parsing and concatenation, Kronos has **powerful performance, expressiveness, and a concise, semantic writing style**, make the operation of the database has become **more simple**.
+Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Built for both server-side and mobile applications.
 
 [![Kotlin](https://img.shields.io/badge/kotlin-2.3.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
@@ -43,128 +41,122 @@ Based on the KCP implementation of expression tree parsing and concatenation, Kr
 </div>
 
 --------
-# Re-define KotlinORM
 
-❓ Why Kronos?
+## Why Kronos
 
-- Leverages the full JVM ecosystem (drivers, logging, pools) and is designed with future Kotlin Multiplatform in mind.
-- Compiler-plugin powered and coroutine-friendly. Absolutely no reflection at runtime for core operations, enabling high performance and low GC overhead.
-- Concise, expressive Kotlin-first DSL using native operators `==`, `>`, `<`, `in`, etc. (not `.eq`, `.gt`, `.lt`). Strong static typing everywhere.
-- Rich features out of the box: transactions, cross-database queries, schema create/sync (tables/indexes/comments), serialization/deserialization, and powerful cascading without FKs (one-to-one / one-to-many / many-to-many).
-- Built-ins: logical deletion, optimistic lock, create/update timestamps; all customizable.
-- Easy to integrate with any stack (Spring, Ktor, Vert.x, Solon, Android). See example projects below.
-- Native SQL with named parameters when you need full control.
-- Compile-time mappers to/from Map and meta APIs for KPojo with near-zero overhead.
+- **Zero reflection** — Compiler plugin generates all mapping code at build time. No runtime overhead, no GC pressure.
+- **Kotlin-native DSL** — Write conditions with `==`, `>`, `<`, `in`, `like` directly. No `.eq()`, `.gt()`, `.lt()` boilerplate.
+- **Multi-database** — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, DB2, H2, OceanBase, DM8, GaussDB and more.
+- **Full-featured** — Transactions, cascading (1:1 / 1:N / M:N), schema sync, serialization, cross-database joins.
+- **Built-in strategies** — Logical deletion, optimistic lock, create/update timestamps. All configurable.
+- **Framework agnostic** — Spring Boot, Ktor, Vert.x, Solon, Android. Plug in anywhere.
+- **Coroutine-friendly** — Designed for structured concurrency from the ground up.
+- **Compile-time mappers** — KPojo to/from Map conversion with near-zero overhead.
 
 ## Developer Docs
-- Looking for architecture diagrams, module internals, and deep‑dive guides? See the [Developer Docs](./develop-docs/README.md).
-- Who should read this:
-  - Contributors and maintainers extending or modifying Kronos.
-  - Advanced users who want to understand internals and design trade‑offs.
-  - Integrators and plugin authors building logging/JDBC/codegen extensions or embedding Kronos into your platform.
 
--------
+Architecture diagrams, module internals, and deep-dive guides: [Developer Docs](./develop-docs/README.md)
 
-# Simple Example
+For contributors, maintainers, plugin authors, and advanced users who want to understand the internals.
 
-Here are some of the simplest examples showing how to use Kronos-ORM for database operations.
+--------
+
+## Quick Example
 
 ```kotlin
-// Define a data class extending KPojo
 data class User(
     @PrimaryKey(identity = true) val id: Long? = null,
     val username: String? = null,
     val age: Int? = null
 ) : KPojo
 
-// We can use dataSource.table.createTable<User>() to create the table,
-// or dataSource.table.syncTable<User>() to synchronize the table structure.
 dataSource.table.createTable<User>()
 
-// Insert a record into table `user` (username = "test", age = 18), and get the id of the inserted record
-// we can use List<User>.insert().execute() to batch insert
 val id = User(username = "test", age = 18).insert().execute().lastInsertId
 
-// Query records from table `user` where `age` is 18
 val listOfUser = User(age = 18).select().queryList()
 
-// Update records in table `user` where `id` is lastInsertId, set `age` to 19
 User(id = id, age = 19).update().by { it.id }.execute()
 
-// Delete records from table `user` where `id` is lastInsertId
 User(id = id).delete().execute()
 ```
 
-## 🖥 JDK、Kotlin and Build Tools
+## Requirements
 
-- **JDK 8+**
-- **Kotlin 2.3.0+**
-- **Maven 3.6.3+** or **Gradle 6.8.3+**
+| Dependency | Version |
+|------------|---------|
+| JDK | 8+ |
+| Kotlin | 2.3.0+ |
+| Gradle | 6.8.3+ |
+| Maven | 3.6.3+ |
 
-> Please make sure your kotlin plugin for ide supports kotlin 2.3.0 or higher.
->
-> If you built failed in **Intellij IDEA** and build with **Maven**,
-> please try to enable the following setting: **Settings / Build, Execution, Deployment / Build Tools / Maven / Runner / Delegate IDE build/run actions to Maven**.
--------
+> Ensure your IDE's Kotlin plugin supports Kotlin 2.3.0 or higher.
+>>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
 
-## 📦  Installation
+--------
 
-<summary>
-
-### Gradle(kts)
-
-</summary>
+## Installation
 
 <details>
+<summary><b>Gradle (Kotlin DSL)</b></summary>
 
 ```kotlin
 plugins {
+<<<<<<< HEAD
   id("com.kotlinorm.kronos-gradle-plugin") version "0.0.7"
 }
 
 dependencies {
     implementation("com.kotlinorm:kronos-core:0.0.7")
+=======
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0-SNAPSHOT"
+}
+
+dependencies {
+    implementation("com.kotlinorm:kronos-core:0.1.0-SNAPSHOT")
+>>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
 }
 ```
 
 </details>
 
-<summary>
-
-### Gradle(groovy)
-
-</summary>
-
 <details>
+<summary><b>Gradle (Groovy)</b></summary>
 
 ```groovy
 plugins {
+<<<<<<< HEAD
   id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.7'
 }
 
 dependencies {
     implementation 'com.kotlinorm:kronos-core:0.0.7'
+=======
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0-SNAPSHOT'
+}
+
+dependencies {
+    implementation 'com.kotlinorm:kronos-core:0.1.0-SNAPSHOT'
+>>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
 }
 ```
 
 </details>
 
-<summary>
-
-### Maven
-
-</summary>
-
 <details>
+<summary><b>Maven</b></summary>
 
 ```xml
-
 <project>
     <dependencies>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
+<<<<<<< HEAD
             <version>0.0.7</version>
+=======
+            <version>0.1.0-SNAPSHOT</version>
+>>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
         </dependency>
     </dependencies>
 
@@ -183,7 +175,11 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
+<<<<<<< HEAD
                         <version>0.0.7</version>
+=======
+                        <version>0.1.0-SNAPSHOT</version>
+>>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
                     </dependency>
                 </dependencies>
             </plugin>
@@ -194,100 +190,65 @@ dependencies {
 
 </details>
 
-## 🗄️ Supported Databases
+## Supported Databases
 
-Kronos-ORM supports multiple databases:
+MySQL | PostgreSQL | SQLite | Oracle | SQL Server | DB2 | Sybase | H2 | OceanBase | DM8 | GaussDB
 
-- MySQL
-- PostgreSQL
-- SQLite
-- Oracle
-- Microsoft SQL Server
-- DB2
-- Sybase
-- H2
-- OceanBase
-- DM8
-- GaussDB
+> The core DSL provides cross-database compatibility. Integration tests currently focus on MySQL and PostgreSQL.
 
-> Notes:
-> - Feature breadth may vary slightly by dialect. The core DSL and upsert/lock syntax provide cross-database compatibility where possible.
-> - The integration test module currently focuses on MySQL and PostgreSQL for CI examples.
+--------
 
-## 🚀 Quick Start
+## Usage
 
-### 🔗 Connect to Database
-
-You can set default data source by:
+### Connect to Database
 
 ```kotlin
 Kronos.init {
     dataSource = { KronosBasicWrapper(SomeDataSource()) }
-    // for example:
-    //dataSource = { KronosBasicWrapper(MysqlDataSource("jdbc:mysql://localhost:3306/test", "root", "***")) }
-    //dataSource = { KronosBasicWrapper(HikariDataSource().apply { jdbcUrl = "jdbc:mysql://localhost:3306/test" ... }) }
-    //dataSource = { KronosBasicWrapper(BasicDataSource().apply { url = "jdbc:sqlite:path/to/db" ... }) }
 }
 ```
 
-More details about connecting to the database and use dynamic data source or multiple data sources, please refer to the [docs](https://kotlinorm.com/#/documentation/en/database/connect-to-db).
+See [Connect to Database](https://kotlinorm.com/#/documentation/en/database/connect-to-db) for dynamic / multiple data sources.
 
-### 🎨 Table Model Definition(Annotation Style)
+### Model Definition
 
 ```kotlin
 @Table(name = "tb_movie")
 @TableIndex("idx_name", ["name"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
 data class Movie(
     @PrimaryKey(identity = true)
-    val id: Long? = null, // primary key and auto increment
-    @Necessary val name: String? = null, // movie name
-    val directorId: Long? = null, // director id
+    val id: Long? = null,
+    @Necessary val name: String? = null,
+    val directorId: Long? = null,
     @Cascade(["directorId"], ["id"])
-    val director: Director? = null, // cascade table & one-to-many
-    val relations: List<MovieActorRelation>? = null, // reference list & many-to-many
+    val director: Director? = null,
+    val relations: List<MovieActorRelation>? = null,
     @Serialize
-    val type: List<String>? = null, // deserialize from string
+    val type: List<String>? = null,
     @Column("movie_summary")
-    val summary: String? = null, // summary with column name
-    @Version val version: Long? = null, // version for optimistic lock
-    @LogicDelete val deleted: Boolean? = null, // logic delete
+    val summary: String? = null,
+    @Version val version: Long? = null,
+    @LogicDelete val deleted: Boolean? = null,
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
-    @UpdateTime val updateTime: String? = null, // update time and date format
-    @CreateTime val createTime: LocalDateTime? = null // create time
-) : KPojo { // KPojo is a marker interface
-    var actors: List<Actor>? by manyToMany(::relations) // many-to-many
+    @UpdateTime val updateTime: String? = null,
+    @CreateTime val createTime: LocalDateTime? = null
+) : KPojo {
+    var actors: List<Actor>? by manyToMany(::relations)
 }
 ```
 
-### 🎨 Table Model Definition(Dsl Style)
-
-Coming soon...
-[#10](https://github.com/Kronos-orm/Kronos-orm/issues/10)
-
-------
-### 🔨 Table Operation
+### Table Operations
 
 ```kotlin
-//is table exists
 dataSource.table.exists<Movie>()
-
-// create table
 dataSource.table.createTable<Movie>()
-
-// drop table
-dataSource.table.dropTable<Movie>()
-// or
-dataSource.table.dropTable("tb_movie")
-
-//sync table structure
 dataSource.table.syncTable<Movie>()
+dataSource.table.dropTable<Movie>()
 ```
 
-------
-### 📜 Query
+### Query
 
 ```kotlin
-// single query
 val listOfUser: List<User> = User()
     .select { it.id + it.username }
     .where { it.id < 10 && it.age >= 18 }
@@ -296,45 +257,38 @@ val listOfUser: List<User> = User()
     .orderBy { it.username.desc() }
     .queryList()
 
-// with Pagination
+// Pagination
 val (total, list) = User()
     .select { it.id + it.username }
     .where { it.id < 10 && it.username like "a%" }
-    .distinct()
-    .groupBy { it.id }
-    .orderBy { it.username.desc() }
     .page(1, 10)
     .withTotal()
     .queryList()
 
-// multi-table query
+// Join
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
-        user.id + user.username + relation.id.as_("relationId") + 
+        user.id + user.username + relation.id.as_("relationId") +
                 role.role + f.count(1).as_("count")
     }
     where { user.id < 10 }
 }.query()
 
-// Using Native SQL Queries with Named Parameters
-val result: Map<String, Any> = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
+// Native SQL with named parameters
+val result = dataSource.query("select * from tb_user where id = :id", mapOf("id" to 1))
 ```
 
-### ➕ Insert
+### Insert
 
 ```kotlin
-// single insert
 user.insert().execute()
-
-// batch insert
 listOfUser.insert().execute()
 ```
 
-### ✏️ Update
+### Update
 
 ```kotlin
-// update by some conditions use `set`
 user.update()
     .set {
         it.username = "123"
@@ -343,89 +297,90 @@ user.update()
     .by { it.id }
     .execute()
 
-// update by some conditions, data from record
 user.update { it.username + it.gender }
     .by { it.id }
     .execute()
 ```
 
-### 🔄 Upsert
+### Upsert
 
 ```kotlin
-// upsert on some columns
 user.upsert { it.username }
     .on { it.id }
-//  .lock(PessimisticLock.X) // You can specify the type of lock, and pessimistic lock is used by default
     .execute()
 
-// upsert on duplicate key
 user.upsert { it.username }
-    .onConflict() // Cross-database compatible upsert syntax
+    .onConflict()
     .execute()
 ```
 
-### 🗑 Delete
+### Delete
 
 ```kotlin
-// delete rows by some conditions
 user.delete()
     .where { it.id == 1 }
     .execute()
 ```
 
-------
+--------
 
-### 📝 Create `KPojo` Instance & Transform between `KPojo` and Map & Get Meta Information
-
-- Kronos provides `KPojo` with the ability to dynamically create instances based on type parameters through compile-time operations so that instances can be easily created.
-- Kronos provides functions to easily convert between `KPojo` and `Map`.
-- Kronos provides classes inheriting the `KPojo` interface with a number of functions including `kronosTable` and `kronosColumns` for obtaining meta information such as table names and columns.
+### KPojo Utilities
 
 ```kotlin
-val instance = Movie::class.newInstance() // -> Movie() ,dynamic create KPojo instance by reference, NO REFLECTION used
-fun <T: KPojo> dynamic(kClass: KClass<T>): T = kClass.newInstance() // dynamic create KPojo instance by reference, NO REFLECTION used
+val instance = Movie::class.newInstance()
 
-val movie = Movie(1)
-val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), NO REFLECTION used
-val movie2: Movie = dataMap.mapperTo<Movie>() // or dataMap.mapperTo(Movie::class), NO REFLECTION used
+val dataMap: Map<String, Any?> = movie.toDataMap()
+val movie2: Movie = dataMap.mapperTo<Movie>()
 
-val tableName = movie.kronosTable() // "tb_movie", NO REFLECTION used
-val columns = movie.kronosColumns() // [Field(id), Field(name), ...], NO REFLECTION used
-// We actually provide more functions such as getting the table creation time, update time, logical deletion of field settings and so on
+val tableName = movie.kronosTable()
+val columns = movie.kronosColumns()
 
-instance["fieldName"] // get field value by field name, NO REFLECTION used
-instance["fieldName"] = "value" // set field value by field name, NO REFLECTION used
+instance["fieldName"]
+instance["fieldName"] = "value"
 ```
 
-------
+All operations are resolved at compile time. No reflection.
 
+--------
 
-## 🛠️ Working with Spring or Other Frameworks
+## Framework Integration
 
-Please refer to the following example projects for more information:
+| Framework | Example |
+|-----------|---------|
+| Spring Boot | [kronos-example-spring-boot](https://github.com/Kronos-orm/kronos-example-spring-boot) |
+| Ktor | [kronos-example-ktor](https://github.com/Kronos-orm/kronos-example-ktor) |
+| Vert.x | [kronos-example-vertx](https://github.com/Kronos-orm/kronos-example-vertx) |
+| Solon | [kronos-example-solon](https://github.com/Kronos-orm/kronos-example-solon) |
+| Android | [kronos-example-android](https://github.com/Kronos-orm/kronos-example-android) |
 
-- [Example for SpringBoot](https://github.com/Kronos-orm/kronos-example-spring-boot)
-- [Example for Ktor](https://github.com/Kronos-orm/kronos-example-ktor)
-- [Example for Vert.x](https://github.com/Kronos-orm/kronos-example-vertx)
-- [Example for Solon](https://github.com/Kronos-orm/kronos-example-solon)
-- [Example for Android](https://github.com/Kronos-orm/kronos-example-android)
+## AI Coding Assistant Integration
 
-## 📚 Documentation
+Kronos provides an AI skill guide that helps coding assistants understand and generate Kronos code. Install it with a single command:
 
-For more information, please visit the [official website](https://www.kotlinorm.com) or
-the [documentation](https://kotlinorm.com/#/documentation/en/getting-started/quick-start).
+| Tool | Command |
+|------|---------|
+| **Cursor / Windsurf** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
+| **Claude Code** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .claude/skills/kronos-orm-guide && rm -rf .claude/skills/kronos-orm-guide/.git` |
+| **Codex** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .codex/kronos-orm-guide && rm -rf .codex/kronos-orm-guide/.git` |
+| **OpenCode** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .opencode/skills/kronos-orm-guide && rm -rf .opencode/skills/kronos-orm-guide/.git` |
+| **Kiro** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .kiro/skills/kronos-orm-guide && rm -rf .kiro/skills/kronos-orm-guide/.git` |
+| **Generic** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .llm/kronos-orm-guide && rm -rf .llm/kronos-orm-guide/.git` |
 
-## 📜 License
+--------
 
-Kronos-ORM is released under the Apache 2.0 license.
+## Documentation
 
-## 🤝 Contributing
+For full documentation, visit the [official website](https://www.kotlinorm.com) or the [documentation portal](https://kotlinorm.com/#/documentation/en/getting-started/quick-start).
 
-Please refer to the [CONTRIBUTING.md](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md) for more.
+## License
+
+Kronos-ORM is released under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.html).
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/Kronos-orm/Kronos-orm/blob/main/CONTRIBUTING.md).
 
 ## Contributors
-
-We would like to express our gratitude to all the individuals who have already contributed to Kronos-ORM!
 
 <a href="https://github.com/Kronos-orm/Kronos-orm/graphs/contributors">
   <img alt="contributors" src="https://contrib.rocks/image?repo=Kronos-orm/Kronos-orm"/>
@@ -433,12 +388,7 @@ We would like to express our gratitude to all the individuals who have already c
 
 -------------------
 
-If you are interested in Kronos-ORM, please join our community and chat with us!
-
 [![discord](https://img.shields.io/badge/Discord-Kronos_ORM-blue?logo=discord&logoColor=white)](https://discord.gg/Vn8EzxRX)
-
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
 
 ![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
-
-**If you like Kronos-ORM, please give us a star ⭐️, thank you!**

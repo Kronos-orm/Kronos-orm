@@ -16,6 +16,9 @@
 
 package com.kotlinorm.functions
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FunctionCall
+import com.kotlinorm.ast.RenderContext
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder
@@ -48,5 +51,25 @@ object FunctionManager {
         return registeredFunctionBuilders.firstOrNull { it.support(field, dataSource.dbType) }
             ?.transform(field, dataSource, showTable, showAlias)
             ?: throw UnSupportedFunctionException(dataSource.dbType, field.functionName)
+    }
+    
+    /**
+     * Render a FunctionCall AST node using registered function builders.
+     * 
+     * @param function The FunctionCall AST node to render
+     * @param context The render context containing database type and configuration
+     * @param renderExpression Callback to render nested expressions
+     * @return The rendered SQL string, or null if no builder supports this function
+     */
+    fun renderFunctionCall(
+        function: FunctionCall,
+        context: RenderContext,
+        renderExpression: (Expression, RenderContext) -> String
+    ): String? {
+        val dbType = context.dbType ?: return null
+        
+        return registeredFunctionBuilders
+            .firstOrNull { it.support(function.functionName, dbType) }
+            ?.transformAst(function, context, renderExpression)
     }
 }

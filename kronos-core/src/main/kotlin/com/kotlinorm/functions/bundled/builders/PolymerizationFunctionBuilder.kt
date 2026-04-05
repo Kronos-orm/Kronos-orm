@@ -16,6 +16,9 @@
 
 package com.kotlinorm.functions.bundled.builders
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FunctionCall
+import com.kotlinorm.ast.RenderContext
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildFields
@@ -28,7 +31,7 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
     )
 
     override val supportFunctionNames: (String) -> Array<DBType> = {
-        when (it) {
+        when (it.lowercase()) {
             /*
             * count
             * 返回某列的行数
@@ -76,7 +79,7 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
             * exp: groupConcat(id) => 1,2,3,4,5,6,7,8,9,10
             * Mysql: GROUP_CONCAT(x) SQLite: GROUP_CONCAT(x) Oracle: GROUP_CONCAT(x) Postgres: STRING_AGG(x) Mssql: STRING_AGG(x)
             */
-            "groupConcat" -> all
+            "groupconcat" -> all
             else -> emptyArray()
         }
     }
@@ -93,5 +96,47 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
             else -> field.functionName.uppercase()
         }
         return buildFields(field.functionName, field.name.takeIf { showAlias } ?: "", field.fields, dataSource, showTable)
+    }
+    
+    override fun transformAst(
+        function: FunctionCall,
+        context: RenderContext,
+        renderExpression: (Expression, RenderContext) -> String
+    ): String {
+        val dbType = context.dbType ?: return null.toString()
+        val funcName = function.functionName.lowercase()
+        
+        val functionName = when (funcName) {
+            "groupconcat" -> {
+                when (dbType) {
+                    DBType.Postgres, DBType.Mssql -> "STRING_AGG"
+                    else -> "GROUP_CONCAT"
+                }
+            }
+            else -> funcName.uppercase()
+        }
+        
+        // Render arguments
+        val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+        val distinct = if (function.distinct) "DISTINCT " else ""
+        val filter = function.filter?.let { " FILTER (WHERE ${renderExpression(it, context)})" } ?: ""
+        val over = function.over?.let { 
+            val partitionBy = it.partitionBy?.let { pb ->
+                "PARTITION BY ${pb.joinToString(", ") { renderExpression(it, context) }}"
+            } ?: ""
+            val orderBy = it.orderBy?.let { ob ->
+                "ORDER BY ${ob.joinToString(", ") { item ->
+                    val expr = renderExpression(item.expression, context)
+                    val direction = when (item.direction) {
+                        com.kotlinorm.enums.SortType.ASC -> "ASC"
+                        com.kotlinorm.enums.SortType.DESC -> "DESC"
+                    }
+                    "$expr $direction"
+                }}"
+            } ?: ""
+            " OVER (${listOfNotNull(partitionBy, orderBy).joinToString(" ")})"
+        } ?: ""
+        
+        return "$functionName($distinct$args)$filter$over"
     }
 }

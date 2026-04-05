@@ -16,6 +16,9 @@
 
 package com.kotlinorm.functions.bundled.builders
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FunctionCall
+import com.kotlinorm.ast.RenderContext
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.database.SqlManager.quoted
@@ -32,7 +35,8 @@ object MathFunctionBuilder : FunctionBuilder {
     private val common = arrayOf(DBType.Mysql, DBType.Postgres, DBType.Oracle)
 
     override val supportFunctionNames: (String) -> Array<DBType> = {
-        when (it) {/*
+        when (it.lowercase()) {
+            /*
             *  返回一个数的绝对值
             *  return the absolute value of a number
             *  exp: abs(-32) => 32
@@ -174,6 +178,88 @@ object MathFunctionBuilder : FunctionBuilder {
     ): String {
         return getFunctionSql(field, dataSource, showTable, showAlias)
     }
+    
+    override fun transformAst(
+        function: FunctionCall,
+        context: RenderContext,
+        renderExpression: (Expression, RenderContext) -> String
+    ): String? {
+        val dbType = context.dbType ?: return null
+        val funcName = function.functionName.lowercase()
+        
+        return when (funcName) {
+            "add", "sub", "mul", "div" -> {
+                // Render as infix operators
+                val operator = when (funcName) {
+                    "add" -> "+"
+                    "sub" -> "-"
+                    "mul" -> "*"
+                    "div" -> "/"
+                    else -> return null
+                }
+                
+                if (function.arguments.size < 2) return null
+                
+                val rendered = function.arguments.joinToString(" $operator ") { 
+                    renderExpression(it, context) 
+                }
+                "($rendered)"
+            }
+            
+            "ceil" -> {
+                val functionName = if (dbType == DBType.Mssql) "CEILING" else "CEIL"
+                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                "$functionName($args)"
+            }
+            
+            "ln" -> {
+                if (dbType == DBType.Mssql) {
+                    // SQL Server: LOG(x, EXP(1))
+                    if (function.arguments.isEmpty()) return null
+                    val arg = renderExpression(function.arguments[0], context)
+                    "LOG($arg, EXP(1))"
+                } else {
+                    val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                    "LN($args)"
+                }
+            }
+            
+            "rand" -> {
+                when (dbType) {
+                    DBType.Oracle -> "DBMS_RANDOM.VALUE"
+                    DBType.SQLite, DBType.Postgres -> "RANDOM()"
+                    else -> "RAND()"
+                }
+            }
+            
+            "trunc" -> {
+                val functionName = when (dbType) {
+                    DBType.Mysql -> "TRUNCATE"
+                    DBType.Mssql -> "ROUND"
+                    else -> "TRUNC"
+                }
+                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                "$functionName($args)"
+            }
+            
+            "mod" -> {
+                if (function.arguments.size == 2) {
+                    val left = renderExpression(function.arguments[0], context)
+                    val right = renderExpression(function.arguments[1], context)
+                    when (dbType) {
+                        DBType.Oracle -> "MOD($left, $right)"
+                        else -> "($left % $right)"
+                    }
+                } else null
+            }
+            
+            else -> {
+                // Default: render as standard function call
+                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                "${funcName.uppercase()}($args)"
+            }
+        }
+    }
 
     private fun getFunctionSql(
         field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean
@@ -213,9 +299,7 @@ object MathFunctionBuilder : FunctionBuilder {
     }
 
     fun buildField(it: Pair<Field?, Any?>, dataSource: KronosDataSourceWrapper, showTable: Boolean): String {
-        return it.first?.quoted(
-            dataSource, showTable
-        ) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
+        return it.first?.quoted(dataSource) ?: if (it.second is String) "'${it.second}'" else it.second.toString()
     }
 
     fun buildOperations(

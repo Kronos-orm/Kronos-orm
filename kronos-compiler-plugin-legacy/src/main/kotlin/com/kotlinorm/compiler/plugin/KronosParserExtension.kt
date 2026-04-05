@@ -47,7 +47,7 @@ open class KronosParserExtension(private val debug: Boolean, private val debugIn
             }
         }
 
-        if (debug) {
+//        if (debug) {
             moduleFragment.files.forEach {
                 File(debugInfoPath).let { file ->
                     if (!file.exists()) file.mkdirs()
@@ -72,6 +72,6 @@ open class KronosParserExtension(private val debug: Boolean, private val debugIn
                 )
                 println("Debug info saved to $debugInfoPath/${it.name}")
             }
-        }
+//        }
     }
 }

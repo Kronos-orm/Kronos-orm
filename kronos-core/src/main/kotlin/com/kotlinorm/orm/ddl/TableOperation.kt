@@ -16,6 +16,7 @@
 
 package com.kotlinorm.orm.ddl
 
+import com.kotlinorm.ast.DdlStatement
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.database.SqlHandler.execute

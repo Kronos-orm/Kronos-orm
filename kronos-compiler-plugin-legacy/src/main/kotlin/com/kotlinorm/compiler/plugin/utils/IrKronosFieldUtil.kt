@@ -338,9 +338,9 @@ fun getColumnOrValue(expression: IrExpression?): IrExpression? {
     if (expression == null) return null
     val (type, expr) = expression.columnValueGetter()
     return when (type) {
-        KronosColumnValueType.Value -> expr
         KronosColumnValueType.ColumnName -> getColumnName(expr)
         KronosColumnValueType.Function -> getFunctionName(expr)
+        else -> expr
     }
 }
 

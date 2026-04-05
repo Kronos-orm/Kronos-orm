@@ -1,7 +1,9 @@
 package com.kotlinorm.codegen
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -88,7 +90,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
         return intArrayOf(1)
     }
 
-    override fun transact(block: () -> Any?): Any? {
+    override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
         return null
     }
 }

@@ -1,9 +1,17 @@
-<ng-doc-root [noWidthLimit]="true" [footerContent]="footer" [class]="wikiMode ? 'wiki_mode' : ''">
+<ng-doc-root [noWidthLimit]="true" [footerContent]="footer" [class]="(wikiMode ? 'wiki_mode' : '') + (sidebarCollapsed ? ' sidebar-collapsed' : '')">
     <ng-doc-navbar>
-        <div ngDocNavbarLeft>
+        <div ngDocNavbarLeft class="flex items-center gap-4">
             <a class="logo" [routerLink]="['/']">
                 <img class="mr-1" src="/assets/images/logo_circle.png" alt="Kronos ORM"/>
                 <span class="hidden! lg:block!">Kronos ORM</span>
+            </a>
+            <span style="width:1px; height:1.2rem; background: var(--ng-doc-base-4); opacity:0.5;"></span>
+            <a ng-doc-button-icon
+               [ngDocTooltip]="sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'"
+               size="large"
+               (click)="sidebarCollapsed = !sidebarCollapsed"
+               style="border: 1px solid var(--ng-doc-base-4); border-radius: 6px; opacity: 0.75;">
+                <i class="pi" [class.pi-angle-double-right]="sidebarCollapsed" [class.pi-angle-double-left]="!sidebarCollapsed" style="font-size: 1.2rem"></i>
             </a>
         </div>
         <div ngDocNavbarRight>
@@ -25,7 +33,7 @@
                 </a>
             </div>
 
-            <p-popover #op styleClass="m-0 p-0" [appendTo]="elementRef.nativeElement">
+            <p-popover #op class="m-0 p-0" [appendTo]="elementRef.nativeElement">
                 <ul class="list-none m-0 p-0 w-48">
                     @for (item of [{lang: 'zh-CN', label: '简体中文'}, {lang: 'en', label: 'English'}];track $index) {
                         <a class="p-2 rounded-border hover:bg-emphasis hover:bg-surface-100! w-full cursor-pointer flex"
@@ -44,11 +52,14 @@
     <router-outlet/>
     <ng-template #footer>
        <div class="flex">
-           <div class="hidden md:block" style="width: 20rem"></div>
+           <div class="hidden md:block" [style.width]="sidebarCollapsed ? '0' : '20rem'" style="transition: width 0.3s ease"></div>
            <div class="w-full">
-               <kronos-footer/>
-               <div class="ng-doc-footer">
-                   Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a>
+               <div class="doc-footer">
+                   <span>Kronos-ORM &copy; 2026</span>
+                   <span class="doc-footer-sep">·</span>
+                   <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a>
+                   <span class="doc-footer-sep">·</span>
+                   <span>Powered by <a href="https://ng-doc.com/" target="_blank">NgDoc</a></span>
                </div>
            </div>
        </div>

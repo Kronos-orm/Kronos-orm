@@ -94,11 +94,6 @@
   display: inline-flex;
 }
 
-:host ::ng-deep .wiki.p-dialog .p-dialog-content {
-  padding: 1rem;
-  background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
-}
-
   /* Wiki 模式 */
 :host ::ng-deep .wiki_mode .ng-doc-header,
 :host ::ng-deep .wiki_mode .ng-doc-sidenav,
@@ -161,26 +156,41 @@
   margin-top: calc(var(--ng-doc-base-gutter) * 5) !important;
 }
 
-/* 对话框样式 */
+/* Copy Markdown button tooltip */
+:host ::ng-deep .kronos-copy-md-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ng-doc-base-5);
+    color: var(--ng-doc-text);
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+}
+
+:host ::ng-deep .kronos-copy-md-btn:hover::after {
+    opacity: 1;
+}
+
+:host ::ng-deep .kronos-copy-md-btn:hover {
+    background: var(--ng-doc-base-2);
+    color: var(--ng-doc-text);
+    transition: background 0.15s ease;
+}
 :host ::ng-deep .wiki.p-dialog {
-  color: var(--ng-doc-text) !important;
-  background-color: transparent !important;
   border-radius: .5rem !important;
   overflow: hidden;
 }
 
 :host ::ng-deep .wiki.p-dialog.p-dialog-maximized {
   border-radius: 0 !important;
-}
-
-:host ::ng-deep .wiki.p-dialog .p-dialog-header {
-  padding: .5rem 0 0 0;
-  background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
-}
-
-:host ::ng-deep .wiki.p-dialog .p-dialog-content {
-  padding: 1rem;
-  background-color: color-mix(in srgb, var(--ng-doc-navbar-background) 95%, transparent) !important;
 }
 
 /* Logo 样式 */
@@ -223,7 +233,58 @@
   --p-popover-border-color: var(--ng-doc-navbar-background) !important;
 }
 
+/* 侧边栏收缩 */
+:host ::ng-deep .sidebar-collapsed .ng-doc-sidenav {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  opacity: 0;
+  transition: width 0.3s ease, opacity 0.2s ease;
+}
+
+:host ::ng-deep .sidebar-collapsed .ng-doc-sidenav-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+:host ::ng-deep .ng-doc-sidenav {
+  transition: width 0.3s ease, opacity 0.2s ease;
+}
+
+:host ::ng-deep .ng-doc-sidenav-content {
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
 /* 语言切换文本颜色 */
 .lang-text {
   color: var(--ng-doc-text);
+}
+
+/* 文档页脚 */
+:host ::ng-deep .doc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: calc(var(--ng-doc-base-gutter) * 3);
+  color: var(--ng-doc-text-muted);
+  font-size: 12px;
+  border-top: 1px solid var(--ng-doc-base-2);
+}
+
+:host ::ng-deep .doc-footer a {
+  color: var(--ng-doc-link-color);
+  text-decoration: none;
+  padding: 0 4px;
+}
+
+:host ::ng-deep .doc-footer a:hover {
+  text-decoration: underline;
+}
+
+:host ::ng-deep .doc-footer-sep {
+  margin: 0 4px;
+  opacity: 0.4;
 }

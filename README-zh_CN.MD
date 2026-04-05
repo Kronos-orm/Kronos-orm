@@ -37,7 +37,7 @@ Kronos 是为 Kotlin 设计的现代 ORM 框架，基于编译器插件开发，
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.0.8-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.1.0--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -384,7 +384,7 @@ user.delete()
 
 - Kronos通过编译期操作，为`KPojo`提供了根据类型参数动态创建实例的能力，这样就可以轻松地创建实例了。
 - Kronos提供函数轻松用于`KPojo`与`Map`之间的互相转换。
-- Kronos为继承了`KPojo`接口的类提供了包括 `__tableName` 属性和 `kronosColumns` 等函数，用于获取表名和列等元信息。
+- Kronos为继承了`KPojo`接口的类提供了包括 `kronosTable` 和 `kronosColumns` 等许多函数，用于获取表名和列等元信息。
 
 ```kotlin
 val instance = Movie::class.newInstance() // -> Movie() ,通过引用动态创建 KPojo 实例，不使用反射
@@ -394,7 +394,7 @@ val movie = Movie(1)
 val dataMap: Map<String, Any?> = movie.toDataMap() // Map("id" = 1), 不使用反射
 val movie2: Movie = dataMap.mapperTo<Movie>() // 或 dataMap.mapperTo(Movie::class), 不使用反射
 
-val tableName = movie.__tableName // "tb_movie", 可读写，不使用反射
+val tableName = movie.kronosTable() // "tb_movie", 不使用反射
 val columns = movie.kronosColumns() // [Field(id), Field(name), ...], 不使用反射
 // 实际上，我们提供了更多的功能，如获取表的创建时间、更新时间、字段设置的逻辑删除等。
 

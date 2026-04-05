@@ -332,6 +332,7 @@ class KTableParserForConditionTransformerTest {
             import kotlin.test.assertEquals
             import com.kotlinorm.functions.FunctionManager.registerFunctionBuilder
             import com.kotlinorm.functions.bundled.builders.PostgresFunctionBuilder
+            import com.kotlinorm.functions.bundled.exts.StringFunctions.repeat
             import com.kotlinorm.beans.dsl.FunctionField
             import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
             import com.kotlinorm.functions.bundled.exts.PostgresFunctions.all

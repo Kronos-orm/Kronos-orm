@@ -34,7 +34,6 @@ import com.kotlinorm.compiler.plugin.utils.SerializeAnnotationsFqName
 import com.kotlinorm.compiler.plugin.utils.getColumnOrValue
 import com.kotlinorm.compiler.plugin.utils.getTableName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.jvm.ir.unwrapInlineLambda
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irGet
@@ -57,7 +56,6 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrWhenImpl
@@ -65,6 +63,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
@@ -311,7 +310,7 @@ private fun handleCompareOps(
         state.paramName = left
         state.type = operator
         state.value = right
-        state.tableName = getTableName(irCall.findKronosColumn()!!.irCast<IrCall>().dispatchReceiverArgument!!)
+        state.tableName = getTableName(irCall.findKronosColumn()?.irCast<IrCall>()?.dispatchReceiverArgument ?: return)
     }
 }
 
@@ -332,26 +331,15 @@ private fun handleEqualOp(
     args: List<IrExpression?>
 ) {
     state.not = state.not xor element.valueArguments.isEmpty()
-    val index = when {
-        args[0].isKPojo() -> 0
-        args[1].isKPojo() -> 1
-        else -> {
-            state.type = "sql"
-            state.value = element
-            -1
-        }
-    }
-    if (index != -1) {
-        val irCall = args[index]!!.irCast<IrCall>()
-        val (left, _, right) = runExpressionAnalysis(
-            irCall,
-            funcName,
-            args[1 - index]
-        )
-        state.paramName = left
-        state.value = right
-        state.tableName = getTableName(irCall.dispatchReceiverArgument!!)
-    }
+    val irCall = args[0]!!.irCast<IrCall>()
+    val (left, _, right) = runExpressionAnalysis(
+        irCall,
+        funcName,
+        args[1]
+    )
+    state.paramName = left
+    state.value = right
+    state.tableName = getTableName(irCall.dispatchReceiverArgument ?: return)
 }
 
 /**
@@ -678,21 +666,12 @@ fun IrExpression.funcName(setNot: Boolean = false): String {
  */
 context(_: IrPluginContext)
 fun IrExpression.findKronosColumn(): IrExpression? {
-    if (this is IrBlock && origin == IrStatementOrigin.SAFE_CALL) return null
-    if (this !is IrCall) return this
-    if (isKPojo()) {
-        return this
-    } else if (extensionReceiverArgument is IrCall) {
-        return extensionReceiverArgument!!.findKronosColumn()
-    } else if (dispatchReceiverArgument is IrCall) {
-        return dispatchReceiverArgument!!.findKronosColumn()
-    } else {
-        for (arg in valueArguments) {
-            if (arg is IrCall) {
-                return arg.findKronosColumn()
-            }
-        }
-        return this
+    if (this !is IrCall) return null
+    return when {
+        isKPojo() -> this
+        extensionReceiverArgument is IrCall -> extensionReceiverArgument!!.findKronosColumn()
+        dispatchReceiverArgument is IrCall -> dispatchReceiverArgument!!.findKronosColumn()
+        else -> valueArguments.find { it is IrCall }?.findKronosColumn()
     }
 }
 
@@ -756,13 +735,13 @@ context(_: IrPluginContext)
 fun IrExpression.columnValueGetter(): Pair<KronosColumnValueType, IrExpression> {
     return if (this.isKPojo()) {
         KronosColumnValueType.ColumnName to this
-    } else if (this.funcName() == "value") {
+    } else if (this is IrConstImpl || this.funcName() == "value") {
         KronosColumnValueType.Value to this
     } else if (this.isKronosFunction()) {
         KronosColumnValueType.Function to this
     } else {
         KronosColumnValueType.ColumnName to (findKronosColumn()
-            ?: error("`?.` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
+            ?: error("`${this.dumpKotlinLike()}` is not supported in CriteriaBuilder. Unless using `.value to get the real expression value."))
     }
 }
 

@@ -61,15 +61,32 @@ import {Tab, TabList, Tabs} from "primeng/tabs";
       :host {
         display: block;
         width: 80%;
-        min-width: 400px;
+        min-width: 300px;
+        max-width: 900px;
+      }
+
+      :host ::ng-deep .p-card {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border-radius: 16px !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
       }
 
       :host ::ng-deep .p-card-title {
         padding-top: 0.5rem;
+        color: #fff;
       }
 
       :host ::ng-deep .p-card .p-card-content {
         padding-top: 0 !important;
+      }
+
+      @media (max-width: 480px) {
+        :host {
+          width: 95%;
+          min-width: unset;
+        }
       }
     `,
     standalone: true

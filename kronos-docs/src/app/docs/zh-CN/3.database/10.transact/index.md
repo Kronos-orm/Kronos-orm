@@ -62,7 +62,7 @@ Kronos.transact {
 
 在上面的代码中，外层事务块会在内层事务块成功执行后提交。如果内层事务块发生了异常，Kronos会自动回滚外层事务块。
 
-## 事务的隔离级别(WIP)
+## 事务的隔离级别
 
 Kronos支持多种事务隔离级别，包括：
 
@@ -71,25 +71,36 @@ Kronos支持多种事务隔离级别，包括：
 - REPEATABLE_READ
 - SERIALIZABLE
 
-你可以在创建KronosDataSourceWrapper时指定事务隔离级别。
+你可以在调用`transact`时通过`isolation`参数指定事务隔离级别：
 
 ```kotlin
-val dataSource = KronosDataSourceWrapper().apply {
-    isolationLevel = IsolationLevel.READ_COMMITTED
+import com.kotlinorm.Kronos.transact
+import com.kotlinorm.enums.TransactionIsolation
+
+transact(isolation = TransactionIsolation.READ_COMMITTED) {
+    // 在这里执行数据库操作
 }
 ```
 
-## 事务的超时时间(WIP)
+## 事务的超时时间
 
-Kronos支持设置事务的超时时间。你可以在创建KronosDataSourceWrapper时指定事务超时时间。
+Kronos支持设置事务的超时时间（单位：秒）。你可以在调用`transact`时通过`timeout`参数指定：
 
 ```kotlin
-val dataSource = KronosDataSourceWrapper().apply {
-    transactionTimeout = 30 // 设置事务超时时间为30秒
+transact(timeout = 30) {
+    // 在这里执行数据库操作，超时时间为30秒
 }
 ```
 
-## 事务的保存点(WIP)
+你也可以同时指定隔离级别和超时时间：
+
+```kotlin
+transact(isolation = TransactionIsolation.REPEATABLE_READ, timeout = 30) {
+    // 在这里执行数据库操作
+}
+```
+
+## 事务的保存点
 
 Kronos支持事务的保存点。你可以在事务块中使用`savepoint`方法来设置保存点，然后在事务块中使用`rollbackToSavepoint`方法来回滚到保存点。
 
@@ -99,5 +110,15 @@ Kronos.transact {
     val savepoint = savepoint("savepoint1")
     // 在这里执行数据库操作
     rollbackToSavepoint(savepoint)
+}
+```
+
+你也可以使用`releaseSavepoint`方法来释放保存点：
+
+```kotlin
+Kronos.transact {
+    val sp = savepoint("sp1")
+    // 在这里执行数据库操作
+    releaseSavepoint(sp)
 }
 ```

@@ -21,9 +21,9 @@ import {Popover} from "primeng/popover";
     ],
     template: `
         <div class="bar-container w-full"
-             [class]="fixed ? ['fixed', 'top-0', 'fadeinup', 'opacity-90', 'shadow-8', 'fadeinup'] : ['fadeoutup']">
+             [class]="fixed ? ['fixed', 'top-0', 'fadeinup', 'bar-fixed'] : ['fadeoutup']">
             <p-toast/>
-            <p-megaMenu class="hidden! md:block!" [model]="items" [styleClass]="'border-none menu-bar p-0! pl-4!'">
+            <p-megaMenu class="hidden! md:flex!" [model]="items" [class]="'border-none menu-bar p-0! pl-4! z-50'">
                 <ng-template pTemplate="start">
                     <img [routerLink]="['/']" src="/assets/images/logo_circle.png" class="logo"
                          draggable="false"
@@ -57,8 +57,7 @@ import {Popover} from "primeng/popover";
                 </ng-template>
                 <ng-template pTemplate="end">
                     <p-button
-                            styleClass="text-white!"
-                            class="mr-6"
+                            class="text-white! mr-6"
                             link
                             (click)="op.toggle($event)"
                             icon="pi pi-language"/>
@@ -91,10 +90,10 @@ import {Popover} from "primeng/popover";
                               (click)="menu.toggle($event)"/>
                 </div>
             </div>
-            <p-popover #op styleClass="m-0 p-0">
+            <p-popover #op class="m-0 p-0">
                 <ui-list [list]="languages" (onClick)="setLang($event.lang)"/>
             </p-popover>
-            <p-popover #menu styleClass="m-0 p-0">
+            <p-popover #menu class="m-0 p-0">
                 <ui-list [list]="menus" (onClick)="onSelect($event)"/>
             </p-popover>
         </div>
@@ -106,8 +105,11 @@ import {Popover} from "primeng/popover";
                 z-index: 51;
             }
 
-            :host ::ng-deep .p-megamenu-start {
-                margin-right: 24px;
+            .bar-fixed {
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                background: rgba(10, 10, 15, 0.85);
+                box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
             }
 
             :host ::ng-deep .p-menuitem-active {
@@ -121,18 +123,28 @@ import {Popover} from "primeng/popover";
 
             :host ::ng-deep .menu-bar {
                 display: flex;
-                background: linear-gradient(45deg, #832E3D 0%, #000 20%, #7F52FF 40%, #832E3D 60%, #000 80%, #7F52FF 100%);
-                background-size: 500% 500%;
-                animation: gradient 12s linear infinite;
+                flex-wrap: nowrap;
+                align-items: center;
+                background: linear-gradient(90deg, #0a0a0f 0%, rgba(127, 82, 255, 0.15) 50%, #0a0a0f 100%);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             }
 
-            @keyframes gradient {
-                0% {
-                    background-position: 100% 0
-                }
-                100% {
-                    background-position: 25% 100%
-                }
+            :host ::ng-deep .p-megamenu-root-list {
+                flex-wrap: nowrap !important;
+            }
+
+            :host ::ng-deep .p-megamenu {
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+            }
+
+            :host ::ng-deep .p-megamenu-start {
+                flex-shrink: 0;
+            }
+
+            :host ::ng-deep .p-megamenu-end {
+                flex-shrink: 0;
+                margin-left: auto;
             }
 
             .logo {

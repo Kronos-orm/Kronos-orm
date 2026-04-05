@@ -31,7 +31,7 @@ interface Column {
     <div class="card">
       <p-table
           #tableInstance
-          styleClass="p-datatable-sm p-datatable-gridlines border border-gray-700"
+          class="p-datatable-sm p-datatable-gridlines border border-gray-700"
           [resizableColumns]="true"
           dataKey="code"
           [(selection)]="selectedProducts"

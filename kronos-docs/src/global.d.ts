@@ -1,8 +1,10 @@
 // src/global.d.ts
-import {EventEmitter} from "@angular/core";
+import type {WritableSignal} from "@angular/core";
 
 declare global {
     interface Window {
-        onWikiChange: EventEmitter<{ id: string, anchor: string }>;
+        onWikiChange: WritableSignal<{ id: string, anchor: string } | null>;
     }
 }
+
+export {};

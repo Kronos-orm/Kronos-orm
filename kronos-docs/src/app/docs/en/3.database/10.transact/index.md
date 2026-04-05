@@ -63,7 +63,7 @@ Kronos.transact {
 
 In the above code, the outer transaction block commits after the inner transaction block executes successfully. If an exception occurs in the inner transaction block, Kronos automatically rolls back the outer transaction block.
 
-## Transaction isolation levels(WIP)
+## Transaction isolation levels
 
 Kronos supports multiple transaction isolation levels, including:
 
@@ -72,25 +72,36 @@ Kronos supports multiple transaction isolation levels, including:
 - REPEATABLE_READ
 - SERIALIZABLE
 
-You can specify the transaction isolation level when creating a KronosDataSourceWrapper:
+You can specify the transaction isolation level when calling `transact` via the `isolation` parameter:
 
 ```kotlin
-val dataSource = KronosDataSourceWrapper().apply {
-    isolationLevel = IsolationLevel.READ_COMMITTED
+import com.kotlinorm.Kronos.transact
+import com.kotlinorm.enums.TransactionIsolation
+
+transact(isolation = TransactionIsolation.READ_COMMITTED) {
+    // Perform database operations here
 }
 ```
 
-## Transaction timeout(WIP)
+## Transaction timeout
 
-Kronos supports setting a timeout for transactions. You can specify the transaction timeout when creating a KronosDataSourceWrapper.
+Kronos supports setting a timeout for transactions (in seconds). You can specify the transaction timeout when calling `transact` via the `timeout` parameter:
 
 ```kotlin
-val dataSource = KronosDataSourceWrapper().apply {
-    transactionTimeout = 30 // Set the transaction timeout to 30 seconds
+transact(timeout = 30) {
+    // Perform database operations here, with a 30-second timeout
 }
 ```
 
-## Saving points for transactions(WIP)
+You can also specify both isolation level and timeout:
+
+```kotlin
+transact(isolation = TransactionIsolation.REPEATABLE_READ, timeout = 30) {
+    // Perform database operations here
+}
+```
+
+## Saving points for transactions
 
 Kronos supports savepoints for transactions. You can use the `savepoint` method in a transaction block to set the savepoint, and then use the `rollbackToSavepoint` method in the transaction block to roll back to the savepoint.
 
@@ -100,5 +111,15 @@ Kronos.transact {
     val savepoint = savepoint("savepoint1")
     // Perform database operations here
     rollbackToSavepoint(savepoint)
+}
+```
+
+You can also use the `releaseSavepoint` method to release a savepoint:
+
+```kotlin
+Kronos.transact {
+    val sp = savepoint("sp1")
+    // Perform database operations here
+    releaseSavepoint(sp)
 }
 ```

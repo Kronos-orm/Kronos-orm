@@ -157,7 +157,7 @@ data class User(
     val relations: List<Relation>? = emptyList()
 ) : KPojo {
     // Target table of many-to-many relationships
-    var roles: List<Role>? by manyToMany(::UserRoleRelation)
+    var roles: List<Role>? by manyToMany(::relations)
 }
 ```
 

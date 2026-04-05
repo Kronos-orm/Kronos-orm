@@ -3,6 +3,7 @@
 @import url('@ng-doc/app/styles/themes/dark.css');
 
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @plugin "tailwindcss-primeui";
 
@@ -37,7 +38,7 @@ h1, h2, h3, h4, h5, h6 {
     --p-menu-border-color: var(--ng-doc-base-3) !important;
     --p-menu-background: var(--ng-doc-sidebar-background) !important;
     --p-menu-item-color: var(--ng-doc-text) !important;
-    --p-megamenu-item-active-background: var(--color-indigo-950) !important;
+    --p-megamenu-item-active-background: rgba(127, 82, 255, 0.15) !important;
 }
 
 img {

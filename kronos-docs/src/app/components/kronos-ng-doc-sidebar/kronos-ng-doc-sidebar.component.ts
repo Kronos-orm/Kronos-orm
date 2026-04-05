@@ -24,7 +24,7 @@ const docSortFn = (a: NgDocNavigation, b: NgDocNavigation) => (a.order ?? 0) - (
         RouterLinkActive
     ],
     template: `
-        <p-menu [model]="items" styleClass="w-full md:w-80 bg-black p-2">
+        <p-menu [model]="items" class="w-full md:w-80 p-2">
             <ng-template pTemplate="item" let-item>
                 <div class="p-menuitem-content" data-pc-section="content">
                     <a [routerLink]="item.routerLink" routerLinkActive="p-menuitem-link-active" pRipple

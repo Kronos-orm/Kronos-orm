@@ -24,7 +24,7 @@ data class User(
 ): KPojo
 ```
 
-[代码生成器(首页/资源/代码生成器)](/)
+[代码生成器](/documentation/zh-CN/plugin/code-generator)
 
 ### 适用场景
 

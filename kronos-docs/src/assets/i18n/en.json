@@ -58,5 +58,19 @@
   "FEATURE_BLOG_CONTENT_1": "Kronos' current kotlin multi-platform support and our kotlin multi-platform development and release plans.",
   "FEATURE_BLOG_TITLE_2": "Code Generation Framework",
   "FEATURE_BLOG_CONTENT_2": "Kronos newest release supports code generation, which can generate ORM classes based on database tables, only simple configuration is required.",
-  "IDE_PLUGIN": "IDE Plugin"
+  "IDE_PLUGIN": "IDE Plugin",
+  "HIGHLIGHT_TITLE": "Why Kronos",
+  "HIGHLIGHT_SUBTITLE": "A modern ORM framework built for Kotlin",
+  "HL_ZERO_REFLECT_TITLE": "Zero Runtime Reflection",
+  "HL_ZERO_REFLECT_DESC": "All ORM mappings are resolved at compile time — no reflection at runtime, faster startup, lower memory footprint, less GC pressure",
+  "HL_CASCADE_TITLE": "FK-Free Cascade Operations",
+  "HL_CASCADE_DESC": "One-to-one, one-to-many, many-to-many cascade CRUD without database foreign key constraints",
+  "HL_CODEFIRST_TITLE": "Bidirectional Sync",
+  "HL_CODEFIRST_DESC": "Code First auto-creates and syncs table schemas, Database First generates Kotlin data classes — seamless both ways",
+  "HL_TRANSACTION_TITLE": "Transactions & Locks",
+  "HL_TRANSACTION_DESC": "Nested transactions, isolation levels, timeout control, savepoints, plus built-in optimistic and pessimistic locking",
+  "HL_MULTITENANT_TITLE": "Multi-Tenant & Dynamic DataSource",
+  "HL_MULTITENANT_DESC": "Native multi-tenant isolation and runtime dynamic data source switching for SaaS multi-database scenarios",
+  "HL_PLUGIN_TITLE": "Pluggable Architecture",
+  "HL_PLUGIN_DESC": "Logging, serialization, naming strategy, data guard — all customizable via plugins, with seamless Spring Boot / Ktor / Solon integration"
 }

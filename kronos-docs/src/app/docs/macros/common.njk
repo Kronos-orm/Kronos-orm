@@ -145,7 +145,7 @@
     {% else %}
         {%- set anchor = "null" -%}
     {%- endif -%}
-    <span class="noun" id="{{ id }}" onclick="window.onWikiChange.emit({'id': '{{ id }}', 'anchor': {{ anchor }}})">
+    <span class="noun" id="{{ id }}" onclick="window.onWikiChange.set({'id': '{{ id }}', 'anchor': {{ anchor }}})">
         {{- name -}}
         {%- block svg -%}
             <svg class="icon" viewBox="0 0 1026 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"

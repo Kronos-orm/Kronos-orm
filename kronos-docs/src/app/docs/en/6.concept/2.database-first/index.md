@@ -32,7 +32,7 @@ data class User(
     val email: String? = null
 ): KPojo
 ```
-[Code Generator (Home/Resource/Code Generator)](/)
+[Code Generator](/documentation/en/plugin/code-generator)
 
 ### Scenarios
 

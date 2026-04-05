@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, ViewChild,} from '@angular/core';
+import {ChangeDetectorRef, Component, effect, ElementRef, signal, ViewChild,} from '@angular/core';
 import {SharedModule} from "../shared.module";
 import {AnimateOnScrollModule} from "primeng/animateonscroll";
 import {NG_DOC_ROUTING} from "@ng-doc/generated";
@@ -19,7 +19,7 @@ import {MessageService} from "primeng/api";
     ],
     template: `
         <p-dialog #dialog
-                  styleClass="wiki"
+                  class="wiki"
                   [closable]="false"
                   [modal]="true"
                   [dismissableMask]="true"
@@ -29,23 +29,23 @@ import {MessageService} from "primeng/api";
                   position="center"
                   [appendTo]="elementRef.nativeElement">
             <div class="flex flex-col gap-4 w-full h-full">
-                <iframe *ngIf="safeUrl" class="w-full h-full" [src]="safeUrl" frameborder="0"></iframe>
+                <iframe *ngIf="safeUrl" class="w-full h-full" [src]="safeUrl" frameborder="0" (load)="syncTheme($event)"></iframe>
             </div>
             <ng-template pTemplate="header">
                 <div class="w-full flex justify-end pr-2">
-                    <p-button pRipple link styleClass="text-gray-500" tooltipPosition="top"
+                    <p-button pRipple link class="text-gray-500" tooltipPosition="top"
                               [style]="{transform: 'scaleX(-1)'}"
                               [pTooltip]="'JUMP_TO_WIKI' | transloco" (click)="expand()" icon="pi pi-clone"/>
-                    <p-button pRipple link styleClass="text-gray-500" tooltipPosition="top"
+                    <p-button pRipple link class="text-gray-500" tooltipPosition="top"
                               [pTooltip]="'MAXIMIZE' | transloco" class="hidden md:block" *ngIf="!dialog.maximized"
                               (click)="dialog.maximize()" icon="pi pi-window-maximize"/>
-                    <p-button pRipple link styleClass="text-gray-500" tooltipPosition="top"
+                    <p-button pRipple link class="text-gray-500" tooltipPosition="top"
                               [pTooltip]="'MAXIMIZED' | transloco" class="hidden md:block" *ngIf="dialog.maximized"
                               (click)="dialog.maximize()" icon="pi pi-window-minimize"/>
-                    <p-button pRipple link styleClass="text-gray-500" tooltipPosition="top"
+                    <p-button pRipple link class="text-gray-500" tooltipPosition="top"
                               [pTooltip]="'OPEN_IN_NEW_WINDOW' | transloco" (click)="jump()"
                               icon="pi pi-external-link"/>
-                    <p-button pRipple link styleClass="text-gray-500" tooltipPosition="top"
+                    <p-button pRipple link class="text-gray-500" tooltipPosition="top"
                               [pTooltip]="'CLOSE_WIKI_DIALOG' | transloco" (click)="hide()" icon="pi pi-times"/>
                 </div>
             </ng-template>
@@ -60,45 +60,86 @@ export class WikiComponent {
     safeUrl: SafeUrl;
     visible = false;
 
+    private wikiSignal = signal<{ id: string, anchor: string } | null>(null);
+
     constructor(
         private appService: AppService,
         private sanitizer: DomSanitizer,
         public router: Router,
         protected elementRef: ElementRef,
         private msg: MessageService,
-        private translocoService: TranslocoService
+        private translocoService: TranslocoService,
+        private cdr: ChangeDetectorRef,
     ) {
-        window.onWikiChange = new EventEmitter();
-        window.onWikiChange.subscribe(({id, anchor}) => {
-            try {
-                this.url = `/documentation/${this.appService.language}/concept/` +
-                    this.routing
-                        .filter(item => item.path.startsWith(this.appService.language))
-                        .map(item => item.children)
-                        .flat()
-                        .find(item => item.path == id).path
-                const _anchor = anchor ? `#${anchor}` : ""
-                this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-                    '/#' + this.url + _anchor
-                );
-                this.visible = true;
-                // 如果页面宽度小于900，自动打开全屏模式
-                if (window.innerWidth < 900) {
-                    this.dialogTpl.maximize();
+        // 直接把 signal 挂到 window 上，nunjucks onclick 里直接调 .set()
+        (window as any).onWikiChange = this.wikiSignal;
+
+        effect(() => {
+            const val = this.wikiSignal();
+            if (!val) return;
+            // 用 setTimeout 推到下一个 microtask，避免在 CD 周期内修改状态
+            setTimeout(() => {
+                try {
+                    this.url = `/documentation/${this.appService.language}/concept/` +
+                        this.routing
+                            .filter(item => item.path.startsWith(this.appService.language))
+                            .map(item => item.children)
+                            .flat()
+                            .find(item => item.path == val.id).path
+                    const _anchor = val.anchor ? `#${val.anchor}` : ""
+                    this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+                        '/#' + this.url + _anchor
+                    );
+                    this.visible = true;
+                    this.cdr.detectChanges();
+                    if (window.innerWidth < 900) {
+                        this.dialogTpl.maximize();
+                    }
+                } catch (e) {
+                    this.translocoService.selectTranslate(["COMING_SOON"])
+                        .subscribe(([comingSoon]) => {
+                            this.msg.add({
+                                severity: 'info',
+                                detail: comingSoon
+                            });
+                            this.cdr.detectChanges();
+                        })
                 }
-            } catch (e) {
-                this.translocoService.selectTranslate(["COMING_SOON"])
-                    .subscribe(([comingSoon]) => {
-                        this.msg.add({
-                            severity: 'info',
-                            detail: comingSoon
-                        });
-                    });
-            }
-        })
+            });
+        });
     }
 
     @ViewChild("dialog", {static: false}) dialogTpl: Dialog;
+
+    private themeObserver: MutationObserver;
+    private currentIframe: HTMLIFrameElement;
+
+    syncTheme(event: Event) {
+        const iframe = event.target as HTMLIFrameElement;
+        this.currentIframe = iframe;
+        try {
+            const iframeHtml = iframe.contentDocument?.documentElement;
+            if (iframeHtml) {
+                iframeHtml.className = document.documentElement.className;
+            }
+        } catch (e) {}
+
+        // 监听外层主题变化
+        if (!this.themeObserver) {
+            this.themeObserver = new MutationObserver(() => {
+                try {
+                    const iframeHtml = this.currentIframe?.contentDocument?.documentElement;
+                    if (iframeHtml) {
+                        iframeHtml.className = document.documentElement.className;
+                    }
+                } catch (e) {}
+            });
+            this.themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+    }
 
     hide() {
         this.visible = false;

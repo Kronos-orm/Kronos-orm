@@ -11,8 +11,7 @@ import {AnimateOnScroll} from "primeng/animateonscroll";
   template: `
     <section class="banner-marquee-section relative banner-section-border">
       <div class="banner-marquee-container px-8 relative z-50 flex items-center p-overflow-hidden">
-        <div class="fade-left h-40 w-24 block absolute top-0 left-0 z-20"
-             style="background:linear-gradient(to right, #19191c, transparent)"></div>
+        <div class="fade-left h-40 w-24 block absolute top-0 left-0 z-20"></div>
         <div class="marquee-wrapper overflow-hidden flex">
           @for (i of [1,2,3];track i){
             <div class="marquee" pAnimateOnScroll>
@@ -30,8 +29,7 @@ import {AnimateOnScroll} from "primeng/animateonscroll";
             </div>
           }
         </div>
-        <div class="fade-right h-40 w-24 block absolute top-0 right-0 z-20"
-             style="background:linear-gradient(to left, #19191c, transparent)"></div>
+        <div class="fade-right h-40 w-24 block absolute top-0 right-0 z-20"></div>
       </div>
     </section>
   `,
@@ -47,7 +45,6 @@ import {AnimateOnScroll} from "primeng/animateonscroll";
       flex-shrink: 0;
       padding-top: 2rem;
       padding-bottom: 2rem;
-
     }
 
     .banner-marquee-section .banner-marquee-container .marquee {
@@ -69,26 +66,30 @@ import {AnimateOnScroll} from "primeng/animateonscroll";
       }
     }
 
+    .banner-marquee-section {
+      position: relative;
+    }
+
     .banner-section-border:before {
       content: "";
       position: absolute;
-      top: -2px;
+      top: -1px;
       left: 0;
       right: 0;
-      height: 2px;
+      height: 1px;
       width: 100%;
-      background: linear-gradient(90deg, rgba(0, 67, 238, .55), rgba(0, 102, 255, 0) 60%, rgba(0, 255, 240, .45));
+      background: linear-gradient(90deg, transparent, rgba(127, 82, 255, 0.4), rgba(0, 200, 255, 0.3), transparent);
     }
 
     .banner-section-border:after {
       content: "";
       position: absolute;
-      bottom: 2px;
+      bottom: 0;
       left: 0;
       right: 0;
-      height: 2px;
+      height: 1px;
       width: 100%;
-      background: linear-gradient(90deg, rgba(0, 67, 238, .55), rgba(0, 102, 255, 0) 60%, rgba(0, 255, 240, .45));
+      background: linear-gradient(90deg, transparent, rgba(127, 82, 255, 0.4), rgba(0, 200, 255, 0.3), transparent);
     }
 
     .ktor {
@@ -106,6 +107,18 @@ import {AnimateOnScroll} from "primeng/animateonscroll";
     .solon img {
       vertical-align: middle;
       margin-right: 10px;
+    }
+
+    .fade-left, .fade-right {
+      z-index: 20;
+    }
+
+    .fade-left {
+      background: linear-gradient(to right, #0a0a0f, transparent) !important;
+    }
+
+    .fade-right {
+      background: linear-gradient(to left, #0a0a0f, transparent) !important;
     }
   `]
 })

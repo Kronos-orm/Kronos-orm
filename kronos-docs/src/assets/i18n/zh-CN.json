@@ -59,5 +59,19 @@
   "FEATURE_BLOG_CONTENT_1": "Kronos目前对 kotlin 多平台的支持情况以及我们的kotlin多平台的开发和发布计划。",
   "FEATURE_BLOG_TITLE_2": "Kronos 代码生成器",
   "FEATURE_BLOG_CONTENT_2": "Kronos最新版本支持代码生成，仅需简单配置，可以根据数据库表生成Kotlin ORM 类及各种Kotlin Class",
-  "IDE_PLUGIN": "IDE 插件"
+  "IDE_PLUGIN": "IDE 插件",
+  "HIGHLIGHT_TITLE": "为什么选择 Kronos",
+  "HIGHLIGHT_SUBTITLE": "专为 Kotlin 打造的现代化 ORM 框架",
+  "HL_ZERO_REFLECT_TITLE": "零运行时反射",
+  "HL_ZERO_REFLECT_DESC": "所有 ORM 映射在编译期完成，运行时无反射调用，启动更快、内存占用更低、GC 压力更小",
+  "HL_CASCADE_TITLE": "无外键级联操作",
+  "HL_CASCADE_DESC": "无需数据库外键约束，即可实现一对一、一对多、多对多关系的级联增删改查",
+  "HL_CODEFIRST_TITLE": "双向同步",
+  "HL_CODEFIRST_DESC": "Code First 自动建表同步结构，Database First 自动生成 Kotlin 数据类，双向无缝衔接",
+  "HL_TRANSACTION_TITLE": "事务与锁",
+  "HL_TRANSACTION_DESC": "支持嵌套事务、隔离级别、超时控制、Savepoint，内置乐观锁和悲观锁机制",
+  "HL_MULTITENANT_TITLE": "多租户与动态数据源",
+  "HL_MULTITENANT_DESC": "原生支持多租户隔离和运行时动态切换数据源，轻松应对 SaaS 多库场景",
+  "HL_PLUGIN_TITLE": "可插拔架构",
+  "HL_PLUGIN_DESC": "日志、序列化、命名策略、数据守卫等均可通过插件自定义，与 Spring Boot / Ktor / Solon 等框架无缝集成"
 }

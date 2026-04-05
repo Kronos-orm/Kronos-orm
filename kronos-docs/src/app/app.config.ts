@@ -17,7 +17,7 @@ import {provideTransloco} from "@jsverse/transloco";
 import {TranslocoHttpLoader} from "./TranslocoHttpLoader";
 import {DocSearchEngine} from "./doc-search-engine";
 import {MARKED_OPTIONS, provideMarkdown} from "ngx-markdown";
-import Material from '@primeuix/themes/material';
+import Aura from '@primeuix/themes/aura';
 import {providePrimeNG} from "primeng/config";
 
 export const appConfig: ApplicationConfig = {
@@ -35,9 +35,13 @@ export const appConfig: ApplicationConfig = {
         provideAnimationsAsync(),
         providePrimeNG({
             theme: {
-                preset: Material,
+                preset: Aura,
                 options: {
-                    darkModeSelector: '.material-dark'
+                    darkModeSelector: '.dark',
+                    cssLayer: {
+                        name: 'primeng',
+                        order: 'theme, base, primeng'
+                    }
                 }
             },
         }),

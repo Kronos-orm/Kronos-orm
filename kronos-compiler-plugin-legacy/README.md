@@ -1,3 +1,5 @@
-# kronos-compiler-plugin-legacy
+# Module kronos-compiler-plugin-legacy
 
-Legacy Kotlin compiler plugin for Kronos ORM. Parses SQL criteria expressions at compile time. Superseded by the K2-based `kronos-compiler-plugin` for Kotlin 2.x projects.
+Legacy (pre-K2) Kotlin compiler plugin for Kronos ORM. Performs the same compile-time IR transformations as `kronos-compiler-plugin` but targets older Kotlin compiler versions.
+
+Not actively developed — new features go into `kronos-compiler-plugin`.

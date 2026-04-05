@@ -1,7 +1,6 @@
 .gradle
 .kiro
 .kotlin/
-.claude/
 envsetup.sh
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -42,9 +41,13 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Build artifacts ###
+docs/
+
 ### kronos-docs (Angular/Node.js) ###
 kronos-docs/node_modules/
 kronos-docs/dist/
+kronos-docs/docs/
 kronos-docs/tmp/
 kronos-docs/out-tsc/
 kronos-docs/.angular/
@@ -56,5 +59,4 @@ kronos-docs/ng-doc/
 *.gpg
 *.key
 */bin/*
-**/test-output.log
 **/*-output.log

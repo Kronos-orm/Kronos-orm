@@ -280,19 +280,19 @@ export class LayoutMenuBarComponent implements OnInit {
                             label: "KRONOS_CORE_API_DOCS",
                             icon: 'pi pi-file',
                             command: () => {
-                                window.open('https://api.kotlinorm.com/kronos-core');
+                                window.open('/api/kronos-core');
                             }
                         }, {
                             label: "KRONOS_COMPILER_PLUGIN_API_DOCS",
                             icon: 'pi pi-file',
                             command: () => {
-                                window.open('https://api.kotlinorm.com/kronos-compiler-plugin');
+                                window.open('/api/kronos-compiler-plugin');
                             }
                         }, {
                             label: "KRONOS_JDBC_WRAPPER_API_DOCS",
                             icon: 'pi pi-file',
                             command: () => {
-                                window.open('https://api.kotlinorm.com/kronos-jdbc-wrapper');
+                                window.open('/api/kronos-jdbc-wrapper');
                             }
                         }]
                     }],

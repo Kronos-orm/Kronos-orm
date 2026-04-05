@@ -14,8 +14,8 @@ The code generator uses a TOML configuration file + Kotlin Script (kts) template
 Add the `kronos-codegen` dependency to your project. Since code generation is typically a build-time task, you can add it as a script dependency in your kts template file:
 
 ```kotlin
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.0.6")
-@file:DependsOn("com.kotlinorm:kronos-core:0.0.6")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.0.7")
+@file:DependsOn("com.kotlinorm:kronos-core:0.0.7")
 ```
 
 You also need a JDBC driver and connection pool for your database. For example, with MySQL + Druid:
@@ -113,8 +113,8 @@ Create a Kotlin Script file (e.g. `codegen.main.kts`):
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.0.6")
-@file:DependsOn("com.kotlinorm:kronos-core:0.0.6")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.0.7")
+@file:DependsOn("com.kotlinorm:kronos-core:0.0.7")
 @file:DependsOn("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.2")
 
 import com.kotlinorm.codegen.*

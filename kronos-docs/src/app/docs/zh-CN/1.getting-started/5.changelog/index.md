@@ -2,11 +2,11 @@
 
 `Kronos` 严格遵循 Semantic Versioning 2.0.0 语义化版本规范。
 
-- **当前版本:** `0.0.6`
+- **当前版本:** `0.0.7`
 
 ## 📝 更新日志
 
-### 0.0.6
+### 0.0.7
 
 - ✨ 更新 Kotlin 版本至 `2.2.21`，添加对 `kotlin.time.Instant` 的支持 ([#191](https://github.com/Kronos-orm/Kronos-orm/pull/191))
 - ✨ 为 select 子句添加 patch 功能 ([#192](https://github.com/Kronos-orm/Kronos-orm/pull/192))
@@ -85,12 +85,12 @@ repositories {
 }
 
 plugins {
-    id 'kronos-gradle-plugin' version '0.0.7-SNAPSHOT'
+    id 'kronos-gradle-plugin' version '0.1.0-SNAPSHOT'
 }
 
 dependencies {
-    implementation "com.kotlinorm:kronos-core:0.0.7-SNAPSHOT"
-    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.0.7-SNAPSHOT"
+    implementation "com.kotlinorm:kronos-core:0.1.0-SNAPSHOT"
+    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.1.0-SNAPSHOT"
 }
 ```
 
@@ -116,12 +116,12 @@ repositories {
 }
 
 plugins {
-    id("kronos-gradle-plugin") version "0.0.7-SNAPSHOT"
+    id("kronos-gradle-plugin") version "0.1.0-SNAPSHOT"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.7-SNAPSHOT")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.0.7-SNAPSHOT")
+    implementation("com.kotlinorm:kronos-core:0.1.0-SNAPSHOT")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.0-SNAPSHOT")
 }
 ```
 
@@ -144,12 +144,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.0.7-SNAPSHOT</version>
+            <version>0.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.0.7-SNAPSHOT</version>
+            <version>0.1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

@@ -38,7 +38,7 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testModInWhere() {
         val (sql, _) = user.select { it.id }.where { f.mod(it.score, 2) == 0 }.build()
-        assertEquals("""SELECT "id" FROM "tb_user" WHERE false AND "deleted" = 0""", sql)
+        assertEquals("""SELECT "id" FROM "tb_user" WHERE ("score" % 2) = :mod AND "deleted" = 0""", sql)
     }
 
     @Test

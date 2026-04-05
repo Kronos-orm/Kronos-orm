@@ -2,6 +2,8 @@ package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.database.MysqlUser
+import com.kotlinorm.beans.task.TransactionScope
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.execute
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
@@ -211,8 +213,8 @@ class MysqlUpsertTest : MysqlTestBase() {
             return super.update(task)
         }
 
-        override fun transact(block: () -> Any?): Any? {
-            return block.invoke()
+        override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
+            return TransactionScope().block()
         }
     }
 

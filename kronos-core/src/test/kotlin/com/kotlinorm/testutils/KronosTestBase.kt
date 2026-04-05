@@ -14,29 +14,31 @@ import com.kotlinorm.wrappers.*
 abstract class KronosTestBase(dbType: DBType) {
     companion object {
         private var initialized = false
-        
+
+        private fun wrapperFor(dbType: DBType) = when (dbType) {
+            DBType.Mysql -> SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+            DBType.Postgres -> SamplePostgresJdbcWrapper()
+            DBType.Oracle -> SampleOracleJdbcWrapper
+            DBType.SQLite -> SampleSqliteJdbcWrapper
+            DBType.Mssql -> SampleSqlServerJdbcWrapper
+            else -> SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        }
+
         @Synchronized
         fun ensureInitialized(dbType: DBType) {
             if (!initialized) {
                 Kronos.init {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
-                    dataSource = {
-                        when (dbType) {
-                            DBType.Mysql -> SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
-                            DBType.Postgres -> SamplePostgresJdbcWrapper()
-                            DBType.Oracle -> SampleOracleJdbcWrapper
-                            DBType.SQLite -> SampleSqliteJdbcWrapper
-                            DBType.Mssql -> SampleSqlServerJdbcWrapper
-                            else -> SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
-                        }
-                    }
+                    dataSource = { wrapperFor(dbType) }
                 }
                 initialized = true
             }
+            // Always switch dataSource to the correct DB type
+            Kronos.dataSource = { wrapperFor(dbType) }
         }
     }
-    
+
     init {
         ensureInitialized(dbType)
     }

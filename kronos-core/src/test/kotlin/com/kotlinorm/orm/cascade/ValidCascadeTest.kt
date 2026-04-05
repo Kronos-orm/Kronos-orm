@@ -8,32 +8,63 @@ import com.kotlinorm.cache.kPojoFieldMapCache
 import com.kotlinorm.enums.IgnoreAction
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ValidCascadeTest {
-    init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-        }
-    }
+class ValidCascadeTest : MysqlTestBase() {
+
+    data class CascadeSelectChild(
+        val id: Int? = null,
+        val parentId: Int? = null
+    ) : KPojo
+
+    data class CascadeSelectParent(
+        val id: Int? = null,
+        @Cascade(["id"], ["parentId"])
+        @Ignore([IgnoreAction.CASCADE_SELECT])
+        val cascadeSelectChild: CascadeSelectChild? = null
+    ) : KPojo
+
+    data class CascadeSelectParent2(
+        val id: Int? = null,
+    ) : KPojo
+
+    @Table("cascade_select_child")
+    data class CascadeSelectChild2(
+        val id: Int? = null,
+        val parentId: Int? = null,
+        @Cascade(["parentId"], ["id"])
+        val parent: CascadeSelectParent2? = null
+    ) : KPojo
+
+    data class CascadeDeleteParent(
+        val id: Int? = null,
+        val children: List<CascadeDeleteChild>? = null
+    ) : KPojo
+
+    data class CascadeDeleteChild(
+        val id: Int? = null,
+        val parentId: Int? = null,
+        @Cascade(["parentId"], ["id"])
+        val parent: CascadeDeleteParent? = null
+    ) : KPojo
+
+    @Table("cascade_delete_parent")
+    data class CascadeDeleteParent2(
+        val id: Int? = null,
+        @Cascade(["id"], ["parentId"])
+        val children: List<CascadeDeleteChild>? = null
+    ) : KPojo
+
+    data class CascadeDeleteChild2(
+        val id: Int? = null,
+        val parentId: Int? = null,
+    ) : KPojo
 
     @Test
     fun `should ignore CASCADE_SELECT fields in SELECT operation`() {
-        data class CascadeSelectChild(
-            val id: Int? = null,
-            val parentId: Int? = null
-        ) : KPojo
-
-        data class CascadeSelectParent(
-            val id: Int? = null,
-            @Cascade(["id"], ["parentId"])
-            @Ignore([IgnoreAction.CASCADE_SELECT])
-            val cascadeSelectChild: CascadeSelectChild? = null
-        ) : KPojo
-
         val ignoreField = kPojoFieldMapCache[CascadeSelectParent::class]!!["cascadeSelectChild"]!!
 
         val result = findValidRefs(
@@ -49,18 +80,6 @@ class ValidCascadeTest {
 
     @Test
     fun `should find direct cascades for SELECT operation`() {
-        data class CascadeSelectParent2(
-            val id: Int? = null,
-        ) : KPojo
-
-        @Table("cascade_select_child")
-        data class CascadeSelectChild2(
-            val id: Int? = null,
-            val parentId: Int? = null,
-            @Cascade(["parentId"], ["id"])
-            val parent: CascadeSelectParent2? = null
-        ) : KPojo
-
         val field = kPojoFieldMapCache[CascadeSelectChild2::class]!!["parent"]!!
         val result = findValidRefs(
             kClass = CascadeSelectParent2::class,
@@ -77,18 +96,6 @@ class ValidCascadeTest {
             assertEquals("cascade_select_child", tableName, "表名应来自目标实体")
         }
     }
-
-    data class CascadeDeleteParent(
-        val id: Int? = null,
-        val children: List<CascadeDeleteChild>? = null
-    ) : KPojo
-
-    data class CascadeDeleteChild(
-        val id: Int? = null,
-        val parentId: Int? = null,
-        @Cascade(["parentId"], ["id"])
-        val parent: CascadeDeleteParent? = null
-    ) : KPojo
 
     @Test
     fun `should find reverse cascades for DELETE operation`() {
@@ -111,21 +118,8 @@ class ValidCascadeTest {
 
     @Test
     fun `should filter invalid cascades for DELETE operation`() {
-        @Table("cascade_delete_parent")
-        data class CascadeDeleteParent2(
-            val id: Int? = null,
-            @Cascade(["id"], ["parentId"])
-            val children: List<CascadeDeleteChild>? = null
-        ) : KPojo
-
-        data class CascadeDeleteChild2(
-            val id: Int? = null,
-            val parentId: Int? = null,
-        ) : KPojo
-
         val field = kPojoFieldMapCache[CascadeDeleteParent2::class]!!["children"]!!
 
-        // When
         val result = findValidRefs(
             kClass = CascadeDeleteChild2::class,
             columns = listOf(field),
@@ -134,7 +128,6 @@ class ValidCascadeTest {
             allowAll = true
         )
 
-        // Then
         assertTrue(result.isEmpty(), "DELETE 操作应过滤不支持的级联字段")
     }
 }

@@ -1,5 +1,6 @@
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.beans.sample.Product
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.enums.PessimisticLock
@@ -13,6 +14,7 @@ import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class MysqlSelectTest : MysqlTestBase() {
 
@@ -366,5 +368,23 @@ class MysqlSelectTest : MysqlTestBase() {
                 "username" to "123"
             ), paramMap
         )
+    }
+
+    @Test
+    fun testSelectBuildUsesOriginalTableName() {
+        // A().select().queryList<B>() should query A's table, not B's
+        // Verify that build() generates SQL with MysqlUser's table (tb_user), not Product's (tb_product)
+        val (sql, _) = MysqlUser(1).select().build()
+        assertTrue(sql.contains("`tb_user`"), "SQL should contain tb_user but was: $sql")
+
+        // Also verify Product's table name is NOT in the SQL
+        assertTrue(!sql.contains("tb_product"), "SQL should NOT contain tb_product but was: $sql")
+    }
+
+    @Test
+    fun testTableNameProperty() {
+        // Verify __tableName returns correct values for each KPojo
+        assertEquals("tb_user", MysqlUser().__tableName)
+        assertEquals("tb_product", Product().__tableName)
     }
 }

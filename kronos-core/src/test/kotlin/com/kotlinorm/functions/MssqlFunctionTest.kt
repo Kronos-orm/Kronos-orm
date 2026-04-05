@@ -66,7 +66,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testModInWhere() {
         val (sql, _) = user.select { it.id }.where { f.mod(it.score, 2) == 0 }.build()
-        assertEquals("...ROM tb_user WHERE [false] AND [deleted] = 0", sql)
+        assertEquals("SELECT [id] FROM [tb_user] WHERE ([score] % 2) = :mod AND [deleted] = 0", sql)
     }
 
     @Test
@@ -103,6 +103,6 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testRepeatInWhere() {
         val (sql, _) = user.select { it.id }.where { f.repeat("x", 3) == "xxx" }.build()
-        assertEquals("SELECT [id] FROM [tb_user] WHERE false AND [deleted] = 0", sql)
+        assertEquals("SELECT [id] FROM [tb_user] WHERE REPLICATE('x', 3) = :repeat AND [deleted] = 0", sql)
     }
 }

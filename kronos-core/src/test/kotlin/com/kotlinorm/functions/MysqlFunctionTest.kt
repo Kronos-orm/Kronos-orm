@@ -58,85 +58,85 @@ class MysqlFunctionTest : MysqlTestBase() {
     @Test
     fun testMathFunctionAbs() {
         val (sql, _) = user.select { f.abs(it.score) }.build()
-        assertEquals("SELECT ABS([score]) AS abs FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT ABS(`score`) AS abs FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionCeiling() {
         val (sql, _) = user.select { f.ceil(it.score) }.build()
-        assertEquals("SELECT CEILING([score]) AS ceil FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT CEIL(`score`) AS ceil FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionFloor() {
         val (sql, _) = user.select { f.floor(it.score) }.build()
-        assertEquals("SELECT FLOOR([score]) AS floor FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT FLOOR(`score`) AS floor FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionExp() {
         val (sql, _) = user.select { f.exp(it.score) }.build()
-        assertEquals("SELECT EXP([score]) AS exp FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT EXP(`score`) AS exp FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionGreatest() {
         val (sql, _) = user.select { f.greatest(it.score, 100) }.build()
-        assertEquals("", sql)
+        assertEquals("SELECT GREATEST(`score`, 100) AS greatest FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionLeast() {
         val (sql, _) = user.select { f.least(it.score, 100) }.build()
-        assertEquals("", sql)
+        assertEquals("SELECT LEAST(`score`, 100) AS least FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionLn() {
         val (sql, _) = user.select { f.ln(it.score) }.build()
-        assertEquals("SELECT LOG([score], EXP(1)) AS ln FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LN(`score`) AS ln FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionLog() {
         val (sql, _) = user.select { f.log(it.score, 10) }.build()
-        assertEquals("SELECT LOG([score], 10) AS log FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LOG(`score`, 10) AS log FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionMod() {
         val (sql, _) = user.select { f.mod(it.score, 2) }.build()
-        assertEquals("SELECT ([score] % 2) AS mod FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT (`score` % 2) AS mod FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionPi() {
         val (sql, _) = user.select { f.pi() }.build()
-        assertEquals("SELECT PI() AS pi FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT PI() AS pi FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionRand() {
         val (sql, _) = user.select { f.rand() }.build()
-        assertEquals("SELECT RAND() AS rand FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT RAND() AS rand FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionRound() {
         val (sql, _) = user.select { f.round(it.score, 2) }.build()
-        assertEquals("SELECT ROUND([score], 2) AS round FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT ROUND(`score`, 2) AS round FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionSign() {
         val (sql, _) = user.select { f.sign(it.score) }.build()
-        assertEquals("SELECT SIGN([score]) AS sign FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT SIGN(`score`) AS sign FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionSqrt() {
         val (sql, _) = user.select { f.sqrt(it.score) }.build()
-        assertEquals("SELECT SQRT([score]) AS sqrt FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT SQRT(`score`) AS sqrt FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
@@ -149,139 +149,139 @@ class MysqlFunctionTest : MysqlTestBase() {
     @Test
     fun testMathFunctionAdd() {
         val (sql, _) = user.select { f.add(it.score, 10, 20) }.build()
-        assertEquals("SELECT ([score] + 10 + 20) AS add FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT (`score` + 10 + 20) AS add FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionSub() {
         val (sql, _) = user.select { f.sub(it.score, 10) }.build()
-        assertEquals("SELECT ([score] - 10) AS sub FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT (`score` - 10) AS sub FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionMul() {
         val (sql, _) = user.select { f.mul(it.score, 2) }.build()
-        assertEquals("SELECT ([score] * 2) AS mul FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT (`score` * 2) AS mul FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionDiv() {
         val (sql, _) = user.select { f.div(it.score, 2) }.build()
-        assertEquals("SELECT ([score] / 2) AS div FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT (`score` / 2) AS div FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionLength() {
         val (sql, _) = user.select { f.length(it.username) }.build()
-        assertEquals("SELECT LEN([username]) AS length FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LENGTH(`username`) AS length FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionUpper() {
         val (sql, _) = user.select { f.upper(it.username) }.build()
-        assertEquals("SELECT UPPER([username]) AS upper FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT UPPER(`username`) AS upper FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionLower() {
         val (sql, _) = user.select { f.lower(it.username) }.build()
-        assertEquals("SELECT LOWER([username]) AS lower FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LOWER(`username`) AS lower FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionSubstr() {
         val (sql, _) = user.select { f.substr(it.username, 1, 5) }.build()
-        assertEquals("SELECT SUBSTR([username], 1, 5) AS substr FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT SUBSTR(`username`, 1, 5) AS substr FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionReplace() {
         val (sql, _) = user.select { f.replace(it.username, "old", "new") }.build()
-        assertEquals("SELECT REPLACE([username], 'old', 'new') AS replace FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT REPLACE(`username`, 'old', 'new') AS replace FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionLeft() {
         val (sql, _) = user.select { f.left(it.username, 5) }.build()
-        assertEquals("SELECT LEFT([username], 5) AS left FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LEFT(`username`, 5) AS left FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionRight() {
         val (sql, _) = user.select { f.right(it.username, 5) }.build()
-        assertEquals("SELECT RIGHT([username], 5) AS right FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT RIGHT(`username`, 5) AS right FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionRepeat() {
         val (sql, _) = user.select { f.repeat(it.username, 3) }.build()
-        assertEquals("SELECT REPLICATE([username], 3) AS repeat FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT REPEAT(`username`, 3) AS repeat FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionReverse() {
         val (sql, _) = user.select { f.reverse(it.username) }.build()
-        assertEquals("SELECT REVERSE([username]) AS reverse FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT REVERSE(`username`) AS reverse FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionTrim() {
         val (sql, _) = user.select { f.trim(it.username) }.build()
-        assertEquals("SELECT TRIM([username]) AS trim FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT TRIM(`username`) AS trim FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionLtrim() {
         val (sql, _) = user.select { f.ltrim(it.username) }.build()
-        assertEquals("SELECT LTRIM([username]) AS ltrim FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LTRIM(`username`) AS ltrim FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionRtrim() {
         val (sql, _) = user.select { f.rtrim(it.username) }.build()
-        assertEquals("SELECT RTRIM([username]) AS rtrim FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT RTRIM(`username`) AS rtrim FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionConcat() {
         val (sql, _) = user.select { f.concat(it.username, " - ", it.username) }.build()
-        assertEquals("SELECT CONCAT([username], ' - ', [username]) AS concat FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT CONCAT(`username`, ' - ', `username`) AS concat FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionJoin() {
         val (sql, _) = user.select { f.join(", ", it.username, it.username) }.build()
-        assertEquals("SELECT CONCAT_WS(', ', [username], [username]) AS join FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT CONCAT_WS(', ', `username`, `username`) AS join FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testPolymerizationFunctionCount() {
         val (sql, _) = user.select { f.count(1) }.build()
-        assertEquals("SELECT COUNT(1) AS count FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT COUNT(1) AS count FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testPolymerizationFunctionSum() {
         val (sql, _) = user.select { f.sum(it.score) }.build()
-        assertEquals("SELECT SUM([score]) AS sum FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT SUM(`score`) AS sum FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testPolymerizationFunctionAvg() {
         val (sql, _) = user.select { f.avg(it.score) }.build()
-        assertEquals("SELECT AVG([score]) AS avg FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT AVG(`score`) AS avg FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testPolymerizationFunctionMax() {
         val (sql, _) = user.select { f.max(it.score) }.build()
-        assertEquals("SELECT MAX([score]) AS max FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT MAX(`score`) AS max FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
     fun testPolymerizationFunctionMin() {
         val (sql, _) = user.select { f.min(it.score) }.build()
-        assertEquals("SELECT MIN([score]) AS min FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT MIN(`score`) AS min FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
     }
 
     @Test
@@ -291,40 +291,40 @@ class MysqlFunctionTest : MysqlTestBase() {
         }.where {
             f.add(it.score, 10) > f.sub(it.score, 10) && f.length(it.username) > 5
         }.build()
-        assertEquals("SELECT COUNT(1) AS count, SUM([score]) AS sum, AVG([score]) AS avg, MAX([score]) AS max, MIN([score]) AS min FROM [tb_user] WHERE ([score] + 10) > ([score] - 10) AND LEN([username]) > :lengthMin AND [deleted] = 0", sql)
+        assertEquals("SELECT COUNT(1) AS count, SUM(`score`) AS sum, AVG(`score`) AS avg, MAX(`score`) AS max, MIN(`score`) AS min FROM `tb_user` WHERE (`score` + 10) > (`score` - 10) AND LENGTH(`username`) > :lengthMin AND `deleted` = 0", sql)
     }
 
     // WHERE clause tests for math functions
     @Test
     fun testMathFunctionsInWhere() {
         val (sql, _) = user.select { it.id }
-            .where { 
-                f.abs(it.score) > 10 && 
+            .where {
+                f.abs(it.score) > 10 &&
                 f.ceil(it.score) < 100 &&
                 f.floor(it.score) > 0
             }.build()
-        assertEquals("SELECT [id] FROM [tb_user] WHERE ABS([score]) > :absMin AND CEILING([score]) < :ceilMax AND FLOOR([score]) > :floorMin AND [deleted] = 0", sql)
+        assertEquals("SELECT `id` FROM `tb_user` WHERE ABS(`score`) > :absMin AND CEIL(`score`) < :ceilMax AND FLOOR(`score`) > :floorMin AND `deleted` = 0", sql)
     }
 
     @Test
     fun testArithmeticInWhere() {
         val (sql, _) = user.select { it.id }
-            .where { 
+            .where {
                 f.add(it.score, 10) > 100 &&
                 f.sub(it.score, 5) < 50 &&
                 f.mul(it.score, 2) > 100 &&
                 f.div(it.score, 2) < 50
             }.build()
-        assertEquals("SELECT [id] FROM [tb_user] WHERE ([score] + 10) > :addMin AND ([score] - 5) < :subMax AND ([score] * 2) > :mulMin AND ([score] / 2) < :divMax AND [deleted] = 0", sql)
+        assertEquals("SELECT `id` FROM `tb_user` WHERE (`score` + 10) > :addMin AND (`score` - 5) < :subMax AND (`score` * 2) > :mulMin AND (`score` / 2) < :divMax AND `deleted` = 0", sql)
     }
 
     @Test
     fun testStringFunctionsInWhere() {
         val (sql, _) = user.select { it.id }
-            .where { 
+            .where {
                 f.length(it.username) > 5
             }.build()
-        assertEquals("SELECT id[ FROM [tb_user] WHERE LEN([username]) ", sql)
+        assertEquals("SELECT `id` FROM `tb_user` WHERE LENGTH(`username`) > :lengthMin AND `deleted` = 0", sql)
     }
 
     @Test
@@ -332,7 +332,7 @@ class MysqlFunctionTest : MysqlTestBase() {
         val (sql, _) = user.select { f.count(1) + it.gender }
             .groupBy { it.gender }
             .build()
-        assertEquals("SELECT COUNT(1) AS count, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender]", sql)
+        assertEquals("SELECT COUNT(1) AS count, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender`", sql)
     }
 
     @Test
@@ -340,7 +340,7 @@ class MysqlFunctionTest : MysqlTestBase() {
         val (sql, _) = user.select { f.sum(it.score) + it.gender }
             .groupBy { it.gender }
             .build()
-        assertEquals("SELECT SUM([score]) AS sum, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender]", sql)
+        assertEquals("SELECT SUM(`score`) AS sum, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender`", sql)
     }
 
     @Test
@@ -348,7 +348,7 @@ class MysqlFunctionTest : MysqlTestBase() {
         val (sql, _) = user.select { f.avg(it.score) + it.gender }
             .groupBy { it.gender }
             .build()
-        assertEquals("SELECT AVG([score]) AS avg, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender]", sql)
+        assertEquals("SELECT AVG(`score`) AS avg, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender`", sql)
     }
 
     @Test
@@ -364,7 +364,7 @@ class MysqlFunctionTest : MysqlTestBase() {
         val (sql, _) = user.select { f.min(it.score) + it.gender }
             .groupBy { it.gender }
             .build()
-        assertEquals("SELECT MIN([score]) AS min, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender]", sql)
+        assertEquals("SELECT MIN(`score`) AS min, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender`", sql)
     }
 
     @Test
@@ -373,7 +373,7 @@ class MysqlFunctionTest : MysqlTestBase() {
             .groupBy { it.gender }
             .having { f.count(1) > 5 }
             .build()
-        assertEquals("SELECT COUNT(1) AS count, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender] HAVING COUNT(1) > :countMin", sql)
+        assertEquals("SELECT COUNT(1) AS count, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender` HAVING COUNT(1) > :countMin", sql)
     }
 
     @Test
@@ -382,7 +382,7 @@ class MysqlFunctionTest : MysqlTestBase() {
             .groupBy { it.gender }
             .having { f.sum(it.score) > 100 }
             .build()
-        assertEquals("SELECT SUM([score]) AS sum, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender] HAVING SUM([score]) > :sumMin", sql)
+        assertEquals("SELECT SUM(`score`) AS sum, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender` HAVING SUM(`score`) > :sumMin", sql)
     }
 
     @Test
@@ -391,7 +391,7 @@ class MysqlFunctionTest : MysqlTestBase() {
             .groupBy { it.gender }
             .having { f.avg(it.score) > 50 }
             .build()
-        assertEquals("SELECT AVG([score]) AS avg, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender] HAVING AVG([score]) > :avgMin", sql)
+        assertEquals("SELECT AVG(`score`) AS avg, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender` HAVING AVG(`score`) > :avgMin", sql)
     }
 
     @Test
@@ -400,7 +400,7 @@ class MysqlFunctionTest : MysqlTestBase() {
             .groupBy { it.gender }
             .having { f.max(it.score) > 90 }
             .build()
-        assertEquals("SELECT MAX([score]) AS max, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender] HAVING MAX([score]) > :maxMin", sql)
+        assertEquals("SELECT MAX(`score`) AS max, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender` HAVING MAX(`score`) > :maxMin", sql)
     }
 
     @Test
@@ -409,17 +409,17 @@ class MysqlFunctionTest : MysqlTestBase() {
             .groupBy { it.gender }
             .having { f.min(it.score) < 10 }
             .build()
-        assertEquals("SELECT MIN([score]) AS min, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender] HAVING MIN([score]) < :minMax", sql)
+        assertEquals("SELECT MIN(`score`) AS min, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender` HAVING MIN(`score`) < :minMax", sql)
     }
 
     @Test
     fun testMultipleAggregationsWithGroupByAndHaving() {
-        val (sql, _) = user.select { 
-            f.count(1) + f.sum(it.score) + f.avg(it.score) + it.gender 
+        val (sql, _) = user.select {
+            f.count(1) + f.sum(it.score) + f.avg(it.score) + it.gender
         }
             .groupBy { it.gender }
             .having { f.count(1) > 5 && f.avg(it.score) > 50 }
             .build()
-        assertEquals("SELECT COUNT(1) AS count, SUM([score]) AS sum, AVG([score]) AS avg, [gender] FROM [tb_user] WHERE [id] = :id AND [deleted] = 0 GROUP BY [gender] HAVING COUNT(1) > :countMin AND AVG([score]) > :avgMin", sql)
+        assertEquals("SELECT COUNT(1) AS count, SUM(`score`) AS sum, AVG(`score`) AS avg, `gender` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 GROUP BY `gender` HAVING COUNT(1) > :countMin AND AVG(`score`) > :avgMin", sql)
     }
 }

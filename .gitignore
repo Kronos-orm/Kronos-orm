@@ -1,5 +1,6 @@
 .gradle
 .kiro
+.cursor
 .kotlin/
 envsetup.sh
 build/
@@ -59,4 +60,4 @@ kronos-docs/ng-doc/
 *.gpg
 *.key
 */bin/*
-**/*-output.log
+*-output.log

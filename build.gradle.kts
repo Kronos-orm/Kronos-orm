@@ -8,6 +8,14 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.kronos.dokka)
     alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kover)
+}
+
+dependencies {
+    kover(project(":kronos-core"))
+    kover(project(":kronos-compiler-plugin"))
+    kover(project(":kronos-codegen"))
+    kover(project(":kronos-testing"))
 }
 
 allprojects {

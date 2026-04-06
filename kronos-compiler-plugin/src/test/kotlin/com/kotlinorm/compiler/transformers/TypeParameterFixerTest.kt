@@ -17,11 +17,17 @@
 package com.kotlinorm.compiler.transformers
 
 import com.kotlinorm.compiler.transformers.shouldFix
+import com.kotlinorm.compiler.utils.KotlinSourceDynamicCompiler.compile
+import com.kotlinorm.compiler.utils.testBaseName
+import com.tschuchort.compiletesting.KotlinCompilation
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.name.FqName
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCompilerApi::class)
 class TypeParameterFixerTest {
 
     @Test

@@ -1,14 +1,15 @@
 .gradle
+.kiro
+.cursor
+.kotlin/
+envsetup.sh
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -41,8 +42,22 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Build artifacts ###
+/docs/
+
+### kronos-docs (Angular/Node.js) ###
+kronos-docs/node_modules/
+kronos-docs/dist/
+kronos-docs/docs/
+kronos-docs/tmp/
+kronos-docs/out-tsc/
+kronos-docs/.angular/
+kronos-docs/ng-doc/
+
 ### Gradle ###
 *.properties
 /keystore/*
 *.gpg
 *.key
+*/bin/*
+*-output.log

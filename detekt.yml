@@ -123,6 +123,8 @@ complexity:
       - 'with'
     excludes:
       - "**/com/kotlinorm/database/**/**Support.kt"
+      - "**/com/kotlinorm/ast/CriteriaToAstConverter.kt"
+      - "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt"
   LabeledExpression:
     active: false
     ignoredLabels: []
@@ -290,7 +292,7 @@ exceptions:
     active: true
   TooGenericExceptionCaught:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/compiler/**']
     exceptionNames:
       - 'ArrayIndexOutOfBoundsException'
       - 'Error'
@@ -396,7 +398,8 @@ naming:
     variablePattern: '[a-z][A-Za-z0-9]*'
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
     excludeClassPattern: '$^'
-    excludes: ['**/com/kotlinorm/interfaces/KPojo.kt']
+    excludes:
+      - "**/com/kotlinorm/interfaces/KPojo.kt"
 
 performance:
   active: true
@@ -625,10 +628,10 @@ style:
   LoopWithTooManyJumpStatements:
     active: true
     maxJumpCount: 5
-    excludes: [ '**/NamedParameterUtils.kt' ]
+    excludes: [ '**/NamedParameterUtils.kt', '**/IrKDocUtil.kt' ]
   MagicNumber:
     active: true
-    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
+    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/database/**/**SqlRenderer.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", "**/com/kotlinorm/compiler/core/FieldAnalysis.kt", "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt", "**/com/kotlinorm/compiler/core/ErrorReporter.kt", "**/com/kotlinorm/compiler/transformers/SetTransformer.kt", "**/com/kotlinorm/compiler/transformers/KronosClassBodyGenerator.kt", "**/com/kotlinorm/orm/update/UpdateClause.kt", "**/com/kotlinorm/orm/delete/DeleteClause.kt", "**/com/kotlinorm/functions/bundled/builders/StringFunctionBuilder.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
     ignoreNumbers:
       - '-1'
       - '0'
@@ -705,6 +708,8 @@ style:
     excludeLabeled: false
     excludeReturnFromLambda: true
     excludeGuardClauses: false
+    excludes:
+      - "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt"
   SafeCast:
     active: true
   SerialVersionUIDInSerializableClass:

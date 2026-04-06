@@ -6,6 +6,7 @@ import com.kotlinorm.beans.sample.codegen.CgUser
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
 import com.kotlinorm.orm.ddl.table
+import org.apache.commons.dbcp2.BasicDataSource
 import org.intellij.lang.annotations.Language
 import java.io.File
 import java.time.LocalDateTime
@@ -14,6 +15,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class CodeGenerateTest {
 
@@ -71,6 +73,31 @@ class CodeGenerateTest {
         this.writeText(
             content.trimIndent()
         )
+    }
+
+    val dataSource by lazy {
+        BasicDataSource().apply {
+            driverClassName = "com.mysql.cj.jdbc.Driver" // MySQL驱动类名，需根据实际数据库类型调整
+            // 数据库URL
+            url =
+                "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useServerPrepStmts=false&rewriteBatchedStatements=true"
+            username = System.getenv("MYSQL_USERNAME") // 数据库用户名
+            password = System.getenv("MYSQL_PASSWORD") // 数据库密码
+            maxIdle = 10 // 最大空闲连接数
+        }
+    }
+    @Test
+    fun testCreateWrapperWithValidClassName() {
+        val wrapper = createWrapper("com.kotlinorm.codegen.SampleMysqlJdbcWrapper", dataSource)
+        assertNotNull(wrapper)
+        assertEquals("com.kotlinorm.codegen.SampleMysqlJdbcWrapper", wrapper::class.java.name)
+    }
+
+    @Test
+    fun testCreateWrapperWithNullClassName() {
+        val wrapper = createWrapper(null, dataSource)
+        assertNotNull(wrapper)
+        assertEquals("com.kotlinorm.KronosBasicWrapper", wrapper::class.java.name)
     }
 
     @Test

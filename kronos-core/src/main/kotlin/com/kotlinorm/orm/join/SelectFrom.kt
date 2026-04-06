@@ -1,5 +1,5 @@
 /**
- * Copyright 2022-2025 kronos-orm
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,18 @@
 
 package com.kotlinorm.orm.join
 
+import com.kotlinorm.ast.ColumnReference
+import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FieldToExpressionConverter
+import com.kotlinorm.ast.JoinTable
+import com.kotlinorm.ast.LimitClause
+import com.kotlinorm.ast.Literal
+import com.kotlinorm.ast.OrderByItem
+import com.kotlinorm.ast.SelectItem
+import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.TableReference
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
@@ -29,14 +41,16 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
-import com.kotlinorm.database.SqlManager.getJoinSql
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.database.SqlManager.quote
+import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
@@ -44,8 +58,6 @@ import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
-import com.kotlinorm.utils.ConditionSqlBuilder
-import com.kotlinorm.utils.ConditionSqlBuilder.buildConditionSqlWithParams
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
@@ -81,7 +93,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     override var selectFields: LinkedHashSet<Field> = linkedSetOf()
     override var selectAll: Boolean = false
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
-    private var keyCounters: ConditionSqlBuilder.KeyCounter = ConditionSqlBuilder.KeyCounter()
+    private var keyCounters: KeyCounter = KeyCounter()
     val listOfJoinable: MutableList<KJoinable> = mutableListOf()
     private var groupByFields: LinkedHashSet<Field> = linkedSetOf()
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = linkedSetOf()
@@ -300,10 +312,9 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
             }
             selectFields += fields
             fields.forEach { field ->
-                val safeKey = ConditionSqlBuilder.getSafeKey(
+                val safeKey = getSafeKey(
                     field.name,
                     keyCounters,
-                    selectFieldsWithNames as MutableMap<String, Any?>,
                     field
                 )
                 selectFieldsWithNames[safeKey] = field
@@ -569,136 +580,265 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     }
 
     /**
+     * Constructs a SelectStatement AST with JoinTable nodes for all joins.
+     * This method builds the complete AST representation of the join query.
+     *
+     * @param wrapper Optional KronosDataSourceWrapper for database-specific logic
+     * @return SelectStatement with properly constructed JoinTable nodes
+     */
+    override fun toStatement(wrapper: KronosDataSourceWrapper?): SelectStatement {
+        return toStatement(wrapper, mutableMapOf())
+    }
+    
+    /**
+     * Constructs a SelectStatement AST with JoinTable nodes for all joins.
+     * This overload also collects parameter values into the provided map.
+     *
+     * @param wrapper Optional KronosDataSourceWrapper for database-specific logic
+     * @param parameterValues Mutable map to collect parameter values during Criteria conversion
+     * @return SelectStatement with properly constructed JoinTable nodes
+     */
+    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): SelectStatement {
+        val dataSource = wrapper.orDefault()
+        
+        // Build select list
+        val selectList = mutableListOf<SelectItem>()
+        if (selectFields.isEmpty()) {
+            selectFields += allFields
+        }
+        selectFieldsWithNames.forEach { (alias, field) ->
+            // Convert field to expression (handles FunctionField and regular fields)
+            val expression = FieldToExpressionConverter.fieldToExpression(field, useTableAlias = true)
+            
+            // If it's a ColumnReference, add database name if available
+            val finalExpression = if (expression is ColumnReference && expression.tableAlias != null) {
+                expression.copy(database = databaseOfTable[expression.tableAlias])
+            } else {
+                expression
+            }
+            
+            selectList.add(
+                SelectItem.ExpressionSelectItem(
+                    expression = finalExpression,
+                    alias = alias
+                )
+            )
+        }
+        
+        // Build FROM clause with joins
+        var fromTable: TableReference = TableName(
+            table = tableName,
+            database = databaseOfTable[tableName],
+            alias = null
+        )
+        
+        // Build JoinTable nodes for each join
+        listOfJoinable.forEach { joinable ->
+            val rightTable = TableName(
+                table = joinable.tableName,
+                database = databaseOfTable[joinable.tableName],
+                alias = null
+            )
+            
+            // Convert join condition to AST Expression
+            var joinCondition = joinable.condition
+            
+            // Apply logic delete strategy to join condition if applicable
+            val logicDeleteStrategy = kPojoLogicDeleteCache[joinable.kClass]
+            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value ->
+                val logicDeleteCondition = "${field.quoted(dataSource)} = $value".asSql()
+                joinCondition = listOfNotNull(
+                    joinCondition,
+                    logicDeleteCondition
+                ).toCriteria()
+            }
+            
+            val onExpression = if (joinCondition != null) {
+                val criteriaParams = mutableMapOf<String, Any?>()
+                CriteriaToAstConverter.convert(joinCondition!!, criteriaParams, KOperationType.SELECT, databaseOfTable, useTableAliases = true).also {
+                    // Collect parameters into parameterValues
+                    parameterValues.putAll(criteriaParams)
+                }
+            } else null
+            
+            // Create JoinTable node
+            fromTable = JoinTable(
+                left = fromTable,
+                joinType = joinable.joinType,
+                right = rightTable,
+                condition = onExpression
+            )
+        }
+        
+        // Build WHERE clause
+        var buildCondition = condition
+        if (buildCondition == null) {
+            // Only use fields from the main table (t1) for default WHERE condition
+            // paramMap contains fields from all joined tables, which should not be in WHERE clause
+            val mainTableData = t1.toDataMap()
+            buildCondition = mainTableData.keys.filter {
+                mainTableData[it] != null
+            }.mapNotNull { propName ->
+                allFields.firstOrNull { it.name == propName }?.eq(mainTableData[propName])
+            }.toCriteria()
+        }
+        
+        // Apply logic delete strategy to WHERE clause
+        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value ->
+            val logicDeleteCondition = "${field.quoted(dataSource)} = $value".asSql()
+            buildCondition = listOfNotNull(
+                buildCondition,
+                logicDeleteCondition
+            ).toCriteria()
+        }
+        
+        val whereExpression = if (buildCondition != null) {
+            val criteriaParams = mutableMapOf<String, Any?>()
+            CriteriaToAstConverter.convert(buildCondition, criteriaParams, KOperationType.SELECT, useTableAliases = true).also {
+                // Collect parameters into parameterValues
+                parameterValues.putAll(criteriaParams)
+            }
+        } else null
+        
+        // Build GROUP BY clause
+        val groupByExpressions: MutableList<Expression>? = if (groupEnabled && groupByFields.isNotEmpty()) {
+            groupByFields.map<Field, Expression> { field ->
+                ColumnReference(
+                    tableAlias = field.tableName,
+                    columnName = field.columnName
+                )
+            }.toMutableList()
+        } else null
+        
+        // Build HAVING clause
+        val havingExpression = if (havingEnabled) {
+            val havingCond = havingCondition
+            if (havingCond != null) {
+                val criteriaParams = mutableMapOf<String, Any?>()
+                CriteriaToAstConverter.convert(havingCond, criteriaParams, KOperationType.SELECT, useTableAliases = true).also {
+                    // Collect parameters into parameterValues
+                    parameterValues.putAll(criteriaParams)
+                }
+            } else null
+        } else null
+        
+        // Build ORDER BY clause
+        val orderByItems = if (orderEnabled && orderByFields.isNotEmpty()) {
+            orderByFields.map { (field, sortType) ->
+                OrderByItem(
+                    expression = if (field.type == CUSTOM_CRITERIA_SQL) {
+                        // For custom SQL, use a literal
+                        Literal.StringLiteral(field.toString())
+                    } else {
+                        ColumnReference(
+                            tableAlias = field.tableName,
+                            columnName = field.columnName
+                        )
+                    },
+                    direction = sortType
+                )
+            }.toMutableList()
+        } else null
+        
+        // Build LIMIT clause
+        val limitClause = if (pageEnabled) {
+            val offset = if (pi > 0) (pi - 1) * ps else 0
+            LimitClause(limit = ps, offset = offset)
+        } else if (limitCapacity > 0) {
+            LimitClause(limit = limitCapacity, offset = null)
+        } else null
+        
+        return SelectStatement(
+            selectList = selectList,
+            from = fromTable,
+            where = whereExpression,
+            groupBy = groupByExpressions,
+            having = havingExpression,
+            orderBy = orderByItems,
+            limit = limitClause,
+            distinct = distinctEnabled,
+            lock = null
+        )
+    }
+
+    /**
      * Builds and returns a KronosAtomicQueryTask object based on the provided data source wrapper.
+     * This method now uses the AST-based toStatement() method for SQL generation.
      *
      * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
      * @return a KronosAtomicQueryTask object representing the query.
      */
     override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
-        var buildCondition = condition
-
-        // 初始化所有字段集合
-
+        val dataSource = wrapper.orDefault()
+        
+        // Initialize select fields if empty
         if (selectFields.isEmpty()) {
             selectFields += allFields
         }
-
-        // 如果条件为空，则根据paramMap构建查询条件
-        if (buildCondition == null) {
-            buildCondition = paramMap.keys.filter {
-                paramMap[it] != null
-            }.mapNotNull { propName ->
-                allFields.firstOrNull { it.name == propName }?.eq(paramMap[propName])
-            }.toCriteria()
-        }
-
-        // 设置逻辑删除的条件
-        logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { _, value ->
-            buildCondition = listOfNotNull(
-                buildCondition,
-                "${quote(wrapper.orDefault(), logicDeleteStrategy!!.field, true, databaseOfTable)} = $value".asSql()
-            ).toCriteria()
-        }
-
+        
+        // Build the SelectStatement using AST
+        val statement = toStatement(wrapper)
+        
+        // Get database support for rendering
+        val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+        
+        // Render the statement to SQL with parameters
+        val renderedSql = support.getSelectSqlWithParams(dataSource, statement)
+        
+        // Process parameters (field type conversion, etc.)
         val paramMapNew = mutableMapOf<String, Any?>()
-        val sql = getJoinSql(wrapper.orDefault(), toJoinClauseInfo(wrapper, buildCondition) {
-            paramMapNew.putAll(it.filter { entry -> null != entry.value })
-        })
-
+        
+        // First, add parameters from renderedSql (parameters extracted from AST)
+        paramMapNew.putAll(renderedSql.parameters)
+        
+        // Second, add parameters from paramMap (pojo data)
+        // These are the parameters from the pojo instances passed to join()
+        // Only include non-null values
+        paramMap.forEach { (key, value) ->
+            if (!paramMapNew.containsKey(key) && value != null) {
+                paramMapNew[key] = value
+            }
+        }
+        
+        // Third, apply field type conversion
         val fieldMap = fieldsMapCache[kClass]!!
         paramMapNew.forEach { (key, value) ->
             val field = fieldMap[key]
             if (field != null && value != null) {
-                paramMapNew[key] = processParams(wrapper.orDefault(), field, value)
-            } else {
-                paramMapNew[key] = value
+                paramMapNew[key] = processParams(dataSource, field, value)
             }
         }
 
-        // 返回构建好的KronosAtomicTask对象
+        // Return the built KronosAtomicTask object
         return CascadeJoinClause.build(
             cascadeEnabled, cascadeAllowed, listOfPojo, KronosAtomicQueryTask(
-                sql, paramMapNew, operationType = KOperationType.SELECT
+                renderedSql.sql, paramMapNew, operationType = KOperationType.SELECT
             ), operationType, selectFieldsWithNames, cascadeSelectedProps ?: mutableSetOf()
         )
     }
 
-    private fun toJoinClauseInfo(
-        wrapper: KronosDataSourceWrapper? = null,
-        buildCondition: Criteria?,
-        updateMap: (map: MutableMap<String, Any?>) -> Unit
-    ): JoinClauseInfo {
-        val (whereClauseSql, mapOfWhere) = buildConditionSqlWithParams(
-            KOperationType.SELECT,
-            wrapper,
-            buildCondition,
-            showTable = true,
-            databaseOfTable = databaseOfTable
-        ).toWhereClause()
+    /**
+     * Counter for generating unique field alias keys when multiple joined tables
+     * have columns with the same name. Tracks value-to-index mappings per key name
+     * so that identical values reuse the same alias.
+     */
+    private data class KeyCounter(
+        val metaOfMap: MutableMap<String, MutableMap<Int, Any?>> = mutableMapOf()
+    )
 
-        val joinSql = " " + listOfJoinable.joinToString(" ") {
-            var joinCondition = it.condition
-            val logicDeleteStrategy = kPojoLogicDeleteCache[it.kClass]
-            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(wrapper.orDefault(), false)) { _, value ->
-                joinCondition = listOfNotNull(
-                    joinCondition,
-                    "${
-                        quote(
-                            wrapper.orDefault(),
-                            logicDeleteStrategy.field,
-                            true,
-                            databaseOfTable
-                        )
-                    } = $value".asSql()
-                ).toCriteria()
-            }
-
-            val (onSql, mapOfOn) = buildConditionSqlWithParams(
-                KOperationType.SELECT,
-                wrapper,
-                joinCondition,
-                paramMap,
-                showTable = true,
-                databaseOfTable = databaseOfTable
-            )
-                .toOnClause()
-            updateMap(mapOfOn)
-
-            it.joinType.value + " " + quote(wrapper.orDefault(), it.tableName, true, map = databaseOfTable) + onSql
+    private fun getSafeKey(
+        keyName: String,
+        keyCounters: KeyCounter,
+        data: Any?
+    ): String {
+        // Find existing entry with the same value
+        val existing = keyCounters.metaOfMap[keyName]?.entries?.firstOrNull { it.value == data }
+        if (existing != null) {
+            return if (existing.key == 0) keyName else "$keyName@${existing.key}"
         }
-
-        val groupByClauseSql =
-            if (groupEnabled && groupByFields.isNotEmpty()) " GROUP BY " + (groupByFields.joinToString(", ") {
-                quote(wrapper.orDefault(), it, true, databaseOfTable)
-            }) else null
-        val orderByClauseSql =
-            if (orderEnabled && orderByFields.isNotEmpty()) " ORDER BY " + orderByFields.joinToString(", ") {
-                if (it.first.type == CUSTOM_CRITERIA_SQL) it.first.toString() else quote(
-                    wrapper.orDefault(),
-                    it.first,
-                    true,
-                    databaseOfTable
-                ) + " " + it.second
-            } else null
-        val (havingClauseSql, mapOfHaving) = if (havingEnabled) buildConditionSqlWithParams(
-            KOperationType.SELECT, wrapper, havingCondition, showTable = true, databaseOfTable = databaseOfTable
-        ).toHavingClause() else null to mutableMapOf()
-        updateMap(mapOfWhere)
-        updateMap(mapOfHaving)
-        return JoinClauseInfo(
-            tableName,
-            selectFieldsWithNames.toList(),
-            distinctEnabled,
-            pageEnabled,
-            pi,
-            ps,
-            limitCapacity,
-            databaseOfTable,
-            whereClauseSql,
-            groupByClauseSql,
-            orderByClauseSql,
-            havingClauseSql,
-            joinSql
-        )
+        // Allocate a new index
+        val counter = (keyCounters.metaOfMap[keyName]?.keys?.maxOrNull() ?: -1) + 1
+        keyCounters.metaOfMap.getOrPut(keyName) { mutableMapOf() }[counter] = data
+        return if (counter == 0) keyName else "$keyName@$counter"
     }
 }

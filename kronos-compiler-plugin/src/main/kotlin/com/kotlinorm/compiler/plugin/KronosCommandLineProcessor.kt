@@ -24,30 +24,59 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
 
+/**
+ * Command line processor for the Kronos compiler plugin
+ *
+ * Handles plugin options like dump-ir mode and dump-ir path
+ */
 @OptIn(ExperimentalCompilerApi::class)
 @AutoService(CommandLineProcessor::class)
 class KronosCommandLineProcessor : CommandLineProcessor {
     companion object {
-        const val OPTION_DEBUG_MODE = "debug"
-        const val OPTION_DEBUG_INFO_PATH = "debug-info-path"
+        const val OPTION_DUMP_IR = "dump-ir"
+        const val OPTION_DUMP_IR_PATH = "dump-ir-path"
+        const val OPTION_DUMP_IR_MODE = "dump-ir-mode"
+        const val OPTION_DUMP_IR_FILES = "dump-ir-files"
+        const val OPTION_DEBUG = "debug"
 
-        val ARG_OPTION_DEBUG_MODE = CompilerConfigurationKey<Boolean>(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE)
-        val ARG_OPTION_DEBUG_INFO_PATH = CompilerConfigurationKey<String>(com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH)
+        val ARG_OPTION_DUMP_IR = CompilerConfigurationKey<Boolean>(OPTION_DUMP_IR)
+        val ARG_OPTION_DUMP_IR_PATH = CompilerConfigurationKey<String>(OPTION_DUMP_IR_PATH)
+        val ARG_OPTION_DUMP_IR_MODE = CompilerConfigurationKey<String>(OPTION_DUMP_IR_MODE)
+        val ARG_OPTION_DUMP_IR_FILES = CompilerConfigurationKey<String>(OPTION_DUMP_IR_FILES)
+        val ARG_OPTION_DEBUG = CompilerConfigurationKey<Boolean>(OPTION_DEBUG)
     }
 
     override val pluginId: String = "kronos-compiler-plugin"
 
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption(
-            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_MODE,
+            optionName = OPTION_DUMP_IR,
             valueDescription = "true or false",
-            description = "Enable debug mode, print debug information",
+            description = "Enable IR dump mode",
             required = false,
         ),
         CliOption(
-            optionName = com.kotlinorm.compiler.plugin.KronosCommandLineProcessor.Companion.OPTION_DEBUG_INFO_PATH,
+            optionName = OPTION_DUMP_IR_PATH,
             valueDescription = "path",
-            description = "Debug information output path",
+            description = "IR dump and debug log output path (default: build/tmp/kronosDebug)",
+            required = false,
+        ),
+        CliOption(
+            optionName = OPTION_DUMP_IR_MODE,
+            valueDescription = "kotlinLike or common",
+            description = "IR dump mode: kotlinLike (Kotlin-like format) or common (plain IR text format)",
+            required = false,
+        ),
+        CliOption(
+            optionName = OPTION_DUMP_IR_FILES,
+            valueDescription = "comma-separated file patterns",
+            description = "Filter files to dump (e.g., 'User.kt,Order.kt' or '*Service.kt'). If not specified, all files will be dumped.",
+            required = false,
+        ),
+        CliOption(
+            optionName = OPTION_DEBUG,
+            valueDescription = "true or false",
+            description = "Enable debug logging mode to capture symbol resolution and type judgments (JSON format)",
             required = false,
         )
     )
@@ -57,14 +86,25 @@ class KronosCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("processOption:: option=$option value=$value")
         return when (option.optionName) {
-            OPTION_DEBUG_MODE -> configuration.put(
-                ARG_OPTION_DEBUG_MODE, value.lowercase() == "true")
-            OPTION_DEBUG_INFO_PATH -> configuration.put(
-                ARG_OPTION_DEBUG_INFO_PATH, value)
+            OPTION_DUMP_IR -> {
+                val boolValue = value.lowercase() == "true"
+                configuration.put(ARG_OPTION_DUMP_IR, boolValue)
+            }
+            OPTION_DUMP_IR_PATH -> {
+                configuration.put(ARG_OPTION_DUMP_IR_PATH, value)
+            }
+            OPTION_DUMP_IR_MODE -> {
+                configuration.put(ARG_OPTION_DUMP_IR_MODE, value)
+            }
+            OPTION_DUMP_IR_FILES -> {
+                configuration.put(ARG_OPTION_DUMP_IR_FILES, value)
+            }
+            OPTION_DEBUG -> {
+                val boolValue = value.lowercase() == "true"
+                configuration.put(ARG_OPTION_DEBUG, boolValue)
+            }
             else -> throw IllegalArgumentException("Unexpected config option ${option.optionName}")
         }
     }
-
 }

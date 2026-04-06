@@ -160,7 +160,7 @@ fun extractNumberInParentheses(input: String): Pair<Int, Int> {
     return Pair(0, 0) // Returns default values if no match is found.
 }
 
-private fun Field.isTimestampOrPostgresDatetime(wrapper: KronosDataSourceWrapper): Boolean {
+internal fun Field.isTimestampOrPostgresDatetime(wrapper: KronosDataSourceWrapper): Boolean {
     return type == KColumnType.TIMESTAMP ||
             (wrapper.dbType == DBType.Postgres && type == KColumnType.DATETIME)
 }

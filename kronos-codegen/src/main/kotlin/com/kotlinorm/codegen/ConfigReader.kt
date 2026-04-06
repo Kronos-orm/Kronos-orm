@@ -115,7 +115,7 @@ fun readConfig(path: String): Map<String, Any?> {
             object : TypeReference<Map<String, Any?>?>() {}
         ) ?: throw IllegalArgumentException("Extend config file not found or is empty: $extendPath"
         )
-        config = extendConfig + config
+        config = (extendConfig + config) - "extend"
     }
     return config
 }

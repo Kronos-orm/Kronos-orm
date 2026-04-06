@@ -24,12 +24,13 @@ plugins {
 value class PublishConfiguration(val project: Project) {
     init {
         project.group = "com.kotlinorm"
-        project.version = "0.0.8-SNAPSHOT"
+        project.version = "0.1.0-SNAPSHOT"
         project.description = when (project.name) {
             "kronos-core" -> "Kronos is an easy-to-use, flexible, lightweight ORM framework designed for kotlin. Kronos core is the core module of Kronos, which provides basic ORM functions."
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
             "kronos-logging" -> "Kronos 's built-in log plug-in, which supports multiple log frameworks and can be customized."
-            "kronos-compiler-plugin" -> "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
+            "kronos-compiler-plugin" -> "Kronos K2 compiler plugin for compile-time ORM code generation and IR transformation."
+            "kronos-compiler-plugin-legacy" -> "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-maven-plugin" -> "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-gradle-plugin" -> "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-codegen" -> "Kronos code generation library, used to read user database and table configurations, and convert them into Kotlin business code, such as KPojo Class."

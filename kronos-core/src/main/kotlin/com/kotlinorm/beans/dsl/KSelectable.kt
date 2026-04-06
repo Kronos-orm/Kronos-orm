@@ -16,6 +16,7 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -28,4 +29,13 @@ abstract class KSelectable<T : KPojo>(
     abstract var pageEnabled: Boolean
     abstract var limitCapacity: Int
     abstract fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask
+    
+    /**
+     * Converts this clause to a SelectStatement AST node.
+     * This is used to build the UNION AST.
+     *
+     * @param wrapper Optional data source wrapper for database-specific logic
+     * @return SelectStatement representing this query
+     */
+    abstract fun toStatement(wrapper: KronosDataSourceWrapper? = null): SelectStatement
 }

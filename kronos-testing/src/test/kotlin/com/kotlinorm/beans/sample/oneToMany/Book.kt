@@ -19,14 +19,17 @@ package com.kotlinorm.beans.sample.oneToMany
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.LogicDelete
+import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.annotations.Version
+import com.kotlinorm.beans.sample.cascade.oneToMany.Chapter
 import com.kotlinorm.interfaces.KPojo
 import java.time.LocalDateTime
 
 @Table("tb_book")
 data class Book(
+    @PrimaryKey(identity = true)
     val id: Int? = null,
     val authorId: Int? = null, // 外键，关联到 Author
     val title: String? = null, // 书名
@@ -38,6 +41,7 @@ data class Book(
     val updateTime: LocalDateTime? = null,
     @CreateTime
     val createTime: LocalDateTime? = null,
+    val chapters: List<Chapter> = emptyList(),
     @Version
     val version: Int? = null,
     @LogicDelete

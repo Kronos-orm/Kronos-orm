@@ -16,6 +16,9 @@
 
 package com.kotlinorm.functions.bundled.builders
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FunctionCall
+import com.kotlinorm.ast.RenderContext
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
@@ -32,7 +35,7 @@ object StringFunctionBuilder : FunctionBuilder {
     )
 
     override val supportFunctionNames: (String) -> Array<DBType> = {
-        when (it) {
+        when (it.lowercase()) {
             /**
              * 返回字符串的长度
              * return the length of a string
@@ -231,5 +234,99 @@ object StringFunctionBuilder : FunctionBuilder {
             else -> field.functionName.uppercase()
         }
         return buildFields(field.functionName, alias, field.fields, dataSource, showTable)
+    }
+    
+    override fun transformAst(
+        function: FunctionCall,
+        context: RenderContext,
+        renderExpression: (Expression, RenderContext) -> String
+    ): String? {
+        val dbType = context.dbType ?: return null
+        val funcName = function.functionName.lowercase()
+        
+        return when (funcName) {
+            "join" -> {
+                // join(separator, x1, x2, ...) => CONCAT_WS(separator, x1, x2, ...)
+                if (function.arguments.isEmpty()) return null
+                
+                if (dbType == DBType.Oracle) {
+                    // Oracle: x1 || separator || x2 || separator || x3
+                    val separator = renderExpression(function.arguments[0], context)
+                    val values = function.arguments.drop(1)
+                    if (values.isEmpty()) return null
+                    
+                    values.joinToString(" || $separator || ") { renderExpression(it, context) }
+                } else {
+                    // Other databases: CONCAT_WS(separator, x1, x2, ...)
+                    val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                    "CONCAT_WS($args)"
+                }
+            }
+            
+            "concat" -> {
+                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                "CONCAT($args)"
+            }
+            
+            "repeat" -> {
+                if (function.arguments.size != 2) return null
+                val str = renderExpression(function.arguments[0], context)
+                val times = renderExpression(function.arguments[1], context)
+                
+                when (dbType) {
+                    DBType.Oracle -> "RPAD($str, $times * LENGTH($str), $str)"
+                    DBType.Mssql -> "REPLICATE($str, $times)"
+                    else -> "REPEAT($str, $times)"
+                }
+            }
+            
+            "right" -> {
+                if (function.arguments.size != 2) return null
+                val str = renderExpression(function.arguments[0], context)
+                val length = renderExpression(function.arguments[1], context)
+                
+                when (dbType) {
+                    DBType.Oracle -> "SUBSTR($str, -$length)"
+                    DBType.Postgres -> "SUBSTRING($str FROM -$length)"
+                    else -> "RIGHT($str, $length)"
+                }
+            }
+            
+            "left" -> {
+                if (function.arguments.size != 2) return null
+                val str = renderExpression(function.arguments[0], context)
+                val length = renderExpression(function.arguments[1], context)
+                
+                when (dbType) {
+                    DBType.Oracle -> "SUBSTR($str, 1, $length)"
+                    DBType.Postgres -> "SUBSTRING($str FROM 1 FOR $length)"
+                    else -> "LEFT($str, $length)"
+                }
+            }
+            
+            "substr" -> {
+                if (function.arguments.size != 3) return null
+                val str = renderExpression(function.arguments[0], context)
+                val start = renderExpression(function.arguments[1], context)
+                val length = renderExpression(function.arguments[2], context)
+                
+                when (dbType) {
+                    DBType.Postgres -> "SUBSTRING($str FROM $start FOR $length)"
+                    else -> "SUBSTR($str, $start, $length)"
+                }
+            }
+            
+            "length" -> {
+                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                val functionName = if (dbType == DBType.Mssql) "LEN" else "LENGTH"
+                "$functionName($args)"
+            }
+            
+            else -> {
+                // Standard functions: upper, lower, replace, reverse, trim, ltrim, rtrim
+                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                "${funcName.uppercase()}($args)"
+            }
+        }
     }
 }

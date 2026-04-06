@@ -2,16 +2,17 @@ package com.kotlinorm.orm.upsert
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.database.MysqlUser
+import com.kotlinorm.beans.task.TransactionScope
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
-import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.execute
 import com.kotlinorm.orm.upsert.UpsertClause.Companion.on
+import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MysqlUpsertTest {
+class MysqlUpsertTest : MysqlTestBase() {
 
     object UpsertWrapper : SampleMysqlJdbcWrapper() {
         override fun update(task: KAtomicActionTask): Int {
@@ -199,7 +200,6 @@ class MysqlUpsertTest {
                     )
                     assertEquals(
                         mapOf(
-                            "id" to null,
                             "score" to null,
                             "gender" to "0",
                             "username" to "test",
@@ -213,17 +213,13 @@ class MysqlUpsertTest {
             return super.update(task)
         }
 
-        override fun transact(block: () -> Any?): Any? {
-            return block.invoke()
+        override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? {
+            return TransactionScope().block()
         }
     }
 
     init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { UpsertWrapper }
-        }
+        Kronos.dataSource = { UpsertWrapper }
     }
 
     @Test

@@ -8,6 +8,14 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.kronos.dokka)
     alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kover)
+}
+
+dependencies {
+    kover(project(":kronos-core"))
+    kover(project(":kronos-compiler-plugin"))
+    kover(project(":kronos-codegen"))
+    kover(project(":kronos-testing"))
 }
 
 allprojects {
@@ -24,8 +32,8 @@ allprojects {
     tasks.withType<KotlinCompile> {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_1_8)
-            apiVersion.set(KotlinVersion.KOTLIN_2_2)
-            languageVersion.set(KotlinVersion.KOTLIN_2_2)
+            apiVersion.set(KotlinVersion.KOTLIN_2_3)
+            languageVersion.set(KotlinVersion.KOTLIN_2_3)
         }
     }
 

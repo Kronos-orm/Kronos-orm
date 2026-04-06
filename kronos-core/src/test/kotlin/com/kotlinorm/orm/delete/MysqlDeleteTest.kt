@@ -1,25 +1,18 @@
 package com.kotlinorm.orm.delete
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.databases.MysqlUser
 import com.kotlinorm.orm.delete.DeleteClause.Companion.build
 import com.kotlinorm.orm.delete.DeleteClause.Companion.logic
 import com.kotlinorm.orm.delete.DeleteClause.Companion.where
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
+import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
-class MysqlDeleteTest {
-    init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { sampleMysqlJdbcWrapper }
-        }
-    }
+class MysqlDeleteTest : MysqlTestBase() {
 
-    private val user = MysqlUser(1)
-    private val testUser = MysqlUser(1, "username")
+    private val user by lazy { MysqlUser(1) }
+    private val testUser by lazy { MysqlUser(1, "username") }
 
     @Test
     fun testDelete() {
@@ -110,5 +103,67 @@ class MysqlDeleteTest {
             ).toList(), list.map { it.paramMap.toMap() }
 
         )
+    }
+
+    @Test
+    fun testLogicDeleteDefault() {
+        // Without logic(false), MysqlUser has @LogicDelete so delete should generate UPDATE
+        val (sql, paramMap) = user.delete().build()
+        assertTrue(sql.startsWith("UPDATE"), "Logic delete should generate UPDATE statement, got: $sql")
+        assertTrue(sql.contains("`deleted` = :deletedNew"), "SQL should set deleted flag")
+        assertTrue(sql.contains("`update_time` = :updateTimeNew"), "SQL should set update_time")
+        assertTrue(sql.contains("AND `deleted` = 0"), "SQL should filter by deleted = 0")
+        assertEquals(1, paramMap["id"])
+        assertEquals(1, paramMap["deletedNew"])
+    }
+
+    @Test
+    fun testLogicDeleteParamsContainTimestamp() {
+        val (_, paramMap) = user.delete().where { it.id.eq }.build()
+        // Logic delete should include updateTimeNew in params
+        assertTrue(paramMap.containsKey("updateTimeNew"), "paramMap should contain updateTimeNew")
+        assertTrue(paramMap.containsKey("deletedNew"), "paramMap should contain deletedNew")
+        assertTrue(paramMap.containsKey("id"), "paramMap should contain id")
+        assertEquals(1, paramMap["deletedNew"])
+        assertEquals(1, paramMap["id"])
+    }
+
+    @Test
+    fun testRealDeleteUsesDeleteFrom() {
+        // logic(false) forces real DELETE FROM
+        val (sql, _) = user.delete().logic(false).build()
+        assertTrue(sql.startsWith("DELETE FROM"), "Real delete should use DELETE FROM, got: $sql")
+        assertTrue(!sql.contains("UPDATE"), "Real delete should not contain UPDATE")
+        assertTrue(sql.contains("`tb_user`"), "SQL should reference tb_user table")
+    }
+
+    @Test
+    fun testDeleteWithUsernameCondition() {
+        val (sql, paramMap) = testUser.delete().logic(false).where {
+            it.username == "test_user"
+        }.build()
+        assertEquals("DELETE FROM `tb_user` WHERE `username` = :username", sql)
+        assertEquals(mapOf("username" to "test_user"), paramMap)
+    }
+
+    @Test
+    fun testLogicDeleteWithMultipleConditions() {
+        val (sql, paramMap) = user.delete().where {
+            it.username == "John" && it.gender == 0
+        }.build()
+        assertEquals(
+            "UPDATE `tb_user` SET `update_time` = :updateTimeNew, `deleted` = :deletedNew WHERE `username` = :username AND `gender` = :gender AND `deleted` = 0",
+            sql
+        )
+        assertEquals("John", paramMap["username"])
+        assertEquals(0, paramMap["gender"])
+        assertEquals(1, paramMap["deletedNew"])
+    }
+
+    @Test
+    fun testDeleteSqlUsesBacktickQuoting() {
+        val (sql, _) = user.delete().logic(false).build()
+        assertTrue(sql.contains("`tb_user`"), "MySQL should use backtick quoting for table")
+        assertTrue(sql.contains("`id`"), "MySQL should use backtick quoting for columns")
     }
 }

@@ -74,6 +74,7 @@ jobs:
           MYSQL_USERNAME: kronos
           POSTGRES_USERNAME: kronos
         run: |
+          ./gradlew :kronos-core:koverLog
           ./gradlew :kronos-core:koverXmlReport
           ./gradlew :kronos-core:koverHtmlReport
           cat kronos-core/build/kover/coverage.txt
@@ -103,6 +104,7 @@ jobs:
           MYSQL_USERNAME: kronos
           POSTGRES_USERNAME: kronos
         run: |
+          ./gradlew :kronos-compiler-plugin:koverLog
           ./gradlew :kronos-compiler-plugin:koverXmlReport
           ./gradlew :kronos-compiler-plugin:koverHtmlReport
           cat kronos-compiler-plugin/build/kover/coverage.txt
@@ -132,6 +134,7 @@ jobs:
           MYSQL_USERNAME: kronos
           POSTGRES_USERNAME: kronos
         run: |
+          ./gradlew :kronos-codegen:koverLog
           ./gradlew :kronos-codegen:koverXmlReport
           ./gradlew :kronos-codegen:koverHtmlReport
           cat kronos-codegen/build/kover/coverage.txt

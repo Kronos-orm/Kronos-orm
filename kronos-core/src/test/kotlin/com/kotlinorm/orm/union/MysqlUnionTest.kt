@@ -8,6 +8,7 @@ import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.trimWhitespace
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class MysqlUnionTest : MysqlTestBase() {
 
@@ -268,22 +269,135 @@ class MysqlUnionTest : MysqlTestBase() {
 
         assertEquals(
             """
-                (SELECT `id`, `username` 
-                FROM `tb_user` 
-                WHERE `id` = :id AND `deleted` = 0) 
-                UNION 
-                (SELECT `tb_user`.`id` AS `id`, `tb_user`.`username` AS `username` 
-                FROM `tb_user` 
-                LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` 
-                WHERE `tb_user`.`id` = :id@1 AND `tb_user`.`deleted` = 0) 
-                UNION 
-                (SELECT `id`, `username` 
-                FROM `tb_user` 
-                WHERE `id` = :id@2 AND `deleted` = 0) 
+                (SELECT `id`, `username`
+                FROM `tb_user`
+                WHERE `id` = :id AND `deleted` = 0)
+                UNION
+                (SELECT `tb_user`.`id` AS `id`, `tb_user`.`username` AS `username`
+                FROM `tb_user`
+                LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2`
+                WHERE `tb_user`.`id` = :id@1 AND `tb_user`.`deleted` = 0)
+                UNION
+                (SELECT `id`, `username`
+                FROM `tb_user`
+                WHERE `id` = :id@2 AND `deleted` = 0)
                 LIMIT 20
             """.trimWhitespace(),
             sql
         )
+    }
+
+    @Test
+    fun testUnionWithDifferentWhereConditions() {
+        val (sql, paramMap) = union(
+            MysqlUser().select { it.id + it.username }.where { it.username == "Alice" },
+            MysqlUser().select { it.id + it.username }.where { it.gender == 1 }
+        ).build()
+
+        assertEquals(
+            """
+                (SELECT `id`, `username`
+                FROM `tb_user`
+                WHERE `username` = :username AND `deleted` = 0)
+                UNION
+                (SELECT `id`, `username`
+                FROM `tb_user`
+                WHERE `gender` = :gender AND `deleted` = 0)
+            """.trimWhitespace(),
+            sql
+        )
+        assertEquals(mapOf("username" to "Alice", "gender" to 1), paramMap)
+    }
+
+    @Test
+    fun testUnionParamMapContainsAllValues() {
+        val (sql, paramMap) = union(
+            MysqlUser().select().where { it.id == 10 },
+            MysqlUser().select().where { it.id == 20 },
+            MysqlUser().select().where { it.id == 30 }
+        ).build()
+
+        // Verify all three id params are present with disambiguation suffixes
+        assertTrue(paramMap.containsKey("id"), "paramMap should contain 'id'")
+        assertTrue(paramMap.containsKey("id@1"), "paramMap should contain 'id@1'")
+        assertTrue(paramMap.containsKey("id@2"), "paramMap should contain 'id@2'")
+        assertEquals(10, paramMap["id"])
+        assertEquals(20, paramMap["id@1"])
+        assertEquals(30, paramMap["id@2"])
+    }
+
+    @Test
+    fun testUnionAllWithThreeTables() {
+        val (sql, paramMap) = (MysqlUser().select { it.id }.where { it.id == 1 }
+            unionAll MysqlUser().select { it.id }.where { it.id == 2 }
+            unionAll MysqlUser().select { it.id }.where { it.id == 3 }).build()
+
+        assertEquals(
+            """
+                (SELECT `id`
+                FROM `tb_user`
+                WHERE `id` = :id AND `deleted` = 0)
+                UNION ALL
+                (SELECT `id`
+                FROM `tb_user`
+                WHERE `id` = :id@1 AND `deleted` = 0)
+                UNION ALL
+                (SELECT `id`
+                FROM `tb_user`
+                WHERE `id` = :id@2 AND `deleted` = 0)
+            """.trimWhitespace(),
+            sql
+        )
+        assertEquals(mapOf("id" to 1, "id@1" to 2, "id@2" to 3), paramMap)
+    }
+
+    @Test
+    fun testUnionWithRangeWhereConditions() {
+        val (sql, paramMap) = union(
+            MysqlUser().select { it.id + it.username }.where { it.id > 0 && it.id < 10 },
+            MysqlUser().select { it.id + it.username }.where { it.id > 100 && it.id < 200 }
+        ).build()
+
+        assertEquals(
+            """
+                (SELECT `id`, `username`
+                FROM `tb_user`
+                WHERE `id` > :idMin AND `id` < :idMax AND `deleted` = 0)
+                UNION
+                (SELECT `id`, `username`
+                FROM `tb_user`
+                WHERE `id` > :idMin@1 AND `id` < :idMax@1 AND `deleted` = 0)
+            """.trimWhitespace(),
+            sql
+        )
+        assertEquals(0, paramMap["idMin"])
+        assertEquals(10, paramMap["idMax"])
+        assertEquals(100, paramMap["idMin@1"])
+        assertEquals(200, paramMap["idMax@1"])
+    }
+
+    @Test
+    fun testUnionSqlContainsBacktickQuoting() {
+        val (sql, _) = union(
+            MysqlUser().select().where { it.id == 1 },
+            MysqlUser().select().where { it.id == 2 }
+        ).build()
+
+        // MySQL dialect uses backtick quoting
+        assertTrue(sql.contains("`tb_user`"), "SQL should use backtick quoting for table name")
+        assertTrue(sql.contains("`id`"), "SQL should use backtick quoting for column name")
+        assertTrue(sql.contains("UNION"), "SQL should contain UNION keyword")
+        assertTrue(!sql.contains("UNION ALL"), "SQL should not contain UNION ALL for plain union")
+    }
+
+    @Test
+    fun testUnionAllSqlContainsUnionAllKeyword() {
+        val (sql, _) = union(
+            MysqlUser().select().where { it.id == 1 },
+            MysqlUser().select().where { it.id == 2 }
+        ).all().build()
+
+        assertTrue(sql.contains("UNION ALL"), "SQL should contain UNION ALL keyword")
     }
 }
 

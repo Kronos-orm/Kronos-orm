@@ -1,14 +1,14 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## Automatically generate conditional statements and delete records based on KPojo instance values
+## Delete records with explicit conditions
 
 In Kronos, we can use the `KPojo.delete().execute()` function to delete records in the database.
 
-When the `by` or `where` function is not used, Kronos will generate a delete condition statement based on the value of the KPojo object.
+Kronos does not generate delete conditions from KPojo instance values unless you explicitly call `by` or `where`. Use `by` to match fields with values from the object, or use `where` to write a custom condition.
 
 > **Warning**
-> When the field value of a KPojo object is `null`, the field will not generate a deletion condition, if you need to delete a record with a field value of `null`, please use the `where` method to specify it.
+> Calling `delete().execute()` without `by` or `where` may affect every row that is not filtered by framework strategies such as logical delete. Enable DataGuard when your application should reject full-table `UPDATE` or `DELETE` statements.
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7}
 val user: User = User(
@@ -17,11 +17,7 @@ val user: User = User(
     age = 18
 )
 
-user.delete().execute()
-// Equivalent to
-// user.delete().by { it.id  + it.name + it.age }.execute()
-// or
-// user.delete().where { it.eq }.execute()
+user.delete().by { it.id + it.name + it.age }.execute()
 // or
 // user.delete().where { it.id.eq && it.name.eq && it.age.eq }.execute()
 ```
@@ -53,13 +49,15 @@ WHERE `id` = :id
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
 DELETE
 FROM [user]
-WHERE [id] = :id and [name] = : name and [age] = :age
+WHERE [id] = :id and [name] = :name and [age] = :age
 ```
 
 ```sql group="Case 1" name="Oracle" icon="oracle"
 DELETE
 FROM "user"
 WHERE "id" = :id
+  and "name" = :name
+  and "age" = :age
 ```
 
 ## {{ $.title("by") }} Delete Condition Configuration
@@ -145,7 +143,7 @@ WHERE "id" = :id
 ```sql group="Case 3" name="SQLServer" icon="sqlserver"
 DELETE
 FROM [user]
-WHERE [id] = :id and [name] like : name and [age] > :ageMin
+WHERE [id] = :id and [name] like :name and [age] > :ageMin
 ```
 
 ```sql group="Case 3" name="Oracle" icon="oracle"
@@ -156,7 +154,7 @@ WHERE "id" = :id
   and "age" > :ageMin
 ```
 
-You can execute the `.eq` function on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:.
+Inside an explicit `where` block, `.eq` can expand the current KPojo object's field values into equality conditions, and you can combine those conditions with other expressions.
 
 ```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -198,7 +196,7 @@ WHERE "id" = :id
 DELETE
 FROM [user]
 WHERE [id] = :id 
-  and [name] = : name
+  and [name] = :name
   and [status] = :status
   and [status] > :statusMin
 ```
@@ -212,7 +210,7 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-Kronos provides the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
+Kronos provides the minus operator `-` to exclude fields from the explicit `.eq` expansion.
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -361,12 +359,12 @@ val user: User = User(
     id = 1,
 )
 
-val (affectedRows) = user.delete().execute()
+val (affectedRows) = user.delete().by { it.id }.execute()
 ```
 
 ## Batch delete records
 
-In Kronos, we can use `Iterable<KPojo>.delete().execute()` or `Array<KPojo>.delete().execute()` methods to delete records from the database.
+In Kronos, we can use `Iterable<KPojo>.delete().by { ... }.execute()` or `Array<KPojo>.delete().by { ... }.execute()` methods to delete multiple records from the database.
 
 ```kotlin group="Case 6" name="kotlin" icon="kotlin" {10}
 val users: List<User> = listOf(
@@ -378,7 +376,7 @@ val users: List<User> = listOf(
     )
 )
 
-users.delete().execute()
+users.delete().by { it.id }.execute()
 ```
 
 ## Specify the data source to be used
@@ -392,5 +390,5 @@ val user: User = User(
     id = 1,
 )
 
-user.delete().execute(customWrapper)
+user.delete().by { it.id }.execute(customWrapper)
 ```

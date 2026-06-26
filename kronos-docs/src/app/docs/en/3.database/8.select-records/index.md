@@ -113,17 +113,17 @@ SELECT "name", "age", count(*) AS total
 FROM "user"
 ```
 
-## Automatic query condition generation
+## Generate query conditions from object values with {{ $.title("by") }}
 
-When the `by` or `where` methods are not used, Kronos generates a query condition statement based on the value of the KPojo object.
+Use `by` when you want Kronos to read values from a KPojo object and generate equality conditions for selected fields.
 
 > **Warning**
-> When the field value of KPojo object is `null`, the field will not generate the query condition, if you need to query the record whose field value is `null`, please use `where { it.prop.isNull }` method to specify.
+> `select().queryList()` without `by` or `where` does not generate conditions from object values. If you need to query records whose field value is `null`, use `where { it.prop.isNull }`.
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {1,3}
 val user: User = User(name = "Kronos")
 
-val listOfUser: List<User> = user.select().queryList()
+val listOfUser: List<User> = user.select().by { it.name }.queryList()
 ```
 
 ```sql group="Case 2" name="Mysql" icon="mysql"
@@ -147,7 +147,7 @@ WHERE "name" = :name
 ```sql group="Case 2" name="SQLServer" icon="sqlserver"
 SELECT [id], [name], [age]
 FROM [user]
-WHERE [name] = : name
+WHERE [name] = :name
 ```
 
 ```sql group="Case 2" name="Oracle" icon="oracle"
@@ -315,7 +315,7 @@ WHERE "id" > :id
   and "age" < :age
 ```
 
-The `.eq` function can be executed on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:
+Inside an explicit `where` block, `.eq` can expand the current KPojo object's field values into equality conditions, and you can combine those conditions with other expressions.
 
 ```kotlin group="Case 4-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -357,7 +357,7 @@ WHERE "id" = :id
 SELECT [id], [name], [age]
 FROM [user]
 WHERE [id] = :id
-  and [name] = : name
+  and [name] = :name
   and [status] = :status
   and [status] > :statusMin
 ```
@@ -370,7 +370,7 @@ WHERE "id" = :id
   and "status" = :status
   and "status" > :statusMin
 ```
-Kronos provides the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
+Kronos provides the minus operator `-` to exclude fields from the explicit `.eq` expansion.
 
 ```kotlin group="Case 4-3" name="kotlin" icon="kotlin" {6}
 val user: User = User(

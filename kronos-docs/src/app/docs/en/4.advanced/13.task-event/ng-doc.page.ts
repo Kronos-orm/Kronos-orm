@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * This chapter will introduce how to register task events to achieve event listening and processing for tasks.
- * @status:warning WIP
+ * @status:info Done
  */
 const TaskEventPage: NgDocPage = {
   title: `Task events handling`,

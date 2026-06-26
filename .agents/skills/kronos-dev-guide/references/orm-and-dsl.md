@@ -146,7 +146,7 @@ Terminal methods: `queryList()`, `queryOne()`, `queryOneOrNull()`, `queryMap()`,
 
 Build flow in `toStatement()`:
 1. Collects selected fields (from `select {}` lambda or all columns)
-2. Builds WHERE from `where {}` criteria + entity non-null values
+2. Builds WHERE only from explicit `where {}` criteria or `by {}` fields
 3. Applies logic delete filter (auto-adds `deleted = 0`)
 4. Applies pagination (dialect-specific)
 5. Applies locking
@@ -171,7 +171,7 @@ Terminal: `execute()`
 
 Build flow:
 1. Collects fields to update (from `set {}` or `update {}` lambda)
-2. Builds WHERE from `by {}` fields or `where {}` criteria
+2. Builds WHERE only from `by {}` fields or `where {}` criteria
 3. Applies strategies: update time, optimistic lock (adds `version = :version` to WHERE, increments version)
 4. Applies logic delete filter to WHERE
 5. Builds `UpdateStatement` AST
@@ -183,7 +183,7 @@ Terminal: `execute()`
 
 Build flow:
 1. If `logic = true` and `logicDeleteStrategy` is set → generates `UpdateStatement` (sets deleted flag + update time + version increment) instead of `DeleteStatement`
-2. Otherwise generates `DeleteStatement` with WHERE
+2. Otherwise generates `DeleteStatement` with WHERE only when `by {}` or `where {}` is used
 3. Applies logic delete condition to WHERE (only delete non-deleted records)
 
 ### UpsertClause

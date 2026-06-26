@@ -15,7 +15,7 @@ val list = user
 
 Based on KCP, Kronos allows you to build `Criteria` queries using real kotlin operators such as `==`, `! =`, `>`, `<`, `>=`, `<=`, `in`, `||`, `&&`, and so on, providing a super-expressive, concise and semantic way to write them.
 
-kronos expressions support **dynamic construction of conditions** and automatic generation of conditions** based on properties** of objects, and support passing **sql strings** as conditions.
+kronos expressions support **dynamic construction of conditions**, explicit `.eq` expansion based on object properties inside condition DSL blocks, and passing **sql strings** as conditions.
 
 Using kronos is like writing native kotlin code, which will greatly **improve development efficiency** and **reduce learning costs and mental load**.
 
@@ -268,9 +268,9 @@ User().select().where { it.username == user.username.value }.query()
 User().select().where { it.username == "Kronos" }.query()
 ```
 
-### {{ $.title("KPojo.eq") }} Automatically Generate Conditions
+### {{ $.title("KPojo.eq") }} Explicitly expand equality conditions in condition blocks
 
-`user.eq` indicates that equality conditions for all non-empty fields within the object are automatically generated through `User`, such as `it.eq` being equivalent to `it.id == id && it.name == name && it.age == age`. It can be combined with operators such as `&&`, `||`, and `!`.
+`user.eq` expands equality conditions for all non-empty fields within the object inside an explicit condition block. For example, `it.eq` is equivalent to `it.id == id && it.name == name && it.age == age`. It can be combined with operators such as `&&`, `||`, and `!`.
 
 ```kotlin {3}
 val user = User(id = 1, name = "Kronos", age = 18)
@@ -282,7 +282,7 @@ Using `-` can ignore the equality condition of a certain field.
 
 ```kotlin {3}
 val user = User(id = 1, name = "Kronos", age = 18)
-// The equality condition `it.id == 1` will not be generated.
+// The equality condition `it.id == 1` will not be expanded.
 User().select().where { (it - it.id).eq }.query()
 ```
 

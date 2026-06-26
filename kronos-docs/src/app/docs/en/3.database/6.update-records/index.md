@@ -53,7 +53,7 @@ WHERE `id` = :id
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
 UPDATE [user]
 SET [name] = :nameNew
-WHERE [id] = :id and [name] = : name and [age] = :age
+WHERE [id] = :id and [name] = :name and [age] = :age
 ```
 
 ```sql group="Case 1" name="Oracle" icon="oracle"
@@ -204,7 +204,7 @@ SET "name" = :nameNew
 WHERE "id" = :id
 ```
 
-You can execute the `.eq` function on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:.
+Inside an explicit `where` block, `.eq` can expand the current KPojo object's field values into equality conditions, and you can combine those conditions with other expressions.
 
 ```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -246,7 +246,7 @@ WHERE "id" = :id
 UPDATE [user]
 SET [name] = :nameNew
 WHERE [id] = :id 
-  and [name] = : name
+  and [name] = :name
   and [status] = :status
   and [status] > :statusMin
 ```
@@ -260,7 +260,7 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-Kronos provides the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
+Kronos provides the minus operator `-` to exclude fields from the explicit `.eq` expansion.
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(

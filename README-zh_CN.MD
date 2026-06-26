@@ -72,11 +72,11 @@ dataSource.table.createTable<User>()
 
 val id = User(username = "test", age = 18).insert().execute().lastInsertId
 
-val listOfUser = User(age = 18).select().queryList()
+val listOfUser = User().select().where { it.age == 18 }.queryList()
 
 User(id = id, age = 19).update().by { it.id }.execute()
 
-User(id = id).delete().execute()
+User(id = id).delete().by { it.id }.execute()
 ```
 
 ## 环境要求
@@ -343,12 +343,10 @@ Kronos 提供 AI 技能指南，帮助编程助手理解和生成 Kronos 代码�
 
 | 工具 | 命令 |
 |------|------|
-| **Cursor / Windsurf** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
-| **Claude Code** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
-| **Codex** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .codex/kronos-orm-guide && rm -rf .codex/kronos-orm-guide/.git` |
-| **OpenCode** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .opencode/skills/kronos-orm-guide && rm -rf .opencode/skills/kronos-orm-guide/.git` |
-| **Kiro** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .kiro/skills/kronos-orm-guide && rm -rf .kiro/skills/kronos-orm-guide/.git` |
-| **通用** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .llm/kronos-orm-guide && rm -rf .llm/kronos-orm-guide/.git` |
+| **Cursor** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
+| **默认 / 通用** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
+
+Windsurf 和其他读取 `.agents/skills/` 的工具使用默认命令。
 
 --------
 

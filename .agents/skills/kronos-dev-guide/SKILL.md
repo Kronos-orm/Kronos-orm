@@ -17,6 +17,19 @@ description: >
 
 Kotlin compiler-plugin-powered ORM. Zero reflection, AST-based SQL generation, multi-database.
 
+## Evolution Memory Protocol
+
+For every error, failure, or unexpected behavior, read `Evolution.md` first before attempting a fix. This file is the highest-priority troubleshooting memory for this skill and must be checked before consulting other reference files, searching the codebase, or changing files.
+
+Priority order for error handling:
+
+1. Read `Evolution.md` and look for a matching symptom, module, command, or error message.
+2. Reuse any documented solution or prevention rule that applies.
+3. If no matching record exists, continue to the relevant reference file below.
+4. After a successful build or verified fix, append important new problems and solutions to `Evolution.md` using the required format.
+
+Use this protocol to preserve discovered project pitfalls and avoid repeating the same mistakes.
+
 ## Architecture at a Glance
 
 ```
@@ -56,6 +69,7 @@ Read these for deep implementation details:
 
 | File | When to Read |
 |------|-------------|
+| `Evolution.md` | Required first read before fixing any error; stores historical problems, root causes, solutions, and prevention rules |
 | `references/compiler-plugin.md` | Modifying compiler plugin, adding/changing IR transforms, debugging IR output |
 | `references/ast-and-rendering.md` | Working with AST nodes, SQL rendering, adding/modifying database dialects, functions system |
 | `references/orm-and-dsl.md` | ORM clause classes, DSL beans, plugin/hook system, task execution, transactions, value transformers |

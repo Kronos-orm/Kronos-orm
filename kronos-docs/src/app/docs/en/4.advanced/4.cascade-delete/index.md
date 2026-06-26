@@ -96,14 +96,14 @@ data class Profile(
 Deleting a User or Profile entity will trigger a cascade delete
 
 ```kotlin
-User(id = 1).delete().execute()
+User(id = 1).delete().by { it.id }.execute()
 // This will delete all User records with id=1 and all Profile records with userId=1
 ```
 
 Or：
 
 ```kotlin
-Profile(id = 1).delete().execute()
+Profile(id = 1).delete().by { it.id }.execute()
 // This will delete all Profile records with id=1 and all User records with userId=1
 ```
 
@@ -143,7 +143,7 @@ Use the `KPojo.delete()` method to implement cascading deletion of one-to-many c
 In Kronos, only cascading deletion in the `Parent -> Child` direction is supported. When deleting, the Child is deleted first, then the Parent. If any level of the multi-level relationship has a `Restrict` cascading deletion policy, the deletion will not be triggered.
 
 ```kotlin
-Parent(id = 1).delete().execute()
+Parent(id = 1).delete().by { it.id }.execute()
 // This will delete the Parent record with id 1 and also delete the Child record with parentId 1.
 ```
 
@@ -183,7 +183,7 @@ data class Student(
 ```
 
 ```kotlin
-School(name = "school").delete().execute()
+School(name = "school").delete().by { it.name }.execute()
 // This will cascade delete all GroupClass and Student records with name="school"
 ```
 
@@ -238,7 +238,7 @@ Inserting a User or Role entity can perform cascade deletion. According to the c
 ```kotlin
 User(name = "user")
     .apply { roles = listOf(Role(name = "role")) }
-    .delete().execute()
+    .delete().by { it.name }.execute()
 ```
 
 Or：
@@ -246,5 +246,5 @@ Or：
 ```kotlin
 Role(name = "role")
     .apply { users = listOf(User(name = "user")) }
-    .delete().execute()
-``` 
+    .delete().by { it.name }.execute()
+```

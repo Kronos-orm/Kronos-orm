@@ -139,7 +139,7 @@ class MysqlTest {
     fun testInsertAndSelect() {
         val user = User(name = "test", age = 18)
         user.insert().execute()
-        val result = User(name = "test").select().queryOne()
+        val result = User(name = "test").select().by { it.name }.queryOne()
         assertEquals("test", result.name)
     }
 }
@@ -191,7 +191,7 @@ All workflows in `.github/workflows/`:
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
 | `publish.yml` | push to `release/0.1.0` OR PR merged to `main` | Snapshot or release publishing to Maven Central |
-| `sync-skills.yml` | push to `release/0.1.0` (paths: `.claude/skills/kronos-orm-guide/**`) | Syncs skill files to `release/llm` branch |
+| `sync-skills.yml` | merged PRs to `main` that change `.agents/**` | Syncs `kronos-orm-guide` files to `release/llm` branch |
 | `greetings.yml` | new issues/PRs | Bilingual welcome messages |
 | `stale.yml` | daily 15:40 UTC | Marks stale issues (60d) and PRs, closes after grace period |
 

@@ -68,8 +68,8 @@ user.update().set { it.name = "Kronos ORM" }.by{ it.id }.execute()
 // 或
 user.update{ it.name }.by{ it.id }.execute()
 
-// 根据对象值动态查询记录
-val name: User = user.select().queryOne()
+// 根据对象值查询记录
+val name: User = user.select().by { it.id }.queryOne()
 
 // 根据id查询name字段
 val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
@@ -77,7 +77,7 @@ val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
 // 删除id为1的数据
 User().delete().where{ it.id == 1 }.execute()
 // 或
-User(1).delete().execute()
+User(1).delete().by { it.id }.execute()
 ```
 
 {{ NgDocActions.demo("FeatureCardsComponent", {container: false}) }}

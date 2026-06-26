@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   publish:
@@ -72,13 +73,22 @@ jobs:
         run: |
           bash ./gradlew --no-daemon clean publishAllToMavenCentral -x test
 
-      - name: Release 🔼 - bump to next SNAPSHOT and push
+      - name: Release 🔼 - open next SNAPSHOT PR
         if: steps.detect.outputs.mode == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           NEXT_SNAPSHOT=$( bash .github/scripts/bump-version.sh next-snapshot | tail -n1 | cut -d= -f2 )
+          BRANCH_NAME="chore/next-snapshot-${NEXT_SNAPSHOT%-SNAPSHOT}"
+          git switch -c "$BRANCH_NAME"
           git add -A
           git commit -m "chore(version): start $NEXT_SNAPSHOT [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git push origin "$BRANCH_NAME"
+          gh pr create \
+            --base "${{ github.event.pull_request.base.ref }}" \
+            --head "$BRANCH_NAME" \
+            --title "chore(version): start $NEXT_SNAPSHOT" \
+            --body "Start the next development cycle after publishing ${{ steps.release_set.outputs.version }} by bumping release configuration to $NEXT_SNAPSHOT."
 
       - name: Snapshot 📸 - publish to Central Snapshots
         if: steps.detect.outputs.mode == 'snapshot'

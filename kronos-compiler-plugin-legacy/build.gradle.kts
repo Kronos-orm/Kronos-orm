@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kapt)
-    alias(libs.plugins.kronos.publishing)
     alias(libs.plugins.kronos.dokka)
     alias(libs.plugins.kover)
 }

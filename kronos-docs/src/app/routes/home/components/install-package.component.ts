@@ -110,11 +110,11 @@ plugins {
     }, {
         code: `
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.1.0-SNAPSHOT'
+    implementation 'com.kotlinorm:kronos-core:0.1.0'
 }
 
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0-SNAPSHOT'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0'
 }`.trim(),
         language: 'groovy'
     }, {
@@ -124,7 +124,7 @@ plugins {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-core</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.0</version>
     </dependency>
   </dependencies>
 
@@ -143,7 +143,7 @@ plugins {
                 <dependency>
                     <groupId>com.kotlinorm</groupId>
                     <artifactId>kronos-maven-plugin</artifactId>
-                    <version>0.1.0-SNAPSHOT</version>
+                    <version>0.1.0</version>
                 </dependency>
             </dependencies>
         </plugin>

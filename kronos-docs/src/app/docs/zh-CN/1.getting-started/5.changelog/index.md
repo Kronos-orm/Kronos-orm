@@ -2,9 +2,20 @@
 
 `Kronos` 严格遵循 Semantic Versioning 2.0.0 语义化版本规范。
 
-- **当前版本:** `0.0.7`
+- **当前版本:** `0.1.0`
 
 ## 📝 更新日志
+
+### 0.1.0
+
+- ✨ 发布 `0.1.0`，完成核心模块、构建配置和 README 版本引用更新 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204), [#207](https://github.com/Kronos-orm/Kronos-orm/pull/207), [#208](https://github.com/Kronos-orm/Kronos-orm/pull/208))
+- ✨ 新增 K2 编译器插件实现，并将原编译器插件重命名为 `kronos-compiler-plugin-legacy`，新的 K2 插件成为主插件 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- ✨ 新增类型安全 SQL AST 与多数据库方言渲染器，覆盖 select、insert、update、delete、upsert、DDL、union 和函数渲染 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- ✨ 新增事务 DSL 能力，支持隔离级别、超时、保存点以及嵌套事务复用连接；JDBC wrapper 增加 ThreadLocal 事务连接共享 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 💪 改进级联查询、跨模块测试基础设施、代码生成测试、核心 ORM/方言函数测试和覆盖率 CI ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 💪 重构文档站点首页、文档页主题切换、侧栏折叠、复制 Markdown、页脚、AI 文档章节和模块 README ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 🐛 修复 upsert `criteriaParams` 注入、`.set {}` 赋值、逻辑删除存在性检查、PostgreSQL `ANY(ARRAY[...])` 类型不匹配以及 PostgreSQL 并发索引建表事务问题 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 🔧 更新 `__tableName` 属性相关文档和插件配置，并调整 detekt 抑制项 ([#206](https://github.com/Kronos-orm/Kronos-orm/pull/206))
 
 ### 0.0.7
 
@@ -92,12 +103,12 @@ repositories {
 }
 
 plugins {
-    id 'kronos-gradle-plugin' version '0.1.0-SNAPSHOT'
+    id 'kronos-gradle-plugin' version '0.1.0'
 }
 
 dependencies {
-    implementation "com.kotlinorm:kronos-core:0.1.0-SNAPSHOT"
-    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.1.0-SNAPSHOT"
+    implementation "com.kotlinorm:kronos-core:0.1.0"
+    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.1.0"
 }
 ```
 
@@ -123,12 +134,12 @@ repositories {
 }
 
 plugins {
-    id("kronos-gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("kronos-gradle-plugin") version "0.1.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.0-SNAPSHOT")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.0-SNAPSHOT")
+    implementation("com.kotlinorm:kronos-core:0.1.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.0")
 }
 ```
 
@@ -151,12 +162,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.1.0</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.1.0</version>
         </dependency>
     </dependencies>
 

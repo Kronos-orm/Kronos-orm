@@ -1,10 +1,11 @@
 name: Sync Skills to release/llm
 
 on:
-  push:
-    branches: [ release/0.1.0 ]
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
     paths:
-      - '.claude/skills/kronos-orm-guide/**'
+      - '.agents/**'
 
 permissions:
   contents: write
@@ -12,6 +13,7 @@ permissions:
 jobs:
   sync:
     name: Sync to release/llm 🔄
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -27,13 +29,14 @@ jobs:
       - name: Copy skill files from source branch 📋
         run: |
           mkdir -p /tmp/skill-sync
-          cp .claude/skills/kronos-orm-guide/SKILL.md /tmp/skill-sync/SKILL.md
-          if [ -d .claude/skills/kronos-orm-guide/references ]; then
-            cp -r .claude/skills/kronos-orm-guide/references /tmp/skill-sync/references
+          cp .agents/skills/kronos-orm-guide/SKILL.md /tmp/skill-sync/SKILL.md
+          if [ -d .agents/skills/kronos-orm-guide/references ]; then
+            cp -r .agents/skills/kronos-orm-guide/references /tmp/skill-sync/references
           fi
 
       - name: Sync to release/llm 📦
         run: |
+          git fetch origin release/llm:release/llm
           git checkout release/llm
 
           # Clean old files and replace with new
@@ -45,6 +48,6 @@ jobs:
 
           git add -A
           git diff --cached --quiet || {
-            git commit -m "chore: sync kronos-orm-guide from release/0.1.0 [skip ci]"
+            git commit -m "chore: sync kronos-orm-guide from main [skip ci]"
             git push origin release/llm
           }

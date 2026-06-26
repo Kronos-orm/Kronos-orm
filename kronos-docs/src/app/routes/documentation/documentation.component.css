@@ -1,4 +1,16 @@
 /* 头部控件 */
+:host ::ng-deep .ng-doc-navbar,
+:host ::ng-deep .ng-doc-navbar-container,
+:host ::ng-deep .ng-doc-navbar-content {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+:host ::ng-deep .ng-doc-navbar-content {
+  padding-left: calc(var(--ng-doc-base-gutter) * 3) !important;
+  padding-right: calc(var(--ng-doc-base-gutter) * 3) !important;
+}
+
 .ng-doc-header-controls {
   display: flex;
 }

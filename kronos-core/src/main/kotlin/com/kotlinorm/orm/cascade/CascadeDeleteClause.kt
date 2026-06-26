@@ -119,13 +119,15 @@ object CascadeDeleteClause {
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
                 // Use SelectClause.toStatement() internally via queryList()
                 // This ensures AST-based SQL generation for cascade query operations
-                val toDeleteRecords =
-                    pojo.select().where { whereClauseSql.asSql() }.patch(*paramMap.toList().toTypedArray())
-                        .apply {
-                            this.cascadeAllowed = cascadeAllowed
-                            this.operationType = KOperationType.DELETE
-                        }
-                        .queryList(wrapper) //先查询出要删除的记录 (queryList() internally calls toStatement())
+                val selectClause = pojo.select().apply {
+                    if (!whereClauseSql.isNullOrBlank()) {
+                        where { whereClauseSql.asSql() }
+                    }
+                    patch(*paramMap.toList().toTypedArray())
+                    this.cascadeAllowed = cascadeAllowed
+                    this.operationType = KOperationType.DELETE
+                }
+                val toDeleteRecords = selectClause.queryList(wrapper) //先查询出要删除的记录 (queryList() internally calls toStatement())
                 if (toDeleteRecords.isEmpty()) return@doBeforeExecute // 如果没有要删除的记录，直接返回
 
                 // 检查限制级联的引用，如果有相关的级联引用数据，那么此次删除操作将被拒绝
@@ -175,7 +177,8 @@ object CascadeDeleteClause {
                         // This ensures AST-based SQL generation for cascade delete/update operations
                         when (it.data?.kCascade?.onDelete) {
                             NO_ACTION, RESTRICT -> null
-                            CASCADE, null -> it.kPojo.delete().logic(logic).cascade(enabled = false).build().atomicTasks // build() internally calls toStatement()
+                            CASCADE, null -> it.kPojo.delete().logic(logic).byNonNullValues()
+                                .cascade(enabled = false).build().atomicTasks // build() internally calls toStatement()
                             SET_NULL -> {
                                 val updateClause = it.kPojo.update()
                                 val listOfValidCascade = it.data.parent?.validCascades?.filter { cascade-> cascade.field == it.data.fieldOfParent }
@@ -185,7 +188,7 @@ object CascadeDeleteClause {
                                         updateClause.patch(property to null)
                                     }
                                 }
-                                updateClause.build().atomicTasks // build() internally calls toStatement()
+                                updateClause.byNonNullValues().build().atomicTasks // build() internally calls toStatement()
                             }
 
                             SET_DEFAULT -> {
@@ -200,7 +203,7 @@ object CascadeDeleteClause {
                                         }
                                     }
                                 }
-                                updateClause.build().atomicTasks // build() internally calls toStatement()
+                                updateClause.byNonNullValues().build().atomicTasks // build() internally calls toStatement()
                             }
                         }
                     }.flatten()) // 生成删除任务

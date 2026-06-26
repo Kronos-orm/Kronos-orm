@@ -70,15 +70,16 @@ object CascadeUpdateClause {
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
                 // Use SelectClause.toStatement() internally via queryList()
                 // This ensures AST-based SQL generation for cascade query operations
+                val selectClause = pojo.select().apply {
+                    if (!whereClauseSql.isNullOrBlank()) {
+                        where { whereClauseSql.asSql() }
+                    }
+                    patch(*paramMap.toList().toTypedArray())
+                    this.cascadeAllowed = cascadeAllowed
+                    this.operationType = KOperationType.UPDATE
+                }
                 toUpdateRecords.addAll(
-                    pojo.select()
-                        .where { whereClauseSql.asSql() }
-                        .patch(*paramMap.toList().toTypedArray())
-                        .apply {
-                            this.cascadeAllowed = cascadeAllowed
-                            this.operationType = KOperationType.UPDATE
-                        }
-                        .queryList(wrapper) // queryList() internally calls toStatement()
+                    selectClause.queryList(wrapper) // queryList() internally calls toStatement()
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { record ->
@@ -126,7 +127,7 @@ object CascadeUpdateClause {
         if (null == node.data) return null
         // Use UpdateClause.toStatement() internally via build()
         // This ensures AST-based SQL generation for cascade update operations
-        return node.kPojo.update().apply {
+        return node.kPojo.update().byNonNullValues().apply {
             // Build patch pairs from updateParams
             val patchPairs = node.updateParams.mapNotNull { (_, value) ->
                 val paramValue = paramMap[value + "New"]

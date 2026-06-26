@@ -20,15 +20,18 @@ import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
+import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.cache.fieldsMapCache
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.Oracle
+import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.getTypeSafeValue
+import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource
@@ -51,6 +54,43 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
             dbType = DBType.fromName(conn.metaData.databaseProductName)
             userName = conn.metaData.userName ?: ""
         }
+    }
+
+    companion object {
+        /**
+         * Thread-local storage for the active transaction connection.
+         * When a transaction is in progress, the connection is stored here so that
+         * all operations within the same thread share the same connection.
+         */
+        private val transactionConnection = ThreadLocal<Connection?>()
+    }
+
+    /**
+     * Obtains a connection for the current operation.
+     * If a transaction is active on the current thread, returns the transaction connection (shouldClose=false).
+     * Otherwise, returns a new connection from the data source (shouldClose=true).
+     *
+     * @return A [Pair] of the [Connection] and a [Boolean] indicating whether the caller should close it.
+     */
+    private fun obtainConnection(): Pair<Connection, Boolean> {
+        val txConn = transactionConnection.get()
+        return if (txConn != null) txConn to false
+        else dataSource.connection to true
+    }
+
+    /**
+     * Executes a block with a database connection, automatically managing connection lifecycle.
+     * If a transaction connection is active, it is reused without closing.
+     * Otherwise, a new connection is obtained and closed after the block completes.
+     *
+     * @param T The return type of the block.
+     * @param block The block to execute with the connection.
+     * @return The result of the block.
+     */
+    private inline fun <T> withConnection(block: (Connection) -> T): T {
+        val (conn, shouldClose) = obtainConnection()
+        return if (shouldClose) conn.use { block(it) }
+        else block(conn)
     }
 
     /**
@@ -143,27 +183,57 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
     * If the block completes successfully, the transaction is committed. If an
     * exception occurs, the transaction is rolled back and the exception is rethrown.
     *
+    * @param isolation The transaction isolation level, or null to use the default.
+    * @param timeout The transaction timeout in seconds, or null for no timeout.
     * @param block The block of code to be executed within the transaction.
     * @return The result of the block execution, or `null` if the block returns `null`.
     * @throws Exception If an exception occurs during the execution of the block,
     *                   it is caught, the transaction is rolled back, and the exception is rethrown.
     */
-   override fun transact(block: () -> Any?): Any? = dataSource.connection.use { conn ->
-       conn.autoCommit = false
-       var committed = false
+   override fun transact(
+       isolation: TransactionIsolation?,
+       timeout: Int?,
+       block: TransactionScope.() -> Any?
+   ): Any? {
+       // Nested transaction: reuse outer connection, don't manage commit/rollback
+       val existing = transactionConnection.get()
+       if (existing != null) {
+           return TransactionScope(existing).block()
+       }
+
+       val conn = dataSource.connection
+       val originalAutoCommit = conn.autoCommit
+       val originalIsolation = conn.transactionIsolation
+       transactionConnection.set(conn)
        try {
-           val result = block()
-           conn.commit()
-           committed = true
-           result
-       } finally {
-           if (!committed) {
+           conn.autoCommit = false
+           if (isolation != null) {
+               conn.transactionIsolation = isolation.level
+           }
+           if (timeout != null) {
                try {
-                   conn.rollback()
-               } catch (_: java.sql.SQLException) {
-                   // ignore rollback failure
+                   conn.setNetworkTimeout(java.util.concurrent.Executors.newSingleThreadExecutor(), timeout * 1000)
+               } catch (_: Exception) {
+                   // Not all drivers support setNetworkTimeout
                }
            }
+           val result = TransactionScope(conn).block()
+           conn.commit()
+           return result
+       } catch (e: Exception) {
+           try {
+               conn.rollback()
+           } catch (_: java.sql.SQLException) {
+               // ignore rollback failure
+           }
+           throw e
+       } finally {
+           transactionConnection.remove()
+           try {
+               if (isolation != null) conn.transactionIsolation = originalIsolation
+               conn.autoCommit = originalAutoCommit
+           } catch (_: Exception) { }
+           try { conn.close() } catch (_: Exception) { }
        }
    }
 
@@ -180,7 +250,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
         resultHandler: ResultSet.() -> T
     ): T {
         val (sql, params) = task.parsed()
-        return dataSource.connection.use { conn ->
+        return withConnection { conn ->
             conn.prepareStatement(sql, oracleOptions()).use { ps ->
                 ps.setParameters(params)
                 ps.executeQuery().use { rs ->
@@ -200,7 +270,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      */
     private fun executeUpdate(task: KAtomicActionTask): Int {
         val (sql, params) = task.parsed()
-        return dataSource.connection.use { conn ->
+        return withConnection { conn ->
             conn.prepareStatement(sql).use { ps ->
                 ps.setParameters(params)
                 ps.executeUpdate()
@@ -217,7 +287,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      */
     private fun executeBatchUpdate(task: KronosAtomicBatchTask): IntArray {
         val (sql, paramList) = task.parsedArr()
-        return dataSource.connection.use { conn ->
+        return withConnection { conn ->
             conn.prepareStatement(sql).use { ps ->
                 paramList.forEach { params ->
                     ps.setParameters(params)

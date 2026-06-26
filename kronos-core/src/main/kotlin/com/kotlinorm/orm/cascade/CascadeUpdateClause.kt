@@ -68,6 +68,8 @@ object CascadeUpdateClause {
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
+                // Use SelectClause.toStatement() internally via queryList()
+                // This ensures AST-based SQL generation for cascade query operations
                 toUpdateRecords.addAll(
                     pojo.select()
                         .where { whereClauseSql.asSql() }
@@ -76,7 +78,7 @@ object CascadeUpdateClause {
                             this.cascadeAllowed = cascadeAllowed
                             this.operationType = KOperationType.UPDATE
                         }
-                        .queryList(wrapper)
+                        .queryList(wrapper) // queryList() internally calls toStatement()
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { record ->
@@ -122,13 +124,22 @@ object CascadeUpdateClause {
         paramMap: Map<String, Any?>
     ): KronosActionTask? {
         if (null == node.data) return null
+        // Use UpdateClause.toStatement() internally via build()
+        // This ensures AST-based SQL generation for cascade update operations
         return node.kPojo.update().apply {
-            node.updateParams.forEach { (_, value) ->
-                val updateField = allFields.first { it.name == value }
-                toUpdateFields += updateField
-                paramMapNew[updateField + "New"] = paramMap[value + "New"]
+            // Build patch pairs from updateParams
+            val patchPairs = node.updateParams.mapNotNull { (_, value) ->
+                val paramValue = paramMap[value + "New"]
+                if (paramValue != null) {
+                    value to paramValue
+                } else {
+                    null
+                }
+            }.toTypedArray()
+            if (patchPairs.isNotEmpty()) {
+                patch(*patchPairs)
             }
-        }.build()
+        }.build() // build() internally calls toStatement()
     }
 
 }

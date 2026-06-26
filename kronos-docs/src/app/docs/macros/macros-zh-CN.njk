@@ -1,0 +1,42 @@
+{# Nunjucks: https://mozilla.github.io/nunjucks/ #}
+
+{% import "../../../macros/common.njk" as common %}
+
+{% macro keyword(url, page) -%}
+    {{ common.keyword(url, page, 'zh-CN') }}
+{%- endmacro %}
+
+{% macro title(name) -%}
+    {{ common.title(name) }}
+{%- endmacro %}
+
+{% macro annotation(name) -%}
+    {{ common.annotation(name) }}
+{%- endmacro %}
+
+{% macro code(name) -%}
+    {{ common.code(name) }}
+{%- endmacro %}
+
+{% macro required() -%}
+    {{ common.required() }}
+{%- endmacro %}
+
+{% macro params(paramList) -%}
+    {{ common.params(["参数", "说明", "类型", "默认值"], paramList) }}
+{%- endmacro %}
+
+{% macro members(memberList) -%}
+    {{ common.members(["名称", "说明", "类型"], memberList) }}
+{%- endmacro %}
+
+{% macro noun(str, name, anchor) -%}
+    {%- if(anchor == null) -%}
+        {%- set anchor = name -%}
+    {%- endif -%}
+    {{ common.noun(str, 'zh-CN', name, anchor) }}
+{%- endmacro %}
+
+{%- macro hr(width) -%}
+    {{ common.hr(width) }}
+{%- endmacro %}

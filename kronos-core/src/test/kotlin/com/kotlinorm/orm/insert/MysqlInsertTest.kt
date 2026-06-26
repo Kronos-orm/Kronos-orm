@@ -1,22 +1,14 @@
 package com.kotlinorm.orm.insert
 
-import com.kotlinorm.Kronos
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.orm.insert.InsertClause.Companion.build
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
+import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MysqlInsertTest {
-    init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { sampleMysqlJdbcWrapper }
-        }
-    }
+class MysqlInsertTest : MysqlTestBase() {
 
-    val user = MysqlUser(1)
+    private val user by lazy { MysqlUser(1) }
 
     @Test
     fun testInsert() {

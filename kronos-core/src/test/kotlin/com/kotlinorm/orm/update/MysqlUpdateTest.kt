@@ -11,8 +11,8 @@ import com.kotlinorm.orm.update.UpdateClause.Companion.build
 import com.kotlinorm.orm.update.UpdateClause.Companion.by
 import com.kotlinorm.orm.update.UpdateClause.Companion.set
 import com.kotlinorm.orm.update.UpdateClause.Companion.where
+import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.Extensions.mapperTo
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
 import kotlin.arrayOf
 import kotlin.collections.listOf
 import kotlin.collections.map
@@ -23,14 +23,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.to
 
-class MysqlUpdateTest {
+class MysqlUpdateTest : MysqlTestBase() {
     init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { sampleMysqlJdbcWrapper }
-            serializeProcessor = GsonProcessor
-        }
+        Kronos.serializeProcessor = GsonProcessor
     }
 
 

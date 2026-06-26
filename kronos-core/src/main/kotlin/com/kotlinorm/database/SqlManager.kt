@@ -25,8 +25,9 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
-import com.kotlinorm.orm.join.JoinClauseInfo
-import com.kotlinorm.orm.select.SelectClauseInfo
+// Legacy imports - commented out for AST migration
+// import com.kotlinorm.orm.join.JoinClauseInfo
+// import com.kotlinorm.orm.select.SelectClauseInfo
 
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
@@ -102,8 +103,8 @@ object SqlManager {
     )
 
     fun Field.quoted(
-        dataSource: KronosDataSourceWrapper, showTable: Boolean = false
-    ) = dataSource.dbType.dbSupport?.quote(this, showTable) ?: throw UnsupportedDatabaseTypeException(
+        dataSource: KronosDataSourceWrapper
+    ) = dataSource.dbType.dbSupport?.quote(this) ?: throw UnsupportedDatabaseTypeException(
         dataSource.dbType
     )
 
@@ -131,34 +132,14 @@ object SqlManager {
         map: Map<String, String> = emptyMap()
     ) = quote(dataSource, field.tableName, showTable, field.columnName, map)
 
-    fun getInsertSql(
-        dataSource: KronosDataSourceWrapper, tableName: String, columns: List<Field>
-    ) = dataSource.dbType.dbSupport?.getInsertSql(dataSource, tableName, columns)
-        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+    // Legacy methods - deprecated, use AST-based methods instead
+    // fun getSelectSql(
+    //     dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo
+    // ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, selectClause)
+    //     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
-    fun getDeleteSql(
-        dataSource: KronosDataSourceWrapper, tableName: String, whereClauseSql: String?
-    ) = dataSource.dbType.dbSupport?.getDeleteSql(dataSource, tableName, whereClauseSql)
-        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    fun getUpdateSql(
-        dataSource: KronosDataSourceWrapper,
-        tableName: String,
-        toUpdateFields: List<Field>,
-        whereClauseSql: String?,
-        plusAssigns: MutableList<Pair<Field, String>>,
-        minusAssigns: MutableList<Pair<Field, String>>
-    ) = dataSource.dbType.dbSupport?.getUpdateSql(
-        dataSource, tableName, toUpdateFields, whereClauseSql, plusAssigns, minusAssigns
-    ) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    fun getSelectSql(
-        dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo
-    ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, selectClause)
-        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    fun getJoinSql(
-        dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
-    ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)
-        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+    // fun getJoinSql(
+    //     dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
+    // ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)
+    //     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 }

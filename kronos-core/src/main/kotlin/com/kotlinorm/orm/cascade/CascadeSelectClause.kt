@@ -16,11 +16,15 @@
 
 package com.kotlinorm.orm.cascade
 
+import com.kotlinorm.Kronos
+import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.cache.kPojoAllFieldsCache
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.enums.QueryType.QueryOne
@@ -118,20 +122,18 @@ object CascadeSelectClause {
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
                             if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
                             if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
-                            lastStepResult.forEach rowMapper@{
-                                setValues(
-                                    it,
-                                    prop.name,
-                                    validRef,
-                                    cascadeAllowed,
-                                    mutableSetOf(
-                                        *cascadeSelectedProps.toTypedArray(),
-                                        *validCascades.map { cascade -> cascade.field }.toTypedArray()
-                                    ),
-                                    operationType,
-                                    wrapper
-                                )
-                            }
+                            setValues(
+                                lastStepResult,
+                                prop.name,
+                                validRef,
+                                cascadeAllowed,
+                                mutableSetOf(
+                                    *cascadeSelectedProps.toTypedArray(),
+                                    *validCascades.map { cascade -> cascade.field }.toTypedArray()
+                                ),
+                                operationType,
+                                wrapper
+                            )
                         }
 
                         QueryOne, QueryOneOrNull -> {
@@ -141,7 +143,7 @@ object CascadeSelectClause {
                             if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
                             if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
                             setValues(
-                                lastStepResult,
+                                listOf(lastStepResult),
                                 prop.name,
                                 validRef,
                                 cascadeAllowed,
@@ -161,8 +163,35 @@ object CascadeSelectClause {
         }
     }
 
+    private var cascadeFieldNotFoundWarned = mutableSetOf<String>()
+
+    /**
+     * Sets cascade values for a list of parent KPojo rows.
+     *
+     * For a single row or composite FK keys, performs per-row queries.
+     * For multiple rows with a single FK key, optimizes into a batch `WHERE col IN (...)` query
+     * to avoid the N+1 problem, then distributes results back to parent rows by FK value.
+     *
+     * If the cascade field is not found in the parent POJO's columns (e.g., when using DTO projections),
+     * a warning is logged and the cascade is skipped.
+     *
+     * 为父行列表设置级联查询值。
+     *
+     * 单行或复合外键时逐行查询；多行且单外键时，使用 `WHERE col IN (...)` 批量查询以避免 N+1 问题，
+     * 然后按外键值将子结果分配回父行。
+     *
+     * 若父 POJO 中未找到级联字段（如使用 DTO 投影时），记录警告并跳过级联。
+     *
+     * @param parentRows The list of parent KPojo instances to set cascade values on.
+     * @param prop The name of the cascade property on the parent POJO.
+     * @param validRef The validated cascade reference containing FK mapping info.
+     * @param cascadeAllowed The set of fields allowed for cascading, null means all allowed.
+     * @param cascadeSelectedProps Fields already selected for cascading (prevents infinite recursion).
+     * @param operationType The operation type (SELECT, DELETE, UPDATE).
+     * @param wrapper The data source wrapper for executing queries.
+     */
     fun setValues(
-        pojo: KPojo,
+        parentRows: List<KPojo>,
         prop: String,
         validRef: ValidCascade,
         cascadeAllowed: Set<Field>?,
@@ -170,39 +199,89 @@ object CascadeSelectClause {
         operationType: KOperationType,
         wrapper: KronosDataSourceWrapper
     ) {
-        // 将KPojo转为Map，该map将用于级联查询
-        val dataMap = pojo.toDataMap()
-        // 获取KPojo对应的表名
-        val tableName = pojo.__tableName
+        if (parentRows.isEmpty()) return
+        val parentFirst = parentRows.first()
+        val propField = parentFirst.kronosColumns().firstOrNull { it.name == prop }
+        if (propField == null) {
+            val key = "${parentFirst::class.simpleName}.$prop"
+            if (cascadeFieldNotFoundWarned.add(key)) {
+                Kronos.defaultLogger("CascadeSelectClause").warn(
+                    log {
+                        +"Cascade field '$prop' not found in ${parentFirst::class.simpleName}, skipping cascade query. Consider disabling cascade for this query."
+                    }
+                )
+            }
+            return
+        }
+        val isCollection = propField.cascadeIsCollectionOrArray
+        val tableName = parentFirst.__tableName
 
-        // 获取Pair列表，用于将Map内的值填充到引用的类的POJO中
-        // Pair的构建需要判断KPojo对象是ValidRef所在的表还是引用的表，然后根据不同的情况填充Pair
-        val listOfPair = validRef.kCascade.targetProperties.mapIndexed { index, targetProperty ->
-            if (tableName == validRef.tableName) {
-                targetProperty to (dataMap[validRef.kCascade.properties[index]] ?: return)
-            } else {
-                validRef.kCascade.properties[index] to (dataMap[targetProperty] ?: return)
+        // 确定 FK 映射方向：本地属性 → 远程属性
+        val isLocalTable = tableName == validRef.tableName
+        val (localProps, remoteProps) = if (isLocalTable) {
+            validRef.kCascade.properties to validRef.kCascade.targetProperties
+        } else {
+            validRef.kCascade.targetProperties to validRef.kCascade.properties
+        }
+
+        // 构建级联查询的 SelectClause
+        fun cascadeSelect(refPojo: KPojo) = refPojo.select().apply {
+            this.operationType = operationType
+            this.cascadeAllowed = cascadeAllowed
+            this.cascadeSelectedProps = cascadeSelectedProps
+        }
+
+        // 从父行 dataMap 中提取 FK 键值对，用于填充子 POJO 查询条件
+        fun buildFkPairs(dataMap: Map<String, Any?>): List<Pair<String, Any>>? {
+            return validRef.kCascade.targetProperties.mapIndexed { index, targetProp ->
+                val (key, valueProp) = if (isLocalTable) {
+                    targetProp to validRef.kCascade.properties[index]
+                } else {
+                    validRef.kCascade.properties[index] to targetProp
+                }
+                key to (dataMap[valueProp] ?: return null)
             }
         }
 
-        // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>，将级联需要用到的字段填充
-        val refPojo = validRef.refPojo.patchTo(
-            validRef.refPojo::class,
-            *listOfPair.toTypedArray()
-        )
+        // 单行或复合键：逐行查询
+        if (parentRows.size == 1 || localProps.size > 1) {
+            for (row in parentRows) {
+                val fkPairs = buildFkPairs(row.toDataMap()) ?: continue
+                val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class, *fkPairs.toTypedArray())
+                row[prop] = if (isCollection) cascadeSelect(refPojo).queryList(wrapper)
+                else cascadeSelect(refPojo).queryOneOrNull(wrapper)
+            }
+            return
+        }
 
-        pojo[prop] = if (pojo.kronosColumns().first { it.name == prop }.cascadeIsCollectionOrArray) { // 判断属性是否为集合
-            refPojo.select().apply {
-                this.operationType = operationType
-                this.cascadeAllowed = cascadeAllowed
-                this.cascadeSelectedProps = cascadeSelectedProps
-            }.queryList(wrapper) // 查询级联的POJO
-        } else {
-            refPojo.select().apply {
-                this.operationType = operationType
-                this.cascadeAllowed = cascadeAllowed
-                this.cascadeSelectedProps = cascadeSelectedProps
-            }.queryOneOrNull(wrapper) // 查询级联的POJO
+        // 批量查询：单FK列 + 多行，使用 WHERE col IN (...) 避免 N+1
+        val localProp = localProps[0]
+        val remoteProp = remoteProps[0]
+
+        val parentsByFk = mutableMapOf<Any, MutableList<KPojo>>()
+        for (row in parentRows) {
+            val fkValue = row.toDataMap()[localProp] ?: continue
+            parentsByFk.getOrPut(fkValue) { mutableListOf() }.add(row)
+        }
+        if (parentsByFk.isEmpty()) return
+
+        val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
+        val remoteField = refPojo.kronosColumns().first { it.name == remoteProp }
+        val allChildren = cascadeSelect(refPojo).where {
+            criteria = Criteria(
+                field = remoteField,
+                type = ConditionType.IN,
+                value = parentsByFk.keys.toList()
+            )
+            true
+        }.queryList(wrapper)
+
+        val childrenByFk = allChildren.groupBy { it.toDataMap()[remoteProp] }
+        for ((fkValue, rows) in parentsByFk) {
+            val matched = childrenByFk[fkValue] ?: emptyList()
+            for (row in rows) {
+                row[prop] = if (isCollection) matched else matched.firstOrNull()
+            }
         }
     }
 }

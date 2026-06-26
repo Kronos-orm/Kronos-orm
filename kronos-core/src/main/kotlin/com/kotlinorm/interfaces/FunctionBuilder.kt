@@ -16,6 +16,9 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FunctionCall
+import com.kotlinorm.ast.RenderContext
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
 
@@ -31,12 +34,33 @@ interface FunctionBuilder {
     fun support(field: FunctionField, dbType: DBType): Boolean {
         return supportFunctionNames(field.functionName).contains(dbType)
     }
+    
+    fun support(functionName: String, dbType: DBType): Boolean {
+        return supportFunctionNames(functionName).contains(dbType)
+    }
 
+    /**
+     * Transform FunctionField to SQL string (legacy DSL-based API)
+     */
     fun transform(
         field: FunctionField,
         dataSource: KronosDataSourceWrapper,
         showTable: Boolean,
         showAlias: Boolean
     ): String
+    
+    /**
+     * Transform FunctionCall AST node to SQL string (new AST-based API)
+     * 
+     * @param function The FunctionCall AST node to transform
+     * @param context The render context containing database type and rendering configuration
+     * @param renderExpression Callback to render nested expressions
+     * @return The rendered SQL string for this function call
+     */
+    fun transformAst(
+        function: FunctionCall,
+        context: RenderContext,
+        renderExpression: (Expression, RenderContext) -> String
+    ): String? = null // Default implementation returns null (not supported)
 
 }

@@ -30,6 +30,6 @@ val copyServices =
 tasks.withType<KotlinCompile> {
     dependsOn(copyServices)
     compilerOptions {
-        freeCompilerArgs.add("-Xopt-in=kotlin.RequiresOptIn")
+        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
     }
 }

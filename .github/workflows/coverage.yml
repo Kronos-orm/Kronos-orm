@@ -5,6 +5,8 @@ on:
     branches: [ main ]
   merge_group:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -12,10 +14,15 @@ permissions:
 
 jobs:
   kronos-core-coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        postgres-version: [17]
+        mysql-version: [8.0]
+        sqlserver-version: [2022]
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -25,6 +32,36 @@ jobs:
           java-version: 21
           distribution: 'adopt'
 
+      - name: Set up MySQL 8.0 🐬
+        uses: ankane/setup-mysql@v1
+        with:
+          mysql-version: ${{ matrix.mysql-version }}
+          user: kronos
+          database: kronos_testing
+
+      - name: Test MySQL connection 🔗
+        run: mysql -u kronos -D kronos_testing -e 'SELECT VERSION()'
+
+      - name: Setup PostgreSQL 🐘
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: ${{ matrix.postgres-version }}
+          user: kronos
+          database: kronos_testing
+        id: postgres
+
+      - name: Test PostgreSQL connection 🔗
+        run: psql -U kronos -d kronos_testing -c 'SHOW server_version'
+
+      - name: Setup Sqlserver 🛢️
+        uses: ankane/setup-sqlserver@v1
+        with:
+          accept-eula: true
+          sqlserver-version: ${{ matrix.sqlserver-version }}
+
+      - name: Test Sqlserver connection 🔗
+        run: sqlcmd -S localhost -U SA -P 'YourStrong!Passw0rd' -Q "SELECT @@version"
+
       - name: Create badges dir if not exists 📁
         run: |
           mkdir -p coverage/kronos-core
@@ -33,35 +70,155 @@ jobs:
 
       - name: Run Core Test Coverage 🧪
         id: core-coverage
+        env:
+          MYSQL_USERNAME: kronos
+          POSTGRES_USERNAME: kronos
         run: |
           ./gradlew :kronos-core:koverLog
+          ./gradlew :kronos-core:koverXmlReport
           ./gradlew :kronos-core:koverHtmlReport
           cat kronos-core/build/kover/coverage.txt
           cp -rf kronos-core/build/reports/kover/html/* coverage/kronos-core
-          COVERAGE="$(cat kronos-core/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
-          echo "##[set-output name=lines;]${COVERAGE}"
+          # 提取行覆盖率
+          LINE_COVERAGE="$(cat kronos-core/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          # 从XML报告提取分支覆盖率
+          if [ -f "kronos-core/build/reports/kover/report.xml" ]; then
+            BRANCH_DATA=$(grep -o 'BRANCH.*missed="[0-9]*".*covered="[0-9]*"' kronos-core/build/reports/kover/report.xml | tail -1)
+            BRANCH_MISSED=$(echo "$BRANCH_DATA" | grep -o 'missed="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_COVERED=$(echo "$BRANCH_DATA" | grep -o 'covered="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+            if [ $BRANCH_TOTAL -gt 0 ]; then
+              BRANCH_COVERAGE=$(echo "scale=2; $BRANCH_COVERED * 100 / $BRANCH_TOTAL" | bc)
+            else
+              BRANCH_COVERAGE="0.00"
+            fi
+          else
+            BRANCH_COVERAGE="N/A"
+          fi
+          echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
 
       - name: Run Compiler Plugin Test Coverage 🧪
         id: compiler-plugin-coverage
+        env:
+          MYSQL_USERNAME: kronos
+          POSTGRES_USERNAME: kronos
         run: |
           ./gradlew :kronos-compiler-plugin:koverLog
+          ./gradlew :kronos-compiler-plugin:koverXmlReport
           ./gradlew :kronos-compiler-plugin:koverHtmlReport
           cat kronos-compiler-plugin/build/kover/coverage.txt
           cp -rf kronos-compiler-plugin/build/reports/kover/html/* coverage/kronos-compiler-plugin
-          COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
-          echo "##[set-output name=lines;]${COVERAGE}"
+          # 提取行覆盖率
+          LINE_COVERAGE="$(cat kronos-compiler-plugin/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          # 从XML报告提取分支覆盖率
+          if [ -f "kronos-compiler-plugin/build/reports/kover/report.xml" ]; then
+            BRANCH_DATA=$(grep -o 'BRANCH.*missed="[0-9]*".*covered="[0-9]*"' kronos-compiler-plugin/build/reports/kover/report.xml | tail -1)
+            BRANCH_MISSED=$(echo "$BRANCH_DATA" | grep -o 'missed="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_COVERED=$(echo "$BRANCH_DATA" | grep -o 'covered="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+            if [ $BRANCH_TOTAL -gt 0 ]; then
+              BRANCH_COVERAGE=$(echo "scale=2; $BRANCH_COVERED * 100 / $BRANCH_TOTAL" | bc)
+            else
+              BRANCH_COVERAGE="0.00"
+            fi
+          else
+            BRANCH_COVERAGE="N/A"
+          fi
+          echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
 
       - name: Run Codegen Test Coverage 🧪
         id: codegen-coverage
+        env:
+          MYSQL_USERNAME: kronos
+          POSTGRES_USERNAME: kronos
         run: |
           ./gradlew :kronos-codegen:koverLog
+          ./gradlew :kronos-codegen:koverXmlReport
           ./gradlew :kronos-codegen:koverHtmlReport
           cat kronos-codegen/build/kover/coverage.txt
           cp -rf kronos-codegen/build/reports/kover/html/* coverage/kronos-codegen
-          COVERAGE="$(cat kronos-codegen/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
-          echo "##[set-output name=lines;]${COVERAGE}"
+          # 提取行覆盖率
+          LINE_COVERAGE="$(cat kronos-codegen/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          # 从XML报告提取分支覆盖率
+          if [ -f "kronos-codegen/build/reports/kover/report.xml" ]; then
+            BRANCH_DATA=$(grep -o 'BRANCH.*missed="[0-9]*".*covered="[0-9]*"' kronos-codegen/build/reports/kover/report.xml | tail -1)
+            BRANCH_MISSED=$(echo "$BRANCH_DATA" | grep -o 'missed="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_COVERED=$(echo "$BRANCH_DATA" | grep -o 'covered="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+            if [ $BRANCH_TOTAL -gt 0 ]; then
+              BRANCH_COVERAGE=$(echo "scale=2; $BRANCH_COVERED * 100 / $BRANCH_TOTAL" | bc)
+            else
+              BRANCH_COVERAGE="0.00"
+            fi
+          else
+            BRANCH_COVERAGE="N/A"
+          fi
+          echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
 
+      # ── PR 触发：将覆盖率结果评论到 PR ──────────────────────────────────────
+      - name: Comment coverage on PR 💬
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const coreLines   = '${{ steps.core-coverage.outputs.lines }}';
+            const coreBranch  = '${{ steps.core-coverage.outputs.branch }}';
+            const pluginLines = '${{ steps.compiler-plugin-coverage.outputs.lines }}';
+            const pluginBranch= '${{ steps.compiler-plugin-coverage.outputs.branch }}';
+            const codegenLines= '${{ steps.codegen-coverage.outputs.lines }}';
+            const codegenBranch='${{ steps.codegen-coverage.outputs.branch }}';
+
+            const body = [
+              '## 📊 Test Coverage Report',
+              '',
+              '| Module | Line Coverage | Branch Coverage |',
+              '|--------|:-------------:|:---------------:|',
+              `| \`kronos-core\`            | ${coreLines}    | ${coreBranch}      |`,
+              `| \`kronos-compiler-plugin\` | ${pluginLines}  | ${pluginBranch}    |`,
+              `| \`kronos-codegen\`         | ${codegenLines} | ${codegenBranch}   |`,
+              '',
+              '### 📈 Coverage Analysis',
+              `- **kronos-core**: Branch coverage ${coreBranch}, consider adding more conditional statement tests`,
+              `- **kronos-compiler-plugin**: Branch coverage ${pluginBranch}, suggest testing more transformation scenarios`,
+              `- **kronos-codegen**: Branch coverage ${codegenBranch}, good performance`,
+              '',
+              `> Generated for commit \`${{ github.event.pull_request.head.sha }}\``,
+            ].join('\n');
+
+            // 找到之前由 Bot 发的同类评论并更新，避免重复刷评论
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('📊 Test Coverage Report')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      # ── push/merge_group 触发：生成 badge 并部署到 coverage 分支 ────────────
       - name: Generate the badge SVG image for Core
+        if: github.event_name != 'pull_request'
         uses: emibcn/badge-action@v2.0.3
         with:
           label: 'core coverage'
@@ -70,6 +227,7 @@ jobs:
           path: 'coverage/coverage-core.svg'
 
       - name: Generate the badge SVG image for Compiler Plugin
+        if: github.event_name != 'pull_request'
         uses: emibcn/badge-action@v2.0.3
         with:
           label: 'compiler plugin coverage'
@@ -78,6 +236,7 @@ jobs:
           path: 'coverage/coverage-compiler-plugin.svg'
 
       - name: Generate the badge SVG image for Codegen
+        if: github.event_name != 'pull_request'
         uses: emibcn/badge-action@v2.0.3
         with:
           label: 'codegen coverage'
@@ -86,6 +245,7 @@ jobs:
           path: 'coverage/coverage-codegen.svg'
 
       - name: Deploy to coverage branch 📦
+        if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: coverage

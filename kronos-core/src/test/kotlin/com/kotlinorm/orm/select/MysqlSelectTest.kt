@@ -1,6 +1,6 @@
 package com.kotlinorm.orm.select
 
-import com.kotlinorm.Kronos
+import com.kotlinorm.beans.sample.Product
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.enums.PessimisticLock
@@ -11,24 +11,14 @@ import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
 import com.kotlinorm.functions.bundled.exts.StringFunctions.concat
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
+import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
-class MysqlSelectTest {
-    init {
-        // 配置Kronos ORM框架的基本设置
-        Kronos.init {
-            // 设置字段命名策略为驼峰命名
-            fieldNamingStrategy = lineHumpNamingStrategy
-            // 设置表命名策略为驼峰命名
-            tableNamingStrategy = lineHumpNamingStrategy
-            // 设置数据源提供器
-            dataSource = { sampleMysqlJdbcWrapper }
-        }
-    }
+class MysqlSelectTest : MysqlTestBase() {
 
-    val user = MysqlUser(2)
+    private val user by lazy { MysqlUser(2) }
 
     @Test
     fun testSelectAllParams() {
@@ -154,7 +144,7 @@ class MysqlSelectTest {
             .build()
 
         assertEquals(
-            "SELECT `id`, `username` FROM `tb_user` WHERE `id` = :id OR `id` = :id@1 OR `id` = :id@2 AND `deleted` = 0",
+            "SELECT `id`, `username` FROM `tb_user` WHERE (`id` = :id OR `id` = :id@1 OR `id` = :id@2) AND `deleted` = 0",
             sql
         )
         assertEquals(mapOf("id" to 0, "id@1" to 2, "id@2" to 3), paramMap)
@@ -378,5 +368,23 @@ class MysqlSelectTest {
                 "username" to "123"
             ), paramMap
         )
+    }
+
+    @Test
+    fun testSelectBuildUsesOriginalTableName() {
+        // A().select().queryList<B>() should query A's table, not B's
+        // Verify that build() generates SQL with MysqlUser's table (tb_user), not Product's (tb_product)
+        val (sql, _) = MysqlUser(1).select().build()
+        assertTrue(sql.contains("`tb_user`"), "SQL should contain tb_user but was: $sql")
+
+        // Also verify Product's table name is NOT in the SQL
+        assertTrue(!sql.contains("tb_product"), "SQL should NOT contain tb_product but was: $sql")
+    }
+
+    @Test
+    fun testTableNameProperty() {
+        // Verify __tableName returns correct values for each KPojo
+        assertEquals("tb_user", MysqlUser().__tableName)
+        assertEquals("tb_product", Product().__tableName)
     }
 }

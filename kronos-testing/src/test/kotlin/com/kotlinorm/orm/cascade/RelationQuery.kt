@@ -4,9 +4,12 @@ import com.kotlinorm.GsonProcessor
 import com.kotlinorm.Kronos
 import com.kotlinorm.Kronos.dataSource
 import com.kotlinorm.KronosBasicWrapper
+import com.kotlinorm.beans.sample.cascade.oneToMany.Chapter
 import com.kotlinorm.beans.sample.manyToMany.Permission
 import com.kotlinorm.beans.sample.manyToMany.Role
 import com.kotlinorm.beans.sample.manyToMany.RolePermissionRelation
+import com.kotlinorm.beans.sample.oneToMany.Book
+import com.kotlinorm.beans.sample.oneToMany.BookDto
 import com.kotlinorm.beans.sample.oneToMany.GroupClass
 import com.kotlinorm.beans.sample.oneToMany.School
 import com.kotlinorm.beans.sample.oneToMany.Student
@@ -19,6 +22,7 @@ import org.apache.commons.dbcp2.BasicDataSource
 import kotlin.io.print
 import kotlin.io.println
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class RelationQuery {
     private val wrapper = BasicDataSource().apply {
@@ -205,5 +209,29 @@ class RelationQuery {
     fun testCascadeSetNull() {
         testCascadeInsert()
         School(1).delete().execute()
+    }
+
+    @Test
+    fun testOneToMany() {
+        dataSource.table.dropTable<Book>()
+        dataSource.table.dropTable<Chapter>()
+        dataSource.table.createTable<Book>()
+        dataSource.table.createTable<Chapter>()
+
+        Book(
+            id = 1,
+            chapters = listOf(
+                Chapter(1),
+                Chapter(2),
+                Chapter(3)
+            )
+        ).insert().execute()
+
+        val chapters = Book(1).select{ it.chapters }.queryList().flatMap { it.chapters }
+        assertEquals(3, chapters.size)
+
+        val books = Book(1).select().queryList<BookDto>()
+        assertEquals(1, books.size)
+        assertEquals(1, books.first().id)
     }
 }

@@ -1,0 +1,50 @@
+name: Sync Skills to release/llm
+
+on:
+  push:
+    branches: [ release/0.1.0 ]
+    paths:
+      - '.claude/skills/kronos-orm-guide/**'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Sync to release/llm 🔄
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git user 👤
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Copy skill files from source branch 📋
+        run: |
+          mkdir -p /tmp/skill-sync
+          cp .claude/skills/kronos-orm-guide/SKILL.md /tmp/skill-sync/SKILL.md
+          if [ -d .claude/skills/kronos-orm-guide/references ]; then
+            cp -r .claude/skills/kronos-orm-guide/references /tmp/skill-sync/references
+          fi
+
+      - name: Sync to release/llm 📦
+        run: |
+          git checkout release/llm
+
+          # Clean old files and replace with new
+          git rm -rf --ignore-unmatch .
+          cp /tmp/skill-sync/SKILL.md SKILL.md
+          if [ -d /tmp/skill-sync/references ]; then
+            cp -r /tmp/skill-sync/references references/
+          fi
+
+          git add -A
+          git diff --cached --quiet || {
+            git commit -m "chore: sync kronos-orm-guide from release/0.1.0 [skip ci]"
+            git push origin release/llm
+          }

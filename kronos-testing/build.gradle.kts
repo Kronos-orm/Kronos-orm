@@ -1,10 +1,14 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktx.serialization)
+    alias(libs.plugins.kover)
 }
 
 dependencies {
     kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
+    kover(project(":kronos-core"))
+    kover(project(":kronos-codegen"))
+    kover(project(":kronos-compiler-plugin"))
     testImplementation(project(":kronos-codegen"))
     testImplementation(project(":kronos-core"))
     testImplementation(project(":kronos-logging"))

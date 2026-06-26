@@ -108,7 +108,7 @@ interface KPojo {
     @Suppress("PropertyName")
     @Ignore([IgnoreAction.ALL])
     var __tableName: String
-        get() = throw IllegalStateException()
+        get() = error("__tableName must be overridden by the compiler plugin")
         set(_) {}
 
     /**
@@ -122,7 +122,7 @@ interface KPojo {
     @Suppress("PropertyName")
     @Ignore([IgnoreAction.ALL])
     var __tableComment: String
-        get() = throw IllegalStateException()
+        get() = error("__tableComment must be overridden by the compiler plugin")
         set(_) {}
 
     /**

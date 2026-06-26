@@ -1,6 +1,8 @@
 name: Publish Kronos
 
 on:
+  push:
+    branches: [ release/0.1.0 ]
   pull_request:
     types: [closed]
     branches: [ main ]
@@ -11,7 +13,9 @@ permissions:
 jobs:
   publish:
     name: Publish 🚀
-    if: github.event.pull_request.merged == true
+    if: >-
+      (github.event_name == 'push') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️

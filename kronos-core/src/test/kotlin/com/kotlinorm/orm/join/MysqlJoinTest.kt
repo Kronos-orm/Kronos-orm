@@ -7,20 +7,14 @@ import com.kotlinorm.beans.sample.Movie
 import com.kotlinorm.beans.sample.UserRelation
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
+import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.trimWhitespace
-import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper.Companion.sampleMysqlJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MysqlJoinTest {
-
+class MysqlJoinTest : MysqlTestBase() {
     init {
-        Kronos.init {
-            fieldNamingStrategy = lineHumpNamingStrategy
-            tableNamingStrategy = lineHumpNamingStrategy
-            dataSource = { sampleMysqlJdbcWrapper }
-            serializeProcessor = GsonProcessor
-        }
+        Kronos.serializeProcessor = GsonProcessor
     }
 
     @Test

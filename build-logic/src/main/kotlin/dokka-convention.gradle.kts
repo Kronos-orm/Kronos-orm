@@ -47,14 +47,13 @@ if (project == project.rootProject) {
         }
     }
 } else {
-    tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
-        dokkaSourceSets {
-            configureEach {
-                includes.from("README.md")
-                reportUndocumented.set(true)
-                jdkVersion.set(17)
-                sourceRoots.from(file("src/main/kotlin"))
-            }
+    // DGP v2 configuration using top-level dokka {} DSL
+    configure<org.jetbrains.dokka.gradle.DokkaExtension> {
+        dokkaSourceSets.configureEach {
+            includes.from("README.md")
+            reportUndocumented.set(true)
+            jdkVersion.set(17)
+            sourceRoots.from(file("src/main/kotlin"))
         }
     }
 }

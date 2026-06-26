@@ -16,6 +16,11 @@
 
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.ast.ColumnReference
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.TableName
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.generator.SnowflakeIdGenerator
@@ -33,16 +38,18 @@ import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoPrimaryKeyCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
-import com.kotlinorm.database.SqlManager.getInsertSql
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
+import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.processParams
 
 class InsertClause<T : KPojo>(val pojo: T) {
@@ -84,7 +91,6 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         var useIdentity = false
-        val paramMapNew = mutableMapOf<String, Any?>()
         val fieldsMap = fieldsMapCache[kClass]!!
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
@@ -120,24 +126,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 paramMap[field.name] = value
             }
         }
-        paramMap.forEach { (key, value) ->
-            val field = fieldsMap[key]
-            if (field != null && value != null) {
-                paramMapNew[key] = processParams(wrapper.orDefault(), field, value)
-            } else {
-                paramMapNew[key] = value
-            }
-        }
 
-        val sql = insertSqlCache[kClass to useIdentity, {
-            getInsertSql(
-                wrapper.orDefault(),
-                tableName,
-                toInsertFields
-            ).also {
-                insertSqlCache[kClass to useIdentity] = it
-            }
-        }]
+        // Use new AST-based rendering
+        val (sql, paramMapNew) = renderStatement(wrapper)
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -159,6 +150,139 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     fun execute(wrapper: KronosDataSourceWrapper? = null): KronosOperationResult {
         return build().execute(wrapper)
+    }
+
+    /**
+     * Converts the InsertClause to an InsertStatement AST.
+     * This method constructs the complete AST representation including:
+     * - Table reference
+     * - Column list
+     * - Value expressions
+     * - Conflict resolver (if configured)
+     *
+     * @param wrapper Optional KronosDataSourceWrapper for processing
+     * @return Complete InsertStatement AST
+     */
+    fun toStatement(wrapper: KronosDataSourceWrapper? = null): InsertStatement {
+        val dataSource = wrapper.orDefault()
+        var useIdentity = false
+        val fieldsMap = fieldsMapCache[kClass]!!
+        val toInsertFields = mutableListOf<Field>()
+        val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
+        
+        // Handle primary key generation
+        when (primaryKeyField.primaryKey) {
+            PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
+            PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
+            PrimaryKeyType.CUSTOM -> paramMap[primaryKeyField.name] = customIdGenerator?.nextId()
+            PrimaryKeyType.IDENTITY -> useIdentity = true
+            else -> {}
+        }
+        if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
+            useIdentity = false
+        }
+        stash["useIdentity"] = useIdentity
+        
+        // Collect fields to insert
+        allColumns.forEach {
+            if (it.defaultValue != null && paramMap[it.name] == null) {
+                paramMap[it.name] = it.defaultValue
+            }
+            if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
+                toInsertFields.add(it)
+            }
+        }
+        if (useIdentity && !paramMap.containsKey(primaryKeyField.name)) {
+            toInsertFields.remove(primaryKeyField)
+        }
+        
+        // Apply strategies
+        arrayOf(
+            createTimeStrategy to true,
+            updateTimeStrategy to true,
+            logicDeleteStrategy to false,
+            optimisticStrategy to false
+        ).forEach {
+            it.first?.execute(it.second) { field, value ->
+                paramMap[field.name] = value
+            }
+        }
+        
+        // Build column references
+        val columns = toInsertFields.map { field ->
+            ColumnReference(database = null, tableAlias = null, columnName = field.columnName)
+        }
+        
+        // Build value expressions (parameters)
+        val values = toInsertFields.map { field ->
+            Parameter.NamedParameter(field.name) as Expression
+        }
+        
+        // Build table reference
+        val table = TableName(
+            database = null,
+            schema = null,
+            table = tableName,
+            alias = null
+        )
+        
+        // Note: ConflictResolver is not currently supported in InsertClause
+        // It's only available in UpsertClause. If needed in the future, 
+        // add a conflictResolver field and onConflict() method similar to UpsertClause
+        
+        return InsertStatement(
+            table = table,
+            columns = columns,
+            values = values,
+            conflictResolver = null
+        )
+    }
+
+    /**
+     * Renders the InsertStatement to SQL with processed parameters.
+     * This method handles parameter processing including field type conversion.
+     *
+     * @param wrapper Optional KronosDataSourceWrapper for rendering and parameter processing
+     * @return Pair of SQL string and processed parameter map
+     */
+    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair<String, Map<String, Any?>> {
+        val dataSource = wrapper.orDefault()
+        val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+
+        // Get complete statement with all parameters and checks applied
+        val finalStatement = toStatement(wrapper)
+
+        // Render AST to SQL with parameters
+        val renderedSql = support.getInsertSqlWithParams(dataSource, finalStatement)
+
+        // Process parameters (field type conversion, etc.)
+        val paramMapNew = mutableMapOf<String, Any?>()
+        val fieldsMap = fieldsMapCache[kClass]!!
+        
+        // First, add parameters from renderedSql (if any)
+        renderedSql.parameters.forEach { (key, value) ->
+            val field = fieldsMap[key]
+            if (field != null && value != null) {
+                paramMapNew[key] = support.processParams(dataSource, field, value)
+            } else {
+                paramMapNew[key] = value
+            }
+        }
+        
+        // Then, add parameters from paramMap (INSERT values)
+        // Check which parameters are actually used in the SQL
+        paramMap.forEach { (key, value) ->
+            if (!paramMapNew.containsKey(key) && renderedSql.sql.contains(":$key")) {
+                val field = fieldsMap[key]
+                if (field != null) {
+                    paramMapNew[key] = support.processParams(dataSource, field, value)
+                } else {
+                    paramMapNew[key] = value
+                }
+            }
+        }
+
+        return Pair(renderedSql.sql, paramMapNew)
     }
 
     companion object {

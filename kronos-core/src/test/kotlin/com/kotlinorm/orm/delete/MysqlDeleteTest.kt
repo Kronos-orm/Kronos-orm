@@ -25,9 +25,8 @@ class MysqlDeleteTest : MysqlTestBase() {
     @Test
     fun testDelete2() {
         val (sql, paramMap) = user.delete().logic(false).build()
-        //delete from tb_user where id = 1 and deleted = 0
-        assertEquals("DELETE FROM `tb_user` WHERE `id` = :id", sql)
-        assertEquals(mapOf("id" to 1), paramMap)
+        assertEquals("DELETE FROM `tb_user`", sql)
+        assertEquals(emptyMap(), paramMap)
     }
 
     @Test
@@ -112,8 +111,8 @@ class MysqlDeleteTest : MysqlTestBase() {
         assertTrue(sql.startsWith("UPDATE"), "Logic delete should generate UPDATE statement, got: $sql")
         assertTrue(sql.contains("`deleted` = :deletedNew"), "SQL should set deleted flag")
         assertTrue(sql.contains("`update_time` = :updateTimeNew"), "SQL should set update_time")
-        assertTrue(sql.contains("AND `deleted` = 0"), "SQL should filter by deleted = 0")
-        assertEquals(1, paramMap["id"])
+        assertTrue(sql.contains("WHERE `deleted` = 0"), "SQL should filter by deleted = 0")
+        assertTrue(!paramMap.containsKey("id"), "paramMap should not contain id without where()/by()")
         assertEquals(1, paramMap["deletedNew"])
     }
 
@@ -164,6 +163,6 @@ class MysqlDeleteTest : MysqlTestBase() {
     fun testDeleteSqlUsesBacktickQuoting() {
         val (sql, _) = user.delete().logic(false).build()
         assertTrue(sql.contains("`tb_user`"), "MySQL should use backtick quoting for table")
-        assertTrue(sql.contains("`id`"), "MySQL should use backtick quoting for columns")
+        assertTrue(!sql.contains("WHERE"), "DELETE without where()/by() should not add implicit conditions")
     }
 }

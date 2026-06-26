@@ -24,9 +24,9 @@ class MysqlSelectTest : MysqlTestBase() {
     fun testSelectAllParams() {
         val (sql, paramMap) = user.select().build()
 
-        assertEquals(mapOf("id" to 2), paramMap)
+        assertEquals(emptyMap(), paramMap)
         assertEquals(
-            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `deleted` = 0",
             sql
         )
     }
@@ -35,8 +35,8 @@ class MysqlSelectTest : MysqlTestBase() {
     fun testSelectOneParam() {
         val (sql, paramMap) = user.select { it.id }.build()
 
-        assertEquals(mapOf("id" to 2), paramMap)
-        assertEquals("SELECT `id` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
+        assertEquals(emptyMap(), paramMap)
+        assertEquals("SELECT `id` FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
     @Test
@@ -44,17 +44,17 @@ class MysqlSelectTest : MysqlTestBase() {
 
         val (sql, paramMap) = user.select { it.id + it.username + it.gender + "123" }.build()
 
-        assertEquals("SELECT `id`, `username`, `gender`, 123 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0", sql)
-        assertEquals(mapOf("id" to 2), paramMap)
+        assertEquals("SELECT `id`, `username`, `gender`, 123 FROM `tb_user` WHERE `deleted` = 0", sql)
+        assertEquals(emptyMap(), paramMap)
     }
 
     @Test
     fun testSingle() {
         val (sql, paramMap) = user.select().single().build()
 
-        assertEquals(mapOf("id" to 2), paramMap)
+        assertEquals(emptyMap(), paramMap)
         assertEquals(
-            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 1",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `deleted` = 0 LIMIT 1",
             sql
         )
     }
@@ -63,9 +63,9 @@ class MysqlSelectTest : MysqlTestBase() {
     fun testLimit() {
         val (sql, paramMap) = user.select().limit(10).build()
 
-        assertEquals(mapOf("id" to 2), paramMap)
+        assertEquals(emptyMap(), paramMap)
         assertEquals(
-            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `deleted` = 0 LIMIT 10",
             sql
         )
     }
@@ -78,16 +78,16 @@ class MysqlSelectTest : MysqlTestBase() {
         val (sql2, paramMap2) = total
 
         assertEquals(
-            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 LIMIT 10 OFFSET 0",
+            "SELECT `id`, `username`, `score`, `gender`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted` FROM `tb_user` WHERE `deleted` = 0 LIMIT 10 OFFSET 0",
             sql
         )
-        assertEquals(mapOf("id" to 2), paramMap)
+        assertEquals(emptyMap(), paramMap)
 
         assertEquals(
-            "SELECT COUNT(*) FROM (SELECT 1 FROM `tb_user` WHERE `id` = :id AND `deleted` = 0) AS total_count",
+            "SELECT COUNT(*) FROM (SELECT 1 FROM `tb_user` WHERE `deleted` = 0) AS total_count",
             sql2
         )
-        assertEquals(mapOf("id" to 2), paramMap2)
+        assertEquals(emptyMap(), paramMap2)
 
     }
 
@@ -117,10 +117,10 @@ class MysqlSelectTest : MysqlTestBase() {
             .build()
 
         assertEquals(
-            "SELECT `id`, `username` AS `name`, `gender`, COUNT(1) as `count` FROM `tb_user` WHERE `id` = :id AND `deleted` = 0 FOR UPDATE",
+            "SELECT `id`, `username` AS `name`, `gender`, COUNT(1) as `count` FROM `tb_user` WHERE `deleted` = 0 FOR UPDATE",
             sql
         )
-        assertEquals(mapOf("id" to 2), paramMap)
+        assertEquals(emptyMap(), paramMap)
     }
 
     @Test

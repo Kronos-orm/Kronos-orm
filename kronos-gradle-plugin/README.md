@@ -6,7 +6,7 @@ Gradle plugin that wires the Kronos compiler plugin into Kotlin compilation.
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0"
 }
 ```
 

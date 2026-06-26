@@ -1,8 +1,6 @@
 name: Publish Kronos
 
 on:
-  push:
-    branches: [ release/0.1.0 ]
   pull_request:
     types: [closed]
     branches: [ main ]
@@ -13,9 +11,7 @@ permissions:
 jobs:
   publish:
     name: Publish 🚀
-    if: >-
-      (github.event_name == 'push') ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -79,7 +75,6 @@ jobs:
       - name: Release 🔼 - bump to next SNAPSHOT and push
         if: steps.detect.outputs.mode == 'release'
         run: |
-          bash .github/scripts/bump-version.sh next-snapshot
           NEXT_SNAPSHOT=$( bash .github/scripts/bump-version.sh next-snapshot | tail -n1 | cut -d= -f2 )
           git add -A
           git commit -m "chore(version): start $NEXT_SNAPSHOT [skip ci]" || echo "No changes to commit"

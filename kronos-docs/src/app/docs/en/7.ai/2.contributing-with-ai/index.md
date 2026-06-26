@@ -4,7 +4,7 @@ Kronos ORM includes a developer-facing AI skill called **kronos-dev-guide** that
 
 ## What is kronos-dev-guide?
 
-`kronos-dev-guide` is located at `.claude/skills/kronos-dev-guide/` in the repository. It's designed for contributors and maintainers who want AI assistance when working on the Kronos codebase itself.
+`kronos-dev-guide` is located at `.agents/skills/kronos-dev-guide/` in the repository. It's designed for contributors and maintainers who want AI assistance when working on the Kronos codebase itself.
 
 The skill helps AI assistants:
 
@@ -31,7 +31,7 @@ The skill uses a hub-and-reference pattern. `SKILL.md` is the entry point that d
 
 ## Setup
 
-The skill is already included in the repository under `.claude/skills/kronos-dev-guide/`. If you're using Claude Code, it will be automatically detected when you open the project.
+The skill is already included in the repository under `.agents/skills/kronos-dev-guide/`. Point your AI assistant's context to this directory when you open the project.
 
 For other AI tools, point your assistant's context to the `SKILL.md` file and the relevant reference files.
 

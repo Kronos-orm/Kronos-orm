@@ -55,7 +55,7 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 
 ## 贡献者指引
 
-AI 编程助手可参考 `.claude/skills/` 下的技能指南获取架构与工作流上下文。
+AI 编程助手可参考 `.agents/skills/` 下的技能指南获取架构与工作流上下文。
 
 --------
 
@@ -89,7 +89,6 @@ User(id = id).delete().execute()
 | Maven | 3.6.3+ |
 
 > 请确保 IDE 的 Kotlin 插件支持 Kotlin 2.3.0 或更高版本。
->>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
 
 --------
 
@@ -100,19 +99,11 @@ User(id = id).delete().execute()
 
 ```kotlin
 plugins {
-<<<<<<< HEAD
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.7"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.0.7")
-=======
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0-SNAPSHOT"
-}
-
-dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.0-SNAPSHOT")
->>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
+    implementation("com.kotlinorm:kronos-core:0.1.0")
 }
 ```
 
@@ -123,19 +114,11 @@ dependencies {
 
 ```groovy
 plugins {
-<<<<<<< HEAD
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.0.7'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.0.7'
-=======
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0-SNAPSHOT'
-}
-
-dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.1.0-SNAPSHOT'
->>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
+    implementation 'com.kotlinorm:kronos-core:0.1.0'
 }
 ```
 
@@ -150,11 +133,7 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-<<<<<<< HEAD
-            <version>0.0.7</version>
-=======
-            <version>0.1.0-SNAPSHOT</version>
->>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
+            <version>0.1.0</version>
         </dependency>
     </dependencies>
 
@@ -173,11 +152,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-<<<<<<< HEAD
-                        <version>0.0.7</version>
-=======
-                        <version>0.1.0-SNAPSHOT</version>
->>>>>>> 9037e6de0 (docs: rewrite READMEs, add AI skill guide, and update submodule docs)
+                        <version>0.1.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -358,7 +333,7 @@ Kronos 提供 AI 技能指南，帮助编程助手理解和生成 Kronos 代码�
 | 工具 | 命令 |
 |------|------|
 | **Cursor / Windsurf** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
-| **Claude Code** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .claude/skills/kronos-orm-guide && rm -rf .claude/skills/kronos-orm-guide/.git` |
+| **Claude Code** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
 | **Codex** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .codex/kronos-orm-guide && rm -rf .codex/kronos-orm-guide/.git` |
 | **OpenCode** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .opencode/skills/kronos-orm-guide && rm -rf .opencode/skills/kronos-orm-guide/.git` |
 | **Kiro** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .kiro/skills/kronos-orm-guide && rm -rf .kiro/skills/kronos-orm-guide/.git` |

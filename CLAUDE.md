@@ -68,4 +68,4 @@ Kotlin compiler-plugin-powered ORM framework. Zero reflection, strong typing, mu
 
 For module internals, transformer pipelines, adding new DB support, DSL operations, testing patterns, and CI/CD workflows, see:
 
-→ `.claude/skills/kronos-dev-guide`
+→ `.agents/skills/kronos-dev-guide`

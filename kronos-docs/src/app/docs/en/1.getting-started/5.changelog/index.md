@@ -3,9 +3,20 @@
 
 `Kronos` strictly adheres to the Semantic Versioning 2.0.0 specification.
 
-- **Current Version:** `0.0.7`
+- **Current Version:** `0.1.0`
 
 ## Update Logs
+
+### 0.1.0
+
+- ✨ Release `0.1.0` with core module, build configuration, and README version reference updates ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204), [#207](https://github.com/Kronos-orm/Kronos-orm/pull/207), [#208](https://github.com/Kronos-orm/Kronos-orm/pull/208))
+- ✨ Add the K2 compiler plugin implementation, rename the previous compiler plugin to `kronos-compiler-plugin-legacy`, and make the K2 plugin the main compiler plugin ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- ✨ Add type-safe SQL AST and dialect renderers covering select, insert, update, delete, upsert, DDL, union, and function rendering ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- ✨ Add transaction DSL support for isolation levels, timeout, savepoints, and nested transaction connection reuse; add ThreadLocal transaction connection sharing to the JDBC wrapper ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 💪 Improve cascade select, cross-module test infrastructure, codegen tests, core ORM/dialect function tests, and coverage CI ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 💪 Redesign the docs homepage and documentation UI with theme sync, collapsible sidebar, copy-as-markdown, footer, AI docs chapter, and module READMEs ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 🐛 Fix upsert `criteriaParams` injection, `.set {}` assignment, logic-delete existence checks, PostgreSQL `ANY(ARRAY[...])` type mismatches, and PostgreSQL concurrent index creation inside transactions ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- 🔧 Update `__tableName` property documentation and plugin configuration, and adjust detekt suppressions ([#206](https://github.com/Kronos-orm/Kronos-orm/pull/206))
 
 ### 0.0.7
 
@@ -101,12 +112,12 @@ repositories {
 }
 
 plugins {
-    id 'kronos-gradle-plugin' version '0.1.0-SNAPSHOT'
+    id 'kronos-gradle-plugin' version '0.1.0'
 }
 
 dependencies {
-    implementation "com.kotlinorm:kronos-core:0.1.0-SNAPSHOT"
-    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.1.0-SNAPSHOT"
+    implementation "com.kotlinorm:kronos-core:0.1.0"
+    implementation "com.kotlinorm:kronos-jdbc-wrapper:0.1.0"
 }
 ```
 
@@ -132,12 +143,12 @@ repositories {
 }
 
 plugins {
-    id("kronos-gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("kronos-gradle-plugin") version "0.1.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.0-SNAPSHOT")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.0-SNAPSHOT")
+    implementation("com.kotlinorm:kronos-core:0.1.0")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.0")
 }
 ```
 
@@ -160,12 +171,12 @@ dependencies {
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-core</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.kotlinorm</groupId>
       <artifactId>kronos-jdbc-wrapper</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.0</version>
     </dependency>
   </dependencies>
 

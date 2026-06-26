@@ -4,7 +4,7 @@ Kronos ORM 包含一个面向开发者的 AI 技能 **kronos-dev-guide**，为 A
 
 ## 什么是 kronos-dev-guide？
 
-`kronos-dev-guide` 位于仓库的 `.claude/skills/kronos-dev-guide/` 目录下，专为贡献者和维护者设计，在开发 Kronos 代码库时提供 AI 辅助。
+`kronos-dev-guide` 位于仓库的 `.agents/skills/kronos-dev-guide/` 目录下，专为贡献者和维护者设计，在开发 Kronos 代码库时提供 AI 辅助。
 
 该技能帮助 AI 助手：
 
@@ -31,7 +31,7 @@ Kronos ORM 包含一个面向开发者的 AI 技能 **kronos-dev-guide**，为 A
 
 ## 配置
 
-技能已包含在仓库的 `.claude/skills/kronos-dev-guide/` 目录中。使用 Claude Code 打开项目时会自动检测。
+技能已包含在仓库的 `.agents/skills/kronos-dev-guide/` 目录中。打开项目时，可将该目录加入 AI 助手上下文。
 
 其他 AI 工具可将 `SKILL.md` 及相关参考文件添加到助手的上下文中。
 

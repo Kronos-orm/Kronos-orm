@@ -1,0 +1,413 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > OracleSqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database.oracle</a>
+</div>
+
+<h1>Coverage Summary for Class: OracleSqlRenderer (com.kotlinorm.database.oracle)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">OracleSqlRenderer</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.4%
+  </span>
+  <span class="absValue">
+    (19/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.6%
+  </span>
+  <span class="absValue">
+    (40/61)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.4%
+  </span>
+  <span class="absValue">
+    (95/110)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.4%
+  </span>
+  <span class="absValue">
+    (775/940)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">OracleSqlRenderer$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    86.4%
+  </span>
+  <span class="absValue">
+    (19/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.6%
+  </span>
+  <span class="absValue">
+    (40/61)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.4%
+  </span>
+  <span class="absValue">
+    (95/110)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.4%
+  </span>
+  <span class="absValue">
+    (775/940)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.database.oracle
+&nbsp;
+&nbsp;import com.kotlinorm.ast.AbstractSqlRenderer
+&nbsp;import com.kotlinorm.ast.ColumnDefinition
+&nbsp;import com.kotlinorm.ast.DdlStatement
+&nbsp;import com.kotlinorm.ast.LimitClause
+&nbsp;import com.kotlinorm.ast.RenderContext
+&nbsp;import com.kotlinorm.ast.RenderedSql
+&nbsp;import com.kotlinorm.ast.Statement
+&nbsp;import com.kotlinorm.database.ConflictResolver
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.PessimisticLock
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;
+&nbsp;/**
+&nbsp; * OracleSqlRenderer
+&nbsp; *
+&nbsp; * Oracle-specific SQL renderer implementation. Handles Oracle-specific syntax including:
+&nbsp; * - Double quotes for identifiers (typically uppercase)
+&nbsp; * - FETCH FIRST/OFFSET syntax (Oracle 12c+)
+&nbsp; * - String literal escaping
+&nbsp; * - Date/time literal formatting
+&nbsp; * - PL/SQL exception handling for conflict resolution
+&nbsp; * - FOR UPDATE(NOWAIT) for pessimistic locking
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+<b class="fc">&nbsp;class OracleSqlRenderer : AbstractSqlRenderer() {</b>
+&nbsp;    override fun render(statement: Statement, context: RenderContext): RenderedSql {
+&nbsp;        // Configure Oracle-specific quote characters (double quotes) and database type
+<b class="fc">&nbsp;        val oracleContext = context.copy(</b>
+<b class="fc">&nbsp;            quotes = Pair(&quot;\&quot;&quot;, &quot;\&quot;&quot;),</b>
+<b class="fc">&nbsp;            dbType = com.kotlinorm.enums.DBType.Oracle</b>
+&nbsp;        )
+<b class="fc">&nbsp;        return super.render(statement, oracleContext)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderStringLiteral(value: String): String {
+&nbsp;        // Escape single quotes by doubling them
+<b class="fc">&nbsp;        val escaped = value.replace(&quot;&#39;&quot;, &quot;&#39;&#39;&quot;)</b>
+<b class="fc">&nbsp;        return &quot;&#39;$escaped&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDateLiteral(value: String): String {
+&nbsp;        // Oracle date format: DATE &#39;YYYY-MM-DD&#39; or TO_DATE(&#39;YYYY-MM-DD&#39;, &#39;YYYY-MM-DD&#39;)
+<b class="fc">&nbsp;        return &quot;DATE &#39;$value&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTimeLiteral(value: String): String {
+&nbsp;        // Oracle time format: TIMESTAMP &#39;YYYY-MM-DD HH:MM:SS&#39;
+<b class="fc">&nbsp;        return &quot;TIMESTAMP &#39;$value&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTimestampLiteral(value: String): String {
+&nbsp;        // Oracle timestamp format: TIMESTAMP &#39;YYYY-MM-DD HH:MM:SS.ffffff&#39;
+<b class="fc">&nbsp;        return &quot;TIMESTAMP &#39;$value&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLock(lock: PessimisticLock): String {
+<b class="fc">&nbsp;        return when (lock) {</b>
+<b class="fc">&nbsp;            PessimisticLock.X -&gt; &quot;FOR UPDATE(NOWAIT)&quot;</b>
+<b class="fc">&nbsp;            PessimisticLock.S -&gt; &quot;LOCK IN SHARE MODE&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderConflictResolver(
+&nbsp;            resolver: ConflictResolver,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val (tableName, onFields, toUpdateFields, toInsertFields) = resolver</b>
+<b class="fc">&nbsp;        val insertColumns =</b>
+<b class="fc">&nbsp;                toInsertFields.joinToString(&quot;, &quot;) { context.quote(it.columnName.uppercase()) }</b>
+<b class="fc">&nbsp;        val insertValues = toInsertFields.joinToString(&quot;, &quot;) { &quot;:${it.name}&quot; }</b>
+<b class="fc">&nbsp;        val updateClause =</b>
+<b class="fc">&nbsp;                toUpdateFields.joinToString(&quot;, &quot;) { field -&gt;</b>
+<b class="fc">&nbsp;                    val column = context.quote(field.columnName.uppercase())</b>
+<b class="fc">&nbsp;                    &quot;$column = :${field.name}New&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val whereClause =</b>
+<b class="fc">&nbsp;                onFields.joinToString(&quot; AND &quot;) { field -&gt;</b>
+<b class="fc">&nbsp;                    val column = context.quote(field.columnName.uppercase())</b>
+<b class="fc">&nbsp;                    &quot;$column = :${field.name}&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val table = context.quote(tableName.uppercase())</b>
+<b class="fc">&nbsp;        return &quot;&quot;&quot;</b>
+&nbsp;            BEGIN
+<b class="fc">&nbsp;                INSERT INTO $table ($insertColumns)</b>
+<b class="fc">&nbsp;                VALUES ($insertValues)</b>
+&nbsp;            EXCEPTION
+&nbsp;                WHEN DUP_VAL_ON_INDEX THEN
+<b class="fc">&nbsp;                    UPDATE $table</b>
+<b class="fc">&nbsp;                    SET $updateClause</b>
+<b class="fc">&nbsp;                    WHERE $whereClause;</b>
+&nbsp;            END;
+<b class="fc">&nbsp;        &quot;&quot;&quot;.trimIndent()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLimitClause(limit: LimitClause, context: RenderContext): String {
+&nbsp;        // Oracle 12c+ uses: FETCH FIRST n ROWS ONLY or OFFSET n ROWS FETCH NEXT m ROWS ONLY
+<b class="pc">&nbsp;        return if (limit.offset != null &amp;&amp; limit.offset!! &gt; 0) {</b>
+<b class="fc">&nbsp;            &quot; OFFSET ${limit.offset} ROWS FETCH NEXT ${limit.limit} ROWS ONLY&quot;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            &quot; FETCH FIRST ${limit.limit} ROWS ONLY&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderCreateTable(
+&nbsp;            create: DdlStatement.CreateTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(create.tableName.uppercase())</b>
+<b class="fc">&nbsp;        val columns =</b>
+<b class="fc">&nbsp;                create.columns.joinToString(&quot;, &quot;) { column: ColumnDefinition -&gt;</b>
+<b class="fc">&nbsp;                    renderColumnDefinition(column, context)</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val indexes =</b>
+<b class="fc">&nbsp;                create.indexes.joinToString(&quot;, &quot;) { index: com.kotlinorm.beans.dsl.KTableIndex -&gt;</b>
+<b class="fc">&nbsp;                    renderIndexDefinition(index, create.tableName, context)</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val comment =</b>
+<b class="pc">&nbsp;                create.comment?.let { &quot; COMMENT ON TABLE $tableName IS &#39;${it.replace(&quot;&#39;&quot;, &quot;&#39;&#39;&quot;)}&#39;&quot; }</b>
+<b class="fc">&nbsp;                        ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        val tableDefinition =</b>
+<b class="fc">&nbsp;                listOfNotNull(columns, indexes.takeIf { it.isNotEmpty() }).joinToString(&quot;, &quot;)</b>
+<b class="fc">&nbsp;        return &quot;CREATE TABLE $tableName ($tableDefinition)$comment&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderAlterTable(
+&nbsp;            alter: DdlStatement.AlterTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(alter.tableName.uppercase())</b>
+<b class="fc">&nbsp;        return when (alter) {</b>
+<b class="fc">&nbsp;            is DdlStatement.AlterTableStatement.AddColumnStatement -&gt; {</b>
+<b class="fc">&nbsp;                val column = renderColumnDefinition(alter.column, context)</b>
+<b class="fc">&nbsp;                &quot;ALTER TABLE $tableName ADD $column&quot;</b>
+&nbsp;            }
+<b class="pc">&nbsp;            is DdlStatement.AlterTableStatement.DropColumnStatement -&gt; {</b>
+<b class="nc">&nbsp;                val columnName = context.quote(alter.columnName.uppercase())</b>
+<b class="nc">&nbsp;                &quot;ALTER TABLE $tableName DROP COLUMN $columnName&quot;</b>
+&nbsp;            }
+<b class="pc">&nbsp;            is DdlStatement.AlterTableStatement.ModifyColumnStatement -&gt; {</b>
+<b class="fc">&nbsp;                val column = renderColumnDefinition(alter.column, context)</b>
+<b class="fc">&nbsp;                &quot;ALTER TABLE $tableName MODIFY $column&quot;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            else -&gt; throw IllegalArgumentException(&quot;Unsupported ALTER TABLE statement type&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDropTable(
+&nbsp;            drop: DdlStatement.DropTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(drop.tableName.uppercase())</b>
+<b class="fc">&nbsp;        val ifExists =</b>
+<b class="pc">&nbsp;                if (drop.ifExists) &quot;&quot; else &quot;&quot; // Oracle doesn&#39;t support IF EXISTS in DROP TABLE</b>
+<b class="fc">&nbsp;        return &quot;DROP TABLE $tableName&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderCreateIndex(
+&nbsp;            create: DdlStatement.CreateIndexStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val indexName = context.quote(create.indexName.uppercase())</b>
+<b class="nc">&nbsp;        val tableName = context.quote(create.tableName.uppercase())</b>
+<b class="nc">&nbsp;        val columns = create.columns.joinToString(&quot;, &quot;) { context.quote(it.uppercase()) }</b>
+<b class="nc">&nbsp;        val unique = if (create.unique) &quot;UNIQUE &quot; else &quot;&quot;</b>
+<b class="nc">&nbsp;        return &quot;CREATE ${unique}INDEX $indexName ON $tableName ($columns)&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDropIndex(
+&nbsp;            drop: DdlStatement.DropIndexStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val indexName = context.quote(drop.indexName.uppercase())</b>
+<b class="nc">&nbsp;        val tableName = context.quote(drop.tableName.uppercase())</b>
+<b class="nc">&nbsp;        return &quot;DROP INDEX $indexName&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTruncateTable(
+&nbsp;            truncate: DdlStatement.TruncateTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val tableName = context.quote(truncate.tableName.uppercase())</b>
+&nbsp;        // Oracle doesn&#39;t support RESTART IDENTITY, but supports CASCADE/REUSE STORAGE
+<b class="nc">&nbsp;        return &quot;TRUNCATE TABLE $tableName&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Helper methods
+&nbsp;
+&nbsp;    private fun renderColumnDefinition(column: ColumnDefinition, context: RenderContext): String {
+<b class="fc">&nbsp;        val name = context.quote(column.name.uppercase())</b>
+<b class="fc">&nbsp;        val type = renderColumnType(column)</b>
+<b class="fc">&nbsp;        val nullable = if (column.nullable) &quot;&quot; else &quot; NOT NULL&quot;</b>
+<b class="fc">&nbsp;        val primaryKey =</b>
+<b class="fc">&nbsp;                if (column.primaryKey != PrimaryKeyType.NOT) {</b>
+<b class="fc">&nbsp;                    &quot; PRIMARY KEY&quot;</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    &quot;&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val identity =</b>
+<b class="fc">&nbsp;                if (column.primaryKey == PrimaryKeyType.IDENTITY) {</b>
+<b class="fc">&nbsp;                    &quot; GENERATED ALWAYS AS IDENTITY&quot;</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    &quot;&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val defaultValue =</b>
+<b class="pc">&nbsp;                column.defaultValue?.let { &quot; DEFAULT ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;$name $type$identity$nullable$primaryKey$defaultValue&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderColumnType(column: ColumnDefinition): String {
+&nbsp;        // Simplified version - in practice, use OracleSupport.getColumnType
+<b class="fc">&nbsp;        val typeStr =</b>
+<b class="pc">&nbsp;                when (column.type) {</b>
+<b class="pc">&nbsp;                    KColumnType.INT -&gt; &quot;NUMBER(${column.length.takeIf { it &gt; 0 } ?: 10})&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.BIGINT -&gt; &quot;NUMBER(19)&quot;</b>
+<b class="pc">&nbsp;                    KColumnType.VARCHAR -&gt; &quot;VARCHAR2(${column.length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.TEXT -&gt; &quot;CLOB&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.DATETIME -&gt; &quot;TIMESTAMP(6)&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.TIMESTAMP -&gt; &quot;TIMESTAMP(${column.scale.coerceIn(0, 9)})&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.DATE -&gt; &quot;DATE&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.BLOB -&gt; &quot;BLOB&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.JSON -&gt; &quot;JSON&quot;</b>
+<b class="nc">&nbsp;                    else -&gt; &quot;VARCHAR2(255)&quot; // Default fallback</b>
+&nbsp;                }
+<b class="fc">&nbsp;        return typeStr</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderIndexDefinition(
+&nbsp;            index: com.kotlinorm.beans.dsl.KTableIndex,
+&nbsp;            tableName: String,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val indexName = context.quote(index.name.uppercase())</b>
+<b class="fc">&nbsp;        val columns = index.columns.joinToString(&quot;, &quot;) { context.quote(it.uppercase()) }</b>
+<b class="fc">&nbsp;        val type =</b>
+<b class="fc">&nbsp;                when (index.type) {</b>
+<b class="pc">&nbsp;                    &quot;UNIQUE&quot; -&gt; &quot;UNIQUE &quot;</b>
+<b class="nc">&nbsp;                    else -&gt; &quot;&quot;</b>
+&nbsp;                }
+<b class="pc">&nbsp;        val method = if (index.method.isNotEmpty()) &quot; USING ${index.method}&quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;${type}INDEX $indexName ($columns)$method&quot;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

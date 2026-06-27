@@ -1,0 +1,405 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KClassMapGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: KClassMapGenerator (com.kotlinorm.compiler.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KClassMapGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (12/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92%
+  </span>
+  <span class="absValue">
+    (115/125)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.1%
+  </span>
+  <span class="absValue">
+    (618/664)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.kClassCreatorSetterSymbol
+&nbsp;import com.kotlinorm.compiler.core.kClassSymbol
+&nbsp;import com.kotlinorm.compiler.core.kPojoClassSymbol
+&nbsp;import com.kotlinorm.compiler.utils.ErrorMessages
+&nbsp;import com.kotlinorm.compiler.utils.KronosInitAnnotationFqName
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
+&nbsp;import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+&nbsp;import org.jetbrains.kotlin.descriptors.Modality
+&nbsp;import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.IrValueParameterBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildFun
+&nbsp;import org.jetbrains.kotlin.ir.builders.declarations.buildValueParameter
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irElseBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irEquals
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irReturn
+&nbsp;import org.jetbrains.kotlin.ir.builders.irWhen
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.makeNullable
+&nbsp;import org.jetbrains.kotlin.ir.types.typeWith
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import org.jetbrains.kotlin.name.SpecialNames
+&nbsp;
+&nbsp;/**
+&nbsp; * KClassMapGenerator
+&nbsp; *
+&nbsp; * Generates a `kClassCreator` lambda for functions annotated with `@KronosInit`.
+&nbsp; * The generated lambda maps `KClass&lt;KPojo&gt;` to new instances of collected KPojo classes,
+&nbsp; * enabling runtime instantiation of KPojo types by their KClass reference.
+&nbsp; *
+&nbsp; * Roughly speaking, the transform will turn the following:
+&nbsp; *
+&nbsp; *     // file: App.kt
+&nbsp; *     ```kotlin
+&nbsp; *     @KronosInit
+&nbsp; *     fun init() {
+&nbsp; *         // user code
+&nbsp; *     }
+&nbsp; *     ```
+&nbsp; *
+&nbsp; * into the following equivalent representation:
+&nbsp; *
+&nbsp; *     // file: App.kt
+&nbsp; *     ```kotlin
+&nbsp; *     @KronosInit
+&nbsp; *     fun init() {
+&nbsp; *         kClassCreator = { kClass -&gt;
+&nbsp; *             when (kClass) {
+&nbsp; *                 User::class -&gt; User()
+&nbsp; *                 Role::class -&gt; Role()
+&nbsp; *                 else -&gt; null
+&nbsp; *             }
+&nbsp; *         }
+&nbsp; *         // user code
+&nbsp; *     }
+&nbsp; *     ```
+&nbsp; */
+&nbsp;object KClassMapGenerator {
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun isKronosInitFunction(declaration: IrFunction): Boolean =
+<b class="fc">&nbsp;        declaration.hasAnnotation(KronosInitAnnotationFqName)</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun generate(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        declaration: IrFunction,
+&nbsp;        kPojoClasses: Set&lt;IrClass&gt;,
+&nbsp;        errorReporter: ErrorReporter
+&nbsp;    ) {
+<b class="fc">&nbsp;        with(pluginContext) {</b>
+<b class="fc">&nbsp;            val kPojoType = kPojoClassSymbol.defaultType</b>
+<b class="fc">&nbsp;            val kPojoNullableType = kPojoType.makeNullable()</b>
+<b class="fc">&nbsp;            val kClassOfKPojoType = kClassSymbol.typeWith(kPojoType)</b>
+&nbsp;
+&nbsp;            // Build the lambda: (KClass&lt;out KPojo&gt;) -&gt; KPojo?
+<b class="fc">&nbsp;            val lambda = irFactory.buildFun {</b>
+<b class="fc">&nbsp;                origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA</b>
+<b class="fc">&nbsp;                name = SpecialNames.ANONYMOUS</b>
+<b class="fc">&nbsp;                visibility = DescriptorVisibilities.LOCAL</b>
+<b class="fc">&nbsp;                returnType = kPojoNullableType</b>
+<b class="fc">&nbsp;                modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            }.apply {</b>
+<b class="fc">&nbsp;                parent = declaration</b>
+<b class="fc">&nbsp;                val kClassParam = irFactory.buildValueParameter(</b>
+<b class="fc">&nbsp;                    IrValueParameterBuilder().apply {</b>
+<b class="fc">&nbsp;                        name = Name.identifier(&quot;kClass&quot;)</b>
+<b class="fc">&nbsp;                        type = kClassOfKPojoType</b>
+<b class="fc">&nbsp;                        kind = IrParameterKind.Regular</b>
+<b class="fc">&nbsp;                    },</b>
+<b class="fc">&nbsp;                    this</b>
+&nbsp;                )
+<b class="fc">&nbsp;                parameters = parameters + kClassParam</b>
+&nbsp;
+<b class="fc">&nbsp;                body = irBuiltIns.createIrBuilder(symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                    +irReturn(</b>
+<b class="fc">&nbsp;                        irWhen(</b>
+<b class="fc">&nbsp;                            kPojoNullableType,</b>
+<b class="fc">&nbsp;                            kPojoClasses</b>
+<b class="pc">&nbsp;                                .distinctBy { it.fqNameWhenAvailable ?: it.symbol }</b>
+<b class="fc">&nbsp;                                .mapNotNull { klass -&gt;</b>
+&nbsp;                                    // Only include classes with a no-arg constructor
+<b class="pc">&nbsp;                                    val ctor = klass.constructors.firstOrNull { ctor -&gt;</b>
+<b class="fc">&nbsp;                                        ctor.parameters.none { p -&gt;</b>
+<b class="pc">&nbsp;                                            p.kind == IrParameterKind.Regular &amp;&amp; p.defaultValue == null</b>
+<b class="fc">&nbsp;                                        }</b>
+<b class="nc">&nbsp;                                    } ?: run {</b>
+<b class="nc">&nbsp;                                        errorReporter.reportWarning(</b>
+<b class="nc">&nbsp;                                            klass,</b>
+<b class="nc">&nbsp;                                            ErrorMessages.kpojoNoNoArgConstructor(klass.fqNameWhenAvailable)</b>
+&nbsp;                                        )
+<b class="nc">&nbsp;                                        return@mapNotNull null</b>
+&nbsp;                                    }
+&nbsp;
+<b class="fc">&nbsp;                                    val classRef = IrClassReferenceImpl(</b>
+<b class="fc">&nbsp;                                        UNDEFINED_OFFSET, UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                                        kClassOfKPojoType,</b>
+<b class="fc">&nbsp;                                        klass.symbol,</b>
+<b class="fc">&nbsp;                                        klass.defaultType</b>
+&nbsp;                                    )
+&nbsp;
+<b class="fc">&nbsp;                                    irBranch(</b>
+<b class="fc">&nbsp;                                        irEquals(irGet(kClassParam), classRef),</b>
+<b class="fc">&nbsp;                                        irCall(ctor.symbol)</b>
+<b class="fc">&nbsp;                                    )</b>
+<b class="fc">&nbsp;                                } + irElseBranch(irNull())</b>
+&nbsp;                        )
+&nbsp;                    )
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;
+<b class="fc">&nbsp;            val kFunctionType = irBuiltIns.functionN(1).typeWith(kClassOfKPojoType, kPojoNullableType)</b>
+<b class="fc">&nbsp;            val lambdaExpr = IrFunctionExpressionImpl(</b>
+<b class="fc">&nbsp;                UNDEFINED_OFFSET, UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                kFunctionType,</b>
+<b class="fc">&nbsp;                lambda,</b>
+<b class="fc">&nbsp;                IrStatementOrigin.LAMBDA</b>
+&nbsp;            )
+&nbsp;
+&nbsp;            // Prepend: kClassCreator = { kClass -&gt; when(kClass) { ... } }
+<b class="pc">&nbsp;            val originalBody = declaration.body as? IrBlockBody ?: return</b>
+<b class="fc">&nbsp;            declaration.body = irBuiltIns.createIrBuilder(declaration.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                +irCall(kClassCreatorSetterSymbol).apply {</b>
+<b class="fc">&nbsp;                    arguments[0] = lambdaExpr</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;                originalBody.statements.forEach { +it }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generates kClassCreator assignment for a call-site lambda.
+&nbsp;     * Used when the @KronosInit function is already compiled (e.g., test compilation)
+&nbsp;     * and we intercept the call site `Kronos.init { ... }` instead.
+&nbsp;     */
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    fun generateForCallSite(
+&nbsp;        pluginContext: IrPluginContext,
+&nbsp;        lambdaFunction: IrFunction,
+&nbsp;        kPojoClasses: Set&lt;IrClass&gt;,
+&nbsp;        errorReporter: ErrorReporter
+&nbsp;    ) {
+<b class="fc">&nbsp;        with(pluginContext) {</b>
+<b class="fc">&nbsp;            val kPojoType = kPojoClassSymbol.defaultType</b>
+<b class="fc">&nbsp;            val kPojoNullableType = kPojoType.makeNullable()</b>
+<b class="fc">&nbsp;            val kClassOfKPojoType = kClassSymbol.typeWith(kPojoType)</b>
+&nbsp;
+<b class="fc">&nbsp;            val creatorLambda = irFactory.buildFun {</b>
+<b class="fc">&nbsp;                origin = IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA</b>
+<b class="fc">&nbsp;                name = SpecialNames.ANONYMOUS</b>
+<b class="fc">&nbsp;                visibility = DescriptorVisibilities.LOCAL</b>
+<b class="fc">&nbsp;                returnType = kPojoNullableType</b>
+<b class="fc">&nbsp;                modality = Modality.FINAL</b>
+<b class="fc">&nbsp;            }.apply {</b>
+<b class="fc">&nbsp;                parent = lambdaFunction</b>
+<b class="fc">&nbsp;                val kClassParam = irFactory.buildValueParameter(</b>
+<b class="fc">&nbsp;                    IrValueParameterBuilder().apply {</b>
+<b class="fc">&nbsp;                        name = Name.identifier(&quot;kClass&quot;)</b>
+<b class="fc">&nbsp;                        type = kClassOfKPojoType</b>
+<b class="fc">&nbsp;                        kind = IrParameterKind.Regular</b>
+<b class="fc">&nbsp;                    },</b>
+<b class="fc">&nbsp;                    this</b>
+&nbsp;                )
+<b class="fc">&nbsp;                parameters = parameters + kClassParam</b>
+&nbsp;
+<b class="fc">&nbsp;                body = irBuiltIns.createIrBuilder(symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                    +irReturn(</b>
+<b class="fc">&nbsp;                        irWhen(</b>
+<b class="fc">&nbsp;                            kPojoNullableType,</b>
+<b class="fc">&nbsp;                            kPojoClasses</b>
+<b class="pc">&nbsp;                                .distinctBy { it.fqNameWhenAvailable ?: it.symbol }</b>
+<b class="fc">&nbsp;                                .mapNotNull { klass -&gt;</b>
+<b class="pc">&nbsp;                                    val ctor = klass.constructors.firstOrNull { ctor -&gt;</b>
+<b class="fc">&nbsp;                                        ctor.parameters.none { p -&gt;</b>
+<b class="pc">&nbsp;                                            p.kind == IrParameterKind.Regular &amp;&amp; p.defaultValue == null</b>
+<b class="fc">&nbsp;                                        }</b>
+<b class="nc">&nbsp;                                    } ?: run {</b>
+<b class="nc">&nbsp;                                        errorReporter.reportWarning(</b>
+<b class="nc">&nbsp;                                            klass,</b>
+<b class="nc">&nbsp;                                            ErrorMessages.kpojoNoNoArgConstructor(klass.fqNameWhenAvailable)</b>
+&nbsp;                                        )
+<b class="nc">&nbsp;                                        return@mapNotNull null</b>
+&nbsp;                                    }
+&nbsp;
+<b class="fc">&nbsp;                                    val classRef = IrClassReferenceImpl(</b>
+<b class="fc">&nbsp;                                        UNDEFINED_OFFSET, UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                                        kClassOfKPojoType,</b>
+<b class="fc">&nbsp;                                        klass.symbol,</b>
+<b class="fc">&nbsp;                                        klass.defaultType</b>
+&nbsp;                                    )
+&nbsp;
+<b class="fc">&nbsp;                                    irBranch(</b>
+<b class="fc">&nbsp;                                        irEquals(irGet(kClassParam), classRef),</b>
+<b class="fc">&nbsp;                                        irCall(ctor.symbol)</b>
+<b class="fc">&nbsp;                                    )</b>
+<b class="fc">&nbsp;                                } + irElseBranch(irNull())</b>
+&nbsp;                        )
+&nbsp;                    )
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;
+<b class="fc">&nbsp;            val kFunctionType = irBuiltIns.functionN(1).typeWith(kClassOfKPojoType, kPojoNullableType)</b>
+<b class="fc">&nbsp;            val creatorLambdaExpr = IrFunctionExpressionImpl(</b>
+<b class="fc">&nbsp;                UNDEFINED_OFFSET, UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;                kFunctionType,</b>
+<b class="fc">&nbsp;                creatorLambda,</b>
+<b class="fc">&nbsp;                IrStatementOrigin.LAMBDA</b>
+&nbsp;            )
+&nbsp;
+&nbsp;            // Prepend kClassCreator assignment to the lambda body
+<b class="pc">&nbsp;            val originalBody = lambdaFunction.body as? IrBlockBody ?: return</b>
+<b class="fc">&nbsp;            lambdaFunction.body = irBuiltIns.createIrBuilder(lambdaFunction.symbol).irBlockBody {</b>
+<b class="fc">&nbsp;                +irCall(kClassCreatorSetterSymbol).apply {</b>
+<b class="fc">&nbsp;                    arguments[0] = creatorLambdaExpr</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;                originalBody.statements.forEach { +it }</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:26</div>
+</div>
+</body>
+</html>

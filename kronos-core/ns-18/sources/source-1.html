@@ -1,0 +1,455 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > DatabasesSupport</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.interfaces</a>
+</div>
+
+<h1>Coverage Summary for Class: DatabasesSupport (com.kotlinorm.interfaces)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">DatabasesSupport</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.8%
+  </span>
+  <span class="absValue">
+    (11/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20.6%
+  </span>
+  <span class="absValue">
+    (7/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38.5%
+  </span>
+  <span class="absValue">
+    (30/78)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    38%
+  </span>
+  <span class="absValue">
+    (199/523)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DatabasesSupport$DefaultImpls</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/12)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/45)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    30.6%
+  </span>
+  <span class="absValue">
+    (11/36)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20.6%
+  </span>
+  <span class="absValue">
+    (7/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (30/90)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    35%
+  </span>
+  <span class="absValue">
+    (199/568)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.interfaces
+&nbsp;
+&nbsp;import com.kotlinorm.ast.AstSqlRenderer
+&nbsp;import com.kotlinorm.ast.DdlStatement
+&nbsp;import com.kotlinorm.ast.DeleteStatement
+&nbsp;import com.kotlinorm.ast.InsertStatement
+&nbsp;import com.kotlinorm.ast.RenderContext
+&nbsp;import com.kotlinorm.ast.RenderedSql
+&nbsp;import com.kotlinorm.ast.SelectStatement
+&nbsp;import com.kotlinorm.ast.SqlRenderer
+&nbsp;import com.kotlinorm.ast.UnionStatement
+&nbsp;import com.kotlinorm.ast.UpdateStatement
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KTableIndex
+&nbsp;import com.kotlinorm.database.ConflictResolver
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.orm.ddl.TableColumnDiff
+&nbsp;import com.kotlinorm.orm.ddl.TableIndexDiff
+&nbsp;import com.kotlinorm.utils.getTypeSafeValue
+&nbsp;
+&nbsp;interface DatabasesSupport {
+&nbsp;        var quotes: Pair&lt;String, String&gt;
+&nbsp;        
+&nbsp;        // Each database support implementation should provide its specific renderer
+&nbsp;        val renderer: SqlRenderer
+&nbsp;
+&nbsp;        fun getDBNameFromUrl(wrapper: KronosDataSourceWrapper): String
+&nbsp;
+<b class="nc">&nbsp;        fun String?.orEmpty(): String = this ?: &quot;&quot;</b>
+&nbsp;
+<b class="pc">&nbsp;        fun quote(str: String): String = &quot;${quotes.first}$str${quotes.second}&quot;</b>
+&nbsp;
+<b class="nc">&nbsp;        fun quote(field: Field): String =</b>
+<b class="fc">&nbsp;                if (field.tableName.isNotBlank()) {</b>
+<b class="fc">&nbsp;                    &quot;${quote(field.tableName)}.${quote(field.columnName)}&quot;</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    quote(field.columnName)</b>
+&nbsp;                }
+&nbsp;
+<b class="nc">&nbsp;        fun equation(field: Field): String =</b>
+<b class="nc">&nbsp;                &quot;${quote(field)} = :${field.name}&quot;</b>
+&nbsp;
+&nbsp;        fun getColumnType(type: KColumnType, length: Int, scale: Int): String
+&nbsp;
+<b class="nc">&nbsp;        fun getKColumnType(type: String, length: Int = 0, scale: Int = 0): KColumnType =</b>
+<b class="nc">&nbsp;                KColumnType.fromString(type)</b>
+&nbsp;
+&nbsp;        fun getColumnCreateSql(dbType: DBType, column: Field): String
+&nbsp;
+&nbsp;        fun getIndexCreateSql(dbType: DBType, tableName: String, index: KTableIndex): String
+&nbsp;
+&nbsp;        fun getTableCreateSqlList(
+&nbsp;                dbType: DBType,
+&nbsp;                tableName: String,
+&nbsp;                tableComment: String?,
+&nbsp;                columns: List&lt;Field&gt;,
+&nbsp;                indexes: List&lt;KTableIndex&gt;
+&nbsp;        ): List&lt;String&gt;
+&nbsp;
+&nbsp;        fun getTableExistenceSql(dbType: DBType): String
+&nbsp;
+&nbsp;        fun getTableTruncateSql(dbType: DBType, tableName: String, restartIdentity: Boolean): String
+&nbsp;        fun getTableDropSql(dbType: DBType, tableName: String): String
+&nbsp;
+&nbsp;        fun getTableCommentSql(dbType: DBType): String
+&nbsp;
+&nbsp;        fun getTableColumns(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                tableName: String,
+&nbsp;        ): List&lt;Field&gt;
+&nbsp;
+&nbsp;        fun getTableIndexes(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                tableName: String,
+&nbsp;        ): List&lt;KTableIndex&gt;
+&nbsp;
+&nbsp;        fun getTableSyncSqlList(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                tableName: String,
+&nbsp;                originalTableComment: String?,
+&nbsp;                tableComment: String?,
+&nbsp;                columns: TableColumnDiff,
+&nbsp;                indexes: TableIndexDiff,
+&nbsp;        ): List&lt;String&gt;
+&nbsp;
+&nbsp;        fun getOnConflictSql(conflictResolver: ConflictResolver): String
+&nbsp;
+&nbsp;        // AST-based SQL rendering with parameters
+&nbsp;        fun getSelectSqlWithParams(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                select: SelectStatement,
+<b class="fc">&nbsp;                fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;        ): RenderedSql {
+<b class="fc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="fc">&nbsp;                val rendered = renderer.render(select, context)</b>
+&nbsp;                // Process parameters for database-specific type conversion
+<b class="fc">&nbsp;                val processedParams = rendered.parameters.mapValues { (key, value) -&gt;</b>
+<b class="nc">&nbsp;                        val field = fieldsMap[key]</b>
+<b class="nc">&nbsp;                        if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                                com.kotlinorm.utils.processParams(dataSource, field, value)</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                                value</b>
+<b class="nc">&nbsp;                        }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return RenderedSql(rendered.sql, processedParams)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun getInsertSqlWithParams(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                insert: InsertStatement,
+<b class="fc">&nbsp;                fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;        ): RenderedSql {
+<b class="fc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="fc">&nbsp;                val rendered = renderer.render(insert, context)</b>
+&nbsp;                // Process parameters for database-specific type conversion
+<b class="fc">&nbsp;                val processedParams = rendered.parameters.mapValues { (key, value) -&gt;</b>
+<b class="nc">&nbsp;                        val field = fieldsMap[key]</b>
+<b class="nc">&nbsp;                        if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                                com.kotlinorm.utils.processParams(dataSource, field, value)</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                                value</b>
+<b class="nc">&nbsp;                        }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return RenderedSql(rendered.sql, processedParams)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun getUpdateSqlWithParams(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                update: UpdateStatement,
+<b class="fc">&nbsp;                fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;        ): RenderedSql {
+<b class="fc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="fc">&nbsp;                val rendered = renderer.render(update, context)</b>
+&nbsp;                // Process parameters for database-specific type conversion
+<b class="fc">&nbsp;                val processedParams = rendered.parameters.mapValues { (key, value) -&gt;</b>
+<b class="nc">&nbsp;                        val field = fieldsMap[key]</b>
+<b class="nc">&nbsp;                        if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                                com.kotlinorm.utils.processParams(dataSource, field, value)</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                                value</b>
+<b class="nc">&nbsp;                        }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return RenderedSql(rendered.sql, processedParams)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun getDeleteSqlWithParams(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                delete: DeleteStatement,
+<b class="fc">&nbsp;                fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;        ): RenderedSql {
+<b class="fc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="fc">&nbsp;                val rendered = renderer.render(delete, context)</b>
+&nbsp;                // Process parameters for database-specific type conversion
+<b class="fc">&nbsp;                val processedParams = rendered.parameters.mapValues { (key, value) -&gt;</b>
+<b class="nc">&nbsp;                        val field = fieldsMap[key]</b>
+<b class="nc">&nbsp;                        if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                                com.kotlinorm.utils.processParams(dataSource, field, value)</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                                value</b>
+<b class="nc">&nbsp;                        }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                return RenderedSql(rendered.sql, processedParams)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun getUnionSqlWithParams(
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                union: UnionStatement,
+<b class="nc">&nbsp;                fieldsMap: Map&lt;String, Field&gt; = emptyMap()</b>
+&nbsp;        ): RenderedSql {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                val rendered = renderer.render(union, context)</b>
+&nbsp;                // Process parameters for database-specific type conversion
+<b class="nc">&nbsp;                val processedParams = rendered.parameters.mapValues { (key, value) -&gt;</b>
+<b class="nc">&nbsp;                        val field = fieldsMap[key]</b>
+<b class="nc">&nbsp;                        if (field != null &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                                com.kotlinorm.utils.processParams(dataSource, field, value)</b>
+&nbsp;                        } else {
+<b class="nc">&nbsp;                                value</b>
+<b class="nc">&nbsp;                        }</b>
+&nbsp;                }
+<b class="nc">&nbsp;                return RenderedSql(rendered.sql, processedParams)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // AST-based DDL rendering methods
+<b class="nc">&nbsp;        fun getCreateTableSql(</b>
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                createTable: DdlStatement.CreateTableStatement
+&nbsp;        ): String {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                return renderer.renderDdlStatement(createTable, context)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun getAlterTableSql(</b>
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                alterTable: DdlStatement.AlterTableStatement
+&nbsp;        ): String {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                return renderer.renderDdlStatement(alterTable, context)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun getDropTableSql(</b>
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                dropTable: DdlStatement.DropTableStatement
+&nbsp;        ): String {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                return renderer.renderDdlStatement(dropTable, context)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun getCreateIndexSql(</b>
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                createIndex: DdlStatement.CreateIndexStatement
+&nbsp;        ): String {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                return renderer.renderDdlStatement(createIndex, context)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun getDropIndexSql(</b>
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                dropIndex: DdlStatement.DropIndexStatement
+&nbsp;        ): String {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                return renderer.renderDdlStatement(dropIndex, context)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun getTruncateTableSql(</b>
+&nbsp;                dataSource: KronosDataSourceWrapper,
+&nbsp;                truncate: DdlStatement.TruncateTableStatement
+&nbsp;        ): String {
+<b class="nc">&nbsp;                val context = RenderContext(quotes = quotes)</b>
+<b class="nc">&nbsp;                return renderer.renderDdlStatement(truncate, context)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Process parameter values for database-specific type conversion.
+&nbsp;         * This handles field type conversion based on Field metadata.
+&nbsp;         *
+&nbsp;         * @param wrapper Data source wrapper
+&nbsp;         * @param field Field metadata
+&nbsp;         * @param value Parameter value to process
+&nbsp;         * @return Processed value suitable for the database
+&nbsp;         */
+<b class="nc">&nbsp;        fun processParams(</b>
+&nbsp;                wrapper: KronosDataSourceWrapper,
+&nbsp;                field: Field,
+&nbsp;                value: Any?
+&nbsp;        ): Any? {
+<b class="fc">&nbsp;                if (value == null) return null</b>
+<b class="pc">&nbsp;                if (field.serializable) return com.kotlinorm.Kronos.serializeProcessor.serialize(value)</b>
+&nbsp;
+<b class="fc">&nbsp;                return when {</b>
+&nbsp;                        // Check if field is TIMESTAMP or PostgreSQL DATETIME
+<b class="pc">&nbsp;                        field.type == KColumnType.TIMESTAMP || </b>
+<b class="pc">&nbsp;                        (wrapper.dbType == DBType.Postgres &amp;&amp; field.type == KColumnType.DATETIME) -&gt;</b>
+<b class="nc">&nbsp;                                getTypeSafeValue(&quot;java.sql.Timestamp&quot;, value, field.superTypes, field.dateFormat)</b>
+<b class="fc">&nbsp;                        else -&gt; value</b>
+&nbsp;                }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun renderCriteria(dataSource: KronosDataSourceWrapper, criteria: Criteria): String =</b>
+<b class="nc">&nbsp;                AstSqlRenderer.renderCriteriaDirect(dataSource, this, criteria)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,193 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > TransactionScope</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.beans.task</a>
+</div>
+
+<h1>Coverage Summary for Class: TransactionScope (com.kotlinorm.beans.task)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">TransactionScope</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    20%
+  </span>
+  <span class="absValue">
+    (1/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    16.7%
+  </span>
+  <span class="absValue">
+    (1/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    39%
+  </span>
+  <span class="absValue">
+    (16/41)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.beans.task
+&nbsp;
+&nbsp;import java.sql.Connection
+&nbsp;import java.sql.Savepoint
+&nbsp;
+&nbsp;/**
+&nbsp; * Transaction Scope.
+&nbsp; *
+&nbsp; * Provides the receiver context for transactional blocks, exposing savepoint operations.
+&nbsp; * When used with a JDBC-based wrapper (e.g. [com.kotlinorm.KronosBasicWrapper]),
+&nbsp; * the [connection] is set to the active transaction connection, enabling savepoint management.
+&nbsp; *
+&nbsp; * @property connection The underlying JDBC connection for the transaction, or `null` if not available.
+&nbsp; * @author OUSC
+&nbsp; */
+<b class="fc">&nbsp;class TransactionScope(internal val connection: Connection? = null) {</b>
+&nbsp;    /**
+&nbsp;     * Creates a savepoint with the given name in the current transaction.
+&nbsp;     *
+&nbsp;     * @param name The name of the savepoint.
+&nbsp;     * @return The created [Savepoint].
+&nbsp;     * @throws UnsupportedOperationException If no JDBC connection is available.
+&nbsp;     */
+&nbsp;    fun savepoint(name: String): Savepoint =
+<b class="nc">&nbsp;        requireConnection().setSavepoint(name)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Rolls back the transaction to the specified savepoint.
+&nbsp;     *
+&nbsp;     * @param savepoint The savepoint to roll back to.
+&nbsp;     * @throws UnsupportedOperationException If no JDBC connection is available.
+&nbsp;     */
+&nbsp;    fun rollbackToSavepoint(savepoint: Savepoint) =
+<b class="nc">&nbsp;        requireConnection().rollback(savepoint)</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Releases the specified savepoint from the current transaction.
+&nbsp;     *
+&nbsp;     * @param savepoint The savepoint to release.
+&nbsp;     * @throws UnsupportedOperationException If no JDBC connection is available.
+&nbsp;     */
+&nbsp;    fun releaseSavepoint(savepoint: Savepoint) =
+<b class="nc">&nbsp;        requireConnection().releaseSavepoint(savepoint)</b>
+&nbsp;
+&nbsp;    private fun requireConnection(): Connection =
+<b class="nc">&nbsp;        connection ?: throw UnsupportedOperationException(</b>
+<b class="nc">&nbsp;            &quot;Savepoint operations require a JDBC-based KronosDataSourceWrapper (e.g. KronosBasicWrapper)&quot;</b>
+&nbsp;        )
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,442 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CascadeSelectClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.cascade</a>
+</div>
+
+<h1>Coverage Summary for Class: CascadeSelectClause (com.kotlinorm.orm.cascade)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CascadeSelectClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    30%
+  </span>
+  <span class="absValue">
+    (3/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    7.5%
+  </span>
+  <span class="absValue">
+    (5/67)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    17.8%
+  </span>
+  <span class="absValue">
+    (19/107)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    13%
+  </span>
+  <span class="absValue">
+    (88/679)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">CascadeSelectClause$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    30%
+  </span>
+  <span class="absValue">
+    (3/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    7.5%
+  </span>
+  <span class="absValue">
+    (5/67)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    17.8%
+  </span>
+  <span class="absValue">
+    (19/107)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    13%
+  </span>
+  <span class="absValue">
+    (88/679)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.cascade
+&nbsp;
+&nbsp;import com.kotlinorm.Kronos
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.logging.log
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.enums.ConditionType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.QueryType.QueryList
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOne
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOneOrNull
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.select.select
+&nbsp;import com.kotlinorm.utils.Extensions.patchTo
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Used to build a cascade select clause.
+&nbsp; *
+&nbsp; * This object is used to construct a cascade select clause for a database operation.
+&nbsp; *
+&nbsp; * 构建级联查询子句
+&nbsp; *
+&nbsp; * 该对象用于为数据库操作构建级联查询子句
+&nbsp; */
+&nbsp;object CascadeSelectClause {
+&nbsp;    /**
+&nbsp;     * Build a cascade select clause.
+&nbsp;     *
+&nbsp;     * 构建级联查询子句
+&nbsp;     *
+&nbsp;     * @param cascade Whether the cascade is enabled.
+&nbsp;     * @param cascadeAllowed The properties that are allowed to cascade.
+&nbsp;     * @param pojo The POJO to select.
+&nbsp;     * @param rootTask The root task.
+&nbsp;     * @param selectFields The fields to select.
+&nbsp;     * @param operationType The operation type， the cascade operation type, may be Query, Delete, Update(Delete and Update operations need to cascade query)
+&nbsp;     * @param cascadeSelectedProps The properties that have been selected for cascading, preventing infinite recursion.
+&nbsp;     * @return A KronosQueryTask object representing the cascade select operation.
+&nbsp;     */
+&nbsp;    fun &lt;T : KPojo&gt; build(
+&nbsp;        cascade: Boolean,
+<b class="nc">&nbsp;        cascadeAllowed: Set&lt;Field&gt;? = null,</b>
+&nbsp;        pojo: T,
+&nbsp;        kClass: KClass&lt;KPojo&gt;,
+&nbsp;        rootTask: KronosAtomicQueryTask,
+&nbsp;        selectFields: LinkedHashSet&lt;Field&gt;,
+&nbsp;        operationType: KOperationType,
+&nbsp;        cascadeSelectedProps: Set&lt;Field&gt;
+<b class="fc">&nbsp;    ) = if (cascade) generateTask(</b>
+<b class="fc">&nbsp;        cascadeAllowed,</b>
+<b class="fc">&nbsp;        pojo,</b>
+<b class="fc">&nbsp;        kClass,</b>
+<b class="fc">&nbsp;        kPojoAllFieldsCache[kClass]!!.filter { selectFields.contains(it) },</b>
+<b class="fc">&nbsp;        operationType,</b>
+<b class="fc">&nbsp;        rootTask,</b>
+<b class="fc">&nbsp;        cascadeSelectedProps</b>
+<b class="fc">&nbsp;    ) else rootTask.toKronosQueryTask()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Generate a task for the cascade select operation.
+&nbsp;     *
+&nbsp;     * 为级联查询操作生成任务
+&nbsp;     *
+&nbsp;     * @param cascadeAllowed The properties that are allowed to cascade.
+&nbsp;     * @param pojo The POJO to select.
+&nbsp;     * @param columns The columns to select.
+&nbsp;     * @param operationType The operation type.
+&nbsp;     * @param prevTask The previous task.
+&nbsp;     * @param cascadeSelectedProps The properties that have been selected for cascading, preventing infinite recursion.
+&nbsp;     * @return A KronosQueryTask object representing the cascade select operation.
+&nbsp;     */
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;    private fun generateTask(
+&nbsp;        cascadeAllowed: Set&lt;Field&gt;?,
+&nbsp;        pojo: KPojo,
+&nbsp;        kClass: KClass&lt;KPojo&gt;,
+&nbsp;        columns: List&lt;Field&gt;,
+&nbsp;        operationType: KOperationType,
+&nbsp;        prevTask: KronosAtomicQueryTask,
+&nbsp;        cascadeSelectedProps: Set&lt;Field&gt;
+&nbsp;    ): KronosQueryTask {
+<b class="fc">&nbsp;        val tableName = pojo.__tableName</b>
+<b class="fc">&nbsp;        val validCascades = findValidRefs(</b>
+<b class="fc">&nbsp;            kClass,</b>
+<b class="fc">&nbsp;            columns,</b>
+<b class="fc">&nbsp;            operationType,</b>
+<b class="pc">&nbsp;            cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性</b>
+<b class="pc">&nbsp;            cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联</b>
+&nbsp;        ) // 获取所有的非数据库列、有关联注解且用于删除操作
+<b class="fc">&nbsp;        return prevTask.toKronosQueryTask().apply {</b>
+&nbsp;            // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
+&nbsp;            // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
+<b class="pc">&nbsp;            if (validCascades.isEmpty()) return@apply</b>
+<b class="nc">&nbsp;            doAfterQuery { queryType, wrapper -&gt;</b>
+<b class="nc">&nbsp;                validCascades.forEach { validRef -&gt;</b>
+<b class="nc">&nbsp;                    when (queryType) {</b>
+&nbsp;                        QueryList -&gt; { // 若是查询KPojo列表
+<b class="nc">&nbsp;                            val lastStepResult = this as List&lt;KPojo&gt; // this为主表查询的结果</b>
+<b class="nc">&nbsp;                            if (lastStepResult.isEmpty()) return@forEach // 若该级联属性查询结果为空，不进行级联查询</b>
+<b class="nc">&nbsp;                            val prop = validRef.field // 获取级联字段的属性如：GroupClass.students</b>
+<b class="nc">&nbsp;                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询</b>
+<b class="nc">&nbsp;                            if (!cascadeAllowed.isNullOrEmpty() &amp;&amp; prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询</b>
+<b class="nc">&nbsp;                            setValues(</b>
+<b class="nc">&nbsp;                                lastStepResult,</b>
+<b class="nc">&nbsp;                                prop.name,</b>
+<b class="nc">&nbsp;                                validRef,</b>
+<b class="nc">&nbsp;                                cascadeAllowed,</b>
+<b class="nc">&nbsp;                                mutableSetOf(</b>
+<b class="nc">&nbsp;                                    *cascadeSelectedProps.toTypedArray(),</b>
+<b class="nc">&nbsp;                                    *validCascades.map { cascade -&gt; cascade.field }.toTypedArray()</b>
+&nbsp;                                ),
+<b class="nc">&nbsp;                                operationType,</b>
+<b class="nc">&nbsp;                                wrapper</b>
+&nbsp;                            )
+&nbsp;                        }
+&nbsp;
+&nbsp;                        QueryOne, QueryOneOrNull -&gt; {
+<b class="nc">&nbsp;                            val lastStepResult = this as KPojo? // this为主表查询的结果</b>
+<b class="nc">&nbsp;                            if (lastStepResult == null) return@forEach // 若该级联属性查询结果为空，不进行级联查询</b>
+<b class="nc">&nbsp;                            val prop = validRef.field // 获取级联字段的属性如：GroupClass.students</b>
+<b class="nc">&nbsp;                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询</b>
+<b class="nc">&nbsp;                            if (!cascadeAllowed.isNullOrEmpty() &amp;&amp; prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询</b>
+<b class="nc">&nbsp;                            setValues(</b>
+<b class="nc">&nbsp;                                listOf(lastStepResult),</b>
+<b class="nc">&nbsp;                                prop.name,</b>
+<b class="nc">&nbsp;                                validRef,</b>
+<b class="nc">&nbsp;                                cascadeAllowed,</b>
+<b class="nc">&nbsp;                                mutableSetOf(</b>
+<b class="nc">&nbsp;                                    *cascadeSelectedProps.toTypedArray(),</b>
+<b class="nc">&nbsp;                                    *validCascades.map { cascade -&gt; cascade.field }.toTypedArray()</b>
+&nbsp;                                ),
+<b class="nc">&nbsp;                                operationType,</b>
+<b class="nc">&nbsp;                                wrapper</b>
+&nbsp;                            )
+&nbsp;                        }
+&nbsp;
+&nbsp;                        else -&gt; {}
+&nbsp;                    }
+<b class="nc">&nbsp;                }</b>
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    private var cascadeFieldNotFoundWarned = mutableSetOf&lt;String&gt;()</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Sets cascade values for a list of parent KPojo rows.
+&nbsp;     *
+&nbsp;     * For a single row or composite FK keys, performs per-row queries.
+&nbsp;     * For multiple rows with a single FK key, optimizes into a batch `WHERE col IN (...)` query
+&nbsp;     * to avoid the N+1 problem, then distributes results back to parent rows by FK value.
+&nbsp;     *
+&nbsp;     * If the cascade field is not found in the parent POJO&#39;s columns (e.g., when using DTO projections),
+&nbsp;     * a warning is logged and the cascade is skipped.
+&nbsp;     *
+&nbsp;     * 为父行列表设置级联查询值。
+&nbsp;     *
+&nbsp;     * 单行或复合外键时逐行查询；多行且单外键时，使用 `WHERE col IN (...)` 批量查询以避免 N+1 问题，
+&nbsp;     * 然后按外键值将子结果分配回父行。
+&nbsp;     *
+&nbsp;     * 若父 POJO 中未找到级联字段（如使用 DTO 投影时），记录警告并跳过级联。
+&nbsp;     *
+&nbsp;     * @param parentRows The list of parent KPojo instances to set cascade values on.
+&nbsp;     * @param prop The name of the cascade property on the parent POJO.
+&nbsp;     * @param validRef The validated cascade reference containing FK mapping info.
+&nbsp;     * @param cascadeAllowed The set of fields allowed for cascading, null means all allowed.
+&nbsp;     * @param cascadeSelectedProps Fields already selected for cascading (prevents infinite recursion).
+&nbsp;     * @param operationType The operation type (SELECT, DELETE, UPDATE).
+&nbsp;     * @param wrapper The data source wrapper for executing queries.
+&nbsp;     */
+&nbsp;    fun setValues(
+&nbsp;        parentRows: List&lt;KPojo&gt;,
+&nbsp;        prop: String,
+&nbsp;        validRef: ValidCascade,
+&nbsp;        cascadeAllowed: Set&lt;Field&gt;?,
+&nbsp;        cascadeSelectedProps: Set&lt;Field&gt;,
+&nbsp;        operationType: KOperationType,
+&nbsp;        wrapper: KronosDataSourceWrapper
+&nbsp;    ) {
+<b class="nc">&nbsp;        if (parentRows.isEmpty()) return</b>
+<b class="nc">&nbsp;        val parentFirst = parentRows.first()</b>
+<b class="nc">&nbsp;        val propField = parentFirst.kronosColumns().firstOrNull { it.name == prop }</b>
+<b class="nc">&nbsp;        if (propField == null) {</b>
+<b class="nc">&nbsp;            val key = &quot;${parentFirst::class.simpleName}.$prop&quot;</b>
+<b class="nc">&nbsp;            if (cascadeFieldNotFoundWarned.add(key)) {</b>
+<b class="nc">&nbsp;                Kronos.defaultLogger(&quot;CascadeSelectClause&quot;).warn(</b>
+<b class="nc">&nbsp;                    log {</b>
+<b class="nc">&nbsp;                        +&quot;Cascade field &#39;$prop&#39; not found in ${parentFirst::class.simpleName}, skipping cascade query. Consider disabling cascade for this query.&quot;</b>
+&nbsp;                    }
+&nbsp;                )
+&nbsp;            }
+&nbsp;            return
+&nbsp;        }
+<b class="nc">&nbsp;        val isCollection = propField.cascadeIsCollectionOrArray</b>
+<b class="nc">&nbsp;        val tableName = parentFirst.__tableName</b>
+&nbsp;
+&nbsp;        // 确定 FK 映射方向：本地属性 → 远程属性
+<b class="nc">&nbsp;        val isLocalTable = tableName == validRef.tableName</b>
+<b class="nc">&nbsp;        val (localProps, remoteProps) = if (isLocalTable) {</b>
+<b class="nc">&nbsp;            validRef.kCascade.properties to validRef.kCascade.targetProperties</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            validRef.kCascade.targetProperties to validRef.kCascade.properties</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // 构建级联查询的 SelectClause
+<b class="nc">&nbsp;        fun cascadeSelect(refPojo: KPojo) = refPojo.select().apply {</b>
+<b class="nc">&nbsp;            this.operationType = operationType</b>
+<b class="nc">&nbsp;            this.cascadeAllowed = cascadeAllowed</b>
+<b class="nc">&nbsp;            this.cascadeSelectedProps = cascadeSelectedProps</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+&nbsp;        // 从父行 dataMap 中提取 FK 键值对，用于填充子 POJO 查询条件
+&nbsp;        fun buildFkPairs(dataMap: Map&lt;String, Any?&gt;): List&lt;Pair&lt;String, Any&gt;&gt;? {
+<b class="nc">&nbsp;            return validRef.kCascade.targetProperties.mapIndexed { index, targetProp -&gt;</b>
+<b class="nc">&nbsp;                val (key, valueProp) = if (isLocalTable) {</b>
+<b class="nc">&nbsp;                    targetProp to validRef.kCascade.properties[index]</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    validRef.kCascade.properties[index] to targetProp</b>
+&nbsp;                }
+<b class="nc">&nbsp;                key to (dataMap[valueProp] ?: return null)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // 单行或复合键：逐行查询
+<b class="nc">&nbsp;        if (parentRows.size == 1 || localProps.size &gt; 1) {</b>
+<b class="nc">&nbsp;            for (row in parentRows) {</b>
+<b class="nc">&nbsp;                val fkPairs = buildFkPairs(row.toDataMap()) ?: continue</b>
+<b class="nc">&nbsp;                val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class, *fkPairs.toTypedArray())</b>
+<b class="nc">&nbsp;                row[prop] = if (isCollection) cascadeSelect(refPojo).queryList(wrapper)</b>
+<b class="nc">&nbsp;                else cascadeSelect(refPojo).queryOneOrNull(wrapper)</b>
+&nbsp;            }
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+&nbsp;        // 批量查询：单FK列 + 多行，使用 WHERE col IN (...) 避免 N+1
+<b class="nc">&nbsp;        val localProp = localProps[0]</b>
+<b class="nc">&nbsp;        val remoteProp = remoteProps[0]</b>
+&nbsp;
+<b class="nc">&nbsp;        val parentsByFk = mutableMapOf&lt;Any, MutableList&lt;KPojo&gt;&gt;()</b>
+<b class="nc">&nbsp;        for (row in parentRows) {</b>
+<b class="nc">&nbsp;            val fkValue = row.toDataMap()[localProp] ?: continue</b>
+<b class="nc">&nbsp;            parentsByFk.getOrPut(fkValue) { mutableListOf() }.add(row)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (parentsByFk.isEmpty()) return</b>
+&nbsp;
+<b class="nc">&nbsp;        val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)</b>
+<b class="nc">&nbsp;        val remoteField = refPojo.kronosColumns().first { it.name == remoteProp }</b>
+<b class="nc">&nbsp;        val allChildren = cascadeSelect(refPojo).where {</b>
+<b class="nc">&nbsp;            criteria = Criteria(</b>
+<b class="nc">&nbsp;                field = remoteField,</b>
+<b class="nc">&nbsp;                type = ConditionType.IN,</b>
+<b class="nc">&nbsp;                value = parentsByFk.keys.toList()</b>
+&nbsp;            )
+<b class="nc">&nbsp;            true</b>
+<b class="nc">&nbsp;        }.queryList(wrapper)</b>
+&nbsp;
+<b class="nc">&nbsp;        val childrenByFk = allChildren.groupBy { it.toDataMap()[remoteProp] }</b>
+<b class="nc">&nbsp;        for ((fkValue, rows) in parentsByFk) {</b>
+<b class="nc">&nbsp;            val matched = childrenByFk[fkValue] ?: emptyList()</b>
+<b class="nc">&nbsp;            for (row in rows) {</b>
+<b class="nc">&nbsp;                row[prop] = if (isCollection) matched else matched.firstOrNull()</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,407 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UnionClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.union</a>
+</div>
+
+<h1>Coverage Summary for Class: UnionClause (com.kotlinorm.orm.union)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UnionClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    39.1%
+  </span>
+  <span class="absValue">
+    (9/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (6/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.5%
+  </span>
+  <span class="absValue">
+    (50/87)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    41.2%
+  </span>
+  <span class="absValue">
+    (198/481)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.union
+&nbsp;
+&nbsp;import com.kotlinorm.ast.ColumnReference
+&nbsp;import com.kotlinorm.ast.CriteriaToAstConverter
+&nbsp;import com.kotlinorm.ast.LimitClause
+&nbsp;import com.kotlinorm.ast.OrderByItem
+&nbsp;import com.kotlinorm.ast.RenderContext
+&nbsp;import com.kotlinorm.ast.UnionStatement
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.SortType
+&nbsp;import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.join.SelectFrom
+&nbsp;import com.kotlinorm.orm.select.SelectClause
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;
+&nbsp;/**
+&nbsp; * UnionClause
+&nbsp; *
+&nbsp; * Represents a UNION operation that combines multiple SELECT queries using AST.
+&nbsp; * Generates proper SQL UNION statements executed by the database.
+&nbsp; *
+&nbsp; * Example usage:
+&nbsp; * ```kotlin
+&nbsp; * // Using union() function
+&nbsp; * val result = union(
+&nbsp; *     User().select().where { it.id == 1 },
+&nbsp; *     User().select().where { it.id == 2 }
+&nbsp; * ).query()
+&nbsp; * 
+&nbsp; * // Using infix notation
+&nbsp; * val result = User().select().where { it.id == 1 }
+&nbsp; *     union User().select().where { it.id == 2 }
+&nbsp; *     union Customer().select().limit(1)
+&nbsp; *     query()
+&nbsp; * 
+&nbsp; * // Using UNION ALL
+&nbsp; * val result = User().select().where { it.id == 1 }
+&nbsp; *     unionAll User().select().where { it.id == 2 }
+&nbsp; *     query()
+&nbsp; * ```
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;class UnionClause internal constructor(
+&nbsp;    selectables: List&lt;KSelectable&lt;out KPojo&gt;&gt;,
+<b class="nc">&nbsp;    initialUnionAll: Boolean = false</b>
+&nbsp;) {
+<b class="fc">&nbsp;    private val selectables: MutableList&lt;KSelectable&lt;out KPojo&gt;&gt; = selectables.toMutableList()</b>
+<b class="fc">&nbsp;    private var unionAll: Boolean = initialUnionAll</b>
+&nbsp;    private var orderByItems: List&lt;OrderByItem&gt;? = null
+&nbsp;    private var limitClause: LimitClause? = null
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Use UNION ALL instead of UNION (includes duplicates)
+&nbsp;     * Note: This applies to ALL union operations in this clause
+&nbsp;     */
+&nbsp;    fun all(): UnionClause {
+<b class="fc">&nbsp;        this.unionAll = true</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Add another query to this union with UNION (removes duplicates)
+&nbsp;     * Internal method used by infix functions
+&nbsp;     */
+&nbsp;    internal fun addQueryWithUnion(selectable: KSelectable&lt;out KPojo&gt;): UnionClause {
+<b class="fc">&nbsp;        this.selectables.add(selectable)</b>
+&nbsp;        // Keep the current unionAll setting
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Add another query to this union with UNION ALL (includes duplicates)
+&nbsp;     * Internal method used by infix functions
+&nbsp;     */
+&nbsp;    internal fun addQueryWithUnionAll(selectable: KSelectable&lt;out KPojo&gt;): UnionClause {
+<b class="fc">&nbsp;        this.selectables.add(selectable)</b>
+<b class="fc">&nbsp;        this.unionAll = true</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Add ORDER BY clause to the entire union result
+&nbsp;     */
+&nbsp;    fun orderBy(vararg items: Pair&lt;String, SortType&gt;): UnionClause {
+<b class="nc">&nbsp;        this.orderByItems = items.map { (columnName, sortType) -&gt;</b>
+<b class="nc">&nbsp;            OrderByItem(</b>
+<b class="nc">&nbsp;                expression = ColumnReference(</b>
+<b class="nc">&nbsp;                    tableAlias = null,</b>
+<b class="nc">&nbsp;                    columnName = columnName</b>
+&nbsp;                ),
+<b class="nc">&nbsp;                direction = sortType</b>
+<b class="nc">&nbsp;            )</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Add LIMIT clause to the entire union result
+&nbsp;     */
+<b class="fc">&nbsp;    fun limit(limit: Int, offset: Int? = null): UnionClause {</b>
+<b class="fc">&nbsp;        this.limitClause = LimitClause(limit = limit, offset = offset)</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Execute the union query and return results
+&nbsp;     */
+<b class="nc">&nbsp;    fun query(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any&gt;&gt; {</b>
+<b class="nc">&nbsp;        return build(wrapper).query(wrapper)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Execute the union query and return a single result
+&nbsp;     */
+<b class="nc">&nbsp;    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any&gt; {</b>
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return build(wrapper).queryMap(wrapper)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Execute the union query and return a single result or null
+&nbsp;     */
+<b class="nc">&nbsp;    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any&gt;? {</b>
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return build(wrapper).queryMapOrNull(wrapper)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Execute the union query and return typed results
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryList(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+&nbsp;    ): List&lt;T&gt; {
+<b class="nc">&nbsp;        return build(wrapper).queryList(wrapper, isKPojo, superTypes)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Execute the union query and return a single typed result
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryOne(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+&nbsp;    ): T {
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return build(wrapper).queryOne(wrapper, isKPojo, superTypes)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Execute the union query and return a single typed result or null
+&nbsp;     */
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryOneOrNull(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+&nbsp;    ): T? {
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return build(wrapper).queryOneOrNull(wrapper, isKPojo, superTypes)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Generate UnionStatement AST from the selectables
+&nbsp;     * 
+&nbsp;     * @param wrapper Optional data source wrapper
+&nbsp;     * @param parameterValues Mutable map to collect all parameter values from all queries
+&nbsp;     * @return UnionStatement AST
+&nbsp;     */
+<b class="nc">&nbsp;    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf()): UnionStatement {</b>
+&nbsp;        // Track parameter name counters for unique naming
+<b class="fc">&nbsp;        val parameterCounter = mutableMapOf&lt;String, Int&gt;()</b>
+&nbsp;        
+&nbsp;        // Convert each selectable to SelectStatement and collect parameters
+<b class="fc">&nbsp;        val selectStatements = selectables.mapIndexed { index, selectable -&gt;</b>
+&nbsp;            // Each selectable needs its own parameter map to collect its parameters
+<b class="fc">&nbsp;            val queryParams = mutableMapOf&lt;String, Any?&gt;()</b>
+&nbsp;            
+&nbsp;            // Call toStatement with parameter collection
+<b class="fc">&nbsp;            val statement = when (selectable) {</b>
+<b class="fc">&nbsp;                is SelectClause -&gt; {</b>
+<b class="fc">&nbsp;                    selectable.toStatement(wrapper, queryParams)</b>
+&nbsp;                }
+<b class="pc">&nbsp;                is SelectFrom&lt;*&gt; -&gt; {</b>
+<b class="fc">&nbsp;                    selectable.toStatement(wrapper, queryParams)</b>
+&nbsp;                }
+&nbsp;                else -&gt; {
+&nbsp;                    // For other types, just call the single-parameter version
+<b class="nc">&nbsp;                    selectable.toStatement(wrapper)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;            
+&nbsp;            // Rename parameters to ensure uniqueness and merge into main parameter map
+<b class="fc">&nbsp;            queryParams.forEach { (paramName, value) -&gt;</b>
+<b class="fc">&nbsp;                if (index == 0) {</b>
+&nbsp;                    // First query: use original parameter names
+<b class="fc">&nbsp;                    parameterValues[paramName] = value</b>
+<b class="fc">&nbsp;                    parameterCounter[paramName] = 0</b>
+&nbsp;                } else {
+&nbsp;                    // Subsequent queries: rename parameters to ensure uniqueness
+<b class="fc">&nbsp;                    val uniqueName = CriteriaToAstConverter.getUniqueParamName(</b>
+<b class="fc">&nbsp;                        paramName,</b>
+<b class="fc">&nbsp;                        parameterValues,</b>
+<b class="fc">&nbsp;                        parameterCounter</b>
+&nbsp;                    )
+<b class="fc">&nbsp;                    parameterValues[uniqueName] = value</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+&nbsp;            
+<b class="fc">&nbsp;            statement</b>
+&nbsp;        }
+&nbsp;        
+&nbsp;        // Create UnionStatement with ORDER BY and LIMIT applied to the entire result
+<b class="fc">&nbsp;        return UnionStatement(</b>
+<b class="fc">&nbsp;            queries = selectStatements,</b>
+<b class="fc">&nbsp;            unionAll = unionAll,</b>
+<b class="fc">&nbsp;            orderBy = orderByItems,</b>
+<b class="fc">&nbsp;            limit = limitClause</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Build the UnionStatement AST and render to SQL
+&nbsp;     */
+<b class="fc">&nbsp;    fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+&nbsp;        
+&nbsp;        // Collect all parameters from all selectables
+<b class="fc">&nbsp;        val allParameters = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;        val unionStatement = toStatement(wrapper, allParameters)</b>
+&nbsp;        
+&nbsp;        // Get database support for rendering
+<b class="pc">&nbsp;        val support = getDBSupport(dataSource.dbType) </b>
+<b class="nc">&nbsp;            ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;        
+&nbsp;        // Create render context and pre-bind all parameters
+<b class="fc">&nbsp;        val context = RenderContext(quotes = support.quotes)</b>
+<b class="fc">&nbsp;        context.boundParameters.putAll(allParameters)</b>
+&nbsp;        
+&nbsp;        // Render the UnionStatement to SQL
+<b class="fc">&nbsp;        val sql = support.renderer.renderUnionStatement(unionStatement, context)</b>
+&nbsp;        
+&nbsp;        // Get the final parameters from context (may have been renamed during rendering)
+<b class="fc">&nbsp;        val finalParameters = context.boundParameters.toMap()</b>
+&nbsp;        
+&nbsp;        // Create atomic task
+<b class="fc">&nbsp;        val atomicTask = KronosAtomicQueryTask(</b>
+<b class="fc">&nbsp;            sql = sql,</b>
+<b class="fc">&nbsp;            paramMap = finalParameters,</b>
+<b class="fc">&nbsp;            operationType = KOperationType.SELECT</b>
+&nbsp;        )
+&nbsp;        
+&nbsp;        // Return query task
+<b class="fc">&nbsp;        return KronosQueryTask(atomicTask)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

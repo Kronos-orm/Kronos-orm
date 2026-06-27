@@ -1,0 +1,591 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > CriteriaToAstConverter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.ast</a>
+</div>
+
+<h1>Coverage Summary for Class: CriteriaToAstConverter (com.kotlinorm.ast)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">CriteriaToAstConverter</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.3%
+  </span>
+  <span class="absValue">
+    (79/131)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.7%
+  </span>
+  <span class="absValue">
+    (125/172)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.1%
+  </span>
+  <span class="absValue">
+    (727/1008)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">CriteriaToAstConverter$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (9/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.3%
+  </span>
+  <span class="absValue">
+    (79/131)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.7%
+  </span>
+  <span class="absValue">
+    (125/172)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.1%
+  </span>
+  <span class="absValue">
+    (727/1008)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.ast
+&nbsp;
+&nbsp;import com.kotlinorm.beans.dsl.Criteria
+&nbsp;import com.kotlinorm.beans.dsl.FunctionField
+&nbsp;import com.kotlinorm.enums.ConditionType
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.NoValueStrategyType
+&nbsp;
+&nbsp;/**
+&nbsp; * CriteriaToAstConverter
+&nbsp; *
+&nbsp; * Converts Criteria tree to AST Expression tree.
+&nbsp; * Handles all condition types (AND, OR, comparison operations, etc.)
+&nbsp; * and parameter binding.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;object CriteriaToAstConverter {
+&nbsp;    /**
+&nbsp;     * Converts a Criteria tree to an AST Expression tree.
+&nbsp;     *
+&nbsp;     * @param criteria The criteria to convert
+&nbsp;     * @param parameterValues Optional mutable map to collect parameter values during conversion
+&nbsp;     * @param operationType Optional operation type for Auto NoValueStrategy resolution (defaults to SELECT)
+&nbsp;     * @param databaseOfTable Optional map of table name to database name (for cross-database queries)
+&nbsp;     * @param useTableAliases Whether to use table aliases in column references (true for JOIN queries, false for single-table queries)
+&nbsp;     * @return The converted AST Expression, or null if the criteria is empty/meaningless
+&nbsp;     */
+&nbsp;    fun convert(
+&nbsp;        criteria: Criteria, 
+<b class="nc">&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf(),</b>
+<b class="nc">&nbsp;        operationType: KOperationType = KOperationType.SELECT,</b>
+<b class="fc">&nbsp;        databaseOfTable: Map&lt;String, String&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;        useTableAliases: Boolean = false</b>
+&nbsp;    ): Expression? {
+&nbsp;        // Track parameter name usage for deduplication
+<b class="fc">&nbsp;        val paramNameCounter = mutableMapOf&lt;String, Int&gt;()</b>
+<b class="fc">&nbsp;        return convertCriteria(criteria, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Recursively converts a Criteria to an Expression.
+&nbsp;     *
+&nbsp;     * @param criteria The criteria to convert
+&nbsp;     * @param parameterValues Mutable map to collect parameter values during conversion
+&nbsp;     * @param paramNameCounter Mutable map to track parameter name usage for deduplication
+&nbsp;     * @param operationType Operation type for Auto NoValueStrategy resolution
+&nbsp;     * @param databaseOfTable Map of table name to database name (for cross-database queries)
+&nbsp;     * @param useTableAliases Whether to use table aliases in column references
+&nbsp;     * @return The converted Expression, or null if the criteria is empty/meaningless
+&nbsp;     */
+&nbsp;    private fun convertCriteria(
+&nbsp;        criteria: Criteria, 
+&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt;, 
+&nbsp;        paramNameCounter: MutableMap&lt;String, Int&gt;,
+&nbsp;        operationType: KOperationType,
+<b class="nc">&nbsp;        databaseOfTable: Map&lt;String, String&gt; = emptyMap(),</b>
+<b class="nc">&nbsp;        useTableAliases: Boolean = false</b>
+&nbsp;    ): Expression? {
+&nbsp;        // Handle NoValueStrategy: if value is null and strategy is Ignore (or Auto for SELECT), skip this criteria
+<b class="fc">&nbsp;        if (criteria.value == null &amp;&amp; criteria.valueAcceptable) {</b>
+<b class="pc">&nbsp;            val strategy = when (criteria.noValueStrategyType) {</b>
+<b class="fc">&nbsp;                NoValueStrategyType.Ignore -&gt; NoValueStrategyType.Ignore</b>
+&nbsp;                NoValueStrategyType.Auto, null -&gt; {
+&nbsp;                    // For SELECT operations, Auto strategy is Ignore (skip null values)
+&nbsp;                    // For UPDATE/INSERT operations, Auto strategy might be different
+<b class="pc">&nbsp;                    if (operationType == KOperationType.SELECT) {</b>
+<b class="fc">&nbsp;                        NoValueStrategyType.Ignore</b>
+&nbsp;                    } else {
+&nbsp;                        // For other operations, keep the default behavior
+<b class="nc">&nbsp;                        criteria.noValueStrategyType ?: NoValueStrategyType.Auto</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="nc">&nbsp;                else -&gt; criteria.noValueStrategyType</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (strategy == NoValueStrategyType.Ignore) {</b>
+<b class="fc">&nbsp;                return null  // Skip this criteria entirely</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;        
+&nbsp;        // Handle empty collection for IN clause: treat as &quot;no value&quot;
+<b class="pc">&nbsp;        if (criteria.type == ConditionType.IN &amp;&amp; criteria.valueAcceptable) {</b>
+<b class="fc">&nbsp;            val isEmpty = when (val value = criteria.value) {</b>
+<b class="pc">&nbsp;                is Collection&lt;*&gt; -&gt; value.isEmpty()</b>
+<b class="nc">&nbsp;                is Array&lt;*&gt; -&gt; value.isEmpty()</b>
+<b class="nc">&nbsp;                else -&gt; false</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (isEmpty) {</b>
+&nbsp;                // Empty IN clause: return false for IN, true for NOT IN
+&nbsp;                // criteria.not = false (IN) -&gt; return false (nothing can be in empty list)
+&nbsp;                // criteria.not = true (NOT IN) -&gt; return true (everything is not in empty list)
+<b class="fc">&nbsp;                return Literal.BooleanLiteral(criteria.not)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Handle ROOT/AND/OR - combine children with logical operators
+<b class="fc">&nbsp;        if (criteria.type == ConditionType.ROOT || criteria.type == ConditionType.AND || criteria.type == ConditionType.OR) {</b>
+<b class="fc">&nbsp;            return combineChildren(criteria, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val columnRef = buildColumnRef(criteria, databaseOfTable, useTableAliases)</b>
+&nbsp;
+&nbsp;        // Handle different condition types
+<b class="pc">&nbsp;        val expression = when (criteria.type) {</b>
+&nbsp;            ConditionType.EQUAL -&gt; {
+<b class="fc">&nbsp;                val rightExpr = convertValue(criteria.value, criteria.field.name, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                BinaryExpression(columnRef, SqlOperator.EQUAL, rightExpr)</b>
+&nbsp;            }
+&nbsp;            ConditionType.GT -&gt; {
+<b class="fc">&nbsp;                val rightExpr = convertValue(criteria.value, criteria.field.name + &quot;Min&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                BinaryExpression(columnRef, SqlOperator.GREATER_THAN, rightExpr)</b>
+&nbsp;            }
+&nbsp;            ConditionType.GE -&gt; {
+<b class="fc">&nbsp;                val rightExpr = convertValue(criteria.value, criteria.field.name + &quot;Min&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                BinaryExpression(columnRef, SqlOperator.GREATER_THAN_OR_EQUAL, rightExpr)</b>
+&nbsp;            }
+&nbsp;            ConditionType.LT -&gt; {
+<b class="fc">&nbsp;                val rightExpr = convertValue(criteria.value, criteria.field.name + &quot;Max&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                BinaryExpression(columnRef, SqlOperator.LESS_THAN, rightExpr)</b>
+&nbsp;            }
+&nbsp;            ConditionType.LE -&gt; {
+<b class="fc">&nbsp;                val rightExpr = convertValue(criteria.value, criteria.field.name + &quot;Max&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                BinaryExpression(columnRef, SqlOperator.LESS_THAN_OR_EQUAL, rightExpr)</b>
+&nbsp;            }
+&nbsp;            ConditionType.LIKE -&gt; {
+<b class="fc">&nbsp;                val patternExpr = convertValue(criteria.value, criteria.field.name, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                SpecialExpression.LikeExpression(</b>
+<b class="fc">&nbsp;                    value = columnRef,</b>
+<b class="fc">&nbsp;                    pattern = patternExpr,</b>
+<b class="fc">&nbsp;                    not = criteria.not,</b>
+<b class="fc">&nbsp;                    caseInsensitive = false</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;            ConditionType.IN -&gt; {
+<b class="fc">&nbsp;                val value = criteria.value</b>
+&nbsp;                // Store the entire collection as a single parameter with &quot;List&quot; suffix
+&nbsp;                // NamedParameterUtils will expand it into multiple ? placeholders for JDBC
+<b class="fc">&nbsp;                val paramName = getUniqueParamName(&quot;${criteria.field.name}List&quot;, parameterValues, paramNameCounter)</b>
+<b class="fc">&nbsp;                val listValue = when (value) {</b>
+<b class="pc">&nbsp;                    is Collection&lt;*&gt; -&gt; value.toList()</b>
+<b class="nc">&nbsp;                    is Array&lt;*&gt; -&gt; value.toList()</b>
+<b class="nc">&nbsp;                    else -&gt; listOf(value)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                parameterValues[paramName] = listValue</b>
+&nbsp;                
+&nbsp;                // Create a single parameter reference for the list
+&nbsp;                // The expansion to multiple placeholders happens in NamedParameterUtils
+<b class="fc">&nbsp;                SpecialExpression.InExpression(</b>
+<b class="fc">&nbsp;                    value = columnRef,</b>
+<b class="fc">&nbsp;                    values = listOf(Parameter.NamedParameter(paramName)),</b>
+<b class="fc">&nbsp;                    not = criteria.not</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;            ConditionType.ISNULL -&gt; {
+<b class="fc">&nbsp;                SpecialExpression.IsNullExpression(</b>
+<b class="fc">&nbsp;                    expression = columnRef,</b>
+<b class="fc">&nbsp;                    not = criteria.not</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;            ConditionType.BETWEEN -&gt; {
+<b class="fc">&nbsp;                val value = criteria.value</b>
+<b class="fc">&nbsp;                when (value) {</b>
+<b class="pc">&nbsp;                    is Pair&lt;*, *&gt; -&gt; {</b>
+<b class="nc">&nbsp;                        val low = convertValue(value.first, criteria.field.name + &quot;Min&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="nc">&nbsp;                        val high = convertValue(value.second, criteria.field.name + &quot;Max&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="nc">&nbsp;                        SpecialExpression.BetweenExpression(</b>
+<b class="nc">&nbsp;                            value = columnRef,</b>
+<b class="nc">&nbsp;                            low = low,</b>
+<b class="nc">&nbsp;                            high = high,</b>
+<b class="nc">&nbsp;                            not = criteria.not</b>
+&nbsp;                        )
+&nbsp;                    }
+<b class="pc">&nbsp;                    is ClosedRange&lt;*&gt; -&gt; {</b>
+&nbsp;                        // Handle IntRange, LongRange, etc.
+<b class="fc">&nbsp;                        val low = convertValue(value.start, criteria.field.name + &quot;Min&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                        val high = convertValue(value.endInclusive, criteria.field.name + &quot;Max&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                        SpecialExpression.BetweenExpression(</b>
+<b class="fc">&nbsp;                            value = columnRef,</b>
+<b class="fc">&nbsp;                            low = low,</b>
+<b class="fc">&nbsp;                            high = high,</b>
+<b class="fc">&nbsp;                            not = criteria.not</b>
+&nbsp;                        )
+&nbsp;                    }
+<b class="nc">&nbsp;                    is List&lt;*&gt; -&gt; {</b>
+<b class="nc">&nbsp;                        if (value.size &gt;= 2) {</b>
+<b class="nc">&nbsp;                            val low = convertValue(value[0], criteria.field.name + &quot;Min&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="nc">&nbsp;                            val high = convertValue(value[1], criteria.field.name + &quot;Max&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="nc">&nbsp;                            SpecialExpression.BetweenExpression(</b>
+<b class="nc">&nbsp;                                value = columnRef,</b>
+<b class="nc">&nbsp;                                low = low,</b>
+<b class="nc">&nbsp;                                high = high,</b>
+<b class="nc">&nbsp;                                not = criteria.not</b>
+&nbsp;                            )
+&nbsp;                        } else {
+<b class="nc">&nbsp;                            throw IllegalArgumentException(&quot;BETWEEN requires exactly 2 values&quot;)</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;                    else -&gt; {
+<b class="fc">&nbsp;                        throw IllegalArgumentException(&quot;BETWEEN requires a Pair, ClosedRange, or List with 2 values&quot;)</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;            ConditionType.REGEXP -&gt; {
+<b class="fc">&nbsp;                val patternExpr = convertValue(criteria.value, criteria.field.name + &quot;Pattern&quot;, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+<b class="fc">&nbsp;                BinaryExpression(</b>
+<b class="fc">&nbsp;                    columnRef,</b>
+<b class="pc">&nbsp;                    if (criteria.not) SqlOperator.NOT_REGEXP else SqlOperator.REGEXP,</b>
+<b class="fc">&nbsp;                    patternExpr</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;            ConditionType.SQL -&gt; {
+&nbsp;                // For SQL type, we might need to parse the SQL string or handle it specially
+&nbsp;                // For now, return the value as-is if it&#39;s already an Expression, or convert it
+<b class="fc">&nbsp;                val value = criteria.value</b>
+<b class="fc">&nbsp;                when (value) {</b>
+<b class="pc">&nbsp;                    is Expression -&gt; value</b>
+<b class="fc">&nbsp;                    is String -&gt; {</b>
+&nbsp;                        // Raw SQL string - use RawSqlExpression to render as-is without quoting
+<b class="fc">&nbsp;                        SpecialExpression.RawSqlExpression(value)</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    else -&gt; convertValue(value, databaseOfTable = databaseOfTable, useTableAliases = useTableAliases)</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;            ConditionType.AND, ConditionType.OR, ConditionType.ROOT -&gt; {
+&nbsp;                // These are handled above, but included here for completeness
+<b class="nc">&nbsp;                Literal.BooleanLiteral(true)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return applyNot(criteria, expression)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Applies NOT negation to an expression if the criteria requires it.
+&nbsp;     * SpecialExpression types (LikeExpression, IsNullExpression, BetweenExpression, InExpression)
+&nbsp;     * already handle NOT in their constructors, so they are not wrapped again.
+&nbsp;     * REGEXP also handles NOT by selecting NOT_REGEXP operator.
+&nbsp;     *
+&nbsp;     * @param criteria The criteria containing the NOT flag and type
+&nbsp;     * @param expression The expression to potentially negate
+&nbsp;     * @return The expression, possibly wrapped with NOT
+&nbsp;     */
+&nbsp;    private fun applyNot(criteria: Criteria, expression: Expression): Expression {
+<b class="pc">&nbsp;        if (!criteria.not || expression is SpecialExpression || criteria.type == ConditionType.REGEXP) {</b>
+<b class="fc">&nbsp;            return expression</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return when (expression) {</b>
+<b class="pc">&nbsp;            is BinaryExpression -&gt; {</b>
+<b class="pc">&nbsp;                val notOperator = when (expression.operator) {</b>
+<b class="fc">&nbsp;                    SqlOperator.EQUAL -&gt; SqlOperator.NOT_EQUAL</b>
+<b class="nc">&nbsp;                    SqlOperator.LIKE -&gt; SqlOperator.NOT_LIKE</b>
+<b class="nc">&nbsp;                    SqlOperator.ILIKE -&gt; SqlOperator.NOT_ILIKE</b>
+<b class="nc">&nbsp;                    else -&gt; null</b>
+&nbsp;                }
+<b class="pc">&nbsp;                if (notOperator != null) {</b>
+<b class="fc">&nbsp;                    BinaryExpression(expression.left, notOperator, expression.right)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    UnaryExpression(UnaryOperator.NOT, expression)</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;            else -&gt; UnaryExpression(UnaryOperator.NOT, expression)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Combines children of a ROOT/AND/OR criteria into a single expression using the appropriate logical operator.
+&nbsp;     *
+&nbsp;     * @param criteria The criteria whose children to combine
+&nbsp;     * @param parameterValues Mutable map to collect parameter values during conversion
+&nbsp;     * @param paramNameCounter Mutable map to track parameter name usage for deduplication
+&nbsp;     * @param operationType Operation type for Auto NoValueStrategy resolution
+&nbsp;     * @param databaseOfTable Map of table name to database name (for cross-database queries)
+&nbsp;     * @param useTableAliases Whether to use table aliases in column references
+&nbsp;     * @return The combined expression, or null if no children produce expressions
+&nbsp;     */
+&nbsp;    private fun combineChildren(
+&nbsp;        criteria: Criteria,
+&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt;,
+&nbsp;        paramNameCounter: MutableMap&lt;String, Int&gt;,
+&nbsp;        operationType: KOperationType,
+&nbsp;        databaseOfTable: Map&lt;String, String&gt;,
+&nbsp;        useTableAliases: Boolean
+&nbsp;    ): Expression? {
+<b class="fc">&nbsp;        val operator = if (criteria.type == ConditionType.OR) SqlOperator.OR else SqlOperator.AND</b>
+<b class="fc">&nbsp;        val expressions = criteria.children</b>
+<b class="fc">&nbsp;            .filterNotNull()</b>
+<b class="fc">&nbsp;            .mapNotNull { convertCriteria(it, parameterValues, paramNameCounter, operationType, databaseOfTable, useTableAliases) }</b>
+<b class="fc">&nbsp;        return when {</b>
+<b class="fc">&nbsp;            expressions.isEmpty() -&gt; null</b>
+<b class="fc">&nbsp;            expressions.size == 1 -&gt; expressions.first()</b>
+<b class="fc">&nbsp;            else -&gt; expressions.reduce { acc, expr -&gt; BinaryExpression(acc, operator, expr) }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Builds a column reference expression from a criteria&#39;s field.
+&nbsp;     * Handles FunctionField conversion and table alias resolution for JOIN queries.
+&nbsp;     *
+&nbsp;     * @param criteria The criteria containing the field
+&nbsp;     * @param databaseOfTable Map of table name to database name
+&nbsp;     * @param useTableAliases Whether to use table aliases
+&nbsp;     * @return The column reference expression
+&nbsp;     */
+&nbsp;    private fun buildColumnRef(
+&nbsp;        criteria: Criteria,
+&nbsp;        databaseOfTable: Map&lt;String, String&gt;,
+&nbsp;        useTableAliases: Boolean
+&nbsp;    ): Expression {
+<b class="fc">&nbsp;        if (criteria.field is FunctionField) {</b>
+<b class="fc">&nbsp;            return FieldToExpressionConverter.fieldToExpression(criteria.field, useTableAlias = useTableAliases)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        val shouldUseAlias = useTableAliases &amp;&amp; !criteria.field.tableName.isNullOrEmpty()</b>
+<b class="fc">&nbsp;        val database = if (shouldUseAlias) databaseOfTable[criteria.field.tableName] else null</b>
+<b class="fc">&nbsp;        return ColumnReference(</b>
+<b class="fc">&nbsp;            database = database,</b>
+<b class="fc">&nbsp;            tableAlias = if (shouldUseAlias) criteria.field.tableName else null,</b>
+<b class="fc">&nbsp;            columnName = criteria.field.columnName</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Gets a unique parameter name by appending @N suffix if the name already exists.
+&nbsp;     * For example: id, id@1, id@2, etc.
+&nbsp;     *
+&nbsp;     * @param baseName The base parameter name
+&nbsp;     * @param parameterValues The map of existing parameter values
+&nbsp;     * @param paramNameCounter The counter map for tracking parameter name usage
+&nbsp;     * @return A unique parameter name
+&nbsp;     */
+&nbsp;    internal fun getUniqueParamName(baseName: String, parameterValues: MutableMap&lt;String, Any?&gt;, paramNameCounter: MutableMap&lt;String, Int&gt;): String {
+&nbsp;        // Check if this is the first use of this parameter name
+<b class="fc">&nbsp;        if (!parameterValues.containsKey(baseName)) {</b>
+<b class="fc">&nbsp;            return baseName</b>
+&nbsp;        }
+&nbsp;        
+&nbsp;        // Parameter name already exists, need to add suffix
+<b class="fc">&nbsp;        val count = paramNameCounter.getOrDefault(baseName, 0) + 1</b>
+<b class="fc">&nbsp;        paramNameCounter[baseName] = count</b>
+<b class="fc">&nbsp;        return &quot;$baseName@$count&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts a value to an Expression (Literal or Parameter).
+&nbsp;     * Creates Parameter nodes with field names for proper parameter binding.
+&nbsp;     * Stores the actual parameter value in the parameterValues map.
+&nbsp;     *
+&nbsp;     * @param value The value to convert
+&nbsp;     * @param fieldName The field name to use for parameter naming (if applicable)
+&nbsp;     * @param parameterValues Mutable map to store parameter values
+&nbsp;     * @param paramNameCounter Mutable map to track parameter name usage for deduplication
+&nbsp;     * @param databaseOfTable Map of table name to database name (for cross-database queries)
+&nbsp;     * @param useTableAliases Whether to use table aliases in column references
+&nbsp;     * @return The converted Expression
+&nbsp;     */
+&nbsp;    private fun convertValue(
+&nbsp;        value: Any?, 
+<b class="fc">&nbsp;        fieldName: String? = null, </b>
+<b class="fc">&nbsp;        parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf(), </b>
+<b class="fc">&nbsp;        paramNameCounter: MutableMap&lt;String, Int&gt; = mutableMapOf(), </b>
+<b class="nc">&nbsp;        databaseOfTable: Map&lt;String, String&gt; = emptyMap(),</b>
+<b class="nc">&nbsp;        useTableAliases: Boolean = false</b>
+&nbsp;    ): Expression {
+<b class="fc">&nbsp;        return when (value) {</b>
+<b class="pc">&nbsp;            null -&gt; Literal.NullLiteral</b>
+<b class="pc">&nbsp;            is Expression -&gt; value</b>
+<b class="pc">&nbsp;            is Parameter -&gt; value</b>
+<b class="fc">&nbsp;            is FunctionField -&gt; {</b>
+&nbsp;                // Convert FunctionField to FunctionCall expression
+<b class="fc">&nbsp;                FieldToExpressionConverter.fieldToExpression(value, useTableAlias = useTableAliases)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is com.kotlinorm.beans.dsl.Field -&gt; {</b>
+&nbsp;                // Convert Field to ColumnReference with table alias and database name for join conditions
+&nbsp;                // Only use table alias when explicitly requested (for JOIN queries)
+<b class="pc">&nbsp;                val shouldUseAlias = useTableAliases &amp;&amp; !value.tableName.isNullOrEmpty()</b>
+<b class="pc">&nbsp;                val database = if (shouldUseAlias) {</b>
+<b class="fc">&nbsp;                    databaseOfTable[value.tableName]</b>
+<b class="nc">&nbsp;                } else null</b>
+<b class="fc">&nbsp;                ColumnReference(</b>
+<b class="fc">&nbsp;                    database = database,</b>
+<b class="pc">&nbsp;                    tableAlias = if (shouldUseAlias) value.tableName else null,</b>
+<b class="fc">&nbsp;                    columnName = value.columnName</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;            else -&gt; {
+&nbsp;                // Create a Parameter node with the field name for proper binding
+&nbsp;                // Store the actual value in the parameterValues map
+<b class="fc">&nbsp;                if (fieldName != null) {</b>
+&nbsp;                    // Get unique parameter name to avoid conflicts
+<b class="fc">&nbsp;                    val uniqueParamName = getUniqueParamName(fieldName, parameterValues, paramNameCounter)</b>
+<b class="fc">&nbsp;                    parameterValues[uniqueParamName] = value</b>
+<b class="fc">&nbsp;                    Parameter.NamedParameter(uniqueParamName)</b>
+&nbsp;                } else {
+&nbsp;                    // Fallback to literal if no field name is provided
+<b class="fc">&nbsp;                    when (value) {</b>
+<b class="pc">&nbsp;                        is String -&gt; Literal.StringLiteral(value)</b>
+<b class="pc">&nbsp;                        is Boolean -&gt; Literal.BooleanLiteral(value)</b>
+<b class="nc">&nbsp;                        is Number -&gt; Literal.NumberLiteral(value.toString())</b>
+<b class="nc">&nbsp;                        is Char -&gt; Literal.StringLiteral(value.toString())</b>
+<b class="nc">&nbsp;                        is Collection&lt;*&gt; -&gt; {</b>
+<b class="nc">&nbsp;                            if (value.isEmpty()) {</b>
+<b class="nc">&nbsp;                                Literal.NullLiteral</b>
+&nbsp;                            } else {
+<b class="nc">&nbsp;                                convertValue(value.first(), null, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+&nbsp;                            }
+&nbsp;                        }
+<b class="nc">&nbsp;                        is Array&lt;*&gt; -&gt; {</b>
+<b class="nc">&nbsp;                            if (value.isEmpty()) {</b>
+<b class="nc">&nbsp;                                Literal.NullLiteral</b>
+&nbsp;                            } else {
+<b class="nc">&nbsp;                                convertValue(value.first(), null, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)</b>
+&nbsp;                            }
+&nbsp;                        }
+<b class="nc">&nbsp;                        else -&gt; Literal.StringLiteral(value.toString())</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

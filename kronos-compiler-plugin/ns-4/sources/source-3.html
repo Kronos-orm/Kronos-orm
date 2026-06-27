@@ -1,0 +1,234 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > ConstantsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: ConstantsKt (com.kotlinorm.compiler.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ConstantsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (46/46)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (46/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (259/259)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.utils
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;
+&nbsp;/**
+&nbsp; * FQN constants for Kronos classes and interfaces
+&nbsp; */
+&nbsp;
+&nbsp;// Core interfaces
+<b class="fc">&nbsp;val KPojoFqName = FqName(&quot;com.kotlinorm.interfaces.KPojo&quot;)</b>
+&nbsp;
+&nbsp;// DSL classes
+<b class="fc">&nbsp;val FieldFqName = FqName(&quot;com.kotlinorm.beans.dsl.Field&quot;)</b>
+<b class="fc">&nbsp;val FunctionFieldFqName = FqName(&quot;com.kotlinorm.beans.dsl.FunctionField&quot;)</b>
+<b class="fc">&nbsp;val KCascadeFqName = FqName(&quot;com.kotlinorm.beans.dsl.KCascade&quot;)</b>
+<b class="fc">&nbsp;val CriteriaFqName = FqName(&quot;com.kotlinorm.beans.dsl.Criteria&quot;)</b>
+<b class="fc">&nbsp;val KTableForSelectFqName = FqName(&quot;com.kotlinorm.beans.dsl.KTableForSelect&quot;)</b>
+<b class="fc">&nbsp;val KTableForSetFqName = FqName(&quot;com.kotlinorm.beans.dsl.KTableForSet&quot;)</b>
+<b class="fc">&nbsp;val KTableForConditionFqName = FqName(&quot;com.kotlinorm.beans.dsl.KTableForCondition&quot;)</b>
+<b class="fc">&nbsp;val KTableForSortFqName = FqName(&quot;com.kotlinorm.beans.dsl.KTableForSort&quot;)</b>
+<b class="fc">&nbsp;val KTableForReferenceFqName = FqName(&quot;com.kotlinorm.beans.dsl.KTableForReference&quot;)</b>
+&nbsp;
+&nbsp;// Kotlin standard library
+<b class="fc">&nbsp;val PairFqName = FqName(&quot;kotlin.Pair&quot;)</b>
+<b class="fc">&nbsp;val StringFqName = FqName(&quot;kotlin.String&quot;)</b>
+<b class="fc">&nbsp;val FunctionHandlerFqName = FqName(&quot;com.kotlinorm.functions.FunctionHandler&quot;)</b>
+&nbsp;
+&nbsp;// Enums
+<b class="fc">&nbsp;val KColumnTypeFqName = FqName(&quot;com.kotlinorm.enums.KColumnType&quot;)</b>
+<b class="fc">&nbsp;val ConditionTypeFqName = FqName(&quot;com.kotlinorm.enums.ConditionType&quot;)</b>
+<b class="fc">&nbsp;val NoValueStrategyTypeFqName = FqName(&quot;com.kotlinorm.enums.NoValueStrategyType&quot;)</b>
+&nbsp;
+&nbsp;// Annotations
+<b class="fc">&nbsp;val TableAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Table&quot;)</b>
+<b class="fc">&nbsp;val ColumnAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Column&quot;)</b>
+<b class="fc">&nbsp;val ColumnTypeAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.ColumnType&quot;)</b>
+<b class="fc">&nbsp;val IgnoreAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Ignore&quot;)</b>
+<b class="fc">&nbsp;val PrimaryKeyAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.PrimaryKey&quot;)</b>
+<b class="fc">&nbsp;val CascadeAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Cascade&quot;)</b>
+<b class="fc">&nbsp;val DateTimeFormatAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.DateTimeFormat&quot;)</b>
+<b class="fc">&nbsp;val DefaultValueAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Default&quot;)</b>
+<b class="fc">&nbsp;val NecessaryAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Necessary&quot;)</b>
+<b class="fc">&nbsp;val SerializeAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.Serialize&quot;)</b>
+<b class="fc">&nbsp;val KronosInitAnnotationFqName = FqName(&quot;com.kotlinorm.annotations.KronosInit&quot;)</b>
+<b class="fc">&nbsp;val KronosCommonStrategyFqName = FqName(&quot;com.kotlinorm.beans.config.KronosCommonStrategy&quot;)</b>
+<b class="fc">&nbsp;val KronosObjectFqName = FqName(&quot;com.kotlinorm.Kronos&quot;)</b>
+&nbsp;
+&nbsp;// Annotation FqNames grouped for class transformer
+&nbsp;object AnnotationFqNames {
+&nbsp;    val Table = TableAnnotationFqName
+&nbsp;    val Column = ColumnAnnotationFqName
+&nbsp;    val ColumnType = ColumnTypeAnnotationFqName
+&nbsp;    val Ignore = IgnoreAnnotationFqName
+&nbsp;    val PrimaryKey = PrimaryKeyAnnotationFqName
+&nbsp;    val Cascade = CascadeAnnotationFqName
+&nbsp;    val DateTimeFormat = DateTimeFormatAnnotationFqName
+&nbsp;    val Default = DefaultValueAnnotationFqName
+&nbsp;    val Necessary = NecessaryAnnotationFqName
+&nbsp;    val Serialize = SerializeAnnotationFqName
+&nbsp;    val CreateTime = FqName(&quot;com.kotlinorm.annotations.CreateTime&quot;)
+&nbsp;    val UpdateTime = FqName(&quot;com.kotlinorm.annotations.UpdateTime&quot;)
+&nbsp;    val LogicDelete = FqName(&quot;com.kotlinorm.annotations.LogicDelete&quot;)
+&nbsp;    val Version = FqName(&quot;com.kotlinorm.annotations.Version&quot;)
+&nbsp;    val TableIndex = FqName(&quot;com.kotlinorm.annotations.TableIndex&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * ClassId constants for class references
+&nbsp; */
+&nbsp;
+&nbsp;// Core interfaces
+<b class="fc">&nbsp;val KPojoClassId = ClassId.topLevel(KPojoFqName)</b>
+&nbsp;
+&nbsp;// DSL classes
+<b class="fc">&nbsp;val FieldClassId = ClassId.topLevel(FieldFqName)</b>
+<b class="fc">&nbsp;val FunctionFieldClassId = ClassId.topLevel(FunctionFieldFqName)</b>
+<b class="fc">&nbsp;val KCascadeClassId = ClassId.topLevel(KCascadeFqName)</b>
+<b class="fc">&nbsp;val CriteriaClassId = ClassId.topLevel(CriteriaFqName)</b>
+<b class="fc">&nbsp;val KTableForSelectClassId = ClassId.topLevel(KTableForSelectFqName)</b>
+<b class="fc">&nbsp;val KTableForSetClassId = ClassId.topLevel(KTableForSetFqName)</b>
+<b class="fc">&nbsp;val KTableForConditionClassId = ClassId.topLevel(KTableForConditionFqName)</b>
+<b class="fc">&nbsp;val KTableForSortClassId = ClassId.topLevel(KTableForSortFqName)</b>
+<b class="fc">&nbsp;val KTableForReferenceClassId = ClassId.topLevel(KTableForReferenceFqName)</b>
+&nbsp;
+&nbsp;// Kotlin standard library
+<b class="fc">&nbsp;val PairClassId = ClassId.topLevel(PairFqName)</b>
+<b class="fc">&nbsp;val StringClassId = ClassId.topLevel(StringFqName)</b>
+&nbsp;
+&nbsp;// Enums
+<b class="fc">&nbsp;val KColumnTypeClassId = ClassId.topLevel(KColumnTypeFqName)</b>
+<b class="fc">&nbsp;val ConditionTypeClassId = ClassId.topLevel(ConditionTypeFqName)</b>
+<b class="fc">&nbsp;val NoValueStrategyTypeClassId = ClassId.topLevel(NoValueStrategyTypeFqName)</b>
+&nbsp;
+&nbsp;// Config
+<b class="fc">&nbsp;val KronosCommonStrategyClassId = ClassId.topLevel(KronosCommonStrategyFqName)</b>
+<b class="fc">&nbsp;val KronosObjectClassId = ClassId.topLevel(KronosObjectFqName)</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:26</div>
+</div>
+</body>
+</html>

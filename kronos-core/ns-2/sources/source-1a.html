@@ -1,0 +1,282 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.ast</a>
+</div>
+
+<h1>Coverage Summary for Class: SqlRenderer (com.kotlinorm.ast)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqlRenderer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (28/28)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SqlRenderer$DefaultImpls</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (28/28)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.ast
+&nbsp;
+&nbsp;/**
+&nbsp; * RenderedSql
+&nbsp; *
+&nbsp; * Represents the result of SQL rendering, containing the SQL string and parameter bindings.
+&nbsp; *
+&nbsp; * @property sql The rendered SQL string
+&nbsp; * @property parameters Map of parameter names to values for parameterized queries
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;data class RenderedSql(val sql: String, val parameters: Map&lt;String, Any?&gt; = emptyMap())
+&nbsp;
+&nbsp;/**
+&nbsp; * RenderContext
+&nbsp; *
+&nbsp; * Context for SQL rendering, containing configuration and state for the rendering process. Manages
+&nbsp; * parameter binding, quote handling, and other rendering options.
+&nbsp; *
+&nbsp; * @property parameterPrefix Prefix for named parameters (e.g., &quot;:&quot; for :paramName)
+&nbsp; * @property positionalParameterPlaceholder Placeholder for positional parameters (e.g., &quot;?&quot;)
+&nbsp; * @property quotes Pair of quote characters for identifiers (start, end), e.g., Pair(&quot;\&quot;&quot;, &quot;\&quot;&quot;)
+&nbsp; * @property parameterCounter Counter for generating unique parameter names
+&nbsp; * @property boundParameters Mutable map of bound parameter values
+&nbsp; * @property usePositionalParameters Whether to use positional parameters instead of named
+&nbsp; * parameters
+&nbsp; * @property dbType Database type for database-specific rendering (optional)
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;class RenderContext(
+&nbsp;        val parameterPrefix: String = &quot;:&quot;,
+&nbsp;        val positionalParameterPlaceholder: String = &quot;?&quot;,
+&nbsp;        val quotes: Pair&lt;String, String&gt; = Pair(&quot;\&quot;&quot;, &quot;\&quot;&quot;),
+&nbsp;        private var parameterCounter: Int = 0,
+&nbsp;        val boundParameters: MutableMap&lt;String, Any?&gt; = mutableMapOf(),
+&nbsp;        val usePositionalParameters: Boolean = false,
+&nbsp;        val dbType: com.kotlinorm.enums.DBType? = null
+&nbsp;) {
+&nbsp;    /** Generate a unique parameter name. */
+&nbsp;    fun generateParameterName(baseName: String? = null): String {
+&nbsp;        val name = baseName ?: &quot;param&quot;
+&nbsp;        val uniqueName =
+&nbsp;                if (boundParameters.containsKey(name)) {
+&nbsp;                    &quot;${name}_${parameterCounter++}&quot;
+&nbsp;                } else {
+&nbsp;                    name
+&nbsp;                }
+&nbsp;        return uniqueName
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Bind a parameter value and return the parameter name. */
+&nbsp;    fun bindParameter(name: String, value: Any?): String {
+&nbsp;        val paramName = generateParameterName(name)
+&nbsp;        boundParameters[paramName] = value
+&nbsp;        return paramName
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Quote an identifier (table name, column name, etc.). */
+&nbsp;    fun quote(identifier: String): String {
+&nbsp;        return &quot;${quotes.first}$identifier${quotes.second}&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Create a copy of this context with modified properties. */
+&nbsp;    fun copy(
+&nbsp;            parameterPrefix: String = this.parameterPrefix,
+&nbsp;            positionalParameterPlaceholder: String = this.positionalParameterPlaceholder,
+&nbsp;            quotes: Pair&lt;String, String&gt; = this.quotes,
+&nbsp;            usePositionalParameters: Boolean = this.usePositionalParameters,
+&nbsp;            dbType: com.kotlinorm.enums.DBType? = this.dbType
+&nbsp;    ): RenderContext {
+&nbsp;        return RenderContext(
+&nbsp;                parameterPrefix = parameterPrefix,
+&nbsp;                positionalParameterPlaceholder = positionalParameterPlaceholder,
+&nbsp;                quotes = quotes,
+&nbsp;                parameterCounter = this.parameterCounter,
+&nbsp;                boundParameters = this.boundParameters.toMutableMap(),
+&nbsp;                usePositionalParameters = usePositionalParameters,
+&nbsp;                dbType = dbType
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * SqlRenderer
+&nbsp; *
+&nbsp; * Interface for rendering SQL AST nodes to SQL strings. Uses the visitor pattern to traverse and
+&nbsp; * render AST nodes.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;interface SqlRenderer {
+&nbsp;    /**
+&nbsp;     * Render a SQL statement to a RenderedSql object.
+&nbsp;     *
+&nbsp;     * @param statement The statement to render
+&nbsp;     * @param context Optional rendering context (creates a new one if not provided)
+&nbsp;     * @return RenderedSql containing the SQL string and parameters
+&nbsp;     */
+<b class="fc">&nbsp;    fun render(statement: Statement, context: RenderContext = RenderContext()): RenderedSql</b>
+&nbsp;
+&nbsp;    // Expression rendering methods
+&nbsp;    fun renderExpression(expression: Expression, context: RenderContext): String
+&nbsp;    fun renderColumnReference(column: ColumnReference, context: RenderContext): String
+&nbsp;    fun renderLiteral(literal: Literal, context: RenderContext): String
+&nbsp;    fun renderParameter(parameter: Parameter, context: RenderContext): String
+&nbsp;    fun renderBinaryExpression(expr: BinaryExpression, context: RenderContext): String
+&nbsp;    fun renderUnaryExpression(expr: UnaryExpression, context: RenderContext): String
+&nbsp;    fun renderFunctionCall(function: FunctionCall, context: RenderContext): String
+&nbsp;    fun renderCaseExpression(case: CaseExpression, context: RenderContext): String
+&nbsp;    fun renderSubqueryExpression(subquery: SubqueryExpression, context: RenderContext): String
+&nbsp;    fun renderSpecialExpression(expr: SpecialExpression, context: RenderContext): String
+&nbsp;
+&nbsp;    // Table reference rendering methods
+&nbsp;    fun renderTableReference(table: TableReference, context: RenderContext): String
+&nbsp;    fun renderTableName(table: TableName, context: RenderContext): String
+&nbsp;    fun renderSubqueryTable(table: SubqueryTable, context: RenderContext): String
+&nbsp;    fun renderJoinTable(join: JoinTable, context: RenderContext): String
+&nbsp;
+&nbsp;    // Statement rendering methods
+&nbsp;    fun renderSelectStatement(select: SelectStatement, context: RenderContext): String
+&nbsp;    fun renderInsertStatement(insert: InsertStatement, context: RenderContext): String
+&nbsp;    fun renderUpdateStatement(update: UpdateStatement, context: RenderContext): String
+&nbsp;    fun renderDeleteStatement(delete: DeleteStatement, context: RenderContext): String
+&nbsp;    fun renderDdlStatement(ddl: DdlStatement, context: RenderContext): String
+&nbsp;    fun renderUnionStatement(union: UnionStatement, context: RenderContext): String
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

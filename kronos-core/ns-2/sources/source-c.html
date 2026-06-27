@@ -1,0 +1,273 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > FunctionCall</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.ast</a>
+</div>
+
+<h1>Coverage Summary for Class: FunctionCall (com.kotlinorm.ast)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">FunctionCall</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (33/33)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.ast
+&nbsp;
+&nbsp;/**
+&nbsp; * FunctionCall
+&nbsp; *
+&nbsp; * Represents a SQL function call expression (e.g., COUNT(*), MAX(column), SUM(amount)). Supports
+&nbsp; * aggregate functions, scalar functions, and window functions.
+&nbsp; *
+&nbsp; * @property functionName The name of the function (e.g., &quot;COUNT&quot;, &quot;MAX&quot;, &quot;SUM&quot;, &quot;UPPER&quot;)
+&nbsp; * @property arguments List of function arguments (expressions)
+&nbsp; * @property distinct Whether to use DISTINCT keyword (for aggregate functions)
+&nbsp; * @property filter Optional FILTER clause (for aggregate functions with WHERE)
+&nbsp; * @property over Optional OVER clause for window functions
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;data class FunctionCall(
+<b class="fc">&nbsp;        val functionName: String,</b>
+<b class="fc">&nbsp;        val arguments: List&lt;Expression&gt; = emptyList(),</b>
+<b class="fc">&nbsp;        val distinct: Boolean = false,</b>
+<b class="fc">&nbsp;        val filter: Expression? = null,</b>
+<b class="fc">&nbsp;        val over: WindowClause? = null</b>
+&nbsp;) : Expression
+&nbsp;
+&nbsp;/**
+&nbsp; * WindowClause
+&nbsp; *
+&nbsp; * Represents a window function OVER clause.
+&nbsp; *
+&nbsp; * @property partitionBy Optional list of expressions for PARTITION BY
+&nbsp; * @property orderBy Optional list of order by items for ORDER BY
+&nbsp; * @property frame Optional window frame specification
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;data class WindowClause(
+&nbsp;        val partitionBy: List&lt;Expression&gt;? = null,
+&nbsp;        val orderBy: List&lt;OrderByItem&gt;? = null,
+&nbsp;        val frame: WindowFrame? = null
+&nbsp;)
+&nbsp;
+&nbsp;/**
+&nbsp; * WindowFrame
+&nbsp; *
+&nbsp; * Represents a window frame specification (ROWS, RANGE, etc.).
+&nbsp; *
+&nbsp; * @property type The frame type (ROWS, RANGE, GROUPS)
+&nbsp; * @property start The start boundary
+&nbsp; * @property end The end boundary
+&nbsp; * @property exclude Optional EXCLUDE clause
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;sealed class WindowFrame {
+&nbsp;    /**
+&nbsp;     * FrameBoundary
+&nbsp;     *
+&nbsp;     * Represents a frame boundary.
+&nbsp;     */
+&nbsp;    sealed class FrameBoundary {
+&nbsp;        /**
+&nbsp;         * UnboundedPreceding
+&nbsp;         *
+&nbsp;         * UNBOUNDED PRECEDING
+&nbsp;         */
+&nbsp;        object UnboundedPreceding : FrameBoundary()
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Preceding
+&nbsp;         *
+&nbsp;         * n PRECEDING
+&nbsp;         */
+&nbsp;        data class Preceding(val value: Expression) : FrameBoundary()
+&nbsp;
+&nbsp;        /**
+&nbsp;         * CurrentRow
+&nbsp;         *
+&nbsp;         * CURRENT ROW
+&nbsp;         */
+&nbsp;        object CurrentRow : FrameBoundary()
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Following
+&nbsp;         *
+&nbsp;         * n FOLLOWING
+&nbsp;         */
+&nbsp;        data class Following(val value: Expression) : FrameBoundary()
+&nbsp;
+&nbsp;        /**
+&nbsp;         * UnboundedFollowing
+&nbsp;         *
+&nbsp;         * UNBOUNDED FOLLOWING
+&nbsp;         */
+&nbsp;        object UnboundedFollowing : FrameBoundary()
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * FrameType
+&nbsp;     *
+&nbsp;     * Window frame type.
+&nbsp;     */
+&nbsp;    enum class FrameType {
+&nbsp;        ROWS,
+&nbsp;        RANGE,
+&nbsp;        GROUPS
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * BetweenFrame
+&nbsp;     *
+&nbsp;     * BETWEEN start AND end
+&nbsp;     */
+&nbsp;    data class BetweenFrame(
+&nbsp;            val type: FrameType,
+&nbsp;            val start: FrameBoundary,
+&nbsp;            val end: FrameBoundary,
+&nbsp;            val exclude: ExcludeType? = null
+&nbsp;    ) : WindowFrame()
+&nbsp;
+&nbsp;    /**
+&nbsp;     * SingleBoundaryFrame
+&nbsp;     *
+&nbsp;     * Single boundary frame (e.g., ROWS UNBOUNDED PRECEDING)
+&nbsp;     */
+&nbsp;    data class SingleBoundaryFrame(val type: FrameType, val boundary: FrameBoundary) :
+&nbsp;            WindowFrame()
+&nbsp;
+&nbsp;    /**
+&nbsp;     * ExcludeType
+&nbsp;     *
+&nbsp;     * EXCLUDE clause type.
+&nbsp;     */
+&nbsp;    enum class ExcludeType {
+&nbsp;        CURRENT_ROW,
+&nbsp;        GROUP,
+&nbsp;        TIES,
+&nbsp;        NO_OTHERS
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

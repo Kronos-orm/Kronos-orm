@@ -1,0 +1,315 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > SetTransformer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: SetTransformer (com.kotlinorm.compiler.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SetTransformer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (20/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.6%
+  </span>
+  <span class="absValue">
+    (58/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.8%
+  </span>
+  <span class="absValue">
+    (330/394)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.core.KTableTransformer
+&nbsp;import com.kotlinorm.compiler.core.buildFieldFromPropertyAccess
+&nbsp;import com.kotlinorm.compiler.core.setAssignMethodSymbol
+&nbsp;import com.kotlinorm.compiler.core.setValueMethodSymbol
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiver
+&nbsp;import com.kotlinorm.compiler.utils.extensionReceiverArgument
+&nbsp;import com.kotlinorm.compiler.utils.dispatchReceiverArgument
+&nbsp;import com.kotlinorm.compiler.utils.getValueArgumentSafe
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.IrElement
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlock
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlock
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrReturn
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;
+&nbsp;/**
+&nbsp; * Set Transformer
+&nbsp; *
+&nbsp; * Transform IR blocks in Kotlin code. It enriches the block by appending a field parameter mapping at the end.
+&nbsp; * @author: OUSC
+&nbsp; *
+&nbsp; * Roughly speaking, the transform will turn the following:
+&nbsp; *
+&nbsp; *     // file: Foo.kt
+&nbsp; *     ```kotlin
+&nbsp; *     fun &lt;T: KPojo&gt; T.foo() {
+&nbsp; *          val action: (KTableForSet&lt;T&gt;.(T) -&gt; Unit) = { it: T -&gt;
+&nbsp; *              it.username = &quot;Hello World&quot;
+&nbsp; *              it.password = &quot;123456&quot;
+&nbsp; *          }
+&nbsp; *          KTable&lt;T&gt;().action(this)
+&nbsp; *     }
+&nbsp; *     ```
+&nbsp; *
+&nbsp; * into the following equivalent representation:
+&nbsp; *
+&nbsp; *    // file: Foo.kt
+&nbsp; *     ```kotlin
+&nbsp; *     fun &lt;T: KPojo&gt; foo() {
+&nbsp; *          val action: (KTableForSet&lt;T&gt;.(T) -&gt; Unit) = { it: T -&gt;
+&nbsp; *              setValue(Field(&quot;username&quot;,...), &quot;Hello World&quot;)
+&nbsp; *              setValue(Field(&quot;password&quot;,...), &quot;123456&quot;)
+&nbsp; *              it.username = &quot;Hello World&quot;
+&nbsp; *              it.password = &quot;123456&quot;
+&nbsp; *          }
+&nbsp; *          KTable&lt;T&gt;().action(this)
+&nbsp; *    }
+&nbsp; *    ```
+&nbsp; */
+<b class="fc">&nbsp;class SetTransformer(</b>
+<b class="fc">&nbsp;    private val pluginContext: IrPluginContext,</b>
+&nbsp;    irFunction: IrFunction,
+&nbsp;    errorReporter: ErrorReporter
+<b class="fc">&nbsp;) : KTableTransformer(irFunction, errorReporter) {</b>
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    override fun visitBlock(expression: IrBlock): IrExpression {
+<b class="pc">&nbsp;        return if (expression.origin == null) {</b>
+<b class="fc">&nbsp;            with(pluginContext) {</b>
+<b class="fc">&nbsp;                DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {</b>
+<b class="fc">&nbsp;                    +expression.statements</b>
+<b class="fc">&nbsp;                    val receiver = irGet(irFunction.parameters.extensionReceiver!!)</b>
+<b class="fc">&nbsp;                    val stmts = putSetParamStatements(irFunction, receiver, expression)</b>
+<b class="fc">&nbsp;                    +stmts</b>
+<b class="fc">&nbsp;                    super.visitBlock(expression)</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="nc">&nbsp;            super.visitBlock(expression)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;    context(context: IrPluginContext, builder: IrBlockBuilder)
+&nbsp;    private fun putSetParamStatements(
+&nbsp;        irFunction: IrFunction,
+&nbsp;        receiver: IrExpression,
+&nbsp;        element: IrElement
+&nbsp;    ): List&lt;IrExpression&gt; {
+<b class="fc">&nbsp;        val statements = mutableListOf&lt;IrExpression&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;        when (element) {</b>
+<b class="pc">&nbsp;            is IrBlockBody -&gt; {</b>
+<b class="nc">&nbsp;                element.statements.forEach { statement -&gt;</b>
+<b class="nc">&nbsp;                    statements += putSetParamStatements(irFunction, receiver, statement)</b>
+<b class="nc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            is IrBlock -&gt; {</b>
+<b class="pc">&nbsp;                if (element.origin == null) {</b>
+<b class="fc">&nbsp;                    element.statements.forEach { statement -&gt;</b>
+<b class="fc">&nbsp;                        statements += putSetParamStatements(irFunction, receiver, statement)</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            is IrTypeOperatorCall -&gt; {</b>
+<b class="nc">&nbsp;                statements += putSetParamStatements(irFunction, receiver, element.argument)</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            is IrReturn -&gt; {</b>
+<b class="nc">&nbsp;                statements += putSetParamStatements(irFunction, receiver, element.value)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            is IrCall -&gt; {</b>
+<b class="fc">&nbsp;                val extReceiver = element.extensionReceiverArgument</b>
+<b class="fc">&nbsp;                val dispReceiver = element.dispatchReceiverArgument</b>
+&nbsp;
+<b class="fc">&nbsp;                when (element.origin) {</b>
+<b class="fc">&nbsp;                    IrStatementOrigin.EQ -&gt; {</b>
+<b class="fc">&nbsp;                        val fieldExpr = buildFieldFromPropertyAccess(element, errorReporter)</b>
+<b class="fc">&nbsp;                        val value = element.getValueArgumentSafe(0)</b>
+<b class="pc">&nbsp;                        if (value != null) {</b>
+<b class="fc">&nbsp;                            statements += builder.irCall(setValueMethodSymbol).apply {</b>
+<b class="fc">&nbsp;                                dispatchReceiver = receiver</b>
+<b class="fc">&nbsp;                                arguments[1] = fieldExpr</b>
+<b class="fc">&nbsp;                                arguments[2] = value</b>
+<b class="fc">&nbsp;                            }</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    IrStatementOrigin.PLUSEQ -&gt; {</b>
+<b class="pc">&nbsp;                        val target = extReceiver ?: dispReceiver!!</b>
+<b class="fc">&nbsp;                        val fieldExpr = buildFieldFromPropertyAccess(target as IrCall, errorReporter)</b>
+<b class="fc">&nbsp;                        val value = element.getValueArgumentSafe(0)</b>
+<b class="pc">&nbsp;                        if (value != null) {</b>
+<b class="fc">&nbsp;                            statements += builder.irCall(setAssignMethodSymbol).apply {</b>
+<b class="fc">&nbsp;                                dispatchReceiver = receiver</b>
+<b class="fc">&nbsp;                                arguments[1] = builder.irString(&quot;+&quot;)</b>
+<b class="fc">&nbsp;                                arguments[2] = fieldExpr</b>
+<b class="fc">&nbsp;                                arguments[3] = value</b>
+<b class="fc">&nbsp;                            }</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    IrStatementOrigin.MINUSEQ -&gt; {</b>
+<b class="pc">&nbsp;                        val target = extReceiver ?: dispReceiver!!</b>
+<b class="fc">&nbsp;                        val fieldExpr = buildFieldFromPropertyAccess(target as IrCall, errorReporter)</b>
+<b class="fc">&nbsp;                        val value = element.getValueArgumentSafe(0)</b>
+<b class="pc">&nbsp;                        if (value != null) {</b>
+<b class="fc">&nbsp;                            statements += builder.irCall(setAssignMethodSymbol).apply {</b>
+<b class="fc">&nbsp;                                dispatchReceiver = receiver</b>
+<b class="fc">&nbsp;                                arguments[1] = builder.irString(&quot;-&quot;)</b>
+<b class="fc">&nbsp;                                arguments[2] = fieldExpr</b>
+<b class="fc">&nbsp;                                arguments[3] = value</b>
+<b class="fc">&nbsp;                            }</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+&nbsp;                    else -&gt; {}
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return statements</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:26</div>
+</div>
+</body>
+</html>

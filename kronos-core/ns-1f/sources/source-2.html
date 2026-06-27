@@ -1,0 +1,950 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > SelectClause</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.orm.select</a>
+</div>
+
+<h1>Coverage Summary for Class: SelectClause (com.kotlinorm.orm.select)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">SelectClause</td>
+<td class="coverageStat">
+  <span class="percent">
+    52.5%
+  </span>
+  <span class="absValue">
+    (31/59)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.2%
+  </span>
+  <span class="absValue">
+    (56/124)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.2%
+  </span>
+  <span class="absValue">
+    (184/282)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.9%
+  </span>
+  <span class="absValue">
+    (1024/1768)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">SelectClause$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/18)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/248)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    40.3%
+  </span>
+  <span class="absValue">
+    (31/77)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    45.2%
+  </span>
+  <span class="absValue">
+    (56/124)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.5%
+  </span>
+  <span class="absValue">
+    (184/304)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50.8%
+  </span>
+  <span class="absValue">
+    (1024/2016)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.orm.select
+&nbsp;
+&nbsp;import com.kotlinorm.ast.BinaryExpression
+&nbsp;import com.kotlinorm.ast.ColumnReference
+&nbsp;import com.kotlinorm.ast.CriteriaToAstConverter
+&nbsp;import com.kotlinorm.ast.FieldToExpressionConverter
+&nbsp;import com.kotlinorm.ast.LimitClause
+&nbsp;import com.kotlinorm.ast.Literal
+&nbsp;import com.kotlinorm.ast.OrderByItem
+&nbsp;import com.kotlinorm.ast.SelectItem
+&nbsp;import com.kotlinorm.ast.SelectStatement
+&nbsp;import com.kotlinorm.ast.SqlOperator
+&nbsp;import com.kotlinorm.ast.TableName
+&nbsp;import com.kotlinorm.beans.dsl.Field
+&nbsp;import com.kotlinorm.beans.dsl.KSelectable
+&nbsp;import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+&nbsp;import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+&nbsp;import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicBatchTask
+&nbsp;import com.kotlinorm.beans.task.KronosAtomicQueryTask
+&nbsp;import com.kotlinorm.beans.task.KronosQueryTask
+&nbsp;import com.kotlinorm.cache.fieldsMapCache
+&nbsp;import com.kotlinorm.cache.kPojoAllColumnsCache
+&nbsp;import com.kotlinorm.cache.kPojoAllFieldsCache
+&nbsp;import com.kotlinorm.cache.kPojoLogicDeleteCache
+&nbsp;import com.kotlinorm.database.SqlManager.quoted
+&nbsp;import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
+&nbsp;import com.kotlinorm.enums.KOperationType
+&nbsp;import com.kotlinorm.enums.PessimisticLock
+&nbsp;import com.kotlinorm.enums.QueryType.QueryList
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOne
+&nbsp;import com.kotlinorm.enums.QueryType.QueryOneOrNull
+&nbsp;import com.kotlinorm.enums.SortType
+&nbsp;import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
+&nbsp;import com.kotlinorm.exceptions.EmptyFieldsException
+&nbsp;import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+&nbsp;import com.kotlinorm.interfaces.KPojo
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;import com.kotlinorm.orm.cascade.CascadeSelectClause
+&nbsp;import com.kotlinorm.orm.pagination.PagedClause
+&nbsp;import com.kotlinorm.types.ToFilter
+&nbsp;import com.kotlinorm.types.ToReference
+&nbsp;import com.kotlinorm.types.ToSelect
+&nbsp;import com.kotlinorm.types.ToSort
+&nbsp;import com.kotlinorm.utils.DataSourceUtil.orDefault
+&nbsp;import com.kotlinorm.utils.Extensions.asSql
+&nbsp;import com.kotlinorm.utils.Extensions.eq
+&nbsp;import com.kotlinorm.utils.Extensions.toCriteria
+&nbsp;import com.kotlinorm.utils.execute
+&nbsp;import com.kotlinorm.utils.getDefaultBoolean
+&nbsp;import com.kotlinorm.utils.logAndReturn
+&nbsp;import com.kotlinorm.utils.processParams
+&nbsp;import com.kotlinorm.utils.toLinkedSet
+&nbsp;
+&nbsp;class SelectClause&lt;T : KPojo&gt;(
+<b class="fc">&nbsp;    override val pojo: T, setSelectFields: ToSelect&lt;T, Any?&gt; = null</b>
+<b class="fc">&nbsp;) : KSelectable&lt;T&gt;(pojo) {</b>
+<b class="fc">&nbsp;    private var kClass = pojo.kClass()</b>
+<b class="fc">&nbsp;    private var tableName = pojo.__tableName</b>
+<b class="fc">&nbsp;    internal var paramMap = pojo.toDataMap()</b>
+<b class="fc">&nbsp;    private val patchParamMap = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;    internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]</b>
+<b class="fc">&nbsp;    private var allFields = kPojoAllFieldsCache[kClass]!!</b>
+<b class="fc">&nbsp;    private var allColumns = kPojoAllColumnsCache[kClass]!!</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 级联查询允许的字段，若为空则表示所有字段均可级联查询，优先级高于[com.kotlinorm.annotations.Ignore[com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT]]
+&nbsp;     * */
+<b class="nc">&nbsp;    internal var cascadeAllowed: Set&lt;Field&gt;? = null</b>
+<b class="nc">&nbsp;    internal var cascadeSelectedProps: Set&lt;Field&gt;? = null</b>
+<b class="fc">&nbsp;    private var cascadeEnabled = true</b>
+<b class="fc">&nbsp;    internal var operationType = KOperationType.SELECT // 级联操作类型，默认为SELECT</b>
+&nbsp;
+&nbsp;    // Cascade fields extracted from select { } lambda (non-column fields like KPojo/Collection&lt;KPojo&gt;)
+<b class="fc">&nbsp;    private var selectCascadeFields: LinkedHashSet&lt;Field&gt; = linkedSetOf()</b>
+&nbsp;
+&nbsp;    // AST SelectStatement - all data stored here, directly modified without copy()
+<b class="fc">&nbsp;    internal var statement: SelectStatement = SelectStatement(</b>
+<b class="fc">&nbsp;        selectList = mutableListOf(),</b>
+<b class="fc">&nbsp;        from = TableName(table = tableName, database = null)</b>
+&nbsp;    )
+&nbsp;    
+&nbsp;    // Store parameter values extracted from Criteria (WHERE/BY/HAVING clauses)
+&nbsp;    // Key: Parameter name, Value: parameter value
+<b class="fc">&nbsp;    internal val criteriaParams = mutableMapOf&lt;String, Any?&gt;()</b>
+&nbsp;    
+&nbsp;    // Track whether logic delete condition has been applied to avoid duplication
+&nbsp;    // when toStatement() is called multiple times (e.g., in PagedClause)
+&nbsp;    private var logicDeleteApplied = false
+&nbsp;    
+&nbsp;    // Public API compatibility properties - computed from statement
+&nbsp;    override var selectFields: LinkedHashSet&lt;Field&gt;
+&nbsp;        get() {
+<b class="fc">&nbsp;            return statement.selectList.mapNotNull { item -&gt;</b>
+<b class="fc">&nbsp;                when (item) {</b>
+<b class="fc">&nbsp;                    is SelectItem.ColumnSelectItem -&gt; {</b>
+<b class="fc">&nbsp;                        val column = item.column</b>
+<b class="pc">&nbsp;                        allColumns.find {</b>
+<b class="pc">&nbsp;                            it.columnName == column.columnName &amp;&amp; it.tableName == (column.tableAlias ?: &quot;&quot;)</b>
+&nbsp;                        }
+&nbsp;                    }
+&nbsp;
+<b class="fc">&nbsp;                    else -&gt; null</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;            }.toLinkedSet()</b>
+&nbsp;        }
+&nbsp;        set(value) {
+<b class="fc">&nbsp;            statement.selectList.clear()</b>
+<b class="fc">&nbsp;            statement.selectList.addAll(fieldsToSelectItems(value))</b>
+<b class="fc">&nbsp;            statement.distinct = false // Reset distinct when fields change</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;    override var selectAll: Boolean = true</b>
+&nbsp;
+&nbsp;    override var limitCapacity: Int
+<b class="nc">&nbsp;        get() = statement.limit?.limit ?: 0</b>
+&nbsp;        set(value) {
+<b class="pc">&nbsp;            statement.limit = if (value &gt; 0) LimitClause(limit = value, offset = statement.limit?.offset) else null</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;    override var pageEnabled: Boolean = false</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 初始化函数：用于在对象初始化时配置选择字段。
+&nbsp;     * 该函数不接受参数，也不返回任何值。
+&nbsp;     * 它首先检查setSelectFields是否为非空，如果是，则调用pojo.tableRun块，
+&nbsp;     * 在该块内调用setSelectFields方法来设置选择的字段，并将当前字段集合转换为链接集合后赋值给selectFields属性。
+&nbsp;     */
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        if (setSelectFields != null) {</b>
+<b class="fc">&nbsp;            pojo.afterSelect {</b>
+<b class="fc">&nbsp;                setSelectFields(it) // 设置选择的字段</b>
+<b class="pc">&nbsp;                if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                    throw EmptyFieldsException()</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val fieldsSet = fields.toLinkedSet()</b>
+<b class="pc">&nbsp;                if (fieldsSet.isNotEmpty()) {</b>
+&nbsp;                    // Split into DB columns and cascade fields
+<b class="fc">&nbsp;                    val columnFields = fieldsSet.filter { f -&gt; f.isColumn }.toLinkedSet()</b>
+<b class="fc">&nbsp;                    selectCascadeFields = fieldsSet.filter { f -&gt; !f.isColumn }.toLinkedSet()</b>
+<b class="pc">&nbsp;                    if (columnFields.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                        selectAll = false</b>
+<b class="fc">&nbsp;                        statement.selectList.clear()</b>
+<b class="fc">&nbsp;                        statement.selectList.addAll(fieldsToSelectItems(columnFields))</b>
+&nbsp;                    }
+&nbsp;                    // If only cascade fields, selectAll stays true (select all DB columns)
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts a Field to a ColumnReference.
+&nbsp;     * In single-table operations, we should not use table prefix.
+&nbsp;     */
+&nbsp;    private fun fieldToColumnReference(field: Field): ColumnReference {
+<b class="fc">&nbsp;        return FieldToExpressionConverter.fieldToColumnReference(field, useTableAlias = false)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Converts a list of Fields to SelectItems.
+&nbsp;     * Handles CUSTOM_CRITERIA_SQL fields as literal SQL expressions.
+&nbsp;     * Handles FunctionField as function calls with aliases.
+&nbsp;     * Adds aliases when field name differs from column name.
+&nbsp;     */
+&nbsp;    private fun fieldsToSelectItems(fields: Collection&lt;Field&gt;): List&lt;SelectItem&gt; {
+<b class="fc">&nbsp;        return fields.map { field -&gt;</b>
+<b class="fc">&nbsp;            if (field is com.kotlinorm.beans.dsl.FunctionField) {</b>
+&nbsp;                // For FunctionField, convert to function call expression with alias
+<b class="fc">&nbsp;                val expression = FieldToExpressionConverter.fieldToExpression(field, useTableAlias = false)</b>
+<b class="fc">&nbsp;                SelectItem.ExpressionSelectItem(</b>
+<b class="fc">&nbsp;                    expression = expression,</b>
+<b class="fc">&nbsp;                    alias = field.functionName.lowercase()  // Use lowercase function name as alias</b>
+&nbsp;                )
+<b class="fc">&nbsp;            } else if (field.type == CUSTOM_CRITERIA_SQL) {</b>
+&nbsp;                // For CUSTOM_CRITERIA_SQL fields, convert to expression
+<b class="fc">&nbsp;                val expression = FieldToExpressionConverter.fieldToExpression(field, useTableAlias = false)</b>
+<b class="fc">&nbsp;                SelectItem.ExpressionSelectItem(</b>
+<b class="fc">&nbsp;                    expression = expression,</b>
+<b class="fc">&nbsp;                    alias = null</b>
+&nbsp;                )
+&nbsp;            } else {
+&nbsp;                // Add alias if field name differs from column name
+<b class="fc">&nbsp;                val alias = if (field.name != field.columnName) field.name else null</b>
+<b class="fc">&nbsp;                SelectItem.ColumnSelectItem(</b>
+<b class="fc">&nbsp;                    column = fieldToColumnReference(field),</b>
+<b class="fc">&nbsp;                    alias = alias</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns the AST SelectStatement with all parameters and checks applied.
+&nbsp;     * This method ensures the statement is complete and ready for rendering.
+&nbsp;     *
+&nbsp;     * @param wrapper Optional KronosDataSourceWrapper for logic delete strategy and other database-specific logic
+&nbsp;     * @param parameterValues Optional mutable map to collect parameter values during Criteria conversion
+&nbsp;     * @return The complete SelectStatement ready for SQL rendering
+&nbsp;     */
+&nbsp;    override fun toStatement(wrapper: KronosDataSourceWrapper?): SelectStatement {
+<b class="fc">&nbsp;        return toStatement(wrapper, mutableMapOf())</b>
+&nbsp;    }
+&nbsp;    
+<b class="nc">&nbsp;    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap&lt;String, Any?&gt; = mutableMapOf()): SelectStatement {</b>
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+&nbsp;
+&nbsp;        // Copy criteriaParams (from where/by/having methods) to parameterValues
+<b class="fc">&nbsp;        parameterValues.putAll(criteriaParams)</b>
+&nbsp;
+&nbsp;        // Update statement with selectAll if needed
+<b class="fc">&nbsp;        if (selectAll) {</b>
+<b class="fc">&nbsp;            val currentFields = selectFields</b>
+<b class="fc">&nbsp;            val allFieldsSet = (currentFields + allColumns).toLinkedSet()</b>
+<b class="fc">&nbsp;            statement.selectList.clear()</b>
+<b class="fc">&nbsp;            statement.selectList.addAll(fieldsToSelectItems(allFieldsSet))</b>
+<b class="pc">&nbsp;        } else if (statement.selectList.isEmpty()) {</b>
+<b class="nc">&nbsp;            val currentFields = selectFields</b>
+<b class="nc">&nbsp;            if (currentFields.isNotEmpty()) {</b>
+<b class="nc">&nbsp;                statement.selectList.addAll(fieldsToSelectItems(currentFields))</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Apply logic delete strategy - only apply once to avoid duplication
+&nbsp;        // when toStatement() is called multiple times (e.g., in PagedClause)
+<b class="fc">&nbsp;        if (!logicDeleteApplied) {</b>
+<b class="fc">&nbsp;            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value -&gt;</b>
+&nbsp;                // Build logic delete condition with literal value (not parameter)
+&nbsp;                // Logic delete values are fixed (0 or 1), so we use literals
+<b class="fc">&nbsp;                val logicDeleteExpression = BinaryExpression(</b>
+<b class="fc">&nbsp;                    ColumnReference(database = null, tableAlias = null, columnName = field.columnName),</b>
+<b class="fc">&nbsp;                    SqlOperator.EQUAL,</b>
+<b class="fc">&nbsp;                    Literal.NumberLiteral(value.toString())</b>
+&nbsp;                )
+&nbsp;
+<b class="fc">&nbsp;                if (statement.where != null) {</b>
+&nbsp;                    // Merge with existing where condition
+<b class="fc">&nbsp;                    statement.where = BinaryExpression(</b>
+<b class="fc">&nbsp;                        statement.where!!,</b>
+<b class="fc">&nbsp;                        SqlOperator.AND,</b>
+<b class="fc">&nbsp;                        logicDeleteExpression</b>
+&nbsp;                    )
+&nbsp;                } else {
+&nbsp;                    // Only logic delete condition
+<b class="fc">&nbsp;                    statement.where = logicDeleteExpression</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            logicDeleteApplied = true</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return statement</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Renders the SelectStatement to SQL with processed parameters.
+&nbsp;     * This method handles parameter processing including field type conversion.
+&nbsp;     *
+&nbsp;     * @param wrapper Optional KronosDataSourceWrapper for rendering and parameter processing
+&nbsp;     * @return Pair of SQL string and processed parameter map
+&nbsp;     */
+&nbsp;    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair&lt;String, Map&lt;String, Any?&gt;&gt; {
+<b class="fc">&nbsp;        val dataSource = wrapper.orDefault()</b>
+<b class="pc">&nbsp;        val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)</b>
+&nbsp;
+&nbsp;        // Collect parameter values from Criteria during AST conversion in toStatement()
+<b class="fc">&nbsp;        val criteriaParameterValues = mutableMapOf&lt;String, Any?&gt;()</b>
+&nbsp;        
+&nbsp;        // Get complete statement with all parameters and checks applied
+<b class="fc">&nbsp;        val finalStatement = toStatement(wrapper, criteriaParameterValues)</b>
+&nbsp;
+&nbsp;        // Render AST to SQL with parameters
+<b class="fc">&nbsp;        val renderedSql = support.getSelectSqlWithParams(dataSource, finalStatement)</b>
+&nbsp;
+&nbsp;        // Build final parameter map from:
+&nbsp;        // 1. Parameters extracted from Criteria in where()/by()/having() methods
+&nbsp;        // 2. Parameters extracted from Criteria during toStatement()
+&nbsp;        // 3. Parameters from AST rendering (renderedSql.parameters)
+&nbsp;        // 4. Patch parameters added by patch()
+<b class="fc">&nbsp;        val paramMapNew = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;        val fieldMap = fieldsMapCache[kClass]!!</b>
+&nbsp;        
+&nbsp;        // First, add parameter values extracted from Criteria in where()/by()/having() methods
+&nbsp;        // These parameters are guaranteed to be used in the WHERE/HAVING clauses
+<b class="fc">&nbsp;        criteriaParams.forEach { (key, value) -&gt;</b>
+<b class="fc">&nbsp;            val field = fieldMap[key]</b>
+<b class="fc">&nbsp;            if (field != null) {</b>
+<b class="fc">&nbsp;                paramMapNew[key] = support.processParams(dataSource, field, value)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                paramMapNew[key] = value</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;        
+&nbsp;        // Second, add parameter values extracted from Criteria during toStatement()
+<b class="fc">&nbsp;        criteriaParameterValues.forEach { (key, value) -&gt;</b>
+<b class="pc">&nbsp;            if (!paramMapNew.containsKey(key)) {</b>
+<b class="nc">&nbsp;                val field = fieldMap[key]</b>
+<b class="nc">&nbsp;                if (field != null) {</b>
+<b class="nc">&nbsp;                    paramMapNew[key] = support.processParams(dataSource, field, value)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    paramMapNew[key] = value</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;        
+&nbsp;        // Third, add any additional parameters from the rendered SQL
+<b class="fc">&nbsp;        renderedSql.parameters.forEach { (key, value) -&gt;</b>
+<b class="nc">&nbsp;            if (!paramMapNew.containsKey(key) &amp;&amp; value != null) {</b>
+<b class="nc">&nbsp;                val field = fieldMap[key]</b>
+<b class="nc">&nbsp;                if (field != null) {</b>
+<b class="nc">&nbsp;                    paramMapNew[key] = support.processParams(dataSource, field, value)</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    paramMapNew[key] = value</b>
+&nbsp;                }
+&nbsp;            }
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        return Pair(renderedSql.sql, paramMapNew)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun single(): SelectClause&lt;T&gt; {
+<b class="fc">&nbsp;        statement.limit = LimitClause(limit = 1, offset = null)</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun limit(capacity: Int): SelectClause&lt;T&gt; {
+<b class="pc">&nbsp;        statement.limit = if (capacity &gt; 0) LimitClause(limit = capacity, offset = statement.limit?.offset) else null</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun db(databaseName: String): SelectClause&lt;T&gt; {
+<b class="pc">&nbsp;        if (databaseName.isNotBlank()) {</b>
+&nbsp;            // Update table name in statement
+<b class="pc">&nbsp;            val currentFrom = statement.from as? TableName</b>
+<b class="pc">&nbsp;            if (currentFrom != null) {</b>
+<b class="fc">&nbsp;                statement.from = currentFrom.copy(database = databaseName)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据指定的字段对当前对象进行排序。
+&nbsp;     *
+&nbsp;     * @param someFields 可排序字段的集合，这里的字段类型为 [ToSort]，单位为 [Unit]。
+&nbsp;     *                   该参数指定了排序时所依据的字段。
+&nbsp;     * @return 返回 [SelectClause] 对象，允许链式调用。
+&nbsp;     */
+&nbsp;    fun orderBy(someFields: ToSort&lt;T, Any?&gt;): SelectClause&lt;T&gt; {
+<b class="pc">&nbsp;        if (someFields == null) throw EmptyFieldsException()</b>
+&nbsp;
+<b class="fc">&nbsp;        pojo.afterSort {</b>
+<b class="fc">&nbsp;            someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。</b>
+&nbsp;            // Update statement with order by items directly
+<b class="pc">&nbsp;            if (statement.orderBy == null) {</b>
+<b class="fc">&nbsp;                statement.orderBy = mutableListOf()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            statement.orderBy!!.clear()</b>
+<b class="fc">&nbsp;            statement.orderBy!!.addAll(sortedFields.map { (field, sortType) -&gt;</b>
+<b class="fc">&nbsp;                OrderByItem(</b>
+<b class="fc">&nbsp;                    expression = fieldToColumnReference(field),</b>
+<b class="fc">&nbsp;                    direction = sortType</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            })
+&nbsp;        }
+<b class="fc">&nbsp;        return this // 返回当前对象，允许继续进行其他查询操作。</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据指定的字段对数据进行分组。
+&nbsp;     *
+&nbsp;     * @param someFields 要用于分组的字段，类型为 KTableField&lt;T, Unit&gt;。该字段不能为空。
+&nbsp;     * @return 返回 SelectClause&lt;T&gt; 实例，允许链式调用。
+&nbsp;     * @throws EmptyFieldsException 如果 someFields 为空，则抛出此异常。
+&nbsp;     */
+&nbsp;    fun groupBy(someFields: ToSelect&lt;T, Any?&gt;): SelectClause&lt;T&gt; {
+&nbsp;        // 检查 someFields 参数是否为空，如果为空则抛出异常
+<b class="pc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        pojo.afterSelect {</b>
+<b class="fc">&nbsp;            someFields(it)</b>
+<b class="pc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+&nbsp;            // Update statement with group by expressions directly
+<b class="pc">&nbsp;            if (statement.groupBy == null) {</b>
+<b class="fc">&nbsp;                statement.groupBy = mutableListOf()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            statement.groupBy!!.clear()</b>
+<b class="fc">&nbsp;            statement.groupBy!!.addAll(fields.map { fieldToColumnReference(it) })</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 将当前选择语句设置为Distinct模式，即去除结果中的重复项。
+&nbsp;     *
+&nbsp;     * @return [SelectClause&lt;T&gt;] 返回当前选择语句实例，允许链式调用。
+&nbsp;     */
+&nbsp;    fun distinct(): SelectClause&lt;T&gt; {
+<b class="fc">&nbsp;        statement.distinct = true</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 设置分页信息，用于查询语句的分页操作。
+&nbsp;     *
+&nbsp;     * @param pi 当前页码，表示需要获取哪一页的数据。
+&nbsp;     * @param ps 每页的记录数，指定每页显示的数据量。
+&nbsp;     * @return 返回 SelectClause&lt;T&gt; 实例，支持链式调用。
+&nbsp;     */
+&nbsp;    fun page(pi: Int, ps: Int): SelectClause&lt;T&gt; {
+<b class="fc">&nbsp;        pageEnabled = true</b>
+&nbsp;        // Calculate offset: (pageIndex - 1) * pageSize
+<b class="pc">&nbsp;        val offset = if (pi &gt; 0) (pi - 1) * ps else 0</b>
+<b class="fc">&nbsp;        statement.limit = LimitClause(limit = ps, offset = offset)</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(enabled: Boolean): SelectClause&lt;T&gt; {
+<b class="fc">&nbsp;        cascadeEnabled = enabled</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun cascade(someFields: ToReference&lt;T, Any?&gt;): SelectClause&lt;T&gt; {
+<b class="nc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        cascadeEnabled = true</b>
+<b class="nc">&nbsp;        pojo.afterReference {</b>
+<b class="nc">&nbsp;            someFields(it)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            cascadeAllowed = fields.toSet()</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据指定的字段构建查询条件，并返回SelectClause实例。
+&nbsp;     *
+&nbsp;     * @param someFields KTableField类型，表示要用来构建查询条件的字段。
+&nbsp;     *                   不能为空，否则会抛出EmptyFieldsException异常。
+&nbsp;     * @return 返回当前SelectClause实例，允许链式调用。
+&nbsp;     */
+&nbsp;    fun by(someFields: ToSelect&lt;T, Any?&gt;): SelectClause&lt;T&gt; {
+&nbsp;        // 检查someFields是否为空，为空则抛出异常
+<b class="nc">&nbsp;        someFields ?: throw EmptyFieldsException()</b>
+<b class="nc">&nbsp;        pojo.afterSelect { t -&gt;</b>
+&nbsp;            // 执行someFields中定义的查询逻辑
+<b class="nc">&nbsp;            someFields(t)</b>
+<b class="nc">&nbsp;            if (fields.isEmpty()) {</b>
+<b class="nc">&nbsp;                throw EmptyFieldsException()</b>
+&nbsp;            }
+&nbsp;            // 构建查询条件，将字段名映射到参数值，并转换为查询条件对象
+<b class="nc">&nbsp;            val newCondition = fields.map { it.eq(paramMap[it.name]) }.toCriteria()</b>
+&nbsp;            // Convert to Expression and merge with existing where condition
+<b class="nc">&nbsp;            val localCriteriaParams = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="nc">&nbsp;            val newExpression = CriteriaToAstConverter.convert(newCondition, localCriteriaParams, KOperationType.SELECT)</b>
+&nbsp;            
+&nbsp;            // Store criteria parameters for later use in renderStatement
+<b class="nc">&nbsp;            criteriaParams.putAll(localCriteriaParams)</b>
+&nbsp;            
+&nbsp;            // Only update where if newExpression is not null
+<b class="nc">&nbsp;            if (newExpression != null) {</b>
+<b class="nc">&nbsp;                statement.where = if (statement.where == null) {</b>
+<b class="nc">&nbsp;                    newExpression</b>
+&nbsp;                } else {
+&nbsp;                    // Merge with AND
+<b class="nc">&nbsp;                    BinaryExpression(</b>
+<b class="nc">&nbsp;                        statement.where!!,</b>
+<b class="nc">&nbsp;                        SqlOperator.AND,</b>
+<b class="nc">&nbsp;                        newExpression</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return this // 返回当前SelectClause实例，允许链式调用</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 根据提供的选择条件构建查询条件。
+&nbsp;     *
+&nbsp;     * @param selectCondition 一个函数，用于定义条件查询。该函数接收一个 [ToFilter] 类型的参数，
+&nbsp;     *                        并返回一个 [Boolean]? 类型的值，用于指定条件是否成立。如果为 null，则表示选择所有字段。
+&nbsp;     * @return [SelectClause] 的实例，代表了一个查询的选择子句。
+&nbsp;     */
+<b class="nc">&nbsp;    fun where(selectCondition: ToFilter&lt;T, Boolean?&gt; = null): SelectClause&lt;T&gt; {</b>
+<b class="pc">&nbsp;        selectCondition ?: return this</b>
+<b class="fc">&nbsp;        pojo.afterFilter {</b>
+<b class="fc">&nbsp;            criteriaParamMap = paramMap</b>
+<b class="fc">&nbsp;            selectCondition(it) // 执行用户提供的条件函数</b>
+<b class="pc">&nbsp;            if (criteria == null) return@afterFilter</b>
+&nbsp;            // Convert Criteria to Expression and merge with existing where condition
+<b class="fc">&nbsp;            val localCriteriaParams = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;            val newExpression = CriteriaToAstConverter.convert(criteria!!, localCriteriaParams, KOperationType.SELECT)</b>
+&nbsp;            
+&nbsp;            // Store criteria parameters for later use in renderStatement
+<b class="fc">&nbsp;            criteriaParams.putAll(localCriteriaParams)</b>
+&nbsp;            
+&nbsp;            // Only update where if newExpression is not null
+<b class="fc">&nbsp;            if (newExpression != null) {</b>
+<b class="pc">&nbsp;                statement.where = if (statement.where == null) {</b>
+<b class="fc">&nbsp;                    newExpression</b>
+&nbsp;                } else {
+&nbsp;                    // Merge with AND
+<b class="nc">&nbsp;                    BinaryExpression(</b>
+<b class="nc">&nbsp;                        statement.where!!,</b>
+<b class="nc">&nbsp;                        SqlOperator.AND,</b>
+<b class="nc">&nbsp;                        newExpression</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 设置HAVING条件的函数，用于在查询中添加基于聚合结果的条件限制。
+&nbsp;     *
+&nbsp;     * @param selectCondition 一个KTableConditionalField类型的函数参数，表示筛选的条件。该条件是一个函数，
+&nbsp;     *                        它接收当前的参数映射表和执行条件，并设置HAVING子句的条件。
+&nbsp;     * @return 返回SelectClause类型的实例，允许链式调用。
+&nbsp;     * @throws EmptyFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
+&nbsp;     */
+<b class="nc">&nbsp;    fun having(selectCondition: ToFilter&lt;T, Boolean?&gt; = null): SelectClause&lt;T&gt; {</b>
+&nbsp;        // 检查是否提供了条件，未提供则抛出异常
+<b class="pc">&nbsp;        selectCondition ?: throw EmptyFieldsException()</b>
+<b class="fc">&nbsp;        pojo.afterFilter {</b>
+<b class="fc">&nbsp;            criteriaParamMap = paramMap // 设置属性参数映射</b>
+<b class="fc">&nbsp;            selectCondition(it) // 执行传入的条件函数</b>
+<b class="pc">&nbsp;            if (criteria == null) return@afterFilter</b>
+&nbsp;            // Convert Criteria to Expression and merge with existing having condition
+<b class="fc">&nbsp;            val localCriteriaParams = mutableMapOf&lt;String, Any?&gt;()</b>
+<b class="fc">&nbsp;            val newExpression = CriteriaToAstConverter.convert(criteria!!, localCriteriaParams, KOperationType.SELECT)</b>
+&nbsp;            
+&nbsp;            // Store criteria parameters for later use in renderStatement
+<b class="fc">&nbsp;            criteriaParams.putAll(localCriteriaParams)</b>
+&nbsp;            
+&nbsp;            // Only update having if newExpression is not null
+<b class="pc">&nbsp;            if (newExpression != null) {</b>
+<b class="pc">&nbsp;                statement.having = if (statement.having == null) {</b>
+<b class="fc">&nbsp;                    newExpression</b>
+&nbsp;                } else {
+&nbsp;                    // Merge with AND
+<b class="nc">&nbsp;                    BinaryExpression(</b>
+<b class="nc">&nbsp;                        statement.having!!,</b>
+<b class="nc">&nbsp;                        SqlOperator.AND,</b>
+<b class="nc">&nbsp;                        newExpression</b>
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return this // 允许链式调用</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun withTotal(): PagedClause&lt;T, SelectClause&lt;T&gt;&gt; {
+<b class="fc">&nbsp;        return PagedClause(this)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun patch(vararg pairs: Pair&lt;String, Any?&gt;): SelectClause&lt;T&gt; {
+<b class="fc">&nbsp;        paramMap.putAll(pairs)</b>
+<b class="fc">&nbsp;        patchParamMap.putAll(pairs)</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun lock(lock: PessimisticLock? = PessimisticLock.X): SelectClause&lt;T&gt; {</b>
+<b class="fc">&nbsp;        statement.lock = lock</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 构建一个KronosAtomicTask对象。
+&nbsp;     *
+&nbsp;     * 该方法主要用于根据提供的KronosDataSourceWrapper（如果存在）和其他参数构建一个用于执行数据库操作的KronosAtomicTask对象。
+&nbsp;     * 这包括构建SQL查询语句及其参数映射，配置逻辑删除策略，并根据不同的标志（如分页、去重、分组等）调整查询语句的构造。
+&nbsp;     *
+&nbsp;     * @param wrapper 可选的KronosDataSourceWrapper对象，用于提供数据库表信息等。
+&nbsp;     * @return 构建好的KronosAtomicTask对象，包含了完整的SQL查询语句和对应的参数映射。
+&nbsp;     */
+&nbsp;    override fun build(wrapper: KronosDataSourceWrapper?): KronosQueryTask {
+&nbsp;        // Render statement to SQL with processed parameters
+<b class="fc">&nbsp;        val (sql, paramMap) = renderStatement(wrapper)</b>
+&nbsp;
+&nbsp;        // 返回构建好的KronosAtomicTask对象
+<b class="fc">&nbsp;        val finalSelectFields = if (selectAll) allFields else (selectFields + selectCascadeFields).toLinkedSet()</b>
+<b class="fc">&nbsp;        return CascadeSelectClause.build(</b>
+<b class="fc">&nbsp;            cascadeEnabled, cascadeAllowed, pojo, kClass, KronosAtomicQueryTask(</b>
+<b class="fc">&nbsp;                sql, paramMap + patchParamMap, operationType = KOperationType.SELECT</b>
+<b class="fc">&nbsp;            ), finalSelectFields,</b>
+<b class="pc">&nbsp;            operationType, cascadeSelectedProps ?: mutableSetOf()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * 执行Kronos操作的函数。
+&nbsp;     *
+&nbsp;     * @param wrapper 可选参数，KronosDataSourceWrapper的实例，用于提供数据源配置和上下文。
+&nbsp;     *                如果为null，函数将使用默认配置执行操作。
+&nbsp;     * @return 返回KronosOperationResult对象，包含操作的结果信息。
+&nbsp;     */
+<b class="nc">&nbsp;    fun query(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any&gt;&gt; {</b>
+<b class="nc">&nbsp;        return this.build().query(wrapper)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryList(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+&nbsp;    ): List&lt;T&gt; {
+<b class="nc">&nbsp;        return this.build().queryList(wrapper, isKPojo, superTypes)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;queryForList&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    fun queryList(wrapper: KronosDataSourceWrapper? = null): List&lt;T&gt; {</b>
+<b class="nc">&nbsp;        with(this.build()) {</b>
+<b class="nc">&nbsp;            beforeQuery?.invoke(this)</b>
+<b class="nc">&nbsp;            val result = atomicTask.logAndReturn(</b>
+<b class="nc">&nbsp;                wrapper.orDefault().forList(atomicTask, kClass, true, listOf()) as List&lt;T&gt;, QueryList</b>
+&nbsp;            )
+<b class="nc">&nbsp;            afterQuery?.invoke(result, QueryList, wrapper.orDefault())</b>
+<b class="nc">&nbsp;            return result</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;
+<b class="nc">&nbsp;    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any&gt; {</b>
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return this.build().queryMap(wrapper)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map&lt;String, Any&gt;? {</b>
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return this.build().queryMapOrNull(wrapper)</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    inline fun &lt;reified T&gt; queryOne(</b>
+<b class="nc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="nc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="nc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+&nbsp;    ): T {
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        return this.build().queryOne(wrapper, isKPojo, superTypes)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;queryForObject&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    fun queryOne(wrapper: KronosDataSourceWrapper? = null): T {</b>
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        with(build()) {</b>
+<b class="nc">&nbsp;            beforeQuery?.invoke(this)</b>
+<b class="nc">&nbsp;            val result = atomicTask.logAndReturn(</b>
+<b class="nc">&nbsp;                (wrapper.orDefault().forObject(atomicTask, kClass, true, listOf())</b>
+<b class="nc">&nbsp;                    ?: throw NullPointerException(&quot;No such record&quot;)) as T, QueryOne</b>
+&nbsp;            )
+<b class="nc">&nbsp;            afterQuery?.invoke(result, QueryOne, wrapper.orDefault())</b>
+<b class="nc">&nbsp;            return result</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    inline fun &lt;reified T&gt; queryOneOrNull(</b>
+<b class="fc">&nbsp;        wrapper: KronosDataSourceWrapper? = null,</b>
+<b class="fc">&nbsp;        isKPojo: Boolean = false,</b>
+<b class="fc">&nbsp;        superTypes: List&lt;String&gt; = listOf()</b>
+&nbsp;    ): T? {
+<b class="fc">&nbsp;        limit(1)</b>
+<b class="fc">&nbsp;        return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @JvmName(&quot;queryForObjectOrNull&quot;)
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): T? {</b>
+<b class="nc">&nbsp;        limit(1)</b>
+<b class="nc">&nbsp;        with(build()) {</b>
+<b class="nc">&nbsp;            beforeQuery?.invoke(this)</b>
+<b class="nc">&nbsp;            val result = atomicTask.logAndReturn(</b>
+<b class="nc">&nbsp;                wrapper.orDefault().forObject(atomicTask, kClass, true, listOf()) as T?, QueryOneOrNull</b>
+&nbsp;            )
+<b class="nc">&nbsp;            afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())</b>
+<b class="nc">&nbsp;            return result</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.by(someFields: ToSelect&lt;T, Any?&gt;): List&lt;SelectClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.by(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.cascade(
+&nbsp;            enabled: Boolean
+&nbsp;        ): List&lt;SelectClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(enabled) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.cascade(
+&nbsp;            someFields: ToReference&lt;T, Any?&gt;
+&nbsp;        ): List&lt;SelectClause&lt;T&gt;&gt; {
+<b class="nc">&nbsp;            return map { it.cascade(someFields) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Applies the `where` operation to each update clause in the list based on the provided update condition.
+&nbsp;         *
+&nbsp;         * @param selectCondition the condition for the update clause. Defaults to null.
+&nbsp;         * @return a list of UpdateClause objects with the updated condition
+&nbsp;         */
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.where(selectCondition: ToFilter&lt;T, Boolean?&gt; = null): List&lt;SelectClause&lt;T&gt;&gt; {</b>
+<b class="nc">&nbsp;            return map { it.where(selectCondition) }</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        /**
+&nbsp;         * Builds a KronosAtomicBatchTask from a list of UpdateClause objects.
+&nbsp;         *
+&nbsp;         * @param T The type of KPojo objects in the list.
+&nbsp;         * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
+&nbsp;         */
+&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.build(): KronosAtomicBatchTask {
+<b class="nc">&nbsp;            val tasks = this.map { it.build() }</b>
+<b class="nc">&nbsp;            return KronosAtomicBatchTask(</b>
+<b class="nc">&nbsp;                sql = tasks.first().atomicTask.sql,</b>
+<b class="nc">&nbsp;                paramMapArr = tasks.map { it.atomicTask.paramMap }.toTypedArray(),</b>
+<b class="nc">&nbsp;                operationType = KOperationType.SELECT</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.query(wrapper: KronosDataSourceWrapper? = null): List&lt;List&lt;Map&lt;String, Any&gt;&gt;&gt; {</b>
+<b class="nc">&nbsp;            return map { it.query(wrapper) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        inline fun &lt;reified T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.queryList(wrapper: KronosDataSourceWrapper? = null): List&lt;List&lt;T&gt;&gt; {</b>
+<b class="nc">&nbsp;            return map { it.queryList&lt;T&gt;(wrapper) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.queryMap(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any&gt;&gt; {</b>
+<b class="nc">&nbsp;            return map { it.queryMap(wrapper) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        fun &lt;T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): List&lt;Map&lt;String, Any&gt;?&gt; {</b>
+<b class="nc">&nbsp;            return map { it.queryMapOrNull(wrapper) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        inline fun &lt;reified T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.queryOne(wrapper: KronosDataSourceWrapper? = null): List&lt;T&gt; {</b>
+<b class="nc">&nbsp;            return map { it.queryOne(wrapper) }</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        inline fun &lt;reified T : KPojo&gt; Iterable&lt;SelectClause&lt;T&gt;&gt;.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): List&lt;T?&gt; {</b>
+<b class="nc">&nbsp;            return map { it.queryOneOrNull(wrapper) }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

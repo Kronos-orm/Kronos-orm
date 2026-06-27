@@ -1,0 +1,209 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > UnaryOperator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.ast</a>
+</div>
+
+<h1>Coverage Summary for Class: UnaryOperator (com.kotlinorm.ast)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">UnaryOperator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (43/43)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.ast
+&nbsp;
+&nbsp;/**
+&nbsp; * SqlOperator
+&nbsp; *
+&nbsp; * Enumeration of SQL operators used in expressions.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+&nbsp;enum class SqlOperator(val symbol: String) {
+&nbsp;    // Comparison operators
+&nbsp;    EQUAL(&quot;=&quot;),
+&nbsp;    NOT_EQUAL(&quot;!=&quot;),
+&nbsp;    NOT_EQUAL_ALT(&quot;&lt;&gt;&quot;),
+&nbsp;    GREATER_THAN(&quot;&gt;&quot;),
+&nbsp;    GREATER_THAN_OR_EQUAL(&quot;&gt;=&quot;),
+&nbsp;    LESS_THAN(&quot;&lt;&quot;),
+&nbsp;    LESS_THAN_OR_EQUAL(&quot;&lt;=&quot;),
+&nbsp;
+&nbsp;    // Logical operators
+&nbsp;    AND(&quot;AND&quot;),
+&nbsp;    OR(&quot;OR&quot;),
+&nbsp;
+&nbsp;    // Arithmetic operators
+&nbsp;    ADD(&quot;+&quot;),
+&nbsp;    SUBTRACT(&quot;-&quot;),
+&nbsp;    MULTIPLY(&quot;*&quot;),
+&nbsp;    DIVIDE(&quot;/&quot;),
+&nbsp;    MODULO(&quot;%&quot;),
+&nbsp;
+&nbsp;    // String operators
+&nbsp;    CONCAT(&quot;||&quot;),
+&nbsp;    LIKE(&quot;LIKE&quot;),
+&nbsp;    NOT_LIKE(&quot;NOT LIKE&quot;),
+&nbsp;    ILIKE(&quot;ILIKE&quot;),
+&nbsp;    NOT_ILIKE(&quot;NOT ILIKE&quot;),
+&nbsp;
+&nbsp;    // Membership operators
+&nbsp;    IN(&quot;IN&quot;),
+&nbsp;    NOT_IN(&quot;NOT IN&quot;),
+&nbsp;
+&nbsp;    // Null operators
+&nbsp;    IS_NULL(&quot;IS NULL&quot;),
+&nbsp;    IS_NOT_NULL(&quot;IS NOT NULL&quot;),
+&nbsp;
+&nbsp;    // Range operators
+&nbsp;    BETWEEN(&quot;BETWEEN&quot;),
+&nbsp;    NOT_BETWEEN(&quot;NOT BETWEEN&quot;),
+&nbsp;
+&nbsp;    // Pattern matching
+&nbsp;    REGEXP(&quot;REGEXP&quot;),
+&nbsp;    NOT_REGEXP(&quot;NOT REGEXP&quot;),
+&nbsp;
+&nbsp;    // Bitwise operators
+&nbsp;    BITWISE_AND(&quot;&amp;&quot;),
+&nbsp;    BITWISE_OR(&quot;|&quot;),
+&nbsp;    BITWISE_XOR(&quot;^&quot;),
+&nbsp;    BITWISE_NOT(&quot;~&quot;),
+&nbsp;    BITWISE_LEFT_SHIFT(&quot;&lt;&lt;&quot;),
+&nbsp;    BITWISE_RIGHT_SHIFT(&quot;&gt;&gt;&quot;)
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * UnaryOperator
+&nbsp; *
+&nbsp; * Enumeration of unary SQL operators.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+<b class="fc">&nbsp;enum class UnaryOperator(val symbol: String) {</b>
+<b class="fc">&nbsp;    NOT(&quot;NOT&quot;),</b>
+<b class="fc">&nbsp;    NEGATE(&quot;-&quot;),</b>
+<b class="fc">&nbsp;    POSITIVE(&quot;+&quot;),</b>
+<b class="fc">&nbsp;    BITWISE_NOT(&quot;~&quot;)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,406 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > AnnotationUtilsKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.utils</a>
+</div>
+
+<h1>Coverage Summary for Class: AnnotationUtilsKt (com.kotlinorm.compiler.utils)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">AnnotationUtilsKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/64)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/53)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/383)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.utils
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+&nbsp;import org.jetbrains.kotlin.ir.types.getClass
+&nbsp;import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;
+&nbsp;/**
+&nbsp; * Annotation utility functions for Kronos compiler plugin
+&nbsp; *
+&nbsp; * Provides helper functions for reading and processing annotations on IR elements
+&nbsp; */
+&nbsp;
+&nbsp;/**
+&nbsp; * Extension property to get value arguments from IrFunctionAccessExpression
+&nbsp; * Uses the arguments property which is the stable K2 API
+&nbsp; * 
+&nbsp; * This follows the same pattern as IrMemberAccessExpressionHelper from the old plugin
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;private val IrFunctionAccessExpression.valueArgs: List&lt;IrExpression?&gt;
+<b class="nc">&nbsp;    get() = arguments.filterIndexed { index, _ -&gt;</b>
+<b class="nc">&nbsp;        symbol.owner.parameters[index].kind == IrParameterKind.Regular</b>
+&nbsp;    }
+&nbsp;
+&nbsp;/**
+&nbsp; * Finds an annotation by its fully qualified name
+&nbsp; *
+&nbsp; * @param fqName The fully qualified name of the annotation to find
+&nbsp; * @return The IrConstructorCall representing the annotation, or null if not found
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrAnnotationContainer.findAnnotation(fqName: FqName): IrConstructorCall? {
+<b class="nc">&nbsp;    return annotations.find { </b>
+<b class="nc">&nbsp;        it.symbol.owner.returnType.getClass()?.fqNameWhenAvailable == fqName </b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the value argument from an annotation at the specified index
+&nbsp; *
+&nbsp; * @param annotation The annotation to read from
+&nbsp; * @param index The parameter index (default: 0)
+&nbsp; * @return The IrExpression representing the value, or null if not found
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;fun getAnnotationValueArgument(annotation: IrConstructorCall?, index: Int = 0): IrExpression? {</b>
+<b class="nc">&nbsp;    if (annotation == null) return null</b>
+<b class="nc">&nbsp;    return annotation.valueArgs.getOrNull(index)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the value of a string parameter from an annotation
+&nbsp; *
+&nbsp; * @param annotation The annotation to read from
+&nbsp; * @param index The parameter index (default: 0)
+&nbsp; * @return The string value, or null if not found or not a string
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;fun getAnnotationStringValue(annotation: IrConstructorCall?, index: Int = 0): String? {</b>
+<b class="nc">&nbsp;    val arg = getAnnotationValueArgument(annotation, index) ?: return null</b>
+<b class="nc">&nbsp;    return when (arg) {</b>
+<b class="nc">&nbsp;        is IrConstImpl -&gt; arg.value as? String</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the value of an integer parameter from an annotation
+&nbsp; *
+&nbsp; * @param annotation The annotation to read from
+&nbsp; * @param index The parameter index (default: 0)
+&nbsp; * @return The integer value, or null if not found or not an integer
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;fun getAnnotationIntValue(annotation: IrConstructorCall?, index: Int = 0): Int? {</b>
+<b class="nc">&nbsp;    val arg = getAnnotationValueArgument(annotation, index) ?: return null</b>
+<b class="nc">&nbsp;    return when (arg) {</b>
+<b class="nc">&nbsp;        is IrConstImpl -&gt; arg.value as? Int</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the value of a boolean parameter from an annotation
+&nbsp; *
+&nbsp; * @param annotation The annotation to read from
+&nbsp; * @param index The parameter index (default: 0)
+&nbsp; * @return The boolean value, or null if not found or not a boolean
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;fun getAnnotationBooleanValue(annotation: IrConstructorCall?, index: Int = 0): Boolean? {</b>
+<b class="nc">&nbsp;    val arg = getAnnotationValueArgument(annotation, index) ?: return null</b>
+<b class="nc">&nbsp;    return when (arg) {</b>
+<b class="nc">&nbsp;        is IrConstImpl -&gt; arg.value as? Boolean</b>
+<b class="nc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @Column annotation&#39;s name parameter
+&nbsp; *
+&nbsp; * @return The column name, or null if annotation not present or no name specified
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.getColumnName(): String? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(ColumnAnnotationFqName) ?: return null</b>
+<b class="nc">&nbsp;    return getAnnotationStringValue(annotation, 0)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @ColumnType annotation&#39;s type parameter
+&nbsp; *
+&nbsp; * @return The column type name, or null if annotation not present
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.getColumnTypeName(): String? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(ColumnTypeAnnotationFqName) ?: return null</b>
+&nbsp;    // The type parameter is an enum value, we need to extract its name
+<b class="nc">&nbsp;    val typeArg = annotation.valueArgs.getOrNull(0) ?: return null</b>
+&nbsp;    // For enum values, we can get the name from the IrGetEnumValue expression
+<b class="nc">&nbsp;    return typeArg.toString() // This will need refinement based on actual IR structure</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @ColumnType annotation&#39;s length parameter
+&nbsp; *
+&nbsp; * @return The column length, or null if not specified
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.getColumnTypeLength(): Int? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(ColumnTypeAnnotationFqName) ?: return null</b>
+<b class="nc">&nbsp;    return getAnnotationIntValue(annotation, 1)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @ColumnType annotation&#39;s scale parameter
+&nbsp; *
+&nbsp; * @return The column scale, or null if not specified
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.getColumnTypeScale(): Int? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(ColumnTypeAnnotationFqName) ?: return null</b>
+<b class="nc">&nbsp;    return getAnnotationIntValue(annotation, 2)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @DateTimeFormat annotation&#39;s format parameter
+&nbsp; *
+&nbsp; * @return The date/time format string, or null if annotation not present
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.getDateTimeFormat(): String? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(DateTimeFormatAnnotationFqName) ?: return null</b>
+<b class="nc">&nbsp;    return getAnnotationStringValue(annotation, 0)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @Default annotation&#39;s value parameter
+&nbsp; *
+&nbsp; * @return The default value as a string, or null if annotation not present
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.getDefaultValue(): String? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(DefaultValueAnnotationFqName) ?: return null</b>
+<b class="nc">&nbsp;    return getAnnotationStringValue(annotation, 0)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if the property has @PrimaryKey annotation with identity=true
+&nbsp; *
+&nbsp; * @return true if the property is an identity primary key
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.isIdentityPrimaryKey(): Boolean {
+<b class="nc">&nbsp;    val annotation = findAnnotation(PrimaryKeyAnnotationFqName) ?: return false</b>
+<b class="nc">&nbsp;    return getAnnotationBooleanValue(annotation, 0) ?: false</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if the property has @PrimaryKey annotation with uuid=true
+&nbsp; *
+&nbsp; * @return true if the property is a UUID primary key
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.isUuidPrimaryKey(): Boolean {
+<b class="nc">&nbsp;    val annotation = findAnnotation(PrimaryKeyAnnotationFqName) ?: return false</b>
+<b class="nc">&nbsp;    return getAnnotationBooleanValue(annotation, 1) ?: false</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if the property has @Necessary annotation (required field)
+&nbsp; *
+&nbsp; * @return true if the property is marked as necessary
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.isNecessary(): Boolean {
+<b class="nc">&nbsp;    return findAnnotation(NecessaryAnnotationFqName) != null</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @Table annotation&#39;s name parameter from a class
+&nbsp; *
+&nbsp; * @return The table name, or null if annotation not present or no name specified
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrClass.getTableName(): String? {
+<b class="nc">&nbsp;    val annotation = findAnnotation(TableAnnotationFqName) ?: return null</b>
+<b class="nc">&nbsp;    return getAnnotationStringValue(annotation, 0)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Collects all annotations from a property into a structured format
+&nbsp; *
+&nbsp; * @return A map of annotation FQN to IrConstructorCall
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.collectAnnotations(): Map&lt;FqName, IrConstructorCall&gt; {
+<b class="nc">&nbsp;    val result = mutableMapOf&lt;FqName, IrConstructorCall&gt;()</b>
+&nbsp;    
+<b class="nc">&nbsp;    annotations.forEach { annotation -&gt;</b>
+<b class="nc">&nbsp;        val fqName = annotation.symbol.owner.returnType.getClass()?.fqNameWhenAvailable</b>
+<b class="nc">&nbsp;        if (fqName != null) {</b>
+<b class="nc">&nbsp;            result[fqName] = annotation</b>
+&nbsp;        }
+<b class="nc">&nbsp;    }</b>
+&nbsp;    
+<b class="nc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if a property should be ignored based on @Ignore annotation
+&nbsp; *
+&nbsp; * The @Ignore annotation can have an action parameter that specifies when to ignore:
+&nbsp; * - &quot;all&quot;: ignore in all operations
+&nbsp; * - &quot;select&quot;: ignore in select operations
+&nbsp; * - &quot;insert&quot;: ignore in insert operations
+&nbsp; * - &quot;update&quot;: ignore in update operations
+&nbsp; * - &quot;to_map&quot;: ignore when converting to map
+&nbsp; *
+&nbsp; * @param action The action to check (e.g., &quot;select&quot;, &quot;insert&quot;, &quot;update&quot;, &quot;to_map&quot;, &quot;all&quot;)
+&nbsp; * @return true if the property should be ignored for the specified action
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+<b class="nc">&nbsp;fun IrProperty.shouldIgnore(action: String = &quot;all&quot;): Boolean {</b>
+<b class="nc">&nbsp;    val annotation = findAnnotation(IgnoreAnnotationFqName) ?: return false</b>
+&nbsp;    
+&nbsp;    // If no action specified in annotation, ignore for all actions
+<b class="nc">&nbsp;    val ignoreAction = getAnnotationStringValue(annotation, 0) ?: return true</b>
+&nbsp;    
+&nbsp;    // Check if the action matches
+<b class="nc">&nbsp;    return ignoreAction == &quot;all&quot; || ignoreAction == action</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:26</div>
+</div>
+</body>
+</html>

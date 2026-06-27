@@ -1,0 +1,393 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > MysqlSqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.database.mysql</a>
+</div>
+
+<h1>Coverage Summary for Class: MysqlSqlRenderer (com.kotlinorm.database.mysql)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">MysqlSqlRenderer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.5%
+  </span>
+  <span class="absValue">
+    (39/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (87/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.2%
+  </span>
+  <span class="absValue">
+    (680/707)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">MysqlSqlRenderer$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.5%
+  </span>
+  <span class="absValue">
+    (39/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.6%
+  </span>
+  <span class="absValue">
+    (87/92)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.2%
+  </span>
+  <span class="absValue">
+    (680/707)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.database.mysql
+&nbsp;
+&nbsp;import com.kotlinorm.ast.AbstractSqlRenderer
+&nbsp;import com.kotlinorm.ast.ColumnDefinition
+&nbsp;import com.kotlinorm.ast.DdlStatement
+&nbsp;import com.kotlinorm.ast.LimitClause
+&nbsp;import com.kotlinorm.ast.RenderContext
+&nbsp;import com.kotlinorm.ast.RenderedSql
+&nbsp;import com.kotlinorm.ast.Statement
+&nbsp;import com.kotlinorm.database.ConflictResolver
+&nbsp;import com.kotlinorm.enums.KColumnType
+&nbsp;import com.kotlinorm.enums.PessimisticLock
+&nbsp;import com.kotlinorm.enums.PrimaryKeyType
+&nbsp;
+&nbsp;/**
+&nbsp; * MysqlSqlRenderer
+&nbsp; *
+&nbsp; * MySQL-specific SQL renderer implementation. Handles MySQL-specific syntax including:
+&nbsp; * - Backtick quotes for identifiers
+&nbsp; * - LIMIT syntax (supports both LIMIT offset, count and LIMIT count OFFSET offset)
+&nbsp; * - String literal escaping
+&nbsp; * - Date/time literal formatting
+&nbsp; * - ON DUPLICATE KEY UPDATE for conflict resolution
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+<b class="fc">&nbsp;class MysqlSqlRenderer : AbstractSqlRenderer() {</b>
+&nbsp;    override fun render(statement: Statement, context: RenderContext): RenderedSql {
+&nbsp;        // Configure MySQL-specific quote characters (backticks) and database type
+<b class="fc">&nbsp;        val mysqlContext = context.copy(</b>
+<b class="fc">&nbsp;            quotes = Pair(&quot;`&quot;, &quot;`&quot;),</b>
+<b class="fc">&nbsp;            dbType = com.kotlinorm.enums.DBType.Mysql</b>
+&nbsp;        )
+<b class="fc">&nbsp;        return super.render(statement, mysqlContext)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderStringLiteral(value: String): String {
+&nbsp;        // Escape single quotes by doubling them
+<b class="fc">&nbsp;        val escaped = value.replace(&quot;&#39;&quot;, &quot;&#39;&#39;&quot;)</b>
+<b class="fc">&nbsp;        return &quot;&#39;$escaped&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDateLiteral(value: String): String {
+&nbsp;        // MySQL date format: &#39;YYYY-MM-DD&#39;
+<b class="fc">&nbsp;        return &quot;&#39;$value&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTimeLiteral(value: String): String {
+&nbsp;        // MySQL time format: &#39;HH:MM:SS&#39;
+<b class="fc">&nbsp;        return &quot;&#39;$value&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTimestampLiteral(value: String): String {
+&nbsp;        // MySQL timestamp format: &#39;YYYY-MM-DD HH:MM:SS&#39;
+<b class="fc">&nbsp;        return &quot;&#39;$value&#39;&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLock(lock: PessimisticLock): String {
+<b class="fc">&nbsp;        return when (lock) {</b>
+<b class="fc">&nbsp;            PessimisticLock.X -&gt; &quot;FOR UPDATE&quot;</b>
+<b class="fc">&nbsp;            PessimisticLock.S -&gt; &quot;LOCK IN SHARE MODE&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderConflictResolver(
+&nbsp;            resolver: ConflictResolver,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val (tableName, onFields, _, toInsertFields) = resolver</b>
+<b class="fc">&nbsp;        val updateClause =</b>
+<b class="fc">&nbsp;                onFields.joinToString(&quot;, &quot;) { field -&gt;</b>
+<b class="fc">&nbsp;                    val column = context.quote(field.columnName)</b>
+<b class="fc">&nbsp;                    &quot;$column = VALUES($column)&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        return &quot; ON DUPLICATE KEY UPDATE $updateClause&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLimitClause(limit: LimitClause, context: RenderContext): String {
+&nbsp;        // MySQL supports both formats:
+&nbsp;        // 1. LIMIT offset, count (MySQL traditional)
+&nbsp;        // 2. LIMIT count OFFSET offset (SQL standard, MySQL 8.0+)
+&nbsp;        // We&#39;ll use the SQL standard format for consistency
+<b class="fc">&nbsp;        return if (limit.offset != null) {</b>
+<b class="fc">&nbsp;            &quot; LIMIT ${limit.limit} OFFSET ${limit.offset}&quot;</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            &quot; LIMIT ${limit.limit}&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderCreateTable(
+&nbsp;            create: DdlStatement.CreateTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(create.tableName)</b>
+<b class="fc">&nbsp;        val columns =</b>
+<b class="fc">&nbsp;                create.columns.joinToString(&quot;, &quot;) { column -&gt;</b>
+<b class="fc">&nbsp;                    renderColumnDefinition(column, context)</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val indexes =</b>
+<b class="fc">&nbsp;                create.indexes.joinToString(&quot;, &quot;) { index -&gt;</b>
+<b class="fc">&nbsp;                    renderIndexDefinition(index, create.tableName, context)</b>
+&nbsp;                }
+<b class="pc">&nbsp;        val comment = create.comment?.let { &quot; COMMENT = &#39;${it.replace(&quot;&#39;&quot;, &quot;&#39;&#39;&quot;)}&#39;&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        val tableDefinition =</b>
+<b class="fc">&nbsp;                listOfNotNull(columns, indexes.takeIf { it.isNotEmpty() }).joinToString(&quot;, &quot;)</b>
+<b class="fc">&nbsp;        return &quot;CREATE TABLE IF NOT EXISTS $tableName ($tableDefinition)$comment&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderAlterTable(
+&nbsp;            alter: DdlStatement.AlterTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(alter.tableName)</b>
+<b class="fc">&nbsp;        return when (alter) {</b>
+<b class="fc">&nbsp;            is DdlStatement.AlterTableStatement.AddColumnStatement -&gt; {</b>
+<b class="fc">&nbsp;                val column = renderColumnDefinition(alter.column, context)</b>
+<b class="fc">&nbsp;                &quot;ALTER TABLE $tableName ADD COLUMN $column&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is DdlStatement.AlterTableStatement.DropColumnStatement -&gt; {</b>
+<b class="fc">&nbsp;                val columnName = context.quote(alter.columnName)</b>
+<b class="fc">&nbsp;                &quot;ALTER TABLE $tableName DROP COLUMN $columnName&quot;</b>
+&nbsp;            }
+<b class="pc">&nbsp;            is DdlStatement.AlterTableStatement.ModifyColumnStatement -&gt; {</b>
+<b class="fc">&nbsp;                val column = renderColumnDefinition(alter.column, context)</b>
+<b class="fc">&nbsp;                &quot;ALTER TABLE $tableName MODIFY COLUMN $column&quot;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            else -&gt; throw IllegalArgumentException(&quot;Unsupported ALTER TABLE statement type&quot;)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDropTable(
+&nbsp;            drop: DdlStatement.DropTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(drop.tableName)</b>
+<b class="pc">&nbsp;        val ifExists = if (drop.ifExists) &quot;IF EXISTS &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;DROP TABLE $ifExists$tableName&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderCreateIndex(
+&nbsp;            create: DdlStatement.CreateIndexStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val indexName = context.quote(create.indexName)</b>
+<b class="fc">&nbsp;        val tableName = context.quote(create.tableName)</b>
+<b class="fc">&nbsp;        val columns = create.columns.joinToString(&quot;, &quot;) { context.quote(it) }</b>
+<b class="pc">&nbsp;        val unique = if (create.unique) &quot;UNIQUE &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;CREATE ${unique}INDEX $indexName ON $tableName ($columns)&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDropIndex(
+&nbsp;            drop: DdlStatement.DropIndexStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val indexName = context.quote(drop.indexName)</b>
+<b class="fc">&nbsp;        val tableName = context.quote(drop.tableName)</b>
+<b class="fc">&nbsp;        return &quot;DROP INDEX $indexName ON $tableName&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTruncateTable(
+&nbsp;            truncate: DdlStatement.TruncateTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val tableName = context.quote(truncate.tableName)</b>
+&nbsp;        // MySQL doesn&#39;t support RESTART IDENTITY, but we include it for completeness
+<b class="fc">&nbsp;        return &quot;TRUNCATE TABLE $tableName&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Helper methods
+&nbsp;
+&nbsp;    private fun renderColumnDefinition(column: ColumnDefinition, context: RenderContext): String {
+<b class="fc">&nbsp;        val name = context.quote(column.name)</b>
+<b class="fc">&nbsp;        val type = renderColumnType(column)</b>
+<b class="fc">&nbsp;        val nullable = if (column.nullable) &quot;&quot; else &quot; NOT NULL&quot;</b>
+<b class="fc">&nbsp;        val primaryKey =</b>
+<b class="fc">&nbsp;                if (column.primaryKey != PrimaryKeyType.NOT) {</b>
+<b class="fc">&nbsp;                    &quot; PRIMARY KEY&quot;</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    &quot;&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val autoIncrement =</b>
+<b class="fc">&nbsp;                if (column.primaryKey == PrimaryKeyType.IDENTITY) {</b>
+<b class="fc">&nbsp;                    &quot; AUTO_INCREMENT&quot;</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    &quot;&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        val defaultValue =</b>
+<b class="pc">&nbsp;                column.defaultValue?.let { &quot; DEFAULT ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;$name $type$nullable$primaryKey$autoIncrement$defaultValue&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderColumnType(column: ColumnDefinition): String {
+&nbsp;        // This is a simplified version - in practice, you might want to use
+&nbsp;        // MysqlSupport.getColumnType
+<b class="fc">&nbsp;        val typeStr =</b>
+<b class="pc">&nbsp;                when (column.type) {</b>
+<b class="fc">&nbsp;                    KColumnType.INT -&gt; &quot;INT&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.BIGINT -&gt; &quot;BIGINT&quot;</b>
+<b class="pc">&nbsp;                    KColumnType.VARCHAR -&gt; &quot;VARCHAR(${column.length.takeIf { it &gt; 0 } ?: 255})&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.TEXT -&gt; &quot;TEXT&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.DATETIME -&gt; &quot;DATETIME&quot;</b>
+<b class="fc">&nbsp;                    KColumnType.TIMESTAMP -&gt; &quot;TIMESTAMP&quot;</b>
+<b class="nc">&nbsp;                    else -&gt; &quot;VARCHAR(255)&quot; // Default fallback</b>
+&nbsp;                }
+<b class="fc">&nbsp;        return typeStr</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun renderIndexDefinition(
+&nbsp;            index: com.kotlinorm.beans.dsl.KTableIndex,
+&nbsp;            tableName: String,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="fc">&nbsp;        val indexName = context.quote(index.name)</b>
+<b class="fc">&nbsp;        val columns = index.columns.joinToString(&quot;, &quot;) { context.quote(it) }</b>
+<b class="fc">&nbsp;        val type =</b>
+<b class="pc">&nbsp;                when (index.type) {</b>
+<b class="fc">&nbsp;                    &quot;UNIQUE&quot; -&gt; &quot;UNIQUE &quot;</b>
+<b class="nc">&nbsp;                    &quot;FULLTEXT&quot; -&gt; &quot;FULLTEXT &quot;</b>
+<b class="nc">&nbsp;                    &quot;SPATIAL&quot; -&gt; &quot;SPATIAL &quot;</b>
+<b class="nc">&nbsp;                    else -&gt; &quot;&quot;</b>
+&nbsp;                }
+<b class="pc">&nbsp;        val method = if (index.method.isNotEmpty()) &quot; USING ${index.method}&quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;${type}INDEX $indexName ($columns)$method&quot;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

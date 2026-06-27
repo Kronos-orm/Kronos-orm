@@ -1,0 +1,742 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > AbstractSqlRenderer</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.ast</a>
+</div>
+
+<h1>Coverage Summary for Class: AbstractSqlRenderer (com.kotlinorm.ast)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">AbstractSqlRenderer</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.6%
+  </span>
+  <span class="absValue">
+    (25/37)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.1%
+  </span>
+  <span class="absValue">
+    (188/272)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73%
+  </span>
+  <span class="absValue">
+    (214/293)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.7%
+  </span>
+  <span class="absValue">
+    (1840/2602)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">AbstractSqlRenderer$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    67.6%
+  </span>
+  <span class="absValue">
+    (25/37)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.1%
+  </span>
+  <span class="absValue">
+    (188/272)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73%
+  </span>
+  <span class="absValue">
+    (214/293)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    70.7%
+  </span>
+  <span class="absValue">
+    (1840/2602)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+&nbsp; * in compliance with the License. You may obtain a copy of the License at
+&nbsp; * ```
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; * ```
+&nbsp; * Unless required by applicable law or agreed to in writing, software distributed under the License
+&nbsp; * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+&nbsp; * or implied. See the License for the specific language governing permissions and limitations under
+&nbsp; * the License.
+&nbsp; */
+&nbsp;package com.kotlinorm.ast
+&nbsp;
+&nbsp;import com.kotlinorm.enums.SortType
+&nbsp;
+&nbsp;/**
+&nbsp; * AbstractSqlRenderer
+&nbsp; *
+&nbsp; * Abstract base class for SQL renderers implementing the visitor pattern. Provides default
+&nbsp; * implementations for common AST node rendering and defines abstract methods for database-specific
+&nbsp; * logic.
+&nbsp; *
+&nbsp; * @author OUSC
+&nbsp; */
+<b class="fc">&nbsp;abstract class AbstractSqlRenderer : SqlRenderer {</b>
+&nbsp;    override fun render(statement: Statement, context: RenderContext): RenderedSql {
+<b class="fc">&nbsp;        val sql =</b>
+<b class="fc">&nbsp;                when (statement) {</b>
+<b class="fc">&nbsp;                    is SelectStatement -&gt; renderSelectStatement(statement, context)</b>
+<b class="fc">&nbsp;                    is InsertStatement -&gt; renderInsertStatement(statement, context)</b>
+<b class="fc">&nbsp;                    is UpdateStatement -&gt; renderUpdateStatement(statement, context)</b>
+<b class="fc">&nbsp;                    is DeleteStatement -&gt; renderDeleteStatement(statement, context)</b>
+<b class="fc">&nbsp;                    is DdlStatement -&gt; renderDdlStatement(statement, context)</b>
+<b class="fc">&nbsp;                    is UnionStatement -&gt; renderUnionStatement(statement, context)</b>
+&nbsp;                }
+<b class="fc">&nbsp;        return RenderedSql(sql, context.boundParameters.toMap())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderExpression(expression: Expression, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (expression) {</b>
+<b class="fc">&nbsp;            is ColumnReference -&gt; renderColumnReference(expression, context)</b>
+<b class="fc">&nbsp;            is Literal -&gt; renderLiteral(expression, context)</b>
+<b class="fc">&nbsp;            is Parameter -&gt; renderParameter(expression, context)</b>
+<b class="fc">&nbsp;            is BinaryExpression -&gt; renderBinaryExpression(expression, context)</b>
+<b class="fc">&nbsp;            is UnaryExpression -&gt; renderUnaryExpression(expression, context)</b>
+<b class="fc">&nbsp;            is FunctionCall -&gt; renderFunctionCall(expression, context)</b>
+<b class="pc">&nbsp;            is CaseExpression -&gt; renderCaseExpression(expression, context)</b>
+<b class="pc">&nbsp;            is SubqueryExpression -&gt; renderSubqueryExpression(expression, context)</b>
+<b class="fc">&nbsp;            is SpecialExpression -&gt; renderSpecialExpression(expression, context)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTableReference(table: TableReference, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (table) {</b>
+<b class="fc">&nbsp;            is TableName -&gt; renderTableName(table, context)</b>
+<b class="fc">&nbsp;            is SubqueryTable -&gt; renderSubqueryTable(table, context)</b>
+<b class="pc">&nbsp;            is JoinTable -&gt; renderJoinTable(table, context)</b>
+<b class="nc">&nbsp;            is TableReferenceImpl.SimpleTableReference -&gt; renderSimpleTableReference(table, context)</b>
+<b class="nc">&nbsp;            is TableReferenceImpl.SubqueryTableReference -&gt;</b>
+<b class="nc">&nbsp;                    renderSubqueryTableReference(table, context)</b>
+<b class="nc">&nbsp;            is TableReferenceImpl.JoinedTableReference -&gt; renderJoinedTableReference(table, context)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Default implementations for common rendering
+&nbsp;
+&nbsp;    override fun renderColumnReference(column: ColumnReference, context: RenderContext): String {
+<b class="fc">&nbsp;        return when {</b>
+<b class="pc">&nbsp;            column.database != null &amp;&amp; column.tableAlias != null -&gt; {</b>
+<b class="fc">&nbsp;                &quot;${context.quote(column.database)}.${context.quote(column.tableAlias)}.${context.quote(column.columnName)}&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            column.tableAlias != null -&gt; {</b>
+<b class="fc">&nbsp;                &quot;${context.quote(column.tableAlias)}.${context.quote(column.columnName)}&quot;</b>
+&nbsp;            }
+&nbsp;            else -&gt; {
+<b class="fc">&nbsp;                context.quote(column.columnName)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderLiteral(literal: Literal, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (literal) {</b>
+<b class="fc">&nbsp;            is Literal.StringLiteral -&gt; renderStringLiteral(literal.value)</b>
+<b class="fc">&nbsp;            is Literal.NumberLiteral -&gt; literal.value</b>
+<b class="fc">&nbsp;            is Literal.BooleanLiteral -&gt; if (literal.value) &quot;true&quot; else &quot;false&quot;</b>
+<b class="fc">&nbsp;            is Literal.NullLiteral -&gt; &quot;NULL&quot;</b>
+<b class="fc">&nbsp;            is Literal.DateLiteral -&gt; renderDateLiteral(literal.value)</b>
+<b class="fc">&nbsp;            is Literal.TimeLiteral -&gt; renderTimeLiteral(literal.value)</b>
+<b class="fc">&nbsp;            is Literal.TimestampLiteral -&gt; renderTimestampLiteral(literal.value)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderParameter(parameter: Parameter, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (parameter) {</b>
+<b class="fc">&nbsp;            is Parameter.NamedParameter -&gt; {</b>
+<b class="fc">&nbsp;                &quot;${context.parameterPrefix}${parameter.name}&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is Parameter.PositionalParameter -&gt; {</b>
+<b class="fc">&nbsp;                context.positionalParameterPlaceholder</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderBinaryExpression(expr: BinaryExpression, context: RenderContext): String {
+&nbsp;        // Determine if left operand needs parentheses
+<b class="fc">&nbsp;        val leftNeedsParens = when {</b>
+<b class="fc">&nbsp;            expr.left !is BinaryExpression -&gt; false</b>
+&nbsp;            // If current operator is AND and left is OR, left needs parentheses
+<b class="fc">&nbsp;            expr.operator == SqlOperator.AND &amp;&amp; </b>
+<b class="fc">&nbsp;            (expr.left.operator == SqlOperator.OR) -&gt; true</b>
+&nbsp;            // If current operator is OR and left is AND, left needs parentheses
+<b class="fc">&nbsp;            expr.operator == SqlOperator.OR &amp;&amp; </b>
+<b class="fc">&nbsp;            (expr.left.operator == SqlOperator.AND) -&gt; true</b>
+<b class="fc">&nbsp;            else -&gt; false</b>
+&nbsp;        }
+&nbsp;        
+&nbsp;        // Determine if right operand needs parentheses
+<b class="fc">&nbsp;        val rightNeedsParens = when {</b>
+<b class="fc">&nbsp;            expr.right !is BinaryExpression -&gt; false</b>
+&nbsp;            // If current operator is AND and right is OR, right needs parentheses
+<b class="fc">&nbsp;            expr.operator == SqlOperator.AND &amp;&amp; </b>
+<b class="fc">&nbsp;            (expr.right.operator == SqlOperator.OR) -&gt; true</b>
+&nbsp;            // If current operator is OR and right is AND, right needs parentheses
+<b class="fc">&nbsp;            expr.operator == SqlOperator.OR &amp;&amp; </b>
+<b class="fc">&nbsp;            (expr.right.operator == SqlOperator.AND) -&gt; true</b>
+<b class="fc">&nbsp;            else -&gt; false</b>
+&nbsp;        }
+&nbsp;        
+<b class="fc">&nbsp;        val left = renderExpression(expr.left, context)</b>
+<b class="fc">&nbsp;        val right = renderExpression(expr.right, context)</b>
+<b class="fc">&nbsp;        val operator = expr.operator.symbol</b>
+&nbsp;        
+<b class="fc">&nbsp;        val leftStr = if (leftNeedsParens) &quot;($left)&quot; else left</b>
+<b class="fc">&nbsp;        val rightStr = if (rightNeedsParens) &quot;($right)&quot; else right</b>
+&nbsp;        
+<b class="fc">&nbsp;        return &quot;$leftStr $operator $rightStr&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderUnaryExpression(expr: UnaryExpression, context: RenderContext): String {
+<b class="fc">&nbsp;        val operand = renderExpression(expr.operand, context)</b>
+<b class="fc">&nbsp;        val operator = expr.operator.symbol</b>
+<b class="pc">&nbsp;        return when (expr.operator) {</b>
+<b class="fc">&nbsp;            UnaryOperator.NOT -&gt; &quot;$operator ($operand)&quot;</b>
+<b class="fc">&nbsp;            UnaryOperator.NEGATE, UnaryOperator.POSITIVE -&gt; &quot;$operator$operand&quot;</b>
+<b class="nc">&nbsp;            UnaryOperator.BITWISE_NOT -&gt; &quot;$operator$operand&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderFunctionCall(function: FunctionCall, context: RenderContext): String {
+&nbsp;        // Use FunctionManager for all function rendering
+<b class="fc">&nbsp;        val rendered = com.kotlinorm.functions.FunctionManager.renderFunctionCall(</b>
+<b class="fc">&nbsp;            function, context, ::renderExpression</b>
+&nbsp;        )
+&nbsp;        
+&nbsp;        // If FunctionManager returns null, throw exception - all functions must be registered
+<b class="pc">&nbsp;        return rendered ?: throw com.kotlinorm.exceptions.UnSupportedFunctionException(</b>
+<b class="nc">&nbsp;            context.dbType ?: com.kotlinorm.enums.DBType.Unknown,</b>
+<b class="nc">&nbsp;            function.functionName</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderCaseExpression(case: CaseExpression, context: RenderContext): String {
+<b class="nc">&nbsp;        return when (case) {</b>
+<b class="nc">&nbsp;            is CaseExpression.SimpleCaseExpression -&gt; {</b>
+<b class="nc">&nbsp;                val operand = renderExpression(case.operand, context)</b>
+<b class="nc">&nbsp;                val whenClauses =</b>
+<b class="nc">&nbsp;                        case.whenClauses.joinToString(&quot; &quot;) { clause -&gt;</b>
+<b class="nc">&nbsp;                            &quot;WHEN ${renderExpression(clause.whenCondition, context)} THEN ${renderExpression(clause.thenResult, context)}&quot;</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                val elseClause =</b>
+<b class="nc">&nbsp;                        case.elseResult?.let { &quot; ELSE ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;                &quot;CASE $operand $whenClauses$elseClause END&quot;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is CaseExpression.SearchedCaseExpression -&gt; {</b>
+<b class="nc">&nbsp;                val whenClauses =</b>
+<b class="nc">&nbsp;                        case.whenClauses.joinToString(&quot; &quot;) { clause -&gt;</b>
+<b class="nc">&nbsp;                            &quot;WHEN ${renderExpression(clause.whenCondition, context)} THEN ${renderExpression(clause.thenResult, context)}&quot;</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                val elseClause =</b>
+<b class="nc">&nbsp;                        case.elseResult?.let { &quot; ELSE ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;                &quot;CASE $whenClauses$elseClause END&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderSubqueryExpression(
+&nbsp;            subquery: SubqueryExpression,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        return when (subquery) {</b>
+<b class="nc">&nbsp;            is SubqueryExpression.ExistsExpression -&gt; {</b>
+<b class="nc">&nbsp;                val not = if (subquery.not) &quot;NOT &quot; else &quot;&quot;</b>
+<b class="nc">&nbsp;                val sql = renderSelectStatement(subquery.subquery, context)</b>
+<b class="nc">&nbsp;                &quot;${not}EXISTS ($sql)&quot;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is SubqueryExpression.ScalarSubquery -&gt; {</b>
+<b class="nc">&nbsp;                val sql = renderSelectStatement(subquery.subquery, context)</b>
+<b class="nc">&nbsp;                &quot;($sql)&quot;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is SubqueryExpression.QuantifiedComparison -&gt; {</b>
+<b class="nc">&nbsp;                val expr = renderExpression(subquery.expression, context)</b>
+<b class="nc">&nbsp;                val operator = subquery.operator.symbol</b>
+<b class="nc">&nbsp;                val quantifier = subquery.quantifier.name</b>
+<b class="nc">&nbsp;                val sql = renderSelectStatement(subquery.subquery, context)</b>
+<b class="nc">&nbsp;                &quot;$expr $operator $quantifier ($sql)&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderSpecialExpression(expr: SpecialExpression, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (expr) {</b>
+<b class="fc">&nbsp;            is SpecialExpression.BetweenExpression -&gt; {</b>
+<b class="fc">&nbsp;                val value = renderExpression(expr.value, context)</b>
+<b class="fc">&nbsp;                val low = renderExpression(expr.low, context)</b>
+<b class="fc">&nbsp;                val high = renderExpression(expr.high, context)</b>
+<b class="fc">&nbsp;                val not = if (expr.not) &quot;NOT &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;                &quot;$value ${not}BETWEEN $low AND $high&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SpecialExpression.InExpression -&gt; {</b>
+<b class="fc">&nbsp;                val value = renderExpression(expr.value, context)</b>
+<b class="fc">&nbsp;                val values = expr.values.joinToString(&quot;, &quot;) { renderExpression(it, context) }</b>
+<b class="fc">&nbsp;                val not = if (expr.not) &quot;NOT &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;                &quot;$value ${not}IN ($values)&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SpecialExpression.InSubqueryExpression -&gt; {</b>
+<b class="fc">&nbsp;                val value = renderExpression(expr.value, context)</b>
+<b class="fc">&nbsp;                val sql = renderSelectStatement(expr.subquery, context)</b>
+<b class="pc">&nbsp;                val not = if (expr.not) &quot;NOT &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;                &quot;$value ${not}IN ($sql)&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SpecialExpression.IsNullExpression -&gt; {</b>
+<b class="fc">&nbsp;                val exprStr = renderExpression(expr.expression, context)</b>
+<b class="fc">&nbsp;                val not = if (expr.not) &quot;NOT &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;                &quot;$exprStr IS ${not}NULL&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SpecialExpression.LikeExpression -&gt; {</b>
+<b class="fc">&nbsp;                val value = renderExpression(expr.value, context)</b>
+<b class="fc">&nbsp;                val pattern = renderExpression(expr.pattern, context)</b>
+<b class="pc">&nbsp;                val escape = expr.escape?.let { &quot; ESCAPE ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;                val not = if (expr.not) &quot;NOT &quot; else &quot;&quot;</b>
+<b class="pc">&nbsp;                val likeOp = if (expr.caseInsensitive) &quot;ILIKE&quot; else &quot;LIKE&quot;</b>
+<b class="fc">&nbsp;                &quot;$value $not$likeOp $pattern$escape&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SpecialExpression.RawSqlExpression -&gt; {</b>
+&nbsp;                // Render raw SQL as-is without any escaping or quoting
+<b class="fc">&nbsp;                expr.sql</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderTableName(table: TableName, context: RenderContext): String {
+<b class="fc">&nbsp;        val parts =</b>
+<b class="fc">&nbsp;                listOfNotNull(table.database, table.schema, table.table).joinToString(&quot;.&quot;) {</b>
+<b class="fc">&nbsp;                    context.quote(it)</b>
+&nbsp;                }
+<b class="pc">&nbsp;        return table.alias?.let { &quot;$parts AS ${context.quote(it)}&quot; } ?: parts</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderSubqueryTable(table: SubqueryTable, context: RenderContext): String {
+<b class="fc">&nbsp;        val sql = renderSelectStatement(table.subquery, context)</b>
+<b class="fc">&nbsp;        return &quot;($sql) AS ${context.quote(table.alias)}&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderJoinTable(join: JoinTable, context: RenderContext): String {
+<b class="fc">&nbsp;        val left = renderTableReference(join.left, context)</b>
+<b class="fc">&nbsp;        val right = renderTableReference(join.right, context)</b>
+<b class="fc">&nbsp;        val joinType = join.joinType.value</b>
+<b class="pc">&nbsp;        val condition = join.condition?.let { &quot; ON ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;$left $joinType $right$condition&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderSelectStatement(select: SelectStatement, context: RenderContext): String {
+<b class="fc">&nbsp;        val selectList = select.selectList.joinToString(&quot;, &quot;) { renderSelectItem(it, context) }</b>
+<b class="fc">&nbsp;        val distinct = if (select.distinct) &quot;DISTINCT &quot; else &quot;&quot;</b>
+<b class="fc">&nbsp;        val from = renderTableReference(select.from, context)</b>
+<b class="pc">&nbsp;        val where = select.where?.let { &quot; WHERE ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        val groupBy =</b>
+<b class="pc">&nbsp;                select.groupBy?.let {</b>
+<b class="fc">&nbsp;                    &quot; GROUP BY ${it.joinToString(&quot;, &quot;) { renderExpression(it, context) }}&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;                        ?: &quot;&quot;</b>
+<b class="pc">&nbsp;        val having = select.having?.let { &quot; HAVING ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        val orderBy =</b>
+<b class="pc">&nbsp;                select.orderBy?.let {</b>
+<b class="fc">&nbsp;                    &quot; ORDER BY ${it.joinToString(&quot;, &quot;) { renderOrderByItem(it, context) }}&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;                        ?: &quot;&quot;</b>
+<b class="pc">&nbsp;        val limit = select.limit?.let { renderLimitClause(it, context) } ?: &quot;&quot;</b>
+<b class="pc">&nbsp;        val lock = select.lock?.let { &quot; ${renderLock(it)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;SELECT $distinct$selectList FROM $from$where$groupBy$having$orderBy$limit$lock&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderInsertStatement(insert: InsertStatement, context: RenderContext): String {
+<b class="fc">&nbsp;        val table = renderTableReference(insert.table, context)</b>
+<b class="fc">&nbsp;        val columns = insert.columns.joinToString(&quot;, &quot;) { renderColumnReference(it, context) }</b>
+<b class="fc">&nbsp;        val values = insert.values.joinToString(&quot;, &quot;) { renderExpression(it, context) }</b>
+<b class="pc">&nbsp;        val conflict = insert.conflictResolver?.let { renderConflictResolver(it, context) } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;INSERT INTO $table ($columns) VALUES ($values)$conflict&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderUpdateStatement(update: UpdateStatement, context: RenderContext): String {
+<b class="fc">&nbsp;        val table = renderTableReference(update.table, context)</b>
+<b class="fc">&nbsp;        val assignments = update.assignments.joinToString(&quot;, &quot;) { renderAssignment(it, context) }</b>
+<b class="pc">&nbsp;        val where = update.where?.let { &quot; WHERE ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;UPDATE $table SET $assignments$where&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDeleteStatement(delete: DeleteStatement, context: RenderContext): String {
+<b class="fc">&nbsp;        val table = renderTableReference(delete.table, context)</b>
+<b class="pc">&nbsp;        val where = delete.where?.let { &quot; WHERE ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="fc">&nbsp;        return &quot;DELETE FROM $table$where&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun renderDdlStatement(ddl: DdlStatement, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (ddl) {</b>
+<b class="fc">&nbsp;            is DdlStatement.CreateTableStatement -&gt; renderCreateTable(ddl, context)</b>
+<b class="fc">&nbsp;            is DdlStatement.AlterTableStatement -&gt; renderAlterTable(ddl, context)</b>
+<b class="fc">&nbsp;            is DdlStatement.DropTableStatement -&gt; renderDropTable(ddl, context)</b>
+<b class="fc">&nbsp;            is DdlStatement.CreateIndexStatement -&gt; renderCreateIndex(ddl, context)</b>
+<b class="fc">&nbsp;            is DdlStatement.DropIndexStatement -&gt; renderDropIndex(ddl, context)</b>
+<b class="fc">&nbsp;            is DdlStatement.TruncateTableStatement -&gt; renderTruncateTable(ddl, context)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Helper methods
+&nbsp;
+&nbsp;    protected fun renderSelectItem(item: SelectItem, context: RenderContext): String {
+<b class="fc">&nbsp;        return when (item) {</b>
+<b class="fc">&nbsp;            is SelectItem.ColumnSelectItem -&gt; {</b>
+<b class="fc">&nbsp;                val column = renderColumnReference(item.column, context)</b>
+<b class="pc">&nbsp;                item.alias?.let { &quot;$column AS ${context.quote(it)}&quot; } ?: column</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SelectItem.ExpressionSelectItem -&gt; {</b>
+<b class="fc">&nbsp;                val expr = renderExpression(item.expression, context)</b>
+&nbsp;                // For function call expressions, don&#39;t quote the alias (it&#39;s a simple identifier)
+&nbsp;                // For other expressions, quote the alias
+<b class="fc">&nbsp;                val aliasStr = item.alias?.let { alias -&gt;</b>
+<b class="fc">&nbsp;                    if (item.expression is FunctionCall) {</b>
+<b class="fc">&nbsp;                        &quot; AS $alias&quot;  // Don&#39;t quote function aliases</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        &quot; AS ${context.quote(alias)}&quot;  // Quote other aliases</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                }
+<b class="fc">&nbsp;                &quot;$expr${aliasStr ?: &quot;&quot;}&quot;</b>
+&nbsp;            }
+<b class="fc">&nbsp;            is SelectItem.AllColumnsSelectItem -&gt; {</b>
+<b class="fc">&nbsp;                item.table?.let { &quot;${context.quote(it)}.*&quot; } ?: &quot;*&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderOrderByItem(item: OrderByItem, context: RenderContext): String {
+<b class="fc">&nbsp;        val expr = renderExpression(item.expression, context)</b>
+<b class="fc">&nbsp;        val direction =</b>
+<b class="fc">&nbsp;                when (item.direction) {</b>
+<b class="fc">&nbsp;                    SortType.ASC -&gt; &quot;ASC&quot;</b>
+<b class="fc">&nbsp;                    SortType.DESC -&gt; &quot;DESC&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;        return &quot;$expr $direction&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected open fun renderLimitClause(limit: LimitClause, context: RenderContext): String {
+<b class="nc">&nbsp;        val offset = if (limit.offset != null) &quot; OFFSET ${limit.offset}&quot; else &quot;&quot;</b>
+<b class="nc">&nbsp;        return &quot; LIMIT ${limit.limit}$offset&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderAssignment(assignment: Assignment, context: RenderContext): String {
+<b class="fc">&nbsp;        val column = renderColumnReference(assignment.column, context)</b>
+<b class="fc">&nbsp;        val value = renderExpression(assignment.value, context)</b>
+<b class="fc">&nbsp;        return &quot;$column = $value&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderWindowClause(window: WindowClause, context: RenderContext): String {
+<b class="nc">&nbsp;        val partitionBy =</b>
+<b class="nc">&nbsp;                window.partitionBy?.let {</b>
+<b class="nc">&nbsp;                    &quot;PARTITION BY ${it.joinToString(&quot;, &quot;) { renderExpression(it, context) }}&quot;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                        ?: &quot;&quot;</b>
+<b class="nc">&nbsp;        val orderBy =</b>
+<b class="nc">&nbsp;                window.orderBy?.let {</b>
+<b class="nc">&nbsp;                    &quot;ORDER BY ${it.joinToString(&quot;, &quot;) { renderOrderByItem(it, context) }}&quot;</b>
+&nbsp;                }
+<b class="nc">&nbsp;                        ?: &quot;&quot;</b>
+<b class="nc">&nbsp;        val frame = window.frame?.let { renderWindowFrame(it, context) } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;        return listOfNotNull(partitionBy, orderBy, frame).joinToString(&quot; &quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderWindowFrame(frame: WindowFrame, context: RenderContext): String {
+<b class="nc">&nbsp;        return when (frame) {</b>
+<b class="nc">&nbsp;            is WindowFrame.BetweenFrame -&gt; {</b>
+<b class="nc">&nbsp;                val type = frame.type.name</b>
+<b class="nc">&nbsp;                val start = renderFrameBoundary(frame.start, context)</b>
+<b class="nc">&nbsp;                val end = renderFrameBoundary(frame.end, context)</b>
+<b class="nc">&nbsp;                val exclude = frame.exclude?.let { &quot; EXCLUDE ${it.name}&quot; } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;                &quot;$type BETWEEN $start AND $end$exclude&quot;</b>
+&nbsp;            }
+<b class="nc">&nbsp;            is WindowFrame.SingleBoundaryFrame -&gt; {</b>
+<b class="nc">&nbsp;                val type = frame.type.name</b>
+<b class="nc">&nbsp;                val boundary = renderFrameBoundary(frame.boundary, context)</b>
+<b class="nc">&nbsp;                &quot;$type $boundary&quot;</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderFrameBoundary(
+&nbsp;            boundary: WindowFrame.FrameBoundary,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        return when (boundary) {</b>
+<b class="nc">&nbsp;            is WindowFrame.FrameBoundary.UnboundedPreceding -&gt; &quot;UNBOUNDED PRECEDING&quot;</b>
+<b class="nc">&nbsp;            is WindowFrame.FrameBoundary.Preceding -&gt;</b>
+<b class="nc">&nbsp;                    &quot;${renderExpression(boundary.value, context)} PRECEDING&quot;</b>
+<b class="nc">&nbsp;            is WindowFrame.FrameBoundary.CurrentRow -&gt; &quot;CURRENT ROW&quot;</b>
+<b class="nc">&nbsp;            is WindowFrame.FrameBoundary.Following -&gt;</b>
+<b class="nc">&nbsp;                    &quot;${renderExpression(boundary.value, context)} FOLLOWING&quot;</b>
+<b class="nc">&nbsp;            is WindowFrame.FrameBoundary.UnboundedFollowing -&gt; &quot;UNBOUNDED FOLLOWING&quot;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    // Legacy table reference support
+&nbsp;    protected fun renderSimpleTableReference(
+&nbsp;            table: TableReferenceImpl.SimpleTableReference,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val name = context.quote(table.tableName)</b>
+<b class="nc">&nbsp;        return table.alias?.let { &quot;$name AS ${context.quote(it)}&quot; } ?: name</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderSubqueryTableReference(
+&nbsp;            table: TableReferenceImpl.SubqueryTableReference,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val sql = renderSelectStatement(table.subquery, context)</b>
+<b class="nc">&nbsp;        return &quot;($sql) AS ${context.quote(table.alias)}&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderJoinedTableReference(
+&nbsp;            table: TableReferenceImpl.JoinedTableReference,
+&nbsp;            context: RenderContext
+&nbsp;    ): String {
+<b class="nc">&nbsp;        val base = renderTableReference(table.baseTable, context)</b>
+<b class="nc">&nbsp;        val joins = table.joins.joinToString(&quot; &quot;) { renderJoin(it, context) }</b>
+<b class="nc">&nbsp;        return &quot;$base $joins&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun renderJoin(join: Join, context: RenderContext): String {
+<b class="nc">&nbsp;        val table = renderTableReference(join.table, context)</b>
+<b class="nc">&nbsp;        val joinType = join.type.value</b>
+<b class="nc">&nbsp;        val condition = join.on?.let { &quot; ON ${renderExpression(it, context)}&quot; } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;        return &quot;$joinType $table$condition&quot;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // Abstract methods for database-specific implementations
+&nbsp;
+&nbsp;    protected abstract fun renderStringLiteral(value: String): String
+&nbsp;    protected abstract fun renderDateLiteral(value: String): String
+&nbsp;    protected abstract fun renderTimeLiteral(value: String): String
+&nbsp;    protected abstract fun renderTimestampLiteral(value: String): String
+&nbsp;    protected abstract fun renderLock(lock: com.kotlinorm.enums.PessimisticLock): String
+&nbsp;    protected abstract fun renderConflictResolver(
+&nbsp;            resolver: com.kotlinorm.database.ConflictResolver,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    protected abstract fun renderCreateTable(
+&nbsp;            create: DdlStatement.CreateTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    protected abstract fun renderAlterTable(
+&nbsp;            alter: DdlStatement.AlterTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    protected abstract fun renderDropTable(
+&nbsp;            drop: DdlStatement.DropTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    protected abstract fun renderCreateIndex(
+&nbsp;            create: DdlStatement.CreateIndexStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    protected abstract fun renderDropIndex(
+&nbsp;            drop: DdlStatement.DropIndexStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    protected abstract fun renderTruncateTable(
+&nbsp;            truncate: DdlStatement.TruncateTableStatement,
+&nbsp;            context: RenderContext
+&nbsp;    ): String
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Renders a UNION statement.
+&nbsp;     * Default implementation combines multiple SELECT statements with UNION or UNION ALL.
+&nbsp;     * Parameters are pre-bound with unique names (e.g., id, id@1, id@2).
+&nbsp;     * This method renames parameters in the rendered SQL to match the pre-bound names.
+&nbsp;     */
+&nbsp;    override fun renderUnionStatement(union: UnionStatement, context: RenderContext): String {
+<b class="fc">&nbsp;        val parts = mutableListOf&lt;String&gt;()</b>
+<b class="fc">&nbsp;        val parameterCounter = mutableMapOf&lt;String, Int&gt;()</b>
+&nbsp;        
+&nbsp;        // Initialize parameter counter from pre-bound parameters
+<b class="fc">&nbsp;        context.boundParameters.keys.forEach { paramName -&gt;</b>
+&nbsp;            // Extract base name (before @N suffix)
+<b class="fc">&nbsp;            val baseName = paramName.substringBefore(&#39;@&#39;)</b>
+<b class="fc">&nbsp;            val suffix = paramName.substringAfter(&#39;@&#39;, &quot;&quot;)</b>
+<b class="fc">&nbsp;            if (suffix.isNotEmpty()) {</b>
+<b class="pc">&nbsp;                val count = suffix.toIntOrNull() ?: 0</b>
+<b class="pc">&nbsp;                parameterCounter[baseName] = maxOf(parameterCounter[baseName] ?: 0, count)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                parameterCounter[baseName] = 0</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;        
+&nbsp;        // Render each SELECT statement
+<b class="fc">&nbsp;        union.queries.forEachIndexed { index, selectStatement -&gt;</b>
+<b class="fc">&nbsp;            if (index &gt; 0) {</b>
+<b class="fc">&nbsp;                parts.add(if (union.unionAll) &quot;UNION ALL&quot; else &quot;UNION&quot;)</b>
+&nbsp;            }
+&nbsp;            
+&nbsp;            // Render the SELECT statement
+<b class="fc">&nbsp;            var querySql = renderSelectStatement(selectStatement, context)</b>
+&nbsp;            
+&nbsp;            // For subsequent queries (index &gt; 0), rename parameters in the SQL
+<b class="fc">&nbsp;            if (index &gt; 0) {</b>
+&nbsp;                // Extract parameter names from the rendered SQL
+<b class="fc">&nbsp;                val parameterPattern = Regex(&quot;:([a-zA-Z_][a-zA-Z0-9_]*)&quot;)</b>
+<b class="fc">&nbsp;                val matches = parameterPattern.findAll(querySql).toList()</b>
+&nbsp;                
+&nbsp;                // Build a map of old parameter names to new parameter names
+<b class="fc">&nbsp;                val parameterRenameMap = mutableMapOf&lt;String, String&gt;()</b>
+&nbsp;                
+<b class="fc">&nbsp;                matches.forEach { match -&gt;</b>
+<b class="fc">&nbsp;                    val paramName = match.groupValues[1]</b>
+&nbsp;                    
+&nbsp;                    // Skip if already processed
+<b class="pc">&nbsp;                    if (parameterRenameMap.containsKey(paramName)) {</b>
+&nbsp;                        return@forEach
+&nbsp;                    }
+&nbsp;                    
+&nbsp;                    // Find the renamed parameter name in context.boundParameters
+&nbsp;                    // For query index N, parameter &quot;id&quot; should be renamed to &quot;id@N&quot; (if N &gt; 0)
+<b class="fc">&nbsp;                    val expectedName = if (index == 1) {</b>
+<b class="fc">&nbsp;                        &quot;$paramName@1&quot;</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        &quot;$paramName@$index&quot;</b>
+&nbsp;                    }
+&nbsp;                    
+<b class="fc">&nbsp;                    if (context.boundParameters.containsKey(expectedName)) {</b>
+<b class="fc">&nbsp;                        parameterRenameMap[paramName] = expectedName</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                }</b>
+&nbsp;                
+&nbsp;                // Replace parameter names in the SQL string
+<b class="fc">&nbsp;                parameterRenameMap.forEach { (oldName, newName) -&gt;</b>
+&nbsp;                    // Replace :oldName with :newName
+&nbsp;                    // Use regex with word boundaries to avoid replacing partial matches
+<b class="fc">&nbsp;                    querySql = querySql.replace(Regex(&quot;:$oldName\\b&quot;), &quot;:$newName&quot;)</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            }
+&nbsp;            
+&nbsp;            // Wrap each SELECT in parentheses for clarity
+<b class="fc">&nbsp;            parts.add(&quot;($querySql)&quot;)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;        
+<b class="fc">&nbsp;        val sql = StringBuilder(parts.joinToString(&quot; &quot;))</b>
+&nbsp;        
+&nbsp;        // Add ORDER BY if present (applies to entire union result)
+<b class="fc">&nbsp;        if (!union.orderBy.isNullOrEmpty()) {</b>
+<b class="fc">&nbsp;            sql.append(&quot; ORDER BY &quot;)</b>
+<b class="fc">&nbsp;            sql.append(union.orderBy.joinToString(&quot;, &quot;) { orderByItem -&gt;</b>
+<b class="fc">&nbsp;                val expr = renderExpression(orderByItem.expression, context)</b>
+<b class="fc">&nbsp;                val direction = when (orderByItem.direction) {</b>
+<b class="fc">&nbsp;                    SortType.ASC -&gt; &quot;ASC&quot;</b>
+<b class="fc">&nbsp;                    SortType.DESC -&gt; &quot;DESC&quot;</b>
+&nbsp;                }
+<b class="fc">&nbsp;                &quot;$expr $direction&quot;</b>
+&nbsp;            })
+&nbsp;        }
+&nbsp;        
+&nbsp;        // Add LIMIT if present (applies to entire union result)
+<b class="fc">&nbsp;        if (union.limit != null) {</b>
+<b class="fc">&nbsp;            sql.append(renderLimitClause(union.limit, context))</b>
+&nbsp;        }
+&nbsp;        
+<b class="fc">&nbsp;        return sql.toString()</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

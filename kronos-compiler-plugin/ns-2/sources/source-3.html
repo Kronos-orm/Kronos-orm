@@ -1,0 +1,292 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosIrGenerationExtension</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.plugin</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosIrGenerationExtension (com.kotlinorm.compiler.plugin)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosIrGenerationExtension</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (18/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.2%
+  </span>
+  <span class="absValue">
+    (60/63)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (320/360)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.plugin
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.ErrorReporter
+&nbsp;import com.kotlinorm.compiler.transformers.KClassMapGenerator
+&nbsp;import com.kotlinorm.compiler.transformers.KronosParserTransformer
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+&nbsp;import org.jetbrains.kotlin.ir.util.BodyPrintingStrategy
+&nbsp;import org.jetbrains.kotlin.ir.util.CustomKotlinLikeDumpStrategy
+&nbsp;import org.jetbrains.kotlin.ir.util.FakeOverridesStrategy
+&nbsp;import org.jetbrains.kotlin.ir.util.KotlinLikeDumpOptions
+&nbsp;import org.jetbrains.kotlin.ir.util.LabelPrintingStrategy
+&nbsp;import org.jetbrains.kotlin.ir.util.dump
+&nbsp;import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+&nbsp;import java.io.File
+&nbsp;
+&nbsp;/**
+&nbsp; * IR generation extension for the Kronos compiler plugin
+&nbsp; *
+&nbsp; * This is the main entry point for IR transformations
+&nbsp; *
+&nbsp; * @property messageCollector Message collector for compilation messages
+&nbsp; * @property dumpIr Whether IR dump is enabled
+&nbsp; * @property dumpIrPath Path to save IR dump (default: build/tmp/kronosDebug)
+&nbsp; * @property dumpIrMode IR dump mode: &quot;kotlinLike&quot; or &quot;common&quot;
+&nbsp; * @property dumpIrFiles Comma-separated file patterns to filter (null means dump all files)
+&nbsp; */
+<b class="fc">&nbsp;class KronosIrGenerationExtension(</b>
+<b class="fc">&nbsp;    private val messageCollector: MessageCollector,</b>
+<b class="fc">&nbsp;    private val dumpIr: Boolean,</b>
+<b class="fc">&nbsp;    private val dumpIrPath: String,</b>
+<b class="fc">&nbsp;    private val dumpIrMode: String,</b>
+<b class="fc">&nbsp;    private val dumpIrFiles: String?</b>
+&nbsp;) : IrGenerationExtension {
+&nbsp;
+&nbsp;    override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+<b class="fc">&nbsp;        println(&quot;[Kronos] Kronos compiler plugin K2 initialized&quot;)</b>
+&nbsp;        
+&nbsp;        // Apply transformations
+<b class="fc">&nbsp;        val transformer = KronosParserTransformer(pluginContext, messageCollector)</b>
+<b class="fc">&nbsp;        moduleFragment.transform(transformer, null)</b>
+&nbsp;
+&nbsp;        // Process @KronosInit call-site lambdas (for test compilation where the
+&nbsp;        // @KronosInit function declaration is already compiled in the main jar)
+<b class="fc">&nbsp;        val errorReporter = ErrorReporter(messageCollector)</b>
+<b class="fc">&nbsp;        transformer.initCallSiteLambdas.forEach { lambdaFunction -&gt;</b>
+<b class="fc">&nbsp;            KClassMapGenerator.generateForCallSite(</b>
+<b class="fc">&nbsp;                pluginContext, lambdaFunction, transformer.kPojoClasses, errorReporter</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;        
+&nbsp;        // Dump IR if enabled
+<b class="fc">&nbsp;        if (dumpIr) {</b>
+<b class="fc">&nbsp;            println(&quot;[Kronos] IR dump enabled - mode: $dumpIrMode, path: $dumpIrPath&quot;)</b>
+<b class="fc">&nbsp;            if (dumpIrFiles != null) {</b>
+<b class="fc">&nbsp;                println(&quot;[Kronos] Filtering files: $dumpIrFiles&quot;)</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                println(&quot;[Kronos] Dumping all files&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;            dumpIR(moduleFragment)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Dumps the IR to files for debugging
+&nbsp;     *
+&nbsp;     * @param moduleFragment The module fragment to dump
+&nbsp;     */
+&nbsp;    private fun dumpIR(moduleFragment: IrModuleFragment) {
+<b class="pc">&nbsp;        val filePatterns = dumpIrFiles?.split(&quot;,&quot;)?.map { it.trim() }</b>
+<b class="fc">&nbsp;        var dumpedFiles = 0</b>
+&nbsp;        
+<b class="fc">&nbsp;        moduleFragment.files.forEach { file -&gt;</b>
+&nbsp;            try {
+<b class="fc">&nbsp;                val fullPath = file.fileEntry.name</b>
+<b class="fc">&nbsp;                val fileName = File(fullPath).name</b>
+&nbsp;                
+&nbsp;                // Check if this file matches the filter
+<b class="fc">&nbsp;                if (filePatterns != null &amp;&amp; !matchesAnyPattern(fileName, filePatterns)) {</b>
+&nbsp;                    return@forEach
+&nbsp;                }
+&nbsp;                
+&nbsp;                // Create IR dump directory if it doesn&#39;t exist
+<b class="fc">&nbsp;                val dumpDir = File(dumpIrPath)</b>
+<b class="fc">&nbsp;                if (!dumpDir.exists()) {</b>
+<b class="fc">&nbsp;                    dumpDir.mkdirs()</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                val fileExtension = if (dumpIrMode.lowercase() == &quot;kotlinlike&quot;) &quot;.kt&quot; else &quot;.txt&quot;</b>
+&nbsp;                
+<b class="fc">&nbsp;                val outputFileName = fileName.removeSuffix(&quot;.kt&quot;) + fileExtension</b>
+<b class="fc">&nbsp;                val outputFile = File(dumpDir, outputFileName)</b>
+&nbsp;
+<b class="fc">&nbsp;                val irDump = when (dumpIrMode.lowercase()) {</b>
+<b class="fc">&nbsp;                    &quot;kotlinlike&quot; -&gt; {</b>
+&nbsp;                        // Kotlin-like format
+<b class="fc">&nbsp;                        val dumpOptions = KotlinLikeDumpOptions(</b>
+<b class="fc">&nbsp;                            CustomKotlinLikeDumpStrategy.Default,</b>
+<b class="fc">&nbsp;                            printRegionsPerFile = true,</b>
+<b class="fc">&nbsp;                            printFileName = true,</b>
+<b class="fc">&nbsp;                            printFilePath = true,</b>
+<b class="fc">&nbsp;                            useNamedArguments = true,</b>
+<b class="fc">&nbsp;                            labelPrintingStrategy = LabelPrintingStrategy.ALWAYS,</b>
+<b class="fc">&nbsp;                            printFakeOverridesStrategy = FakeOverridesStrategy.ALL,</b>
+<b class="fc">&nbsp;                            bodyPrintingStrategy = BodyPrintingStrategy.PRINT_BODIES,</b>
+<b class="fc">&nbsp;                            inferElseBranches = false,</b>
+<b class="fc">&nbsp;                            printMemberDeclarations = true,</b>
+<b class="fc">&nbsp;                            printUnitReturnType = true,</b>
+<b class="fc">&nbsp;                            stableOrder = true</b>
+&nbsp;                        )
+<b class="fc">&nbsp;                        file.module.dumpKotlinLike(dumpOptions)</b>
+&nbsp;                    }
+<b class="pc">&nbsp;                    &quot;common&quot; -&gt; {</b>
+&nbsp;                        // Plain IR text format
+<b class="fc">&nbsp;                        file.dump()</b>
+&nbsp;                    }
+&nbsp;                    else -&gt; {
+<b class="nc">&nbsp;                        println(&quot;[Kronos] Warning: Unknown dump mode &#39;$dumpIrMode&#39;, using &#39;common&#39; mode&quot;)</b>
+<b class="nc">&nbsp;                        file.dump()</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                
+<b class="fc">&nbsp;                outputFile.writeText(irDump)</b>
+<b class="fc">&nbsp;                dumpedFiles++</b>
+&nbsp;            } catch (e: RuntimeException) {
+<b class="nc">&nbsp;                println(&quot;[Kronos] Warning: Failed to dump IR for ${file.fileEntry.name}: ${e.message}&quot;)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;        
+<b class="fc">&nbsp;        println(&quot;[Kronos] IR dump complete: $dumpedFiles file(s) saved to $dumpIrPath&quot;)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    /**
+&nbsp;     * Checks if a filename matches any of the given patterns
+&nbsp;     * Supports simple wildcard patterns with * (e.g., &quot;*Service.kt&quot;, &quot;User*.kt&quot;)
+&nbsp;     */
+&nbsp;    private fun matchesAnyPattern(fileName: String, patterns: List&lt;String&gt;): Boolean {
+<b class="fc">&nbsp;        return patterns.any { pattern -&gt;</b>
+<b class="fc">&nbsp;            val regex = pattern</b>
+<b class="fc">&nbsp;                .replace(&quot;.&quot;, &quot;\\.&quot;)</b>
+<b class="fc">&nbsp;                .replace(&quot;*&quot;, &quot;.*&quot;)</b>
+<b class="fc">&nbsp;                .toRegex()</b>
+<b class="fc">&nbsp;            regex.matches(fileName)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:26</div>
+</div>
+</body>
+</html>

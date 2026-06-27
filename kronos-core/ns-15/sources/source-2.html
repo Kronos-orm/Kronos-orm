@@ -1,0 +1,297 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-core Coverage Report > PolymerizationFunctionBuilder</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-core<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.functions.bundled.builders</a>
+</div>
+
+<h1>Coverage Summary for Class: PolymerizationFunctionBuilder (com.kotlinorm.functions.bundled.builders)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">PolymerizationFunctionBuilder</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    47.5%
+  </span>
+  <span class="absValue">
+    (19/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.4%
+  </span>
+  <span class="absValue">
+    (29/45)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.1%
+  </span>
+  <span class="absValue">
+    (233/388)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">PolymerizationFunctionBuilder$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    47.5%
+  </span>
+  <span class="absValue">
+    (19/40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.4%
+  </span>
+  <span class="absValue">
+    (29/45)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60.1%
+  </span>
+  <span class="absValue">
+    (233/388)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2025 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.functions.bundled.builders
+&nbsp;
+&nbsp;import com.kotlinorm.ast.Expression
+&nbsp;import com.kotlinorm.ast.FunctionCall
+&nbsp;import com.kotlinorm.ast.RenderContext
+&nbsp;import com.kotlinorm.beans.dsl.FunctionField
+&nbsp;import com.kotlinorm.enums.DBType
+&nbsp;import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildFields
+&nbsp;import com.kotlinorm.interfaces.FunctionBuilder
+&nbsp;import com.kotlinorm.interfaces.KronosDataSourceWrapper
+&nbsp;
+&nbsp;object PolymerizationFunctionBuilder : FunctionBuilder {
+<b class="fc">&nbsp;    private val all = arrayOf(</b>
+<b class="fc">&nbsp;        DBType.Mysql, DBType.Postgres, DBType.SQLite, DBType.Oracle, DBType.Mssql</b>
+&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    override val supportFunctionNames: (String) -&gt; Array&lt;DBType&gt; = {</b>
+<b class="fc">&nbsp;        when (it.lowercase()) {</b>
+&nbsp;            /*
+&nbsp;            * count
+&nbsp;            * 返回某列的行数
+&nbsp;            * return the number of rows in a column
+&nbsp;            * exp: count(id) =&gt; 10
+&nbsp;            * Mysql: COUNT(x) SQLite: COUNT(x) Oracle: COUNT(x) Postgres: COUNT(x) Mssql: COUNT(x)
+&nbsp;            */
+<b class="fc">&nbsp;            &quot;count&quot; -&gt; all</b>
+&nbsp;            /*
+&nbsp;            * sum
+&nbsp;            * 返回某列的总和
+&nbsp;            * return the sum of a column
+&nbsp;            * exp: sum(id) =&gt; 55
+&nbsp;            * Mysql: SUM(x) SQLite: SUM(x) Oracle: SUM(x) Postgres: SUM(x) Mssql: SUM(x)
+&nbsp;            */
+<b class="fc">&nbsp;            &quot;sum&quot; -&gt; all</b>
+&nbsp;            /*
+&nbsp;            * avg
+&nbsp;            * 返回某列的平均值
+&nbsp;            * return the average value of a column
+&nbsp;            * exp: avg(id) =&gt; 5.5
+&nbsp;            * Mysql: AVG(x) SQLite: AVG(x) Oracle: AVG(x) Postgres: AVG(x) Mssql: AVG(x)
+&nbsp;            */
+<b class="fc">&nbsp;            &quot;avg&quot; -&gt; all</b>
+&nbsp;            /*
+&nbsp;            * max
+&nbsp;            * 返回某列的最大值
+&nbsp;            * return the maximum value of a column
+&nbsp;            * exp: max(id) =&gt; 10
+&nbsp;            * Mysql: MAX(x) SQLite: MAX(x) Oracle: MAX(x) Postgres: MAX(x) Mssql: MAX(x)
+&nbsp;            */
+<b class="fc">&nbsp;            &quot;max&quot; -&gt; all</b>
+&nbsp;            /*
+&nbsp;            * min
+&nbsp;            * 返回某列的最小值
+&nbsp;            * return the minimum value of a column
+&nbsp;            * exp: min(id) =&gt; 1
+&nbsp;            * Mysql: MIN(x) SQLite: MIN(x) Oracle: MIN(x) Postgres: MIN(x) Mssql: MIN(x)
+&nbsp;            */
+<b class="fc">&nbsp;            &quot;min&quot; -&gt; all</b>
+&nbsp;            /*
+&nbsp;            * groupConcat
+&nbsp;            * 返回一组值的连接结果
+&nbsp;            * return a concatenated string
+&nbsp;            * exp: groupConcat(id) =&gt; 1,2,3,4,5,6,7,8,9,10
+&nbsp;            * Mysql: GROUP_CONCAT(x) SQLite: GROUP_CONCAT(x) Oracle: GROUP_CONCAT(x) Postgres: STRING_AGG(x) Mssql: STRING_AGG(x)
+&nbsp;            */
+<b class="fc">&nbsp;            &quot;groupconcat&quot; -&gt; all</b>
+<b class="fc">&nbsp;            else -&gt; emptyArray()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun transform(field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean): String {
+<b class="fc">&nbsp;        field.functionName = when (field.functionName) {</b>
+<b class="fc">&nbsp;            &quot;groupConcat&quot; -&gt; {</b>
+<b class="fc">&nbsp;                when (dataSource.dbType) {</b>
+<b class="fc">&nbsp;                    DBType.Postgres, DBType.Mssql -&gt; &quot;STRING_AGG&quot;</b>
+<b class="fc">&nbsp;                    else -&gt; &quot;GROUP_CONCAT&quot;</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; field.functionName.uppercase()</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return buildFields(field.functionName, field.name.takeIf { showAlias } ?: &quot;&quot;, field.fields, dataSource, showTable)</b>
+&nbsp;    }
+&nbsp;    
+&nbsp;    override fun transformAst(
+&nbsp;        function: FunctionCall,
+&nbsp;        context: RenderContext,
+&nbsp;        renderExpression: (Expression, RenderContext) -&gt; String
+&nbsp;    ): String {
+<b class="pc">&nbsp;        val dbType = context.dbType ?: return null.toString()</b>
+<b class="fc">&nbsp;        val funcName = function.functionName.lowercase()</b>
+&nbsp;        
+<b class="fc">&nbsp;        val functionName = when (funcName) {</b>
+<b class="pc">&nbsp;            &quot;groupconcat&quot; -&gt; {</b>
+<b class="nc">&nbsp;                when (dbType) {</b>
+<b class="nc">&nbsp;                    DBType.Postgres, DBType.Mssql -&gt; &quot;STRING_AGG&quot;</b>
+<b class="nc">&nbsp;                    else -&gt; &quot;GROUP_CONCAT&quot;</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            else -&gt; funcName.uppercase()</b>
+&nbsp;        }
+&nbsp;        
+&nbsp;        // Render arguments
+<b class="fc">&nbsp;        val args = function.arguments.joinToString(&quot;, &quot;) { renderExpression(it, context) }</b>
+<b class="pc">&nbsp;        val distinct = if (function.distinct) &quot;DISTINCT &quot; else &quot;&quot;</b>
+<b class="pc">&nbsp;        val filter = function.filter?.let { &quot; FILTER (WHERE ${renderExpression(it, context)})&quot; } ?: &quot;&quot;</b>
+<b class="pc">&nbsp;        val over = function.over?.let { </b>
+<b class="nc">&nbsp;            val partitionBy = it.partitionBy?.let { pb -&gt;</b>
+<b class="nc">&nbsp;                &quot;PARTITION BY ${pb.joinToString(&quot;, &quot;) { renderExpression(it, context) }}&quot;</b>
+<b class="nc">&nbsp;            } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;            val orderBy = it.orderBy?.let { ob -&gt;</b>
+<b class="nc">&nbsp;                &quot;ORDER BY ${ob.joinToString(&quot;, &quot;) { item -&gt;</b>
+<b class="nc">&nbsp;                    val expr = renderExpression(item.expression, context)</b>
+<b class="nc">&nbsp;                    val direction = when (item.direction) {</b>
+<b class="nc">&nbsp;                        com.kotlinorm.enums.SortType.ASC -&gt; &quot;ASC&quot;</b>
+<b class="nc">&nbsp;                        com.kotlinorm.enums.SortType.DESC -&gt; &quot;DESC&quot;</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    &quot;$expr $direction&quot;</b>
+<b class="nc">&nbsp;                }}&quot;</b>
+<b class="nc">&nbsp;            } ?: &quot;&quot;</b>
+<b class="nc">&nbsp;            &quot; OVER (${listOfNotNull(partitionBy, orderBy).joinToString(&quot; &quot;)})&quot;</b>
+<b class="fc">&nbsp;        } ?: &quot;&quot;</b>
+&nbsp;        
+<b class="fc">&nbsp;        return &quot;$functionName($distinct$args)$filter$over&quot;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:25</div>
+</div>
+</body>
+</html>

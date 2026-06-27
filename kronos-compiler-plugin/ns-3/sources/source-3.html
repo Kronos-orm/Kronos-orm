@@ -1,0 +1,688 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>kronos-compiler-plugin Coverage Report > KronosClassBodyGeneratorKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: kronos-compiler-plugin<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.kotlinorm.compiler.transformers</a>
+</div>
+
+<h1>Coverage Summary for Class: KronosClassBodyGeneratorKt (com.kotlinorm.compiler.transformers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">KronosClassBodyGeneratorKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (22/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    64.4%
+  </span>
+  <span class="absValue">
+    (67/104)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.5%
+  </span>
+  <span class="absValue">
+    (235/241)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.5%
+  </span>
+  <span class="absValue">
+    (1566/1639)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;/**
+&nbsp; * Copyright 2022-2026 kronos-orm
+&nbsp; *
+&nbsp; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+&nbsp; * you may not use this file except in compliance with the License.
+&nbsp; * You may obtain a copy of the License at
+&nbsp; *
+&nbsp; *     http://www.apache.org/licenses/LICENSE-2.0
+&nbsp; *
+&nbsp; * Unless required by applicable law or agreed to in writing, software
+&nbsp; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+&nbsp; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+&nbsp; * See the License for the specific language governing permissions and
+&nbsp; * limitations under the License.
+&nbsp; */
+&nbsp;
+&nbsp;package com.kotlinorm.compiler.transformers
+&nbsp;
+&nbsp;import com.kotlinorm.compiler.core.buildFieldFromProperty
+&nbsp;import com.kotlinorm.compiler.core.fieldClassSymbol
+&nbsp;import com.kotlinorm.compiler.core.fieldConstructorSymbol
+&nbsp;import com.kotlinorm.compiler.core.isColumnType
+&nbsp;import com.kotlinorm.compiler.core.getSafeValueSymbol
+&nbsp;import com.kotlinorm.compiler.core.kronosCommonStrategyConstructorSymbol
+&nbsp;import com.kotlinorm.compiler.core.kronosObjectSymbol
+&nbsp;import com.kotlinorm.compiler.core.k2dbFunctionSymbol
+&nbsp;import com.kotlinorm.compiler.core.tableNamingStrategyGetterSymbol
+&nbsp;import com.kotlinorm.compiler.core.kClassSymbol
+&nbsp;import com.kotlinorm.compiler.core.pairClassSymbol
+&nbsp;import com.kotlinorm.compiler.utils.AnnotationFqNames
+&nbsp;import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.TableAnnotationFqName
+&nbsp;import com.kotlinorm.compiler.utils.dispatchReceiver
+&nbsp;import com.kotlinorm.compiler.utils.getKDocString
+&nbsp;import com.kotlinorm.compiler.utils.invoke
+&nbsp;import com.kotlinorm.compiler.utils.valueParameters
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+&nbsp;import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBoolean
+&nbsp;import org.jetbrains.kotlin.ir.builders.irBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irCall
+&nbsp;import org.jetbrains.kotlin.ir.builders.irElseBranch
+&nbsp;import org.jetbrains.kotlin.ir.builders.irEquals
+&nbsp;import org.jetbrains.kotlin.ir.builders.irExprBody
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGet
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGetField
+&nbsp;import org.jetbrains.kotlin.ir.builders.irGetObject
+&nbsp;import org.jetbrains.kotlin.ir.builders.irNull
+&nbsp;import org.jetbrains.kotlin.ir.builders.irReturn
+&nbsp;import org.jetbrains.kotlin.ir.builders.irSetField
+&nbsp;import org.jetbrains.kotlin.ir.builders.irString
+&nbsp;import org.jetbrains.kotlin.ir.builders.irVararg
+&nbsp;import org.jetbrains.kotlin.ir.builders.irWhen
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrFunction
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrProperty
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConst
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpression
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrTypeOperator
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrTypeOperatorCallImpl
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+&nbsp;import org.jetbrains.kotlin.ir.types.classFqName
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.types.makeNullable
+&nbsp;import org.jetbrains.kotlin.ir.util.isNullable
+&nbsp;import org.jetbrains.kotlin.ir.types.typeWith
+&nbsp;import org.jetbrains.kotlin.ir.util.constructors
+&nbsp;import org.jetbrains.kotlin.ir.util.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.getSimpleFunction
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.ir.util.isVararg
+&nbsp;import org.jetbrains.kotlin.ir.util.properties
+&nbsp;import org.jetbrains.kotlin.ir.util.superTypes
+&nbsp;import org.jetbrains.kotlin.name.CallableId
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;
+&nbsp;/**
+&nbsp; * Kronos Class Body Generator
+&nbsp; *
+&nbsp; * Provides `DeclarationIrBuilder` extension functions that generate the IR bodies
+&nbsp; * for each KPojo interface method implemented by [KronosIrClassTransformer].
+&nbsp; *
+&nbsp; * Each function produces an `IrBlockBody` that is assigned to the corresponding
+&nbsp; * fake-override declaration:
+&nbsp; * - [createKronosColumns] — builds a `listOf(Field(...), ...)` expression.
+&nbsp; * - [createTableName] — returns the table name derived from `@Table` or the class name.
+&nbsp; * - [createTableComment] — returns the table comment string.
+&nbsp; * - [createKronosTableIndex] — returns the list of table indexes.
+&nbsp; * - [createKronosSpecialField] — returns the field annotated with a special annotation, or null.
+&nbsp; * - [createKClassFunction] — returns the `KClass` reference of the class.
+&nbsp; * - [createToDataMap] — serializes all column properties into a `MutableMap`.
+&nbsp; * - [createPropertyGetter] / [createPropertySetter] — dynamic property access by name.
+&nbsp; * - [createFromMapData] — populates the instance from a `Map&lt;String, Any?&gt;`.
+&nbsp; */
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Body generation functions — extension on DeclarationIrBuilder
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun kronosColumns() = listOf(Field(...), ...)
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createKronosColumns(irClass: IrClass): IrBlockBody {
+<b class="fc">&nbsp;    val fields = irClass.properties</b>
+<b class="fc">&nbsp;        .filter { !it.isIgnoredForAll() }</b>
+<b class="fc">&nbsp;        .map { buildFieldFromProperty(it) }</b>
+<b class="fc">&nbsp;        .toList()</b>
+<b class="fc">&nbsp;    return irBlockBody {</b>
+<b class="fc">&nbsp;        +irReturn(buildListOf(fieldClassSymbol.defaultType, fields))</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: var __tableName: String = &quot;table_name&quot;
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(_: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createTableName(irClass: IrClass): IrExpressionBody =
+<b class="fc">&nbsp;    irExprBody(getTableNameExpr(irClass))</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: var __tableComment: String = &quot;extracted KDoc comment&quot;
+&nbsp; */
+&nbsp;context(_: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createTableComment(irClass: IrClass): IrExpressionBody =
+<b class="fc">&nbsp;    irExprBody(irClass.getKDocString())</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun kronosTableIndex() = listOf(KTableIndex(...), ...)
+&nbsp; *
+&nbsp; * Reads @TableIndex annotations from the class and constructs KTableIndex instances.
+&nbsp; * The @TableIndex annotation parameters (name, columns, type, method, concurrently)
+&nbsp; * map directly to the KTableIndex constructor parameters.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createKronosTableIndex(irClass: IrClass): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val kTableIndexClassId = ClassId.topLevel(FqName(&quot;com.kotlinorm.beans.dsl.KTableIndex&quot;))</b>
+<b class="pc">&nbsp;        val kTableIndexSymbol = context.referenceClass(kTableIndexClassId)</b>
+<b class="nc">&nbsp;            ?: error(&quot;KTableIndex class not found&quot;)</b>
+<b class="fc">&nbsp;        val kTableIndexConstructor = kTableIndexSymbol.constructors.first()</b>
+<b class="fc">&nbsp;        val listType = kTableIndexSymbol.defaultType</b>
+&nbsp;
+<b class="fc">&nbsp;        val tableIndexAnnotations = irClass.annotations.filter {</b>
+<b class="fc">&nbsp;            it.symbol.owner.returnType.classFqName == AnnotationFqNames.TableIndex</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val indexExpressions = tableIndexAnnotations.map { annotation -&gt;</b>
+&nbsp;            // Extract value arguments from the annotation (skip non-value parameters like dispatch receiver)
+<b class="fc">&nbsp;            val valueArgs = annotation.symbol.owner.parameters.valueParameters.mapIndexed { i, param -&gt;</b>
+<b class="fc">&nbsp;                val paramIndex = annotation.symbol.owner.parameters.indexOf(param)</b>
+<b class="fc">&nbsp;                annotation.arguments.getOrNull(paramIndex)</b>
+<b class="fc">&nbsp;            }.toTypedArray()</b>
+<b class="fc">&nbsp;            kTableIndexConstructor(this@irBlockBody, *valueArgs)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        +irReturn(buildListOf(listType, indexExpressions))</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun kronosCreateTime/UpdateTime/LogicDelete/OptimisticLock(): KronosCommonStrategy
+&nbsp; *
+&nbsp; * If a property with the given annotation is found:
+&nbsp; *   return KronosCommonStrategy(enabled, Field(&quot;column_name&quot;, &quot;propertyName&quot;))
+&nbsp; * Otherwise:
+&nbsp; *   return the global default strategy from Kronos object
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createKronosSpecialField(irClass: IrClass, annotationFqName: FqName): IrBlockBody {
+&nbsp;    // Check class-level annotation first (e.g., @CreateTime(enable = false) on the class)
+<b class="fc">&nbsp;    val classAnno = irClass.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }</b>
+<b class="fc">&nbsp;    if (classAnno != null) {</b>
+<b class="pc">&nbsp;        val classEnabled = if (classAnno.arguments.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            val firstArg = classAnno.arguments[0]</b>
+<b class="pc">&nbsp;            !(firstArg is IrConst &amp;&amp; firstArg.value == false)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (!classEnabled) {</b>
+&nbsp;            // Class-level annotation explicitly disables the strategy
+<b class="fc">&nbsp;            return irBlockBody {</b>
+<b class="fc">&nbsp;                +irReturn(</b>
+<b class="fc">&nbsp;                    irCall(kronosCommonStrategyConstructorSymbol).apply {</b>
+<b class="fc">&nbsp;                        arguments[0] = irBoolean(false)</b>
+<b class="fc">&nbsp;                        arguments[1] = irCall(fieldConstructorSymbol).apply {</b>
+<b class="fc">&nbsp;                            arguments[0] = irString(&quot;&quot;)</b>
+<b class="fc">&nbsp;                            arguments[1] = irString(&quot;&quot;)</b>
+<b class="fc">&nbsp;                        }</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val prop = irClass.properties.firstOrNull { it.hasAnnotation(annotationFqName) }</b>
+<b class="fc">&nbsp;    return irBlockBody {</b>
+<b class="fc">&nbsp;        if (prop != null) {</b>
+&nbsp;            // Check if annotation explicitly disables the strategy: @LogicDelete(false)
+<b class="fc">&nbsp;            val anno = prop.annotations.firstOrNull { it.symbol.owner.returnType.classFqName == annotationFqName }</b>
+<b class="pc">&nbsp;            val enabled = if (anno != null &amp;&amp; anno.arguments.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                val firstArg = anno.arguments[0]</b>
+<b class="pc">&nbsp;                !(firstArg is IrConst &amp;&amp; firstArg.value == false)</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                true</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val fieldExpr = buildFieldFromProperty(prop)</b>
+<b class="fc">&nbsp;            +irReturn(</b>
+<b class="fc">&nbsp;                irCall(kronosCommonStrategyConstructorSymbol).apply {</b>
+<b class="fc">&nbsp;                    arguments[0] = irBoolean(enabled)</b>
+<b class="fc">&nbsp;                    arguments[1] = fieldExpr</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;            )
+&nbsp;        } else {
+&nbsp;            // No annotated property — return the global default from Kronos object
+<b class="fc">&nbsp;            val strategyName = when (annotationFqName) {</b>
+<b class="fc">&nbsp;                AnnotationFqNames.CreateTime -&gt; &quot;createTimeStrategy&quot;</b>
+<b class="fc">&nbsp;                AnnotationFqNames.UpdateTime -&gt; &quot;updateTimeStrategy&quot;</b>
+<b class="fc">&nbsp;                AnnotationFqNames.LogicDelete -&gt; &quot;logicDeleteStrategy&quot;</b>
+<b class="pc">&nbsp;                AnnotationFqNames.Version -&gt; &quot;optimisticLockStrategy&quot;</b>
+<b class="nc">&nbsp;                else -&gt; null</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (strategyName != null) {</b>
+<b class="fc">&nbsp;                val getter = kronosObjectSymbol.owner.declarations</b>
+<b class="fc">&nbsp;                    .filterIsInstance&lt;IrProperty&gt;()</b>
+<b class="fc">&nbsp;                    .firstOrNull { it.name.asString() == strategyName }</b>
+<b class="pc">&nbsp;                    ?.getter</b>
+<b class="pc">&nbsp;                if (getter != null) {</b>
+<b class="fc">&nbsp;                    +irReturn(</b>
+<b class="fc">&nbsp;                        irCall(getter.symbol).apply {</b>
+<b class="fc">&nbsp;                            dispatchReceiver = irGetObject(kronosObjectSymbol)</b>
+<b class="fc">&nbsp;                        }</b>
+&nbsp;                    )
+&nbsp;                } else {
+<b class="nc">&nbsp;                    +irReturn(irNull())</b>
+&nbsp;                }
+&nbsp;            } else {
+<b class="nc">&nbsp;                +irReturn(irNull())</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun kClass() = User::class
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createKClassFunction(irClass: IrClass): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val kClassRef = IrClassReferenceImpl(</b>
+<b class="fc">&nbsp;            startOffset, endOffset,</b>
+<b class="fc">&nbsp;            context.irBuiltIns.kClassClass.typeWith(irClass.defaultType),</b>
+<b class="fc">&nbsp;            irClass.symbol,</b>
+<b class="fc">&nbsp;            irClass.defaultType</b>
+&nbsp;        )
+<b class="fc">&nbsp;        +irReturn(kClassRef)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun toDataMap() = mutableMapOf(&quot;prop&quot; to this.prop, ...)
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createToDataMap(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)</b>
+<b class="fc">&nbsp;        val entries: List&lt;IrExpression&gt; = irClass.properties</b>
+<b class="pc">&nbsp;            .filter { it.backingField != null &amp;&amp; !it.isDelegated &amp;&amp; !it.isIgnoredForAll() }</b>
+<b class="fc">&nbsp;            .flatMap { prop -&gt;</b>
+<b class="fc">&nbsp;                listOf(</b>
+<b class="fc">&nbsp;                    buildPairOf(</b>
+<b class="fc">&nbsp;                        irString(prop.name.asString()),</b>
+<b class="fc">&nbsp;                        irGetField(dispatcher, prop.backingField!!)</b>
+&nbsp;                    )
+&nbsp;                )
+<b class="fc">&nbsp;            }.toList()</b>
+<b class="fc">&nbsp;        +irReturn(buildMutableMapOf(context.irBuiltIns.stringType, context.irBuiltIns.anyNType, entries))</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun get(name: String): Any? = when(name) { &quot;prop&quot; -&gt; this.prop; else -&gt; null }
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createPropertyGetter(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)</b>
+<b class="fc">&nbsp;        val nameParam = irGet(irFunction.parameters.valueParameters.first())</b>
+<b class="fc">&nbsp;        val branches = irClass.properties</b>
+<b class="fc">&nbsp;            .filter { it.backingField != null &amp;&amp; !it.isDelegated }</b>
+<b class="fc">&nbsp;            .map { prop -&gt;</b>
+<b class="fc">&nbsp;                irBranch(</b>
+<b class="fc">&nbsp;                    irEquals(nameParam, irString(prop.name.asString())),</b>
+<b class="fc">&nbsp;                    irGetField(dispatcher, prop.backingField!!)</b>
+&nbsp;                )
+<b class="fc">&nbsp;            }.toMutableList&lt;Any&gt;()</b>
+<b class="fc">&nbsp;        branches.add(irElseBranch(irNull()))</b>
+<b class="fc">&nbsp;        +irReturn(</b>
+<b class="fc">&nbsp;            irWhen(</b>
+<b class="fc">&nbsp;                context.irBuiltIns.anyNType,</b>
+&nbsp;                @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;                (branches as List&lt;org.jetbrains.kotlin.ir.expressions.IrBranch&gt;)</b>
+&nbsp;            )
+&nbsp;        )
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun set(name: String, value: Any?) { when(name) { &quot;prop&quot; -&gt; this.prop = value as Type } }
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)</b>
+<b class="fc">&nbsp;        val nameParam = irGet(irFunction.parameters.valueParameters[0])</b>
+<b class="fc">&nbsp;        val valueParam = irGet(irFunction.parameters.valueParameters[1])</b>
+<b class="fc">&nbsp;        val branches = irClass.properties</b>
+<b class="pc">&nbsp;            .filter { it.backingField != null &amp;&amp; !it.isDelegated &amp;&amp; it.isVar }</b>
+<b class="fc">&nbsp;            .map { prop -&gt;</b>
+<b class="fc">&nbsp;                val fieldType = prop.backingField!!.type</b>
+<b class="pc">&nbsp;                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()</b>
+<b class="fc">&nbsp;                irBranch(</b>
+<b class="fc">&nbsp;                    irEquals(nameParam, irString(prop.name.asString())),</b>
+<b class="fc">&nbsp;                    irSetField(</b>
+<b class="fc">&nbsp;                        dispatcher,</b>
+<b class="fc">&nbsp;                        prop.backingField!!,</b>
+<b class="fc">&nbsp;                        IrTypeOperatorCallImpl(</b>
+<b class="fc">&nbsp;                            startOffset, endOffset,</b>
+<b class="fc">&nbsp;                            castType,</b>
+<b class="fc">&nbsp;                            IrTypeOperator.SAFE_CAST,</b>
+<b class="fc">&nbsp;                            castType,</b>
+<b class="fc">&nbsp;                            valueParam</b>
+&nbsp;                        )
+&nbsp;                    )
+&nbsp;                )
+<b class="fc">&nbsp;            }.toMutableList&lt;Any&gt;()</b>
+<b class="fc">&nbsp;        branches.add(irElseBranch(IrConstImpl.constNull(startOffset, endOffset, context.irBuiltIns.nothingNType)))</b>
+<b class="fc">&nbsp;        +irWhen(</b>
+<b class="fc">&nbsp;            context.irBuiltIns.unitType,</b>
+&nbsp;            @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;            (branches as List&lt;org.jetbrains.kotlin.ir.expressions.IrBranch&gt;)</b>
+&nbsp;        )
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun fromMapData(map: Map&lt;String, Any?&gt;): KPojo { ... }
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)</b>
+<b class="fc">&nbsp;        val mapParam = irGet(irFunction.parameters.valueParameters.first())</b>
+<b class="fc">&nbsp;        val mapGetSymbol = context.irBuiltIns.mapClass.getSimpleFunction(&quot;get&quot;)!!</b>
+&nbsp;
+<b class="fc">&nbsp;        irClass.properties</b>
+<b class="pc">&nbsp;            .filter { it.backingField != null &amp;&amp; !it.isDelegated &amp;&amp; it.isVar &amp;&amp; !it.isIgnoredForAll() }</b>
+<b class="fc">&nbsp;            .forEach { prop -&gt;</b>
+<b class="fc">&nbsp;                val mapGet = irCall(mapGetSymbol).apply {</b>
+<b class="fc">&nbsp;                    dispatchReceiver = mapParam</b>
+<b class="fc">&nbsp;                    arguments[1] = irString(prop.name.asString())</b>
+<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;                val fieldType = prop.backingField!!.type</b>
+<b class="pc">&nbsp;                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()</b>
+<b class="fc">&nbsp;                val cast = IrTypeOperatorCallImpl(</b>
+<b class="fc">&nbsp;                    startOffset, endOffset,</b>
+<b class="fc">&nbsp;                    castType,</b>
+<b class="fc">&nbsp;                    IrTypeOperator.SAFE_CAST,</b>
+<b class="fc">&nbsp;                    castType,</b>
+<b class="fc">&nbsp;                    mapGet</b>
+&nbsp;                )
+<b class="fc">&nbsp;                +irSetField(dispatcher, prop.backingField!!, cast)</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        +irReturn(dispatcher)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: override fun safeFromMapData(map: Map&lt;String, Any?&gt;): KPojo { ... }
+&nbsp; * Uses getSafeValue() for type-safe conversion (handles enum, date, etc.)
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
+<b class="fc">&nbsp;    irBlockBody {</b>
+<b class="fc">&nbsp;        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)</b>
+<b class="fc">&nbsp;        val mapParam = irGet(irFunction.parameters.valueParameters.first())</b>
+&nbsp;
+<b class="fc">&nbsp;        irClass.properties</b>
+<b class="pc">&nbsp;            .filter { it.backingField != null &amp;&amp; !it.isDelegated &amp;&amp; it.isVar &amp;&amp; !it.isIgnoredForAll() }</b>
+<b class="fc">&nbsp;            .forEach { prop -&gt;</b>
+<b class="fc">&nbsp;                val fieldType = prop.backingField!!.type</b>
+&nbsp;                // Build: getSafeValue(this, FieldType::class, listOf(supertype1, ...), map, &quot;propName&quot;, isSerializable)
+<b class="fc">&nbsp;                val kClassRef = IrClassReferenceImpl(</b>
+<b class="fc">&nbsp;                    startOffset, endOffset,</b>
+<b class="fc">&nbsp;                    kClassSymbol.typeWith(fieldType),</b>
+<b class="pc">&nbsp;                    fieldType.classOrNull ?: context.irBuiltIns.anyClass,</b>
+<b class="fc">&nbsp;                    fieldType</b>
+&nbsp;                )
+<b class="fc">&nbsp;                val superTypesList = buildListOf(</b>
+<b class="fc">&nbsp;                    context.irBuiltIns.stringType,</b>
+<b class="pc">&nbsp;                    (fieldType.classOrNull?.owner?.superTypes ?: emptyList()).mapNotNull { st -&gt;</b>
+<b class="pc">&nbsp;                        st.classFqName?.asString()?.let { irString(it) }</b>
+&nbsp;                    }
+&nbsp;                )
+<b class="fc">&nbsp;                val isSerializable = irBoolean(prop.hasAnnotation(SerializeAnnotationFqName))</b>
+&nbsp;
+<b class="fc">&nbsp;                val safeValueCall = irCall(getSafeValueSymbol).apply {</b>
+<b class="fc">&nbsp;                    arguments[0] = dispatcher</b>
+<b class="fc">&nbsp;                    arguments[1] = kClassRef</b>
+<b class="fc">&nbsp;                    arguments[2] = superTypesList</b>
+<b class="fc">&nbsp;                    arguments[3] = mapParam</b>
+<b class="fc">&nbsp;                    arguments[4] = irString(prop.name.asString())</b>
+<b class="fc">&nbsp;                    arguments[5] = isSerializable</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;
+<b class="pc">&nbsp;                val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()</b>
+<b class="fc">&nbsp;                val cast = IrTypeOperatorCallImpl(</b>
+<b class="fc">&nbsp;                    startOffset, endOffset,</b>
+<b class="fc">&nbsp;                    castType,</b>
+<b class="fc">&nbsp;                    IrTypeOperator.SAFE_CAST,</b>
+<b class="fc">&nbsp;                    castType,</b>
+<b class="fc">&nbsp;                    safeValueCall</b>
+&nbsp;                )
+<b class="fc">&nbsp;                +irSetField(dispatcher, prop.backingField!!, cast)</b>
+<b class="fc">&nbsp;            }</b>
+<b class="fc">&nbsp;        +irReturn(dispatcher)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// Private helpers
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;internal fun IrBuilderWithScope.getTableNameExpr(irClass: IrClass): IrExpression {
+<b class="fc">&nbsp;    val tableAnnotation = irClass.annotations.firstOrNull {</b>
+<b class="fc">&nbsp;        it.symbol.owner.returnType.classFqName == TableAnnotationFqName</b>
+&nbsp;    }
+<b class="pc">&nbsp;    return if (tableAnnotation != null &amp;&amp; tableAnnotation.arguments.isNotEmpty()) {</b>
+<b class="pc">&nbsp;        tableAnnotation.arguments[0] ?: buildTableNamingStrategyCall(irClass.name.asString())</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        buildTableNamingStrategyCall(irClass.name.asString())</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates: Kronos.tableNamingStrategy.k2db(className)
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrBuilderWithScope.buildTableNamingStrategyCall(className: String): IrExpression {
+<b class="fc">&nbsp;    val strategyGetter = irCall(tableNamingStrategyGetterSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = irGetObject(kronosObjectSymbol)</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    return irCall(k2dbFunctionSymbol).apply {</b>
+<b class="fc">&nbsp;        dispatchReceiver = strategyGetter</b>
+<b class="fc">&nbsp;        arguments[1] = irString(className)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrBuilderWithScope.buildListOf(
+&nbsp;    elementType: org.jetbrains.kotlin.ir.types.IrType,
+&nbsp;    elements: List&lt;IrExpression&gt;
+&nbsp;): IrExpression {
+<b class="fc">&nbsp;    val listOfFunctions = context.referenceFunctions(</b>
+<b class="fc">&nbsp;        CallableId(FqName(&quot;kotlin.collections&quot;), null, Name.identifier(&quot;listOf&quot;))</b>
+&nbsp;    )
+<b class="fc">&nbsp;    val listOfSymbol = listOfFunctions.first {</b>
+<b class="pc">&nbsp;        it.owner.parameters.valueParameters.singleOrNull()?.isVararg == true</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return irCall(listOfSymbol).apply {</b>
+<b class="fc">&nbsp;        typeArguments[0] = elementType</b>
+<b class="fc">&nbsp;        arguments[0] = irVararg(elementType, elements)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrBuilderWithScope.buildMutableMapOf(
+&nbsp;    keyType: org.jetbrains.kotlin.ir.types.IrType,
+&nbsp;    valueType: org.jetbrains.kotlin.ir.types.IrType,
+&nbsp;    pairs: List&lt;IrExpression&gt;
+&nbsp;): IrExpression {
+<b class="fc">&nbsp;    val mutableMapOfFunctions = context.referenceFunctions(</b>
+<b class="fc">&nbsp;        CallableId(FqName(&quot;kotlin.collections&quot;), null, Name.identifier(&quot;mutableMapOf&quot;))</b>
+&nbsp;    )
+<b class="fc">&nbsp;    val mutableMapOfSymbol = mutableMapOfFunctions.first {</b>
+<b class="pc">&nbsp;        it.owner.parameters.valueParameters.singleOrNull()?.isVararg == true</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val pairType = pairClassSymbol.typeWith(keyType, valueType)</b>
+<b class="fc">&nbsp;    return irCall(mutableMapOfSymbol).apply {</b>
+<b class="fc">&nbsp;        typeArguments[0] = keyType</b>
+<b class="fc">&nbsp;        typeArguments[1] = valueType</b>
+<b class="fc">&nbsp;        arguments[0] = irVararg(pairType, pairs)</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;context(context: IrPluginContext)
+&nbsp;private fun IrBuilderWithScope.buildPairOf(first: IrExpression, second: IrExpression): IrExpression {
+<b class="fc">&nbsp;    val pairConstructor = pairClassSymbol.constructors.first()</b>
+<b class="fc">&nbsp;    return irCall(pairConstructor).apply {</b>
+<b class="fc">&nbsp;        typeArguments[0] = context.irBuiltIns.stringType</b>
+<b class="fc">&nbsp;        typeArguments[1] = context.irBuiltIns.anyNType</b>
+<b class="fc">&nbsp;        arguments[0] = first</b>
+<b class="fc">&nbsp;        arguments[1] = second</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+&nbsp;
+&nbsp;// ============================================================================
+&nbsp;// @Ignore annotation helpers
+&nbsp;// ============================================================================
+&nbsp;
+&nbsp;/**
+&nbsp; * Gets the @Ignore annotation constructor call from a property, if present.
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrProperty.ignoreAnnotationValue(): IrConstructorCall? {
+<b class="fc">&nbsp;    return annotations.find { it.symbol.owner.returnType.classFqName == IgnoreAnnotationFqName }</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if an @Ignore annotation includes a specific action name (e.g., &quot;all&quot;, &quot;to_map&quot;, &quot;from_map&quot;).
+&nbsp; */
+&nbsp;@OptIn(UnsafeDuringIrConstructionAPI::class)
+&nbsp;fun IrConstructorCall?.ignore(name: String): Boolean {
+<b class="fc">&nbsp;    if (this == null) return false</b>
+<b class="pc">&nbsp;    val action = arguments[0] ?: return true</b>
+&nbsp;    return (
+<b class="pc">&nbsp;        action is IrVarargImpl &amp;&amp;</b>
+<b class="pc">&nbsp;        action.elements.isNotEmpty() &amp;&amp;</b>
+<b class="fc">&nbsp;        action.elements.any {</b>
+<b class="pc">&nbsp;            it is IrGetEnumValueImpl &amp;&amp; it.symbol.owner.name.asString() == name.uppercase()</b>
+&nbsp;        }
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Checks if a property is annotated with @Ignore([IgnoreAction.ALL]).
+&nbsp; */
+<b class="fc">&nbsp;fun IrProperty.isIgnoredForAll(): Boolean = ignoreAnnotationValue().ignore(&quot;all&quot;)</b>
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-06-27 01:26</div>
+</div>
+</body>
+</html>

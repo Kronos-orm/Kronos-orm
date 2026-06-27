@@ -114,10 +114,9 @@ object SqliteSupport : DatabasesSupport {
     ): List<String> {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
-        return listOf(
-                "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)",
-                *indexesSql.toTypedArray()
-        )
+        return [
+                "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)"
+        ] + indexesSql
     }
 
     override fun getTableExistenceSql(dbType: DBType) =
@@ -149,7 +148,7 @@ object SqliteSupport : DatabasesSupport {
                                 ),
                                 String::class,
                                 false,
-                                listOf()
+                                []
                         ) as
                                 String?
                 if (sql != null &&

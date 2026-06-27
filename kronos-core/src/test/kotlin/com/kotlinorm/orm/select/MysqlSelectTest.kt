@@ -42,7 +42,7 @@ class MysqlSelectTest : MysqlTestBase() {
     @Test
     fun testSelectParams() {
 
-        val (sql, paramMap) = user.select { it.id + it.username + it.gender + "123" }.build()
+        val (sql, paramMap) = user.select { [it.id, it.username, it.gender, "123"] }.build()
 
         assertEquals("SELECT `id`, `username`, `gender`, 123 FROM `tb_user` WHERE `deleted` = 0", sql)
         assertEquals(emptyMap(), paramMap)
@@ -112,7 +112,7 @@ class MysqlSelectTest : MysqlTestBase() {
     @Test
     fun testAsSql() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.as_("name") + it.gender + "COUNT(1) as `count`" }
+        val (sql, paramMap) = user.select { [it.id, it.username.as_("name"), it.gender, "COUNT(1) as `count`"] }
             .lock(PessimisticLock.X)
             .build()
 
@@ -126,7 +126,7 @@ class MysqlSelectTest : MysqlTestBase() {
     @Test
     fun testAlias() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.as_("name") }
+        val (sql, paramMap) = user.select { [it.id, it.username.as_("name")] }
             .where { it.gender == 0 }
             .build()
 
@@ -139,7 +139,7 @@ class MysqlSelectTest : MysqlTestBase() {
 
     @Test
     fun testGetKey() {
-        val (sql, paramMap) = user.select { it.id + it.username }
+        val (sql, paramMap) = user.select { [it.id, it.username] }
             .where { it.id == 0 || it.id == 2 || it.id == 3 }
             .build()
 
@@ -152,18 +152,18 @@ class MysqlSelectTest : MysqlTestBase() {
 
     @Test
     fun testSelectIn() {
-        val (sql, paramMap) = user.select { it.id + it.username }
-            .where { it.id in listOf(0, 2, 3) }
+        val (sql, paramMap) = user.select { [it.id, it.username] }
+            .where { it.id in [0, 2, 3] }
             .build()
 
         assertEquals(
             "SELECT `id`, `username` FROM `tb_user` WHERE `id` IN (:idList) AND `deleted` = 0",
             sql
         )
-        assertEquals(mapOf("idList" to listOf(0, 2, 3)), paramMap)
+        assertEquals(mapOf("idList" to [0, 2, 3]), paramMap)
 
-        val (sql2, paramMap2) = user.select { it.id + it.username }
-            .where { it.id in listOf<Int>() }
+        val (sql2, paramMap2) = user.select { [it.id, it.username] }
+            .where { it.id in emptyList<Int>() }
             .build()
 
         assertEquals(
@@ -172,8 +172,8 @@ class MysqlSelectTest : MysqlTestBase() {
         )
         assertEquals(mapOf<String, Any>(), paramMap2)
 
-        val (sql3, paramMap3) = user.select { it.id + it.username }
-            .where { it.id in listOf<Int?>() }
+        val (sql3, paramMap3) = user.select { [it.id, it.username] }
+            .where { it.id in emptyList<Int>() }
             .build()
 
         assertEquals(
@@ -182,8 +182,8 @@ class MysqlSelectTest : MysqlTestBase() {
         )
         assertEquals(mapOf<String, Any>(), paramMap3)
 
-        val ids = listOf<String?>("1", "2", "3")
-        val (sql4, paramMap4) = user.select { it.id + it.username }
+        val ids = ["1", "2", "3"]
+        val (sql4, paramMap4) = user.select { [it.id, it.username] }
             .where { it.username in ids }
             .build()
 
@@ -200,7 +200,7 @@ class MysqlSelectTest : MysqlTestBase() {
 
     @Test
     fun testRegexp() {
-        val (sql, paramMap, task) = user.select { it.id + it.username }
+        val (sql, paramMap, task) = user.select { [it.id, it.username] }
             .where { (it.id == 0 || it.id == 2 || it.id == 3) && it.username.regexp("\\d+") }
             .build()
 
@@ -223,7 +223,7 @@ class MysqlSelectTest : MysqlTestBase() {
     @Test
     fun testSetDbName() {
 
-        val (sql, paramMap) = user.select { it.id + it.username.as_("name") }
+        val (sql, paramMap) = user.select { [it.id, it.username.as_("name")] }
             .where { it.gender == 0 }.db("test")
             .build()
 
@@ -293,13 +293,9 @@ class MysqlSelectTest : MysqlTestBase() {
     @Test
     fun testSelectBuiltInFunctionCount() {
         val (sql, paramMap) = user.select {
-            f.count(1) + it.id + f.avg(it.id) + it.username + f.sum(it.id)
+            [f.count(1), it.id, f.avg(it.id), it.username, f.sum(it.id)]
         }.where {
-            f.add(it.id, 1) > f.sub(it.id, 1) && f.length(it.username) > 5 && it.username like f.concat(
-                "%",
-                it.username,
-                "%"
-            )
+            it.id + 1 > it.id - 1 && f.length(it.username) > 5 && it.username like ("%" + it.username + "%")
         }.build()
 
         assertEquals(
@@ -354,7 +350,7 @@ class MysqlSelectTest : MysqlTestBase() {
     @Test
     fun testSelectPatch() {
         val (sql, paramMap) = user.select {
-            it.id + it.username
+            [it.id, it.username]
         }.where {
             it.id == 1 && "`username` = :username".asSql()
         }.patch("id" to 2, "username" to "123").build()

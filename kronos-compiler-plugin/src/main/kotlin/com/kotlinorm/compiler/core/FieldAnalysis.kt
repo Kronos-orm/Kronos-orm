@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package com.kotlinorm.compiler.core
 
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
@@ -83,7 +85,7 @@ import org.jetbrains.kotlin.name.FqName
  * Analyzes field expression and builds Field IR expressions
  *
  * Main entry point for field analysis. Handles different types of expressions:
- * - IrCall: Property access, plus/minus operations, function calls
+ * - IrCall: Property access, projection collection calls, minus operations, function calls
  * - IrPropertyReference: Property references (User::name)
  * - IrGetValue: KPojo instance (it)
  * - IrConst: String constants for custom SQL
@@ -102,9 +104,12 @@ fun analyzeAndBuildFields(
 ): List<IrExpression> {
     return when (expression) {
         is IrCall -> analyzeCallFields(irFunction, expression, errorReporter)
-        is IrPropertyReference -> listOf(buildFieldFromPropertyRef(expression, errorReporter))
+        is IrPropertyReference -> [buildFieldFromPropertyRef(expression, errorReporter)]
         is IrGetValue -> analyzeGetValueFields(irFunction, expression, errorReporter)
-        is IrConst -> listOf(buildCustomSqlField(expression))
+        is IrConst -> [buildCustomSqlField(expression)]
+        is IrVararg -> expression.elements.flatMap { element ->
+            if (element is IrExpression) analyzeAndBuildFields(irFunction, element, errorReporter) else emptyList()
+        }
         else -> {
             // Unsupported expression type - don't report error, just return empty list
             // This allows the original expression to be preserved
@@ -118,7 +123,7 @@ fun analyzeAndBuildFields(
  *
  * Handles:
  * - GET_PROPERTY: Property access (it.name)
- * - PLUS: Field combination (it.name + it.age)
+ * - projection collection calls: Field combination ([it.name, it.age])
  * - MINUS: Field exclusion (it - User::password)
  * - Function calls: as_() for aliases, unaryPlus for explicit field selection
  *
@@ -137,23 +142,37 @@ private fun analyzeCallFields(
     return when (call.origin) {
         IrStatementOrigin.GET_PROPERTY -> {
             // Property access: it.name
-            listOf(buildFieldFromPropertyAccess(call, errorReporter))
+            [buildFieldFromPropertyAccess(call, errorReporter)]
         }
-        
+
         IrStatementOrigin.PLUS -> {
-            // Plus operation: it.name + it.age
-            analyzePlusFields(irFunction, call, errorReporter)
+            [buildOperatorFunctionField(irFunction, call.plusFunctionName(), call.operatorOperands(), errorReporter)]
         }
         
         IrStatementOrigin.MINUS -> {
-            // Minus operation: it - User::password
-            analyzeMinusFields(irFunction, call, errorReporter)
+            val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
+            if (receiver?.type?.isKPojoType() == true) {
+                // Field exclusion: it - it.password
+                analyzeMinusFields(irFunction, call, errorReporter)
+            } else {
+                [buildOperatorFunctionField(irFunction, "sub", call.operatorOperands(), errorReporter)]
+            }
         }
         
         else -> {
             // Check for special function calls
             val functionName = call.symbol.owner.name.asString()
             when (functionName) {
+                "get", "of", "listOf", "mutableListOf", "setOf", "arrayOf" -> {
+                    analyzeFieldProjection(irFunction, call, errorReporter)
+                }
+
+                "plus" -> [buildOperatorFunctionField(irFunction, call.plusFunctionName(), call.operatorOperands(), errorReporter)]
+                "minus" -> [buildOperatorFunctionField(irFunction, "sub", call.operatorOperands(), errorReporter)]
+                "times" -> [buildOperatorFunctionField(irFunction, "mul", call.operatorOperands(), errorReporter)]
+                "div" -> [buildOperatorFunctionField(irFunction, "div", call.operatorOperands(), errorReporter)]
+                "rem" -> [buildOperatorFunctionField(irFunction, "mod", call.operatorOperands(), errorReporter)]
+
                 "unaryPlus" -> {
                     // Unary plus: +it.name
                     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
@@ -174,7 +193,7 @@ private fun analyzeCallFields(
                         if (fields.isNotEmpty()) {
                             val aliasValue = aliasArg.value as? String
                             if (aliasValue != null) {
-                                listOf(buildFieldWithAlias(fields.first(), aliasValue))
+                                [buildFieldWithAlias(fields.first(), aliasValue)]
                             } else {
                                 fields
                             }
@@ -189,13 +208,51 @@ private fun analyzeCallFields(
                 else -> {
                     // Check if it's a Kronos function call (f.rand(), f.trunc(), etc.)
                     if (call.isKronosFunction()) {
-                        listOf(buildFunctionField(irFunction, call, errorReporter))
+                        [buildFunctionField(irFunction, call, errorReporter)]
                     } else {
                         // Unknown function call - don't report error
                         emptyList()
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.operatorOperands(): List<IrExpression> {
+    val operands = mutableListOf<IrExpression>()
+    (extensionReceiverArgument ?: dispatchReceiverArgument)?.let { operands += it }
+    getValueArgumentSafe(0)?.let { operands += it }
+    return operands
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.plusFunctionName(): String {
+    return if (operatorOperands().any { it.isStringLikeExpression() }) "concat" else "add"
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.isStringLikeExpression(): Boolean {
+    if (this is IrConst && value is String) return true
+    val fqName = type.classFqName?.asString()
+    return fqName == "kotlin.String" || fqName == "kotlin.CharSequence"
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun analyzeFieldProjection(
+    irFunction: IrFunction,
+    call: IrCall,
+    errorReporter: ErrorReporter
+): List<IrExpression> {
+    return call.valueArguments.flatMap { arg ->
+        when (arg) {
+            is IrVararg -> arg.elements.flatMap { element ->
+                if (element is IrExpression) analyzeAndBuildFields(irFunction, element, errorReporter) else emptyList()
+            }
+            is IrExpression -> analyzeAndBuildFields(irFunction, arg, errorReporter)
+            else -> emptyList()
         }
     }
 }
@@ -573,40 +630,6 @@ private fun buildFieldWithAlias(fieldExpr: IrExpression, alias: String): IrExpre
 }
 
 /**
- * Analyzes plus expressions for field combination (it.name + it.age)
- *
- * Recursively analyzes both sides of the plus operation and combines the results.
- *
- * @param irFunction The function being transformed
- * @param call The plus operation call
- * @param errorReporter Error reporter for compilation errors
- * @return List of Field IR expressions
- */
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-context(context: IrPluginContext, builder: IrBuilderWithScope)
-fun analyzePlusFields(
-    irFunction: IrFunction,
-    call: IrCall,
-    errorReporter: ErrorReporter
-): List<IrExpression> {
-    val fields = mutableListOf<IrExpression>()
-    
-    // Analyze left side (receiver)
-    val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
-    if (receiver != null) {
-        fields.addAll(analyzeAndBuildFields(irFunction, receiver, errorReporter))
-    }
-    
-    // Analyze right side (argument)
-    val argument = call.getValueArgumentSafe(0)
-    if (argument != null) {
-        fields.addAll(analyzeAndBuildFields(irFunction, argument, errorReporter))
-    }
-    
-    return fields
-}
-
-/**
  * Analyzes minus expressions for field exclusion (it - User::password)
  *
  * Gets all fields from the KPojo and excludes the specified fields.
@@ -680,11 +703,16 @@ private fun collectExcludedFieldNames(
         }
 
         is IrCall -> {
-            if (expression.origin == IrStatementOrigin.PLUS) {
-                // Handle multiple exclusions: User::password + User::email
-                val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiverArgument
-                collectExcludedFieldNames(receiver, excludedFields)
-                collectExcludedFieldNames(expression.getValueArgumentSafe(0), excludedFields)
+            val functionName = expression.symbol.owner.name.asString()
+            if (functionName in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")) {
+                expression.valueArguments.forEach { arg ->
+                    when (arg) {
+                        is IrVararg -> arg.elements.forEach { element ->
+                            collectExcludedFieldNames(element as? IrExpression, excludedFields)
+                        }
+                        is IrExpression -> collectExcludedFieldNames(arg, excludedFields)
+                    }
+                }
             } else if (expression.origin == IrStatementOrigin.GET_PROPERTY) {
                 // Handle property access: it.username
                 val propName = expression.symbol.owner.correspondingPropertySymbol?.owner?.name?.asString()
@@ -844,6 +872,59 @@ fun buildFunctionField(
         // Parameter 1: fields (List<Pair<Field?, Any?>>)
         arguments[1] = listExpr
     }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+fun buildOperatorFunctionField(
+    irFunction: IrFunction,
+    functionName: String,
+    operands: List<IrExpression>,
+    errorReporter: ErrorReporter
+): IrExpression {
+    val nullableFieldType = fieldClassSymbol.typeWith().makeNullable()
+    val anyNullableType = context.irBuiltIns.anyNType
+    val functionOperands = if (functionName == "concat") {
+        operands.flatMap { it.flattenConcatOperands() }
+    } else {
+        operands
+    }
+    val argumentPairs = functionOperands.map { operand ->
+        val fieldExpr = if (operand.isFunctionFieldOperand()) {
+            analyzeAndBuildFields(irFunction, operand, errorReporter).firstOrNull() ?: builder.irNull()
+        } else {
+            builder.irNull()
+        }
+        irPairOf(nullableFieldType, anyNullableType, fieldExpr, operand)
+    }
+
+    val pairType = pairClassSymbol.typeWith(nullableFieldType, anyNullableType)
+    val listExpr = irListOf(pairType, argumentPairs)
+
+    return builder.irCall(functionFieldConstructorSymbol).apply {
+        arguments[0] = builder.irString(functionName)
+        arguments[1] = listExpr
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.flattenConcatOperands(): List<IrExpression> {
+    if (this !is IrCall) return listOf(this)
+    val isPlus = origin == IrStatementOrigin.PLUS || symbol.owner.name.asString() == "plus"
+    if (!isPlus || plusFunctionName() != "concat") return listOf(this)
+    return operatorOperands().flatMap { it.flattenConcatOperands() }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.isFunctionFieldOperand(): Boolean {
+    return isKPojoProperty() || isKronosFunction() || isOperatorFunction()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrExpression.isOperatorFunction(): Boolean {
+    if (this !is IrCall) return false
+    if (origin == IrStatementOrigin.PLUS || origin == IrStatementOrigin.MINUS) return true
+    return symbol.owner.name.asString() in setOf("plus", "minus", "times", "div", "rem")
 }
 
 /**

@@ -42,11 +42,11 @@ class ParameterTest {
 
     @Test
     fun testMultipleNamedParameters() {
-        val params = listOf(
+        val params = [
             Parameter.NamedParameter("id"),
             Parameter.NamedParameter("name"),
             Parameter.NamedParameter("email")
-        )
+        ]
         
         assertEquals(3, params.size)
         assertEquals("id", params[0].name)
@@ -56,11 +56,11 @@ class ParameterTest {
 
     @Test
     fun testMultiplePositionalParameters() {
-        val params = listOf(
+        val params = [
             Parameter.PositionalParameter(0),
             Parameter.PositionalParameter(1),
             Parameter.PositionalParameter(2)
-        )
+        ]
         
         assertEquals(3, params.size)
         assertEquals(0, params[0].index)

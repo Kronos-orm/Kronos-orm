@@ -16,7 +16,6 @@ tasks.withType<Test>().configureEach {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-Xcontext-parameters")
         freeCompilerArgs.add("-Xcontext-sensitive-resolution")
         freeCompilerArgs.add("-Xsuppress-deprecated-jvm-target-warning")
         freeCompilerArgs.add("-Xskip-prerelease-check")
@@ -33,13 +32,13 @@ tasks.withType<KotlinCompile>().configureEach {
     }
 }
 
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.compilerOptions {
-    freeCompilerArgs.set(listOf(
-        "-Xannotation-default-target=param-property",
-        "-Xcontext-parameters",
-        "-Xcontext-sensitive-resolution"
-    ))
+tasks.named<KotlinCompile>("compileTestKotlin") {
+    compilerOptions {
+        freeCompilerArgs.set(listOf(
+            "-Xcontext-sensitive-resolution",
+            "-Xcollection-literals"
+        ))
+    }
 }
 
 dependencies {

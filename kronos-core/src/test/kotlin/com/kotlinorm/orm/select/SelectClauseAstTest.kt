@@ -71,7 +71,7 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testToStatementWithSelectFields() {
         val user = MysqlUser()
-        val selectClause = user.select { it.id + it.username }
+        val selectClause = user.select { [it.id, it.username] }
         
         val statement = selectClause.toStatement()
         
@@ -93,7 +93,7 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testToStatementWithOrderBy() {
         val user = MysqlUser()
-        val selectClause = user.select().orderBy { it.id.desc() + it.username.asc() }
+        val selectClause = user.select().orderBy { [it.id.desc(), it.username.asc()] }
         
         val statement = selectClause.toStatement()
         

@@ -117,7 +117,7 @@ class KTableParserForSelectTransformerTest {
                         user.getColumn("deleted"),
                         Field("1", type = KColumnType.CUSTOM_CRITERIA_SQL)
                     ),
-                    user.select { it + "1" }
+                    user.select { [it, "1"] }
                 )
 
                 assertEquals(
@@ -127,12 +127,12 @@ class KTableParserForSelectTransformerTest {
 
                 assertEquals(
                     listOf(user.getColumn("id"), user.getColumn("username")),
-                    user.select { it.id + it.username }
+                    user.select { [it.id, it.username] }
                 )
 
                 assertEquals(
                     listOf(user.getColumn("id"), user.getColumn("username")),
-                    user.select { it::id + it::username }
+                    user.select { [it.id, it.username] }
                 )
 
                 val countField = user.select { f.count(it.id).as_("cnt") }

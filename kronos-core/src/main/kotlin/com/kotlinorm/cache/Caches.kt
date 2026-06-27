@@ -22,6 +22,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.LRUCache
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.toLinkedSet

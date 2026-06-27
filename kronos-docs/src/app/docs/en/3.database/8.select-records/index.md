@@ -84,7 +84,7 @@ You can pass `KPojo` to query all columns, and use `+`, `-` to add and subtract 
 
 ```kotlin group="Case 1-2" name="kotlin" icon="kotlin"
 val listOfUser: List<User> = User()
-    .select { it - it.id + "count(*) as total" }
+    .select { [it - it.id, "count(*) as total"] }
     .queryList()
 ```
 
@@ -209,7 +209,7 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().by { it.id + it.name }.queryOneOrNull()
+val kronos: User? = user.select().by { [it.id, it.name] }.queryOneOrNull()
 ```
 
 ```sql group="Case 3-1" name="Mysql" icon="mysql"
@@ -473,7 +473,7 @@ When no sort method is set, the default is ascending, e.g. `orderBy { it.id }` i
 
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()
-    .orderBy { it.id.desc() + it.name.asc() }
+    .orderBy { [it.id.desc(), it.name.asc()] }
     .queryList()
 ```
 
@@ -701,12 +701,12 @@ The `db` method is used for cross-database queries, when Kronos sets the databas
 ```kotlin group="Case 20" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User()
     .db("user_database")
-    .select { it.id + it.username }
+    .select { [it.id, it.username] }
     .queryList()
 
 // Or the db method can be called directly after the select
 // val listOfUser: List<User> = User()
-//            .select { it.id + it.username }
+//            .select { [it.id, it.username] }
 //            .db("user_database")
 //            .queryList()
 ```

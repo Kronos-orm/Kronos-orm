@@ -8,7 +8,6 @@ plugins {
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-nowarn")
-        freeCompilerArgs.add("-Xnested-type-aliases")
     }
 }
 

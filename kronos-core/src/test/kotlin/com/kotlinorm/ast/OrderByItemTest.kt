@@ -26,7 +26,7 @@ class OrderByItemTest {
 
     @Test
     fun testOrderByItemWithFunctionCall() {
-        val expr = FunctionCall("LOWER", listOf(ColumnReference(tableAlias = "users", columnName = "email")))
+        val expr = FunctionCall("LOWER", [ColumnReference(tableAlias = "users", columnName = "email")])
         val item = OrderByItem(expr, SortType.ASC)
         
         assertEquals(expr, item.expression)
@@ -44,11 +44,11 @@ class OrderByItemTest {
 
     @Test
     fun testMultipleOrderByItems() {
-        val items = listOf(
+        val items = [
             OrderByItem(ColumnReference(tableAlias = "users", columnName = "last_name"), SortType.ASC),
             OrderByItem(ColumnReference(tableAlias = "users", columnName = "first_name"), SortType.ASC),
             OrderByItem(ColumnReference(tableAlias = "users", columnName = "id"), SortType.DESC)
-        )
+        ]
         
         assertEquals(3, items.size)
         assertEquals(SortType.ASC, items[0].direction)

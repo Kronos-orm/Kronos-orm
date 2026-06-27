@@ -83,7 +83,7 @@ class ConditionTransformer(
 
                     if (inner != null && receiver != null) {
                         // Always wrap in a ROOT criteria so consumers can access rst.children.get(0)
-                        val rootCriteria = buildCriteriaNode(type = "ROOT", not = false, children = listOf(inner))
+                        val rootCriteria = buildCriteriaNode(type = "ROOT", not = false, children = [inner])
                         +irCall(setCriteriaMethodSymbol).apply {
                             dispatchReceiver = irGet(receiver)
                             arguments[1] = rootCriteria

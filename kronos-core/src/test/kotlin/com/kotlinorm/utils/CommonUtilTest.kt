@@ -53,7 +53,7 @@ class CommonUtilTest {
 
     @Test
     fun testToLinkedSet() {
-        val list = listOf(1, 2, 3, 4, 5)
+        val list = [1, 2, 3, 4, 5]
         val linkedSet = list.toLinkedSet()
         assertEquals(linkedSet, linkedSetOf(1, 2, 3, 4, 5))
     }

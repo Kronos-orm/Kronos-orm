@@ -449,7 +449,7 @@ class KTableTransformerTest {
                     rst = fields
                 }
             }
-            sel { it.id + it.name }
+            sel { [it.id, it.name] }
             assertEquals(2, rst!!.size)
             assertEquals("id", rst!![0].name)
             assertEquals("name", rst!![1].name)

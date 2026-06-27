@@ -360,9 +360,9 @@ Deploy: `npx wrangler pages deploy dist/site --project-name=kotlinorm`
 ## Build System
 
 ### Root Settings
-`settings.gradle.kts` includes 8 modules:
+`settings.gradle.kts` includes 7 modules:
 ```kotlin
-include("kronos-core", "kronos-compiler-plugin", "kronos-compiler-plugin-legacy",
+include("kronos-core", "kronos-compiler-plugin",
         "kronos-maven-plugin", "kronos-logging", "kronos-jdbc-wrapper",
         "kronos-codegen", "kronos-testing")
 includeBuild("kronos-gradle-plugin")  // separate included build

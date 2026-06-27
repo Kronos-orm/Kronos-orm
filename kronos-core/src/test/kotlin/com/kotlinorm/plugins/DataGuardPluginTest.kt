@@ -83,7 +83,7 @@ class DataGuardPluginTest {
             .trim()
             .replace(Regex("(\\s)(?i)WHERE\\b.*"), "") // 移除 WHERE 子句干扰
 
-        val patterns = listOf(
+        val patterns = [
             // 优先级 1: DELETE FROM [schema.]table
             Regex("(?i)DELETE\\s+FROM\\s+([`\"\\[\\]]?)([\\w.]+)\\1"),
             // 优先级 2: UPDATE [schema.]table
@@ -97,7 +97,7 @@ class DataGuardPluginTest {
             // 后备匹配模式
             Regex("(?i)FROM\\s+([`\"\\[\\]]?)([\\w.]+)\\1"),
             Regex("(?i)INTO\\s+([`\"\\[\\]]?)([\\w.]+)\\1")
-        )
+        ]
 
         patterns.forEach { regex ->
             regex.find(cleanedSql)?.let {

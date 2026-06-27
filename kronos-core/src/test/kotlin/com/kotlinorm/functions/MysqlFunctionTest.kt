@@ -105,7 +105,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testMathFunctionMod() {
-        val (sql, _) = user.select { f.mod(it.score, 2) }.build()
+        val (sql, _) = user.select { it.score % 2 }.build()
         assertEquals("SELECT (`score` % 2) AS mod FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
@@ -148,25 +148,25 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testMathFunctionAdd() {
-        val (sql, _) = user.select { f.add(it.score, 10, 20) }.build()
-        assertEquals("SELECT (`score` + 10 + 20) AS add FROM `tb_user` WHERE `deleted` = 0", sql)
+        val (sql, _) = user.select { it.score + 10 + 20 }.build()
+        assertEquals("SELECT ((`score` + 10) + 20) AS add FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionSub() {
-        val (sql, _) = user.select { f.sub(it.score, 10) }.build()
+        val (sql, _) = user.select { it.score - 10 }.build()
         assertEquals("SELECT (`score` - 10) AS sub FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionMul() {
-        val (sql, _) = user.select { f.mul(it.score, 2) }.build()
+        val (sql, _) = user.select { it.score * 2 }.build()
         assertEquals("SELECT (`score` * 2) AS mul FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
     @Test
     fun testMathFunctionDiv() {
-        val (sql, _) = user.select { f.div(it.score, 2) }.build()
+        val (sql, _) = user.select { it.score / 2 }.build()
         assertEquals("SELECT (`score` / 2) AS div FROM `tb_user` WHERE `deleted` = 0", sql)
     }
 
@@ -287,9 +287,9 @@ class MysqlFunctionTest : MysqlTestBase() {
     @Test
     fun testComplexFunctionCombination() {
         val (sql, _) = user.select {
-            f.count(1) + f.sum(it.score) + f.avg(it.score) + f.max(it.score) + f.min(it.score)
+            [f.count(1), f.sum(it.score), f.avg(it.score), f.max(it.score), f.min(it.score)]
         }.where {
-            f.add(it.score, 10) > f.sub(it.score, 10) && f.length(it.username) > 5
+            it.score + 10 > it.score - 10 && f.length(it.username) > 5
         }.build()
         assertEquals("SELECT COUNT(1) AS count, SUM(`score`) AS sum, AVG(`score`) AS avg, MAX(`score`) AS max, MIN(`score`) AS min FROM `tb_user` WHERE (`score` + 10) > (`score` - 10) AND LENGTH(`username`) > :lengthMin AND `deleted` = 0", sql)
     }
@@ -310,10 +310,10 @@ class MysqlFunctionTest : MysqlTestBase() {
     fun testArithmeticInWhere() {
         val (sql, _) = user.select { it.id }
             .where {
-                f.add(it.score, 10) > 100 &&
-                f.sub(it.score, 5) < 50 &&
-                f.mul(it.score, 2) > 100 &&
-                f.div(it.score, 2) < 50
+                it.score + 10 > 100 &&
+                it.score - 5 < 50 &&
+                it.score * 2 > 100 &&
+                it.score / 2 < 50
             }.build()
         assertEquals("SELECT `id` FROM `tb_user` WHERE (`score` + 10) > :addMin AND (`score` - 5) < :subMax AND (`score` * 2) > :mulMin AND (`score` / 2) < :divMax AND `deleted` = 0", sql)
     }
@@ -329,7 +329,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testCountWithGroupBy() {
-        val (sql, _) = user.select { f.count(1) + it.gender }
+        val (sql, _) = user.select { [f.count(1), it.gender] }
             .groupBy { it.gender }
             .build()
         assertEquals("SELECT COUNT(1) AS count, `gender` FROM `tb_user` WHERE `deleted` = 0 GROUP BY `gender`", sql)
@@ -337,7 +337,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testSumWithGroupBy() {
-        val (sql, _) = user.select { f.sum(it.score) + it.gender }
+        val (sql, _) = user.select { [f.sum(it.score), it.gender] }
             .groupBy { it.gender }
             .build()
         assertEquals("SELECT SUM(`score`) AS sum, `gender` FROM `tb_user` WHERE `deleted` = 0 GROUP BY `gender`", sql)
@@ -345,7 +345,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testAvgWithGroupBy() {
-        val (sql, _) = user.select { f.avg(it.score) + it.gender }
+        val (sql, _) = user.select { [f.avg(it.score), it.gender] }
             .groupBy { it.gender }
             .build()
         assertEquals("SELECT AVG(`score`) AS avg, `gender` FROM `tb_user` WHERE `deleted` = 0 GROUP BY `gender`", sql)
@@ -353,7 +353,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testMaxWithGroupBy() {
-        val (sql, _) = user.select { f.max(it.score) + it.gender }
+        val (sql, _) = user.select { [f.max(it.score), it.gender] }
             .groupBy { it.gender }
             .build()
         assertEquals("SELECT MAX(`score`) AS max, `gender` FROM `tb_user` WHERE `deleted` = 0 GROUP BY `gender`", sql)
@@ -361,7 +361,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testMinWithGroupBy() {
-        val (sql, _) = user.select { f.min(it.score) + it.gender }
+        val (sql, _) = user.select { [f.min(it.score), it.gender] }
             .groupBy { it.gender }
             .build()
         assertEquals("SELECT MIN(`score`) AS min, `gender` FROM `tb_user` WHERE `deleted` = 0 GROUP BY `gender`", sql)
@@ -369,7 +369,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testCountWithHaving() {
-        val (sql, _) = user.select { f.count(1) + it.gender }
+        val (sql, _) = user.select { [f.count(1), it.gender] }
             .groupBy { it.gender }
             .having { f.count(1) > 5 }
             .build()
@@ -378,7 +378,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testSumWithHaving() {
-        val (sql, _) = user.select { f.sum(it.score) + it.gender }
+        val (sql, _) = user.select { [f.sum(it.score), it.gender] }
             .groupBy { it.gender }
             .having { f.sum(it.score) > 100 }
             .build()
@@ -387,7 +387,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testAvgWithHaving() {
-        val (sql, _) = user.select { f.avg(it.score) + it.gender }
+        val (sql, _) = user.select { [f.avg(it.score), it.gender] }
             .groupBy { it.gender }
             .having { f.avg(it.score) > 50 }
             .build()
@@ -396,7 +396,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testMaxWithHaving() {
-        val (sql, _) = user.select { f.max(it.score) + it.gender }
+        val (sql, _) = user.select { [f.max(it.score), it.gender] }
             .groupBy { it.gender }
             .having { f.max(it.score) > 90 }
             .build()
@@ -405,7 +405,7 @@ class MysqlFunctionTest : MysqlTestBase() {
 
     @Test
     fun testMinWithHaving() {
-        val (sql, _) = user.select { f.min(it.score) + it.gender }
+        val (sql, _) = user.select { [f.min(it.score), it.gender] }
             .groupBy { it.gender }
             .having { f.min(it.score) < 10 }
             .build()
@@ -415,7 +415,7 @@ class MysqlFunctionTest : MysqlTestBase() {
     @Test
     fun testMultipleAggregationsWithGroupByAndHaving() {
         val (sql, _) = user.select {
-            f.count(1) + f.sum(it.score) + f.avg(it.score) + it.gender
+            [f.count(1), f.sum(it.score), f.avg(it.score), it.gender]
         }
             .groupBy { it.gender }
             .having { f.count(1) > 5 && f.avg(it.score) > 50 }

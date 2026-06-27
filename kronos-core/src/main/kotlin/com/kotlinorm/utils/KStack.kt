@@ -16,8 +16,13 @@
 
 package com.kotlinorm.utils
 
-typealias KStack<T> = ArrayDeque<T>
+class KStack<T> : java.util.ArrayDeque<T>() {
+    companion object {
+        operator fun <T> of(vararg elements: T): KStack<T> =
+            KStack<T>().apply { addAll(elements.reversed()) }
+    }
+}
 
 fun <T> KStack<T>.push(element: T) = addLast(element)
 
-fun <T> KStack<T>.pop() = removeLastOrNull() ?: throw NoSuchElementException("ArrayDeque is empty")
+fun <T> KStack<T>.pop(): T = pollLast() ?: throw NoSuchElementException("KStack is empty")

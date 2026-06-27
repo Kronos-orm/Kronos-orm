@@ -130,16 +130,16 @@ class BasicWrapperTest {
             KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"),
             MysqlUser::class,
             true,
-            listOf()
+            []
         )
         assertEquals(
-            listOf(
+            [
                 MysqlUser(null, "test", 1, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test2", 2, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test3", 3, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test4", 4, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test5", 5, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
-            ),
+            ],
             result
         )
         Kronos.init {
@@ -149,16 +149,16 @@ class BasicWrapperTest {
             KronosAtomicQueryTask("select username, score, gender, create_time createTime, update_time updateTime from tb_user"),
             MysqlUser::class,
             true,
-            listOf()
+            []
         )
         assertEquals(
-            listOf(
+            [
                 MysqlUser(null, "test", 1, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test2", 2, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test3", 3, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test4", 4, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
                 MysqlUser(null, "test5", 5, 1, "2022-01-01T00:00", LocalDateTime.parse("2022-01-01T00:00")),
-            ),
+            ],
             result2
         )
     }
@@ -169,18 +169,18 @@ class BasicWrapperTest {
         Kronos.init {
             strictSetValue = true
         }
-        val result = wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, listOf("Kotlin.Int"))
+        val result = wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, ["Kotlin.Int"])
         assertEquals(
-            listOf(1, 2, 3, 4, 5),
+            [1, 2, 3, 4, 5],
             result
         )
         Kronos.init {
             strictSetValue = false
         }
         val result2 =
-            wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, listOf("Kotlin.Int"))
+            wrapper.forList(KronosAtomicQueryTask("select score from tb_user"), Int::class, false, ["Kotlin.Int"])
         assertEquals(
-            listOf(1, 2, 3, 4, 5),
+            [1, 2, 3, 4, 5],
             result2
         )
     }
@@ -196,7 +196,7 @@ class BasicWrapperTest {
                 KronosAtomicQueryTask("select * from tb_user where id = 1"),
                 MysqlUser::class,
                 true,
-                listOf()
+                []
             )
         assertEquals(MysqlUser(1, "test", 1, 1, deleted = false), result1)
 
@@ -208,7 +208,7 @@ class BasicWrapperTest {
                 KronosAtomicQueryTask("select * from tb_user where id = 1"),
                 MysqlUser::class,
                 true,
-                listOf()
+                []
             )
         assertEquals(MysqlUser(1, "test", 1, 1, deleted = false), result2)
     }
@@ -219,7 +219,7 @@ class BasicWrapperTest {
         Kronos.init {
             strictSetValue = true
         }
-        val result = wrapper.forObject(KronosAtomicQueryTask("select score from tb_user where id = 1"), Int::class, false, listOf("Kotlin.Int"))
+        val result = wrapper.forObject(KronosAtomicQueryTask("select score from tb_user where id = 1"), Int::class, false, ["Kotlin.Int"])
         assertEquals(1, result)
         Kronos.init {
             strictSetValue = false
@@ -228,7 +228,7 @@ class BasicWrapperTest {
             KronosAtomicQueryTask("select score from tb_user where id = 1"),
             Int::class,
             false,
-            listOf("Kotlin.Int")
+            ["Kotlin.Int"]
         )
         assertEquals(1, result2)
     }
@@ -277,7 +277,7 @@ class BasicWrapperTest {
             KronosAtomicQueryTask("select id, user_id userId, order_date orderDate from tb_order where id = 1"),
             Order::class,
             true,
-            listOf()
+            []
         )
         assertEquals(
             Order(1, 1, null),

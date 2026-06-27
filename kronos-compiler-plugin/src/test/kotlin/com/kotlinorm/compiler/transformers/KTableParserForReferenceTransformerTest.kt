@@ -96,12 +96,12 @@ class KTableParserForReferenceTransformerTest {
                         user.getColumn("id"),
                         user.getColumn("username"),
                     ),
-                    reference { it::id + it::username }
+                    reference { [it::id, it::username] }
                 )
 
                 assertEquals(
                     listOf(user.getColumn("id")),
-                    reference { +it::id }
+                    reference { it::id }
                 )
             }
             """.trimIndent(),

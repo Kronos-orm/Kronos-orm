@@ -23,18 +23,18 @@ class KCascadeTest {
     @Test
     fun testManyToManyDelegate() {
         val course = Course().apply {
-            students = listOf(
+            students = [
                 Student(name = "Alice"),
                 Student(name = "Bob")
-            )
+            ]
         }
 
         assertEquals(
             Course().apply {
-                studentCourse = listOf(
+                studentCourse = [
                     StudentCourse(student = Student(name = "Alice")),
                     StudentCourse(student = Student(name = "Bob")),
-                )
+                ]
             }, course
         )
 

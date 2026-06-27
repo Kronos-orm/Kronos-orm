@@ -34,6 +34,16 @@ open class KTableForCondition<T : KPojo> {
     var criteriaParamMap: MutableMap<String, Any?> = mutableMapOf()
     val f: FunctionHandler = FunctionHandler
 
+    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Any? = null
+
+    operator fun Any?.minus(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.times(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.div(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.rem(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
     /**
      * Retrieves the value from the 'propParamMap' based on the provided 'fieldName'.
      *

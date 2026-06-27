@@ -132,8 +132,8 @@ class MysqlUnionTest : MysqlTestBase() {
     @Test
     fun testUnionWithSelectFields() {
         val (sql, paramMap) = union(
-            MysqlUser().select { it.id + it.username }.where { it.id == 1 },
-            MysqlUser().select { it.id + it.username }.where { it.id == 2 }
+            MysqlUser().select { [it.id, it.username] }.where { it.id == 1 },
+            MysqlUser().select { [it.id, it.username] }.where { it.id == 2 }
         ).build()
 
         assertEquals(
@@ -155,7 +155,7 @@ class MysqlUnionTest : MysqlTestBase() {
         val query1 = MysqlUser().select().where { it.id == 1 }
         val query2 = MysqlUser(2).join(UserRelation(2, "test", 1, 1)) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 }
-            select { user.id + user.username + relation.gender }
+            select { [user.id, user.username, relation.gender] }
         }
         
         println("Query 1 SQL: ${query1.build().atomicTask.sql}")
@@ -188,11 +188,11 @@ class MysqlUnionTest : MysqlTestBase() {
         val (sql, paramMap) = (
             MysqlUser(1).join(UserRelation(1, "test1", 1, 1)) { user, relation ->
                 leftJoin(relation) { user.id == relation.id2 }
-                select { user.id + relation.gender }
+                select { [user.id, relation.gender] }
             }
             union MysqlUser(2).join(UserRelation(2, "test2", 1, 1)) { user, relation ->
                 leftJoin(relation) { user.id == relation.id2 }
-                select { user.id + relation.gender }
+                select { [user.id, relation.gender] }
             }
         ).build()
 
@@ -259,12 +259,12 @@ class MysqlUnionTest : MysqlTestBase() {
     @Test
     fun testComplexUnionWithJoinAndLimit() {
         val (sql, paramMap) = union(
-            MysqlUser().select { it.id + it.username }.where { it.id == 1 },
+            MysqlUser().select { [it.id, it.username] }.where { it.id == 1 },
             MysqlUser(2).join(UserRelation(2, "test", 1, 1)) { user, relation ->
                 leftJoin(relation) { user.id == relation.id2 }
-                select { user.id + user.username }
+                select { [user.id, user.username] }
             },
-            MysqlUser().select { it.id + it.username }.where { it.id == 3 }
+            MysqlUser().select { [it.id, it.username] }.where { it.id == 3 }
         ).limit(20).build()
 
         assertEquals(
@@ -290,8 +290,8 @@ class MysqlUnionTest : MysqlTestBase() {
     @Test
     fun testUnionWithDifferentWhereConditions() {
         val (sql, paramMap) = union(
-            MysqlUser().select { it.id + it.username }.where { it.username == "Alice" },
-            MysqlUser().select { it.id + it.username }.where { it.gender == 1 }
+            MysqlUser().select { [it.id, it.username] }.where { it.username == "Alice" },
+            MysqlUser().select { [it.id, it.username] }.where { it.gender == 1 }
         ).build()
 
         assertEquals(
@@ -354,8 +354,8 @@ class MysqlUnionTest : MysqlTestBase() {
     @Test
     fun testUnionWithRangeWhereConditions() {
         val (sql, paramMap) = union(
-            MysqlUser().select { it.id + it.username }.where { it.id > 0 && it.id < 10 },
-            MysqlUser().select { it.id + it.username }.where { it.id > 100 && it.id < 200 }
+            MysqlUser().select { [it.id, it.username] }.where { it.id > 0 && it.id < 10 },
+            MysqlUser().select { [it.id, it.username] }.where { it.id > 100 && it.id < 200 }
         ).build()
 
         assertEquals(

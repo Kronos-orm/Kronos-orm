@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package com.kotlinorm.compiler.core
 
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName

@@ -63,9 +63,9 @@ class KronosPluginTest {
                 }
                 """.trimIndent()
             ),
-            pluginOptions = listOf(
+            pluginOptions = [
                 PluginOption("kronos-compiler-plugin", "dump-ir", "true")
-            )
+            ]
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
@@ -84,10 +84,10 @@ class KronosPluginTest {
                 }
                 """.trimIndent()
             ),
-            pluginOptions = listOf(
+            pluginOptions = [
                 PluginOption("kronos-compiler-plugin", "dump-ir", "true"),
                 PluginOption("kronos-compiler-plugin", "dump-ir-path", "build/test-ir-dump")
-            )
+            ]
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
@@ -106,10 +106,10 @@ class KronosPluginTest {
                 }
                 """.trimIndent()
             ),
-            pluginOptions = listOf(
+            pluginOptions = [
                 PluginOption("kronos-compiler-plugin", "dump-ir", "true"),
                 PluginOption("kronos-compiler-plugin", "dump-ir-mode", "kotlinLike")
-            )
+            ]
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
@@ -128,10 +128,10 @@ class KronosPluginTest {
                 }
                 """.trimIndent()
             ),
-            pluginOptions = listOf(
+            pluginOptions = [
                 PluginOption("kronos-compiler-plugin", "dump-ir", "true"),
                 PluginOption("kronos-compiler-plugin", "dump-ir-mode", "common")
-            )
+            ]
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
@@ -150,10 +150,10 @@ class KronosPluginTest {
                 }
                 """.trimIndent()
             ),
-            pluginOptions = listOf(
+            pluginOptions = [
                 PluginOption("kronos-compiler-plugin", "dump-ir", "true"),
                 PluginOption("kronos-compiler-plugin", "dump-ir-files", "Test.kt,User.kt")
-            )
+            ]
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
@@ -172,10 +172,10 @@ class KronosPluginTest {
                 }
                 """.trimIndent()
             ),
-            pluginOptions = listOf(
+            pluginOptions = [
                 PluginOption("kronos-compiler-plugin", "dump-ir", "true"),
                 PluginOption("kronos-compiler-plugin", "dump-ir-files", "*Service.kt,*Repository.kt")
-            )
+            ]
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
@@ -186,9 +186,9 @@ class KronosPluginTest {
         pluginOptions: List<PluginOption> = emptyList()
     ): JvmCompilationResult {
         return KotlinCompilation().apply {
-            sources = listOf(sourceFile)
-            compilerPluginRegistrars = listOf(KronosCompilerPluginRegistrar())
-            commandLineProcessors = listOf(KronosCommandLineProcessor())
+            sources = [sourceFile]
+            compilerPluginRegistrars = [KronosCompilerPluginRegistrar()]
+            commandLineProcessors = [KronosCommandLineProcessor()]
             this.pluginOptions = pluginOptions
             inheritClassPath = true
             messageOutputStream = System.out

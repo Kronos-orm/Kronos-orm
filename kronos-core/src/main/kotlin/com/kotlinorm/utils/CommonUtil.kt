@@ -52,7 +52,7 @@ fun KronosCommonStrategy.execute(
     )
 }
 
-fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { addAll(this@toLinkedSet) }
+fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = LinkedHashSet(this)
 
 
 /**
@@ -68,7 +68,7 @@ fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply {
 fun getTypeSafeValue(
     kotlinType: String,
     value: Any,
-    superTypes: List<String> = listOf(),
+    superTypes: List<String> = [],
     dateTimeFormat: String? = null,
     kClassOfVal: KClass<*> = value::class
 ): Any = getValueTransformed(

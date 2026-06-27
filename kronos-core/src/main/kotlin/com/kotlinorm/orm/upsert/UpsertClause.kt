@@ -47,6 +47,7 @@ import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.processParams
@@ -76,9 +77,9 @@ class UpsertClause<T : KPojo>(
     private var optimisticStrategy = kPojoOptimisticLockCache[kClass]
     internal var allFields = kPojoAllFieldsCache[kClass]!!
     private var onConflict = false
-    private var toInsertFields = linkedSetOf<Field>()
-    private var toUpdateFields = linkedSetOf<Field>()
-    private var onFields = linkedSetOf<Field>()
+    private var toInsertFields: LinkedHashSet<Field> = []
+    private var toUpdateFields: LinkedHashSet<Field> = []
+    private var onFields: LinkedHashSet<Field> = []
     private var cascadeEnabled = true
     private var cascadeAllowed: Set<Field>? = null
     private var lock: PessimisticLock? = null
@@ -218,7 +219,8 @@ class UpsertClause<T : KPojo>(
                 operationType = KOperationType.UPSERT
             ).toKronosActionTask()
         } else {
-            return listOf<KronosAtomicActionTask>().toKronosActionTask().doBeforeExecute {
+            val tasks: List<KronosAtomicActionTask> = []
+            return tasks.toKronosActionTask().doBeforeExecute {
 
                 lock = lock ?: PessimisticLock.X.takeIf { optimisticStrategy?.enabled != true }
 
@@ -227,7 +229,7 @@ class UpsertClause<T : KPojo>(
                     .lock(lock)
                     .apply {
                         selectFields =
-                            linkedSetOf(Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL))
+                            [Field("COUNT(1)", "COUNT(1)", type = KColumnType.CUSTOM_CRITERIA_SQL)]
                         selectAll = false
                         // Directly set statement.where using Criteria
                         val localCriteriaParams = mutableMapOf<String, Any?>()

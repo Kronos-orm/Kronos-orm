@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kronos Dev KCP"
+  short_description: "Build Kotlin compiler plugins"
+  default_prompt: "Use $kronos-dev-kcp to design, implement, or test a Kotlin compiler plugin."

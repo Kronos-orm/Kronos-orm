@@ -45,7 +45,7 @@ fun queryTableExistence(tableName: String, dataSource: KronosDataSourceWrapper):
     ),
     Int::class,
     false,
-    listOf()
+    []
 ) as Int) > 0
 
 fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): String {
@@ -59,7 +59,7 @@ fun queryTableComment(tableName: String, dataSource: KronosDataSourceWrapper): S
         ),
         String::class,
         false,
-        listOf()
+        []
     ) as String? ?: ""
 }
 

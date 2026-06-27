@@ -130,7 +130,7 @@ class SortTransformerTest {
                         user.getColumn("username") to SortType.ASC,
                         user.getColumn("age") to SortType.ASC,
                     ),
-                    sort { it.id + it.username + it.age }
+                    sort { [it.id, it.username, it.age] }
                 )
             }
         """
@@ -150,7 +150,7 @@ class SortTransformerTest {
                         user.getColumn("username") to SortType.DESC,
                         user.getColumn("age") to SortType.ASC,
                     ),
-                    sort { it.id.asc() + it.username.desc() + it.age.asc() }
+                    sort { [it.id.asc(), it.username.desc(), it.age.asc()] }
                 )
             }
         """
@@ -220,7 +220,7 @@ class SortTransformerTest {
                         user.getColumn("age") to SortType.DESC,
                         user.getColumn("gender") to SortType.ASC,
                     ),
-                    sort { it.id.desc() + it.username + it.age.desc() + it.gender }
+                    sort { [it.id.desc(), it.username, it.age.desc(), it.gender] }
                 )
             }
         """

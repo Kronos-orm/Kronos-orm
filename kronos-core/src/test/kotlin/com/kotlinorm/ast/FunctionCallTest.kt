@@ -12,7 +12,7 @@ class FunctionCallTest {
 
     @Test
     fun testSimpleFunctionCall() {
-        val func = FunctionCall("COUNT", listOf(ColumnReference(tableAlias = "users", columnName = "id")))
+        val func = FunctionCall("COUNT", [ColumnReference(tableAlias = "users", columnName = "id")])
         
         assertEquals("COUNT", func.functionName)
         assertEquals(1, func.arguments.size)
@@ -33,7 +33,7 @@ class FunctionCallTest {
     fun testFunctionCallWithDistinct() {
         val func = FunctionCall(
             "COUNT",
-            listOf(ColumnReference(tableAlias = "users", columnName = "email")),
+            [ColumnReference(tableAlias = "users", columnName = "email")],
             distinct = true
         )
         
@@ -49,7 +49,7 @@ class FunctionCallTest {
         )
         val func = FunctionCall(
             "COUNT",
-            listOf(ColumnReference(tableAlias = "users", columnName = "id")),
+            [ColumnReference(tableAlias = "users", columnName = "id")],
             filter = filter
         )
         
@@ -60,8 +60,8 @@ class FunctionCallTest {
     @Test
     fun testFunctionCallWithWindowClause() {
         val window = WindowClause(
-            partitionBy = listOf(ColumnReference(tableAlias = "users", columnName = "department")),
-            orderBy = listOf(OrderByItem(ColumnReference(tableAlias = "users", columnName = "salary"), SortType.DESC))
+            partitionBy = [ColumnReference(tableAlias = "users", columnName = "department")],
+            orderBy = [OrderByItem(ColumnReference(tableAlias = "users", columnName = "salary"), SortType.DESC)]
         )
         val func = FunctionCall(
             "ROW_NUMBER",
@@ -78,11 +78,11 @@ class FunctionCallTest {
     fun testFunctionCallWithMultipleArguments() {
         val func = FunctionCall(
             "CONCAT",
-            listOf(
+            [
                 ColumnReference(tableAlias = "users", columnName = "first_name"),
                 Literal.StringLiteral(" "),
                 ColumnReference(tableAlias = "users", columnName = "last_name")
-            )
+            ]
         )
         
         assertEquals(3, func.arguments.size)
@@ -91,10 +91,10 @@ class FunctionCallTest {
     @Test
     fun testWindowClauseWithPartitionBy() {
         val window = WindowClause(
-            partitionBy = listOf(
+            partitionBy = [
                 ColumnReference(tableAlias = "sales", columnName = "region"),
                 ColumnReference(tableAlias = "sales", columnName = "product")
-            )
+            ]
         )
         
         assertEquals(2, window.partitionBy?.size)
@@ -105,10 +105,10 @@ class FunctionCallTest {
     @Test
     fun testWindowClauseWithOrderBy() {
         val window = WindowClause(
-            orderBy = listOf(
+            orderBy = [
                 OrderByItem(ColumnReference(tableAlias = "sales", columnName = "date"), SortType.ASC),
                 OrderByItem(ColumnReference(tableAlias = "sales", columnName = "amount"), SortType.DESC)
-            )
+            ]
         )
         
         assertEquals(2, window.orderBy?.size)
@@ -169,8 +169,8 @@ class FunctionCallTest {
 
     @Test
     fun testFunctionCallEquality() {
-        val func1 = FunctionCall("MAX", listOf(ColumnReference(tableAlias = "users", columnName = "age")))
-        val func2 = FunctionCall("MAX", listOf(ColumnReference(tableAlias = "users", columnName = "age")))
+        val func1 = FunctionCall("MAX", [ColumnReference(tableAlias = "users", columnName = "age")])
+        val func2 = FunctionCall("MAX", [ColumnReference(tableAlias = "users", columnName = "age")])
         
         assertEquals(func1, func2)
     }

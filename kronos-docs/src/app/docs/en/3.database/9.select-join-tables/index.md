@@ -9,7 +9,7 @@ In Kronos, we can use `KPojo.join(KPojo1, KPojo2, ...) `The method is to query t
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -21,7 +21,7 @@ In Kronos, we use `left join` to connect multiple tables by default. If you don'
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -32,7 +32,7 @@ val users: List<User> =
     User().join(UserInfo(), UserTeam()) { user, userInfo, userTeam ->
         leftJoin { user.id == userInfo.userId }
         innerJoin { user.id == userTeam.userId }
-        select { user.id + user.name + userInfo.age + userTeam.teamId }
+        select { [user.id, user.name, userInfo.age, userTeam.teamId] }
     }.query()
 ```
 
@@ -47,7 +47,7 @@ val users: List<User> =
     User().join(UserInfo(), UserTeam(), UserRole()) { user, userInfo, userTeam, userRole ->
         on { user.id == userInfo.userId && user.id == userTeam.userId && user.id == userRole.userId }
         db(userInfo to "user_info_database", userRole to "user_role_database")
-        select { user.id + user.name + userInfo.age + userTeam.teamId + userRole.roleName }
+        select { [user.id, user.name, userInfo.age, userTeam.teamId, userRole.roleName] }
     }.query()
 ```
 
@@ -55,9 +55,9 @@ val users: List<User> =
 
 In Kronos, we can specify query fields using the `select` method, with `+` joins between multiple fields.
 
-You can use `as_` to specify aliases for the field, such as `select { user.id + user.name.as_("userName") + userInfo.age }`.
+You can use `as_` to specify aliases for the field, such as `select { [user.id, user.name.as_("userName"), userInfo.age] }`.
 
-If you need to query all fields of a table, you can use `select { user }`, `select { user + userInfo + userTeam.teamId }`.
+If you need to query all fields of a table, you can use `select { user }`, `select { [user, userInfo, userTeam.teamId] }`.
 
 When you don't specify query fields, all fields are queried by default. We will rename the same fields in different tables to avoid field conflicts.
 
@@ -67,7 +67,7 @@ Strings can be used as custom query fields, such as `select { "count(`user.id`)"
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryList()
 ```
 
@@ -79,7 +79,7 @@ You can pass `KPojo` to query all columns, and use `+`, `-` to add and subtract 
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user - user.id + userInfo.age }
+        select { [user - user.id, userInfo.age] }
     }
         .query()
 ```
@@ -105,7 +105,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user.id == 1 }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -116,7 +116,7 @@ val users: List<User> =
     User(1, "Kronos").join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user.eq }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -127,7 +127,7 @@ val users: List<User> =
     User(1, "Kronos").join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user - user.id }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -139,7 +139,7 @@ In Kronos, we can use the `patch` method to add parameters to a custom query con
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
         where { "user.id = :id" }
         patch("id" to 1)
     }.query()
@@ -153,9 +153,9 @@ In Kronos, we can specify grouping fields using the `groupBy` method and specify
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        groupBy { user.id + userInfo.age }
+        groupBy { [user.id, userInfo.age] }
         having { userInfo.age > 18 }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -167,8 +167,8 @@ In Kronos, we can specify sorting conditions using the `orderBy` method.
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        orderBy { user.id.asc() + userInfo.age.desc() }
-        select { user.id + user.name + userInfo.age }
+        orderBy { [user.id.asc(), userInfo.age.desc()] }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -181,7 +181,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         limit(10)
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -194,7 +194,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         distinct()
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -214,7 +214,7 @@ val (total, list) =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         page(1, 10)
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.withTotal().query()
 ```
 
@@ -226,7 +226,7 @@ The `query` method is used to execute queries and return map list.
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -247,7 +247,7 @@ When the generic parameter is not set, Kronos will automatically convert the que
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryList()
 ```
 
@@ -316,7 +316,7 @@ When the generic parameter is not set, Kronos will automatically convert the que
 val user: User? =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryOneOrNull()
 ```
 
@@ -330,7 +330,7 @@ val customWrapper = CustomWrapper()
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryLIST(customWrapper)
 ```
 

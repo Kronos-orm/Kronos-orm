@@ -68,7 +68,7 @@ class MysqlUpdateTest : MysqlTestBase() {
                 it.username = "123"
                 it.gender = 1
             }
-            .by { it.id + it.username }
+            .by { [it.id, it.username] }
             .build()
 
         assertEquals(
@@ -90,7 +90,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateMultiFieldsWithSetAndBy() {
-        val (sql, paramMap) = user.update { it.username + it.gender }
+        val (sql, paramMap) = user.update { [it.username, it.gender] }
             .by { it.id }
             .build()
         assertEquals(
@@ -146,7 +146,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereComparable() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id < 1 && it.id > 0 }.build()
 
         assertEquals(
@@ -167,7 +167,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNeq() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.neq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` != :id AND `deleted` = 0",
@@ -185,7 +185,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotEqual() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id != 1 }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` != :id AND `deleted` = 0",
@@ -203,7 +203,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereLikeInfix() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username like "%t" }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
@@ -221,7 +221,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereLikeBracket() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.like("%t") }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
@@ -239,7 +239,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotLikeInfix() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username notLike "%t" }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
@@ -257,7 +257,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotLikeBracket() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.notLike("%t") }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
@@ -275,7 +275,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereBetweenInfix() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id between (1..2) }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` BETWEEN :idMin AND :idMax AND `deleted` = 0",
@@ -294,7 +294,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotBetweenInfix() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id notBetween (1..2) }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` NOT BETWEEN :idMin AND :idMax AND `deleted` = 0",
@@ -318,7 +318,7 @@ class MysqlUpdateTest : MysqlTestBase() {
     //it.<property>.notNull
     @Test
     fun testUpdateWhereIsNull() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.isNull }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IS NULL AND `deleted` = 0",
@@ -353,9 +353,9 @@ class MysqlUpdateTest : MysqlTestBase() {
 
         val (sql, paramMap) = movie.update().where {
             "xxxxxxx".asSql() && it.id.eq && it.name.contains && it.score.between(1..2) && it.tags.eq && it.description.contains &&
-                    (it.year in listOf(2021, 2022) || it.vote < 10 || it.favorite == 1) &&
+                    (it.year in [2021, 2022] || it.vote < 10 || it.favorite == 1) &&
                     it.director.eq && it.actor.eq &&
-                    (it.country !in listOf("China", "Japan") || it.language.eq ||
+                    (it.country !in ["China", "Japan"] || it.language.eq ||
                             (it.poster.notNull && it.video.notNull && it.summary.notLike("%test%"))
                             )
         }.build()
@@ -371,12 +371,12 @@ class MysqlUpdateTest : MysqlTestBase() {
             "scoreMax" to 2,
             "tags" to "test, testMovie",
             "description" to "%A test movie%",
-            "yearList" to listOf(2021, 2022),
+            "yearList" to [2021, 2022],
             "voteMax" to 10,
             "favorite" to 1,
             "director" to "testDirector",
             "actor" to "testActor",
-            "countryList" to listOf("China", "Japan"),
+            "countryList" to ["China", "Japan"],
             "language" to "English",
             "summary" to "%test%",
             "actorNew" to "testActor",
@@ -404,7 +404,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotNull() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.notNull }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IS NOT NULL AND `deleted` = 0",
@@ -429,8 +429,8 @@ class MysqlUpdateTest : MysqlTestBase() {
     //Any类型的notIn方法
     @Test
     fun testUpdateWhereIn() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id in listOf(1, 2, 3) }.build()
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
+            .where { it.id in [1, 2, 3] }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IN (:idList) AND `deleted` = 0",
             sql
@@ -439,7 +439,7 @@ class MysqlUpdateTest : MysqlTestBase() {
             mapOf(
                 "idNew" to 1,
                 "usernameNew" to "test",
-                "idList" to listOf(1, 2, 3),
+                "idList" to [1, 2, 3],
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -447,8 +447,8 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotIn() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { it.id !in listOf(1, 2, 3) }.build()
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
+            .where { it.id !in [1, 2, 3] }.build()
 
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` NOT IN (:idList) AND `deleted` = 0",
@@ -458,7 +458,7 @@ class MysqlUpdateTest : MysqlTestBase() {
             mapOf(
                 "idNew" to 1,
                 "usernameNew" to "test",
-                "idList" to listOf(1, 2, 3),
+                "idList" to [1, 2, 3],
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -466,8 +466,8 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereContains() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
-            .where { listOf(1, 2, 3).contains(it.id) }.build()
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
+            .where { [1, 2, 3].contains(it.id) }.build()
 
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` IN (:idList) AND `deleted` = 0",
@@ -477,7 +477,7 @@ class MysqlUpdateTest : MysqlTestBase() {
             mapOf(
                 "idNew" to 1,
                 "usernameNew" to "test",
-                "idList" to listOf(1, 2, 3),
+                "idList" to [1, 2, 3],
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
         )
@@ -503,7 +503,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWherestartsWithInfix() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id startsWith "1" }.build()
 
         assertEquals(
@@ -522,7 +522,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereendsWithInfix() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id endsWith "1" }.build()
 
         assertEquals(
@@ -541,7 +541,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereStringContains() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.contains("test") }.build()
 
         assertEquals(
@@ -564,7 +564,7 @@ class MysqlUpdateTest : MysqlTestBase() {
     //    val Comparable<*>?.endsWith get() = true
     @Test
     fun testUpdateWhereLike() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.like }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
@@ -582,7 +582,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereNotLike() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.notLike }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` NOT LIKE :username AND `deleted` = 0",
@@ -600,7 +600,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWherestartsWith() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.startsWith }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
@@ -618,7 +618,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereendsWith() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.username.endsWith }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `username` LIKE :username AND `deleted` = 0",
@@ -640,7 +640,7 @@ class MysqlUpdateTest : MysqlTestBase() {
     //    val Comparable<*>?.ge get() = true
     @Test
     fun testUpdateWhereLt() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.lt }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` < :idMax AND `deleted` = 0",
@@ -658,7 +658,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereGt() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.gt }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` > :idMin AND `deleted` = 0",
@@ -676,7 +676,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereLe() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.le }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` <= :idMax AND `deleted` = 0",
@@ -694,7 +694,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testUpdateWhereGe() {
-        val (sql, paramMap) = testUser.update { it.id + it.username }
+        val (sql, paramMap) = testUser.update { [it.id, it.username] }
             .where { it.id.ge }.build()
 
         assertEquals(
@@ -840,7 +840,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testBatchUpdateIterWhere() {
-        val (sql, _, list) = listOf(user, testUser).update { it - it.username }.where { it.id.eq }.build()
+        val (sql, _, list) = [user, testUser].update { it - it.username }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `id` = :idNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql
@@ -867,7 +867,7 @@ class MysqlUpdateTest : MysqlTestBase() {
 
     @Test
     fun testBatchUpdateExceptIterWhere() {
-        val (sql, _, list) = listOf(user, testUser).update { it - it.id }.where { it.id.eq }.build()
+        val (sql, _, list) = [user, testUser].update { it - it.id }.where { it.id.eq }.build()
         assertEquals(
             "UPDATE `tb_user` SET `username` = :usernameNew, `score` = :scoreNew, `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `deleted` = 0",
             sql

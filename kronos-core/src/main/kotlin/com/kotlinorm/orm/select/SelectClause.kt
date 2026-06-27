@@ -63,6 +63,7 @@ import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
+import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
 import com.kotlinorm.utils.logAndReturn
@@ -89,7 +90,7 @@ class SelectClause<T : KPojo>(
     internal var operationType = KOperationType.SELECT // 级联操作类型，默认为SELECT
 
     // Cascade fields extracted from select { } lambda (non-column fields like KPojo/Collection<KPojo>)
-    private var selectCascadeFields: LinkedHashSet<Field> = linkedSetOf()
+    private var selectCascadeFields: LinkedHashSet<Field> = []
 
     // AST SelectStatement - all data stored here, directly modified without copy()
     internal var statement: SelectStatement = SelectStatement(
@@ -624,7 +625,7 @@ class SelectClause<T : KPojo>(
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ): List<T> {
         return this.build().queryList(wrapper, isKPojo, superTypes)
     }
@@ -635,7 +636,7 @@ class SelectClause<T : KPojo>(
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, kClass, true, listOf()) as List<T>, QueryList
+                wrapper.orDefault().forList(atomicTask, kClass, true, []) as List<T>, QueryList
             )
             afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
@@ -656,7 +657,7 @@ class SelectClause<T : KPojo>(
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ): T {
         limit(1)
         return this.build().queryOne(wrapper, isKPojo, superTypes)
@@ -669,7 +670,7 @@ class SelectClause<T : KPojo>(
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, kClass, true, listOf())
+                (wrapper.orDefault().forObject(atomicTask, kClass, true, [])
                     ?: throw NullPointerException("No such record")) as T, QueryOne
             )
             afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
@@ -680,7 +681,7 @@ class SelectClause<T : KPojo>(
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ): T? {
         limit(1)
         return this.build().queryOneOrNull(wrapper, isKPojo, superTypes)
@@ -693,7 +694,7 @@ class SelectClause<T : KPojo>(
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, kClass, true, listOf()) as T?, QueryOneOrNull
+                wrapper.orDefault().forObject(atomicTask, kClass, true, []) as T?, QueryOneOrNull
             )
             afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
             return result

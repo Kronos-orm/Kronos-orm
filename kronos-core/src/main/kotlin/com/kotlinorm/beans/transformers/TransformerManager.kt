@@ -41,7 +41,7 @@ object TransformerManager {
     fun getValueTransformed(
         targetKotlinType: String,
         value: Any,
-        superTypes: List<String> = listOf(),
+        superTypes: List<String> = [],
         dateTimeFormat: String? = null,
         kClassOfVal: KClass<*> = value::class
     ): Any {

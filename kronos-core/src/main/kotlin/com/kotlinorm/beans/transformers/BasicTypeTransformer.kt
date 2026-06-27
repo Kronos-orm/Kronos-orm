@@ -25,7 +25,7 @@ import kotlin.reflect.KClass
  * @author OUSC
  */
 object BasicTypeTransformer : ValueTransformer {
-    private val basicTypes = listOf(
+    private val basicTypes = [
         "kotlin.Int",
         "kotlin.Long",
         "kotlin.Double",
@@ -34,7 +34,7 @@ object BasicTypeTransformer : ValueTransformer {
         "kotlin.Char",
         "kotlin.Byte",
         "kotlin.Short"
-    )
+    ]
 
     /**
      * Safely casts the value to the target type.

@@ -17,6 +17,7 @@
 package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.utils.LinkedHashSet
 
 data class ConflictResolver(
     val tableName: String,

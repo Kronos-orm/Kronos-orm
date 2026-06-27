@@ -82,13 +82,16 @@ class SelectTransformer(
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
 
-                fields.forEach { field ->
-                    +irCall(addFieldMethodSymbol).apply {
-                        dispatchReceiver = irGet(receiver)
-                        arguments[1] = field
+                if (fields.isEmpty()) {
+                    +expression
+                } else {
+                    fields.forEach { field ->
+                        +irCall(addFieldMethodSymbol).apply {
+                            dispatchReceiver = irGet(receiver)
+                            arguments[1] = field
+                        }
                     }
                 }
-                +expression
             }
         }
     }

@@ -89,7 +89,7 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ) = executeQuery(wrapper, QueryOne) {
         it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?
             ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
@@ -98,7 +98,7 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ) = executeQuery(wrapper, QueryOneOrNull) {
         it.forObject(atomicTask, T::class, isKPojo, superTypes) as T?
     }

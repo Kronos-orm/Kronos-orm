@@ -24,8 +24,8 @@ import com.kotlinorm.interfaces.KPojo
  *
  * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
  * to add Fields, you can use following:
- * 1. `it.<field1> + it.<field2>`
- * 2. `it.<field1> + it.<field2>.as_("<alias>")`
+ * 1. `[it.<field1>, it.<field2>]`
+ * 2. `[it.<field1>, it.<field2>.as_("<alias>")]`
  * 3. `addField(Field(columnName, optionalName))`
  * 4. `Field(columnName, optionalName).setAlias("<alias>")`
  * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).as_("<alias>")`
@@ -36,20 +36,18 @@ open class KTableForSelect<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
     val f: FunctionHandler = FunctionHandler
 
-    /**
-     * Overloaded operator function that adds two objects of type Any?.
-     *
-     * @param other the object to be added to this object.
-     * @return an integer value of 1.
-     */
-    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Int = 1
+    @Suppress("UNUSED_PARAMETER")
+    operator fun get(vararg fields: Any?): Unit = Unit
 
-    /**
-     * Overloaded operator function that adds two objects of type Any?.
-     *
-     * @return an integer value of 1.
-     */
-    operator fun Any?.unaryPlus(): Int = 1
+    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Any? = null
+
+    operator fun Any?.minus(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.times(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.div(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.rem(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
 
     /**
      * Overloaded operator function that minus two objects of type Any?.

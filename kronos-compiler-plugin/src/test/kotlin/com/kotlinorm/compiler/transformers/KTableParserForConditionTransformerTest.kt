@@ -269,7 +269,7 @@ class KTableParserForConditionTransformerTest {
     fun `test function field on both sides of GT`() {
         "FuncBothSides" testCompile """
             fun test(){
-                val result = where { f.add(it.age, 1) > f.sub(it.age, 1) }
+                val result = where { it.age + 1 > it.age - 1 }
                 assertNotNull(result)
                 assertEquals(ConditionType.GT, result!!.type)
             }

@@ -45,7 +45,7 @@ class FunctionBuildersTest : MysqlTestBase() {
     private val sqlite = SampleSqliteJdbcWrapper
     private fun fp(c: String, t: String = ""): Pair<Field?, Any?> = Pair(Field(columnName = c, name = c, tableName = t), null)
     private fun vp(v: Any?): Pair<Field?, Any?> = Pair(null, v)
-    private fun ff(n: String, f: List<Pair<Field?, Any?>> = listOf(), a: String = n) = FunctionField(n, f).also { it.columnName = a; it.name = a }
+    private fun ff(n: String, f: List<Pair<Field?, Any?>> = [], a: String = n) = FunctionField(n, f).also { it.columnName = a; it.name = a }
 
     // buildAlias
     @Test fun testBuildAliasWithAlias() = assertEquals("X AS a", MathFunctionBuilder.buildAlias("X", "a"))
@@ -57,101 +57,101 @@ class FunctionBuildersTest : MysqlTestBase() {
     @Test fun testBuildFieldNum() = assertEquals("42", MathFunctionBuilder.buildField(vp(42), mysql, false))
 
     // buildFields
-    @Test fun testBuildFieldsAlias() = assertEquals("ABS(`s`) AS a", MathFunctionBuilder.buildFields("ABS", "a", listOf(fp("s")), mysql, false))
-    @Test fun testBuildFieldsNoAlias() = assertEquals("ABS(`s`)", MathFunctionBuilder.buildFields("ABS", "", listOf(fp("s")), mysql, false))
-    @Test fun testBuildFieldsMulti() = assertEquals("G(`a`, `b`, 1)", MathFunctionBuilder.buildFields("G", "", listOf(fp("a"), fp("b"), vp(1)), mysql, false))
+    @Test fun testBuildFieldsAlias() = assertEquals("ABS(`s`) AS a", MathFunctionBuilder.buildFields("ABS", "a", [fp("s")], mysql, false))
+    @Test fun testBuildFieldsNoAlias() = assertEquals("ABS(`s`)", MathFunctionBuilder.buildFields("ABS", "", [fp("s")], mysql, false))
+    @Test fun testBuildFieldsMulti() = assertEquals("G(`a`, `b`, 1)", MathFunctionBuilder.buildFields("G", "", [fp("a"), fp("b"), vp(1)], mysql, false))
 
     // buildOperations
-    @Test fun testBuildOpsAdd() = assertEquals("(`a` + `b`)", MathFunctionBuilder.buildOperations("+", "", listOf(fp("a"), fp("b")), mysql, false))
-    @Test fun testBuildOpsAlias() = assertEquals("(`a` - 10) AS d", MathFunctionBuilder.buildOperations("-", "d", listOf(fp("a"), vp(10)), mysql, false))
+    @Test fun testBuildOpsAdd() = assertEquals("(`a` + `b`)", MathFunctionBuilder.buildOperations("+", "", [fp("a"), fp("b")], mysql, false))
+    @Test fun testBuildOpsAlias() = assertEquals("(`a` - 10) AS d", MathFunctionBuilder.buildOperations("-", "d", [fp("a"), vp(10)], mysql, false))
 
     // MathFunctionBuilder.transform
-    @Test fun testMathAbs() = assertEquals("ABS(`s`) AS abs", MathFunctionBuilder.transform(ff("abs", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathAbsNoAlias() = assertEquals("ABS(`s`)", MathFunctionBuilder.transform(ff("abs", listOf(fp("s"))), mysql, false, false))
-    @Test fun testMathCeilMy() = assertEquals("CEIL(`s`) AS ceil", MathFunctionBuilder.transform(ff("ceil", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathCeilMs() = assertEquals("CEILING([s]) AS ceil", MathFunctionBuilder.transform(ff("ceil", listOf(fp("s"))), mssql, false, true))
-    @Test fun testMathFloor() = assertEquals("FLOOR(`s`) AS floor", MathFunctionBuilder.transform(ff("floor", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathExp() = assertEquals("EXP(`s`) AS exp", MathFunctionBuilder.transform(ff("exp", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathSign() = assertEquals("SIGN(`s`) AS sign", MathFunctionBuilder.transform(ff("sign", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathSqrt() = assertEquals("SQRT(`s`) AS sqrt", MathFunctionBuilder.transform(ff("sqrt", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathRound() = assertEquals("ROUND(`s`, 2) AS round", MathFunctionBuilder.transform(ff("round", listOf(fp("s"), vp(2))), mysql, false, true))
-    @Test fun testMathPi() = assertEquals("PI() AS pi", MathFunctionBuilder.transform(ff("pi", listOf()), mysql, false, true))
-    @Test fun testMathLog() = assertEquals("LOG(`s`, 10) AS log", MathFunctionBuilder.transform(ff("log", listOf(fp("s"), vp(10))), mysql, false, true))
-    @Test fun testMathGreatest() = assertEquals("GREATEST(`a`, `b`) AS greatest", MathFunctionBuilder.transform(ff("greatest", listOf(fp("a"), fp("b"))), mysql, false, true))
-    @Test fun testMathLeast() = assertEquals("LEAST(`a`, `b`) AS least", MathFunctionBuilder.transform(ff("least", listOf(fp("a"), fp("b"))), mysql, false, true))
-    @Test fun testMathLnMy() = assertEquals("LN(`s`) AS ln", MathFunctionBuilder.transform(ff("ln", listOf(fp("s"))), mysql, false, true))
-    @Test fun testMathLnMs() = assertEquals("LOG([s], 'EXP(1)') AS ln", MathFunctionBuilder.transform(ff("ln", listOf(fp("s"))), mssql, false, true))
-    @Test fun testMathRandMy() = assertEquals("RAND() AS rand", MathFunctionBuilder.transform(ff("rand", listOf()), mysql, false, true))
-    @Test fun testMathRandOr() = assertEquals("DBMS_RANDOM.VALUE AS rand", MathFunctionBuilder.transform(ff("rand", listOf()), oracle, false, true))
-    @Test fun testMathRandSl() = assertEquals("RANDOM() AS rand", MathFunctionBuilder.transform(ff("rand", listOf()), sqlite, false, true))
-    @Test fun testMathRandPg() = assertEquals("RANDOM() AS rand", MathFunctionBuilder.transform(ff("rand", listOf()), postgres, false, true))
-    @Test fun testMathTruncMy() = assertEquals("TRUNCATE(`s`, 2) AS trunc", MathFunctionBuilder.transform(ff("trunc", listOf(fp("s"), vp(2))), mysql, false, true))
-    @Test fun testMathTruncMs() = assertEquals("ROUND([s], 2) AS trunc", MathFunctionBuilder.transform(ff("trunc", listOf(fp("s"), vp(2))), mssql, false, true))
-    @Test fun testMathTruncPg() = assertEquals("TRUNC(\"s\", 2) AS trunc", MathFunctionBuilder.transform(ff("trunc", listOf(fp("s"), vp(2))), postgres, false, true))
-    @Test fun testMathAdd() = assertEquals("(`a` + `b`) AS add", MathFunctionBuilder.transform(ff("add", listOf(fp("a"), fp("b"))), mysql, false, true))
-    @Test fun testMathSub() = assertEquals("(`a` - `b`) AS sub", MathFunctionBuilder.transform(ff("sub", listOf(fp("a"), fp("b"))), mysql, false, true))
-    @Test fun testMathMul() = assertEquals("(`a` * `b`) AS mul", MathFunctionBuilder.transform(ff("mul", listOf(fp("a"), fp("b"))), mysql, false, true))
-    @Test fun testMathDiv() = assertEquals("(`a` / 2) AS div", MathFunctionBuilder.transform(ff("div", listOf(fp("a"), vp(2))), mysql, false, true))
-    @Test fun testMathMod() = assertEquals("MOD(`a`, 3) AS mod", MathFunctionBuilder.transform(ff("mod", listOf(fp("a"), vp(3))), mysql, false, true))
+    @Test fun testMathAbs() = assertEquals("ABS(`s`) AS abs", MathFunctionBuilder.transform(ff("abs", [fp("s")]), mysql, false, true))
+    @Test fun testMathAbsNoAlias() = assertEquals("ABS(`s`)", MathFunctionBuilder.transform(ff("abs", [fp("s")]), mysql, false, false))
+    @Test fun testMathCeilMy() = assertEquals("CEIL(`s`) AS ceil", MathFunctionBuilder.transform(ff("ceil", [fp("s")]), mysql, false, true))
+    @Test fun testMathCeilMs() = assertEquals("CEILING([s]) AS ceil", MathFunctionBuilder.transform(ff("ceil", [fp("s")]), mssql, false, true))
+    @Test fun testMathFloor() = assertEquals("FLOOR(`s`) AS floor", MathFunctionBuilder.transform(ff("floor", [fp("s")]), mysql, false, true))
+    @Test fun testMathExp() = assertEquals("EXP(`s`) AS exp", MathFunctionBuilder.transform(ff("exp", [fp("s")]), mysql, false, true))
+    @Test fun testMathSign() = assertEquals("SIGN(`s`) AS sign", MathFunctionBuilder.transform(ff("sign", [fp("s")]), mysql, false, true))
+    @Test fun testMathSqrt() = assertEquals("SQRT(`s`) AS sqrt", MathFunctionBuilder.transform(ff("sqrt", [fp("s")]), mysql, false, true))
+    @Test fun testMathRound() = assertEquals("ROUND(`s`, 2) AS round", MathFunctionBuilder.transform(ff("round", [fp("s"), vp(2)]), mysql, false, true))
+    @Test fun testMathPi() = assertEquals("PI() AS pi", MathFunctionBuilder.transform(ff("pi", []), mysql, false, true))
+    @Test fun testMathLog() = assertEquals("LOG(`s`, 10) AS log", MathFunctionBuilder.transform(ff("log", [fp("s"), vp(10)]), mysql, false, true))
+    @Test fun testMathGreatest() = assertEquals("GREATEST(`a`, `b`) AS greatest", MathFunctionBuilder.transform(ff("greatest", [fp("a"), fp("b")]), mysql, false, true))
+    @Test fun testMathLeast() = assertEquals("LEAST(`a`, `b`) AS least", MathFunctionBuilder.transform(ff("least", [fp("a"), fp("b")]), mysql, false, true))
+    @Test fun testMathLnMy() = assertEquals("LN(`s`) AS ln", MathFunctionBuilder.transform(ff("ln", [fp("s")]), mysql, false, true))
+    @Test fun testMathLnMs() = assertEquals("LOG([s], 'EXP(1)') AS ln", MathFunctionBuilder.transform(ff("ln", [fp("s")]), mssql, false, true))
+    @Test fun testMathRandMy() = assertEquals("RAND() AS rand", MathFunctionBuilder.transform(ff("rand", []), mysql, false, true))
+    @Test fun testMathRandOr() = assertEquals("DBMS_RANDOM.VALUE AS rand", MathFunctionBuilder.transform(ff("rand", []), oracle, false, true))
+    @Test fun testMathRandSl() = assertEquals("RANDOM() AS rand", MathFunctionBuilder.transform(ff("rand", []), sqlite, false, true))
+    @Test fun testMathRandPg() = assertEquals("RANDOM() AS rand", MathFunctionBuilder.transform(ff("rand", []), postgres, false, true))
+    @Test fun testMathTruncMy() = assertEquals("TRUNCATE(`s`, 2) AS trunc", MathFunctionBuilder.transform(ff("trunc", [fp("s"), vp(2)]), mysql, false, true))
+    @Test fun testMathTruncMs() = assertEquals("ROUND([s], 2) AS trunc", MathFunctionBuilder.transform(ff("trunc", [fp("s"), vp(2)]), mssql, false, true))
+    @Test fun testMathTruncPg() = assertEquals("TRUNC(\"s\", 2) AS trunc", MathFunctionBuilder.transform(ff("trunc", [fp("s"), vp(2)]), postgres, false, true))
+    @Test fun testMathAdd() = assertEquals("(`a` + `b`) AS add", MathFunctionBuilder.transform(ff("add", [fp("a"), fp("b")]), mysql, false, true))
+    @Test fun testMathSub() = assertEquals("(`a` - `b`) AS sub", MathFunctionBuilder.transform(ff("sub", [fp("a"), fp("b")]), mysql, false, true))
+    @Test fun testMathMul() = assertEquals("(`a` * `b`) AS mul", MathFunctionBuilder.transform(ff("mul", [fp("a"), fp("b")]), mysql, false, true))
+    @Test fun testMathDiv() = assertEquals("(`a` / 2) AS div", MathFunctionBuilder.transform(ff("div", [fp("a"), vp(2)]), mysql, false, true))
+    @Test fun testMathMod() = assertEquals("MOD(`a`, 3) AS mod", MathFunctionBuilder.transform(ff("mod", [fp("a"), vp(3)]), mysql, false, true))
 
     // StringFunctionBuilder.transform
-    @Test fun testStrUpper() = assertEquals("UPPER(`n`) AS upper", StringFunctionBuilder.transform(ff("upper", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrLower() = assertEquals("LOWER(`n`) AS lower", StringFunctionBuilder.transform(ff("lower", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrLenMy() = assertEquals("LENGTH(`n`) AS length", StringFunctionBuilder.transform(ff("length", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrLenMs() = assertEquals("LEN([n]) AS length", StringFunctionBuilder.transform(ff("length", listOf(fp("n"))), mssql, false, true))
-    @Test fun testStrTrim() = assertEquals("TRIM(`n`) AS trim", StringFunctionBuilder.transform(ff("trim", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrLtrim() = assertEquals("LTRIM(`n`) AS ltrim", StringFunctionBuilder.transform(ff("ltrim", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrRtrim() = assertEquals("RTRIM(`n`) AS rtrim", StringFunctionBuilder.transform(ff("rtrim", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrReverse() = assertEquals("REVERSE(`n`) AS reverse", StringFunctionBuilder.transform(ff("reverse", listOf(fp("n"))), mysql, false, true))
-    @Test fun testStrReplace() = assertEquals("REPLACE(`n`, 'a', 'b') AS replace", StringFunctionBuilder.transform(ff("replace", listOf(fp("n"), vp("a"), vp("b"))), mysql, false, true))
-    @Test fun testStrConcat() = assertEquals("CONCAT(`a`, `b`) AS concat", StringFunctionBuilder.transform(ff("concat", listOf(fp("a"), fp("b"))), mysql, false, true))
-    @Test fun testStrNoAlias() = assertEquals("UPPER(`n`)", StringFunctionBuilder.transform(ff("upper", listOf(fp("n"))), mysql, false, false))
-    @Test fun testStrSubstrMy() = assertEquals("SUBSTR(`n`, 2, 3) AS substr", StringFunctionBuilder.transform(ff("substr", listOf(fp("n"), vp(2), vp(3))), mysql, false, true))
-    @Test fun testStrSubstrPg() = assertEquals("SUBSTRING(\"n\" FROM 2 FOR 3) AS substr", StringFunctionBuilder.transform(ff("substr", listOf(fp("n"), vp(2), vp(3))), postgres, false, true))
-    @Test fun testStrLeftMy() = assertEquals("LEFT(`n`, 3) AS left", StringFunctionBuilder.transform(ff("left", listOf(fp("n"), vp(3))), mysql, false, true))
-    @Test fun testStrLeftOr() = assertEquals("SUBSTR(\"n\", 1, 3) AS left", StringFunctionBuilder.transform(ff("left", listOf(fp("n"), vp(3))), oracle, false, true))
-    @Test fun testStrLeftPg() = assertEquals("SUBSTRING(\"n\" FROM 1 FOR 3) AS left", StringFunctionBuilder.transform(ff("left", listOf(fp("n"), vp(3))), postgres, false, true))
-    @Test fun testStrRightMy() = assertEquals("RIGHT(`n`, 2) AS right", StringFunctionBuilder.transform(ff("right", listOf(fp("n"), vp(2))), mysql, false, true))
-    @Test fun testStrRightOr() = assertEquals("SUBSTR(\"n\", -2) AS right", StringFunctionBuilder.transform(ff("right", listOf(fp("n"), vp(2))), oracle, false, true))
-    @Test fun testStrRightPg() = assertEquals("SUBSTRING(\"n\" FROM -2) AS right", StringFunctionBuilder.transform(ff("right", listOf(fp("n"), vp(2))), postgres, false, true))
-    @Test fun testStrRepeatMy() = assertEquals("REPEAT(`n`, 3) AS repeat", StringFunctionBuilder.transform(ff("repeat", listOf(fp("n"), vp(3))), mysql, false, true))
-    @Test fun testStrRepeatMs() = assertEquals("REPLICATE([n], 3) AS repeat", StringFunctionBuilder.transform(ff("repeat", listOf(fp("n"), vp(3))), mssql, false, true))
+    @Test fun testStrUpper() = assertEquals("UPPER(`n`) AS upper", StringFunctionBuilder.transform(ff("upper", [fp("n")]), mysql, false, true))
+    @Test fun testStrLower() = assertEquals("LOWER(`n`) AS lower", StringFunctionBuilder.transform(ff("lower", [fp("n")]), mysql, false, true))
+    @Test fun testStrLenMy() = assertEquals("LENGTH(`n`) AS length", StringFunctionBuilder.transform(ff("length", [fp("n")]), mysql, false, true))
+    @Test fun testStrLenMs() = assertEquals("LEN([n]) AS length", StringFunctionBuilder.transform(ff("length", [fp("n")]), mssql, false, true))
+    @Test fun testStrTrim() = assertEquals("TRIM(`n`) AS trim", StringFunctionBuilder.transform(ff("trim", [fp("n")]), mysql, false, true))
+    @Test fun testStrLtrim() = assertEquals("LTRIM(`n`) AS ltrim", StringFunctionBuilder.transform(ff("ltrim", [fp("n")]), mysql, false, true))
+    @Test fun testStrRtrim() = assertEquals("RTRIM(`n`) AS rtrim", StringFunctionBuilder.transform(ff("rtrim", [fp("n")]), mysql, false, true))
+    @Test fun testStrReverse() = assertEquals("REVERSE(`n`) AS reverse", StringFunctionBuilder.transform(ff("reverse", [fp("n")]), mysql, false, true))
+    @Test fun testStrReplace() = assertEquals("REPLACE(`n`, 'a', 'b') AS replace", StringFunctionBuilder.transform(ff("replace", [fp("n"), vp("a"), vp("b")]), mysql, false, true))
+    @Test fun testStrConcat() = assertEquals("CONCAT(`a`, `b`) AS concat", StringFunctionBuilder.transform(ff("concat", [fp("a"), fp("b")]), mysql, false, true))
+    @Test fun testStrNoAlias() = assertEquals("UPPER(`n`)", StringFunctionBuilder.transform(ff("upper", [fp("n")]), mysql, false, false))
+    @Test fun testStrSubstrMy() = assertEquals("SUBSTR(`n`, 2, 3) AS substr", StringFunctionBuilder.transform(ff("substr", [fp("n"), vp(2), vp(3)]), mysql, false, true))
+    @Test fun testStrSubstrPg() = assertEquals("SUBSTRING(\"n\" FROM 2 FOR 3) AS substr", StringFunctionBuilder.transform(ff("substr", [fp("n"), vp(2), vp(3)]), postgres, false, true))
+    @Test fun testStrLeftMy() = assertEquals("LEFT(`n`, 3) AS left", StringFunctionBuilder.transform(ff("left", [fp("n"), vp(3)]), mysql, false, true))
+    @Test fun testStrLeftOr() = assertEquals("SUBSTR(\"n\", 1, 3) AS left", StringFunctionBuilder.transform(ff("left", [fp("n"), vp(3)]), oracle, false, true))
+    @Test fun testStrLeftPg() = assertEquals("SUBSTRING(\"n\" FROM 1 FOR 3) AS left", StringFunctionBuilder.transform(ff("left", [fp("n"), vp(3)]), postgres, false, true))
+    @Test fun testStrRightMy() = assertEquals("RIGHT(`n`, 2) AS right", StringFunctionBuilder.transform(ff("right", [fp("n"), vp(2)]), mysql, false, true))
+    @Test fun testStrRightOr() = assertEquals("SUBSTR(\"n\", -2) AS right", StringFunctionBuilder.transform(ff("right", [fp("n"), vp(2)]), oracle, false, true))
+    @Test fun testStrRightPg() = assertEquals("SUBSTRING(\"n\" FROM -2) AS right", StringFunctionBuilder.transform(ff("right", [fp("n"), vp(2)]), postgres, false, true))
+    @Test fun testStrRepeatMy() = assertEquals("REPEAT(`n`, 3) AS repeat", StringFunctionBuilder.transform(ff("repeat", [fp("n"), vp(3)]), mysql, false, true))
+    @Test fun testStrRepeatMs() = assertEquals("REPLICATE([n], 3) AS repeat", StringFunctionBuilder.transform(ff("repeat", [fp("n"), vp(3)]), mssql, false, true))
     @Test
     fun testStrRepeatOr() {
-        val result = StringFunctionBuilder.transform(ff("repeat", listOf(fp("n"), vp(3))), oracle, false, true)
+        val result = StringFunctionBuilder.transform(ff("repeat", [fp("n"), vp(3)]), oracle, false, true)
         assertTrue(result.contains("RPAD"))
         assertTrue(result.contains("LENGTH"))
     }
-    @Test fun testStrJoinMy() = assertEquals("CONCAT_WS(`a`, `b`) AS join", StringFunctionBuilder.transform(ff("join", listOf(vp(", "), fp("a"), fp("b"))), mysql, false, true))
+    @Test fun testStrJoinMy() = assertEquals("CONCAT_WS(`a`, `b`) AS join", StringFunctionBuilder.transform(ff("join", [vp(", "), fp("a"), fp("b")]), mysql, false, true))
     @Test
     fun testStrJoinOr() {
-        val result = StringFunctionBuilder.transform(ff("join", listOf(vp(", "), fp("a"), fp("b"))), oracle, false, true)
+        val result = StringFunctionBuilder.transform(ff("join", [vp(", "), fp("a"), fp("b")]), oracle, false, true)
         assertTrue(result.contains("||"))
     }
 
     // PolymerizationFunctionBuilder.transform
-    @Test fun testPolyCount() = assertEquals("COUNT(`id`) AS count", PolymerizationFunctionBuilder.transform(ff("count", listOf(fp("id"))), mysql, false, true))
-    @Test fun testPolySum() = assertEquals("SUM(`a`) AS sum", PolymerizationFunctionBuilder.transform(ff("sum", listOf(fp("a"))), mysql, false, true))
-    @Test fun testPolyAvg() = assertEquals("AVG(`s`) AS avg", PolymerizationFunctionBuilder.transform(ff("avg", listOf(fp("s"))), mysql, false, true))
-    @Test fun testPolyMax() = assertEquals("MAX(`p`) AS max", PolymerizationFunctionBuilder.transform(ff("max", listOf(fp("p"))), mysql, false, true))
-    @Test fun testPolyMin() = assertEquals("MIN(`p`) AS min", PolymerizationFunctionBuilder.transform(ff("min", listOf(fp("p"))), mysql, false, true))
-    @Test fun testPolyNoAlias() = assertEquals("COUNT(`id`)", PolymerizationFunctionBuilder.transform(ff("count", listOf(fp("id"))), mysql, false, false))
-    @Test fun testPolyGcMy() = assertEquals("GROUP_CONCAT(`n`) AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", listOf(fp("n")), "gc"), mysql, false, true))
-    @Test fun testPolyGcPg() = assertEquals("STRING_AGG(\"n\") AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", listOf(fp("n")), "gc"), postgres, false, true))
-    @Test fun testPolyGcMs() = assertEquals("STRING_AGG([n]) AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", listOf(fp("n")), "gc"), mssql, false, true))
-    @Test fun testPolyGcOr() = assertEquals("GROUP_CONCAT(\"n\") AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", listOf(fp("n")), "gc"), oracle, false, true))
-    @Test fun testPolyGcSl() = assertEquals("GROUP_CONCAT(\"n\") AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", listOf(fp("n")), "gc"), sqlite, false, true))
+    @Test fun testPolyCount() = assertEquals("COUNT(`id`) AS count", PolymerizationFunctionBuilder.transform(ff("count", [fp("id")]), mysql, false, true))
+    @Test fun testPolySum() = assertEquals("SUM(`a`) AS sum", PolymerizationFunctionBuilder.transform(ff("sum", [fp("a")]), mysql, false, true))
+    @Test fun testPolyAvg() = assertEquals("AVG(`s`) AS avg", PolymerizationFunctionBuilder.transform(ff("avg", [fp("s")]), mysql, false, true))
+    @Test fun testPolyMax() = assertEquals("MAX(`p`) AS max", PolymerizationFunctionBuilder.transform(ff("max", [fp("p")]), mysql, false, true))
+    @Test fun testPolyMin() = assertEquals("MIN(`p`) AS min", PolymerizationFunctionBuilder.transform(ff("min", [fp("p")]), mysql, false, true))
+    @Test fun testPolyNoAlias() = assertEquals("COUNT(`id`)", PolymerizationFunctionBuilder.transform(ff("count", [fp("id")]), mysql, false, false))
+    @Test fun testPolyGcMy() = assertEquals("GROUP_CONCAT(`n`) AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", [fp("n")], "gc"), mysql, false, true))
+    @Test fun testPolyGcPg() = assertEquals("STRING_AGG(\"n\") AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", [fp("n")], "gc"), postgres, false, true))
+    @Test fun testPolyGcMs() = assertEquals("STRING_AGG([n]) AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", [fp("n")], "gc"), mssql, false, true))
+    @Test fun testPolyGcOr() = assertEquals("GROUP_CONCAT(\"n\") AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", [fp("n")], "gc"), oracle, false, true))
+    @Test fun testPolyGcSl() = assertEquals("GROUP_CONCAT(\"n\") AS gc", PolymerizationFunctionBuilder.transform(ff("groupConcat", [fp("n")], "gc"), sqlite, false, true))
 
     // PostgresFunctionBuilder
     @Test
     fun testPgAny() {
-        val r = PostgresFunctionBuilder.transform(ff("any", listOf(fp("id"))), postgres, false, true)
+        val r = PostgresFunctionBuilder.transform(ff("any", [fp("id")]), postgres, false, true)
         assertTrue(r.contains("ANY"))
         assertTrue(r.contains("ARRAY"))
     }
     @Test
     fun testPgAll() {
-        val r = PostgresFunctionBuilder.transform(ff("all", listOf(fp("id"))), postgres, false, true)
+        val r = PostgresFunctionBuilder.transform(ff("all", [fp("id")]), postgres, false, true)
         assertTrue(r.contains("ALL"))
         assertTrue(r.contains("ARRAY"))
     }
@@ -166,13 +166,13 @@ class FunctionBuildersTest : MysqlTestBase() {
     @Test fun testSupportFFNo() = assertFalse(PolymerizationFunctionBuilder.support(ff("xyz"), DBType.Mysql))
 
     // FunctionManager.getBuiltFunctionField
-    @Test fun testFmCount() = assertEquals("COUNT(`id`) AS count", FunctionManager.getBuiltFunctionField(ff("count", listOf(fp("id"))), mysql))
-    @Test fun testFmAbs() = assertEquals("ABS(`s`) AS abs", FunctionManager.getBuiltFunctionField(ff("abs", listOf(fp("s"))), mysql))
-    @Test fun testFmUpper() = assertEquals("UPPER(`n`) AS upper", FunctionManager.getBuiltFunctionField(ff("upper", listOf(fp("n"))), mysql))
+    @Test fun testFmCount() = assertEquals("COUNT(`id`) AS count", FunctionManager.getBuiltFunctionField(ff("count", [fp("id")]), mysql))
+    @Test fun testFmAbs() = assertEquals("ABS(`s`) AS abs", FunctionManager.getBuiltFunctionField(ff("abs", [fp("s")]), mysql))
+    @Test fun testFmUpper() = assertEquals("UPPER(`n`) AS upper", FunctionManager.getBuiltFunctionField(ff("upper", [fp("n")]), mysql))
     @Test
     fun testFmUnsupported() {
         assertFailsWith<UnSupportedFunctionException> {
-            FunctionManager.getBuiltFunctionField(ff("nonexistent_xyz", listOf(fp("x"))), mysql)
+            FunctionManager.getBuiltFunctionField(ff("nonexistent_xyz", [fp("x")]), mysql)
         }
     }
 
@@ -185,19 +185,19 @@ class FunctionBuildersTest : MysqlTestBase() {
                 "CUSTOM(${field.fields.joinToString(", ") { it.first?.columnName ?: it.second.toString() }})"
         }
         FunctionManager.registerFunctionBuilder(custom)
-        assertEquals("CUSTOM(x)", FunctionManager.getBuiltFunctionField(ff("customTestFunc", listOf(fp("x"))), mysql))
+        assertEquals("CUSTOM(x)", FunctionManager.getBuiltFunctionField(ff("customTestFunc", [fp("x")]), mysql))
     }
 
     // Support coverage
     @Test
     fun testMathAllNames() {
-        listOf("abs","ceil","floor","exp","round","sign","sqrt","trunc","add","sub","mul","div","ln","log","mod","pi","rand").forEach {
+        ["abs","ceil","floor","exp","round","sign","sqrt","trunc","add","sub","mul","div","ln","log","mod","pi","rand"].forEach {
             assertTrue(MathFunctionBuilder.support(it, DBType.Mysql), "$it on MySQL")
         }
     }
     @Test
     fun testMathGreatestLeastCommon() {
-        listOf("greatest","least").forEach { fn ->
+        ["greatest","least"].forEach { fn ->
             assertTrue(MathFunctionBuilder.support(fn, DBType.Mysql))
             assertTrue(MathFunctionBuilder.support(fn, DBType.Postgres))
             assertFalse(MathFunctionBuilder.support(fn, DBType.SQLite))
@@ -206,13 +206,13 @@ class FunctionBuildersTest : MysqlTestBase() {
     }
     @Test
     fun testStrAllNames() {
-        listOf("length","upper","lower","substr","replace","left","right","repeat","reverse","trim","ltrim","rtrim","concat","join").forEach {
+        ["length","upper","lower","substr","replace","left","right","repeat","reverse","trim","ltrim","rtrim","concat","join"].forEach {
             assertTrue(StringFunctionBuilder.support(it, DBType.Mysql), "$it on MySQL")
         }
     }
     @Test
     fun testPolyAllNames() {
-        listOf("count","sum","avg","max","min","groupConcat").forEach {
+        ["count","sum","avg","max","min","groupConcat"].forEach {
             assertTrue(PolymerizationFunctionBuilder.support(it, DBType.Mysql), "$it on MySQL")
         }
     }

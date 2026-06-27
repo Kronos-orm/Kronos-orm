@@ -15,12 +15,12 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 object KotlinXDateTimeTransformer : ValueTransformer {
-    private val dateTimeTypes = listOf(
+    private val dateTimeTypes = [
         "kotlinx.datetime.Instant",
         "kotlinx.datetime.LocalDateTime",
         "kotlinx.datetime.LocalDate",
         "kotlinx.datetime.LocalTime",
-    )
+    ]
 
     override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
         return kClassOfValue.qualifiedName in dateTimeTypes ||

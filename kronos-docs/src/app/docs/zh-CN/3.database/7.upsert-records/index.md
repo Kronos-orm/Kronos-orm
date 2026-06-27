@@ -188,7 +188,7 @@ val user: User = User(
     )
 
 user
-  .upsert { it.name + it.age }
+  .upsert { [it.name, it.age] }
   .onConflict()
   .execute()
 ```
@@ -240,7 +240,7 @@ val user: User = User(
     )
 
 user
-  .upsert { it.name + it.age }
+  .upsert { [it.name, it.age] }
   .lock()
   .execute()
 ```
@@ -322,7 +322,7 @@ val users: List<User> = listOf(
 )
 
 users
-  .upsert { it.name + it.age }
+  .upsert { [it.name, it.age] }
   .on { it.id }
   .execute()
 ```
@@ -341,7 +341,7 @@ val user: User = User(
     )
 
 user
-  .upsert { it.name + it.age }
+  .upsert { [it.name, it.age] }
   .on { it.id }
   .execute(customWrapper)
 ```

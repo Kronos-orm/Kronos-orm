@@ -100,7 +100,7 @@ object MysqlSupport : DatabasesSupport {
     }
 
     override fun getKColumnType(type: String, length: Int, scale: Int): KColumnType {
-        if (type.lowercase() in listOf("int", "smallint", "tinyint", "bigint") && length == 1) {
+        if (type.lowercase() in ["int", "smallint", "tinyint", "bigint"] && length == 1) {
             return BIT
         }
         return super.getKColumnType(type, length, scale)
@@ -137,11 +137,10 @@ object MysqlSupport : DatabasesSupport {
     ): List<String> {
         val columnsSql = columns.joinToString(",") { columnCreateDefSql(dbType, it) }
         val indexesSql = indexes.map { indexCreateDefSql(dbType, tableName, it) }
-        return listOf(
+        return [
                 "CREATE TABLE IF NOT EXISTS ${quote(tableName)} ($columnsSql)" +
-                        if (tableComment.isNullOrEmpty()) "" else " COMMENT = '$tableComment'",
-                *indexesSql.toTypedArray()
-        )
+                        if (tableComment.isNullOrEmpty()) "" else " COMMENT = '$tableComment'"
+        ] + indexesSql
     }
 
     override fun getTableExistenceSql(dbType: DBType) =

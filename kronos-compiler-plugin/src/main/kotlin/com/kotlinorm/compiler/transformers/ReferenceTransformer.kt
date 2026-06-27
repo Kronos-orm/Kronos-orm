@@ -19,12 +19,11 @@ package com.kotlinorm.compiler.transformers
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.KTableTransformer
 import com.kotlinorm.compiler.core.addRefFieldSymbol
-import com.kotlinorm.compiler.core.buildFieldFromProperty
 import com.kotlinorm.compiler.core.buildFieldFromPropertyRef
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
-import com.kotlinorm.compiler.utils.getValueArgumentSafe
+import com.kotlinorm.compiler.utils.valueArguments
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
@@ -36,8 +35,8 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrReturn
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 
 /**
@@ -89,13 +88,17 @@ class ReferenceTransformer(
             DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
-                collectReferences(expression.value).forEach { fieldExpr ->
-                    +irCall(addRefFieldSymbol).apply {
-                        dispatchReceiver = irGet(receiver)
-                        arguments[1] = fieldExpr
+                val fields = collectReferences(expression.value)
+                if (fields.isEmpty()) {
+                    +expression
+                } else {
+                    fields.forEach { fieldExpr ->
+                        +irCall(addRefFieldSymbol).apply {
+                            dispatchReceiver = irGet(receiver)
+                            arguments[1] = fieldExpr
+                        }
                     }
                 }
-                +expression
             }
         }
     }
@@ -108,11 +111,15 @@ class ReferenceTransformer(
             expression is IrPropertyReference -> {
                 result += buildFieldFromPropertyRef(expression, errorReporter)
             }
-            expression is IrCall && expression.origin == IrStatementOrigin.PLUS -> {
-                val left = expression.extensionReceiverArgument ?: expression.dispatchReceiver
-                val right = expression.getValueArgumentSafe(0)
-                if (left != null) result += collectReferences(left)
-                if (right != null) result += collectReferences(right)
+            expression is IrCall && expression.symbol.owner.name.asString() in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf") -> {
+                expression.valueArguments.forEach { arg ->
+                    when (arg) {
+                        is IrVararg -> arg.elements.forEach { element ->
+                            if (element is IrExpression) result += collectReferences(element)
+                        }
+                        is IrExpression -> result += collectReferences(arg)
+                    }
+                }
             }
             expression is IrCall && expression.funcName() == "unaryPlus" -> {
                 val recv = expression.extensionReceiverArgument ?: expression.dispatchReceiver ?: return result

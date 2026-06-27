@@ -30,7 +30,6 @@ value class PublishConfiguration(val project: Project) {
             "kronos-jdbc-wrapper" -> "Kronos 's built-in database operation plug-in based on the original jdbc supports variable templates and multiple databases."
             "kronos-logging" -> "Kronos 's built-in log plug-in, which supports multiple log frameworks and can be customized."
             "kronos-compiler-plugin" -> "Kronos K2 compiler plugin for compile-time ORM code generation and IR transformation."
-            "kronos-compiler-plugin-legacy" -> "Kotlin plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-maven-plugin" -> "Maven plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-gradle-plugin" -> "Gradle plugin provided by kronos for parsing SQL Criteria expressions at compile time."
             "kronos-codegen" -> "Kronos code generation library, used to read user database and table configurations, and convert them into Kotlin business code, such as KPojo Class."

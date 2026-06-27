@@ -27,7 +27,7 @@ import com.kotlinorm.compiler.core.isColumnType
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
-import com.kotlinorm.compiler.utils.getValueArgumentSafe
+import com.kotlinorm.compiler.utils.valueArguments
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
@@ -40,6 +40,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.properties
@@ -55,7 +56,7 @@ import org.jetbrains.kotlin.ir.util.properties
  *     ```kotlin
  *     fun <T: KPojo> T.foo() {
  *          val action: (KTableSortable<T>.(T) -> Unit) = { it: T ->
- *              it.username.desc() + it.password.asc() + it.age
+ *              [it.username.desc(), it.password.asc(), it.age]
  *          }
  *          KTableSortable<T>().action(this)
  *     }
@@ -70,7 +71,7 @@ import org.jetbrains.kotlin.ir.util.properties
  *              addSortField(Field("username",...).desc())
  *              addSortField(Field("password",...).asc())
  *              addSortField(Field("age",...))
- *              it.username.desc() + it.password.asc() + it.age
+ *              [it.username.desc(), it.password.asc(), it.age]
  *          }
  *          KTableSortable<T>().action(this)
  *    }
@@ -92,7 +93,8 @@ class SortTransformer(
             DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
-                collectSortFields(irFunction, expression.value).forEach { (fieldExpr, asc) ->
+                val fields = collectSortFields(irFunction, expression.value)
+                fields.forEach { (fieldExpr, asc) ->
                     val sortedField = irCall(if (asc) ascMethodSymbol else descMethodSymbol).apply {
                         dispatchReceiver = irGet(receiver)
                         arguments[1] = fieldExpr
@@ -102,7 +104,7 @@ class SortTransformer(
                         arguments[1] = sortedField
                     }
                 }
-                +expression
+                if (fields.isEmpty()) +expression
             }
         }
     }
@@ -115,11 +117,15 @@ class SortTransformer(
     ): List<Pair<IrExpression, Boolean>> {
         val result = mutableListOf<Pair<IrExpression, Boolean>>()
         when {
-            expression is IrCall && expression.origin == IrStatementOrigin.PLUS -> {
-                val left = expression.extensionReceiverArgument ?: expression.dispatchReceiver
-                val right = expression.getValueArgumentSafe(0)
-                if (left != null) result += collectSortFields(irFunction, left)
-                if (right != null) result += collectSortFields(irFunction, right)
+            expression is IrCall && expression.symbol.owner.name.asString() in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf") -> {
+                expression.valueArguments.forEach { arg ->
+                    when (arg) {
+                        is IrVararg -> arg.elements.forEach { element ->
+                            if (element is IrExpression) result += collectSortFields(irFunction, element)
+                        }
+                        is IrExpression -> result += collectSortFields(irFunction, arg)
+                    }
+                }
             }
             expression is IrCall && expression.funcName() == "desc" -> {
                 val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiver ?: return result

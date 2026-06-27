@@ -998,7 +998,7 @@ class FieldAnalysisTest {
                 }
                 return rst
             }
-            val rst = e.select { it::id + it::name + it::score }
+            val rst = e.select { [it.id, it.name, it.score] }
             assertEquals(3, rst.size)
             assertEquals("id", rst[0].name)
             assertEquals("name", rst[1].name)

@@ -24,7 +24,7 @@ class MysqlJoinTest : MysqlTestBase() {
         ) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
             select {
-                user.id + relation.gender
+                [user.id, relation.gender]
             }
             where { user.id == 1 }
             orderBy { user.id.desc() }
@@ -51,7 +51,7 @@ class MysqlJoinTest : MysqlTestBase() {
             rightJoin(movie) { movie.year == user.id }
             fullJoin(address) { address.userId == user.id }
             select {
-                user.id + relation.gender + movie.id
+                [user.id, relation.gender, movie.id]
             }
             where { user.id == 1 }
             orderBy { user.id.desc() }
@@ -87,11 +87,11 @@ class MysqlJoinTest : MysqlTestBase() {
         val (sql, paramMap) = MysqlUser(1).join(
             UserRelation(1, "123", 1, 1), Movie(1), Address(1)
         ) { user, relation, movie, address ->
-            on {
-                user.id == relation.id2 && user.gender == relation.gender && movie.year == user.id && address.userId == user.id
-            }
+            leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
+            leftJoin(movie) { movie.year == user.id }
+            leftJoin(address) { address.userId == user.id }
             select {
-                user.id + relation.gender + movie.id
+                [user.id, relation.gender, movie.id]
             }
             where { user.id == 1 }
             orderBy { user.id.desc() }
@@ -127,7 +127,7 @@ class MysqlJoinTest : MysqlTestBase() {
             rightJoin(movie) { movie.year == user.id }
             fullJoin(address) { address.userId == user.id }
             select {
-                user.id + relation.gender + movie.id
+                [user.id, relation.gender, movie.id]
             }
             where { user.id == 1 }
             orderBy { user.id.desc() }
@@ -164,7 +164,7 @@ class MysqlJoinTest : MysqlTestBase() {
         ) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 && user.gender == relation.gender }
             select {
-                user.id + relation.gender
+                [user.id, relation.gender]
             }
             db(relation to "test")
             where { user.id == 1 }

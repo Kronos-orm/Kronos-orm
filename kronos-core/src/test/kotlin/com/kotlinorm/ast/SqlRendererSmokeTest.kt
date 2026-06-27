@@ -132,13 +132,13 @@ class SqlRendererSmokeTest {
 
     @Test
     fun `All renderers can render basic SELECT statement`() {
-        val renderers = listOf(
+        val renderers = [
             MysqlSqlRenderer(),
             PostgresqlSqlRenderer(),
             OracleSqlRenderer(),
             MssqlSqlRenderer(),
             SqliteSqlRenderer()
-        )
+        ]
         
         val statement = SelectStatement(
             selectList = mutableListOf(

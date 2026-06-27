@@ -33,6 +33,7 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.patchTo
+import com.kotlinorm.utils.LinkedHashSet
 import kotlin.reflect.KClass
 
 /**
@@ -143,7 +144,7 @@ object CascadeSelectClause {
                             if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
                             if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
                             setValues(
-                                listOf(lastStepResult),
+                                [lastStepResult],
                                 prop.name,
                                 validRef,
                                 cascadeAllowed,

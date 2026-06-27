@@ -162,7 +162,7 @@ val lastId = user.insert().execute().lastInsertId
 listOf(user1, user2, user3).insert().execute()
 
 // 指定插入字段
-user.insert { it.name + it.age }.execute()
+user.insert { [it.name, it.age] }.execute()
 ```
 
 ---
@@ -224,7 +224,7 @@ val users = User().select()
     .queryList()
 
 // 分组 + 聚合
-val result = User().select { it.age + f.count(it.id) }
+val result = User().select { [it.age, f.count(it.id)] }
     .groupBy { it.age }
     .having { f.count(it.id) > 5 }
     .queryList()
@@ -328,14 +328,14 @@ where { (it.age == age).ifNoValue(alwaysFalse) }  // 条件恒假
 // 内连接
 val result = User().join(Order()) { user, order ->
     on { user.id == order.userId }
-    select { user.name + order.amount }
+    select { [user.name, order.amount] }
     where { user.age > 18 }
 }.queryList()
 
 // 左连接
 User().leftJoin(Order()) { user, order ->
     on { user.id == order.userId }
-    select { user.name + order.amount }
+    select { [user.name, order.amount] }
 }.queryList()
 
 // 右连接
@@ -345,13 +345,13 @@ User().rightJoin(Order()) { ... }.queryList()
 User().join(Order(), Product()) { user, order, product ->
     on { user.id == order.userId }
     on { order.productId == product.id }
-    select { user.name + product.name + order.amount }
+    select { [user.name, product.name, order.amount] }
 }.queryList()
 
 // 跨数据库连接
 User().join(Order()) { user, order ->
     on { user.id == order.userId }
-    select { user.name + order.amount }
+    select { [user.name, order.amount] }
 }.withTotal().queryList()  // 同时返回总数
 ```
 

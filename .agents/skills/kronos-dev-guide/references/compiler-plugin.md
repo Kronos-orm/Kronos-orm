@@ -1,5 +1,7 @@
 # Compiler Plugin Deep Dive
 
+Before making compiler plugin architecture changes, adding FIR/frontend extensions, changing IR/backend generation, adding diagnostics, or changing compiler-plugin tests, first read and apply `.agents/skills/kronos-dev-kcp/SKILL.md`. That skill documents Kotlin's native KCP/FIR/IR extension model and test infrastructure; this file only describes Kronos-specific implementation details.
+
 ## Table of Contents
 1. [Entry Point Chain](#entry-point-chain)
 2. [KronosParserTransformer — The Main Pass](#kronospartransformer)

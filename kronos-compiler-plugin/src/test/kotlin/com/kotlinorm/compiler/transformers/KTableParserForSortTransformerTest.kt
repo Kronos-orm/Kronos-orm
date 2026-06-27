@@ -97,7 +97,7 @@ class KTableParserForSortTransformerTest {
                         user.getColumn("id") to SortType.ASC,
                         user.getColumn("username") to SortType.ASC,
                     ),
-                    sort { it.id + it.username }
+                    sort { [it.id, it.username] }
                 )
 
                 assertEquals(
@@ -105,7 +105,7 @@ class KTableParserForSortTransformerTest {
                         user.getColumn("id") to SortType.DESC,
                         user.getColumn("username") to SortType.ASC,
                     ),
-                    sort { it.id.desc() + it.username }
+                    sort { [it.id.desc(), it.username] }
                 )
             }
             """.trimIndent(),

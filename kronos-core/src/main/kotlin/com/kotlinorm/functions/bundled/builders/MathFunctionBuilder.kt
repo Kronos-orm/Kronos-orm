@@ -281,9 +281,9 @@ object MathFunctionBuilder : FunctionBuilder {
                 val functionName = when (field.functionName to dataSource.dbType) {
                     "ceil" to DBType.Mssql -> "CEILING"
                     "ln" to DBType.Mssql -> {
-                        field.fields = listOf(
+                        field.fields = [
                             field.fields.first(), Pair(null, "EXP(1)")
-                        )
+                        ]
                         "LOG"
                     }
 

@@ -270,7 +270,7 @@ fun FunctionHandler.add(vararg x: Number?): Number?
 - **使用示例**
 
 ```kotlin group="Case 7" name="kotlin" icon="kotlin"
-user.select { f.add(it.age, 1) }.queryList()
+user.select { it.age + 1 }.queryList()
 ```
 
 ```sql group="Case 7" name="mysql" icon="mysql"
@@ -310,7 +310,7 @@ fun FunctionHandler.sub(vararg x: Number?): Number?
 - **使用示例**
 
 ```kotlin group="Case 8" name="kotlin" icon="kotlin"
-user.select { f.sub(it.age, 1) }.queryList()
+user.select { it.age - 1 }.queryList()
 ```
 
 ```sql group="Case 8" name="mysql" icon="mysql"
@@ -350,7 +350,7 @@ fun FunctionHandler.mul(vararg x: Number?): Number?
 - **使用示例**
 
 ```kotlin group="Case 9" name="kotlin" icon="kotlin"
-user.select { f.mul(it.age, 2) }.queryList()
+user.select { it.age * 2 }.queryList()
 ```
 
 ```sql group="Case 9" name="mysql" icon="mysql"
@@ -390,7 +390,7 @@ fun FunctionHandler.div(vararg x: Number?): Number?
 - **使用示例**
 
 ```kotlin group="Case 10" name="kotlin" icon="kotlin"
-user.select { f.div(it.age, 2) }.queryList()
+user.select { it.age / 2 }.queryList()
 ```
 
 ```sql group="Case 10" name="mysql" icon="mysql"
@@ -790,7 +790,7 @@ fun FunctionHandler.mod(x: Number?, y: Number?): Number?
 - **使用示例**
 
 ```kotlin group="Case 20" name="kotlin" icon="kotlin"
-user.select { f.mod(it.age, 2) }.queryList()
+user.select { it.age % 2 }.queryList()
 ```
 
 ```sql group="Case 20" name="mysql" icon="mysql"

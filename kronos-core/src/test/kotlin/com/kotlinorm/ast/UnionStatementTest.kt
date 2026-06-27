@@ -76,7 +76,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false
         )
 
@@ -101,7 +101,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = true
         )
 
@@ -129,7 +129,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2, select3),
+            queries = [select1, select2, select3],
             unionAll = false
         )
 
@@ -163,14 +163,14 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false,
-            orderBy = listOf(
+            orderBy = [
                 OrderByItem(
                     expression = ColumnReference(null, null, "id"),
                     direction = SortType.ASC
                 )
-            )
+            ]
         )
 
         val renderer = MysqlSqlRenderer()
@@ -193,7 +193,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false,
             limit = LimitClause(limit = 10, offset = null)
         )
@@ -227,14 +227,14 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false,
-            orderBy = listOf(
+            orderBy = [
                 OrderByItem(
                     expression = ColumnReference(null, null, "id"),
                     direction = SortType.DESC
                 )
-            ),
+            ],
             limit = LimitClause(limit = 20, offset = 10)
         )
 
@@ -249,13 +249,13 @@ class UnionStatementTest {
 
     @Test
     fun `All renderers can render UNION statement`() {
-        val renderers = listOf(
+        val renderers = [
             MysqlSqlRenderer(),
             PostgresqlSqlRenderer(),
             OracleSqlRenderer(),
             MssqlSqlRenderer(),
             SqliteSqlRenderer()
-        )
+        ]
 
         val select1 = SelectStatement(
             selectList = mutableListOf(SelectItem.AllColumnsSelectItem(null)),
@@ -268,7 +268,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false
         )
 
@@ -293,7 +293,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false,
             limit = LimitClause(limit = 10, offset = 5)
         )
@@ -317,7 +317,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false,
             limit = LimitClause(limit = 10, offset = 5)
         )
@@ -361,7 +361,7 @@ class UnionStatementTest {
         )
 
         val unionStatement = UnionStatement(
-            queries = listOf(select1, select2),
+            queries = [select1, select2],
             unionAll = false
         )
 

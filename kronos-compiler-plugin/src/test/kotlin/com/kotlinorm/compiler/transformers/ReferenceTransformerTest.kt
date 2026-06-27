@@ -129,7 +129,7 @@ class ReferenceTransformerTest {
                         user.getColumn("username"),
                         user.getColumn("age"),
                     ),
-                    reference { it::id + it::username + it::age }
+                    reference { [it::id, it::username, it::age] }
                 )
             }
         """
@@ -140,12 +140,12 @@ class ReferenceTransformerTest {
     // ========================================================================
 
     @Test
-    fun `test single reference field with unaryPlus`() {
-        "SingleUnaryPlus" testCompile """
+    fun `test single reference field`() {
+        "SingleRef" testCompile """
             fun test() {
                 assertEquals(
                     listOf(user.getColumn("username")),
-                    reference { +it::username }
+                    reference { it::username }
                 )
             }
         """
@@ -159,7 +159,7 @@ class ReferenceTransformerTest {
     fun `test reference with Column annotated field`() {
         "ColumnAnnotatedRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::telephone }
+                val result = reference { [it::id, it::telephone] }
                 assertEquals(2, result.size)
                 assertEquals("telephone", result[1].name)
                 assertEquals("phone_number", result[1].columnName)
@@ -175,7 +175,7 @@ class ReferenceTransformerTest {
     fun `test reference with email Column annotated`() {
         "EmailRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::email }
+                val result = reference { [it::id, it::email] }
                 assertEquals(2, result.size)
                 assertEquals("email", result[1].name)
                 assertEquals("email_address", result[1].columnName)
@@ -191,7 +191,7 @@ class ReferenceTransformerTest {
     fun `test reference with four fields`() {
         "FourFieldRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::username + it::age + it::gender }
+                val result = reference { [it::id, it::username, it::age, it::gender] }
                 assertEquals(4, result.size)
                 assertEquals("id", result[0].name)
                 assertEquals("username", result[1].name)
@@ -209,7 +209,7 @@ class ReferenceTransformerTest {
     fun `test reference with Cascade annotated field`() {
         "CascadeRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::friend }
+                val result = reference { [it::id, it::friend] }
                 assertEquals(2, result.size)
                 assertEquals("friend", result[1].name)
             }
@@ -224,7 +224,7 @@ class ReferenceTransformerTest {
     fun `test reference with createTime field`() {
         "CreateTimeRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::createTime }
+                val result = reference { [it::id, it::createTime] }
                 assertEquals(2, result.size)
                 assertEquals("createTime", result[1].name)
             }
@@ -239,7 +239,7 @@ class ReferenceTransformerTest {
     fun `test reference with version field`() {
         "VersionRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::version }
+                val result = reference { [it::id, it::version] }
                 assertEquals(2, result.size)
                 assertEquals("version", result[1].name)
             }
@@ -254,7 +254,7 @@ class ReferenceTransformerTest {
     fun `test reference with deleted field`() {
         "DeletedRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::deleted }
+                val result = reference { [it::id, it::deleted] }
                 assertEquals(2, result.size)
                 assertEquals("deleted", result[1].name)
             }
@@ -269,7 +269,7 @@ class ReferenceTransformerTest {
     fun `test reference with five mixed fields`() {
         "FiveMixedRef" testCompile """
             fun test() {
-                val result = reference { it::id + it::username + it::telephone + it::email + it::age }
+                val result = reference { [it::id, it::username, it::telephone, it::email, it::age] }
                 assertEquals(5, result.size)
                 assertEquals("id", result[0].name)
                 assertEquals("username", result[1].name)

@@ -137,12 +137,12 @@ class SelectTransformerTest {
     }
 
     @Test
-    fun `test select multiple fields with plus`() {
-        "MultiFieldPlus" testCompile """
+    fun `test select multiple fields with projection literal`() {
+        "MultiFieldProjection" testCompile """
             fun test() {
                 assertEquals(
                     listOf(user.getColumn("id"), user.getColumn("username"), user.getColumn("age")),
-                    user.select { it.id + it.username + it.age }
+                    user.select { [it.id, it.username, it.age] }
                 )
             }
         """
@@ -154,7 +154,7 @@ class SelectTransformerTest {
             fun test() {
                 assertEquals(
                     listOf(user.getColumn("id"), user.getColumn("username"), user.getColumn("age")),
-                    user.select { it::id + it::username + it::age }
+                    user.select { [it.id, it.username, it.age] }
                 )
             }
         """
@@ -214,7 +214,7 @@ class SelectTransformerTest {
     fun `test select with alias`() {
         "WithAlias" testCompile """
             fun test() {
-                val result = user.select { it.id + it.username + it.createTime.as_("time") }
+                val result = user.select { [it.id, it.username, it.createTime.as_("time")] }
                 assertEquals(3, result.size)
                 assertEquals("id", result[0].name)
                 assertEquals("username", result[1].name)
@@ -226,7 +226,7 @@ class SelectTransformerTest {
     fun `test select with custom SQL string`() {
         "CustomSqlString" testCompile """
             fun test() {
-                val result = user.select { it + "1" }
+                val result = user.select { [it, "1"] }
                 // Should include all user fields plus the custom SQL field
                 assertTrue(result.size > 1, "Should have user fields plus custom SQL")
                 val lastField = result.last()

@@ -17,7 +17,7 @@ val user: User = User(
     age = 18
 )
 
-user.delete().by { it.id + it.name + it.age }.execute()
+user.delete().by { [it.id, it.name, it.age] }.execute()
 // or
 // user.delete().where { it.id.eq && it.name.eq && it.age.eq }.execute()
 ```

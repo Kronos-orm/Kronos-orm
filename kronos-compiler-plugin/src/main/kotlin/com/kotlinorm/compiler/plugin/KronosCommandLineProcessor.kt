@@ -48,7 +48,7 @@ class KronosCommandLineProcessor : CommandLineProcessor {
 
     override val pluginId: String = "kronos-compiler-plugin"
 
-    override val pluginOptions: Collection<AbstractCliOption> = listOf(
+    override val pluginOptions: Collection<AbstractCliOption> = [
         CliOption(
             optionName = OPTION_DUMP_IR,
             valueDescription = "true or false",
@@ -79,7 +79,7 @@ class KronosCommandLineProcessor : CommandLineProcessor {
             description = "Enable debug logging mode to capture symbol resolution and type judgments (JSON format)",
             required = false,
         )
-    )
+    ]
 
     override fun processOption(
         option: AbstractCliOption,

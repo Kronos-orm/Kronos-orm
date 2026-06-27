@@ -263,7 +263,7 @@ class MysqlUpsertTest : MysqlTestBase() {
     fun testBatchUpsert() {
         val testUser = MysqlUser(7, "test")
         val testUser2 = MysqlUser(8, "test2")
-        listOf(testUser, testUser2).upsert { it.username }.on { it.id }.execute()
+        [testUser, testUser2].upsert { it.username }.on { it.id }.execute()
     }
 
     @Test

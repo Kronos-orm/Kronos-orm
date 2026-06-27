@@ -48,13 +48,13 @@ object FieldToExpressionConverter {
             val arguments = field.fields.flatMap { (argField, argValue) ->
                 when {
                     // If argField is present, it's a column reference
-                    argField != null -> listOf(fieldToExpression(argField, useTableAlias))
+                    argField != null -> [fieldToExpression(argField, useTableAlias)]
                     // If argValue is present, convert it to a literal
                     argValue != null -> {
                         when (argValue) {
-                            is String -> listOf(Literal.StringLiteral(argValue))
-                            is Number -> listOf(Literal.NumberLiteral(argValue.toString()))
-                            is Boolean -> listOf(Literal.BooleanLiteral(argValue))
+                            is String -> [Literal.StringLiteral(argValue)]
+                            is Number -> [Literal.NumberLiteral(argValue.toString())]
+                            is Boolean -> [Literal.BooleanLiteral(argValue)]
                             is Collection<*> -> argValue.filterNotNull().map { convertValueToExpression(it) }
                             is Array<*> -> argValue.filterNotNull().map { convertValueToExpression(it) }
                             is IntArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
@@ -64,10 +64,10 @@ object FieldToExpressionConverter {
                             is DoubleArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
                             is BooleanArray -> argValue.map { Literal.BooleanLiteral(it) }
                             is ByteArray -> argValue.map { Literal.NumberLiteral(it.toString()) }
-                            else -> listOf(Literal.StringLiteral(argValue.toString()))
+                            else -> [Literal.StringLiteral(argValue.toString())]
                         }
                     }
-                    else -> listOf(Literal.NullLiteral)
+                    else -> [Literal.NullLiteral]
                 }
             }
             return FunctionCall(

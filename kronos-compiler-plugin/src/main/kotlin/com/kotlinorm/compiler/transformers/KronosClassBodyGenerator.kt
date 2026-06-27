@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package com.kotlinorm.compiler.transformers
 
 import com.kotlinorm.compiler.core.buildFieldFromProperty
@@ -284,12 +286,12 @@ fun DeclarationIrBuilder.createToDataMap(irClass: IrClass, irFunction: IrFunctio
         val entries: List<IrExpression> = irClass.properties
             .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() }
             .flatMap { prop ->
-                listOf(
+                [
                     buildPairOf(
                         irString(prop.name.asString()),
                         irGetField(dispatcher, prop.backingField!!)
                     )
-                )
+                ]
             }.toList()
         +irReturn(buildMutableMapOf(context.irBuiltIns.stringType, context.irBuiltIns.anyNType, entries))
     }

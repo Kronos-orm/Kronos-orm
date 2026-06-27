@@ -90,7 +90,7 @@ class MysqlDeleteTest : MysqlTestBase() {
 
     @Test
     fun testDeleteIter() {
-        val (sql, _, list) = listOf(user, testUser).delete().logic(false).where {
+        val (sql, _, list) = [user, testUser].delete().logic(false).where {
             it.username == "John" && it.gender == 0
         }.build()
         // delete from tb_user where name = 'John' and email like 'john%'

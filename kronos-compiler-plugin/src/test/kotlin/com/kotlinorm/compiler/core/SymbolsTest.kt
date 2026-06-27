@@ -81,13 +81,13 @@ class SymbolsTest {
             
             // 直接测试方法符号
             with(pluginContext) {
-                val methodSymbols = listOf(
+                val methodSymbols = [
                     "addField" to addFieldMethodSymbol,
                     "setValue" to setValueMethodSymbol,
                     "setAssign" to setAssignMethodSymbol,
                     "setCriteria" to setCriteriaMethodSymbol,
                     "addSortField" to addSortFieldMethodSymbol
-                )
+                ]
                 
                 methodSymbols.forEach { (name, symbol) ->
                     assertNotNull(symbol, "$name method symbol should be resolved")
@@ -207,7 +207,7 @@ class SymbolsTest {
             assertEquals(3, kPojoClasses.size, "Should have 3 KPojo classes")
             
             val classNames = kPojoClasses.map { it.name.asString() }.sorted()
-            assertEquals(listOf("Comment", "Post", "User"), classNames, 
+            assertEquals(["Comment", "Post", "User"], classNames, 
                 "Should have User, Post, and Comment classes")
             
             println("✓ Found ${kPojoClasses.size} KPojo classes: ${classNames.joinToString()}")

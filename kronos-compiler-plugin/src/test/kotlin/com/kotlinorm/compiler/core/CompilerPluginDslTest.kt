@@ -347,6 +347,30 @@ class CompilerPluginDslTest {
         """
     }
 
+    @Test
+    fun `test field in listOf produces IN condition`() {
+        "FieldInListOf" conditionTest """
+            fun test() {
+                val result = where { it.id in listOf(1, 2, 3) }
+                assertNotNull(result)
+                assertEquals(ConditionType.IN, result!!.type)
+                assertEquals("id", result.field.name)
+            }
+        """
+    }
+
+    @Test
+    fun `test field in collection literal produces IN condition`() {
+        "FieldInCollectionLiteral" conditionTest """
+            fun test() {
+                val result = where { it.id in [1, 2, 3] }
+                assertNotNull(result)
+                assertEquals(ConditionType.IN, result!!.type)
+                assertEquals("id", result.field.name)
+            }
+        """
+    }
+
     // ====================================================================
     // 5. ConditionAnalysis — named comparison methods: less, greater, etc.
     // ====================================================================

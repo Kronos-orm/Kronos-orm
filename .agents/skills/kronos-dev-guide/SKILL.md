@@ -53,7 +53,6 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
 |--------|------|-----------------|
 | `kronos-core` | Contracts, AST, SQL rendering, ORM ops, strategies, DSL beans | `Kronos.kt`, `ast/`, `database/`, `orm/`, `beans/dsl/` |
 | `kronos-compiler-plugin` | K2 IR transformations | `KronosParserTransformer`, `KronosIrClassTransformer` |
-| `kronos-compiler-plugin-legacy` | Pre-K2 plugin (maintenance only) | Same transform goals, older structure |
 | `kronos-gradle-plugin` | Gradle build integration | `KronosGradlePlugin.kt` |
 | `kronos-maven-plugin` | Maven build integration | `KronosMavenPlugin.kt` |
 | `kronos-logging` | Pluggable logging (SLF4J/JUL/Commons/Android) | `KronosLoggerApp.kt` |
@@ -70,7 +69,7 @@ Read these for deep implementation details:
 | File | When to Read |
 |------|-------------|
 | `Evolution.md` | Required first read before fixing any error; stores historical problems, root causes, solutions, and prevention rules |
-| `references/compiler-plugin.md` | Modifying compiler plugin, adding/changing IR transforms, debugging IR output |
+| `references/compiler-plugin.md` | Modifying compiler plugin, adding/changing IR transforms, debugging IR output. Before compiler plugin architecture, FIR/frontend, IR/backend, diagnostics, or compiler-test work, use `.agents/skills/kronos-dev-kcp` first. |
 | `references/ast-and-rendering.md` | Working with AST nodes, SQL rendering, adding/modifying database dialects, functions system |
 | `references/orm-and-dsl.md` | ORM clause classes, DSL beans, plugin/hook system, task execution, transactions, value transformers |
 | `references/modules.md` | Working on codegen, logging, jdbc-wrapper, gradle/maven plugins |

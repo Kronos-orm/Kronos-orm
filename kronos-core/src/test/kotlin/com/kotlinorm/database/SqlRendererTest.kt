@@ -189,7 +189,7 @@ class SqlRendererTest {
         val stmt = SelectStatement(
             selectList = mutableListOf(SelectItem.AllColumnsSelectItem(null)),
             from = table,
-            where = SpecialExpression.InExpression(col("id"), listOf(num("1"), num("2"), num("3")))
+            where = SpecialExpression.InExpression(col("id"), [num("1"), num("2"), num("3")])
         )
         assertEquals("SELECT * FROM `users` WHERE `id` IN (1, 2, 3)", mysql.render(stmt).sql)
     }
@@ -198,7 +198,7 @@ class SqlRendererTest {
         val stmt = SelectStatement(
             selectList = mutableListOf(SelectItem.AllColumnsSelectItem(null)),
             from = table,
-            where = SpecialExpression.InExpression(col("id"), listOf(num("1"), num("2")), not = true)
+            where = SpecialExpression.InExpression(col("id"), [num("1"), num("2")], not = true)
         )
         assertEquals("SELECT * FROM `users` WHERE `id` NOT IN (1, 2)", mysql.render(stmt).sql)
     }
@@ -447,8 +447,8 @@ class SqlRendererTest {
     @Test fun testMysqlInsert() {
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name")),
-            values = listOf(param("id"), param("name"))
+            columns = [col("id"), col("name")],
+            values = [param("id"), param("name")]
         )
         assertEquals("INSERT INTO `users` (`id`, `name`) VALUES (:id, :name)", mysql.render(stmt).sql)
     }
@@ -456,8 +456,8 @@ class SqlRendererTest {
     @Test fun testPostgresInsert() {
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name")),
-            values = listOf(param("id"), param("name"))
+            columns = [col("id"), col("name")],
+            values = [param("id"), param("name")]
         )
         assertEquals("INSERT INTO \"users\" (\"id\", \"name\") VALUES (:id, :name)", postgres.render(stmt).sql)
     }
@@ -465,8 +465,8 @@ class SqlRendererTest {
     @Test fun testMssqlInsert() {
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name")),
-            values = listOf(param("id"), param("name"))
+            columns = [col("id"), col("name")],
+            values = [param("id"), param("name")]
         )
         assertEquals("INSERT INTO [users] ([id], [name]) VALUES (:id, :name)", mssql.render(stmt).sql)
     }
@@ -474,8 +474,8 @@ class SqlRendererTest {
     @Test fun testOracleInsert() {
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name")),
-            values = listOf(param("id"), param("name"))
+            columns = [col("id"), col("name")],
+            values = [param("id"), param("name")]
         )
         assertEquals("INSERT INTO \"users\" (\"id\", \"name\") VALUES (:id, :name)", oracle.render(stmt).sql)
     }
@@ -483,8 +483,8 @@ class SqlRendererTest {
     @Test fun testSqliteInsert() {
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name")),
-            values = listOf(param("id"), param("name"))
+            columns = [col("id"), col("name")],
+            values = [param("id"), param("name")]
         )
         assertEquals("INSERT INTO \"users\" (\"id\", \"name\") VALUES (:id, :name)", sqlite.render(stmt).sql)
     }
@@ -567,9 +567,9 @@ class SqlRendererTest {
         val ageField = Field("age", "age")
         return ConflictResolver(
             tableName = "users",
-            onFields = linkedSetOf(idField),
-            toUpdateFields = linkedSetOf(nameField, ageField),
-            toInsertFields = linkedSetOf(idField, nameField, ageField)
+            onFields = [idField],
+            toUpdateFields = [nameField, ageField],
+            toInsertFields = [idField, nameField, ageField]
         )
     }
 
@@ -577,8 +577,8 @@ class SqlRendererTest {
         val resolver = makeConflictResolver()
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name"), col("age")),
-            values = listOf(param("id"), param("name"), param("age")),
+            columns = [col("id"), col("name"), col("age")],
+            values = [param("id"), param("name"), param("age")],
             conflictResolver = resolver
         )
         val r = mysql.render(stmt)
@@ -590,8 +590,8 @@ class SqlRendererTest {
         val resolver = makeConflictResolver()
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name"), col("age")),
-            values = listOf(param("id"), param("name"), param("age")),
+            columns = [col("id"), col("name"), col("age")],
+            values = [param("id"), param("name"), param("age")],
             conflictResolver = resolver
         )
         val r = postgres.render(stmt)
@@ -604,8 +604,8 @@ class SqlRendererTest {
         val resolver = makeConflictResolver()
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name"), col("age")),
-            values = listOf(param("id"), param("name"), param("age")),
+            columns = [col("id"), col("name"), col("age")],
+            values = [param("id"), param("name"), param("age")],
             conflictResolver = resolver
         )
         val r = sqlite.render(stmt)
@@ -617,8 +617,8 @@ class SqlRendererTest {
         val resolver = makeConflictResolver()
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name"), col("age")),
-            values = listOf(param("id"), param("name"), param("age")),
+            columns = [col("id"), col("name"), col("age")],
+            values = [param("id"), param("name"), param("age")],
             conflictResolver = resolver
         )
         val r = mssql.render(stmt)
@@ -631,8 +631,8 @@ class SqlRendererTest {
         val resolver = makeConflictResolver()
         val stmt = InsertStatement(
             table = table,
-            columns = listOf(col("id"), col("name"), col("age")),
-            values = listOf(param("id"), param("name"), param("age")),
+            columns = [col("id"), col("name"), col("age")],
+            values = [param("id"), param("name"), param("age")],
             conflictResolver = resolver
         )
         val r = oracle.render(stmt)
@@ -645,16 +645,16 @@ class SqlRendererTest {
     private fun makeCreateTable(comment: String? = null): DdlStatement.CreateTableStatement {
         return DdlStatement.CreateTableStatement(
             tableName = "users",
-            columns = listOf(
+            columns = [
                 ColumnDefinition("id", KColumnType.INT, nullable = false, primaryKey = PrimaryKeyType.IDENTITY),
                 ColumnDefinition("name", KColumnType.VARCHAR, length = 100, nullable = false),
                 ColumnDefinition("age", KColumnType.INT, nullable = true),
                 ColumnDefinition("bio", KColumnType.TEXT, nullable = true),
                 ColumnDefinition("created_at", KColumnType.DATETIME, nullable = true)
-            ),
-            indexes = listOf(
+            ],
+            indexes = [
                 KTableIndex("idx_name", arrayOf("name"), "UNIQUE", "BTREE")
-            ),
+            ],
             comment = comment
         )
     }
@@ -858,12 +858,12 @@ class SqlRendererTest {
     }
 
     @Test fun testMysqlCreateIndex() {
-        val r = mysql.render(DdlStatement.CreateIndexStatement("idx_email", "users", listOf("email"), unique = true))
+        val r = mysql.render(DdlStatement.CreateIndexStatement("idx_email", "users", ["email"], unique = true))
         assertTrue(r.sql.contains("CREATE") && r.sql.contains("UNIQUE") && r.sql.contains("INDEX"))
     }
 
     @Test fun testPostgresCreateIndex() {
-        val r = postgres.render(DdlStatement.CreateIndexStatement("idx_email", "users", listOf("email")))
+        val r = postgres.render(DdlStatement.CreateIndexStatement("idx_email", "users", ["email"]))
         assertTrue(r.sql.contains("CREATE") && r.sql.contains("INDEX"))
     }
 
@@ -1119,7 +1119,7 @@ class SqlRendererTest {
             selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id"), null)),
             from = TableName(table = "admins")
         )
-        val r = mysql.render(UnionStatement(queries = listOf(q1, q2), unionAll = false))
+        val r = mysql.render(UnionStatement(queries = [q1, q2], unionAll = false))
         assertTrue(r.sql.contains("UNION") && !r.sql.contains("UNION ALL"))
     }
 
@@ -1132,7 +1132,7 @@ class SqlRendererTest {
             selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id"), null)),
             from = TableName(table = "admins")
         )
-        assertTrue(mysql.render(UnionStatement(queries = listOf(q1, q2), unionAll = true)).sql.contains("UNION ALL"))
+        assertTrue(mysql.render(UnionStatement(queries = [q1, q2], unionAll = true)).sql.contains("UNION ALL"))
     }
 
     @Test fun testUnionWithOrderByAndLimit() {
@@ -1145,8 +1145,8 @@ class SqlRendererTest {
             from = TableName(table = "admins")
         )
         val r = mysql.render(UnionStatement(
-            queries = listOf(q1, q2), unionAll = false,
-            orderBy = listOf(OrderByItem(col("id"), SortType.ASC)),
+            queries = [q1, q2], unionAll = false,
+            orderBy = [OrderByItem(col("id"), SortType.ASC)],
             limit = LimitClause(10, null)
         ))
         assertTrue(r.sql.contains("ORDER BY") && r.sql.contains("LIMIT 10"))
@@ -1216,64 +1216,64 @@ class SqlRendererTest {
     // === COLUMN TYPES (DDL coverage for each dialect) ===
 
     @Test fun testMysqlColumnTypes() {
-        val r = mysql.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = mysql.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("c1", KColumnType.INT), ColumnDefinition("c2", KColumnType.BIGINT),
             ColumnDefinition("c3", KColumnType.VARCHAR, length = 200), ColumnDefinition("c4", KColumnType.TEXT),
             ColumnDefinition("c5", KColumnType.DATETIME), ColumnDefinition("c6", KColumnType.TIMESTAMP)
-        )))
+        ]))
         assertTrue(r.sql.contains("INT") && r.sql.contains("BIGINT") && r.sql.contains("VARCHAR(200)"))
         assertTrue(r.sql.contains("TEXT") && r.sql.contains("DATETIME") && r.sql.contains("TIMESTAMP"))
     }
 
     @Test fun testPostgresColumnTypes() {
-        val r = postgres.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = postgres.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("c1", KColumnType.INT), ColumnDefinition("c2", KColumnType.BIGINT),
             ColumnDefinition("c3", KColumnType.VARCHAR, length = 200), ColumnDefinition("c4", KColumnType.TEXT),
             ColumnDefinition("c5", KColumnType.BIT), ColumnDefinition("c6", KColumnType.UUID),
             ColumnDefinition("c7", KColumnType.JSON)
-        )))
+        ]))
         assertTrue(r.sql.contains("INTEGER") && r.sql.contains("BIGINT") && r.sql.contains("VARCHAR(200)"))
         assertTrue(r.sql.contains("BOOLEAN") && r.sql.contains("UUID") && r.sql.contains("JSONB"))
     }
 
     @Test fun testMssqlColumnTypes() {
-        val r = mssql.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = mssql.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("c1", KColumnType.INT), ColumnDefinition("c2", KColumnType.BIGINT),
             ColumnDefinition("c3", KColumnType.VARCHAR, length = 200), ColumnDefinition("c4", KColumnType.NVARCHAR, length = 100),
             ColumnDefinition("c5", KColumnType.TEXT), ColumnDefinition("c6", KColumnType.BIT),
             ColumnDefinition("c7", KColumnType.BLOB), ColumnDefinition("c8", KColumnType.DATE)
-        )))
+        ]))
         assertTrue(r.sql.contains("INT") && r.sql.contains("VARCHAR(200)") && r.sql.contains("NVARCHAR(100)"))
         assertTrue(r.sql.contains("BIT") && r.sql.contains("VARBINARY(MAX)") && r.sql.contains("DATE"))
     }
 
     @Test fun testOracleColumnTypes() {
-        val r = oracle.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = oracle.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("c1", KColumnType.INT), ColumnDefinition("c2", KColumnType.BIGINT),
             ColumnDefinition("c3", KColumnType.VARCHAR, length = 200), ColumnDefinition("c4", KColumnType.TEXT),
             ColumnDefinition("c5", KColumnType.DATE), ColumnDefinition("c6", KColumnType.BLOB),
             ColumnDefinition("c7", KColumnType.JSON), ColumnDefinition("c8", KColumnType.TIMESTAMP, scale = 3)
-        )))
+        ]))
         assertTrue(r.sql.contains("NUMBER") && r.sql.contains("VARCHAR2(200)") && r.sql.contains("CLOB"))
         assertTrue(r.sql.contains("DATE") && r.sql.contains("BLOB") && r.sql.contains("JSON") && r.sql.contains("TIMESTAMP(3)"))
     }
 
     @Test fun testSqliteColumnTypes() {
-        val r = sqlite.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = sqlite.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("c1", KColumnType.INT), ColumnDefinition("c2", KColumnType.BIGINT),
             ColumnDefinition("c3", KColumnType.VARCHAR, length = 200), ColumnDefinition("c4", KColumnType.TEXT),
             ColumnDefinition("c5", KColumnType.FLOAT), ColumnDefinition("c6", KColumnType.BLOB)
-        )))
+        ]))
         assertTrue(r.sql.contains("INTEGER") && r.sql.contains("TEXT") && r.sql.contains("REAL") && r.sql.contains("BLOB"))
     }
 
     // === DEFAULT VALUES / SPECIAL DDL ===
 
     @Test fun testColumnWithDefaultValue() {
-        val r = mysql.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = mysql.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("status", KColumnType.INT, defaultValue = Literal.NumberLiteral("0")),
             ColumnDefinition("name", KColumnType.VARCHAR, length = 50, defaultValue = Literal.StringLiteral("unknown"))
-        )))
+        ]))
         assertTrue(r.sql.contains("DEFAULT 0") && r.sql.contains("DEFAULT 'unknown'"))
     }
 
@@ -1287,40 +1287,40 @@ class SqlRendererTest {
     }
 
     @Test fun testMssqlLargeVarchar() {
-        val r = mssql.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = mssql.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("c1", KColumnType.VARCHAR, length = 9000),
             ColumnDefinition("c2", KColumnType.NVARCHAR, length = 5000)
-        )))
+        ]))
         assertTrue(r.sql.contains("VARCHAR(MAX)") && r.sql.contains("NVARCHAR(MAX)"))
     }
 
     @Test fun testPostgresSerialIdentity() {
-        val r = postgres.render(DdlStatement.CreateTableStatement("t", listOf(
+        val r = postgres.render(DdlStatement.CreateTableStatement("t", [
             ColumnDefinition("id", KColumnType.INT, primaryKey = PrimaryKeyType.IDENTITY),
             ColumnDefinition("big_id", KColumnType.BIGINT, primaryKey = PrimaryKeyType.IDENTITY)
-        )))
+        ]))
         assertTrue(r.sql.contains("SERIAL") && r.sql.contains("BIGSERIAL"))
     }
 
     @Test fun testSqliteIndexWithCollate() {
         val r = sqlite.render(DdlStatement.CreateTableStatement("t",
-            listOf(ColumnDefinition("name", KColumnType.VARCHAR, length = 100)),
-            indexes = listOf(KTableIndex("idx_name", arrayOf("name"), "", "NOCASE"))
+            [ColumnDefinition("name", KColumnType.VARCHAR, length = 100)],
+            indexes = [KTableIndex("idx_name", arrayOf("name"), "", "NOCASE")]
         ))
         assertTrue(r.sql.contains("COLLATE NOCASE"))
     }
 
     @Test fun testOracleUppercaseTable() {
-        val r = oracle.render(DdlStatement.CreateTableStatement("users", listOf(
+        val r = oracle.render(DdlStatement.CreateTableStatement("users", [
             ColumnDefinition("id", KColumnType.INT, primaryKey = PrimaryKeyType.IDENTITY)
-        )))
+        ]))
         assertTrue(r.sql.contains("\"USERS\""))
     }
 
     @Test fun testMssqlDboSchema() {
-        val r = mssql.render(DdlStatement.CreateTableStatement("users", listOf(
+        val r = mssql.render(DdlStatement.CreateTableStatement("users", [
             ColumnDefinition("id", KColumnType.INT)
-        )))
+        ]))
         assertTrue(r.sql.contains("[dbo]"))
     }
 }

@@ -152,7 +152,7 @@ object StringFunctionBuilder : FunctionBuilder {
                 if (dataSource.dbType == DBType.Oracle) {
                     val separator = field.fields.first().second
                     val fields: List<Pair<Field?, Any?>> =
-                        field.fields.drop(1).flatMap { listOf(Pair(null, separator), it) }.drop(1)
+                        field.fields.drop(1).flatMap { [Pair(null, separator), it] }.drop(1)
                     return buildOperations("||", alias, fields, dataSource, showTable)
                 } else {
                     field.fields = field.fields.drop(1)

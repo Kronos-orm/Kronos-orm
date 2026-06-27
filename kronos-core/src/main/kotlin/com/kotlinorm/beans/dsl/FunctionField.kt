@@ -24,5 +24,5 @@ package com.kotlinorm.beans.dsl
  **/
 class FunctionField(
     var functionName: String,
-    var fields: List<Pair<Field?, Any?>> = listOf()
+    var fields: List<Pair<Field?, Any?>> = []
 ) : Field(functionName)

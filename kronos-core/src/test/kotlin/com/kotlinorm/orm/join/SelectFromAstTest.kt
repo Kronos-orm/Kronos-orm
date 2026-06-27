@@ -36,7 +36,7 @@ class SelectFromAstTest : MysqlTestBase() {
     fun testToStatementGeneratesCorrectAst() {
         val selectFrom = MysqlUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 }
-            select { user.id + user.username + relation.gender }
+            select { [user.id, user.username, relation.gender] }
         }
         
         // Call toStatement to get the AST
@@ -74,7 +74,7 @@ class SelectFromAstTest : MysqlTestBase() {
         ) { user, relation1, relation2 ->
             leftJoin(relation1) { user.id == relation1.id2 }
             leftJoin(relation2) { user.id == relation2.id2 }
-            select { user.id + relation1.gender + relation2.gender }
+            select { [user.id, relation1.gender, relation2.gender] }
         }
         
         val statement = selectFrom.toStatement()
@@ -97,7 +97,7 @@ class SelectFromAstTest : MysqlTestBase() {
     fun testToStatementWithWhereClause() {
         val selectFrom = MysqlUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 }
-            select { user.id + user.username }
+            select { [user.id, user.username] }
         }
         
         val statement = selectFrom.toStatement()
@@ -111,7 +111,7 @@ class SelectFromAstTest : MysqlTestBase() {
     fun testToStatementSelectListWithTableAliases() {
         val selectFrom = MysqlUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 }
-            select { user.id + user.username + relation.gender }
+            select { [user.id, user.username, relation.gender] }
         }
         
         val statement = selectFrom.toStatement()
@@ -249,7 +249,7 @@ class SelectFromAstTest : MysqlTestBase() {
     fun testToStatementWithGroupBy() {
         val selectFrom = MysqlUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
             leftJoin(relation) { user.id == relation.id2 }
-            select { user.id + relation.gender }
+            select { [user.id, relation.gender] }
             groupBy { relation.gender }
         }
         

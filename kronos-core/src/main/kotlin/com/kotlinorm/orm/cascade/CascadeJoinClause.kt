@@ -139,7 +139,7 @@ object CascadeJoinClause {
                             if (lastStepResult == null) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
                             setValues(
-                                listOf(lastStepResult),
+                                [lastStepResult],
                                 propName,
                                 validRef,
                                 cascadeAllowed,

@@ -40,7 +40,7 @@ class EnumValueTransformTest {
             superTypesOfValue: List<String>,
             kClassOfValue: KClass<*>
         ): Boolean {
-            return targetKotlinType in listOf(TestEnum::class.qualifiedName, TestEnum2::class.qualifiedName) &&
+            return targetKotlinType in [TestEnum::class.qualifiedName, TestEnum2::class.qualifiedName] &&
                     kClassOfValue == String::class
         }
 

@@ -52,7 +52,7 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
             beforeQuery?.invoke(this)
             val records =
                 atomicTask.logAndReturn(
-                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class, true, listOf()), QueryList
+                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class, true, []), QueryList
                 )
 
             afterQuery?.invoke(records, QueryList, wrapper.orDefault())
@@ -68,7 +68,7 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
             // 不能直接将 select字段变成1，因为查询的字段可能在where条件中使用
             // 例如：select (select count(1) from table1) as count from table2 where count > 0
             // 只有查询的字段为空或者没有自定义sql时才能将select字段变成1
-            selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
+            selectClause.selectFields = [Field("1", type = CUSTOM_CRITERIA_SQL)]
             selectClause.selectAll = false
         }
         val cntTask = selectClause.build(wrapper)

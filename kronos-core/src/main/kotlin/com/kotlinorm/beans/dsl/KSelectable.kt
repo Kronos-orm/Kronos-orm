@@ -20,11 +20,12 @@ import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.utils.LinkedHashSet
 
 abstract class KSelectable<T : KPojo>(
     internal open val pojo: T
 ) {
-    open var selectFields: LinkedHashSet<Field> = linkedSetOf()
+    open var selectFields: LinkedHashSet<Field> = []
     abstract var selectAll: Boolean
     abstract var pageEnabled: Boolean
     abstract var limitCapacity: Int

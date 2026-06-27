@@ -51,11 +51,11 @@ class AssignmentTest {
 
     @Test
     fun testMultipleAssignments() {
-        val assignments = listOf(
+        val assignments = [
             Assignment(ColumnReference(tableAlias = "users", columnName = "name"), Literal.StringLiteral("Alice")),
             Assignment(ColumnReference(tableAlias = "users", columnName = "age"), Literal.NumberLiteral("30")),
             Assignment(ColumnReference(tableAlias = "users", columnName = "email"), Parameter.NamedParameter("email"))
-        )
+        ]
         
         assertEquals(3, assignments.size)
         assertTrue(assignments[0].value is Literal.StringLiteral)

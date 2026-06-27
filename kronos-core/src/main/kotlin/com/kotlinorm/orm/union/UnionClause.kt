@@ -154,7 +154,7 @@ class UnionClause internal constructor(
     inline fun <reified T> queryList(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ): List<T> {
         return build(wrapper).queryList(wrapper, isKPojo, superTypes)
     }
@@ -165,7 +165,7 @@ class UnionClause internal constructor(
     inline fun <reified T> queryOne(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ): T {
         limit(1)
         return build(wrapper).queryOne(wrapper, isKPojo, superTypes)
@@ -177,7 +177,7 @@ class UnionClause internal constructor(
     inline fun <reified T> queryOneOrNull(
         wrapper: KronosDataSourceWrapper? = null,
         isKPojo: Boolean = false,
-        superTypes: List<String> = listOf()
+        superTypes: List<String> = []
     ): T? {
         limit(1)
         return build(wrapper).queryOneOrNull(wrapper, isKPojo, superTypes)

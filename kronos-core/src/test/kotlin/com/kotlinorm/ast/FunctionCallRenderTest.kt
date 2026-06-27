@@ -39,7 +39,7 @@ class FunctionCallRenderTest {
         val renderer = MysqlSqlRenderer()
         val addFunc = FunctionCall(
             functionName = "add",
-            arguments = listOf(Literal.NumberLiteral("10"), Literal.NumberLiteral("20"))
+            arguments = [Literal.NumberLiteral("10"), Literal.NumberLiteral("20")]
         )
         val result = renderer.render(createSelect(addFunc))
         assertTrue(result.sql.contains("(10 + 20)"), "Expected infix operator, got: ${result.sql}")
@@ -50,7 +50,7 @@ class FunctionCallRenderTest {
         val renderer = MysqlSqlRenderer()
         val ceilFunc = FunctionCall(
             functionName = "ceil",
-            arguments = listOf(Literal.NumberLiteral("12.3"))
+            arguments = [Literal.NumberLiteral("12.3")]
         )
         val result = renderer.render(createSelect(ceilFunc))
         assertTrue(result.sql.contains("CEIL(12.3)"), "Expected CEIL for MySQL, got: ${result.sql}")
@@ -61,7 +61,7 @@ class FunctionCallRenderTest {
         val renderer = MssqlSqlRenderer()
         val ceilFunc = FunctionCall(
             functionName = "ceil",
-            arguments = listOf(Literal.NumberLiteral("12.3"))
+            arguments = [Literal.NumberLiteral("12.3")]
         )
         val result = renderer.render(createSelect(ceilFunc))
         assertTrue(result.sql.contains("CEILING(12.3)"), "Expected CEILING for SQL Server, got: ${result.sql}")
@@ -72,7 +72,7 @@ class FunctionCallRenderTest {
         val renderer = MysqlSqlRenderer()
         val lnFunc = FunctionCall(
             functionName = "ln",
-            arguments = listOf(Literal.NumberLiteral("2"))
+            arguments = [Literal.NumberLiteral("2")]
         )
         val result = renderer.render(createSelect(lnFunc))
         assertTrue(result.sql.contains("LN(2)"), "Expected LN for MySQL, got: ${result.sql}")
@@ -83,7 +83,7 @@ class FunctionCallRenderTest {
         val renderer = MssqlSqlRenderer()
         val lnFunc = FunctionCall(
             functionName = "ln",
-            arguments = listOf(Literal.NumberLiteral("2"))
+            arguments = [Literal.NumberLiteral("2")]
         )
         val result = renderer.render(createSelect(lnFunc))
         assertTrue(result.sql.contains("LOG(2, EXP(1))"), "Expected LOG(x, EXP(1)) for SQL Server, got: ${result.sql}")
@@ -118,7 +118,7 @@ class FunctionCallRenderTest {
         val renderer = MysqlSqlRenderer()
         val modFunc = FunctionCall(
             functionName = "mod",
-            arguments = listOf(Literal.NumberLiteral("10"), Literal.NumberLiteral("3"))
+            arguments = [Literal.NumberLiteral("10"), Literal.NumberLiteral("3")]
         )
         val result = renderer.render(createSelect(modFunc))
         assertTrue(result.sql.contains("(10 % 3)"), "Expected % operator for MySQL, got: ${result.sql}")
@@ -129,7 +129,7 @@ class FunctionCallRenderTest {
         val renderer = OracleSqlRenderer()
         val modFunc = FunctionCall(
             functionName = "mod",
-            arguments = listOf(Literal.NumberLiteral("10"), Literal.NumberLiteral("3"))
+            arguments = [Literal.NumberLiteral("10"), Literal.NumberLiteral("3")]
         )
         val result = renderer.render(createSelect(modFunc))
         assertTrue(result.sql.contains("MOD(10, 3)"), "Expected MOD function for Oracle, got: ${result.sql}")

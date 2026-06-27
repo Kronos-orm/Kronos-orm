@@ -9,7 +9,7 @@
 ### 0.1.0
 
 - ✨ 发布 `0.1.0`，完成核心模块、构建配置和 README 版本引用更新 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204), [#207](https://github.com/Kronos-orm/Kronos-orm/pull/207), [#208](https://github.com/Kronos-orm/Kronos-orm/pull/208))
-- ✨ 新增 K2 编译器插件实现，并将原编译器插件重命名为 `kronos-compiler-plugin-legacy`，新的 K2 插件成为主插件 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
+- ✨ 新增 K2 编译器插件实现，替换旧版编译器插件实现，并将 K2 插件作为唯一主插件发布 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
 - ✨ 新增类型安全 SQL AST 与多数据库方言渲染器，覆盖 select、insert、update、delete、upsert、DDL、union 和函数渲染 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
 - ✨ 新增事务 DSL 能力，支持隔离级别、超时、保存点以及嵌套事务复用连接；JDBC wrapper 增加 ThreadLocal 事务连接共享 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))
 - 💪 改进级联查询、跨模块测试基础设施、代码生成测试、核心 ORM/方言函数测试和覆盖率 CI ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204))

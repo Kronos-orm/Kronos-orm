@@ -44,9 +44,9 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         println("Loaded Compiler plugin $group.$artifactId version $version")
         val timestamp = System.currentTimeMillis()
         return kotlinCompilation.target.project.provider {
-            listOf(
+            [
                 SubpluginOption("timestamp", timestamp.toString())
-            )
+            ]
         }
     }
 

@@ -475,7 +475,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
      * @param kClass The Kotlin class of the target object type.
      * @return The value at the specified column position, converted to the specified type.
      */
-    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String> = listOf()): Any? =
+    private fun ResultSet.getObjectValue(position: Int, kClass: KClass<*>, superTypes: List<String> = []): Any? =
         if (strictSetValue) {
             getObject(position, kClass.java)
         } else {

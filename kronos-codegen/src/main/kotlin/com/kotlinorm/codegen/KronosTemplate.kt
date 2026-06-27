@@ -66,14 +66,14 @@ class KronosTemplate(
             annotations.add("@Default(\"$defaultValue\")")
             imports.add("com.kotlinorm.annotations.Default")
         }
-        val isNumber = type in listOf(
+        val isNumber = type in [
             KColumnType.TINYINT,
             KColumnType.INT,
             KColumnType.BIGINT,
             KColumnType.FLOAT,
             KColumnType.DOUBLE,
             KColumnType.DECIMAL
-        )
+        ]
         val isBool = type == KColumnType.BIT
         val isString = type == KColumnType.VARCHAR && length == 255 && scale == 0
         if (

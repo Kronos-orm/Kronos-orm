@@ -11,7 +11,7 @@
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -23,7 +23,7 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -34,7 +34,7 @@ val users: List<User> =
     User().join(UserInfo(), UserTeam()) { user, userInfo, userTeam ->
         leftJoin { user.id == userInfo.userId }
         innerJoin { user.id == userTeam.userId }
-        select { user.id + user.name + userInfo.age + userTeam.teamId }
+        select { [user.id, user.name, userInfo.age, userTeam.teamId] }
     }.query()
 ```
 
@@ -49,7 +49,7 @@ val users: List<User> =
     User().join(UserInfo(), UserTeam(), UserRole()) { user, userInfo, userTeam, userRole ->
         on { user.id == userInfo.userId && user.id == userTeam.userId && user.id == userRole.userId }
         db(userInfo to "user_info_database", userRole to "user_role_database")
-        select { user.id + user.name + userInfo.age + userTeam.teamId + userRole.roleName }
+        select { [user.id, user.name, userInfo.age, userTeam.teamId, userRole.roleName] }
     }.query()
 ```
 
@@ -57,9 +57,9 @@ val users: List<User> =
 
 在Kronos中，我们可以使用`select`方法指定查询字段，多个字段之间使用`+`连接。
 
-可以使用`as_`为字段指定别名，如```select { user.id + user.name.as_("userName") + userInfo.age }```。
+可以使用`as_`为字段指定别名，如```select { [user.id, user.name.as_("userName"), userInfo.age] }```。
 
-如需要查询某张表的所有字段，可以使用`select { user }`、`select { user + userInfo + userTeam.teamId }`。
+如需要查询某张表的所有字段，可以使用`select { user }`、`select { [user, userInfo, userTeam.teamId] }`。
 
 不指定查询字段时，默认查询所有字段，我们会对不同表相同字段进行重新命名，以避免字段冲突。
 
@@ -69,7 +69,7 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryList()
 ```
 
@@ -81,7 +81,7 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user - user.id + userInfo.age }
+        select { [user - user.id, userInfo.age] }
     }
         .query()
 ```
@@ -107,7 +107,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user.id == 1 }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -118,7 +118,7 @@ val users: List<User> =
     User(1, "Kronos").join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user.eq }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -129,7 +129,7 @@ val users: List<User> =
     User(1, "Kronos").join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         where { user - user.id }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -141,7 +141,7 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
         where { "user.id = :id" }
         patch("id" to 1)
     }.query()
@@ -155,9 +155,9 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        groupBy { user.id + userInfo.age }
+        groupBy { [user.id, userInfo.age] }
         having { userInfo.age > 18 }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -169,8 +169,8 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        orderBy { user.id.asc() + userInfo.age.desc() }
-        select { user.id + user.name + userInfo.age }
+        orderBy { [user.id.asc(), userInfo.age.desc()] }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -183,7 +183,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         limit(10)
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -196,7 +196,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         distinct()
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -216,7 +216,7 @@ val (total, list) =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         page(1, 10)
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.withTotal().query()
 ```
 
@@ -228,7 +228,7 @@ val (total, list) =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -249,7 +249,7 @@ val users: List<User> =
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryList()
 ```
 
@@ -318,7 +318,7 @@ val user: User =
 val user: User? =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryOneOrNull()
 ```
 
@@ -332,7 +332,7 @@ val customWrapper = CustomWrapper()
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        select { user.id + user.name + userInfo.age }
+        select { [user.id, user.name, userInfo.age] }
     }.queryLIST(customWrapper)
 ```
 

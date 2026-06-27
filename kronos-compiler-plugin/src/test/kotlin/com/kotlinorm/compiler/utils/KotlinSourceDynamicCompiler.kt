@@ -27,14 +27,15 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 object KotlinSourceDynamicCompiler {
 
     fun compile(source: String, fileName: String? = null): JvmCompilationResult {
-        return compile(listOf(SourceFile.kotlin(fileName?.let { "$it.kt" } ?: "main.kt", source)))
+        return compile([SourceFile.kotlin(fileName?.let { "$it.kt" } ?: "main.kt", source)])
     }
 
     internal fun compile(sourceFiles: List<SourceFile>): JvmCompilationResult {
         return KotlinCompilation().apply {
             sources = sourceFiles
-            compilerPluginRegistrars = listOf(KronosCompilerPluginRegistrar())
-            commandLineProcessors = listOf(KronosCommandLineProcessor())
+            compilerPluginRegistrars = [KronosCompilerPluginRegistrar()]
+            commandLineProcessors = [KronosCommandLineProcessor()]
+            kotlincArguments = ["-Xcollection-literals"]
             inheritClassPath = true
             messageOutputStream = System.out
         }.compile()

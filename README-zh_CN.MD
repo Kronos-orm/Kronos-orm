@@ -234,7 +234,7 @@ dataSource.table.dropTable<Movie>()
 
 ```kotlin
 val listOfUser: List<User> = User()
-    .select { it.id + it.username }
+    .select { [it.id, it.username] }
     .where { it.id < 10 && it.age >= 18 }
     .distinct()
     .groupBy { it.id }
@@ -243,7 +243,7 @@ val listOfUser: List<User> = User()
 
 // 分页
 val (total, list) = User()
-    .select { it.id + it.username }
+    .select { [it.id, it.username] }
     .where { it.id < 10 && it.username like "a%" }
     .page(1, 10)
     .withTotal()
@@ -253,8 +253,8 @@ val (total, list) = User()
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
-        user.id + user.username + relation.id.as_("relationId") +
-                role.role + f.count(1).as_("count")
+        [user.id, user.username, relation.id.as_("relationId"),
+                role.role, f.count(1).as_("count")]
     }
     where { user.id < 10 }
 }.query()
@@ -281,7 +281,7 @@ user.update()
     .by { it.id }
     .execute()
 
-user.update { it.username + it.gender }
+user.update { [it.username, it.gender] }
     .by { it.id }
     .execute()
 ```

@@ -45,7 +45,7 @@ class SelectMysql {
         MysqlUser(id = 3).insert().execute()
         val users = MysqlUser()
             .select()
-            .where { it.id in listOf(1, 2, 3, 4) }
+            .where { it.id in [1, 2, 3, 4] }
             .queryList()
         assertEquals(3, users.size)
     }

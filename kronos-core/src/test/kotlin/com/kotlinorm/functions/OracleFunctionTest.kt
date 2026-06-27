@@ -29,13 +29,13 @@ class OracleFunctionTest : OracleTestBase() {
 
     @Test
     fun testModInSelect() {
-        val (sql, _) = user.select { f.mod(it.score, 2) }.build()
+        val (sql, _) = user.select { it.score % 2 }.build()
         assertEquals("""SELECT MOD("score", 2) AS mod FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
     fun testModInWhere() {
-        val (sql, _) = user.select { it.id }.where { f.mod(it.score, 2) == 0 }.build()
+        val (sql, _) = user.select { it.id }.where { it.score % 2 == 0 }.build()
         assertEquals("""SELECT "id" FROM "tb_user" WHERE MOD("score", 2) = :mod AND "deleted" = 0""", sql)
     }
 

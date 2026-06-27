@@ -8,7 +8,6 @@ Kotlin compiler-plugin-powered ORM framework. Zero reflection, strong typing, mu
 |--------|-------------|
 | `kronos-core` | Core contracts (`KPojo`, `KLogger`, `KronosDataSourceWrapper`), AST-based SQL generation, DSL beans, ORM operations (select/insert/update/delete/upsert/ddl/cascade/join/union), strategies, caching, i18n |
 | `kronos-compiler-plugin` | K2 compiler plugin — IR transformations for KPojo class augmentation and KTable DSL parsing (condition/select/set/sort/reference) |
-| `kronos-compiler-plugin-legacy` | Legacy (pre-K2) compiler plugin, same transformation goals, older internal structure |
 | `kronos-gradle-plugin` | Gradle plugin wiring the compiler plugin into Kotlin compilation (included build) |
 | `kronos-maven-plugin` | Maven plugin counterpart |
 | `kronos-logging` | Pluggable logging — auto-detects SLF4J, Commons Logging, JUL, Android Log |

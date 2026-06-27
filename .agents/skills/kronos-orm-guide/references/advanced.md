@@ -105,7 +105,7 @@ User().select { f.round(it.score, 2) }.queryList()
 User().select().where { f.length(it.name) > 5 }.queryList()
 
 // 在分组中使用
-User().select { it.age + f.count(it.id) }
+User().select { [it.age, f.count(it.id)] }
     .groupBy { it.age }
     .having { f.count(it.id) > 5 }
     .queryList()

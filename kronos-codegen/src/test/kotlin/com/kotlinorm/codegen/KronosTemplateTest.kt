@@ -123,7 +123,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithPrimaryKeyIdentity() {
         val field = Field(columnName = "id", type = KColumnType.INT, primaryKey = PrimaryKeyType.IDENTITY)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it.contains("@PrimaryKey") })
         assertContains(t.imports, "com.kotlinorm.annotations.PrimaryKey")
@@ -132,7 +132,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithPrimaryKeyDefault() {
         val field = Field(columnName = "pk_col", type = KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@PrimaryKey" })
     }
@@ -140,7 +140,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithDefaultValue() {
         val field = Field(columnName = "status", type = KColumnType.INT, defaultValue = "0")
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it.contains("@Default(\"0\")") })
         assertContains(t.imports, "com.kotlinorm.annotations.Default")
@@ -149,7 +149,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithNonNullableField() {
         val field = Field(columnName = "name", type = KColumnType.VARCHAR, nullable = false)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@Necessary" })
         assertContains(t.imports, "com.kotlinorm.annotations.Necessary")
@@ -158,7 +158,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithCreateTimeStrategy() {
         val field = Field(columnName = "create_time", type = KColumnType.DATETIME)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@CreateTime" })
         assertContains(t.imports, "com.kotlinorm.annotations.CreateTime")
@@ -167,7 +167,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithUpdateTimeStrategy() {
         val field = Field(columnName = "update_time", type = KColumnType.DATETIME)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@UpdateTime" })
         assertContains(t.imports, "com.kotlinorm.annotations.UpdateTime")
@@ -176,7 +176,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithLogicDeleteStrategy() {
         val field = Field(columnName = "deleted", type = KColumnType.BIT)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@LogicDelete" })
         assertContains(t.imports, "com.kotlinorm.annotations.LogicDelete")
@@ -185,7 +185,7 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithVersionStrategy() {
         val field = Field(columnName = "version", type = KColumnType.INT)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@Version" })
         assertContains(t.imports, "com.kotlinorm.annotations.Version")
@@ -195,7 +195,7 @@ class KronosTemplateTest {
     fun annotationsWithColumnTypeNonDefaultLength() {
         // A DECIMAL field with non-default length/scale triggers @ColumnType
         val field = Field(columnName = "price", type = KColumnType.DECIMAL, length = 10, scale = 2)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it.contains("@ColumnType") })
         assertContains(t.imports, "com.kotlinorm.annotations.ColumnType")
@@ -206,7 +206,7 @@ class KronosTemplateTest {
     @Test
     fun indexToAnnotationsWithNameAndColumns() {
         val index = KTableIndex(name = "idx_user", columns = arrayOf("name", "email"), type = "UNIQUE")
-        val t = template(indexes = listOf(index))
+        val t = template(indexes = [index])
         val annotation = with(t) { index.toAnnotations() }
         assertContains(annotation, "@TableIndex")
         assertContains(annotation, "name = \"idx_user\"")
@@ -218,7 +218,7 @@ class KronosTemplateTest {
     @Test
     fun indexToAnnotationsWithMethod() {
         val index = KTableIndex(name = "idx_geo", columns = arrayOf("location"), type = "", method = "GIST")
-        val t = template(indexes = listOf(index))
+        val t = template(indexes = [index])
         val annotation = with(t) { index.toAnnotations() }
         assertContains(annotation, "method = \"GIST\"")
     }
@@ -226,7 +226,7 @@ class KronosTemplateTest {
     @Test
     fun indexToAnnotationsWithConcurrently() {
         val index = KTableIndex(name = "idx_conc", columns = arrayOf("col1"), concurrently = true)
-        val t = template(indexes = listOf(index))
+        val t = template(indexes = [index])
         val annotation = with(t) { index.toAnnotations() }
         assertContains(annotation, "concurrently = true")
     }
@@ -242,7 +242,7 @@ class KronosTemplateTest {
     fun multipleIndexesToAnnotationsJoinsWithNewline() {
         val idx1 = KTableIndex(name = "idx1", columns = arrayOf("a"))
         val idx2 = KTableIndex(name = "idx2", columns = arrayOf("b"))
-        val t = template(indexes = listOf(idx1, idx2))
+        val t = template(indexes = [idx1, idx2])
         val result = with(t) { indexes.toAnnotations() }!!
         val lines = result.split("\n")
         assertEquals(2, lines.size)

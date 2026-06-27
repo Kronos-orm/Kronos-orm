@@ -279,7 +279,7 @@ object IrTestFramework {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
-            compilerPluginRegistrars = listOf(
+            compilerPluginRegistrars = [
                 object : org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar() {
                     override val supportsK2: Boolean = true
                     override val pluginId: String = "ir-test-framework"
@@ -299,7 +299,8 @@ object IrTestFramework {
                         )
                     }
                 }
-            )
+            ]
+            kotlincArguments = ["-Xcollection-literals"]
             messageOutputStream = System.out
         }
 

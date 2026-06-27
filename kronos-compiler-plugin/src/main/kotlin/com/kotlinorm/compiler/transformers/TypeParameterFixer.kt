@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.FqName
 
-private val fqNameOfTypedQuery = listOf(
+private val fqNameOfTypedQuery = [
     FqName("com.kotlinorm.beans.task.KronosQueryTask.queryList"),
     FqName("com.kotlinorm.beans.task.KronosQueryTask.queryOne"),
     FqName("com.kotlinorm.beans.task.KronosQueryTask.queryOneOrNull"),
@@ -40,13 +40,13 @@ private val fqNameOfTypedQuery = listOf(
     FqName("com.kotlinorm.database.SqlHandler.queryList"),
     FqName("com.kotlinorm.database.SqlHandler.queryOne"),
     FqName("com.kotlinorm.database.SqlHandler.queryOneOrNull")
-)
+]
 
-private val fqNameOfSelectFromsRegexes = listOf(
+private val fqNameOfSelectFromsRegexes = [
     "com.kotlinorm.orm.join.SelectFrom\\d.queryList",
     "com.kotlinorm.orm.join.SelectFrom\\d.queryOne",
     "com.kotlinorm.orm.join.SelectFrom\\d.queryOneOrNull"
-)
+]
 
 private val KPojoFqName = FqName("com.kotlinorm.interfaces.KPojo")
 
@@ -81,7 +81,7 @@ object TypeParameterFixer {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun fix(pluginContext: IrPluginContext, expression: IrCall): IrExpression {
         val queryType = expression.typeArguments[0] ?: return expression
-        val allTypes = (listOf(queryType) + queryType.superTypes()).mapNotNull { it.classFqName }
+        val allTypes = ([queryType] + queryType.superTypes()).mapNotNull { it.classFqName }
         val isKPojo = KPojoFqName in allTypes
 
         val irSuperTypes = with(pluginContext) {

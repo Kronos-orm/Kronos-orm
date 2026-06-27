@@ -52,7 +52,7 @@ object Kronos {
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
 
     // 日志路径
-    var logPath = listOf("console")
+    var logPath = ["console"]
 
     // 无值策略
     var noValueStrategy: NoValueStrategy = DefaultNoValueStrategy

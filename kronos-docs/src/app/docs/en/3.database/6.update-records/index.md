@@ -367,7 +367,7 @@ val user: User = User(
 )
 
 user
-    .update { it.name + it.age }
+    .update { [it.name, it.age] }
     .where { it.id == 1 }
     .execute()
 ```
@@ -493,7 +493,7 @@ val users: List<User> = listOf(
 )
 
 users
-    .update { it.name + it.age }
+    .update { [it.name, it.age] }
     .where { it.id eq 1 }
     .execute()
 ```

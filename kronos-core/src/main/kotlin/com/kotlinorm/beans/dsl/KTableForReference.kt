@@ -17,15 +17,13 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.interfaces.KPojo
-import kotlin.reflect.KProperty
 
 /**
  * KTable
  *
  * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
  * to add Fields, you can use following:
- * 1. `it.<field1> + it.<field2>`
- * 2. `it.<field1> + it.<field2>.as_("<alias>")`
+ * 1. `[it::<field1>, it::<field2>]`
  * 3. `addField(Field(columnName, optionalName))`
  * 4. `Field(columnName, optionalName).setAlias("<alias>")`
  * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).as_("<alias>")`
@@ -35,11 +33,8 @@ import kotlin.reflect.KProperty
 open class KTableForReference<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
 
-    operator fun KProperty<*>.plus(@Suppress("UNUSED_PARAMETER") other: KProperty<*>) = false
-    operator fun KProperty<*>.plus(@Suppress("UNUSED_PARAMETER") other: Boolean?) = false
-    operator fun Boolean.plus(@Suppress("UNUSED_PARAMETER") other: KProperty<*>) = false
-
-    operator fun KProperty<*>.unaryPlus() = false
+    @Suppress("UNUSED_PARAMETER")
+    operator fun get(vararg fields: Any?): Unit = Unit
 
     /**
      * Adds a field to the collection of fields.

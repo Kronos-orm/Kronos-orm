@@ -155,7 +155,7 @@ object CriteriaToAstConverter {
                 val listValue = when (value) {
                     is Collection<*> -> value.toList()
                     is Array<*> -> value.toList()
-                    else -> listOf(value)
+                    else -> [value]
                 }
                 parameterValues[paramName] = listValue
                 
@@ -163,7 +163,7 @@ object CriteriaToAstConverter {
                 // The expansion to multiple placeholders happens in NamedParameterUtils
                 SpecialExpression.InExpression(
                     value = columnRef,
-                    values = listOf(Parameter.NamedParameter(paramName)),
+                    values = [Parameter.NamedParameter(paramName)],
                     not = criteria.not
                 )
             }

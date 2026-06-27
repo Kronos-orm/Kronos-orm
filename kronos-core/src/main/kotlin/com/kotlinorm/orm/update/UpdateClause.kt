@@ -23,7 +23,6 @@ import com.kotlinorm.ast.FieldToExpressionConverter
 import com.kotlinorm.ast.Parameter
 import com.kotlinorm.ast.TableName
 import com.kotlinorm.ast.UpdateStatement
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -40,7 +39,6 @@ import com.kotlinorm.cache.kPojoCreateTimeCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
-import com.kotlinorm.database.SqlManager.quoted
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
@@ -53,12 +51,10 @@ import com.kotlinorm.types.ToSet
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
-import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.toLinkedSet
 
 /**
@@ -274,18 +270,19 @@ class UpdateClause<T : KPojo>(
     /**
      * Renders the UpdateStatement to SQL with processed parameters.
      */
-    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair<String, Map<String, Any?>> {
+    private fun renderStatement(
+        wrapper: KronosDataSourceWrapper?,
+        finalStatement: UpdateStatement? = null,
+        criteriaParameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): Pair<String, Map<String, Any?>> {
         val dataSource = wrapper.orDefault()
         val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-        // Collect parameter values from Criteria during AST conversion in toStatement()
-        val criteriaParameterValues = mutableMapOf<String, Any?>()
         
         // Get complete statement with all parameters and checks applied
-        val finalStatement = toStatement(wrapper, criteriaParameterValues)
+        val statementToRender = finalStatement ?: toStatement(wrapper, criteriaParameterValues)
 
         // Render AST to SQL with parameters
-        val renderedSql = support.getUpdateSqlWithParams(dataSource, finalStatement)
+        val renderedSql = support.getUpdateSqlWithParams(dataSource, statementToRender)
 
         // Process parameters
         val paramMapNew = mutableMapOf<String, Any?>()
@@ -526,20 +523,14 @@ class UpdateClause<T : KPojo>(
      * @return The constructed KronosAtomicTask.
      */
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        // Render statement to SQL with processed parameters
-        val (sql, paramMap) = renderStatement(wrapper)
+        val criteriaParameterValues = mutableMapOf<String, Any?>()
+        val finalStatement = toStatement(wrapper, criteriaParameterValues)
 
-        // Get where clause SQL for UpdateClauseInfo (for cascade)
-        // Extract WHERE clause from SQL string
-        val whereClauseSql = if (sql.contains(" WHERE ", ignoreCase = true)) {
-            val whereIndex = sql.indexOf(" WHERE ", ignoreCase = true)
-            sql.substring(whereIndex + 7) // " WHERE " is 7 characters
-        } else {
-            null
-        }
+        // Render statement to SQL with processed parameters
+        val (sql, paramMap) = renderStatement(wrapper, finalStatement, criteriaParameterValues)
 
         // Get toUpdateFields from assignments for cascade compatibility
-        val toUpdateFields = statement.assignments.mapNotNull { assignment ->
+        val toUpdateFields = finalStatement.assignments.mapNotNull { assignment ->
             allColumns.find { it.columnName == assignment.column.columnName }
         }.toLinkedSet()
 
@@ -548,11 +539,7 @@ class UpdateClause<T : KPojo>(
             sql,
             paramMap,
             operationType = KOperationType.UPDATE,
-            UpdateClauseInfo(
-                kClass,
-                tableName,
-                whereClauseSql
-            )
+            statement = finalStatement
         )
 
         return CascadeUpdateClause.build(
@@ -562,7 +549,7 @@ class UpdateClause<T : KPojo>(
             kClass,
             paramMap,
             toUpdateFields,
-            whereClauseSql,
+            finalStatement.where,
             rootTask
         )
     }

@@ -16,10 +16,10 @@
 
 package com.kotlinorm.beans.task
 
+import com.kotlinorm.ast.Statement
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.interfaces.KActionInfo
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KBatchTask
 
@@ -33,7 +33,7 @@ data class KronosAtomicBatchTask(
     override val sql: String,
     override val paramMapArr: Array<Map<String, Any?>>? = null,
     override val operationType: KOperationType = KOperationType.UPDATE,
-    override val actionInfo: KActionInfo? = null,
+    override val statement: Statement? = null,
     override val stash: MutableMap<String, Any?> = mutableMapOf()
 ) : KAtomicActionTask, KBatchTask {
 

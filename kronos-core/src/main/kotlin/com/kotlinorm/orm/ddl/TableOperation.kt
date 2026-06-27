@@ -73,7 +73,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 it,
                 mapOf("tableName" to instance.__tableName),
                 KOperationType.CREATE,
-                DDLInfo(T::class, instance.__tableName)
+                statement = buildCreateTableStatement(instance)
             )
         }.toKronosActionTask().execute(dataSource)
         // Execute CONCURRENTLY index statements outside the transaction
@@ -90,7 +90,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             getTableDropSql(dataSource.dbType, instance.__tableName),
             mapOf("tableName" to instance.__tableName),
             KOperationType.DROP,
-            DDLInfo(T::class, instance.__tableName)
+            statement = buildDropTableStatement(instance)
         ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -104,7 +104,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 getTableDropSql(dataSource.dbType, tableName),
                 mapOf("tableName" to tableName),
                 KOperationType.DROP,
-                DDLInfo(null, tableName)
+                statement = buildDropTableStatement(tableName)
             )
         }.toKronosActionTask().execute(dataSource)
 
@@ -125,7 +125,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         ),
         mapOf("tableName" to instance.__tableName),
         KOperationType.TRUNCATE,
-        DDLInfo(T::class, instance.__tableName)
+        statement = buildTruncateTableStatement(instance, restartIdentity)
     ).toKronosActionTask().execute(dataSource)
 
     /**
@@ -140,7 +140,7 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
                 getTableTruncateSql(dataSource.dbType, name, restartIdentity),
                 mapOf("tableName" to name),
                 KOperationType.TRUNCATE,
-                DDLInfo(null, name)
+                statement = buildTruncateTableStatement(name, restartIdentity)
             )
         }.toKronosActionTask().execute(dataSource)
 

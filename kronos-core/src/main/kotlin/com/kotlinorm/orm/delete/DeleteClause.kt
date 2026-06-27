@@ -43,8 +43,6 @@ import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
-import com.kotlinorm.database.SqlManager.quoted
-import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
@@ -55,12 +53,10 @@ import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.Extensions.asSql
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.getDefaultBoolean
-import com.kotlinorm.utils.processParams
 
 class DeleteClause<T : KPojo>(private val pojo: T) {
     private var kClass = pojo.kClass()
@@ -269,18 +265,19 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
      * @param wrapper Optional KronosDataSourceWrapper for rendering and parameter processing
      * @return Pair of SQL string and processed parameter map
      */
-    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair<String, Map<String, Any?>> {
+    private fun renderStatement(
+        wrapper: KronosDataSourceWrapper?,
+        finalStatement: DeleteStatement? = null,
+        criteriaParameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): Pair<String, Map<String, Any?>> {
         val dataSource = wrapper.orDefault()
         val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-        // Collect parameter values from Criteria during AST conversion
-        val criteriaParameterValues = mutableMapOf<String, Any?>()
         
         // Get complete statement with all parameters and checks applied
-        val finalStatement = toStatement(wrapper, criteriaParameterValues)
+        val statementToRender = finalStatement ?: toStatement(wrapper, criteriaParameterValues)
 
         // Render AST to SQL with parameters
-        val renderedSql = support.getDeleteSqlWithParams(dataSource, finalStatement)
+        val renderedSql = support.getDeleteSqlWithParams(dataSource, statementToRender)
 
         // Process parameters (field type conversion, etc.)
         val paramMapNew = mutableMapOf<String, Any?>()
@@ -332,23 +329,18 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
         // Use AST-based rendering for non-logic delete
         if (!logic) {
-            // Render statement to SQL with processed parameters
-            val (sql, paramMap) = renderStatement(wrapper)
+            val criteriaParameterValues = mutableMapOf<String, Any?>()
+            val finalStatement = toStatement(wrapper, criteriaParameterValues)
 
-            // Get where clause SQL for DeleteClauseInfo (for cascade)
-            val whereClauseSql = if (sql.contains(" WHERE ", ignoreCase = true)) {
-                val whereIndex = sql.indexOf(" WHERE ", ignoreCase = true)
-                sql.substring(whereIndex + 7) // " WHERE " is 7 characters
-            } else {
-                null
-            }
+            // Render statement to SQL with processed parameters
+            val (sql, paramMap) = renderStatement(wrapper, finalStatement, criteriaParameterValues)
 
             return CascadeDeleteClause.build(
-                cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, paramMap, false, KronosAtomicActionTask(
+                cascadeEnabled, cascadeAllowed, kClass, pojo, finalStatement.where, paramMap, false, KronosAtomicActionTask(
                     sql,
                     paramMap,
                     operationType = KOperationType.DELETE,
-                    DeleteClauseInfo(kClass, tableName, whereClauseSql)
+                    statement = finalStatement
                 )
             )
         }
@@ -472,20 +464,12 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             }
         }
         
-        // Get where clause SQL for DeleteClauseInfo (for cascade)
-        val whereClauseSql = if (rendered.sql.contains(" WHERE ", ignoreCase = true)) {
-            val whereIndex = rendered.sql.indexOf(" WHERE ", ignoreCase = true)
-            rendered.sql.substring(whereIndex + 7) // " WHERE " is 7 characters
-        } else {
-            null
-        }
-        
         return CascadeDeleteClause.build(
-            cascadeEnabled, cascadeAllowed, kClass, pojo, whereClauseSql, finalParamMap, true, KronosAtomicActionTask(
+            cascadeEnabled, cascadeAllowed, kClass, pojo, updateStatement.where, finalParamMap, true, KronosAtomicActionTask(
                 rendered.sql,
                 finalParamMap,
                 operationType = KOperationType.DELETE,
-                DeleteClauseInfo(kClass, tableName, whereClauseSql)
+                statement = updateStatement
             )
         )
     }

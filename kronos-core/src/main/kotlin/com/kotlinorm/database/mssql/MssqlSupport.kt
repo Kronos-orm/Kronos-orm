@@ -15,25 +15,19 @@ package com.kotlinorm.database.mssql
 
 import com.kotlinorm.ast.SqlRenderer
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
-import com.kotlinorm.database.SqlManager
 import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.sqlColumnType
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
-import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.PrimaryKeyType
-import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
-import com.kotlinorm.orm.join.JoinClauseInfo
-import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace
 
 object MssqlSupport : DatabasesSupport {

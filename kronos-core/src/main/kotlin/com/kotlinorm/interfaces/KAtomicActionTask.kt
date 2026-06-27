@@ -16,6 +16,8 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.ast.Statement
+
 /**
  * Kronos Atomic Task
  *
@@ -24,6 +26,6 @@ package com.kotlinorm.interfaces
  * @author OUSC
  */
 interface KAtomicActionTask : KAtomicTask {
-    val actionInfo: KActionInfo?
+    val statement: Statement?
     val stash: MutableMap<String, Any?>
 }

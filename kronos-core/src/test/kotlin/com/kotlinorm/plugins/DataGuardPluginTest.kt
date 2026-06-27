@@ -1,9 +1,16 @@
+import com.kotlinorm.ast.Assignment
+import com.kotlinorm.ast.ColumnDefinition
+import com.kotlinorm.ast.ColumnReference
+import com.kotlinorm.ast.DdlStatement
+import com.kotlinorm.ast.DeleteStatement
+import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.SpecialExpression
+import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.orm.ddl.DDLInfo
-import com.kotlinorm.orm.delete.DeleteClauseInfo
-import com.kotlinorm.orm.update.UpdateClauseInfo
 import com.kotlinorm.plugins.DataGuardPlugin
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import kotlin.test.AfterTest
@@ -34,23 +41,30 @@ class DataGuardPluginTest {
         tableName: String? = null,
         whereClause: String? = null
     ): KronosAtomicActionTask {
-        val actionInfo = when (operation) {
-            KOperationType.DELETE -> DeleteClauseInfo(
-                null,
-                tableName = tableName ?: parseTableName(sql),
-                whereClause = whereClause
+        val targetTable = tableName ?: parseTableName(sql)
+        val statement = when (operation) {
+            KOperationType.DELETE -> DeleteStatement(
+                table = TableName(table = targetTable),
+                where = whereClause?.let { SpecialExpression.RawSqlExpression(it) }
             )
 
-            KOperationType.UPDATE -> UpdateClauseInfo(
-                null,
-                tableName = tableName ?: parseTableName(sql),
-                whereClause = whereClause
+            KOperationType.UPDATE -> UpdateStatement(
+                table = TableName(table = targetTable),
+                assignments = mutableListOf(
+                    Assignment(
+                        ColumnReference(tableAlias = null, columnName = "value"),
+                        Parameter.NamedParameter("value")
+                    )
+                ),
+                where = whereClause?.let { SpecialExpression.RawSqlExpression(it) }
             )
 
-            KOperationType.TRUNCATE, KOperationType.DROP, KOperationType.ALTER ->
-                DDLInfo(
-                    null,
-                    tableName = tableName ?: parseTableName(sql),
+            KOperationType.TRUNCATE -> DdlStatement.TruncateTableStatement(targetTable)
+            KOperationType.DROP -> DdlStatement.DropTableStatement(targetTable)
+            KOperationType.ALTER ->
+                DdlStatement.AlterTableStatement.AddColumnStatement(
+                    targetTable,
+                    ColumnDefinition("age", KColumnType.INT)
                 )
 
             else -> throw IllegalArgumentException("Unsupported operation type")
@@ -59,7 +73,7 @@ class DataGuardPluginTest {
         return KronosAtomicActionTask(
             sql = sql,
             operationType = operation,
-            actionInfo = actionInfo
+            statement = statement
         )
     }
 

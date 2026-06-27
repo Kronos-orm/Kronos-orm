@@ -31,7 +31,6 @@ import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.cache.fieldsMapCache
-import com.kotlinorm.cache.insertSqlCache
 import com.kotlinorm.cache.kPojoAllColumnsCache
 import com.kotlinorm.cache.kPojoCreateTimeCache
 import com.kotlinorm.cache.kPojoLogicDeleteCache
@@ -49,8 +48,6 @@ import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.processParams
-import com.kotlinorm.utils.processParams
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private val paramMap = pojo.toDataMap()
@@ -90,45 +87,8 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        var useIdentity = false
-        val fieldsMap = fieldsMapCache[kClass]!!
-        val toInsertFields = mutableListOf<Field>()
-        val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
-        when (primaryKeyField.primaryKey) {
-            PrimaryKeyType.UUID -> paramMap[primaryKeyField.name] = UUIDGenerator.nextId()
-            PrimaryKeyType.SNOWFLAKE -> paramMap[primaryKeyField.name] = SnowflakeIdGenerator.nextId()
-            PrimaryKeyType.CUSTOM -> paramMap[primaryKeyField.name] = customIdGenerator?.nextId()
-            PrimaryKeyType.IDENTITY -> useIdentity = true
-            else -> {}
-        }
-        if (paramMap[primaryKeyField.name] != null || primaryKeyField.defaultValue != null) {
-            useIdentity = false
-        }
-        stash["useIdentity"] = useIdentity
-        allColumns.forEach {
-            if (it.defaultValue != null && paramMap[it.name] == null) {
-                paramMap[it.name] = it.defaultValue
-            }
-            if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
-                toInsertFields.add(it)
-            }
-        }
-        if(useIdentity && !paramMap.containsKey(primaryKeyField.name)){
-            toInsertFields.remove(primaryKeyField)
-        }
-        arrayOf(
-            createTimeStrategy to true,
-            updateTimeStrategy to true,
-            logicDeleteStrategy to false,
-            optimisticStrategy to false
-        ).forEach {
-            it.first?.execute(it.second) { field, value ->
-                paramMap[field.name] = value
-            }
-        }
-
-        // Use new AST-based rendering
-        val (sql, paramMapNew) = renderStatement(wrapper)
+        val finalStatement = toStatement(wrapper)
+        val (sql, paramMapNew) = renderStatement(wrapper, finalStatement)
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -138,10 +98,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 sql,
                 paramMapNew,
                 operationType = KOperationType.INSERT,
-                actionInfo = InsertClauseInfo(
-                    kClass,
-                    tableName
-                ),
+                statement = finalStatement,
                 stash = stash
             )
         )
@@ -164,9 +121,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
      * @return Complete InsertStatement AST
      */
     fun toStatement(wrapper: KronosDataSourceWrapper? = null): InsertStatement {
-        val dataSource = wrapper.orDefault()
         var useIdentity = false
-        val fieldsMap = fieldsMapCache[kClass]!!
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
         
@@ -245,12 +200,12 @@ class InsertClause<T : KPojo>(val pojo: T) {
      * @param wrapper Optional KronosDataSourceWrapper for rendering and parameter processing
      * @return Pair of SQL string and processed parameter map
      */
-    private fun renderStatement(wrapper: KronosDataSourceWrapper?): Pair<String, Map<String, Any?>> {
+    private fun renderStatement(
+        wrapper: KronosDataSourceWrapper?,
+        finalStatement: InsertStatement = toStatement(wrapper)
+    ): Pair<String, Map<String, Any?>> {
         val dataSource = wrapper.orDefault()
         val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-        // Get complete statement with all parameters and checks applied
-        val finalStatement = toStatement(wrapper)
 
         // Render AST to SQL with parameters
         val renderedSql = support.getInsertSqlWithParams(dataSource, finalStatement)

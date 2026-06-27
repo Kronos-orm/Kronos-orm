@@ -17,7 +17,6 @@
 package com.kotlinorm.database.postgres
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.dsl.KTableIndex
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.database.ConflictResolver
@@ -25,20 +24,14 @@ import com.kotlinorm.database.SqlManager.columnCreateDefSql
 import com.kotlinorm.database.SqlManager.getDBNameFrom
 import com.kotlinorm.database.SqlManager.getKotlinColumnType
 import com.kotlinorm.database.SqlManager.indexCreateDefSql
-import com.kotlinorm.database.mssql.MssqlSupport
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.*
-import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.enums.PrimaryKeyType
-import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
-import com.kotlinorm.functions.FunctionManager.getBuiltFunctionField
 import com.kotlinorm.interfaces.DatabasesSupport
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
-import com.kotlinorm.orm.join.JoinClauseInfo
-import com.kotlinorm.orm.select.SelectClauseInfo
 import com.kotlinorm.utils.trimWhitespace
 import com.kotlinorm.utils.getTypeSafeValue
 import com.kotlinorm.ast.SqlRenderer

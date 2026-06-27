@@ -25,9 +25,6 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.ddl.TableColumnDiff
 import com.kotlinorm.orm.ddl.TableIndexDiff
-// Legacy imports - commented out for AST migration
-// import com.kotlinorm.orm.join.JoinClauseInfo
-// import com.kotlinorm.orm.select.SelectClauseInfo
 
 // Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
@@ -131,15 +128,4 @@ object SqlManager {
         showTable: Boolean = false,
         map: Map<String, String> = emptyMap()
     ) = quote(dataSource, field.tableName, showTable, field.columnName, map)
-
-    // Legacy methods - deprecated, use AST-based methods instead
-    // fun getSelectSql(
-    //     dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo
-    // ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, selectClause)
-    //     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    // fun getJoinSql(
-    //     dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
-    // ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)
-    //     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 }

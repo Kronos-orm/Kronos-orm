@@ -17,7 +17,11 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.annotations.Cascade.Companion.RESERVED
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.renderSql
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
@@ -67,7 +71,7 @@ object CascadeDeleteClause {
         cascadeAllowed: Set<Field>?,
         kClass: KClass<KPojo>,
         pojo: T,
-        whereClauseSql: String?,
+        where: Expression?,
         paramMap: Map<String, Any?>,
         logic: Boolean,
         rootTask: KronosAtomicActionTask
@@ -76,7 +80,7 @@ object CascadeDeleteClause {
             cascadeAllowed,
             kClass,
             pojo,
-            whereClauseSql,
+            where,
             paramMap,
             pojo.kronosColumns(),
             logic,
@@ -99,7 +103,7 @@ object CascadeDeleteClause {
         cascadeAllowed: Set<Field>?,
         kClass: KClass<KPojo>,
         pojo: T,
-        whereClauseSql: String?,
+        where: Expression?,
         paramMap: Map<String, Any?>,
         columns: List<Field>,
         logic: Boolean,
@@ -117,6 +121,11 @@ object CascadeDeleteClause {
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper -> // 在执行前检查是否有引用
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
+                val support = getDBSupport(wrapper.dbType)!!
+                val whereClauseSql = where?.renderSql(
+                    support.renderer,
+                    RenderContext(quotes = support.quotes, dbType = wrapper.dbType)
+                )
                 // Use SelectClause.toStatement() internally via queryList()
                 // This ensures AST-based SQL generation for cascade query operations
                 val toDeleteRecords =

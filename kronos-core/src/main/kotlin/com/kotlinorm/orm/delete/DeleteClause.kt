@@ -106,6 +106,18 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         return this
     }
 
+    internal fun byNonNullValues(): DeleteClause<T> {
+        val criteria = allColumns.mapNotNull { field ->
+            field.eq(paramMap[field.name]).takeIf { it.value != null }
+        }.toCriteria()
+        condition = if (condition == null) {
+            criteria
+        } else {
+            condition!!.apply { children.add(criteria) }
+        }
+        return this
+    }
+
     fun cascade(enabled: Boolean): DeleteClause<T> {
         this.cascadeEnabled = enabled
         return this
@@ -168,17 +180,8 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
     fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): DeleteStatement {
         val dataSource = wrapper.orDefault()
         
-        // Build condition from paramMap if condition is null
         var whereExpression: Expression? = if (condition == null) {
-            // Build default condition from all non-null fields
-            val nonNullFields = allColumns.mapNotNull { field ->
-                field.eq(paramMap[field.name]).takeIf { it.value != null }
-            }
-            if (nonNullFields.isNotEmpty()) {
-                CriteriaToAstConverter.convert(nonNullFields.toCriteria(), parameterValues, KOperationType.DELETE)
-            } else {
-                null
-            }
+            null
         } else {
             // Filter out empty criteria before converting
             val filteredCondition = filterEmptyCriteria(condition!!)
@@ -346,13 +349,6 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
         
         // For logic delete, use AST-based UPDATE (instead of DELETE)
-        if (condition == null) {
-            // 当未指定删除条件时，构建一个默认条件，即删除所有字段都不为null的记录
-            condition = allColumns.mapNotNull { field ->
-                field.eq(paramMap[field.name]).takeIf { it.value != null }
-            }.toCriteria()
-        }
-
         // 处理逻辑删除时的更新字段逻辑
         val toUpdateFields = mutableListOf<Field>()
         val support = getDBSupport(wrapper.orDefault().dbType) ?: throw UnsupportedDatabaseTypeException(wrapper.orDefault().dbType)

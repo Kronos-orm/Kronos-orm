@@ -20,7 +20,7 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testRandInSelect() {
         val (sql, _) = user.select { f.rand() }.build()
-        assertEquals("""SELECT RANDOM() AS rand FROM "tb_user" WHERE "id" = :id AND "deleted" = 0""", sql)
+        assertEquals("""SELECT RANDOM() AS rand FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
@@ -32,7 +32,7 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testModInSelect() {
         val (sql, _) = user.select { f.mod(it.score, 2) }.build()
-        assertEquals("""SELECT ("score" % 2) AS mod FROM "tb_user" WHERE "id" = :id AND "deleted" = 0""", sql)
+        assertEquals("""SELECT ("score" % 2) AS mod FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
@@ -44,7 +44,7 @@ class SqliteFunctionTest : SqliteTestBase() {
     @Test
     fun testTruncInSelect() {
         val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
-        assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "id" = :id AND "deleted" = 0""", sql)
+        assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test

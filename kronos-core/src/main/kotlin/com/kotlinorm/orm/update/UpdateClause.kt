@@ -98,9 +98,6 @@ class UpdateClause<T : KPojo>(
     // Key: Parameter name, Value: parameter value
     internal val criteriaParams = mutableMapOf<String, Any?>()
     
-    // Track whether where() method was called (even if condition was ignored)
-    private var whereCalled = false
-
     // Store plus/minus assignments (for += and -= operations)
     private val plusAssigns = mutableListOf<Pair<Field, String>>()
     private val minusAssigns = mutableListOf<Pair<Field, String>>()
@@ -147,17 +144,6 @@ class UpdateClause<T : KPojo>(
     fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): UpdateStatement {
         val dataSource = wrapper.orDefault()
         val support = getDBSupport(dataSource.dbType)
-
-        // Build condition from paramMap if where is null AND where() was not called
-        if (statement.where == null && !whereCalled) {
-            // Build default condition from all fields
-            val buildCondition = allFields.asSequence().filter { it.isColumn }.mapNotNull { field ->
-                field.eq(paramMap[field.name]).takeIf { criteria -> criteria.value != null }
-            }.toList().toCriteria()
-
-            statement.where = CriteriaToAstConverter.convert(buildCondition, parameterValues, KOperationType.UPDATE)
-            // Note: statement.where can be null if buildCondition is empty
-        }
 
         // If no assignments, add all fields
         if (statement.assignments.isEmpty() && plusAssigns.isEmpty() && minusAssigns.isEmpty()) {
@@ -300,7 +286,6 @@ class UpdateClause<T : KPojo>(
         }
         
         // Second, add parameter values extracted from Criteria during toStatement()
-        // These are from default WHERE conditions built from paramMap
         criteriaParameterValues.forEach { (key, value) ->
             if (!paramMapNew.containsKey(key)) {
                 val field = fieldMap[key]
@@ -456,6 +441,29 @@ class UpdateClause<T : KPojo>(
         return this
     }
 
+    internal fun byNonNullValues(): UpdateClause<T> {
+        val condition = allColumns.mapNotNull { field ->
+            field.eq(paramMap[field.name]).takeIf { criteria -> criteria.value != null }
+        }.toCriteria()
+        val localCriteriaParams = mutableMapOf<String, Any?>()
+        val newExpression = CriteriaToAstConverter.convert(condition, localCriteriaParams, KOperationType.UPDATE)
+
+        criteriaParams.putAll(localCriteriaParams)
+
+        if (newExpression != null) {
+            statement.where = if (statement.where == null) {
+                newExpression
+            } else {
+                com.kotlinorm.ast.BinaryExpression(
+                    statement.where!!,
+                    com.kotlinorm.ast.SqlOperator.AND,
+                    newExpression
+                )
+            }
+        }
+        return this
+    }
+
     /**
      * Sets the condition for the update clause based on the provided update condition.
      *
@@ -464,7 +472,6 @@ class UpdateClause<T : KPojo>(
      */
     fun where(updateCondition: ToFilter<T, Boolean?> = null): UpdateClause<T> {
         if (updateCondition == null) return this
-        whereCalled = true  // Mark that where() was called
         pojo.afterFilter { filterTable ->
             criteriaParamMap = paramMap // 更新 propParamMap
             updateCondition(filterTable)

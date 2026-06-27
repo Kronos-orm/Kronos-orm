@@ -27,7 +27,6 @@ import com.kotlinorm.ast.SelectItem
 import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.ast.SqlOperator
 import com.kotlinorm.ast.TableName
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
@@ -106,13 +105,6 @@ class SelectClause<T : KPojo>(
     // when toStatement() is called multiple times (e.g., in PagedClause)
     private var logicDeleteApplied = false
     
-    // Track whether WHERE condition was built from paramMap (vs. where() method)
-    // If true, we need to extract parameters from paramMap on every toStatement() call
-    private var whereFromParamMap = false
-    
-    // Track whether where() method was called (even if condition was ignored)
-    private var whereCalled = false
-
     // Public API compatibility properties - computed from statement
     override var selectFields: LinkedHashSet<Field>
         get() {
@@ -216,27 +208,6 @@ class SelectClause<T : KPojo>(
     }
 
     /**
-     * Builds WHERE condition from paramMap, applying NoValueStrategy.
-     * For SELECT operations, the default Auto strategy is Ignore (skip null values).
-     *
-     * @return Criteria built from non-null values in paramMap, or null if no conditions
-     */
-    private fun buildConditionFromParamMap(): Criteria {
-        val columns = allColumns
-        val criteriaList = paramMap.keys.mapNotNull { propName ->
-            val value = paramMap[propName]
-            val field = columns.find { it.name == propName }
-            if (field != null && value != null) {
-                // Only include non-null values (Auto strategy = Ignore for SELECT)
-                field.eq(value)
-            } else {
-                null
-            }
-        }
-        return criteriaList.toCriteria()
-    }
-
-    /**
      * Returns the AST SelectStatement with all parameters and checks applied.
      * This method ensures the statement is complete and ready for rendering.
      *
@@ -267,25 +238,6 @@ class SelectClause<T : KPojo>(
             }
         }
 
-        // Build condition from paramMap if where is null AND where() was not called
-        // Apply NoValueStrategy to handle null values
-        var buildCondition: Criteria? = null
-        if (statement.where == null && !whereCalled) {
-            buildCondition = buildConditionFromParamMap()
-            
-            // Mark that WHERE condition is from paramMap
-            whereFromParamMap = true
-        } else if (whereFromParamMap) {
-            // If WHERE was built from paramMap on first call, rebuild it on subsequent calls
-            // to extract parameters (needed for PagedClause)
-            buildCondition = buildConditionFromParamMap()
-        }
-        
-        // Extract parameters from buildCondition
-        if (buildCondition != null) {
-            CriteriaToAstConverter.convert(buildCondition, parameterValues, KOperationType.SELECT)
-        }
-
         // Apply logic delete strategy - only apply once to avoid duplication
         // when toStatement() is called multiple times (e.g., in PagedClause)
         if (!logicDeleteApplied) {
@@ -298,22 +250,7 @@ class SelectClause<T : KPojo>(
                     Literal.NumberLiteral(value.toString())
                 )
 
-                if (statement.where == null && buildCondition != null) {
-                    // Merge with buildCondition
-                    // Note: buildCondition has already been converted to Expression above
-                    // and parameters have been extracted, so we just convert it again here
-                    // without extracting parameters (use empty map)
-                    val buildConditionExpr = CriteriaToAstConverter.convert(buildCondition, mutableMapOf(), KOperationType.SELECT)
-                    statement.where = if (buildConditionExpr != null) {
-                        BinaryExpression(
-                            buildConditionExpr,
-                            SqlOperator.AND,
-                            logicDeleteExpression
-                        )
-                    } else {
-                        logicDeleteExpression
-                    }
-                } else if (statement.where != null) {
+                if (statement.where != null) {
                     // Merge with existing where condition
                     statement.where = BinaryExpression(
                         statement.where!!,
@@ -326,13 +263,6 @@ class SelectClause<T : KPojo>(
                 }
             }
             logicDeleteApplied = true
-        }
-
-        // Set where from buildCondition if still null
-        if (statement.where == null && buildCondition != null) {
-            // Note: buildCondition has already been converted above and parameters extracted
-            // So we convert it again here without extracting parameters (use empty map)
-            statement.where = CriteriaToAstConverter.convert(buildCondition, mutableMapOf(), KOperationType.SELECT)
         }
 
         return statement
@@ -362,7 +292,7 @@ class SelectClause<T : KPojo>(
         // 1. Parameters extracted from Criteria in where()/by()/having() methods
         // 2. Parameters extracted from Criteria during toStatement()
         // 3. Parameters from AST rendering (renderedSql.parameters)
-        // 4. Original paramMap from the pojo
+        // 4. Patch parameters added by patch()
         val paramMapNew = mutableMapOf<String, Any?>()
         val fieldMap = fieldsMapCache[kClass]!!
         
@@ -378,7 +308,6 @@ class SelectClause<T : KPojo>(
         }
         
         // Second, add parameter values extracted from Criteria during toStatement()
-        // These are from default WHERE conditions built from paramMap
         criteriaParameterValues.forEach { (key, value) ->
             if (!paramMapNew.containsKey(key)) {
                 val field = fieldMap[key]
@@ -576,7 +505,6 @@ class SelectClause<T : KPojo>(
      */
     fun where(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T> {
         selectCondition ?: return this
-        whereCalled = true  // Mark that where() was called
         pojo.afterFilter {
             criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数

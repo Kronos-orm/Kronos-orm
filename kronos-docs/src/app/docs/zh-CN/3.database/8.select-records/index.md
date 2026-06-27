@@ -113,17 +113,17 @@ SELECT "name", "age", count(*) AS total
 FROM "user"
 ```
 
-## 根据KPojo对象值生成条件语句并查询记录
+## 使用 {{ $.title("by") }} 根据对象值生成查询条件
 
-当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成查询条件语句。
+当你希望 Kronos 读取 KPojo 对象中的值，并为指定字段生成等值查询条件时，请使用`by`。
 
 > **Warning**
-> 当KPojo对象的字段值为`null`时，该字段不会生成查询条件，若需要查询字段值为`null`的记录，请使用`where { it.prop.isNull }`方法指定。
+> 不带`by`或`where`的`select().queryList()`不会根据对象值自动生成查询条件。若需要查询字段值为`null`的记录，请使用`where { it.prop.isNull }`指定。
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {1,3}
 val user: User = User(name = "Kronos")
 
-val listOfUser: List<User> = user.select().queryList()
+val listOfUser: List<User> = user.select().by { it.name }.queryList()
 ```
 
 ```sql group="Case 2" name="Mysql" icon="mysql"
@@ -147,7 +147,7 @@ WHERE "name" = :name
 ```sql group="Case 2" name="SQLServer" icon="sqlserver"
 SELECT [id], [name], [age]
 FROM [user]
-WHERE [name] = : name
+WHERE [name] = :name
 ```
 
 ```sql group="Case 2" name="Oracle" icon="oracle"
@@ -315,7 +315,7 @@ WHERE "id" > :id
   and "age" < :age
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件：
+在显式`where`块中，可以使用`.eq`将当前 KPojo 对象的字段值展开为等值条件，并继续组合其他条件表达式：
 
 ```kotlin group="Case 4-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -357,7 +357,7 @@ WHERE "id" = :id
 SELECT [id], [name], [age]
 FROM [user]
 WHERE [id] = :id
-  and [name] = : name
+  and [name] = :name
   and [status] = :status
   and [status] > :statusMin
 ```
@@ -370,7 +370,7 @@ WHERE "id" = :id
   and "status" = :status
   and "status" > :statusMin
 ```
-Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+Kronos提供了减号运算符`-`，用于在显式`.eq`展开时排除指定字段。
 
 ```kotlin group="Case 4-3" name="kotlin" icon="kotlin" {6}
 val user: User = User(

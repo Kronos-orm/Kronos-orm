@@ -96,14 +96,14 @@ data class Profile(
 删除`User`或`Profile`实体都会触发级联删除
 
 ```kotlin
-User(id = 1).delete().execute()
+User(id = 1).delete().by { it.id }.execute()
 // 这将删除所有id=1的User记录和所有userId=1的Profile记录
 ```
 
 或者：
 
 ```kotlin
-Profile(id = 1).delete().execute()
+Profile(id = 1).delete().by { it.id }.execute()
 // 这将删除所有id=1的Profile记录和所有userId=1的User记录
 ```
 
@@ -143,7 +143,7 @@ data class Child(
 在Kronos中，仅支持`Parent -> Child`方向的级联删除，删除时先删除Child,再删除Parent，若多层级的任意一层级的关系存在`Restrict`级联删除策略，则不触发删除。
 
 ```kotlin
-Parent(id = 1).delete().execute()
+Parent(id = 1).delete().by { it.id }.execute()
 // 这会删除id为1的Parent记录，同时删除parentId为1的Child记录
 ```
 
@@ -183,7 +183,7 @@ data class Student(
 ```
 
 ```kotlin
-School(name = "school").delete().execute()
+School(name = "school").delete().by { it.name }.execute()
 // 这会级联删除所有name="school"的GroupClass和Student记录
 ```
 
@@ -239,7 +239,7 @@ data class Relation(
 ```kotlin
 User(name = "user")
     .apply { roles = listOf(Role(name = "role")) }
-    .delete().execute()
+    .delete().by { it.name }.execute()
 ```
 
 或者：
@@ -247,5 +247,5 @@ User(name = "user")
 ```kotlin
 Role(name = "role")
     .apply { users = listOf(User(name = "user")) }
-    .delete().execute()
-``` 
+    .delete().by { it.name }.execute()
+```

@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * LastInsertId is a Kronos plugin that retrieves the last inserted ID.
- * @status:warning WIP
+ * @status:info Done
  */
 const LastInsertIdPluginPage: NgDocPage = {
     title: `Last Insert Id`,

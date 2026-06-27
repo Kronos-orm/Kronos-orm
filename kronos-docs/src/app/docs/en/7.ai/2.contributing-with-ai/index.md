@@ -1,43 +1,42 @@
-# Contributing with AI
+{% import "../../../macros/macros-en.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-Kronos ORM includes a developer-facing AI skill called **kronos-dev-guide** that gives AI coding assistants deep knowledge of the project's internals — compiler plugin architecture, AST rendering pipeline, module structure, testing patterns, and CI/CD workflows.
+## What is {{ $.title("kronos-dev-guide") }}
 
-## What is kronos-dev-guide?
+{{ $.code("kronos-dev-guide") }} is a developer-facing AI skill stored under {{ $.code(".agents/skills/kronos-dev-guide/") }} in the repository. It gives AI coding assistants project-level context for Kronos internals, including compiler plugin architecture, AST rendering, module boundaries, testing patterns, and CI/CD workflows.
 
-`kronos-dev-guide` is located at `.agents/skills/kronos-dev-guide/` in the repository. It's designed for contributors and maintainers who want AI assistance when working on the Kronos codebase itself.
-
-The skill helps AI assistants:
+The skill helps assistants:
 
 - Navigate the compiler plugin's IR transformation pipeline
-- Understand the AST-based SQL generation and per-dialect rendering
+- Understand AST-based SQL generation and per-dialect rendering
 - Add new database dialect support
 - Add new DSL operations or subquery syntax
 - Write unit tests, compiler plugin tests, and integration tests
-- Understand the CI/CD pipeline, coverage, and publishing flow
-- Work with any module (codegen, logging, jdbc-wrapper, gradle/maven plugins)
+- Understand coverage, versioning, and publishing workflows
+- Work across codegen, logging, jdbc-wrapper, Gradle plugin, and Maven plugin modules
 
-## Skill Structure
+## Skill structure
 
-The skill uses a hub-and-reference pattern. `SKILL.md` is the entry point that directs the AI to the right reference file based on the task:
+The skill uses a hub-and-reference pattern. {{ $.code("SKILL.md") }} is the entry point and directs the assistant to the right reference file for the task.
 
-| Reference File | When to Read |
-|----------------|-------------|
-| `references/compiler-plugin.md` | Modifying the compiler plugin, KPojo augmentation, DSL lambda transformers |
-| `references/ast-and-rendering.md` | Working with AST nodes, SQL rendering, adding dialect support, functions system |
-| `references/orm-and-dsl.md` | ORM clause classes, DSL beans, transactions, cascade, join, plugin/hook system |
-| `references/modules.md` | Codegen, logging, jdbc-wrapper, gradle/maven plugin internals |
-| `references/testing-and-ci.md` | Writing tests, coverage, CI workflows, version management, publishing |
-| `references/cookbook.md` | Step-by-step guides for common development tasks |
+| Reference file | When to read |
+|----------------|--------------|
+| {{ $.code("references/compiler-plugin.md") }} | Modifying the compiler plugin, KPojo augmentation, and DSL lambda transformers |
+| {{ $.code("references/ast-and-rendering.md") }} | Working with AST nodes, SQL rendering, dialect support, and functions |
+| {{ $.code("references/orm-and-dsl.md") }} | ORM clauses, DSL beans, transactions, cascade, joins, and plugin hooks |
+| {{ $.code("references/modules.md") }} | Codegen, logging, jdbc-wrapper, Gradle plugin, and Maven plugin internals |
+| {{ $.code("references/testing-and-ci.md") }} | Tests, coverage, CI workflows, version management, and publishing |
+| {{ $.code("references/cookbook.md") }} | Step-by-step guides for common development tasks |
 
 ## Setup
 
-The skill is already included in the repository under `.agents/skills/kronos-dev-guide/`. Point your AI assistant's context to this directory when you open the project.
+The skill is already included in the repository. When working on Kronos itself, point your assistant's context to {{ $.code(".agents/skills/kronos-dev-guide/") }}.
 
-For other AI tools, point your assistant's context to the `SKILL.md` file and the relevant reference files.
+For other AI tools, include {{ $.code("SKILL.md") }} and the relevant reference files in the assistant context.
 
-## Example Tasks
+## Example tasks
 
-With the skill active, you can ask your AI assistant to help with tasks like:
+With the skill active, you can ask your assistant to help with repository work:
 
 - "Add Oracle support for the MERGE upsert syntax"
 - "Write a compiler plugin test for a new condition operator"
@@ -48,7 +47,7 @@ With the skill active, you can ask your AI assistant to help with tasks like:
 
 ## Cookbook
 
-The skill includes a cookbook (`references/cookbook.md`) with step-by-step guides for the most common development tasks:
+The cookbook covers recurring maintainer tasks:
 
 - Adding a new database dialect
 - Adding a new DSL operation

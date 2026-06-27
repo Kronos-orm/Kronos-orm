@@ -99,11 +99,11 @@ export class InstallPackageComponent {
     }[] = [{
         code: `
 dependencies {
-    implementation("com.kotlinorm.kronos-core:0.0.7")
+    implementation("com.kotlinorm.kronos-core:0.1.0")
 }
 
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.0.7"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0"
 }
 `.trim(),
         language: 'kotlin'

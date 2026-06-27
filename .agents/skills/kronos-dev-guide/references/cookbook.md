@@ -335,7 +335,7 @@ class MyFeatureTest {
     fun testMyFeature() {
         val entity = TestEntity(name = "test")
         entity.insert().execute()
-        val result = TestEntity(name = "test").select().queryOne()
+        val result = TestEntity(name = "test").select().by { it.name }.queryOne()
         assertEquals("test", result.name)
     }
 }

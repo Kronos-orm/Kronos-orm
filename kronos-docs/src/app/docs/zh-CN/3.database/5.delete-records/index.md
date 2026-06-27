@@ -1,14 +1,14 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 根据KPojo对象值自动生成条件语句并删除记录
+## 使用显式条件删除记录
 
 在Kronos中，我们可以使用`KPojo.delete().execute()`方法用于删除数据库中的记录
 
-**当未使用`by`或`where`方法时，Kronos会根据KPojo对象的值生成删除条件语句。**
+**当未使用`by`或`where`方法时，Kronos不会根据KPojo对象的字段值自动生成删除条件。** 请使用`by`匹配对象中的字段值，或使用`where`编写自定义条件。
 
 > **Warning**
-> 当KPojo对象的字段值为`null`时，该字段不会生成删除条件，若需要删除字段值为`null`的记录，请使用`where`方法指定。
+> 不带`by`或`where`的`delete().execute()`可能影响所有未被逻辑删除等框架策略过滤的行。如果业务需要拒绝全表`UPDATE`或`DELETE`，请启用 DataGuard。
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {7}
 val user: User = User(
@@ -17,11 +17,7 @@ val user: User = User(
     age = 18
 )
 
-user.delete().execute()
-// 等同于
-// user.delete().by { it.id  + it.name + it.age }.execute()
-// 或
-// user.delete().where { it.eq }.execute()
+user.delete().by { it.id + it.name + it.age }.execute()
 // 或
 // user.delete().where { it.id.eq && it.name.eq && it.age.eq }.execute()
 ```
@@ -53,13 +49,15 @@ WHERE `id` = :id
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
 DELETE
 FROM [user]
-WHERE [id] = :id and [name] = : name and [age] = :age
+WHERE [id] = :id and [name] = :name and [age] = :age
 ```
 
 ```sql group="Case 1" name="Oracle" icon="oracle"
 DELETE
 FROM "user"
 WHERE "id" = :id
+  and "name" = :name
+  and "age" = :age
 ```
 
 ## {{ $.title("by") }} 设置删除条件
@@ -145,7 +143,7 @@ WHERE "id" = :id
 ```sql group="Case 3" name="SQLServer" icon="sqlserver"
 DELETE
 FROM [user]
-WHERE [id] = :id and [name] like : name and [age] > :ageMin
+WHERE [id] = :id and [name] like :name and [age] > :ageMin
 ```
 
 ```sql group="Case 3" name="Oracle" icon="oracle"
@@ -156,7 +154,7 @@ WHERE "id" = :id
   and "age" > :ageMin
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件:
+在显式`where`块中，可以使用`.eq`将当前 KPojo 对象的字段值展开为等值条件，并继续组合其他条件表达式：
 
 ```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -198,7 +196,7 @@ WHERE "id" = :id
 DELETE
 FROM [user]
 WHERE [id] = :id 
-  and [name] = : name
+  and [name] = :name
   and [status] = :status
   and [status] > :statusMin
 ```
@@ -212,7 +210,7 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+Kronos提供了减号运算符`-`，用于在显式`.eq`展开时排除指定字段。
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -361,12 +359,12 @@ val user: User = User(
     id = 1,
 )
 
-val (affectedRows) = user.delete().execute()
+val (affectedRows) = user.delete().by { it.id }.execute()
 ```
 
 ## 批量删除记录
 
-在Kronos中，我们可以使用`Iterable<KPojo>.delete().execute()`或`Array<KPojo>.delete().execute()`方法删除数据库中的记录。
+在Kronos中，我们可以使用`Iterable<KPojo>.delete().by { ... }.execute()`或`Array<KPojo>.delete().by { ... }.execute()`方法批量删除数据库中的记录。
 
 ```kotlin group="Case 6" name="kotlin" icon="kotlin" {10}
 val users: List<User> = listOf(
@@ -378,7 +376,7 @@ val users: List<User> = listOf(
     )
 )
 
-users.delete().execute()
+users.delete().by { it.id }.execute()
 ```
 
 ## 指定使用的数据源
@@ -392,5 +390,5 @@ val user: User = User(
     id = 1,
 )
 
-user.delete().execute(customWrapper)
+user.delete().by { it.id }.execute(customWrapper)
 ```

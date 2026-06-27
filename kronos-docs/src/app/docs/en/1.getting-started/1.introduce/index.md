@@ -69,8 +69,8 @@ user.update().set { it.name = "Kronos ORM" }.by{ it.id }.execute()
 // or
 user.update{ it.name }.by{ it.id }.execute()
 
-// Dynamically query records based on object value
-val name: User = user.select().queryOne()
+// Query records based on object value
+val name: User = user.select().by { it.id }.queryOne()
 
 // Query name field by id
 val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
@@ -78,7 +78,7 @@ val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
 // Delete data with id 1
 User().delete().where{ it.id == 1 }.execute()
 // or
-User(1).delete().execute()
+User(1).delete().by { it.id }.execute()
 ```
 
 {{ NgDocActions.demo("FeatureCardsComponent", {container: false}) }}

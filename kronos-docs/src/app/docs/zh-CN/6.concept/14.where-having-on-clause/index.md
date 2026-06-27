@@ -16,7 +16,7 @@ val list = user
 基于KCP，Kronos允许你使用真实的kotlin操作符来构建`Criteria`查询条件，如`==`、`!=`、`>`、`<`、`>=`、`<=`、`in`、`||` 、`&&`
 等，提供了超级富有表现力、简洁而又语义化的写法。
 
-kronos表达式支持**动态构建条件**和根据对象的属性**自动生成条件**，并且支持传入**sql字符串**作为条件。
+kronos表达式支持**动态构建条件**、在条件 DSL 块中基于对象属性显式展开`.eq`条件，并且支持传入**sql字符串**作为条件。
 
 使用kronos就像在写原生的kotlin代码一样，这将大大**提高开发效率**和**降低学习成本及心智负担**。
 
@@ -268,9 +268,9 @@ User().select().where { it.username == user.username.value }.query()
 User().select().where { it.username == "Kronos" }.query()
 ```
 
-### {{ $.title("KPojo.eq") }} 通过KPojo自动生成判等条件
+### {{ $.title("KPojo.eq") }} 在条件块中显式展开判等条件
 
-`user.eq`表示通过`User`为对象内所有非空字段自动生成判等条件，如`it.eq`等同于
+`user.eq`表示在显式条件块中通过`User`为对象内所有非空字段展开判等条件，如`it.eq`等同于
 `it.id == id && it.name == name && it.age == age`，他可以与`&&`、`||`、`!`等操作符组合使用。
 
 ```kotlin {3}
@@ -283,7 +283,7 @@ User().select().where { it.eq || it.name like "Kronos%" }.query()
 
 ```kotlin {3}
 val user = User(id = 1, name = "Kronos", age = 18)
-// 将不会生成`it.id == 1`的判等条件
+// 将不会展开`it.id == 1`的判等条件
 User().select().where { (it - it.id).eq }.query()
 ```
 

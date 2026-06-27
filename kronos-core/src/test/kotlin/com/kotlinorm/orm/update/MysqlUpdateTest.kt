@@ -489,13 +489,11 @@ class MysqlUpdateTest : MysqlTestBase() {
             it.username = "ZhangSan"
         }.build()
         assertEquals(
-            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `id` = :id AND `username` = :username AND `deleted` = 0",
+            "UPDATE `tb_user` SET `username` = :usernameNew, `update_time` = :updateTimeNew WHERE `deleted` = 0",
             sql
         )
         assertEquals(
             mapOf(
-                "id" to 1,
-                "username" to "test",
                 "usernameNew" to "ZhangSan",
                 "updateTimeNew" to paramMap["updateTimeNew"]
             ), paramMap
@@ -744,6 +742,19 @@ class MysqlUpdateTest : MysqlTestBase() {
         assertEquals("UPDATE `tb_user` SET `id` = :idNew, `update_time` = :updateTimeNew WHERE `deleted` = 0", sql)
         assertEquals(mapOf("idNew" to 1, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
         assertEquals(testUser.mapperTo(), testUser)
+    }
+
+    @Test
+    fun testUpdateWithoutWhereDoesNotUsePojoValues() {
+        val (sql, paramMap) = testUser.update()
+            .set { it.gender = 2 }
+            .build()
+
+        assertEquals(
+            "UPDATE `tb_user` SET `gender` = :genderNew, `update_time` = :updateTimeNew WHERE `deleted` = 0",
+            sql
+        )
+        assertEquals(mapOf("genderNew" to 2, "updateTimeNew" to paramMap["updateTimeNew"]), paramMap)
     }
 
     @Test

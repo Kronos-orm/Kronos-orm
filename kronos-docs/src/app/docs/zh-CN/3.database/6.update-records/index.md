@@ -53,7 +53,7 @@ WHERE `id` = :id
 ```sql group="Case 1" name="SQLServer" icon="sqlserver"
 UPDATE [user]
 SET [name] = :nameNew
-WHERE [id] = :id and [name] = : name and [age] = :age
+WHERE [id] = :id and [name] = :name and [age] = :age
 ```
 
 ```sql group="Case 1" name="Oracle" icon="oracle"
@@ -204,7 +204,7 @@ SET "name" = :nameNew
 WHERE "id" = :id
 ```
 
-可以对查询对象执行`.eq`函数，这样您可以以根据KPojo对象值生成条件语句为基础，添加其他查询条件:
+在显式`where`块中，可以使用`.eq`将当前 KPojo 对象的字段值展开为等值条件，并继续组合其他条件表达式：
 
 ```kotlin group="Case 3-1" name="kotlin" icon="kotlin" {6}
 val user: User = User(
@@ -246,7 +246,7 @@ WHERE "id" = :id
 UPDATE [user]
 SET [name] = :nameNew
 WHERE [id] = :id 
-  and [name] = : name
+  and [name] = :name
   and [status] = :status
   and [status] > :statusMin
 ```
@@ -260,7 +260,7 @@ WHERE "id" = :id
   and "status" > :statusMin
 ```
 
-Kronos提供了减号运算符`-`用来指定不需要自动生成条件语句的列。
+Kronos提供了减号运算符`-`，用于在显式`.eq`展开时排除指定字段。
 
 ```kotlin group="Case 3-2" name="kotlin" icon="kotlin" {6}
 val user: User = User(

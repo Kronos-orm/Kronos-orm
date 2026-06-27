@@ -109,7 +109,7 @@ val users: List<User> =
     }.query()
 ```
 
-The `.eq` function can be executed on the query object so that you can add other query conditions based on generating conditional statements based on KPojo object values:
+Inside an explicit `where` block, `.eq` can expand the current KPojo object's field values into equality conditions, and you can combine those conditions with other expressions.
 
 ```kotlin name="demo" name="kotlin" icon="kotlin" {6}
 val users: List<User> =
@@ -120,7 +120,7 @@ val users: List<User> =
     }.query()
 ```
 
-Kronos supports the minus operator `-` to specify columns that do not require automatic generation of conditional statements.
+Kronos supports the minus operator `-` to exclude fields from the explicit `.eq` expansion.
 
 ```kotlin name="demo" name="kotlin" icon="kotlin" {6}
 val users: List<User> =

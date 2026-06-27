@@ -24,7 +24,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testCeilInSelect() {
         val (sql, _) = user.select { f.ceil(it.score) }.build()
-        assertEquals("SELECT CEILING([score]) AS ceil FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT CEILING([score]) AS ceil FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
@@ -36,7 +36,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testLnInSelect() {
         val (sql, _) = user.select { f.ln(it.score) }.build()
-        assertEquals("SELECT LOG([score], EXP(1)) AS ln FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LOG([score], EXP(1)) AS ln FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
@@ -48,7 +48,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testRandInSelect() {
         val (sql, _) = user.select { f.rand() }.build()
-        assertEquals("SELECT RAND() AS rand FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT RAND() AS rand FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
@@ -60,7 +60,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testModInSelect() {
         val (sql, _) = user.select { f.mod(it.score, 2) }.build()
-        assertEquals("SELECT ([score] % 2) AS mod FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT ([score] % 2) AS mod FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
@@ -72,7 +72,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testTruncInSelect() {
         val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
-        assertEquals("SELECT ROUND([score], 2) AS trunc FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT ROUND([score], 2) AS trunc FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
@@ -85,7 +85,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testLengthInSelect() {
         val (sql, _) = user.select { f.length(it.username) }.build()
-        assertEquals("SELECT LEN([username]) AS length FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT LEN([username]) AS length FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
@@ -97,7 +97,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     @Test
     fun testRepeatInSelect() {
         val (sql, _) = user.select { f.repeat(it.username, 3) }.build()
-        assertEquals("SELECT REPLICATE([username], 3) AS repeat FROM [tb_user] WHERE [id] = :id AND [deleted] = 0", sql)
+        assertEquals("SELECT REPLICATE([username], 3) AS repeat FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test

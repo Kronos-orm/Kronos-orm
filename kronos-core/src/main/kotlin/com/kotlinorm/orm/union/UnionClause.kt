@@ -201,7 +201,7 @@ class UnionClause internal constructor(
             
             // Call toStatement with parameter collection
             val statement = when (selectable) {
-                is SelectClause -> {
+                is SelectClause<*, *> -> {
                     selectable.toStatement(wrapper, queryParams)
                 }
                 is SelectFrom<*> -> {

@@ -173,11 +173,11 @@ user.insert { it.name + it.age }.execute()
 // 按条件删除
 User().delete().where { it.id == 1 }.execute()
 
-// 按对象非空字段删除
-User(id = 1).delete().execute()
+// 按对象字段值删除
+User(id = 1).delete().by { it.id }.execute()
 
 // 批量删除
-listOf(user1, user2).delete().execute()
+listOf(user1, user2).delete().by { it.id }.execute()
 ```
 
 如果实体配置了 `@LogicDelete`，delete 会自动执行逻辑删除（UPDATE 而非 DELETE）。
@@ -208,7 +208,7 @@ User().update().set { it.age = 20 }.where { it.name == "Kronos" }.execute()
 
 ```kotlin
 // 查询单条
-val user: User = User(id = 1).select().queryOne()
+val user: User = User(id = 1).select().by { it.id }.queryOne()
 
 // 查询列表
 val users: List<User> = User().select().where { it.age > 18 }.queryList()
@@ -304,7 +304,7 @@ where { !(it.age > 18) }
 val user = User(age = 18)
 user.select().where { it.age.eq }  // WHERE age = 18
 
-// 自动生成所有非空字段的等值条件
+// 显式使用 where 生成所有非空字段的等值条件
 user.select().where { it.eq }
 
 // 排除字段

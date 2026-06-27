@@ -314,8 +314,7 @@ class CompilerPluginTest {
             // @Ignore(TO_MAP) field is still in kronosColumns
             val colNames = e.kronosColumns().map { it.name }
             assertTrue("secret" in colNames, "secret should still be in kronosColumns")
-            // toDataMap includes all non-null fields; @Ignore is a runtime hint for ORM operations
-            assertTrue(map.containsKey("secret"), "secret is included in toDataMap at compile level")
+            assertFalse(map.containsKey("secret"), "secret should be excluded from toDataMap")
         }
             """,
             tag = "IgnoreToMap"
@@ -339,9 +338,7 @@ class CompilerPluginTest {
             val e = IgnoreFromMapEntity().fromMapData<IgnoreFromMapEntity>(map)
             assertEquals(1, e.id)
             assertEquals("Bob", e.name)
-            // @Ignore(FROM_MAP) is a runtime hint for ORM operations;
-            // fromMapData at compile level still populates all fields from the map
-            assertEquals("should_be_ignored", e.readOnly)
+            assertNull(e.readOnly, "readOnly should be excluded from fromMapData")
         }
             """,
             tag = "IgnoreFromMap"

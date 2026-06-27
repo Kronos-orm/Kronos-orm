@@ -829,10 +829,8 @@ class CompilerPluginDslTest {
             val e = IgnoreToMapEntity(id = 1, writeOnly = "hidden", name = "test")
             val names = e.kronosColumns().map { it.name }
             assertTrue("writeOnly" in names, "writeOnly should be in columns")
-            // @Ignore(TO_MAP) is a runtime hint for ORM operations;
-            // toDataMap at compile level still includes all non-null fields
             val map = e.toDataMap()
-            assertNotNull(map["writeOnly"], "writeOnly is included in toDataMap at compile level")
+            assertFalse(map.containsKey("writeOnly"), "writeOnly should be excluded from toDataMap")
         }
             """,
             tag = "IgnoreToMap"
@@ -857,8 +855,7 @@ class CompilerPluginDslTest {
             assertTrue("readOnly" in names, "readOnly should be in columns")
             val map = mapOf("id" to 1, "readOnly" to "should_be_ignored", "name" to "test")
             val e2 = e.fromMapData<IgnoreFromMapEntity>(map)
-            // @Ignore(FROM_MAP) is a runtime hint; fromMapData at compile level still populates all fields
-            assertEquals("should_be_ignored", e2.readOnly)
+            assertNull(e2.readOnly, "readOnly should be excluded from fromMapData")
             assertEquals("test", e2.name)
         }
             """,

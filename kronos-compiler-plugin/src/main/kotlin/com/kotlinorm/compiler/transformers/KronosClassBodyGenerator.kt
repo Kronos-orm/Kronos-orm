@@ -50,6 +50,7 @@ import org.jetbrains.kotlin.ir.builders.irExprBody
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.builders.irGetObject
+import org.jetbrains.kotlin.ir.builders.irInt
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.builders.irSetField
@@ -64,6 +65,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+import org.jetbrains.kotlin.ir.expressions.IrGetEnumValue
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperator
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
@@ -164,12 +166,22 @@ fun DeclarationIrBuilder.createKronosTableIndex(irClass: IrClass): IrBlockBody =
         }
 
         val indexExpressions = tableIndexAnnotations.map { annotation ->
-            // Extract value arguments from the annotation (skip non-value parameters like dispatch receiver)
-            val valueArgs = annotation.symbol.owner.parameters.valueParameters.mapIndexed { i, param ->
-                val paramIndex = annotation.symbol.owner.parameters.indexOf(param)
-                annotation.arguments.getOrNull(paramIndex)
-            }.toTypedArray()
-            kTableIndexConstructor(this@irBlockBody, *valueArgs)
+            val name = annotation.arguments.getOrNull(0).stringValue()
+            val columns = annotation.arguments.getOrNull(1).stringArrayValue()
+            val type = annotation.arguments.getOrNull(2).stringValue()
+            val method = annotation.arguments.getOrNull(3).stringValue()
+            val concurrently = annotation.arguments.getOrNull(4).booleanValue()
+
+            irCall(kTableIndexConstructor).apply {
+                arguments[0] = irString(name)
+                arguments[1] = irVararg(
+                    context.irBuiltIns.stringType,
+                    columns.map { irString(it) }
+                )
+                arguments[2] = irString(type)
+                arguments[3] = irString(method)
+                arguments[4] = irBoolean(concurrently)
+            }
         }
 
         +irReturn(buildListOf(listType, indexExpressions))
@@ -282,14 +294,14 @@ fun DeclarationIrBuilder.createKClassFunction(irClass: IrClass): IrBlockBody =
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createToDataMap(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
     irBlockBody {
-        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
+        fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
         val entries: List<IrExpression> = irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() }
+            .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() && !it.isIgnoredForToMap() }
             .flatMap { prop ->
                 [
                     buildPairOf(
                         irString(prop.name.asString()),
-                        irGetField(dispatcher, prop.backingField!!)
+                        irGetField(dispatcher(), prop.backingField!!)
                     )
                 ]
             }.toList()
@@ -303,14 +315,14 @@ fun DeclarationIrBuilder.createToDataMap(irClass: IrClass, irFunction: IrFunctio
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createPropertyGetter(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
     irBlockBody {
-        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
-        val nameParam = irGet(irFunction.parameters.valueParameters.first())
+        fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
+        fun nameParam() = irGet(irFunction.parameters.valueParameters.first())
         val branches = irClass.properties
             .filter { it.backingField != null && !it.isDelegated }
             .map { prop ->
                 irBranch(
-                    irEquals(nameParam, irString(prop.name.asString())),
-                    irGetField(dispatcher, prop.backingField!!)
+                    irEquals(nameParam(), irString(prop.name.asString())),
+                    irGetField(dispatcher(), prop.backingField!!)
                 )
             }.toMutableList<Any>()
         branches.add(irElseBranch(irNull()))
@@ -330,25 +342,25 @@ fun DeclarationIrBuilder.createPropertyGetter(irClass: IrClass, irFunction: IrFu
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
     irBlockBody {
-        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
-        val nameParam = irGet(irFunction.parameters.valueParameters[0])
-        val valueParam = irGet(irFunction.parameters.valueParameters[1])
+        fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
+        fun nameParam() = irGet(irFunction.parameters.valueParameters[0])
+        fun valueParam() = irGet(irFunction.parameters.valueParameters[1])
         val branches = irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && it.isVar }
+            .filter { it.backingField != null && !it.isDelegated && it.setter != null }
             .map { prop ->
                 val fieldType = prop.backingField!!.type
                 val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
                 irBranch(
-                    irEquals(nameParam, irString(prop.name.asString())),
+                    irEquals(nameParam(), irString(prop.name.asString())),
                     irSetField(
-                        dispatcher,
+                        dispatcher(),
                         prop.backingField!!,
                         IrTypeOperatorCallImpl(
                             startOffset, endOffset,
                             castType,
                             IrTypeOperator.SAFE_CAST,
                             castType,
-                            valueParam
+                            valueParam()
                         )
                     )
                 )
@@ -368,15 +380,15 @@ fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFu
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
     irBlockBody {
-        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
-        val mapParam = irGet(irFunction.parameters.valueParameters.first())
+        fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
+        fun mapParam() = irGet(irFunction.parameters.valueParameters.first())
         val mapGetSymbol = context.irBuiltIns.mapClass.getSimpleFunction("get")!!
 
         irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && it.isVar && !it.isIgnoredForAll() }
+            .filter { it.backingField != null && !it.isDelegated && it.setter != null && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
                 val mapGet = irCall(mapGetSymbol).apply {
-                    dispatchReceiver = mapParam
+                    dispatchReceiver = mapParam()
                     arguments[1] = irString(prop.name.asString())
                 }
                 val fieldType = prop.backingField!!.type
@@ -388,9 +400,9 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
                     castType,
                     mapGet
                 )
-                +irSetField(dispatcher, prop.backingField!!, cast)
+                +irSetField(dispatcher(), prop.backingField!!, cast)
             }
-        +irReturn(dispatcher)
+        +irReturn(dispatcher())
     }
 
 /**
@@ -401,11 +413,11 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
 context(context: IrPluginContext)
 fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrFunction): IrBlockBody =
     irBlockBody {
-        val dispatcher = irGet(irFunction.parameters.dispatchReceiver!!)
-        val mapParam = irGet(irFunction.parameters.valueParameters.first())
+        fun dispatcher() = irGet(irFunction.parameters.dispatchReceiver!!)
+        fun mapParam() = irGet(irFunction.parameters.valueParameters.first())
 
         irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && it.isVar && !it.isIgnoredForAll() }
+            .filter { it.backingField != null && !it.isDelegated && it.setter != null && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
                 val fieldType = prop.backingField!!.type
                 // Build: getSafeValue(this, FieldType::class, listOf(supertype1, ...), map, "propName", isSerializable)
@@ -424,10 +436,10 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
                 val isSerializable = irBoolean(prop.hasAnnotation(SerializeAnnotationFqName))
 
                 val safeValueCall = irCall(getSafeValueSymbol).apply {
-                    arguments[0] = dispatcher
+                    arguments[0] = dispatcher()
                     arguments[1] = kClassRef
                     arguments[2] = superTypesList
-                    arguments[3] = mapParam
+                    arguments[3] = mapParam()
                     arguments[4] = irString(prop.name.asString())
                     arguments[5] = isSerializable
                 }
@@ -440,9 +452,9 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
                     castType,
                     safeValueCall
                 )
-                +irSetField(dispatcher, prop.backingField!!, cast)
+                +irSetField(dispatcher(), prop.backingField!!, cast)
             }
-        +irReturn(dispatcher)
+        +irReturn(dispatcher())
     }
 
 // ============================================================================
@@ -456,7 +468,8 @@ internal fun IrBuilderWithScope.getTableNameExpr(irClass: IrClass): IrExpression
         it.symbol.owner.returnType.classFqName == TableAnnotationFqName
     }
     return if (tableAnnotation != null && tableAnnotation.arguments.isNotEmpty()) {
-        tableAnnotation.arguments[0] ?: buildTableNamingStrategyCall(irClass.name.asString())
+        tableAnnotation.arguments[0].stringValueOrNull()?.let { irString(it) }
+            ?: buildTableNamingStrategyCall(irClass.name.asString())
     } else {
         buildTableNamingStrategyCall(irClass.name.asString())
     }
@@ -560,3 +573,18 @@ fun IrConstructorCall?.ignore(name: String): Boolean {
  * Checks if a property is annotated with @Ignore([IgnoreAction.ALL]).
  */
 fun IrProperty.isIgnoredForAll(): Boolean = ignoreAnnotationValue().ignore("all")
+
+fun IrProperty.isIgnoredForToMap(): Boolean = ignoreAnnotationValue().ignore("to_map")
+
+fun IrProperty.isIgnoredForFromMap(): Boolean = ignoreAnnotationValue().ignore("from_map")
+
+private fun IrExpression?.stringValueOrNull(): String? = (this as? IrConst)?.value as? String
+
+private fun IrExpression?.stringValue(default: String = ""): String = stringValueOrNull() ?: default
+
+private fun IrExpression?.booleanValue(default: Boolean = false): Boolean = (this as? IrConst)?.value as? Boolean ?: default
+
+private fun IrExpression?.stringArrayValue(): List<String> {
+    val vararg = this as? IrVarargImpl ?: return emptyList()
+    return vararg.elements.mapNotNull { (it as? IrConst)?.value as? String }
+}

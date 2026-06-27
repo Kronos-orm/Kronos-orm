@@ -42,6 +42,7 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 
 /**
  * Set Transformer
@@ -89,8 +90,7 @@ class SetTransformer(
             with(pluginContext) {
                 DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
                     +expression.statements
-                    val receiver = irGet(irFunction.parameters.extensionReceiver!!)
-                    val stmts = putSetParamStatements(irFunction, receiver, expression)
+                    val stmts = putSetParamStatements(irFunction, expression)
                     +stmts
                     super.visitBlock(expression)
                 }
@@ -104,32 +104,32 @@ class SetTransformer(
     context(context: IrPluginContext, builder: IrBlockBuilder)
     private fun putSetParamStatements(
         irFunction: IrFunction,
-        receiver: IrExpression,
         element: IrElement
     ): List<IrExpression> {
         val statements = mutableListOf<IrExpression>()
+        fun receiver() = builder.irGet(irFunction.parameters.extensionReceiver!!)
 
         when (element) {
             is IrBlockBody -> {
                 element.statements.forEach { statement ->
-                    statements += putSetParamStatements(irFunction, receiver, statement)
+                    statements += putSetParamStatements(irFunction, statement)
                 }
             }
 
             is IrBlock -> {
                 if (element.origin == null) {
                     element.statements.forEach { statement ->
-                        statements += putSetParamStatements(irFunction, receiver, statement)
+                        statements += putSetParamStatements(irFunction, statement)
                     }
                 }
             }
 
             is IrTypeOperatorCall -> {
-                statements += putSetParamStatements(irFunction, receiver, element.argument)
+                statements += putSetParamStatements(irFunction, element.argument)
             }
 
             is IrReturn -> {
-                statements += putSetParamStatements(irFunction, receiver, element.value)
+                statements += putSetParamStatements(irFunction, element.value)
             }
 
             is IrCall -> {
@@ -142,9 +142,9 @@ class SetTransformer(
                         val value = element.getValueArgumentSafe(0)
                         if (value != null) {
                             statements += builder.irCall(setValueMethodSymbol).apply {
-                                dispatchReceiver = receiver
+                                dispatchReceiver = receiver()
                                 arguments[1] = fieldExpr
-                                arguments[2] = value
+                                arguments[2] = value.deepCopyWithSymbols()
                             }
                         }
                     }
@@ -155,10 +155,10 @@ class SetTransformer(
                         val value = element.getValueArgumentSafe(0)
                         if (value != null) {
                             statements += builder.irCall(setAssignMethodSymbol).apply {
-                                dispatchReceiver = receiver
+                                dispatchReceiver = receiver()
                                 arguments[1] = builder.irString("+")
                                 arguments[2] = fieldExpr
-                                arguments[3] = value
+                                arguments[3] = value.deepCopyWithSymbols()
                             }
                         }
                     }
@@ -169,10 +169,10 @@ class SetTransformer(
                         val value = element.getValueArgumentSafe(0)
                         if (value != null) {
                             statements += builder.irCall(setAssignMethodSymbol).apply {
-                                dispatchReceiver = receiver
+                                dispatchReceiver = receiver()
                                 arguments[1] = builder.irString("-")
                                 arguments[2] = fieldExpr
-                                arguments[3] = value
+                                arguments[3] = value.deepCopyWithSymbols()
                             }
                         }
                     }

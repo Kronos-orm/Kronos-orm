@@ -45,9 +45,11 @@ import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetObject
+import org.jetbrains.kotlin.ir.builders.irInt
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
+import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -56,6 +58,7 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrGetEnumValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
@@ -348,24 +351,22 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     }
 
     // columnName: @Column("custom") or Kronos.fieldNamingStrategy.k2db(propertyName)
-    val columnNameExpr: IrExpression = if (columnAnnotation != null) {
-        val customName = columnAnnotation.arguments[0]
-        if (customName != null) {
-            customName
-        } else {
-            buildNamingStrategyCall(propertyName)
-        }
-    } else {
-        buildNamingStrategyCall(propertyName)
-    }
+    val columnNameExpr: IrExpression = columnAnnotation
+        ?.arguments
+        ?.getOrNull(0)
+        ?.stringValueOrNull()
+        ?.let { builder.irString(it) }
+        ?: buildNamingStrategyCall(propertyName)
 
     // Check @ColumnType annotation
     val columnTypeAnnotation = irProperty.annotations.firstOrNull {
         it.symbol.owner.returnType.classFqName == ColumnTypeAnnotationFqName
     }
-    val columnTypeExpr = columnTypeAnnotation?.arguments?.get(0) ?: buildKColumnTypeEnum(columnTypeName)
-    val columnLengthExpr = columnTypeAnnotation?.arguments?.getOrNull(1)
-    val columnScaleExpr = columnTypeAnnotation?.arguments?.getOrNull(2)
+    val columnTypeExpr = cloneEnumValue(columnTypeAnnotation?.arguments?.getOrNull(0)) {
+        buildKColumnTypeEnum(columnTypeName)
+    }
+    val columnLengthExpr = columnTypeAnnotation?.arguments?.getOrNull(1)?.intValueOrNull()?.let { builder.irInt(it) }
+    val columnScaleExpr = columnTypeAnnotation?.arguments?.getOrNull(2)?.intValueOrNull()?.let { builder.irInt(it) }
 
     // Check @PrimaryKey annotation
     val primaryKeyAnnotation = irProperty.annotations.firstOrNull {
@@ -377,7 +378,9 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     val dateTimeFormatAnnotation = irProperty.annotations.firstOrNull {
         it.symbol.owner.returnType.classFqName == DateTimeFormatAnnotationFqName
     }
-    val dateFormatExpr = dateTimeFormatAnnotation?.arguments?.get(0)
+    val dateFormatExpr = dateTimeFormatAnnotation?.arguments?.getOrNull(0)
+        ?.stringValueOrNull()
+        ?.let { builder.irString(it) }
 
     // Table name
     val parent = irProperty.parent as? IrClass
@@ -387,7 +390,9 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     val defaultValueAnnotation = irProperty.annotations.firstOrNull {
         it.symbol.owner.returnType.classFqName == DefaultValueAnnotationFqName
     }
-    val defaultValueExpr = defaultValueAnnotation?.arguments?.get(0)
+    val defaultValueExpr = defaultValueAnnotation?.arguments?.getOrNull(0)
+        ?.stringValueOrNull()
+        ?.let { builder.irString(it) }
 
     // Check @Necessary annotation
     val necessaryAnnotation = irProperty.annotations.firstOrNull {
@@ -414,10 +419,11 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     // Cascade-related fields (following legacy plugin's getColumnName)
     val cascadeExpr: IrExpression = if (cascadeAnnotation != null) {
         builder.irCall(kCascadeConstructorSymbol).apply {
-            // KCascade constructor params match @Cascade annotation params 1:1
-            for (i in cascadeAnnotation.arguments.indices) {
-                arguments[i] = cascadeAnnotation.arguments[i]
-            }
+            arguments[0] = cloneStringVararg(cascadeAnnotation.arguments.getOrNull(0))
+            arguments[1] = cloneStringVararg(cascadeAnnotation.arguments.getOrNull(1))
+            arguments[2] = cloneEnumValue(cascadeAnnotation.arguments.getOrNull(2)) { null }
+            arguments[3] = cloneStringVararg(cascadeAnnotation.arguments.getOrNull(3))
+            arguments[4] = cloneEnumVararg(cascadeAnnotation.arguments.getOrNull(4))
         }
     } else {
         builder.irNull()
@@ -465,7 +471,7 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
     } ?: emptyList()
     val superTypesExpr = irListOf(context.irBuiltIns.stringType, superTypesExprs)
 
-    val ignoreExpr: IrExpression = ignoreAnnotation?.arguments?.get(0) ?: builder.irNull()
+    val ignoreExpr: IrExpression = cloneEnumVararg(ignoreAnnotation?.arguments?.getOrNull(0)) ?: builder.irNull()
 
     val isColumn = irProperty.isColumnType()
 
@@ -925,6 +931,53 @@ private fun IrExpression.isOperatorFunction(): Boolean {
     if (this !is IrCall) return false
     if (origin == IrStatementOrigin.PLUS || origin == IrStatementOrigin.MINUS) return true
     return symbol.owner.name.asString() in setOf("plus", "minus", "times", "div", "rem")
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun cloneEnumValue(expression: IrExpression?, fallback: () -> IrExpression?): IrExpression? {
+    val enumValue = expression as? IrGetEnumValue ?: return fallback()
+    return IrGetEnumValueImpl(
+        builder.startOffset,
+        builder.endOffset,
+        enumValue.type,
+        enumValue.symbol
+    )
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun cloneStringVararg(expression: IrExpression?): IrExpression? {
+    val vararg = expression as? IrVararg ?: return null
+    return builder.irVararg(
+        vararg.varargElementType,
+        vararg.elements.mapNotNull { element ->
+            (element as? IrConst)?.value?.toString()?.let { builder.irString(it) }
+        }
+    )
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun cloneEnumVararg(expression: IrExpression?): IrExpression? {
+    val vararg = expression as? IrVararg ?: return null
+    return builder.irVararg(
+        vararg.varargElementType,
+        vararg.elements.mapNotNull { element ->
+            cloneEnumValue(element as? IrExpression) { null }
+        }
+    )
+}
+
+private fun IrExpression?.stringValueOrNull(): String? = (this as? IrConst)?.value as? String
+
+private fun IrExpression?.intValueOrNull(): Int? {
+    val value = (this as? IrConst)?.value
+    return when (value) {
+        is Int -> value
+        is Number -> value.toInt()
+        else -> null
+    }
 }
 
 /**

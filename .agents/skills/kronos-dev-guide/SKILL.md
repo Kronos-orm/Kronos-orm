@@ -62,6 +62,26 @@ ORM Clause classes (SelectClause, InsertClause, etc.)
 | `kronos-docs` | Documentation website (Angular/ng-doc) | `pnpm install && ng build` |
 | `build-logic` | Convention plugins (publishing, dokka) | `publishing.gradle.kts`, `dokka-convention.gradle.kts` |
 
+## Testing Frameworks At A Glance
+
+Kronos currently uses three kinds of tests. Pick the narrowest one that proves the behavior:
+
+| Test kind | Location | Use for | Do not use for |
+|-----------|----------|---------|----------------|
+| Ordinary unit tests | `*/src/test/kotlin` | Pure functions, AST rendering, utility classes, core runtime behavior that does not need a fresh compiler pipeline | Compiler-plugin generated declarations or IR rewrites |
+| Official compiler tests | `kronos-compiler-plugin/testData` plus runners in `src/test/kotlin/com/kotlinorm/compiler/official` | KPojo generated bodies, DSL lambda transformations, FIR diagnostics, IR verifier regressions, compiler-plugin behavior through Kotlin's real FIR/IR pipeline | Broad smoke tests, pure utilities, external database integration |
+| kctfork / kotlin-compile-testing legacy tests | `kronos-compiler-plugin/src/test/kotlin` helpers such as `KotlinSourceDynamicCompiler` and `IrTestFramework` | Existing coverage that has not yet been mapped to official compiler tests; focused dynamic compilation while migration is incomplete | New replacement coverage when an official compiler test can prove the same contract |
+
+Important migration rule: official compiler tests are the preferred direction for compiler-plugin behavior, but kctfork is not removable until coverage is mapped. At the time this guide was updated, excluding kctfork reduced coverage by about 10.55 percentage points, so kctfork still protects real behavior.
+
+When adding or migrating compiler-plugin tests:
+
+1. Read `kronos-compiler-plugin/src/test/kotlin/com/kotlinorm/compiler/official/TEST_DATA_STYLE_GUIDE.md`.
+2. If the behavior depends on generated KPojo members or DSL IR rewrites, add a `testData/box/.../*.kt` file and a thin official runner method.
+3. If invalid source should fail, use `testData/diagnostics`, not a box test.
+4. If the test replaces a kctfork case, record the mapping as `covered`, `covered by stronger official test`, `intentionally kept as unit test`, `obsolete`, or `missing`.
+5. Do not delete old kctfork tests just because a broad official smoke test exists; the official test must assert the same compiler-plugin contract and important values.
+
 ## Reference Files
 
 Read these for deep implementation details:

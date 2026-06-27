@@ -16,7 +16,8 @@
 ### Where Tests Go
 - **Unit tests**: each module's `src/test/kotlin/`. Tests that don't need real databases.
 - **Integration tests**: `kronos-testing/src/test/kotlin/`. Tests that connect to real DB instances.
-- **Compiler plugin tests**: `kronos-compiler-plugin/src/test/kotlin/`. Uses kotlin-compile-testing.
+- **Official compiler plugin tests**: `kronos-compiler-plugin/testData/` with runners in `kronos-compiler-plugin/src/test/kotlin/com/kotlinorm/compiler/official/`. Uses Kotlin's official compiler test infrastructure.
+- **Legacy compiler plugin tests**: `kronos-compiler-plugin/src/test/kotlin/`. Uses kotlin-compile-testing / kctfork and remains in place until official coverage is mapped.
 
 ### Writing Unit Tests (kronos-core)
 
@@ -46,7 +47,153 @@ class SelectTest {
 }
 ```
 
-### Writing Compiler Plugin Tests
+### Writing Official Compiler Plugin Tests
+
+Kronos is migrating compiler-plugin behavior to Kotlin's official compiler test infrastructure. These tests compile `kronos-compiler-plugin/testData` sources through the real FIR/IR/codegen pipeline with `KronosCompilerPluginRegistrar` registered.
+
+Read this style guide before adding or reviewing official testData:
+
+```text
+kronos-compiler-plugin/src/test/kotlin/com/kotlinorm/compiler/official/TEST_DATA_STYLE_GUIDE.md
+```
+
+Use official compiler tests for:
+
+- KPojo generated declarations and generated bodies.
+- DSL lambda transformations: condition, select, set, sort, reference, type-parameter injection.
+- FIR/frontend generated declarations or diagnostics.
+- IR verifier regressions.
+- Runtime behavior that depends on compiler-generated code.
+
+Do not use official compiler tests for:
+
+- Pure utility functions.
+- Broad smoke tests that only prove compilation.
+- Database integration requiring external services.
+
+#### Official Test Layout
+
+```text
+kronos-compiler-plugin/
+  testData/
+    box/
+      pluginLoading/
+      kpojoGeneratedBodies/
+      kpojoFieldMetadata/
+      condition/
+      select/
+      set/
+      sort/
+      reference/
+      dslIntegration/
+      typeParameterFixer/
+      kclassMap/
+      regression/
+    diagnostics/
+  src/test/kotlin/com/kotlinorm/compiler/official/
+    AbstractKronosJvmBoxTest.kt
+    *BoxTest.kt
+    TEST_DATA_STYLE_GUIDE.md
+```
+
+Each `testData/box/<area>/<case>.kt` file should have a matching thin runner method:
+
+```kotlin
+class SelectBoxTest : AbstractKronosJvmBoxSuite("select") {
+    @Test
+    fun collectionLiteralFields() = box("collectionLiteralFields")
+}
+```
+
+#### Official Box Test Requirements
+
+Every testData `.kt` file must:
+
+- Start with the Kronos Apache 2.0 copyright header.
+- Add a short top-level comment that states the compiler-plugin contract being tested.
+- Test one primary contract per file unless it is explicitly an integration scenario.
+- Expose `fun box(): String`.
+- Return exactly `"OK"` on success.
+- Return `"Fail: <specific reason>"` on failure, including observed values where useful.
+- Assert generated behavior, not merely that the source compiles.
+
+Preferred assertion style for multiple checks:
+
+```kotlin
+fun box(): String {
+    val failures = listOfNotNull(
+        expect(fields.size == 2) { "field count was ${fields.size}" },
+        expect(fields[0].name == "id") { "first field was ${fields[0].name}" },
+    )
+
+    return failures.firstOrNull() ?: "OK"
+}
+
+inline fun expect(condition: Boolean, message: () -> String): String? {
+    return if (condition) null else "Fail: ${message()}"
+}
+```
+
+Use `Kronos.init` only when the test depends on naming strategies, initialization hooks, default data source, or `kClassCreator`. Keep it minimal:
+
+```kotlin
+Kronos.init {
+    fieldNamingStrategy = lineHumpNamingStrategy
+    tableNamingStrategy = lineHumpNamingStrategy
+}
+```
+
+Collection literal tests using `[]` rely on the official test configuration enabling `+CollectionLiterals`; do not assume Gradle `compileTestKotlin` arguments apply to testData compilation.
+
+#### Positive, Negative, And Golden Tests
+
+- Use `testData/box` for generated runtime behavior. The test should fail if the relevant plugin transformer or generator is disabled.
+- Use `testData/diagnostics` for source that should fail compilation. Do not encode expected compiler failures as box tests.
+- Add `.fir.txt` or `.fir.ir.txt` golden dumps only for selected structural contracts such as FIR-generated declarations, call return type refinement, complex IR body generation, or invalid-IR regressions. Do not snapshot every box test.
+
+#### Migration From kctfork
+
+Official tests do not automatically replace kctfork tests. A kctfork test can be considered replaced only when the official test:
+
+- Asserts the same compiler-plugin contract.
+- Runs through the official FIR/IR pipeline.
+- Fails if the relevant plugin behavior breaks.
+- Checks the same important values, not merely compilation.
+- Covers the same edge case or a documented stronger one.
+
+Maintain a migration table for migrated areas:
+
+```markdown
+| Old test | Official testData | Status | Notes |
+| --- | --- | --- | --- |
+| ConditionAnalysisTest.no-arg eq uses object value | condition/noArgEqUsesCurrentValue.kt | covered | Same type/value assertions |
+| FieldAnalysisTest.plus expression analysis | select/collectionLiteralFields.kt | obsolete | `+` no longer means field projection |
+```
+
+Allowed statuses:
+
+- `covered`
+- `covered by stronger official test`
+- `intentionally kept as unit test`
+- `obsolete`
+- `missing`
+
+Do not remove kctfork dependencies or old helpers until every old behavior in the target area is mapped and coverage impact is acceptable. Recent coverage showed about a 10.55 percentage-point drop when kctfork tests were excluded, so kctfork still carries meaningful coverage.
+
+#### Running Official Compiler Tests
+
+```bash
+# All official compiler box tests
+./gradlew :kronos-compiler-plugin:test --tests "com.kotlinorm.compiler.official.*BoxTest" --no-daemon --console=plain
+
+# One official suite
+./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.official.ConditionBoxTest --no-daemon --console=plain
+
+# One test method
+./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.official.TypeParameterFixerBoxTest.queryReturnTypes --no-daemon --console=plain
+```
+
+### Writing Legacy Compiler Plugin Tests
 
 Uses `kotlin-compile-testing` (kct/kctfork) framework.
 
@@ -89,6 +236,8 @@ Test files in compiler plugin:
 - `plugin/`: KronosPluginTest
 - `transformers/`: Tests for each transformer (Condition, Reference, Select, Set, Sort, TypeParameterFixer)
 - `utils/`: AnnotationUtilsTest, TypeUtilsTest
+
+Prefer official compiler tests for new compiler-plugin behavior when possible. Keep legacy tests when they are pure unit tests, when they inspect helper internals directly, or while official coverage for that behavior is still missing.
 
 ### Writing Integration Tests (kronos-testing)
 

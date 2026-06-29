@@ -39,8 +39,6 @@ open class KTableForSelect<T : KPojo> {
     @Suppress("UNUSED_PARAMETER")
     operator fun get(vararg fields: Any?): Unit = Unit
 
-    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Any? = null
-
     operator fun Any?.minus(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
 
     operator fun Any?.times(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null

@@ -23,19 +23,19 @@ data class PgUser(
     @Column("gender1")
     @ColumnType(TINYINT)
     @Default("0")
-    @Necessary
+    @NonNull
     var gender: Int? = null,
     var age: Int? = 0,
 //    @ColumnType(INT)
 //    var age: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
-    @Necessary
+    @NonNull
     var createTime: String? = null,
     @UpdateTime
-    @Necessary
+    @NonNull
     var updateTime: LocalDateTime? = null,
     @LogicDelete
-    @Necessary
+    @NonNull
     var deleted: Boolean? = null
 ) : KPojo

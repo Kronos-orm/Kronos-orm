@@ -24,13 +24,13 @@ data class OracleUser(
     // var age: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss") // 格式调整为通用格式，具体需根据实际库处理逻辑
-    @Necessary
+    @NonNull
     var createTime: LocalDateTime? = null, // 更改类型为LocalDateTime以匹配Oracle的日期时间处理
     @UpdateTime
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
-    @Necessary
+    @NonNull
     var updateTime: LocalDateTime? = null,
     @LogicDelete
-    @Necessary
+    @NonNull
     var deleted: Boolean? = null
 ) : KPojo

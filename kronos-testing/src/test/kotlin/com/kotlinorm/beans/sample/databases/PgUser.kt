@@ -24,19 +24,19 @@ data class PgUser(
     @Column("gender1")
     @ColumnType(KColumnType.BIT)
     @Default("true")
-    @Necessary
+    @NonNull
     var gender: Boolean? = null,
     var age: Int? = 0,
     @ColumnType(type = KColumnType.TIMESTAMP)
     var regTime: Instant? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
-    @Necessary
+    @NonNull
     var createTime: String? = null,
     @UpdateTime
-    @Necessary
+    @NonNull
     var updateTime: LocalDateTime? = null,
     @LogicDelete
-    @Necessary
+    @NonNull
     var deleted: Boolean? = null
 ) : KPojo

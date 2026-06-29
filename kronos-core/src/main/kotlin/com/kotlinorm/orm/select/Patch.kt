@@ -25,6 +25,14 @@ fun <T : KPojo> T.select(fields: ToSelect<T, Any?> = null): SelectClause<T, T> {
     return SelectClause(this, fields, kClass() as KClass<T>)
 }
 
+@PublishedApi
+internal fun <T : KPojo, R : KPojo> T.selectGeneratedProjection(
+    projectionClass: KClass<R>,
+    fields: ToSelect<T, Any?> = null
+): SelectClause<T, R> {
+    return SelectClause(this, fields, projectionClass)
+}
+
 @JvmName("selectProjection")
 inline fun <reified T : KPojo, reified R : KPojo> T.select(
     projectionClass: KClass<R> = R::class,

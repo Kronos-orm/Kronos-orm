@@ -17,10 +17,13 @@
 package com.kotlinorm.compiler.plugin
 
 import com.google.auto.service.AutoService
+import com.kotlinorm.compiler.plugin.fir.KronosFirExtensionRegistrar
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.compiler.plugin.registerExtension
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 
 /**
  * Compiler plugin registrar for the Kronos compiler plugin
@@ -36,6 +39,8 @@ class KronosCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
+        FirExtensionRegistrar.registerExtension(KronosFirExtensionRegistrar())
+
         val messageCollector = configuration.get(
             org.jetbrains.kotlin.config.CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY,
             org.jetbrains.kotlin.cli.common.messages.MessageCollector.NONE

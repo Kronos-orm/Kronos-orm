@@ -48,6 +48,7 @@ import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * Kronos Parser Transformer
@@ -74,6 +75,7 @@ class KronosParserTransformer(
 
     private val errorReporter = ErrorReporter(messageCollector)
     val kPojoClasses = mutableSetOf<IrClass>()
+    private val transformedKPojoClasses = mutableSetOf<IrClass>()
     val initCallSiteLambdas = mutableListOf<IrFunction>()
 
     override fun visitFileNew(declaration: IrFile): IrFile {
@@ -84,9 +86,7 @@ class KronosParserTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitClassNew(declaration: IrClass): IrStatement {
         if (declaration.superTypes.any { it.classFqName == KPojoFqName }) {
-            kPojoClasses.add(declaration)
-            // Apply class transformer to generate KPojo interface implementations
-            declaration.transform(KronosIrClassTransformer(pluginContext, declaration, errorReporter), null)
+            processKPojoClass(declaration)
         }
         return super.visitClassNew(declaration)
     }
@@ -95,7 +95,7 @@ class KronosParserTransformer(
     override fun visitClassReference(expression: IrClassReference): IrExpression {
         val cls = expression.classType.classOrNull?.owner
         if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
-            kPojoClasses.add(cls)
+            processKPojoClass(cls)
         }
         return super.visitClassReference(expression)
     }
@@ -104,7 +104,7 @@ class KronosParserTransformer(
     override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
         val cls = expression.type.classOrNull?.owner
         if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
-            kPojoClasses.add(cls)
+            processKPojoClass(cls)
         }
         return super.visitConstructorCall(expression)
     }
@@ -115,7 +115,7 @@ class KronosParserTransformer(
         for (i in 0 until expression.typeArguments.size) {
             val cls = expression.typeArguments[i]?.getClass()
             if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
-                kPojoClasses.add(cls)
+                processKPojoClass(cls)
             }
         }
         // Detect calls to @KronosInit-annotated functions and collect the lambda argument
@@ -132,6 +132,28 @@ class KronosParserTransformer(
         }
         return result
     }
+
+    /**
+     * Collects and enhances each KPojo class once, including compiler-generated projection classes
+     * that are discovered only through refined call type arguments.
+     */
+    private fun processKPojoClass(irClass: IrClass) {
+        kPojoClasses.add(irClass)
+        if (irClass.isGeneratedProjectionClass()) {
+            return
+        }
+        if (transformedKPojoClasses.add(irClass)) {
+            irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
+        }
+    }
+
+    /**
+     * Synthetic projection classes are FIR-backed lazy classes. Expanding their members while
+     * visiting a call type argument can ask FIR2IR for property symbols before they are bound.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.isGeneratedProjectionClass(): Boolean =
+        kotlinFqName.parent() == GENERATED_PROJECTION_PACKAGE
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
@@ -166,5 +188,9 @@ class KronosParserTransformer(
         +irBlock {
             +declaration.body!!.statements
         }.transform(transformerFactory(declaration), null)
+    }
+
+    private companion object {
+        val GENERATED_PROJECTION_PACKAGE: FqName = FqName("com.kotlinorm.generated.projection")
     }
 }

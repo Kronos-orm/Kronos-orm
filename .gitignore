@@ -3,6 +3,7 @@
 .cursor
 .kotlin/
 envsetup.sh
+envsetup.bat
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

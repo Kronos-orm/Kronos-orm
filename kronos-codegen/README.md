@@ -122,7 +122,7 @@ Script naming: must be `xxx.main.kts` for standalone execution.
 
 Based on field metadata and global strategy config:
 - `@PrimaryKey(identity = true)` — field matches primary key strategy
-- `@Necessary` — non-nullable, non-PK fields
+- `@NonNull` — non-nullable, non-PK fields
 - `@Default("value")` — fields with default values
 - `@ColumnType(type, length, scale)` — non-standard column types
 - `@CreateTime` / `@UpdateTime` / `@LogicDelete` / `@Version` — field matches global strategy

@@ -2,7 +2,7 @@ import com.kotlinorm.annotations.Column
 import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.DateTimeFormat
 import com.kotlinorm.annotations.Default
-import com.kotlinorm.annotations.Necessary
+import com.kotlinorm.annotations.NonNull
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Serialize
 import com.kotlinorm.enums.KColumnType
@@ -13,7 +13,7 @@ data class ColumnUser(
     @PrimaryKey(identity = true)
     var id: Int? = null,
     @Column("user_name")
-    @Necessary
+    @NonNull
     @Default("guest")
     var name: String? = null,
     @ColumnType(KColumnType.VARCHAR, length = 64)

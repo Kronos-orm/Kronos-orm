@@ -1,5 +1,5 @@
 /**
- * Copyright 2022-2025 kronos-orm
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,134 +16,106 @@
 
 package com.kotlinorm.compiler.core
 
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
-import kotlin.test.Test
-import org.junit.jupiter.api.BeforeEach
-import kotlin.test.assertTrue
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
+import org.jetbrains.kotlin.ir.visitors.IrVisitor
 
 class ErrorReporterTest {
     private lateinit var messages: MutableList<Pair<CompilerMessageSeverity, String>>
     private lateinit var errorReporter: ErrorReporter
 
-    @BeforeEach
+    @BeforeTest
     fun setup() {
         messages = mutableListOf()
-        val messageCollector = object : MessageCollector {
-            override fun clear() {
-                messages.clear()
+        errorReporter = ErrorReporter(
+            object : MessageCollector {
+                override fun clear() {
+                    messages.clear()
+                }
+
+                override fun hasErrors(): Boolean {
+                    return messages.any { it.first == CompilerMessageSeverity.ERROR }
+                }
+
+                override fun report(
+                    severity: CompilerMessageSeverity,
+                    message: String,
+                    location: CompilerMessageSourceLocation?,
+                ) {
+                    messages += severity to message
+                }
             }
-
-            override fun hasErrors(): Boolean {
-                return messages.any { it.first == CompilerMessageSeverity.ERROR }
-            }
-
-            override fun report(severity: CompilerMessageSeverity, message: String, location: org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation?) {
-                messages.add(severity to message)
-            }
-        }
-        errorReporter = ErrorReporter(messageCollector)
+        )
     }
 
     @Test
-    fun `should report error without suggestion`() {
-        // Given
-        val element = createMockIrElement()
-        val message = "Test error message"
+    fun reportsErrorWithCompactIrFallback() {
+        errorReporter.reportError(mockIrElement(), "Unsupported condition")
 
-        // When
-        errorReporter.reportError(element, message)
-
-        // Then
-        assertTrue(messages.size == 1)
-        assertTrue(messages[0].first == CompilerMessageSeverity.ERROR)
-        assertTrue(messages[0].second.contains(message))
+        assertEquals(1, messages.size)
+        assertEquals(CompilerMessageSeverity.ERROR, messages.single().first)
+        assertTrue(messages.single().second.contains("[Kronos] Unsupported condition"))
+        assertTrue(messages.single().second.contains("IR: <IR dump failed: dump unavailable>"))
     }
 
     @Test
-    fun `should report error with suggestion`() {
-        // Given
-        val element = createMockIrElement()
-        val message = "Test error message"
-        val suggestion = "Try this fix"
+    fun reportsErrorWithSuggestion() {
+        errorReporter.reportError(mockIrElement(), "Unsupported field", "Use a property reference")
 
-        // When
-        errorReporter.reportError(element, message, suggestion)
-
-        // Then
-        assertTrue(messages.size == 1)
-        assertTrue(messages[0].first == CompilerMessageSeverity.ERROR)
-        assertTrue(messages[0].second.contains(message))
-        assertTrue(messages[0].second.contains("Fix: $suggestion"))
+        val message = messages.single().second
+        assertTrue(message.contains("[Kronos] Unsupported field"))
+        assertTrue(message.contains("Fix: Use a property reference"))
     }
 
     @Test
-    fun `should report warning`() {
-        // Given
-        val element = createMockIrElement()
-        val message = "Test warning message"
+    fun reportsErrorWithExceptionDetails() {
+        errorReporter.reportError(
+            mockIrElement(),
+            "Failed to transform",
+            IllegalStateException("bad state"),
+            "Reduce the expression",
+        )
 
-        // When
-        errorReporter.reportWarning(element, message)
-
-        // Then
-        assertTrue(messages.size == 1)
-        assertTrue(messages[0].first == CompilerMessageSeverity.WARNING)
-        assertTrue(messages[0].second.contains(message))
+        val message = messages.single().second
+        assertTrue(message.contains("Exception: IllegalStateException: bad state"))
+        assertTrue(message.contains("Fix: Reduce the expression"))
     }
 
     @Test
-    fun `should report info`() {
-        // Given
-        val message = "Test info message"
+    fun reportsWarningAndInfo() {
+        errorReporter.reportWarning(mockIrElement(), "Condition fallback")
+        errorReporter.reportInfo("Plugin initialized")
 
-        // When
-        errorReporter.reportInfo(message)
-
-        // Then
-        assertTrue(messages.size == 1)
-        assertTrue(messages[0].first == CompilerMessageSeverity.INFO)
-        assertTrue(messages[0].second == "[Kronos] $message")
+        assertEquals(CompilerMessageSeverity.WARNING, messages[0].first)
+        assertEquals("[Kronos] Condition fallback", messages[0].second)
+        assertEquals(CompilerMessageSeverity.INFO, messages[1].first)
+        assertEquals("[Kronos] Plugin initialized", messages[1].second)
     }
 
-    @Test
-    fun `should report multiple errors`() {
-        // Given
-        val element = createMockIrElement()
-
-        // When
-        errorReporter.reportError(element, "Error 1")
-        errorReporter.reportError(element, "Error 2")
-        errorReporter.reportWarning(element, "Warning 1")
-
-        // Then
-        assertTrue(messages.size == 3)
-        assertTrue(messages.count { it.first == CompilerMessageSeverity.ERROR } == 2)
-        assertTrue(messages.count { it.first == CompilerMessageSeverity.WARNING } == 1)
-    }
-
-    private fun createMockIrElement(): IrElement {
+    private fun mockIrElement(): IrElement {
         return object : IrElement {
-            override var startOffset: Int = 0
-            override var endOffset: Int = 10
+            override var startOffset: Int = -1
+            override var endOffset: Int = -1
             override var attributeOwnerId: IrElement = this
 
-            override fun <R, D> accept(visitor: org.jetbrains.kotlin.ir.visitors.IrVisitor<R, D>, data: D): R {
-                throw UnsupportedOperationException()
+            override fun <R, D> accept(visitor: IrVisitor<R, D>, data: D): R {
+                throw RuntimeException("dump unavailable")
             }
 
-            override fun <D> acceptChildren(visitor: org.jetbrains.kotlin.ir.visitors.IrVisitor<Unit, D>, data: D) {
-                throw UnsupportedOperationException()
+            override fun <D> acceptChildren(visitor: IrVisitor<Unit, D>, data: D) = Unit
+
+            override fun <D> transform(transformer: IrTransformer<D>, data: D): IrElement {
+                return this
             }
 
-            override fun <D> transform(transformer: org.jetbrains.kotlin.ir.visitors.IrTransformer<D>, data: D): IrElement {
-                throw UnsupportedOperationException()
-            }
-
-            override fun <D> transformChildren(transformer: org.jetbrains.kotlin.ir.visitors.IrTransformer<D>, data: D) {
-                throw UnsupportedOperationException()
-            }
+            override fun <D> transformChildren(transformer: IrTransformer<D>, data: D) = Unit
         }
     }
 }

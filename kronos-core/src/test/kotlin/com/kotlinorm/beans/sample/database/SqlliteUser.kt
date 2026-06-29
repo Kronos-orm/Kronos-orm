@@ -26,12 +26,12 @@ data class SqlliteUser(
 //    var age: Int? = null,
     @CreateTime
     @DateTimeFormat("yyyy@MM@dd HH:mm:ss")
-    @Necessary
+    @NonNull
     var createTime: String? = null,
     @UpdateTime
-    @Necessary
+    @NonNull
     var updateTime: LocalDateTime? = null,
     @LogicDelete
-    @Necessary
+    @NonNull
     var deleted: Boolean? = null
 ) : KPojo

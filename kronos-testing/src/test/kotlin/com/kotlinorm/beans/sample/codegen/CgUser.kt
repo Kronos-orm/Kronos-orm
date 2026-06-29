@@ -4,7 +4,7 @@ import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.CreateTime
 import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.LogicDelete
-import com.kotlinorm.annotations.Necessary
+import com.kotlinorm.annotations.NonNull
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.annotations.TableIndex
@@ -25,13 +25,13 @@ data class CgUser(
     var score: Int? = null,
     @Default("0")
     var gender: Boolean? = null,
-    @Necessary
+    @NonNull
     @CreateTime
     var createTime: String? = null,
-    @Necessary
+    @NonNull
     @UpdateTime
     var updateTime: LocalDateTime? = null,
-    @Necessary
+    @NonNull
     @Default("0")
     @LogicDelete
     var deleted: Boolean? = null

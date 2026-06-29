@@ -347,14 +347,14 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Necessary") }}列非空约束
+## {{ $.annotation("NonNull") }}列非空约束
 
 此注解用于声明列为非空，如果不指定则使用默认的非空约束
 
 ```kotlin
 @Table("tb_user")
 data class User(
-    @Necessary
+    @NonNull
     val name: String? = null
 ) : KPojo
 ```

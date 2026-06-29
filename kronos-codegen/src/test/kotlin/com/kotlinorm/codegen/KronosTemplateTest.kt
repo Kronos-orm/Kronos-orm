@@ -151,8 +151,8 @@ class KronosTemplateTest {
         val field = Field(columnName = "name", type = KColumnType.VARCHAR, nullable = false)
         val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it == "@Necessary" })
-        assertContains(t.imports, "com.kotlinorm.annotations.Necessary")
+        assertTrue(annotations.any { it == "@NonNull" })
+        assertContains(t.imports, "com.kotlinorm.annotations.NonNull")
     }
 
     @Test

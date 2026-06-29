@@ -85,7 +85,7 @@ class ProjectionRecordingWrapper : KronosDataSourceWrapper {
 }
 
 fun buildProjection(user: ProjectionSource): com.kotlinorm.orm.select.SelectClause<ProjectionSource, ProjectionRow> {
-    return user.select<ProjectionSource, ProjectionRow> {
+    return user.select(ProjectionRow::class) {
         it.ignored
         [it.id, it.name]
     }

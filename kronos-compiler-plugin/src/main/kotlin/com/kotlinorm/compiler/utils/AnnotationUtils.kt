@@ -214,13 +214,13 @@ fun IrProperty.isUuidPrimaryKey(): Boolean {
 }
 
 /**
- * Checks if the property has @Necessary annotation (required field)
+ * Checks if the property has @NonNull annotation (required field)
  *
- * @return true if the property is marked as necessary
+ * @return true if the property is marked as non-null
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrProperty.isNecessary(): Boolean {
-    return findAnnotation(NecessaryAnnotationFqName) != null
+fun IrProperty.isNonNull(): Boolean {
+    return findAnnotation(NonNullAnnotationFqName) != null
 }
 
 /**

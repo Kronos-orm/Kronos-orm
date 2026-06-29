@@ -202,7 +202,7 @@ Kronos.init {
 data class Movie(
     @PrimaryKey(identity = true)
     val id: Long? = null,
-    @Necessary val name: String? = null,
+    @NonNull val name: String? = null,
     val directorId: Long? = null,
     @Cascade(["directorId"], ["id"])
     val director: Director? = null,

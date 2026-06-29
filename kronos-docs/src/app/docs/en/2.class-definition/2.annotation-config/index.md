@@ -333,14 +333,14 @@ data class User(
 ) : KPojo
 ```
 
-## {{ $.annotation("Necessary") }}Column non-null constraint
+## {{ $.annotation("NonNull") }}Column non-null constraint
 
 This annotation is used to declare a column as non-null; if not specified, the default non-null constraint is used.
 
 ```kotlin
 @Table("tb_user")
 data class User(
-    @Necessary
+    @NonNull
     val name: String? = null
 ) : KPojo
 ```

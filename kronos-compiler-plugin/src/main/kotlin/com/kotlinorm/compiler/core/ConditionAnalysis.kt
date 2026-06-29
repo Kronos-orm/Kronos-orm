@@ -484,8 +484,6 @@ internal fun extractFieldExpression(irFunction: IrFunction, expression: IrExpres
             }
             expression.isKronosFunction() ->
                 buildFunctionField(irFunction, expression, errorReporter)
-            expression.isOperatorFunction() ->
-                buildOperatorFunctionField(irFunction, expression.operatorFunctionName(), expression.operatorOperands(), errorReporter)
             else -> null
         }
         is IrPropertyReference -> buildFieldFromPropertyRef(expression, errorReporter)
@@ -518,11 +516,6 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
                     extractTableNameExpr(arg)
                 }
             }
-            expression.isOperatorFunction() -> {
-                expression.operatorOperands().firstNotNullOfOrNull { arg ->
-                    extractTableNameExpr(arg)
-                }
-            }
             else -> null
         }
         is IrTypeOperatorCall -> extractTableNameExpr(expression.argument)
@@ -531,38 +524,9 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun IrCall.operatorOperands(): List<IrExpression> {
-    val operands = mutableListOf<IrExpression>()
-    (extensionReceiverArgument ?: dispatchReceiverArgument)?.let { operands += it }
-    getValueArgumentSafe(0)?.let { operands += it }
-    return operands
-}
-
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun IrCall.operatorFunctionName(): String {
-    return when {
-        origin == IrStatementOrigin.PLUS || symbol.owner.name.asString() == "plus" -> {
-            if (operatorOperands().any { it.isStringLikeExpression() }) "concat" else "add"
-        }
-        origin == IrStatementOrigin.MINUS || symbol.owner.name.asString() == "minus" -> "sub"
-        symbol.owner.name.asString() == "times" -> "mul"
-        symbol.owner.name.asString() == "div" -> "div"
-        symbol.owner.name.asString() == "rem" -> "mod"
-        else -> symbol.owner.name.asString()
-    }
-}
-
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun IrExpression.isStringLikeExpression(): Boolean {
-    if (this is IrConst && value is String) return true
-    val fqName = type.classFqName?.asString()
-    return fqName == "kotlin.String" || fqName == "kotlin.CharSequence"
-}
-
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun IrExpression.isOperatorFunction(): Boolean {
+private fun IrExpression.isUnsupportedOperatorExpression(): Boolean {
     if (this !is IrCall) return false
-    if (origin == IrStatementOrigin.PLUS || origin == IrStatementOrigin.MINUS) return true
+    if (origin in setOf(IrStatementOrigin.PLUS, IrStatementOrigin.MINUS)) return true
     return symbol.owner.name.asString() in setOf("plus", "minus", "times", "div", "rem")
 }
 
@@ -573,6 +537,13 @@ private fun IrExpression.isOperatorFunction(): Boolean {
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBlockBuilder)
 private fun resolveValueExpression(irFunction: IrFunction, expression: IrExpression, errorReporter: ErrorReporter): IrExpression {
+    if (expression.isUnsupportedOperatorExpression()) {
+        errorReporter.reportError(
+            expression,
+            ErrorMessages.UNSUPPORTED_FIELD_OPERATOR,
+            ErrorMessages.UNSUPPORTED_FIELD_OPERATOR_FIX
+        )
+    }
     return extractFieldExpression(irFunction, expression, errorReporter) ?: expression
 }
 

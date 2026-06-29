@@ -129,7 +129,7 @@ data class User(
     // 设置name字段为非空
     // 设置列类型为VARCHAR，长度为128
     @Column("name")
-    @Necessary
+    @NonNull
     @ColumnType(VARCHAR, 128)
     var username: String? = null,
 
@@ -140,7 +140,7 @@ data class User(
     var age: Int? = null,
 
     // 设置companyId字段为非空
-    @Necessary
+    @NonNull
     var companyId: Int? = null,
 
     // 级联设置，无需实体外键，通过companyId关联Company表的id

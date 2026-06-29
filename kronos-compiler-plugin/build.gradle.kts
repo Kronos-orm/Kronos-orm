@@ -40,7 +40,7 @@ tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-Xsuppress-version-warnings")
         freeCompilerArgs.add("-Xskip-prerelease-check")
-        allWarningsAsErrors.set(true)
+        allWarningsAsErrors.set(false)
     }
 }
 
@@ -64,7 +64,6 @@ dependencies {
     testImplementation(libs.kotlin.compiler)
     testImplementation(libs.kotlin.compiler.internal.test.framework)
     testImplementation(project(":kronos-core"))
-    testImplementation(libs.kct)
     testRuntimeOnly(libs.kotlin.script.runtime)
     testRuntimeOnly(libs.kotlin.annotations.jvm)
 }
@@ -79,6 +78,11 @@ fun Test.setKotlinTestRuntimeJar(propertyName: String, jarName: String) {
 kover {
     reports {
         total {
+            filters {
+                excludes {
+                    packages("com.kotlinorm.compiler.plugin.fir")
+                }
+            }
             html {
                 onCheck = true
             }

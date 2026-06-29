@@ -1,413 +1,282 @@
-# Kronos 子查询与窗口函数 DSL 设计规范
+# Kronos 子查询 DSL 语法设计
 
-状态：草案
+状态：语法草案
 
-本文档设计 Kronos 的完整子查询与窗口函数支持。核心原则是：不引入一套割裂的新 SQL
-构造器语法，而是在现有 Kronos DSL 上扩展能力。也就是说，用户仍然主要写：
+本文档只讨论用户侧 DSL 长什么样。当前正在逐个确认子查询使用场景。
 
-```kotlin
-User()
-    .select { it.id + it.name }
-    .where { it.status == 1 }
-    .queryList()
-```
+## 场景目录
 
-子查询只是这个现有 `select()` 链的另一种使用方式，可以被嵌入 SQL 允许子查询出现的位置。
+- 场景 1：`SELECT` 列表中的标量子查询
+- 场景 2：`WHERE` / `HAVING` 中的 `IN` 与 `NOT IN` 子查询
+- 场景 3：`WHERE` / `HAVING` 中的 `EXISTS` 与 `NOT EXISTS` 子查询
+- 场景 4：`WHERE` / `HAVING` 中的标量比较、`ANY` / `SOME` / `ALL`
+- 场景 5：元组 `IN`
+- 场景 6：`FROM` / `JOIN` 派生查询
+- 场景 7：窗口函数与自动 SQL 分层
+- 场景 8：`ORDER BY` 中的子查询或表达式排序
+- 场景 9：`UPDATE SET` 标量子查询
+- 场景 10：`UPDATE` / `DELETE WHERE` 子查询
+- 场景 11：`INSERT SELECT`
+- 场景 12：`UPSERT` 中的子查询表达式
+- 场景 13：`CREATE TABLE AS SELECT`
 
-## 目标
+## 基本原则
 
-- 保持现有 Kronos 写法：
-  `KPojo().select { ... }.where { ... }.orderBy { ... }.queryList()`。
-- 子查询由现有 `SelectClause`、`SelectFrom`、`UnionClause` 派生，不提供割裂的
-  `query { select(); from(); where() }` 风格入口。
-- 支持子查询出现在 `SELECT`、`FROM`、`JOIN`、`WHERE`、`HAVING`、`ORDER BY`、
-  `UPDATE SET`、`DELETE WHERE`、`INSERT SELECT`、`UPSERT`、DDL 视图/表创建等场景。
-- 支持 `EXISTS`、`NOT EXISTS`、`IN`、`NOT IN`、标量子查询、量词比较
-  `ANY` / `SOME` / `ALL`、元组 `IN`、派生表、CTE、窗口函数。
-- 在 Kotlin 能表达的地方尽量保持类型安全；动态 SQL 场景保留字符串别名和原生 SQL 兜底。
-- 尽量复用当前编译器插件的 `SelectTransformer`、`ConditionTransformer`、
-  `SetTransformer`、`SortTransformer`，不要重写一套查询编译管线。
+- 用户只写 `select { ... }`，不写 `select<User, Xxx>`。
+- `select` lambda 的参数默认是源 KPojo；能直接用 `it` 时优先省略显式参数。
+- 返回投影类型不需要用户声明 DTO，也不需要用户写任何第二泛型参数。
+- 返回投影类型由 FIR 插件根据 `select` 内容自动生成。
+- `.as_("name")` 只表示结果字段名，用于自动生成投影字段；它不是表别名，也不是派生表名。
+- `.as_("name")` 会在 where/orderBy/having 使用的生成上下文类中生成同名属性，例如 `.as_("lastOrderAmount")` 对应后续的 `it.lastOrderAmount`。
+- 不要求用户提前声明 `val rn = alias<Int>("rn")` 这类 alias token。
+- 查询链统一先 `select { ... }`，再接 `where`、`orderBy`、`groupBy`、`having`、`limit` 等子句。
+- `[]` 是用户侧统一列表语法；编译器按上下文生成投影列表、排序列表、窗口字段列表、row-value tuple 等内部结构。
+- `select { ... }` 之后的 `where { ... }`、`orderBy { ... }`、`having { ... }` 的 `it` 是 FIR 插件生成的上下文类。
+- 生成上下文类包含原 DTO 的全部列，以及 `select { ... }` 中通过 `.as_("xxx")` 等方式新增的投影列。
 
-## 非目标
+## 术语：KSelectable
 
-- 不替换现有 select/update/delete/insert API。
-- 不要求用户为了写子查询学习另一套 DSL。
-- 不把 raw SQL 作为主要能力；raw SQL 只作为兜底。
-- 不要求所有高级 SQL 都必须在编译器插件中一次性完成；能用运行时 AST 安全表达的场景，
-  可以先通过运行时 API 落地。
+本文档用 `KSelectable` 指代所有可被当作查询源消费的 select-like 对象。
 
-## 当前 DSL 基线
+- `select { ... }` 仍然返回具体的 `SelectClause<T, R>`。
+- `SelectClause<T, R>` 实现 `KSelectable`。
+- join 查询、union 查询等只要实现 `KSelectable`，也可以被子查询、insert-select、CTAS 等能力消费。
+- 用户通常不需要显式声明 `KSelectable` 类型；它主要用于描述 DSL 能力边界。
 
-当前查询风格：
+## 场景 1：SELECT 列表中的标量子查询
 
-```kotlin
-val listOfUser: List<User> = User()
-    .select { it.id + it.username }
-    .where { it.id < 10 && it.age >= 18 }
-    .distinct()
-    .groupBy { it.id }
-    .orderBy { it.username.desc() }
-    .queryList()
-```
+目标：在 `select { ... }` 中放一个返回单值的子查询，例如用户最近一笔订单金额。
 
-当前联表风格：
+推荐语法：
 
 ```kotlin
-val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
-    on { user.id == relation.userId && user.id == role.userId }
-    select {
-        user.id + user.username + relation.id.as_("relationId") +
-            role.role + f.count(1).as_("count")
-    }
-    where { user.id < 10 }
-}.query()
-```
-
-子查询设计必须像这些写法的自然延伸。
-
-## 总体设计原则
-
-子查询不是新的根级查询语言，而是现有 `SelectClause` 或 `SelectFrom` 转换出来的嵌入值：
-
-```kotlin
-SelectClause<T>.as_(block: DerivedSelectScope<T>.(T) -> Unit): SelectClause<T>
-SelectClause<T>.as_(alias: String, block: DerivedSelectScope<T>.(T) -> Unit): SelectClause<T>
-SelectClause<T>.asTable(alias: String? = null): DerivedTable<T>
-SelectClause<T>.scalar<R>(): ScalarSubquery<R>
-SelectClause<T>.exists(): ExistsSubquery
-
-SelectFrom<T>.as_(block: DerivedSelectScope<T>.(T) -> Unit): SelectClause<T>
-SelectFrom<T>.as_(alias: String, block: DerivedSelectScope<T>.(T) -> Unit): SelectClause<T>
-SelectFrom<T>.asTable(alias: String? = null): DerivedTable<T>
-SelectFrom<T>.scalar<R>(): ScalarSubquery<R>
-SelectFrom<T>.exists(): ExistsSubquery
-```
-
-`UnionClause` 同理：
-
-```kotlin
-UnionClause.as_(block: DerivedSelectScope<Nothing>.(Nothing) -> Unit): SelectClause<Nothing>
-UnionClause.as_(alias: String, block: DerivedSelectScope<Nothing>.(Nothing) -> Unit): SelectClause<Nothing>
-UnionClause.asTable(alias: String? = null): DerivedTable<Nothing>
-UnionClause.scalar<R>(): ScalarSubquery<R>
-UnionClause.exists(): ExistsSubquery
-```
-
-派生表本身仍可显式创建并复用：
-
-```kotlin
-SelectClause<T>.asTable(alias: String? = null): DerivedTable<T>
-DerivedTable<T>.select(fields: ToDerivedSelect<T, Any?> = null): SelectClause<T>
-DerivedTable<T>.join(...)
-DerivedTable<T>.leftJoin(...)
-DerivedTable<T>.rightJoin(...)
-```
-
-最重要的用户写法是：
-
-```kotlin
-T()
-    .select { ... }
-    .where { ... }
-    .as_ { x ->
-        select { ... }
-        where { ... }
-    }
-    .queryList()
-```
-
-也就是说，`as_ { x -> ... }` 会把前一个查询包装成 SQL 派生表，并进入一个新的外层
-select scope。`x` 是派生表行的 lambda 参数，SQL 表别名由 Kronos 自动生成。等价于：
-
-```sql
-SELECT ...
-FROM (
-    SELECT ...
-) _k_subq_0
-WHERE ...
-```
-
-如果用户需要复用派生表、让生成 SQL 更易读、或与 raw SQL 片段互操作，可以显式命名：
-
-```kotlin
-T()
-    .select { ... }
-    .where { ... }
-    .as_("tmp") { x ->
-        select { ... }
-        where { ... }
-    }
-```
-
-或者显式创建可复用表源：
-
-```kotlin
-val tmp = T()
-    .select { ... }
-    .where { ... }
-    .asTable("tmp")
-
-tmp.select { it.id + it.name }
-```
-
-## 核心示例：按组取第一条
-
-目标 SQL：
-
-```sql
-SELECT id, group_col, sort_col, val
-FROM (
-    SELECT
-        *,
-        ROW_NUMBER() OVER (PARTITION BY group_col ORDER BY sort_col ASC) AS rn
-    FROM t
-    WHERE create_time >= '2026-01-01'
-) tmp
-WHERE rn = 1
-```
-
-推荐 Kronos DSL：
-
-```kotlin
-val rn = alias<Int>("rn")
-
-val rows = T()
-    .select {
-        it +
-            f.rowNumber()
-                .over {
-                    partitionBy(it.groupCol)
-                    orderBy(it.sortCol.asc())
-                }
-                .as_(rn)
-    }
-    .where { it.createTime >= LocalDate.parse("2026-01-01") }
-    .as_ { x ->
-        select {
-            x.id + x.groupCol + x.sortCol + x.val
-        }
-        where {
-            x[rn] == 1
-        }
-    }
-    .queryList()
-```
-
-字符串别名兜底写法：
-
-```kotlin
-val rows = T()
-    .select {
-        it +
-            f.rowNumber()
-                .over {
-                    partitionBy(it.groupCol)
-                    orderBy(it.sortCol.asc())
-                }
-                .as_("rn")
-    }
-    .where { it.createTime >= LocalDate.parse("2026-01-01") }
-    .as_ { x ->
-        select { x.id + x.groupCol + x.sortCol + x.val }
-        where { x["rn"] == 1 }
-    }
-    .queryList()
-```
-
-## 别名模型
-
-当前 Kronos 已支持 `as_("alias")`。为了让子查询、窗口函数、标量子查询中的表达式别名更好复用，
-新增类型化别名 token：
-
-```kotlin
-val rn = alias<Int>("rn")
-val lastOrderAt = alias<LocalDateTime>("lastOrderAt")
-```
-
-API：
-
-```kotlin
-fun <T> alias(name: String): QueryAlias<T>
-
-infix fun Any?.as_(alias: QueryAlias<*>): QueryAlias<*>
-infix fun Any?.as_(alias: String): String
-
-operator fun <R> DerivedRow.get(alias: QueryAlias<R>): R?
-operator fun DerivedRow.get(alias: String): Any?
-```
-
-规则：
-
-- `as_("name")` 继续保留，兼容现有写法。
-- `alias<T>("name")` 用于需要复用的投影表达式，推荐在子查询和窗口函数中使用。
-- `it[alias]` 类型可感知。
-- `it["name"]` 是动态兜底。
-- 派生表可以暴露内层已选出的 KPojo 字段。
-- 派生表可以暴露内层 `select` 中声明的表达式别名。
-
-## 派生表 API
-
-### 基础 FROM 子查询
-
-```kotlin
-val rows = User()
-    .select { it.id + it.name + it.status }
-    .where { it.status == 1 }
-    .as_("active_users") { activeUsers ->
-        select { activeUsers.id + activeUsers.name }
-    }
-    .queryList()
-```
-
-期望 SQL：
-
-```sql
-SELECT active_users.id, active_users.name
-FROM (
-    SELECT id, name, status
-    FROM user
-    WHERE status = :status
-) active_users
-```
-
-不关心 SQL 中派生表别名时，可以省略字符串别名：
-
-```kotlin
-val rows = User()
-    .select { it.id + it.name + it.status }
-    .where { it.status == 1 }
-    .as_ { activeUsers ->
-        select { activeUsers.id + activeUsers.name }
-    }
-    .queryList()
-```
-
-需要复用派生表，或希望先把表源传给 `join` / `using` / raw SQL 互操作时，再显式创建
-`DerivedTable`：
-
-```kotlin
-val activeUsers = User()
-    .select { it.id + it.name + it.status }
-    .where { it.status == 1 }
-    .asTable("active_users")
-
-val rows = activeUsers
-    .select { it.id + it.name }
-    .queryList()
-```
-
-### 派生表外层过滤
-
-```kotlin
-val countAlias = alias<Long>("orderCount")
-
-val rows = Order()
-    .select {
-        it.userId + f.count(1).as_(countAlias)
-    }
-    .groupBy { it.userId }
-    .as_("oc") { oc ->
-        select {
-            oc.userId + oc[countAlias]
-        }
-        where {
-            oc[countAlias] > 10
-        }
-    }
-    .query()
-```
-
-### 派生表字段可见性
-
-如果内层选择了全部列：
-
-```kotlin
-User()
-    .select { it }
-    .as_ { u ->
-        select { u.id + u.name }
-    }
-```
-
-外层的 `it.id` 和 `it.name` 合法。
-
-如果内层只选择了部分列：
-
-```kotlin
-User()
-    .select { it.id }
-    .as_ { u ->
-        select { u.name }
-    }
-```
-
-应尽早失败：
-
-- 编译器插件能证明字段未投影时，给出编译期错误或警告。
-- 动态场景无法证明时，在 `DerivedSelectScope.select` 或 `DerivedTable.select` 运行期校验。
-
-表达式别名必须显式访问：
-
-```kotlin
-val total = alias<Long>("total")
-
-User()
-    .select { f.count(1).as_(total) }
-    .as_ { u ->
-        select { u[total] }
-    }
-```
-
-## SELECT 列表中的子查询
-
-标量子查询可以直接作为 select item：
-
-```kotlin
-val lastOrderAt = alias<LocalDateTime>("lastOrderAt")
-
 val rows = User()
     .select { u ->
-        u.id + u.name +
+        [
+            u.id,
+            u.name,
             Order()
-                .select { o -> f.max(o.createTime) }
-                .where { o -> o.userId == u.id }
-                .scalar<LocalDateTime>()
-                .as_(lastOrderAt)
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
     }
-    .query()
+    .where {
+        it.status == 1
+    }
+    .queryList()
 ```
 
-期望 SQL：
+语义：
+
+- `u` 是完整 `User`。
+- `Order().select { it.amount }` 作为 select item 出现时，默认按标量子查询处理。
+- `rows` 的元素类型由 FIR 插件根据 select 内容自动生成。
+- 返回投影类型至少包含 `id`、`name`、`lastOrderAmount` 三个字段。
+- `lastOrderAmount` 来自 `.as_("lastOrderAmount")`。
+- `where` 的 `it` 是生成上下文类，包含 `User` 全部列和 select 新增列，所以可以同时访问 `it.status` 与 `it.lastOrderAmount`。
+
+因此可以在普通 `where` 中同时过滤源字段和 select alias：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
+    }
+    .where {
+        it.status == 1 &&
+            it.lastOrderAmount > 100
+    }
+    .queryList()
+```
+
+如果当前数据库不能在同层 `WHERE` 中引用 select alias，Kronos 根据 `where` 是否引用新增投影列自动决定是否包外层派生查询；用户语法不变。
+
+如果需要显式类型提示，可以使用 Kotlin cast：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            (
+                Order()
+                    .select { it.amount }
+                    .where { it.userId == u.id }
+                    .orderBy { it.createTime.desc() }
+                    .limit(1) as BigDecimal
+            ).as_("lastOrderAmount")
+        ]
+    }
+    .queryList()
+```
+
+`limit(1) as BigDecimal` 中的 cast 是标量子查询类型提示，不改变 SQL，也不能绕过单列/单行校验。默认应根据子查询选择的字段或表达式推断类型。
+
+### limit 规则
+
+标量子查询必须能保证只返回一行。
+
+第一版采用保守规则：聚合且无 `groupBy` 的标量子查询可以不写 `.limit(1)`；其他非聚合标量子查询必须显式写 `.limit(1)`：
+
+```kotlin
+Order()
+    .select { it.amount }
+    .where { it.userId == u.id }
+    .orderBy { it.createTime.desc() }
+    .limit(1)
+```
+
+下面这种写法不应该被接受：
+
+```kotlin
+Order()
+    .select { it.amount }
+    .where { it.userId == u.id }
+```
+
+Kronos 不自动补 `.limit(1)`。
+
+原因：
+
+- 自动补 limit 会改变业务语义。
+- 如果没有 `orderBy`，最近、最大、最小等业务含义都不明确。
+- 标量子查询返回多行本来就是用户应该显式处理的问题。
+
+聚合且无 `groupBy` 的子查询可以不写 `.limit(1)`：
+
+```kotlin
+Order()
+    .select { f.max(it.amount) }
+    .where { it.userId == u.id }
+```
+
+唯一键证明可以后续增强，但不作为第一版主规则。
+
+### having 中的用法
+
+`having` 通常用于聚合结果过滤，可以访问 select alias / 聚合结果，并由 Kronos 决定是否需要自动 SQL 分层：
+
+```kotlin
+val rows = Order()
+    .select {
+        [
+            it.userId,
+            f.sum(it.amount).as_("totalAmount")
+        ]
+    }
+    .groupBy { it.userId }
+    .having {
+        it.totalAmount > 1000
+    }
+    .queryList()
+```
+
+这里 `.as_("totalAmount")` 在生成上下文类中生成 `totalAmount` 属性，所以 `having` 中可以写 `it.totalAmount`。
+
+### 期望 SQL
 
 ```sql
 SELECT
     u.id,
     u.name,
     (
-        SELECT MAX(o.create_time)
+        SELECT o.amount
         FROM orders o
         WHERE o.user_id = u.id
-    ) AS lastOrderAt
+        ORDER BY o.create_time DESC
+        LIMIT 1
+    ) AS lastOrderAmount
 FROM user u
+WHERE u.status = ?
 ```
 
-注意：
+如果 `where` 引用了 select alias，实际渲染时如果当前数据库不能在同层过滤 select alias，Kronos 可以自动包一层派生查询；用户语法不变。
 
-- 内层 `where` 必须能引用外层 `u`。
-- `scalar<R>()` 声明该子查询返回单列。
-- `scalar<R>()` 不保证只返回一行；多行时由数据库决定是报错还是按方言语义处理。
+### 当前确认
 
-## WHERE 子查询
+- 只使用 `select { ... }`。
+- 不需要声明投影 DTO。
+- 不需要 `select<User, UserOrderView>`。
+- 返回投影类型和后续子句使用的上下文类由 FIR 插件根据 select 内容生成。
+- `.as_("xxx")` 生成自动投影属性 `it.xxx`。
+- `where` 的 `it` 是生成上下文类，包含原 DTO 全部列和 select 新增列。
+- `where` 可以直接访问 select alias / 窗口结果；Kronos 根据引用情况自动决定是否包外层派生查询。
+- 子查询 select item 默认支持标量化。
+- 类型提示使用 `limit(1) as T`。
+- 聚合且无 `groupBy` 可不写 `.limit(1)`；其他非聚合标量子查询必须写 `.limit(1)`。
 
-### IN
+## 场景 2：WHERE / HAVING 中的 IN 与 NOT IN 子查询
+
+目标：用一个子查询结果集筛选当前查询，例如“查询有已支付订单的用户”、“查询不在黑名单中的用户”、“筛选聚合结果属于某个集合的分组”。
+
+### WHERE IN
+
+推荐使用 Kotlin 原生 `in`：
 
 ```kotlin
 val rows = User()
-    .select { it.id + it.name }
-    .where { u ->
-        u.id in Order()
-            .select { o -> o.userId }
-            .where { o -> o.status == 1 }
+    .select {
+        [
+            it.id,
+            it.name
+        ]
+    }
+    .where {
+        it.id in Order()
+            .select { it.userId }
+            .where { it.status == PAID }
+    }
+    .queryList()
+```
+
+语义：
+
+- `where` 的 `it` 是生成上下文类，包含 `User` 全部列和 select 新增列。
+- `Order().select { it.userId }` 是 `IN` 右侧的子查询。
+- 右侧子查询必须只选择一个字段或表达式。
+- `select { ... }` 后自动生成投影类型，返回结果只包含 `id`、`name`。
+
+期望 SQL：
+
+```sql
+SELECT u.id, u.name
+FROM user u
+WHERE u.id IN (
+    SELECT o.user_id
+    FROM orders o
+    WHERE o.status = ?
+)
+```
+
+### WHERE NOT IN
+
+推荐使用 Kotlin 原生 `!in`：
+
+```kotlin
+val rows = User()
+    .select {
+        [
+            it.id,
+            it.name
+        ]
+    }
+    .where {
+        it.id !in UserBlacklist()
+            .select { it.userId }
+            .where { it.enabled == true }
     }
     .queryList()
 ```
@@ -415,77 +284,328 @@ val rows = User()
 期望 SQL：
 
 ```sql
-SELECT id, name
-FROM user
-WHERE id IN (
-    SELECT user_id
-    FROM orders
-    WHERE status = :status
+SELECT u.id, u.name
+FROM user u
+WHERE u.id NOT IN (
+    SELECT b.user_id
+    FROM user_blacklist b
+    WHERE b.enabled = ?
 )
 ```
 
-### NOT IN
+### 源字段过滤不要求投影
+
+因为 `where` 的生成上下文类包含源 KPojo 全部列，过滤源字段不要求该字段出现在 select 列表中：
 
 ```kotlin
 val rows = User()
-    .select { it.id + it.name }
-    .where { u ->
-        u.id notIn Order()
-            .select { o -> o.userId }
-            .where { o -> o.cancelled == true }
+    .select {
+        [
+            it.id,
+            it.name
+        ]
+    }
+    .where {
+        it.status in UserStatusRule()
+            .select { it.allowedStatus }
+            .where { it.scene == "public" }
     }
     .queryList()
 ```
 
-### EXISTS
+### HAVING IN
+
+`having` 同样可以使用 `in`，并可访问聚合投影字段：
+
+```kotlin
+val rows = Order()
+    .select {
+        [
+            it.userId,
+            f.sum(it.amount).as_("totalAmount")
+        ]
+    }
+    .groupBy { it.userId }
+    .having {
+        it.totalAmount in VipLevel()
+            .select { it.minAmount }
+            .where { it.enabled == true }
+    }
+    .queryList()
+```
+
+这里 `it.totalAmount` 来自 `.as_("totalAmount")` 生成的自动投影属性。
+
+### 子查询选择多列
+
+普通 `IN` 右侧只能选择一列：
+
+```kotlin
+u.id in Order()
+    .select { it.userId }
+```
+
+多列匹配放到“元组 IN”场景，使用 `[]`：
+
+```kotlin
+[u.id, u.createTime] in Order()
+    .select { [it.userId, f.max(it.createTime)] }
+    .groupBy { it.userId }
+```
+
+### 当前确认
+
+- `IN` 使用 Kotlin 原生 `in`。
+- `NOT IN` 使用 Kotlin 原生 `!in`。
+- 右侧直接写 `KSelectable` 子查询，不引入 `inSubquery { ... }`。
+- 普通 `IN` 的右侧子查询必须只选择一列。
+- `where` 的 lambda 参数是生成上下文类，包含源 KPojo 全部列和 select 新增列。
+- `having` 可以访问聚合投影字段。
+- 元组 `IN` 不放在本场景，后续单独确认。
+
+## 场景 3：WHERE / HAVING 中的 EXISTS 与 NOT EXISTS 子查询
+
+目标：判断相关记录是否存在，例如“查询有已支付订单的用户”、“查询没有黑名单记录的用户”。
+
+### WHERE EXISTS
+
+推荐使用 `exists(query)`，子查询统一从 `select()` 进入：
 
 ```kotlin
 val rows = User()
-    .select { it.id + it.name }
+    .select {
+        [
+            it.id,
+            it.name
+        ]
+    }
     .where { u ->
         exists(
             Order()
-                .select { "1" }
-                .where { o -> o.userId == u.id && o.status == 1 }
+                .select()
+                .where { o ->
+                    o.userId == u.id &&
+                        o.status == PAID
+                }
         )
     }
     .queryList()
 ```
 
-### NOT EXISTS
+语义：
+
+- `where` 的 `u` 是生成上下文类，包含 `User` 全部列和 select 新增列。
+- `Order().select().where { ... }` 表示 `EXISTS` 的子查询来源。
+- 用户不需要写 `select { 1 }`；渲染时可以优化成 `EXISTS (SELECT 1 ...)`。
+- `exists(...)` 默认表达“是否存在满足条件的行”。
+
+期望 SQL：
+
+```sql
+SELECT u.id, u.name
+FROM user u
+WHERE EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE o.user_id = u.id
+      AND o.status = ?
+)
+```
+
+### WHERE NOT EXISTS
+
+否定使用 Kotlin 原生 `!exists(query)`：
 
 ```kotlin
 val rows = User()
-    .select { it.id + it.name }
+    .select {
+        [
+            it.id,
+            it.name
+        ]
+    }
     .where { u ->
-        notExists(
-            Order()
-                .select { "1" }
-                .where { o -> o.userId == u.id && o.status == 1 }
+        !exists(
+            UserBlacklist()
+                .select()
+                .where { b ->
+                    b.userId == u.id &&
+                        b.enabled == true
+                }
         )
     }
     .queryList()
 ```
+
+期望 SQL：
+
+```sql
+SELECT u.id, u.name
+FROM user u
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM user_blacklist b
+    WHERE b.user_id = u.id
+      AND b.enabled = ?
+)
+```
+
+### HAVING EXISTS
+
+`having` 中也可以使用 `exists`。如果需要引用聚合投影字段，可以通过自动投影属性访问：
+
+```kotlin
+val rows = User()
+    .select {
+        [
+            it.groupId,
+            f.count(it.id).as_("userCount")
+        ]
+    }
+    .groupBy { it.groupId }
+    .having { g ->
+        exists(
+            GroupLimit()
+                .select()
+                .where { l ->
+                    l.groupId == g.groupId &&
+                        l.minCount <= g.userCount
+                }
+        )
+    }
+    .queryList()
+```
+
+这里：
+
+- `g.groupId` 来自 `u.groupId` 生成的自动投影字段。
+- `g.userCount` 来自 `.as_("userCount")` 生成的自动投影字段。
+- `exists(...)` 的子查询可以引用外层 lambda 参数字段。
+
+### 带 select 的 query source
+
+`exists(...)` 也允许接收已经带条件的 query source，但仍然必须先调用 `select()`：
+
+```kotlin
+val paidOrders = Order()
+    .select()
+    .where { it.status == PAID }
+
+val rows = User()
+    .select {
+        [
+            it.id,
+            it.name
+        ]
+    }
+    .where { u ->
+        exists(paidOrders.where { it.userId == u.id })
+    }
+    .queryList()
+```
+
+在 `EXISTS` 语义中，select 列表不重要。主路径不要求手写 `select { 1 }`，但也不设计 `Order().where { ... }` 这种无 `select` 入口。
+
+### 当前确认
+
+- `EXISTS` 使用 `exists(query)`。
+- `NOT EXISTS` 使用 `!exists(query)`。
+- 不提供 `notExists(...)`。
+- `EXISTS` 子查询统一使用 `KPojo().select().where { ... }` 入口。
+- 不设计 `KPojo().where { ... }` 这种无 `select` 入口。
+- `exists(KPojo().select().where { ... })` 默认渲染为 `EXISTS (SELECT 1 FROM ... WHERE ...)`。
+- 如果传入带 `select { ... }` 的 query source，也允许，但 select 列表不影响 `EXISTS` 语义。
+- `where` 的 lambda 参数是生成上下文类，包含源 KPojo 全部列和 select 新增列。
+- `having` 可以访问聚合投影字段。
+- 相关子查询可以引用外层 lambda 参数字段。
+## 场景 4：WHERE / HAVING 中的标量比较、ANY / SOME / ALL
+
+目标：让字段或表达式与子查询结果比较，例如“价格大于平均价”、“分数大于任意历史分数”、“价格不高于同类所有价格”。
+
+本场景分两类：
+
+- 标量子查询比较：右侧子查询必须能保证只返回一行。
+- 量词比较：`ANY` / `SOME` / `ALL` 本来就是和一组值比较，不需要 `.limit(1)`。
 
 ### 标量子查询比较
 
+直接使用 Kotlin 比较运算符：
+
 ```kotlin
 val rows = User()
-    .select { it.id + it.score }
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            u.score
+        ]
+    }
     .where { u ->
         u.score > Score()
-            .select { s -> f.avg(s.score) }
-            .where { s -> s.groupId == u.groupId }
-            .scalar<BigDecimal>()
+            .select { f.avg(it.score) }
+            .where { it.groupId == u.groupId }
     }
     .queryList()
 ```
 
-### ANY / SOME / ALL
+这里右侧是聚合子查询，天然只返回一个值，因此不需要 `.limit(1)`。
+
+期望 SQL：
+
+```sql
+SELECT u.id, u.name, u.score
+FROM user u
+WHERE u.score > (
+    SELECT AVG(s.score)
+    FROM score s
+    WHERE s.group_id = u.group_id
+)
+```
+
+如果右侧不是“聚合且无 `groupBy`”，就必须显式写 `.limit(1)`：
 
 ```kotlin
 val rows = Product()
-    .select { it.id + it.price }
+    .select { p ->
+        [
+            p.id,
+            p.name,
+            p.price
+        ]
+    }
+    .where { p ->
+        p.price < ProductPrice()
+            .select { it.price }
+            .where { it.productId == p.id }
+            .orderBy { it.createdAt.desc() }
+            .limit(1)
+    }
+    .queryList()
+```
+
+下面这种写法不应该被接受：
+
+```kotlin
+p.price < ProductPrice()
+    .select { it.price }
+    .where { it.productId == p.id }
+```
+
+原因：`>`、`>=`、`<`、`<=`、`==`、`!=` 直接接 `KSelectable` 时，语义是“和一个标量值比较”，所以右侧必须能保证单行。
+
+### ANY
+
+`ANY` 使用 `any(query)`：
+
+```kotlin
+val rows = Product()
+    .select { p ->
+        [
+            p.id,
+            p.name,
+            p.price
+        ]
+    }
     .where { p ->
         p.price > any(
             ProductPrice()
@@ -496,9 +616,56 @@ val rows = Product()
     .queryList()
 ```
 
+期望 SQL：
+
+```sql
+SELECT p.id, p.name, p.price
+FROM product p
+WHERE p.price > ANY (
+    SELECT h.price
+    FROM product_price h
+    WHERE h.category_id = p.category_id
+)
+```
+
+`any(...)` 右侧是集合，不需要 `.limit(1)`。
+
+### SOME
+
+`SOME` 使用 `some(query)`，语义等同 `any(query)`：
+
 ```kotlin
 val rows = Product()
-    .select { it.id + it.price }
+    .select { p ->
+        [
+            p.id,
+            p.name,
+            p.price
+        ]
+    }
+    .where { p ->
+        p.price > some(
+            ProductPrice()
+                .select { it.price }
+                .where { it.categoryId == p.categoryId }
+        )
+    }
+    .queryList()
+```
+
+### ALL
+
+`ALL` 使用 `all(query)`：
+
+```kotlin
+val rows = Product()
+    .select { p ->
+        [
+            p.id,
+            p.name,
+            p.price
+        ]
+    }
     .where { p ->
         p.price <= all(
             ProductPrice()
@@ -509,1396 +676,1863 @@ val rows = Product()
     .queryList()
 ```
 
-`some(...)` 是 `any(...)` 的别名。
-
-### 元组 IN
-
-```kotlin
-val rows = Order()
-    .select { it.id + it.userId + it.createTime }
-    .where { o ->
-        tuple(o.userId, o.createTime) in Order()
-            .select { i -> i.userId + f.max(i.createTime) }
-            .groupBy { i -> i.userId }
-    }
-    .queryList()
-```
-
 期望 SQL：
 
 ```sql
-WHERE (user_id, create_time) IN (
-    SELECT user_id, MAX(create_time)
-    FROM orders
-    GROUP BY user_id
+SELECT p.id, p.name, p.price
+FROM product p
+WHERE p.price <= ALL (
+    SELECT h.price
+    FROM product_price h
+    WHERE h.category_id = p.category_id
 )
 ```
 
-元组 IN 需要按方言开关控制。若方言不支持 row-value expression，可以抛出不支持异常，
-或在能安全改写时转换为等价 EXISTS。
+`all(...)` 右侧是集合，不需要 `.limit(1)`。
 
-## HAVING 子查询
+### HAVING 中的用法
+
+`having` 中同样可以使用标量比较和量词比较：
 
 ```kotlin
-val rows = User()
-    .select { it.groupId + f.count(1).as_("cnt") }
-    .groupBy { it.groupId }
-    .having { u ->
-        f.count(1) > GroupLimit()
-            .select { it.minCount }
-            .where { it.groupId == u.groupId }
-            .scalar<Int>()
+val rows = Order()
+    .select {
+        [
+            it.userId,
+            f.sum(it.amount).as_("totalAmount")
+        ]
     }
-    .query()
-```
-
-`having` 与 `where` 共用子查询表达式能力。
-
-## ORDER BY 子查询
-
-SQL 允许在 `ORDER BY` 中使用表达式。当前 Kronos 排序主要基于字段，本设计扩展为可排序表达式：
-
-```kotlin
-val rows = User()
-    .select { it.id + it.name }
-    .orderBy { u ->
-        Order()
-            .select { o -> f.max(o.createTime) }
-            .where { o -> o.userId == u.id }
-            .scalar<LocalDateTime>()
-            .desc()
+    .groupBy { it.userId }
+    .having { g ->
+        g.totalAmount > UserQuota()
+            .select { it.minAmount }
+            .where { it.userId == g.userId }
+            .limit(1)
     }
     .queryList()
 ```
 
-实现上可以先让新表达式排序路径支持该能力，同时保留现有 `Field + SortType` 的排序路径。
-
-## JOIN 子查询
-
-### JOIN 派生表
+如果使用 `any` / `some` / `all`，则不需要 `.limit(1)`：
 
 ```kotlin
-val lastOrderAt = alias<LocalDateTime>("lastOrderAt")
-
-val lastOrder = Order()
+val rows = Order()
     .select {
-        it.userId + f.max(it.createTime).as_(lastOrderAt)
+        [
+            it.userId,
+            f.sum(it.amount).as_("totalAmount")
+        ]
     }
     .groupBy { it.userId }
-    .asTable("last_order")
+    .having { g ->
+        g.totalAmount > any(
+            UserQuota()
+                .select { it.minAmount }
+                .where { it.enabled == true }
+        )
+    }
+    .queryList()
+```
 
-val rows = User().leftJoin(lastOrder) { user, lo ->
-    on { user.id == lo.userId }
-    select { user.id + user.name + lo[lastOrderAt] }
-}.query()
+### 当前确认
+
+- 标量比较直接使用 Kotlin 运算符：`>`、`>=`、`<`、`<=`、`==`、`!=`。
+- `field > KSelectable` 这类写法表示标量子查询比较。
+- 标量子查询比较右侧必须能保证单行；非聚合标量子查询必须 `.limit(1)`。
+- 聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`。
+- `ANY` 使用 `any(query)`。
+- `SOME` 使用 `some(query)`，语义等同 `any(query)`。
+- `ALL` 使用 `all(query)`。
+- `any` / `some` / `all` 右侧是集合量词比较，不需要 `.limit(1)`。
+- `any` / `some` / `all` 右侧子查询必须只选择一列。
+- `where` 的 lambda 参数是生成上下文类，包含源 KPojo 全部列和 select 新增列；`having` 可以访问聚合投影字段。
+
+## 场景 5：元组 IN
+
+目标：用多个字段组成一个 row-value tuple，与子查询返回的多列结果进行匹配，例如“每个用户最新一笔订单”、“复合键存在性判断”。
+
+普通 `IN` 只允许右侧子查询选择一列；多列匹配使用 `[]` 字面量表达 SQL row-value tuple。
+
+### 基础语法
+
+推荐使用 `[...] in KSelectable`：
+
+```kotlin
+val rows = Order()
+    .select {
+        [
+            it.id,
+            it.userId,
+            it.createTime,
+            it.amount
+        ]
+    }
+    .where { o ->
+        [o.userId, o.createTime] in Order()
+            .select { i ->
+                [
+                    i.userId,
+                    f.max(i.createTime)
+                ]
+            }
+            .groupBy { it.userId }
+    }
+    .queryList()
 ```
 
 期望 SQL：
 
 ```sql
-SELECT user.id, user.name, last_order.lastOrderAt
-FROM user
-LEFT JOIN (
-    SELECT user_id, MAX(create_time) AS lastOrderAt
-    FROM orders
-    GROUP BY user_id
-) last_order ON user.id = last_order.user_id
+SELECT o.id, o.user_id, o.create_time, o.amount
+FROM orders o
+WHERE (o.user_id, o.create_time) IN (
+    SELECT i.user_id, MAX(i.create_time)
+    FROM orders i
+    GROUP BY i.user_id
+)
 ```
 
-### JOIN 嵌套派生表
+语义：
+
+- `[o.userId, o.createTime]` 是左侧 row-value tuple。
+- 右侧子查询必须选择两列，且顺序与左侧 tuple 一一对应。
+- tuple 元素数量必须与右侧 select 列数量一致。
+- tuple 元素类型应与右侧对应列类型兼容。
+
+### NOT IN
+
+否定使用 Kotlin 原生 `!in`：
 
 ```kotlin
-val rn = alias<Int>("rn")
-
-val latestOrder = Order()
+val rows = Order()
     .select {
-        it +
-            f.rowNumber()
-                .over {
-                    partitionBy(it.userId)
-                    orderBy(it.createTime.desc())
-                }
-                .as_(rn)
+        [
+            it.id,
+            it.userId,
+            it.productId
+        ]
     }
-    .as_("ranked_order") { ranked ->
-        select { ranked.id + ranked.userId + ranked.createTime }
-        where { ranked[rn] == 1 }
+    .where { o ->
+        [o.userId, o.productId] !in UserProductBlock()
+            .select { b ->
+                [
+                    b.userId,
+                    b.productId
+                ]
+            }
+            .where { it.enabled == true }
     }
-    .asTable("latest_order")
-
-val rows = User().join(latestOrder) { user, order ->
-    on { user.id == order.userId }
-    select { user.id + user.name + order.createTime.as_("lastOrderAt") }
-}.query()
+    .queryList()
 ```
 
-## 窗口函数 DSL
+期望 SQL：
 
-窗口函数是表达式，应可用于 `select`、派生表过滤、支持该语义的 `having` / `orderBy` 等位置。
+```sql
+SELECT o.id, o.user_id, o.product_id
+FROM orders o
+WHERE (o.user_id, o.product_id) NOT IN (
+    SELECT b.user_id, b.product_id
+    FROM user_product_block b
+    WHERE b.enabled = ?
+)
+```
+
+### HAVING 中的元组 IN
+
+`having` 中也可以使用 `[]` tuple：
+
+```kotlin
+val rows = Order()
+    .select { o ->
+        [
+            o.userId,
+            f.sum(o.amount).as_("totalAmount"),
+            f.count(o.id).as_("orderCount")
+        ]
+    }
+    .groupBy { it.userId }
+    .having {
+        [it.totalAmount, it.orderCount] in VipRule()
+            .select { r ->
+                [
+                    r.minAmount,
+                    r.minOrderCount
+                ]
+            }
+            .where { it.enabled == true }
+    }
+    .queryList()
+```
+
+### 与普通 IN 的边界
+
+单列场景不要使用 `[]` tuple：
+
+```kotlin
+u.id in Order()
+    .select { it.userId }
+```
+
+tuple IN 单元素不允许。下面这种写法不应该被接受：
+
+```kotlin
+[u.id] in Order()
+    .select { it.userId }
+```
+
+多列场景必须使用 `[]`，不能让普通 `in` 右侧选择多列：
+
+```kotlin
+[u.id, u.createTime] in Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime)
+        ]
+    }
+```
+
+下面这种写法不应该被接受：
+
+```kotlin
+u.id in Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime)
+        ]
+    }
+```
+
+### 当前确认
+
+- 元组 `IN` 使用 `[...] in KSelectable`。
+- 元组 `NOT IN` 使用 `[...] !in KSelectable`。
+- 不引入 `tuple(...)`、`tupleIn(...)` 或 `inTuple(...)`。
+- 在条件表达式左侧，`[...] in KSelectable` 表示 SQL row-value tuple，不是普通运行时 `List` 比较。
+- 左侧 tuple 元素数量必须大于 1；单元素 `[...] in query` 不允许。
+- 左侧 tuple 元素数量必须与右侧 select 列数量一致。
+- 左侧 tuple 元素类型必须与右侧 select 对应列类型兼容。
+- 单列 `IN` 继续使用场景 2 的普通 `field in KSelectable`。
+- 普通 `field in KSelectable` 右侧不能选择多列。
+## 场景 6：FROM / JOIN 派生查询
+
+目标：让已有查询结果作为派生表参与 `JOIN`，例如“用户关联最近一笔订单时间”、“订单关联聚合后的商品统计”。
+
+本场景保留现有 Kronos join 心智：主表写在前面，join 动词写在主表后面。
+
+不引入：
+
+- `[A, B].select { ... }`
+- `from(A, B) { ... }`
+- `.asTable("tmp")`
+
+### JOIN 派生查询
+
+派生查询可以直接作为 `join` / `leftJoin` / `rightJoin` 的目标：
+
+```kotlin
+val latestOrder = Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime).as_("lastOrderAt")
+        ]
+    }
+    .groupBy { it.userId }
+
+val rows = User().leftJoin(latestOrder) { user, order ->
+    on { user.id == order.userId }
+
+    select {
+        [
+            user.id,
+            user.name,
+            order.lastOrderAt
+        ]
+    }
+}.queryList()
+```
+
+语义：
+
+- `User()` 是主表。
+- `latestOrder` 是派生查询源。
+- `order` 不是 `Order`，而是 `latestOrder` 的自动投影类型。
+- `order.userId` 来自 `latestOrder` 的 `o.userId`。
+- `order.lastOrderAt` 来自 `.as_("lastOrderAt")`。
+- 用户不需要也不允许在主语法里写派生表 alias。
+
+期望 SQL：
+
+```sql
+SELECT
+    u.id,
+    u.name,
+    q.lastOrderAt
+FROM user u
+LEFT JOIN (
+    SELECT
+        o.user_id,
+        MAX(o.create_time) AS lastOrderAt
+    FROM orders o
+    GROUP BY o.user_id
+) q ON u.id = q.user_id
+```
+
+实际 SQL alias 由 Kronos 自动生成，例如 `_kq_0`；用户不感知。
+
+### 多表 JOIN
+
+现有多表 join 写法保持不变：
+
+```kotlin
+val rows = User().join(UserRelation(), UserRole()) { user, relation, role ->
+    on { user.id == relation.userId }
+    on { user.id == role.userId }
+
+    select {
+        [
+            user.id,
+            user.name,
+            relation.id.as_("relationId"),
+            role.role
+        ]
+    }
+}.queryList()
+```
+
+如果其中某个 join 目标是派生查询，对应 lambda 参数就是该派生查询的自动投影类型：
+
+```kotlin
+val roleCount = UserRole()
+    .select { r ->
+        [
+            r.userId,
+            f.count(r.id).as_("roleCount")
+        ]
+    }
+    .groupBy { it.userId }
+
+val rows = User().leftJoin(UserRelation(), roleCount) { user, relation, role ->
+    on { user.id == relation.userId }
+    on { user.id == role.userId }
+
+    select {
+        [
+            user.id,
+            user.name,
+            relation.id.as_("relationId"),
+            role.roleCount
+        ]
+    }
+}.queryList()
+```
+
+### JOIN 条件字段必须在派生查询投影中
+
+如果 join 条件需要使用派生查询字段，该字段必须出现在派生查询的 `select` 列表中。
+
+正确：
+
+```kotlin
+val latestOrder = Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime).as_("lastOrderAt")
+        ]
+    }
+    .groupBy { it.userId }
+
+User().leftJoin(latestOrder) { user, order ->
+    on { user.id == order.userId }
+    select {
+        [
+            user.id,
+            order.lastOrderAt
+        ]
+    }
+}
+```
+
+不正确：
+
+```kotlin
+val latestOrder = Order()
+    .select { o ->
+        [
+            f.max(o.createTime).as_("lastOrderAt")
+        ]
+    }
+    .groupBy { it.userId }
+
+User().leftJoin(latestOrder) { user, order ->
+    on { user.id == order.userId }
+    select {
+        [
+            user.id,
+            order.lastOrderAt
+        ]
+    }
+}
+```
+
+这里 `order.userId` 没有被 `latestOrder` 投影出来，因此不能在外层 join 条件中访问。
+
+### 对派生查询继续查询
+
+一个已经生成自动投影类型的 query source，可以继续链式查询：
+
+```kotlin
+val latestOrder = Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime).as_("lastOrderAt")
+        ]
+    }
+    .groupBy { it.userId }
+
+val rows = latestOrder
+    .where {
+        it.lastOrderAt != null
+    }
+    .select {
+        [
+            it.userId,
+            it.lastOrderAt
+        ]
+    }
+    .queryList()
+```
+
+这里 `latestOrder.where { ... }` 的 `it` 是 `latestOrder` 的自动投影类型。是否需要包一层派生查询由 Kronos 自动决定。
+
+### 派生查询作为主源继续 JOIN
+
+派生查询也可以作为 join 的主源，继续连接普通表或其他派生查询：
+
+```kotlin
+val latestOrder = Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime).as_("lastOrderAt")
+        ]
+    }
+    .groupBy { it.userId }
+
+val rows = latestOrder.leftJoin(User()) { order, user ->
+    on { order.userId == user.id }
+
+    select {
+        [
+            user.id,
+            user.name,
+            order.lastOrderAt
+        ]
+    }
+}.queryList()
+```
+
+语义：
+
+- `latestOrder` 是主 query source。
+- `order` 是 `latestOrder` 的自动投影类型。
+- `User()` 是 join 目标。
+- `user` 是完整 `User`。
+- 用户仍然不需要写派生表 alias。
+
+期望 SQL：
+
+```sql
+SELECT
+    u.id,
+    u.name,
+    q.lastOrderAt
+FROM (
+    SELECT
+        o.user_id,
+        MAX(o.create_time) AS lastOrderAt
+    FROM orders o
+    GROUP BY o.user_id
+) q
+LEFT JOIN user u ON q.user_id = u.id
+```
+
+派生查询也可以连接另一个派生查询：
+
+```kotlin
+val latestOrder = Order()
+    .select { o ->
+        [
+            o.userId,
+            f.max(o.createTime).as_("lastOrderAt")
+        ]
+    }
+    .groupBy { it.userId }
+
+val roleCount = UserRole()
+    .select { r ->
+        [
+            r.userId,
+            f.count(r.id).as_("roleCount")
+        ]
+    }
+    .groupBy { it.userId }
+
+val rows = latestOrder.leftJoin(roleCount) { order, role ->
+    on { order.userId == role.userId }
+
+    select {
+        [
+            order.userId,
+            order.lastOrderAt,
+            role.roleCount
+        ]
+    }
+}.queryList()
+```
+
+这里 `order` 和 `role` 都是各自派生查询的自动投影类型。
+
+### 当前确认
+
+- 保留现有 `KPojo().join(...)` / `leftJoin(...)` / `rightJoin(...)` 写法。
+- `KSelectable` 派生查询也可以作为 join 主源继续调用 `join(...)` / `leftJoin(...)` / `rightJoin(...)`。
+- `join` 目标可以是 `KPojo()`，也可以是 `KSelectable` 派生查询。
+- 如果 join 主源是 `KSelectable`，lambda 的第一个参数是该主源的自动投影类型。
+- 如果 join 目标是 `KPojo()`，lambda 参数是该 KPojo 类型。
+- 如果 join 目标是 `KSelectable`，lambda 参数是自动投影类型。
+- 派生查询字段只能访问它 select 出来的投影字段。
+- join 条件要用的派生查询字段必须出现在派生查询 select 列表里。
+- 不引入 `.asTable(...)`。
+- 不要求用户命名 SQL 表 alias。
+- SQL 表 alias 由 Kronos 自动生成。
+
+## 场景 7：窗口函数与自动 SQL 分层
+
+目标：支持 `ROW_NUMBER()`、聚合窗口、窗口 frame 等能力，并允许后续 `where` / `having` / `orderBy` 使用窗口投影字段。
+
+窗口能力不设计成 `rowNumber` 的特例，而设计成通用表达式修饰器机制：
+
+```kotlin
+表达式.over(...).as_("name")
+```
+
+也就是说，`f.rowNumber()`、`f.sum(o.amount)`、`f.count(o.id)` 都先是表达式；`.over(...)` 只是给表达式追加窗口修饰。
 
 ### ROW_NUMBER
 
-```kotlin
-val rn = alias<Int>("rn")
+推荐语法：
 
-User()
-    .select {
-        it.id +
+```kotlin
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            o.amount,
+            o.createTime,
             f.rowNumber()
-                .over {
-                    partitionBy(it.groupId)
-                    orderBy(it.createTime.desc())
-                }
-                .as_(rn)
+                .over(
+                    partitionBy = [o.userId],
+                    orderBy = [o.createTime.desc()]
+                )
+                .as_("rn")
+        ]
     }
-```
-
-### 聚合函数窗口化
-
-```kotlin
-val userTotal = alias<BigDecimal>("userTotal")
-
-Order()
-    .select {
-        it.id + it.amount +
-            f.sum(it.amount)
-                .over {
-                    partitionBy(it.userId)
-                }
-                .as_(userTotal)
+    .where {
+        it.rn <= 2
     }
+    .queryList()
 ```
 
-### 窗口 frame
+语义：
+
+- `f.rowNumber()` 是普通函数表达式。
+- `.over(...)` 是表达式修饰器，不是 `rowNumber` 专属 API。
+- `partitionBy = [...]` 表示窗口分区字段列表。
+- `orderBy = [...]` 表示窗口排序字段列表。
+- `.as_("rn")` 生成自动投影属性 `it.rn`。
+- `select { ... }` 后的 `where { it.rn <= 2 }` 使用自动投影类型。
+- 用户不需要声明 `val rn = alias<Int>("rn")`。
+- 用户不需要手写外层查询。
+
+期望 SQL：
+
+```sql
+SELECT q.id, q.user_id, q.amount, q.create_time, q.rn
+FROM (
+    SELECT
+        o.id,
+        o.user_id,
+        o.amount,
+        o.create_time,
+        ROW_NUMBER() OVER (
+            PARTITION BY o.user_id
+            ORDER BY o.create_time DESC
+        ) AS rn
+    FROM orders o
+) q
+WHERE q.rn <= 2
+```
+
+如果当前数据库不能在同层 `WHERE` 引用窗口投影，Kronos 自动包一层派生查询；用户语法不变。
+
+### 先过滤源表，再过滤窗口结果
+
+如果要过滤源表字段，当前阶段需要把该字段放进投影：
 
 ```kotlin
-val rollingAmount = alias<BigDecimal>("rollingAmount")
-
-Order()
-    .select {
-        it.id + it.amount +
-            f.sum(it.amount)
-                .over {
-                    partitionBy(it.userId)
-                    orderBy(it.createTime.asc())
-                    rows {
-                        between(2.preceding, currentRow)
-                    }
-                }
-                .as_(rollingAmount)
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            o.status,
+            o.amount,
+            o.createTime,
+            f.rowNumber()
+                .over(
+                    partitionBy = [o.userId],
+                    orderBy = [o.createTime.desc()]
+                )
+                .as_("rn")
+        ]
     }
+    .where {
+        it.status == PAID &&
+            it.rn <= 2
+    }
+    .queryList()
 ```
 
-### 窗口 DSL 类型
+如果后续还要在自动投影上使用源字段，该字段必须被 select 出来：
 
 ```kotlin
-class WindowBuilder<T : KPojo> {
-    fun partitionBy(vararg fields: Any?)
-    fun orderBy(vararg fields: Pair<Any?, SortType>)
-    fun rows(block: WindowFrameBuilder.() -> Unit)
-    fun range(block: WindowFrameBuilder.() -> Unit)
-    fun groups(block: WindowFrameBuilder.() -> Unit)
-}
-
-class WindowFrameBuilder {
-    val unboundedPreceding: FrameBoundary
-    val currentRow: FrameBoundary
-    val unboundedFollowing: FrameBoundary
-
-    val Int.preceding: FrameBoundary
-    val Int.following: FrameBoundary
-
-    fun between(start: FrameBoundary, end: FrameBoundary)
-}
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            o.status,
+            o.amount,
+            f.rowNumber()
+                .over(
+                    partitionBy = [o.userId],
+                    orderBy = [o.createTime.desc()]
+                )
+                .as_("rn")
+        ]
+    }
+    .where {
+        it.status == PAID &&
+            it.rn <= 2
+    }
+    .queryList()
 ```
 
-## UPDATE 子查询
+### 聚合窗口
 
-### WHERE EXISTS
+聚合函数也通过同一套 `.over(...)` 机制窗口化：
 
 ```kotlin
-User()
-    .update()
-    .set { it.status = 2 }
-    .where { u ->
-        exists(
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            o.amount,
+            f.sum(o.amount)
+                .over(
+                    partitionBy = [o.userId]
+                )
+                .as_("userTotal")
+        ]
+    }
+    .where {
+        it.userTotal > 1000
+    }
+    .queryList()
+```
+
+这里 `.over(...)` 不是 `sum` 特例，而是表达式修饰器。未来 `f.avg(...)`、`f.count(...)` 等聚合表达式也应复用同一机制。
+
+### Window frame
+
+带 frame 的窗口也使用 `.over(...)` 参数表达：
+
+```kotlin
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            o.amount,
+            f.sum(o.amount)
+                .over(
+                    partitionBy = [o.userId],
+                    orderBy = [o.createTime.asc()],
+                    rows = between(2.preceding, currentRow)
+                )
+                .as_("rollingAmount")
+        ]
+    }
+    .where {
+        it.rollingAmount > 500
+    }
+    .queryList()
+```
+
+### ORDER BY 使用窗口投影
+
+窗口投影字段可以继续用于 `orderBy`：
+
+```kotlin
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            f.rowNumber()
+                .over(
+                    partitionBy = [o.userId],
+                    orderBy = [o.createTime.desc()]
+                )
+                .as_("rn")
+        ]
+    }
+    .orderBy {
+        it.rn.asc()
+    }
+    .queryList()
+```
+
+### 表达式修饰器机制
+
+`.over(...)` 应作为通用表达式修饰器，而不是窗口函数专属特例。目标是让后续能力复用同一套表达式链：
+
+```kotlin
+f.count(o.id)
+    .filter { it.status == PAID }
+    .as_("paidCount")
+```
+
+```kotlin
+f.sum(o.amount)
+    .filter { it.status == PAID }
+    .over(
+        partitionBy = [o.userId]
+    )
+    .as_("paidUserTotal")
+```
+
+本场景只确认 `.over(...)` 语法；`.filter(...)`、`.withinGroup(...)` 等作为未来表达式修饰器方向，不在本场景展开。
+
+### 当前确认
+
+- 窗口函数通过表达式链表达：`f.xxx(...).over(...).as_("name")`。
+- `.over(...)` 是通用表达式修饰器，不是 `rowNumber` 特例。
+- `partitionBy = [...]` 使用字段列表。
+- `orderBy = [...]` 使用排序表达式列表。
+- `.as_("xxx")` 生成自动投影属性 `it.xxx`。
+- 后续 `where` / `having` / `orderBy` 通过自动投影类型访问窗口结果。
+- 过滤窗口结果时，Kronos 自动决定是否包外层派生查询。
+- 不要求用户手写外层查询。
+- 不要求用户声明 alias token。
+- 如果后续要使用源字段，该字段必须在投影中出现，或者在 `select` 前完成过滤。
+- 表达式修饰器机制后续可扩展到 `.filter(...)`、`.withinGroup(...)` 等能力。
+
+## 场景 8：ORDER BY 中的子查询或表达式排序
+
+目标：支持按自动投影字段、标量子查询、函数表达式排序，同时保持现有 `orderBy` DSL 风格。
+
+排序项规则：
+
+- 单个排序项可以直接返回。
+- 多个排序项使用 `[]` 字面量。
+- 不使用 `(a + b).asc()` 表示多字段排序；多字段排序写成 `[a.asc(), b.desc()]`。
+- `+` 只表示真实表达式运算或函数表达式，不表示排序项组合。
+
+### 使用自动投影字段排序
+
+如果排序字段已经在 `select` 投影中，推荐直接使用自动投影字段：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
             Order()
-                .select { "1" }
-                .where { o -> o.userId == u.id && o.status == 1 }
-        )
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
     }
-    .execute()
+    .orderBy {
+        it.lastOrderAmount.desc()
+    }
+    .queryList()
 ```
 
-### SET 标量子查询
+语义：
+
+- `.as_("lastOrderAmount")` 生成自动投影属性 `it.lastOrderAmount`。
+- `select { ... }` 后的 `orderBy` 使用自动投影类型。
+- 单个排序项可以省略 `[]`。
+
+多个排序项使用 `[]`：
+
+```kotlin
+val rows = User()
+    .select {
+        [
+            it.id,
+            it.firstName,
+            it.lastName
+        ]
+    }
+    .orderBy {
+        [
+            it.lastName.asc(),
+            it.firstName.asc()
+        ]
+    }
+    .queryList()
+```
+
+### 标量子查询排序
+
+标量子查询排序推荐先作为投影表达式命名，再通过自动投影字段排序：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
+    }
+    .orderBy {
+        it.lastOrderAmount.desc()
+    }
+    .queryList()
+```
+
+语义：
+
+- `Order().select { it.amount }...limit(1)` 是标量子查询投影。
+- `.as_("lastOrderAmount")` 生成自动投影字段。
+- `orderBy` 使用自动投影字段排序。
+- 标量子查询排序仍然遵守单行规则；非聚合标量子查询必须 `.limit(1)`。
+- 单个排序项可以省略 `[]`。
+
+多个排序项可以混合普通字段、函数表达式和标量子查询投影：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            f.length(u.name).as_("nameLength"),
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
+    }
+    .orderBy {
+        [
+            it.name.asc(),
+            it.nameLength.desc(),
+            it.lastOrderAmount.desc()
+        ]
+    }
+    .queryList()
+```
+
+### 函数表达式排序
+
+函数表达式也可以作为排序项：
+
+```kotlin
+val rows = User()
+    .select {
+        [
+            it.id,
+            it.name,
+            f.length(it.name).as_("nameLength")
+        ]
+    }
+    .orderBy {
+        it.nameLength.desc()
+    }
+    .queryList()
+```
+
+多个函数或字段排序项使用 `[]`：
+
+```kotlin
+val rows = User()
+    .select {
+        [
+            it.id,
+            it.name,
+            f.length(it.name).as_("nameLength")
+        ]
+    }
+    .orderBy {
+        [
+            it.nameLength.desc(),
+            it.id.asc()
+        ]
+    }
+    .queryList()
+```
+
+### 窗口投影排序
+
+窗口函数投影排序复用场景 7 的自动投影字段：
+
+```kotlin
+val rows = Order()
+    .select { o ->
+        [
+            o.id,
+            o.userId,
+            f.rowNumber()
+                .over(
+                    partitionBy = [o.userId],
+                    orderBy = [o.createTime.desc()]
+                )
+                .as_("rn")
+        ]
+    }
+    .orderBy {
+        it.rn.asc()
+    }
+    .queryList()
+```
+
+### 当前确认
+
+- `orderBy { item }` 表示单个排序项。
+- `orderBy { [item1, item2] }` 表示多个排序项。
+- 单个排序项允许省略 `[]`。
+- 多个排序项必须使用 `[]`。
+- 多字段排序不使用 `(a + b).asc()`。
+- `+` 只表示真实表达式运算或函数表达式。
+- 带投影的 `select { ... }` 后的 `orderBy` 使用自动投影类型。
+- 标量子查询可以作为排序项。
+- 标量子查询排序必须满足单行规则；非聚合标量子查询必须 `.limit(1)`。
+- 函数表达式可以作为排序项。
+- 窗口投影排序通过自动投影字段完成。
+
+## 场景 9：UPDATE SET 标量子查询
+
+目标：在 `UPDATE SET` 中使用标量子查询给字段赋值，例如同步最近订单金额、统计订单数、写入最近登录时间。
+
+本场景不引入 `setSubquery(...)` 等新 API。`set { field = KSelectable }` 直接表示 `SET field = (SELECT ...)`。
+
+### 基础语法
 
 ```kotlin
 User()
     .update()
     .set { u ->
-        u.lastOrderAt = Order()
-            .select { o -> f.max(o.createTime) }
-            .where { o -> o.userId == u.id }
-            .scalar<LocalDateTime>()
+        u.lastOrderAmount = Order()
+            .select { it.amount }
+            .where { it.userId == u.id }
+            .orderBy { it.createTime.desc() }
+            .limit(1)
     }
-    .where { it.status == 1 }
+    .where { it.status == ACTIVE }
     .execute()
 ```
 
-### SET 中使用统计子查询
+语义：
+
+- `set` lambda 参数 `u` 是正在更新的 `User`。
+- `Order().select { it.amount }...limit(1)` 是右侧标量子查询。
+- 右侧子查询可以引用被更新表字段，例如 `u.id`。
+- `where` 限制被更新的行。
+- 非聚合右侧子查询必须 `.limit(1)`。
+
+期望 SQL：
+
+```sql
+UPDATE user u
+SET last_order_amount = (
+    SELECT o.amount
+    FROM orders o
+    WHERE o.user_id = u.id
+    ORDER BY o.create_time DESC
+    LIMIT 1
+)
+WHERE u.status = ?
+```
+
+### 聚合标量子查询
+
+聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`：
 
 ```kotlin
 UserStats()
     .update()
     .set { s ->
         s.orderCount = Order()
-            .select { o -> f.count(1) }
-            .where { o -> o.userId == s.userId }
-            .scalar<Long>()
+            .select { f.count(it.id) }
+            .where { it.userId == s.userId }
     }
-    .where { it.userId in activeUserIds }
+    .where { it.enabled == true }
     .execute()
 ```
 
-### UPDATE FROM / JOIN UPDATE
+期望 SQL：
 
-`UPDATE ... FROM`、`UPDATE ... JOIN` 的方言差异较大。第一阶段不建议抽象 joined update，
-优先用相关标量子查询和 `EXISTS` 覆盖可移植场景。
+```sql
+UPDATE user_stats s
+SET order_count = (
+    SELECT COUNT(o.id)
+    FROM orders o
+    WHERE o.user_id = s.user_id
+)
+WHERE s.enabled = ?
+```
 
-后续可考虑：
+### 多字段赋值
+
+同一个 `set` block 中可以给多个字段赋值，其中每个右侧子查询独立遵守标量子查询规则：
+
+```kotlin
+UserStats()
+    .update()
+    .set { s ->
+        s.orderCount = Order()
+            .select { f.count(it.id) }
+            .where { it.userId == s.userId }
+
+        s.lastOrderAmount = Order()
+            .select { it.amount }
+            .where { it.userId == s.userId }
+            .orderBy { it.createTime.desc() }
+            .limit(1)
+    }
+    .where { it.enabled == true }
+    .execute()
+```
+
+### 可选类型提示
+
+通常不需要显式类型提示；如果右侧表达式类型无法推断，可以使用 Kotlin cast：
 
 ```kotlin
 User()
     .update()
-    .from(Order().select { ... }.asTable("o")) { o ->
-        set { u -> u.lastOrderAt = o.createTime }
-        where { u.id == o.userId }
+    .set { u ->
+        u.lastOrderAmount = (
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1) as BigDecimal
+        )
     }
+    .where { it.status == ACTIVE }
+    .execute()
 ```
 
-该能力应作为后续阶段处理。
+`limit(1) as T` 只是类型提示，不是必需语法，不改变 SQL，也不能绕过单列/单行校验。
 
-## DELETE 子查询
+### 不在本场景处理的 joined update
 
-### WHERE EXISTS
+`UPDATE ... FROM`、`UPDATE ... JOIN` 方言差异较大，不作为本场景主语法。
+
+如果能用相关标量子查询表达，优先使用：
 
 ```kotlin
 User()
-    .delete()
+    .update()
+    .set { u ->
+        u.lastOrderAmount = Order()
+            .select { it.amount }
+            .where { it.userId == u.id }
+            .orderBy { it.createTime.desc() }
+            .limit(1)
+    }
+    .where { it.status == ACTIVE }
+    .execute()
+```
+
+### 当前确认
+
+- `set { field = KSelectable }` 表示 `SET field = (SELECT ...)`。
+- 右侧子查询必须只选择一列。
+- 右侧非聚合标量子查询必须 `.limit(1)`；唯一键证明后续增强，不作为第一版主规则。
+- 聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`。
+- `set` lambda 参数是被更新的源 KPojo。
+- 右侧子查询可以引用 `set` lambda 参数字段，表示相关更新。
+- `where` 用于限制被更新行。
+- 类型提示使用 `limit(1) as T`，只作为类型提示。
+- 不引入 `setSubquery(...)`。
+- `UPDATE FROM` / joined update 不作为本场景主语法。
+
+## 场景 10：UPDATE / DELETE WHERE 子查询
+
+目标：在 `UPDATE` / `DELETE` 的 `where` 条件中使用子查询，例如批量禁用黑名单用户、删除无效会话、按统计条件更新状态。
+
+本场景不新增 API，直接复用前面已经确认的条件表达式：
+
+- `in` / `!in`
+- `exists(...)` / `!exists(...)`
+- 标量比较
+- `any(...)` / `some(...)` / `all(...)`
+- `[...] in KSelectable` 元组 IN
+
+### UPDATE WHERE IN
+
+```kotlin
+User()
+    .update()
+    .set { u ->
+        u.status = INACTIVE
+    }
+    .where { u ->
+        u.id in UserBlacklist()
+            .select { it.userId }
+            .where { it.enabled == true }
+    }
+    .execute()
+```
+
+期望 SQL：
+
+```sql
+UPDATE user u
+SET status = ?
+WHERE u.id IN (
+    SELECT b.user_id
+    FROM user_blacklist b
+    WHERE b.enabled = ?
+)
+```
+
+### UPDATE WHERE EXISTS
+
+```kotlin
+User()
+    .update()
+    .set { u ->
+        u.status = VIP
+    }
     .where { u ->
         exists(
-            UserBan()
-                .select { "1" }
-                .where { b -> b.userId == u.id }
+            Order()
+                .select { it.id }
+                .where { o ->
+                    o.userId == u.id &&
+                        o.amount > 1000
+                }
         )
     }
     .execute()
 ```
 
-### WHERE IN
+期望 SQL：
+
+```sql
+UPDATE user u
+SET status = ?
+WHERE EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE o.user_id = u.id
+      AND o.amount > ?
+)
+```
+
+### UPDATE WHERE 标量比较
 
 ```kotlin
-Order()
+Product()
+    .update()
+    .set { p ->
+        p.hot = true
+    }
+    .where { p ->
+        p.price > ProductPrice()
+            .select { f.avg(it.price) }
+            .where { it.categoryId == p.categoryId }
+    }
+    .execute()
+```
+
+这里右侧是聚合子查询，天然单行，不需要 `.limit(1)`。
+
+非聚合标量子查询仍然必须满足单行规则：
+
+```kotlin
+Product()
+    .update()
+    .set { p ->
+        p.hot = true
+    }
+    .where { p ->
+        p.price > ProductPrice()
+            .select { it.price }
+            .where { it.productId == p.id }
+            .orderBy { it.createdAt.desc() }
+            .limit(1)
+    }
+    .execute()
+```
+
+### DELETE WHERE EXISTS
+
+```kotlin
+UserSession()
     .delete()
-    .where { o ->
-        o.userId in User()
+    .where { s ->
+        exists(
+            User()
+                .select { it.id }
+                .where { u ->
+                    u.id == s.userId &&
+                        u.status == INACTIVE
+                }
+        )
+    }
+    .execute()
+```
+
+期望 SQL：
+
+```sql
+DELETE FROM user_session s
+WHERE EXISTS (
+    SELECT 1
+    FROM user u
+    WHERE u.id = s.user_id
+      AND u.status = ?
+)
+```
+
+### DELETE WHERE NOT IN
+
+```kotlin
+OrderDraft()
+    .delete()
+    .where { d ->
+        d.userId !in User()
             .select { it.id }
-            .where { it.status == 0 }
+            .where { it.status == ACTIVE }
     }
     .execute()
 ```
 
-### DELETE USING / 多表 DELETE
-
-多表删除同样存在明显方言差异。第一阶段只要求 `where` 中支持子查询，覆盖可移植场景。
-
-后续 API 可考虑：
+### DELETE WHERE 元组 IN
 
 ```kotlin
-Order()
+OrderDraft()
     .delete()
-    .using(User().select { it.id }.where { it.status == 0 }.asTable("u")) { u ->
-        where { o -> o.userId == u.id }
-    }
-```
-
-## INSERT 子查询
-
-### INSERT VALUES 中的标量子查询
-
-```kotlin
-UserStats(userId = userId)
-    .insert()
-    .value {
-        it.orderCount = Order()
-            .select { o -> f.count(1) }
-            .where { o -> o.userId == userId }
-            .scalar<Long>()
-    }
-    .execute()
-```
-
-这需要新增 insert value override API。如果第一阶段优先做 `INSERT SELECT`，该能力可以后置。
-
-### INSERT SELECT
-
-```kotlin
-UserArchive()
-    .insert {
-        it.id + it.name + it.lastOrderAt
-    }
-    .select(
-        User()
-            .select { u ->
-                u.id + u.name +
-                    Order()
-                        .select { o -> f.max(o.createTime) }
-                        .where { o -> o.userId == u.id }
-                        .scalar<LocalDateTime>()
-                        .as_("lastOrderAt")
+    .where { d ->
+        [d.userId, d.productId] in UserProductBlock()
+            .select { b ->
+                [
+                    b.userId,
+                    b.productId
+                ]
             }
-            .where { it.status == 0 }
-    )
-    .execute()
-```
-
-期望 SQL：
-
-```sql
-INSERT INTO user_archive (id, name, last_order_at)
-SELECT id, name, (
-    SELECT MAX(create_time)
-    FROM orders
-    WHERE orders.user_id = user.id
-) AS lastOrderAt
-FROM user
-WHERE status = :status
-```
-
-### INSERT SELECT 来源为派生表
-
-```kotlin
-UserArchive()
-    .insert { it.id + it.name }
-    .select(
-        User()
-            .select { it.id + it.name }
-            .where { it.status == 0 }
-            .as_("inactive_users") { inactiveUsers ->
-                select { inactiveUsers.id + inactiveUsers.name }
-            }
-    )
-    .execute()
-```
-
-## UPSERT 子查询
-
-原生 upsert 方言差异较大，但表达式能力应共用。
-
-### 冲突更新中使用标量子查询
-
-```kotlin
-UserStats(userId = userId)
-    .upsert { it.userId + it.orderCount }
-    .on { it.userId }
-    .onConflict()
-    .set {
-        it.orderCount = Order()
-            .select { o -> f.count(1) }
-            .where { o -> o.userId == userId }
-            .scalar<Long>()
+            .where { it.enabled == true }
     }
     .execute()
 ```
 
-如果 `UpsertClause` 当前没有暴露 `set`，应在 update SET 子查询能力稳定后再补。
+### 当前确认
 
-### UPSERT INSERT SELECT
+- `update().where { ... }` 的 lambda 参数是被更新的源 KPojo。
+- `delete().where { ... }` 的 lambda 参数是被删除的源 KPojo。
+- 条件子查询可以引用该源 KPojo 字段，形成相关子查询。
+- `IN` / `NOT IN` 复用 `in` / `!in`。
+- `EXISTS` / `NOT EXISTS` 复用 `exists(...)` / `!exists(...)`。
+- 标量比较复用 `field > KSelectable` 等比较表达式。
+- `ANY` / `SOME` / `ALL` 复用 `any(...)` / `some(...)` / `all(...)`。
+- 元组 IN 复用 `[...] in KSelectable`。
+- 标量子查询仍然必须满足单行规则；非聚合标量子查询必须 `.limit(1)`。
+- 不设计 `deleteJoin` / multi-table delete 作为主语法。
+- 不设计 `updateFrom` / joined update 作为本场景主语法。
 
-后续 API：
+## 场景 11：INSERT SELECT
 
-```kotlin
-UserStats()
-    .upsert { it.userId + it.orderCount }
-    .select(
-        Order()
-            .select { it.userId + f.count(1).as_("orderCount") }
-            .groupBy { it.userId }
-    )
-    .on { it.userId }
-    .onConflict()
-    .execute()
-```
+目标：把一个 query source 的结果插入到目标表，例如归档用户、生成快照表、把统计结果写入汇总表。
 
-## DDL 与子查询
-
-DDL 支持需要保守，因为不同数据库语法差异较大。
-
-### CREATE VIEW AS SELECT
+本场景使用 query source 消费式语法：
 
 ```kotlin
-Kronos.dataSource().view
-    .create("active_user_order_view")
-    .as_(
-        User().join(Order()) { u, o ->
-            on { u.id == o.userId }
-            select { u.id + u.name + o.id.as_("orderId") }
-            where { u.status == 1 }
-        }
-    )
+KSelectable.insert<Target> { ... }
 ```
 
-期望 SQL：
+不使用 `Target().insert { ... }.select(query)`，因为源查询通常需要先完整构造，再作为数据源插入目标表。
 
-```sql
-CREATE VIEW active_user_order_view AS
-SELECT ...
-```
-
-### CREATE TABLE AS SELECT
-
-```kotlin
-Kronos.dataSource().table
-    .create("active_user_snapshot")
-    .as_(
-        User()
-            .select { it.id + it.name + it.status }
-            .where { it.status == 1 }
-    )
-```
-
-期望 SQL：
-
-```sql
-CREATE TABLE active_user_snapshot AS
-SELECT id, name, status
-FROM user
-WHERE status = :status
-```
-
-方言注意：
-
-- MySQL、PostgreSQL、SQLite、Oracle、SQL Server 都有类似 CTAS 的能力，但语法和限制不同。
-- CTAS 通常不会保留索引、主键、注释、KPojo 注解等元数据，需要明确写入文档。
-- `syncTable` 不应使用子查询，仍然保持基于 schema diff 的表结构同步。
-
-### CREATE MATERIALIZED VIEW
-
-后续按方言开关支持：
-
-```kotlin
-Kronos.dataSource().view
-    .createMaterialized("daily_user_stats")
-    .as_(
-        UserStatsDaily().select { it.date + it.userCount }
-    )
-```
-
-### CHECK 约束与生成列
-
-不建议支持 CHECK 约束中的子查询。多数数据库禁止或语义复杂。生成列应走表达式 DSL，
-不要走子查询 DSL，除非某个方言明确支持。
-
-## CTE 支持
-
-CTE 是具名子查询，也应该来自现有 `select()`。
-
-### 单个 CTE
-
-```kotlin
-val activeUsers = User()
-    .select { it.id + it.name }
-    .where { it.status == 1 }
-    .cte("active_users")
-
-val rows = activeUsers
-    .select { it.id + it.name }
-    .queryList()
-```
-
-期望 SQL：
-
-```sql
-WITH active_users AS (
-    SELECT id, name
-    FROM user
-    WHERE status = :status
-)
-SELECT id, name
-FROM active_users
-```
-
-### 多个 CTE
-
-```kotlin
-val activeUsers = User()
-    .select { it.id + it.name }
-    .where { it.status == 1 }
-    .cte("active_users")
-
-val orderCounts = Order()
-    .select { it.userId + f.count(1).as_("cnt") }
-    .groupBy { it.userId }
-    .cte("order_counts")
-
-val rows = activeUsers.join(orderCounts) { u, oc ->
-    on { u.id == oc.userId }
-    select { u.id + u.name + oc["cnt"] }
-}.query()
-```
-
-### 递归 CTE
-
-递归 CTE 需要 union 和列名列表：
-
-```kotlin
-val tree = Category()
-    .select { it.id + it.parentId + it.name }
-    .where { it.parentId.isNull }
-    .unionAll(
-        Category().join(cteRef<Category>("tree")) { c, t ->
-            on { c.parentId == t.id }
-            select { c.id + c.parentId + c.name }
-        }
-    )
-    .cte("tree", recursive = true, columns = listOf("id", "parent_id", "name"))
-
-tree.select { it.id + it.parentId + it.name }.queryList()
-```
-
-递归 CTE 可作为后续阶段。第一版完整子查询支持只要求非递归 CTE。
-
-## Raw SQL 兼容
-
-Raw SQL 继续保留：
+### 基础语法
 
 ```kotlin
 User()
-    .select { it.id + "ROW_NUMBER() OVER (PARTITION BY group_id ORDER BY id) AS rn" }
-    .where { "rn = :rn".asSql() }
-    .patch("rn" to 1)
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            u.status,
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
+    }
+    .where {
+        it.status == ACTIVE
+    }
+    .insert<UserArchive> {
+        [
+            it.id,
+            it.name,
+            it.lastOrderAmount,
+            null
+        ]
+    }
+    .execute()
 ```
 
-但常见子查询和窗口函数应由类型化 DSL 覆盖，降低用户写 raw SQL 的频率。
+语义：
 
-## Core AST 设计
+- `User().select { ... }.where { ... }` 是源 query。
+- `insert<UserArchive>` 指定目标表。
+- `insert` lambda 的 `it` 是源 query 的自动投影类型。
+- lambda 返回插入值列表。
+- 插入值按顺序写入 `UserArchive` 的可插入字段序列。
+- `null` 是合法插入值。
+- `status` 可以只用于过滤，不必出现在 `insert` 值列表中。
 
-当前 AST 已有一些基础节点：
+期望 SQL：
 
-- `SelectStatement`
-- `SubqueryExpression`
-- `SpecialExpression.InSubqueryExpression`
-- `SubqueryTable`
-- `TableReferenceImpl.SubqueryTableReference`
-- `FunctionCall(over = WindowClause?)`
-- `WindowClause`
-- `WindowFrame`
+```sql
+INSERT INTO user_archive (id, name, last_order_amount, archived_by)
+SELECT
+    q.id,
+    q.name,
+    q.lastOrderAmount,
+    NULL
+FROM (
+    SELECT
+        u.id,
+        u.name,
+        u.status,
+        (
+            SELECT o.amount
+            FROM orders o
+            WHERE o.user_id = u.id
+            ORDER BY o.create_time DESC
+            LIMIT 1
+        ) AS lastOrderAmount
+    FROM user u
+) q
+WHERE q.status = ?
+```
 
-本设计建议统一并补齐这些能力。
+实际是否包派生查询由 Kronos 根据投影过滤、方言能力和渲染需要决定；用户语法不变。
 
-### 新增或调整的 AST 节点
+### 按顺序映射
+
+`insert<Target> { [...] }` 按目标表可插入字段顺序映射，不按 alias 或字段名匹配。
 
 ```kotlin
-sealed interface QueryExpression : Expression
-
-data class ScalarSubqueryExpression(
-    val query: SelectStatement
-) : QueryExpression
-
-data class ExistsSubqueryExpression(
-    val query: SelectStatement,
-    val not: Boolean = false
-) : QueryExpression
-
-data class QuantifiedSubqueryExpression(
-    val left: Expression,
-    val operator: SqlOperator,
-    val quantifier: Quantifier,
-    val query: SelectStatement
-) : QueryExpression
-
-enum class Quantifier {
-    ANY,
-    SOME,
-    ALL
-}
+User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            u.email
+        ]
+    }
+    .insert<UserArchive> {
+        [
+            it.id,
+            it.name,
+            it.email
+        ]
+    }
+    .execute()
 ```
 
-如果继续沿用现有 `SubqueryExpression` sealed class，也可以在其中补齐缺失行为，不必平行新增。
-
-元组表达式：
-
-```kotlin
-data class TupleExpression(
-    val expressions: List<Expression>
-) : Expression
-```
-
-派生表：
-
-```kotlin
-data class DerivedTableReference(
-    val query: SelectStatement,
-    val alias: String,
-    val projectedFields: List<ProjectionField>
-) : TableReference
-```
-
-CTE：
-
-```kotlin
-data class WithClause(
-    val items: List<CteItem>,
-    val recursive: Boolean = false
-)
-
-data class CteItem(
-    val name: String,
-    val columns: List<String>? = null,
-    val query: SelectStatement
-)
-```
-
-`SelectStatement`：
-
-```kotlin
-class SelectStatement(
-    var selectList: MutableList<SelectItem> = mutableListOf(),
-    var from: TableReference,
-    var where: Expression? = null,
-    var groupBy: MutableList<Expression>? = null,
-    var having: Expression? = null,
-    var orderBy: MutableList<OrderByItem>? = null,
-    var limit: LimitClause? = null,
-    var distinct: Boolean = false,
-    var lock: PessimisticLock? = null,
-    var with: WithClause? = null
-) : Statement
-```
-
-`InsertStatement` 的来源需要从单一 values 扩展为 values/select：
-
-```kotlin
-sealed interface InsertSource {
-    data class Values(val values: List<Expression>) : InsertSource
-    data class Select(val query: SelectStatement) : InsertSource
-}
-
-data class InsertStatement(
-    val table: TableReference,
-    val columns: List<ColumnReference>,
-    val source: InsertSource,
-    val conflictResolver: ConflictResolver? = null
-) : Statement
-```
-
-为了兼容旧代码，可以保留旧 `values` 构造器或提供 adapter。
-
-### 投影元数据
-
-派生表需要记录投影信息：
-
-```kotlin
-data class ProjectionField(
-    val sourceField: Field? = null,
-    val alias: QueryAlias<*>? = null,
-    val aliasName: String? = null,
-    val expression: Expression,
-    val kotlinType: String? = null
-)
-```
-
-用途：
-
-- 校验外层 `it.field` 是否来自内层投影。
-- 解析 `it[alias]`。
-- 渲染 select item 别名和带表别名的列引用。
-- 支持 `queryList<T>()`、`query()` 的结果映射。
-
-## DSL 运行时类型
-
-### QueryAlias
-
-```kotlin
-data class QueryAlias<T>(
-    val name: String,
-    val kotlinType: KClass<*>? = null
-)
-```
-
-### DerivedTable
-
-```kotlin
-class DerivedTable<T : KPojo>(
-    val alias: String,
-    val source: KSelectable<T>,
-    val statement: SelectStatement,
-    val projections: List<ProjectionField>
-)
-```
-
-`DerivedTable<T>` 不应实现 `KPojo`。它不是持久化实体，而是表源。select/join DSL
-应接受它作为 table-like receiver。
-
-### DerivedRow
-
-外层 lambda 的接收对象可以抽象为：
-
-```kotlin
-class DerivedRow<T : KPojo>(
-    val table: DerivedTable<T>,
-    val pojoProxy: T
-) {
-    operator fun <R> get(alias: QueryAlias<R>): R? = null
-    operator fun get(alias: String): Any? = null
-}
-```
-
-但为了保留 `it.id` 这种干净写法，编译器插件可以继续把原始 `T` 传入 lambda，
-只是在字段解析阶段把字段渲染为派生表别名下的列。别名访问通过扩展 operator 提供：
-
-```kotlin
-operator fun <T : KPojo, R> T.get(alias: QueryAlias<R>): R? = null
-operator fun <T : KPojo> T.get(alias: String): Any? = null
-```
-
-这些 operator 只在派生表 DSL 作用域内有意义。
-
-## Clause API 调整
-
-### SelectClause
-
-```kotlin
-fun <T : KPojo> SelectClause<T>.as_(
-    block: DerivedSelectScope<T>.(T) -> Unit
-): SelectClause<T>
-
-fun <T : KPojo> SelectClause<T>.as_(
-    alias: String,
-    block: DerivedSelectScope<T>.(T) -> Unit
-): SelectClause<T>
-
-fun <T : KPojo> SelectClause<T>.asTable(alias: String? = null): DerivedTable<T>
-fun <T : KPojo, R> SelectClause<T>.scalar(): ScalarSubquery<R>
-fun <T : KPojo> SelectClause<T>.exists(): ExistsSubquery
-
-fun <T : KPojo> DerivedTable<T>.select(fields: ToSelect<T, Any?> = null): SelectClause<T>
-fun <T : KPojo> DerivedTable<T>.where(condition: ToFilter<T, Boolean?>): SelectClause<T>
-```
-
-`as_ { ... }` 是首选的嵌入式 FROM 子查询入口。它内部生成 `DerivedTable`，并把块内的
-`select`、`where`、`groupBy`、`having`、`orderBy` 等调用收集到外层 `SelectClause`。
-`asTable(...)` 只在需要复用表源、传入 join/using、或显式控制 SQL alias 时使用。
-`DerivedTable.select` 返回的 clause 必须把 `from` 设置为子查询表引用。
-
-### DerivedSelectScope
-
-```kotlin
-class DerivedSelectScope<T : KPojo> {
-    fun select(fields: ToSelect<T, Any?> = null): Unit
-    fun where(condition: ToFilter<T, Boolean?>): Unit
-    fun groupBy(fields: ToSelect<T, Any?>): Unit
-    fun having(condition: ToFilter<T, Boolean?>): Unit
-    fun orderBy(fields: ToSort<T, Any?>): Unit
-    fun page(pageIndex: Int, pageSize: Int): Unit
-    fun limit(limit: Int): Unit
-}
-```
-
-`DerivedSelectScope` 的职责是把外层查询 clauses 写在同一个 lambda 里，避免
-`selectFrom(tmp)` 或 `tmp.select()` 成为用户写 FROM 子查询时的默认心智模型。
-
-### SelectFrom 与 UnionClause
-
-联表查询和 union 查询也使用同一套派生表入口，避免因为来源不同而出现第二套语法：
-
-```kotlin
-fun <T : KPojo> SelectFrom<T>.as_(
-    block: DerivedSelectScope<T>.(T) -> Unit
-): SelectClause<T>
-
-fun <T : KPojo> SelectFrom<T>.as_(
-    alias: String,
-    block: DerivedSelectScope<T>.(T) -> Unit
-): SelectClause<T>
-
-fun <T : KPojo> SelectFrom<T>.asTable(alias: String? = null): DerivedTable<T>
-fun <T : KPojo, R> SelectFrom<T>.scalar(): ScalarSubquery<R>
-fun <T : KPojo> SelectFrom<T>.exists(): ExistsSubquery
-
-fun UnionClause.as_(
-    block: DerivedSelectScope<Nothing>.(Nothing) -> Unit
-): SelectClause<Nothing>
-
-fun UnionClause.as_(
-    alias: String,
-    block: DerivedSelectScope<Nothing>.(Nothing) -> Unit
-): SelectClause<Nothing>
-
-fun UnionClause.asTable(alias: String? = null): DerivedTable<Nothing>
-fun <R> UnionClause.scalar(): ScalarSubquery<R>
-fun UnionClause.exists(): ExistsSubquery
-```
-
-`SelectFrom` 派生出的 row scope 应暴露 join select list 中真实投影的字段与别名。若 join select
-中存在同名列，外层必须通过显式 alias 或字符串列名访问，不能静默选择其中一个。
-
-### Join
-
-新增 overload：
-
-```kotlin
-fun <T1 : KPojo, T2 : KPojo> T1.join(
-    derived: DerivedTable<T2>,
-    block: SelectFrom2<T1, T2>.() -> Unit
-): SelectFrom2<T1, T2>
-
-fun <T1 : KPojo, T2 : KPojo> DerivedTable<T1>.join(
-    derived: DerivedTable<T2>,
-    block: SelectFrom2<T1, T2>.() -> Unit
-): SelectFrom2<T1, T2>
-```
-
-`SelectFrom` 内部应允许每个参与方是基础 `KPojo` 表，也可以是 `DerivedTable`。
-
-### 条件 DSL
-
-新增辅助函数：
-
-```kotlin
-fun exists(select: KSelectable<*>): Boolean
-fun notExists(select: KSelectable<*>): Boolean
-
-infix fun <T> T?.notIn(select: KSelectable<*>): Boolean
-fun <T> any(select: KSelectable<*>): QuantifiedSubquery<T>
-fun <T> some(select: KSelectable<*>): QuantifiedSubquery<T>
-fun <T> all(select: KSelectable<*>): QuantifiedSubquery<T>
-
-fun tuple(vararg values: Any?): TupleValue
-```
-
-现有 Kotlin `in` 操作符应支持：
-
-```kotlin
-u.id in UserRole().select { it.userId }
-tuple(u.orgId, u.userId) in UserRole().select { it.orgId + it.userId }
-```
-
-### Set
-
-允许右值为表达式：
-
-```kotlin
-u.lastOrderAt = Order().select { ... }.scalar<LocalDateTime>()
-```
-
-当前 `KTableForSet.fieldParamMap` 存的是普通 value，需要泛化：
-
-```kotlin
-sealed interface SetValue {
-    data class ParameterValue(val value: Any?) : SetValue
-    data class ExpressionValue(val expression: Expression) : SetValue
-}
-```
-
-### Insert
-
-新增 `INSERT SELECT`：
-
-```kotlin
-fun <T : KPojo> T.insert(fields: ToSelect<T, Any?> = null): InsertClause<T>
-fun <T : KPojo> InsertClause<T>.select(source: KSelectable<*>): InsertClause<T>
-```
-
-调用 `.select(source)` 后，`InsertStatement.source` 使用 `InsertSource.Select`。
-
-## 编译器插件设计
-
-不要新增一套顶层 query transformer。应扩展现有 transformer，并抽出共享表达式分析层。
-
-### 新增 ExpressionAnalysis
-
-文件：
+如果目标表可插入字段顺序是：
 
 ```text
-kronos-compiler-plugin/src/main/kotlin/com/kotlinorm/compiler/core/ExpressionAnalysis.kt
+id, name, email
 ```
 
-职责：
+则上面的值按顺序写入：
 
-- 将属性访问转换为 `ColumnReference` 或 `Field`。
-- 将函数调用转换为 `FunctionField` 或 `FunctionCall`。
-- 将 `scalar()`、`exists()`、`notExists()`、`any()`、`all()` 转换为子查询 AST 表达式。
-- 解析派生表别名访问 `it[alias]` 和 `it["alias"]`。
-- 解析 tuple 表达式。
-- 解析窗口函数 `.over { ... }`。
-- 保留外层作用域字段引用，用于相关子查询。
+```text
+it.id    -> id
+it.name  -> name
+it.email -> email
+```
 
-### 查询作用域栈
+`.as_("xxx")` 不作为目标字段映射规则。按顺序映射时，通常不需要为了 insert 目标字段重命名表达式。
 
-嵌套子查询需要引用外层字段：
+### 目标字段序列与校验
+
+`insert<Target> { [...] }` 的目标字段序列来自 Kronos 对 `Target` 的可插入字段规则，而不是源 query 的字段名或 alias。
+
+第一版按以下规则校验：
+
+- 忽略字段、非数据库字段、不参与 insert 的字段不进入目标字段序列。
+- 数据库自增主键默认不进入目标字段序列，除非 Kronos 现有 insert 规则允许显式插入。
+- 创建时间、更新时间、逻辑删除、乐观锁等策略字段是否进入序列，以 Kronos 现有 insertable 字段规则为准。
+- 带数据库默认值的字段如果不进入目标字段序列，则由数据库或 Kronos 策略处理；如果进入目标字段序列，用户必须在 `[...]` 中提供对应值，可以显式写 `null`。
+- `[...]` 的值数量必须与目标字段序列数量完全一致。
+- 每个值的类型必须与同位置目标字段兼容。
+
+这意味着顺序映射是强校验，不做“少给几个字段自动跳过默认值字段”的隐式匹配。
+
+### 插入 null
+
+`null` 可以作为插入值：
 
 ```kotlin
-User().select { u ->
-    Order()
-        .select { f.count(1) }
-        .where { o -> o.userId == u.id }
-        .scalar<Long>()
+User()
+    .select { u ->
+        [
+            u.id,
+            u.name
+        ]
+    }
+    .insert<UserArchive> {
+        [
+            it.id,
+            it.name,
+            null
+        ]
+    }
+    .execute()
+```
+
+这表示第三个目标可插入字段写入 `NULL`。
+
+### 插入函数表达式
+
+插入值可以是源投影字段，也可以是函数表达式：
+
+```kotlin
+User()
+    .select { u ->
+        [
+            u.id,
+            u.name
+        ]
+    }
+    .insert<UserArchive> {
+        [
+            it.id,
+            it.name,
+            f.now()
+        ]
+    }
+    .execute()
+```
+
+### 插入聚合查询结果
+
+聚合查询结果也可以作为源：
+
+```kotlin
+Order()
+    .select { o ->
+        [
+            o.userId,
+            f.count(o.id).as_("orderCount"),
+            f.sum(o.amount).as_("totalAmount")
+        ]
+    }
+    .groupBy { it.userId }
+    .insert<UserOrderSummary> {
+        [
+            it.userId,
+            it.orderCount,
+            it.totalAmount
+        ]
+    }
+    .execute()
+```
+
+### 插入 JOIN 查询结果
+
+join 查询结果也可以作为源，只要它实现 `KSelectable`：
+
+```kotlin
+User().join(Order()) { user, order ->
+    on { user.id == order.userId }
+
+    select {
+        [
+            user.id,
+            user.name,
+            order.id.as_("orderId"),
+            order.amount
+        ]
+    }
 }
+    .insert<UserOrderArchive> {
+        [
+            it.id,
+            it.name,
+            it.orderId,
+            it.amount
+        ]
+    }
+    .execute()
 ```
 
-编译器插件需要维护 query scope stack：
+SQL 层面等价于：
+
+```sql
+INSERT INTO user_order_archive (...)
+SELECT u.id, u.name, o.id, o.amount
+FROM user u
+JOIN orders o ON u.id = o.user_id
+```
+
+join 查询的最终投影就是 insert 的源投影。
+
+### 当前确认
+
+- `KSelectable.insert<Target> { ... }` 表示 `INSERT INTO Target SELECT ...`。
+- `Target` 必须是 KPojo。
+- `insert` lambda 的 `it` 是源 query 的自动投影类型。
+- lambda 返回插入值列表。
+- 插入值按目标表可插入字段顺序映射。
+- 不按 alias 或字段名映射。
+- 目标字段序列来自 Kronos 现有可插入字段规则。
+- 忽略字段、非数据库字段、不参与 insert 的字段不进入目标字段序列。
+- 策略字段、默认值字段是否进入序列，以 Kronos 现有 insertable 字段规则为准。
+- `null` 可以作为插入值。
+- 插入值可以是源投影字段、常量、`null`、函数表达式、标量子查询表达式。
+- 插入值数量必须与目标表可插入字段数量一致。
+- 插入值类型必须按顺序与目标字段兼容。
+- 源 query 可以保留用于 `where` / `orderBy` 的字段，不必全部插入。
+- 普通 select、join select、union 等只要实现 `KSelectable`，都可以作为 insert source。
+- 不引入 `insertSelect(...)`。
+- 暂不设计显式目标字段列表语法；如果字段顺序风险需要收敛，后续单独讨论。
+
+## 场景 12：UPSERT 中的子查询表达式
+
+目标：在 upsert 冲突更新阶段使用子查询表达式，例如更新统计字段、最近订单金额、最近登录时间。
+
+本场景不引入 upsert 专属的 `setSubquery(...)`。`upsert().set { field = KSelectable }` 直接表示冲突更新时使用标量子查询赋值。
+
+### 基础语法
 
 ```kotlin
-data class QueryScope(
-    val tableAlias: String?,
-    val pojoType: IrType,
-    val tableKind: TableKind,
-    val projections: List<ProjectionField>
+UserStats(userId = userId)
+    .upsert()
+    .on { it.userId }
+    .set { s ->
+        s.orderCount = Order()
+            .select { f.count(it.id) }
+            .where { it.userId == s.userId }
+
+        s.lastOrderAmount = Order()
+            .select { it.amount }
+            .where { it.userId == s.userId }
+            .orderBy { it.createTime.desc() }
+            .limit(1)
+    }
+    .execute()
+```
+
+语义：
+
+- `on { it.userId }` 表示冲突键。
+- `set { ... }` 表示冲突后更新哪些字段。
+- `set` 右侧可以是标量子查询。
+- `set` lambda 参数 `s` 是目标 KPojo。
+- 右侧子查询可以引用目标 KPojo 字段，例如 `s.userId`。
+- 聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`。
+- 非聚合标量子查询必须 `.limit(1)`。
+
+SQL 形态由方言决定：
+
+```sql
+-- PostgreSQL
+INSERT INTO user_stats (...)
+VALUES (...)
+ON CONFLICT (user_id)
+DO UPDATE SET
+    order_count = (
+        SELECT COUNT(o.id)
+        FROM orders o
+        WHERE o.user_id = user_stats.user_id
+    ),
+    last_order_amount = (
+        SELECT o.amount
+        FROM orders o
+        WHERE o.user_id = user_stats.user_id
+        ORDER BY o.create_time DESC
+        LIMIT 1
+    )
+```
+
+```sql
+-- MySQL
+INSERT INTO user_stats (...)
+VALUES (...)
+ON DUPLICATE KEY UPDATE
+    order_count = (
+        SELECT COUNT(o.id)
+        FROM orders o
+        WHERE o.user_id = user_stats.user_id
+    ),
+    last_order_amount = (
+        SELECT o.amount
+        FROM orders o
+        WHERE o.user_id = user_stats.user_id
+        ORDER BY o.create_time DESC
+        LIMIT 1
+    )
+```
+
+用户 DSL 不暴露这些方言差异。
+
+### 插入值与冲突更新值不同
+
+插入初始值和冲突更新值可以不同：
+
+```kotlin
+UserStats(
+    userId = userId,
+    orderCount = 0,
+    lastOrderAmount = null
 )
+    .upsert()
+    .on { it.userId }
+    .set { s ->
+        s.orderCount = Order()
+            .select { f.count(it.id) }
+            .where { it.userId == s.userId }
 
-enum class TableKind {
-    BASE_TABLE,
-    DERIVED_TABLE,
-    CTE
-}
+        s.lastOrderAmount = Order()
+            .select { it.amount }
+            .where { it.userId == s.userId }
+            .orderBy { it.createTime.desc() }
+            .limit(1)
+    }
+    .execute()
 ```
 
-解析规则：
+这里对象属性提供插入时的初始值，`set` block 提供冲突更新时的值。
 
-1. 优先匹配当前 lambda 参数。
-2. 再匹配最近的外层 query scope。
-3. 如果 receiver 属于外层 scope，生成列引用，不生成参数。
-4. 如果表达式是普通运行时值，则生成参数。
+### 可选类型提示
 
-### SelectTransformer
-
-扩展 `FieldAnalysis`，或让它委托给 `ExpressionAnalysis` 处理表达式 select item。
-
-必须支持：
+与其他标量子查询场景一致，可以使用 Kotlin cast 作为可选类型提示：
 
 ```kotlin
-f.rowNumber().over { ... }.as_(rn)
-Order().select { ... }.scalar<Long>().as_("orderCount")
-it[alias]
-it["alias"]
-```
-
-当前 `FunctionField` 路径不足以表达窗口函数，因为窗口函数需要 `over`、`filter`、frame 等元数据。
-可选方案：
-
-1. 扩展 `FunctionField`：
-   ```kotlin
-   var window: WindowSpec? = null
-   var filterCriteria: Criteria? = null
-   ```
-2. 推荐新增 `ExpressionField`：
-   ```kotlin
-   class ExpressionField(
-       val expression: Expression,
-       alias: String?
-   ) : Field(alias ?: expression.defaultName)
-   ```
-
-建议：新能力使用 `ExpressionField`，`FunctionField` 保持兼容。
-
-### ConditionTransformer
-
-当前 `ConditionAnalysis` 输出 `Criteria`。这对简单字段条件有效，但 `EXISTS` 没有 field，
-继续强塞进 `Criteria(field, type, value)` 会越来越别扭。
-
-第一阶段：
-
-- 新增 `ConditionType.EXISTS`、`NOT_EXISTS`、`IN_SUBQUERY`、`NOT_IN_SUBQUERY`、
-  `SCALAR_COMPARE`、`TUPLE_IN`、`QUANTIFIED_COMPARE`。
-- 将子查询 AST 存进 `Criteria.value`。
-- 更新 `CriteriaToAstConverter`。
-
-第二阶段：
-
-- 新 DSL 条件块直接返回 `Expression`。
-- `Criteria` 保留为旧 DSL 的兼容 IR。
-
-推荐最终模型：
-
-```kotlin
-sealed interface ConditionIr
-data class CriteriaIr(val criteria: Criteria) : ConditionIr
-data class ExpressionIr(val expression: Expression) : ConditionIr
-```
-
-### SetTransformer
-
-增强赋值分析：
-
-```kotlin
-it.lastOrderAt = Order().select { ... }.scalar<LocalDateTime>()
-```
-
-右侧应识别为 `ScalarSubqueryExpression`，不能当成普通参数。
-
-### SortTransformer
-
-支持表达式排序：
-
-```kotlin
-orderBy {
-    Order().select { f.max(it.createTime) }
-        .where { o -> o.userId == it.id }
-        .scalar<LocalDateTime>()
-        .desc()
-}
-```
-
-保留现有字段排序逻辑。
-
-### Symbols 和 Constants
-
-新增符号：
-
-- `DerivedTable`
-- `QueryAlias`
-- `ScalarSubquery`
-- `ExistsSubquery`
-- `QuantifiedSubquery`
-- `ExpressionField`
-- `WindowBuilder`
-- `WindowFrameBuilder`
-- `alias`
-- `exists`
-- `notExists`
-- `any`
-- `some`
-- `all`
-- `tuple`
-- `scalar`
-- `as_` 的 alias 与 derived table overload
-- `get(QueryAlias)` 和 `get(String)` operator
-
-## 运行时构建与参数处理
-
-嵌套子查询需要共享参数命名逻辑。当前 clause builder 多处使用 mutable map 收集参数，
-子查询嵌套后必须避免参数名冲突。
-
-引入：
-
-```kotlin
-class QueryBuildContext(
-    val parameterValues: MutableMap<String, Any?> = mutableMapOf(),
-    private val counters: MutableMap<String, Int> = mutableMapOf()
-) {
-    fun bind(baseName: String, value: Any?): Parameter.NamedParameter
-    fun child(prefix: String? = null): QueryBuildContext
-}
-```
-
-规则：
-
-- 所有嵌套 statement builder 接收同一个 `QueryBuildContext`。
-- 如果外层和内层都绑定 `:id`，第二个变成 `:id@1`。
-- 渲染出的 SQL 必须使用重命名后的参数。
-- 参数后处理仍尽量使用字段元数据。
-- 对别名字段和表达式字段，无法找到字段元数据时直接使用原值。
-
-示例：
-
-```kotlin
-User(id = 1)
-    .select()
-    .where { u ->
-        exists(
-            Order(id = 1)
-                .select { "1" }
-                .where { o -> o.id == 1 && o.userId == u.id }
+UserStats(userId = userId)
+    .upsert()
+    .on { it.userId }
+    .set { s ->
+        s.lastOrderAmount = (
+            Order()
+                .select { it.amount }
+                .where { it.userId == s.userId }
+                .orderBy { it.createTime.desc() }
+                .limit(1) as BigDecimal
         )
     }
+    .execute()
 ```
 
-可能绑定为：
+### 当前确认
 
-```text
-:id      -> 外层 user id
-:id@1    -> 内层 order id
-```
+- `upsert().set { field = KSelectable }` 表示冲突更新时使用标量子查询赋值。
+- 右侧子查询必须只选择一列。
+- 右侧非聚合标量子查询必须 `.limit(1)`；唯一键证明后续增强，不作为第一版主规则。
+- 聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`。
+- `set` lambda 参数是目标 KPojo。
+- 子查询可以引用目标 KPojo 字段，表示相关子查询。
+- `on { ... }` 只表示冲突键，不承载子查询条件。
+- 类型提示使用 `limit(1) as T`，只作为类型提示。
+- 方言差异由 Kronos 处理，DSL 不暴露。
+- 不引入 upsert 专属的 `setSubquery(...)`。
 
-## SQL 渲染
+## 场景 13：CREATE TABLE AS SELECT
 
-### 派生表
+目标：基于一个 `KSelectable` 查询结果创建目标表，即 `CREATE TABLE ... AS SELECT ...`。
 
-```sql
-(SELECT ...) AS alias
-```
-
-别名和标识符按方言引用规则渲染。
-
-### 标量子查询
-
-```sql
-(SELECT ...)
-```
-
-### EXISTS
-
-```sql
-EXISTS (SELECT ...)
-NOT EXISTS (SELECT ...)
-```
-
-### IN 子查询
-
-```sql
-expr IN (SELECT ...)
-expr NOT IN (SELECT ...)
-```
-
-### 量词比较
-
-```sql
-expr > ANY (SELECT ...)
-expr <= ALL (SELECT ...)
-```
-
-方言注意：
-
-- PostgreSQL 支持 `ANY` / `ALL`。
-- MySQL 支持 `ANY` / `SOME` / `ALL`。
-- SQLite 支持有限，不支持时抛出方言特性异常。
-- SQL Server 和 Oracle 支持常见量词比较，但必须补测试。
-
-### 窗口函数
-
-```sql
-ROW_NUMBER() OVER (
-    PARTITION BY ...
-    ORDER BY ...
-    ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-)
-```
-
-当前 `FunctionCall(over = WindowClause?)` 已经接近目标。需要确保：
-
-- `FunctionManager.renderFunctionCall` 不丢失 `over`。
-- 各 function builder 要么复用统一窗口渲染逻辑，要么至少不能丢弃 `WindowClause.frame`。
-- 注册 `ROW_NUMBER`、`RANK`、`DENSE_RANK`、`LAG`、`LEAD`、`FIRST_VALUE`、
-  `LAST_VALUE`、`NTILE` 等函数，并按方言判断支持情况。
-
-## 方言兼容矩阵
-
-目标矩阵：
-
-| 功能 | MySQL | PostgreSQL | SQLite | SQL Server | Oracle |
-| --- | --- | --- | --- | --- | --- |
-| FROM 派生表 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| JOIN 派生表 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| EXISTS | 支持 | 支持 | 支持 | 支持 | 支持 |
-| IN 子查询 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| 标量子查询 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| ANY / SOME / ALL | 支持 | 支持 | 有限 | 支持 | 支持 |
-| 元组 IN | 支持 | 支持 | 有限 | 有限 | 支持 |
-| 窗口函数 | MySQL 8+ | 支持 | 3.25+ | 支持 | 支持 |
-| INSERT SELECT | 支持 | 支持 | 支持 | 支持 | 支持 |
-| CTAS | 支持 | 支持 | 支持 | 变体 | 支持 |
-| CREATE VIEW AS | 支持 | 支持 | 支持 | 支持 | 支持 |
-
-当能力依赖数据库版本时，应给出清晰异常：
+本场景不新增 `createTableAs(...)`，也不提供 `createView(...)`。它扩展现有 DDL 入口：
 
 ```kotlin
-UnsupportedSqlFeatureException(
-    dbType = DBType.Mysql,
-    feature = "window functions",
-    requirement = "MySQL 8.0+"
-)
+dataSource.table.createTable(target)
+dataSource.table.createTable(target, query)
 ```
 
-## 结果映射
+其中：
 
-派生表查询可以返回：
+- `createTable(target)` 保持现有语义：按 KPojo 创建表。
+- `createTable(target, query)` 表示基于 query 执行 CTAS。
 
-- `query()` 的 Map。
-- `queryList<T>()`，前提是 select alias 能匹配目标 KPojo 或 DTO 字段。
-- 现有 typed query 支持的 DTO 映射。
-
-示例：
+### 基础语法
 
 ```kotlin
-data class UserWithRank(
-    val id: Int,
-    val groupCol: String,
-    val rn: Int
-)
-
-val rows = T()
-    .select { ... f.rowNumber().as_("rn") }
-    .as_ { x ->
-        select { x.id + x.groupCol + x["rn"] }
+val activeUsers = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            u.status
+        ]
     }
-    .queryList<UserWithRank>()
-```
-
-如果现有 type-parameter fixer 已支持非 KPojo DTO 映射，则可以直接复用。否则先文档化为
-map-first 使用方式。
-
-## 校验规则
-
-尽量编译期校验：
-
-- `scalar()` 只能用于恰好选择一个表达式的查询。
-- `exists()` 可用于任意 select。
-- `IN subquery` 应选择一个表达式，除非左侧是 tuple。
-- tuple 左侧元素数量必须与子查询 select list 数量一致。
-- 派生表字段访问必须引用内层已投影字段。
-- 窗口 `orderBy` 必须是排序表达式。
-- 窗口 frame 边界必须符合 SQL 规则。
-
-运行期兜底校验：
-
-- 动态字符串 alias。
-- 条件化 select list。
-- 原生 SQL select item。
-- 跨模块 KPojo 元数据在插件中不可见的场景。
-
-## 测试计划
-
-### Core AST 渲染测试
-
-补充：
-
-- `ScalarSubqueryExpression`
-- `ExistsSubqueryExpression`
-- `InSubqueryExpression`
-- `QuantifiedSubqueryExpression`
-- `TupleExpression`
-- `DerivedTableReference`
-- `WithClause`
-- `InsertSource.Select`
-- 带 partition/order/frame 的窗口函数
-
-覆盖方言：
-
-- MySQL renderer
-- PostgreSQL renderer
-- SQLite renderer
-- SQL Server renderer
-- Oracle renderer
-
-### ORM Clause 测试
-
-补充 SQL 和参数测试：
-
-- `select().as_ { x -> select { ... } }`
-- `select().as_("tmp") { x -> select { ... } }`
-- `select().asTable("tmp").select()`
-- 带 alias 字段的派生表
-- 相关 `exists`
-- select list 中的相关标量子查询
-- IN 子查询
-- NOT EXISTS
-- HAVING 标量子查询
-- ORDER BY 标量子查询
-- UPDATE SET 标量子查询
-- UPDATE WHERE EXISTS
-- DELETE WHERE IN
-- INSERT SELECT
-- CREATE VIEW AS SELECT
-- CREATE TABLE AS SELECT
-
-### 编译器插件测试
-
-补充：
-
-- `f.rowNumber().over { ... }.as_(rn)` 的字段分析
-- `it[alias]` 的字段分析
-- `exists(selectClause)` 的条件分析
-- `it.id in selectClause` 的条件分析
-- `it.score > scalar` 的条件分析
-- 相关子查询引用外层 scope
-- `SetTransformer` 处理 RHS scalar subquery
-- `SortTransformer` 处理表达式排序
-
-### 集成测试
-
-优先级：
-
-1. MySQL 8+ 和 PostgreSQL：窗口函数、派生表、CTE。
-2. SQLite：基础子查询、派生表。
-3. SQL Server 和 Oracle：渲染兼容与语法差异。
-
-## 实施计划
-
-### 第一阶段：表达式与渲染基础
-
-- 统一或新增 scalar、exists、quantified、tuple、derived table、insert select AST。
-- 引入 `QueryBuildContext`。
-- 确保各方言 renderer 支持这些 AST。
-- 补 core rendering tests。
-
-### 第二阶段：嵌入式 SelectClause API
-
-- 添加 `SelectClause.as_ { ... }`。
-- 添加 `SelectClause.as_("tmp") { ... }`。
-- 添加 `SelectClause.asTable(alias)`。
-- 添加 `SelectClause.scalar<R>()`。
-- 添加 `exists(select)`、`notExists(select)`。
-- 添加 `DerivedTable.select`。
-- 添加 `DerivedTable` 投影元数据与字段校验。
-- 尽可能先写不依赖编译器插件的新 SQL 生成测试。
-
-### 第三阶段：编译器插件支持
-
-- 新增 `ExpressionAnalysis`。
-- 扩展 `FieldAnalysis`：表达式字段、alias token、窗口函数、标量子查询。
-- 扩展 `ConditionAnalysis`：exists/in/scalar/any/all/tuple。
-- 扩展 `SetTransformer`：scalar RHS。
-- 扩展 `SortTransformer`：表达式排序。
-
-### 第四阶段：DML 与 DDL
-
-- 添加 `InsertSource.Select`。
-- 添加 `InsertClause.select(source)`。
-- 添加 create view as select。
-- 添加 create table as select。
-- 补 DML 和 DDL 测试。
-
-### 第五阶段：CTE 与高级方言特性
-
-- 添加非递归 CTE。
-- 后续添加递归 CTE。
-- 添加 tuple、quantified comparison 的方言开关。
-- 按方言添加 materialized view。
-
-## 待确认问题
-
-1. `DerivedTable<T>` 是否只暴露已投影字段，还是允许访问所有原始 KPojo 字段并在 SQL 生成时失败？
-   推荐：只暴露已投影字段，动态场景运行期兜底。
-2. `SelectClause.as_("tmp") { ... }` 表示进入具名派生表外层查询，而
-   `select { expr.as_("alias") }` 表示 select item alias。这个重载是否可接受？
-   推荐接受，因为二者的调用形态不同：前者有外层查询 block，后者出现在 select 表达式内。
-3. `scalar<R>()` 是否必须显式调用？推荐比较场景显式，`IN` 场景可以隐式接受单列 select。
-4. `exists(select)` 是否接受任意 `KSelectable`，包括 union？推荐接受。
-5. 方言版本相关能力如何判断？推荐提供 feature flag，让 wrapper 可覆盖。
-
-## 总结
-
-核心设计是：
-
-```kotlin
-KPojo().select { ... }.where { ... }          // 现有查询
-KPojo().select { ... }.where { ... }.as_ { x -> ... } // 嵌入式 FROM 子查询
-KPojo().select { ... }.where { ... }.asTable("tmp")   // 可复用派生表源
-KPojo().select { ... }.where { ... }.scalar() // 标量子查询
-exists(KPojo().select { ... }.where { ... })  // EXISTS 子查询
-```
-
-FROM 子查询的主推荐写法是：
-
-```kotlin
-T()
-    .select { ... }
-    .where { ... }
-    .as_ { x ->
-        select { ... }
-        where { ... }
+    .where {
+        it.status == ACTIVE
     }
+
+dataSource.table.createTable(
+    UserArchive(),
+    activeUsers
+)
 ```
 
-这样既保留了 Kronos 当前链式 DSL 的心智模型，又能覆盖查询、DML 和 DDL 中的完整子查询场景。
+语义：
+
+- `UserArchive()` 是目标表 KPojo。
+- `activeUsers` 是源 `KSelectable`。
+- 目标表名来自 `UserArchive()`。
+- 源 query 的最终投影提供 CTAS 的 `SELECT` 数据来源。
+- 不需要用户写 SQL 表 alias。
+
+期望 SQL：
+
+```sql
+CREATE TABLE user_archive AS
+SELECT q.id, q.name, q.status
+FROM (
+    SELECT u.id, u.name, u.status
+    FROM user u
+) q
+WHERE q.status = ?
+```
+
+实际是否需要包派生查询由 Kronos 根据投影过滤和方言能力决定。
+
+### 复杂查询源
+
+源 query 可以使用前面所有 select/subquery 能力：
+
+```kotlin
+val userOrderSnapshot = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            u.status,
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
+    }
+    .where {
+        it.status == ACTIVE
+    }
+
+dataSource.table.createTable(
+    UserOrderSnapshot(),
+    userOrderSnapshot
+)
+```
+
+### JOIN 查询源
+
+join 查询也可以作为 CTAS 源：
+
+```kotlin
+val userOrders = User().join(Order()) { user, order ->
+    on { user.id == order.userId }
+
+    select {
+        [
+            user.id,
+            user.name,
+            order.id.as_("orderId"),
+            order.amount
+        ]
+    }
+}
+
+dataSource.table.createTable(
+    UserOrderArchive(),
+    userOrders
+)
+```
+
+因为 join 查询实现 `KSelectable`，所以可以直接作为 `createTable(target, query)` 的第二个参数。
+
+### 与普通建表的边界
+
+普通建表保持原 API：
+
+```kotlin
+dataSource.table.createTable(UserArchive())
+```
+
+CTAS 使用新增重载：
+
+```kotlin
+dataSource.table.createTable(UserArchive(), query)
+```
+
+注意：不同数据库对 `CREATE TABLE AS SELECT` 是否保留字段类型、主键、索引、默认值等 schema 信息支持不同。若需要完整保留 KPojo 定义的表结构，推荐分两步：
+
+```kotlin
+dataSource.table.createTable(UserArchive())
+
+query
+    .insert<UserArchive> {
+        [
+            it.id,
+            it.name,
+            it.lastOrderAmount
+        ]
+    }
+    .execute()
+```
+
+### 当前确认
+
+- 不提供 `createView(...)`。
+- 不新增 `createTableAs(...)`。
+- 保留现有 `createTable(KPojo)`。
+- 新增 `createTable(KPojo, KSelectable)` 表示 CTAS。
+- 第一个参数是目标表 KPojo。
+- 第二个参数是源 query。
+- 普通 select、join select、union 等只要实现 `KSelectable`，都可以作为 CTAS 源。
+- 目标表名来自目标 KPojo。
+- 源 query 的最终投影提供 `SELECT` 数据来源。
+- CTAS 是否保留完整 KPojo schema 取决于方言能力。
+- 如需完整 schema，使用 `createTable(KPojo)` + `KSelectable.insert<Target> { ... }`。

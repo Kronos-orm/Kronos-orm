@@ -21,7 +21,6 @@ import com.kotlinorm.compiler.core.KTableTransformer
 import com.kotlinorm.compiler.core.addRefFieldSymbol
 import com.kotlinorm.compiler.core.buildFieldFromPropertyRef
 import com.kotlinorm.compiler.utils.extensionReceiver
-import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
 import com.kotlinorm.compiler.utils.valueArguments
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -51,7 +50,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
  *     ```kotlin
  *     fun <T: KPojo> T.foo() {
  *          val action: (KTableForReference<T>.(T) -> Unit) = { it: T ->
- *              it::prop1 + Entity::prop2 + it::prop3
+ *              [it::prop1, Entity::prop2, it::prop3]
  *          }
  *          KTable<T>().action(this)
  *     }
@@ -66,7 +65,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
  *              addField(Field("prop1",...))
  *              addField(Field("prop2",...))
  *              addField(Field("prop3",...))
- *              it::prop1 + Entity::prop2 + it::prop3
+ *              [it::prop1, Entity::prop2, it::prop3]
  *          }
  *          KTable<T>().action(this)
  *    }
@@ -120,10 +119,6 @@ class ReferenceTransformer(
                         is IrExpression -> result += collectReferences(arg)
                     }
                 }
-            }
-            expression is IrCall && expression.funcName() == "unaryPlus" -> {
-                val recv = expression.extensionReceiverArgument ?: expression.dispatchReceiver ?: return result
-                result += collectReferences(recv)
             }
             expression is IrTypeOperatorCall -> {
                 result += collectReferences(expression.argument)

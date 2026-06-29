@@ -115,6 +115,14 @@ object ErrorMessages {
         "No column properties found in class $className for minus operation. " +
         "Make sure the class has properties annotated as columns."
 
+    const val UNSUPPORTED_FIELD_OPERATOR =
+        "Operator expressions are no longer supported in Kronos field DSL."
+
+    const val UNSUPPORTED_FIELD_OPERATOR_FIX =
+        "Use a collection literal for multiple fields, for example: [it.field1, it.field2]. " +
+        "Use a single property directly for one field, for example: it.field1. " +
+        "Use explicit Kronos function APIs instead of binary operators for computed fields."
+
     // ========================================================================
     // ConditionTransformer
     // ========================================================================

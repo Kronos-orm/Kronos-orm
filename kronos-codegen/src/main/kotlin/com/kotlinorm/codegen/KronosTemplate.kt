@@ -59,8 +59,8 @@ class KronosTemplate(
             else -> {}
         }
         if (!nullable && primaryKey == PrimaryKeyType.NOT) {
-            annotations.add("@Necessary")
-            imports.add("com.kotlinorm.annotations.Necessary")
+            annotations.add("@NonNull")
+            imports.add("com.kotlinorm.annotations.NonNull")
         }
         if (defaultValue != null) {
             annotations.add("@Default(\"$defaultValue\")")

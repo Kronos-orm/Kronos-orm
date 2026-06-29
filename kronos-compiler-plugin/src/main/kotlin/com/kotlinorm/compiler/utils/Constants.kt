@@ -56,7 +56,7 @@ val PrimaryKeyAnnotationFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val CascadeAnnotationFqName = FqName("com.kotlinorm.annotations.Cascade")
 val DateTimeFormatAnnotationFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val DefaultValueAnnotationFqName = FqName("com.kotlinorm.annotations.Default")
-val NecessaryAnnotationFqName = FqName("com.kotlinorm.annotations.Necessary")
+val NonNullAnnotationFqName = FqName("com.kotlinorm.annotations.NonNull")
 val SerializeAnnotationFqName = FqName("com.kotlinorm.annotations.Serialize")
 val KronosInitAnnotationFqName = FqName("com.kotlinorm.annotations.KronosInit")
 val KronosCommonStrategyFqName = FqName("com.kotlinorm.beans.config.KronosCommonStrategy")
@@ -72,7 +72,7 @@ object AnnotationFqNames {
     val Cascade = CascadeAnnotationFqName
     val DateTimeFormat = DateTimeFormatAnnotationFqName
     val Default = DefaultValueAnnotationFqName
-    val Necessary = NecessaryAnnotationFqName
+    val NonNull = NonNullAnnotationFqName
     val Serialize = SerializeAnnotationFqName
     val CreateTime = FqName("com.kotlinorm.annotations.CreateTime")
     val UpdateTime = FqName("com.kotlinorm.annotations.UpdateTime")

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.transformers
+package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.KTableTransformer

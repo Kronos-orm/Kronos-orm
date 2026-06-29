@@ -14,29 +14,33 @@
  * limitations under the License.
  */
 
-// Verifies that bare select projections refine queryList() to a generated projection type.
+// Verifies that bare select lambdas produce runtime-mappable generated projection rows with alias fields.
 
-import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.interfaces.KAtomicActionTask
-import com.kotlinorm.interfaces.KAtomicQueryTask
-import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.Kronos
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.TransactionIsolation
+import com.kotlinorm.interfaces.KAtomicActionTask
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
 
-data class GeneratedProjectionUser(
+data class ProjectionSourceRow(
     var id: Int? = null,
     var name: String? = null,
+    var ignoredInProjection: String? = null,
 ) : KPojo
 
-class GeneratedProjectionWrapper : KronosDataSourceWrapper {
+class ProjectionMappingWrapper : KronosDataSourceWrapper {
     override val url: String = "jdbc:generated-projection"
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
+    val executedSql = mutableListOf<String>()
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
 
@@ -47,7 +51,8 @@ class GeneratedProjectionWrapper : KronosDataSourceWrapper {
         superTypes: List<String>
     ): List<Any> {
         mappedClasses.add(kClass)
-        return emptyList()
+        executedSql.add(task.sql)
+        return [mapOf("id" to 7, "xx" to "Ada").mapperTo(kClass as KClass<out KPojo>)]
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
@@ -71,19 +76,28 @@ class GeneratedProjectionWrapper : KronosDataSourceWrapper {
 }
 
 fun box(): String {
-    val user = GeneratedProjectionUser()
-    val wrapper = GeneratedProjectionWrapper()
+    val source = ProjectionSourceRow()
+    val wrapper = ProjectionMappingWrapper()
 
-    val idRows = user.select { it.id }.queryList(wrapper)
-    idRows.firstOrNull()?.id
+    Kronos.init {
+        dataSource = { wrapper }
+    }
 
-    val rows = user.select { [it.id, it.name] }.queryList(wrapper)
-    rows.firstOrNull()?.name
+    val rows = source.select { [it.id, it.name.as_("xx")] }.queryList(wrapper)
+    val row = rows.singleOrNull()
 
     val failures = listOfNotNull(
-        expect(wrapper.mappedClasses.size == 2) { "mapped class count was ${wrapper.mappedClasses.size}" },
-        expect(wrapper.mappedClasses.all { it != GeneratedProjectionUser::class }) {
-            "projection used source class ${GeneratedProjectionUser::class}"
+        expect(rows.size == 1) { "row count was ${rows.size}" },
+        expect(row?.id == 7) { "generated projection id was ${row?.id}" },
+        expect(row?.xx == "Ada") { "generated projection alias xx was ${row?.xx}" },
+        expect(wrapper.mappedClasses.singleOrNull() != ProjectionSourceRow::class) {
+            "queryList mapped with source class ${ProjectionSourceRow::class}"
+        },
+        expect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
+            "mapped class was ${wrapper.mappedClasses.singleOrNull()}"
+        },
+        expect(wrapper.executedSql.singleOrNull()?.contains("ignored_in_projection") != true) {
+            "projection SQL selected ignored source field: ${wrapper.executedSql.singleOrNull()}"
         },
     )
 

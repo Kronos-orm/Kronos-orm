@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.plugin.fir
+package com.kotlinorm.compiler.fir
 
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirExtensionApiInternals
 
+/**
+ * Registers Kronos FIR extensions that expose generated declarations and refined DSL result types.
+ */
 @OptIn(FirExtensionApiInternals::class)
 class KronosFirExtensionRegistrar : FirExtensionRegistrar() {
+    /**
+     * Installs projection declaration generation before call refinement consumes those symbols.
+     */
     override fun ExtensionRegistrarContext.configurePlugin() {
         +::KronosProjectionDeclarationGenerationExtension
         +::KronosProjectionCallRefinementExtension

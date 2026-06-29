@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.transformers
+package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.kTableForConditionSymbol
@@ -22,6 +22,7 @@ import com.kotlinorm.compiler.core.kTableForReferenceSymbol
 import com.kotlinorm.compiler.core.kTableForSelectSymbol
 import com.kotlinorm.compiler.core.kTableForSetSymbol
 import com.kotlinorm.compiler.core.kTableForSortSymbol
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoFqName
 import com.kotlinorm.compiler.utils.KronosInitAnnotationFqName
 import com.kotlinorm.compiler.utils.extensionReceiver
@@ -48,7 +49,6 @@ import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
-import org.jetbrains.kotlin.name.FqName
 
 /**
  * Kronos Parser Transformer
@@ -76,6 +76,7 @@ class KronosParserTransformer(
     private val errorReporter = ErrorReporter(messageCollector)
     val kPojoClasses = mutableSetOf<IrClass>()
     private val transformedKPojoClasses = mutableSetOf<IrClass>()
+    val initFunctions = mutableListOf<IrFunction>()
     val initCallSiteLambdas = mutableListOf<IrFunction>()
 
     override fun visitFileNew(declaration: IrFile): IrFile {
@@ -134,14 +135,13 @@ class KronosParserTransformer(
     }
 
     /**
-     * Collects and enhances each KPojo class once, including compiler-generated projection classes
-     * that are discovered only through refined call type arguments.
+     * Collects and enhances each source KPojo class once.
      */
     private fun processKPojoClass(irClass: IrClass) {
-        kPojoClasses.add(irClass)
         if (irClass.isGeneratedProjectionClass()) {
             return
         }
+        kPojoClasses.add(irClass)
         if (transformedKPojoClasses.add(irClass)) {
             irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
         }
@@ -153,15 +153,14 @@ class KronosParserTransformer(
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun IrClass.isGeneratedProjectionClass(): Boolean =
-        kotlinFqName.parent() == GENERATED_PROJECTION_PACKAGE
+        kotlinFqName.parent() == GeneratedProjectionPackageFqName
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
         with(pluginContext) {
             // Handle @KronosInit functions
             if (KClassMapGenerator.isKronosInitFunction(declaration)) {
-                KClassMapGenerator.generate(pluginContext, declaration, kPojoClasses, errorReporter)
-                return super.visitFunctionNew(declaration)
+                initFunctions.add(declaration)
             }
 
             val extensionReceiverFqName = declaration.parameters.extensionReceiver?.type?.classFqName?.asString()
@@ -190,7 +189,4 @@ class KronosParserTransformer(
         }.transform(transformerFactory(declaration), null)
     }
 
-    private companion object {
-        val GENERATED_PROJECTION_PACKAGE: FqName = FqName("com.kotlinorm.generated.projection")
-    }
 }

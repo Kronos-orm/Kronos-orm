@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.transformers
+package com.kotlinorm.compiler.backend.transformers
 
+import com.kotlinorm.compiler.utils.KPojoFqName
+import com.kotlinorm.compiler.utils.SelectFromQueryFunctionRegexes
+import com.kotlinorm.compiler.utils.TypedQueryFunctionFqNames
 import com.kotlinorm.compiler.utils.irListOf
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -30,32 +33,12 @@ import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.FqName
 
-private val fqNameOfTypedQuery = [
-    FqName("com.kotlinorm.beans.task.KronosQueryTask.queryList"),
-    FqName("com.kotlinorm.beans.task.KronosQueryTask.queryOne"),
-    FqName("com.kotlinorm.beans.task.KronosQueryTask.queryOneOrNull"),
-    FqName("com.kotlinorm.orm.select.SelectClause.queryList"),
-    FqName("com.kotlinorm.orm.select.SelectClause.queryOne"),
-    FqName("com.kotlinorm.orm.select.SelectClause.queryOneOrNull"),
-    FqName("com.kotlinorm.database.SqlHandler.queryList"),
-    FqName("com.kotlinorm.database.SqlHandler.queryOne"),
-    FqName("com.kotlinorm.database.SqlHandler.queryOneOrNull")
-]
-
-private val fqNameOfSelectFromsRegexes = [
-    "com.kotlinorm.orm.join.SelectFrom\\d.queryList",
-    "com.kotlinorm.orm.join.SelectFrom\\d.queryOne",
-    "com.kotlinorm.orm.join.SelectFrom\\d.queryOneOrNull"
-]
-
-private val KPojoFqName = FqName("com.kotlinorm.interfaces.KPojo")
-
 /**
  * Checks if the given FqName should be fixed by TypeParameterFixer
  */
 fun FqName.shouldFix(): Boolean {
-    return this in fqNameOfTypedQuery ||
-            fqNameOfSelectFromsRegexes.any { Regex(it).matches(this.asString()) }
+    return this in TypedQueryFunctionFqNames ||
+            SelectFromQueryFunctionRegexes.any { it.matches(this.asString()) }
 }
 
 /**
@@ -74,24 +57,17 @@ object TypeParameterFixer {
     fun shouldFix(expression: IrCall): Boolean {
         if (expression.typeArguments.size != 1) return false
         val fqName = expression.symbol.owner.kotlinFqName
-        return fqName in fqNameOfTypedQuery ||
-                fqNameOfSelectFromsRegexes.any { Regex(it).matches(fqName.asString()) }
+        return fqName.shouldFix()
     }
 
+    /**
+     * Injects the KPojo marker flag and supertype FQNs into typed query runtime arguments.
+     */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun fix(pluginContext: IrPluginContext, expression: IrCall): IrExpression {
         val queryType = expression.typeArguments[0] ?: return expression
         val allTypes = ([queryType] + queryType.superTypes()).mapNotNull { it.classFqName }
         val isKPojo = KPojoFqName in allTypes
-
-        val irSuperTypes = with(pluginContext) {
-            DeclarationIrBuilder(pluginContext, expression.symbol).irBlock {
-                irListOf(
-                    pluginContext.irBuiltIns.stringType,
-                    allTypes.map { irString(it.asString()) }
-                )
-            }
-        }
 
         // Last two arguments: isKPojo, superTypes
         expression.arguments[expression.arguments.size - 2] =

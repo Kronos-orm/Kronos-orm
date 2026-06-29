@@ -37,7 +37,7 @@ import com.kotlinorm.compiler.utils.irPairOf
 import com.kotlinorm.compiler.utils.isKronosFunction
 import com.kotlinorm.compiler.utils.mapTypeToKColumnType
 import com.kotlinorm.compiler.utils.valueArguments
-import com.kotlinorm.compiler.transformers.getTableNameExpr
+import com.kotlinorm.compiler.backend.transformers.getTableNameExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBlock

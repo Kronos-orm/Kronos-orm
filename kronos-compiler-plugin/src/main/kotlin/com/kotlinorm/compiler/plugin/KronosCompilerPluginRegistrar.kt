@@ -17,7 +17,8 @@
 package com.kotlinorm.compiler.plugin
 
 import com.google.auto.service.AutoService
-import com.kotlinorm.compiler.plugin.fir.KronosFirExtensionRegistrar
+import com.kotlinorm.compiler.backend.KronosIrGenerationExtension
+import com.kotlinorm.compiler.fir.KronosFirExtensionRegistrar
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi

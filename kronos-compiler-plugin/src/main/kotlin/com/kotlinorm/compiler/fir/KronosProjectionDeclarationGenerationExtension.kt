@@ -16,28 +16,40 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.plugin.fir
+package com.kotlinorm.compiler.fir
 
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
+import org.jetbrains.kotlin.GeneratedDeclarationKey
+import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.descriptors.EffectiveVisibility
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.kotlin.fir.containingClassForStaticMemberAttr
+import org.jetbrains.kotlin.fir.correspondingProperty
 import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.moduleData
 import org.jetbrains.kotlin.fir.ownerGenerator
+import org.jetbrains.kotlin.fir.declarations.FirConstructor
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
+import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
+import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.declarations.FirValueParameterKind
 import org.jetbrains.kotlin.fir.declarations.builder.buildPrimaryConstructor
 import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.builder.buildRegularClass
 import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
+import org.jetbrains.kotlin.fir.declarations.utils.fromPrimaryConstructor
 import org.jetbrains.kotlin.fir.expressions.builder.buildLiteralExpression
+import org.jetbrains.kotlin.fir.expressions.builder.buildPropertyAccessExpression
 import org.jetbrains.kotlin.fir.extensions.ExperimentalTopLevelDeclarationsGenerationApi
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.MemberGenerationContext
+import org.jetbrains.kotlin.fir.references.builder.buildPropertyFromParameterResolvedNamedReference
 import org.jetbrains.kotlin.fir.scopes.FirKotlinScopeProvider
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
@@ -48,16 +60,21 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirRegularPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.ConeAttributes
+import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeTypeProjection
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.impl.ConeClassLikeTypeImpl
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.CallableId
-import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.types.ConstantValueKind
+import java.util.concurrent.ConcurrentHashMap
 
-// Generates synthetic projection classes and their projection fields.
+/**
+ * Generates FIR declarations for compiler-created select projection classes.
+ */
 @OptIn(FirImplementationDetail::class, ExperimentalTopLevelDeclarationsGenerationApi::class)
 class KronosProjectionDeclarationGenerationExtension(
     session: FirSession
@@ -69,20 +86,21 @@ class KronosProjectionDeclarationGenerationExtension(
     /**
      * Projection classes are created on demand from the call-refinement registry.
      */
-    override fun getTopLevelClassIds(): Set<ClassId> = KronosProjectionRegistry.allClassIds()
+    override fun getTopLevelClassIds(): Set<ClassId> = KronosProjectionRegistry.allTopLevelClassIds()
 
     /**
      * Makes the generated projection package visible to top-level class lookup and backend output.
      */
-    override fun hasPackage(fqName: FqName): Boolean =
-        fqName == PROJECTION_PACKAGE || super.hasPackage(fqName)
+    override fun hasPackage(packageFqName: FqName): Boolean =
+        packageFqName == GeneratedProjectionPackageFqName || super.hasPackage(packageFqName)
 
     /**
      * Resolves a generated top-level projection class from registry state.
      */
     override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
         val model = KronosProjectionRegistry.find(classId) ?: return null
-        val symbol = FirRegularClassSymbol(classId)
+        val symbol = model.symbol
+        if (symbol.isBound) return symbol
         val fir = buildProjectionClass(session, symbol, model)
         fir.ownerGenerator = this
         symbol.bind(fir)
@@ -97,7 +115,7 @@ class KronosProjectionDeclarationGenerationExtension(
         context: MemberGenerationContext
     ): Set<Name> {
         val model = KronosProjectionRegistry.find(classSymbol.classId) ?: return emptySet()
-        return model.fields.mapTo(mutableSetOf()) { it.name }
+        return model.fields.mapTo(mutableSetOf(SpecialNames.INIT)) { it.name }
     }
 
     /**
@@ -107,24 +125,39 @@ class KronosProjectionDeclarationGenerationExtension(
         callableId: CallableId,
         context: MemberGenerationContext?
     ): List<FirPropertySymbol> {
-        val classId = callableId.classId ?: return emptyList()
-        val model = KronosProjectionRegistry.find(classId) ?: return emptyList()
-        val symbol = model.symbol
-        return model.fields
+        val classSymbol = context?.owner as? FirRegularClassSymbol ?: return emptyList()
+        val model = KronosProjectionRegistry.find(classSymbol.classId) ?: return emptyList()
+        return projectionMembers(session, classSymbol, model).properties
             .filter { it.name == callableId.callableName }
-            .map { field ->
-                buildProjectionProperty(
-                    session,
-                    symbol,
-                    field.name,
-                    field.type,
-                    model.anchor,
-                    constructorParameter = null
-                ).symbol
-            }
+            .map { it.symbol }
+    }
+
+    /**
+     * Exposes the primary constructor of the generated data class to FIR scopes.
+     */
+    override fun generateConstructors(context: MemberGenerationContext): List<FirConstructorSymbol> {
+        val classSymbol = context.owner as? FirRegularClassSymbol ?: return emptyList()
+        val model = KronosProjectionRegistry.find(classSymbol.classId) ?: return emptyList()
+        return listOf(projectionMembers(session, classSymbol, model).constructor.symbol)
     }
 
     companion object {
+        /**
+         * Binds the projection class early so refined call return types can reference a concrete FIR symbol.
+         */
+        fun ensureProjectionClassBound(
+            session: FirSession,
+            model: KronosProjectionModel
+        ) {
+            val symbol = model.symbol
+            if (symbol.isBound) return
+            val generator = KronosProjectionRegistry.declarationGenerator(session)
+                ?: error("Kronos projection declaration generator is not registered for this FIR session")
+            val fir = buildProjectionClass(session, symbol, model)
+            fir.ownerGenerator = generator
+            symbol.bind(fir)
+        }
+
         /**
          * Builds the synthetic projection class and attaches generated projection fields directly to it.
          */
@@ -136,19 +169,14 @@ class KronosProjectionDeclarationGenerationExtension(
             source = model.anchor
             resolvePhase = FirResolvePhase.STATUS
             moduleData = session.moduleData
-            origin = FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
+            origin = projectionOrigin()
             scopeProvider = FirKotlinScopeProvider()
-            status = FirResolvedDeclarationStatusImpl(
-                Visibilities.Public,
-                Modality.FINAL,
-                EffectiveVisibility.Public
-            ).apply {
+            status = projectionStatus().apply {
                 isData = true
             }
-            classKind = org.jetbrains.kotlin.descriptors.ClassKind.CLASS
+            classKind = ClassKind.CLASS
             name = model.name
             this.symbol = symbol
-            val primaryConstructor = buildProjectionPrimaryConstructor(session, symbol, model)
             superTypeRefs += buildResolvedTypeRef {
                 coneType = ConeClassLikeTypeImpl(
                     ConeClassLikeLookupTagImpl(KPojoClassId),
@@ -157,11 +185,26 @@ class KronosProjectionDeclarationGenerationExtension(
                     ConeAttributes.Empty
                 )
             }
-            declarations += primaryConstructor
-            declarations += model.fields.map { field ->
-                val parameter = primaryConstructor.valueParameters.single { it.name == field.name }
-                buildProjectionProperty(session, symbol, field.name, field.type, model.anchor, parameter)
+            projectionMembers(session, symbol, model).let { members ->
+                declarations += members.constructor
+                declarations += members.properties
             }
+        }
+
+        /**
+         * Returns generated constructor and property declarations for a projection class.
+         */
+        fun projectionMembers(
+            session: FirSession,
+            classSymbol: FirRegularClassSymbol,
+            model: KronosProjectionModel
+        ): KronosProjectionGeneratedMembers = projectionMemberCache.computeIfAbsent(classSymbol) {
+            val primaryConstructor = buildProjectionPrimaryConstructor(session, classSymbol, model)
+            val properties = model.fields.map { field ->
+                val parameter = primaryConstructor.valueParameters.single { it.name == field.name }
+                buildProjectionProperty(session, classSymbol, field.name, field.type, model.anchor, parameter)
+            }
+            KronosProjectionGeneratedMembers(primaryConstructor, properties)
         }
 
         /**
@@ -175,8 +218,8 @@ class KronosProjectionDeclarationGenerationExtension(
             source = model.anchor
             resolvePhase = FirResolvePhase.STATUS
             moduleData = session.moduleData
-            origin = FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
-            status = FirResolvedDeclarationStatusImpl(Visibilities.Public, Modality.FINAL, EffectiveVisibility.Public)
+            origin = projectionOrigin()
+            status = projectionStatus()
             isLocal = false
             returnTypeRef = buildResolvedTypeRef {
                 coneType = ConeClassLikeTypeImpl(
@@ -188,8 +231,10 @@ class KronosProjectionDeclarationGenerationExtension(
             }
             symbol = FirConstructorSymbol(classSymbol.classId)
             valueParameters += model.fields.map { field ->
-                buildProjectionConstructorParameter(session, symbol, field.name, field.type, model.anchor)
+                buildProjectionConstructorParameter(session, symbol, field, model.anchor)
             }
+        }.apply {
+            containingClassForStaticMemberAttr = classSymbol.toLookupTag()
         }
 
         /**
@@ -198,16 +243,15 @@ class KronosProjectionDeclarationGenerationExtension(
         private fun buildProjectionConstructorParameter(
             session: FirSession,
             constructorSymbol: FirConstructorSymbol,
-            name: Name,
-            type: org.jetbrains.kotlin.fir.types.ConeKotlinType,
-            anchor: org.jetbrains.kotlin.KtSourceElement
+            field: KronosProjectionField,
+            anchor: KtSourceElement,
         ) = buildValueParameter {
-            source = anchor
+            source = field.source ?: anchor
             resolvePhase = FirResolvePhase.STATUS
             moduleData = session.moduleData
             origin = FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
-            returnTypeRef = buildResolvedTypeRef { coneType = type }
-            this.name = name
+            returnTypeRef = buildResolvedTypeRef { coneType = field.type }
+            this.name = field.name
             this.symbol = FirValueParameterSymbol()
             containingDeclarationSymbol = constructorSymbol
             valueParameterKind = FirValueParameterKind.Regular
@@ -216,7 +260,9 @@ class KronosProjectionDeclarationGenerationExtension(
                 kind = ConstantValueKind.Null,
                 value = null,
                 setType = true
-            )
+            ).apply {
+                replaceConeTypeOrNull(session.builtinTypes.nullableNothingType.coneType)
+            }
         }
 
         /**
@@ -226,18 +272,16 @@ class KronosProjectionDeclarationGenerationExtension(
             session: FirSession,
             classSymbol: FirRegularClassSymbol,
             name: Name,
-            type: org.jetbrains.kotlin.fir.types.ConeKotlinType,
-            anchor: org.jetbrains.kotlin.KtSourceElement,
-            constructorParameter: org.jetbrains.kotlin.fir.declarations.FirValueParameter?
+            type: ConeKotlinType,
+            anchor: KtSourceElement,
+            constructorParameter: FirValueParameter?,
         ) = buildProperty {
             source = anchor
             resolvePhase = FirResolvePhase.STATUS
             moduleData = session.moduleData
             origin = FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
-            isLocal = false
-            val propertyStatus =
-                FirResolvedDeclarationStatusImpl(Visibilities.Public, Modality.FINAL, EffectiveVisibility.Public)
-            status = propertyStatus
+            this.isLocal = false
+            status = projectionStatus()
             this.dispatchReceiverType = ConeClassLikeTypeImpl(
                 classSymbol.toLookupTag(),
                 ConeTypeProjection.EMPTY_ARRAY,
@@ -247,12 +291,55 @@ class KronosProjectionDeclarationGenerationExtension(
             this.name = name
             this.symbol = FirRegularPropertySymbol(CallableId(classSymbol.classId, name))
             returnTypeRef = buildResolvedTypeRef { coneType = type }
-            initializer = constructorParameter?.defaultValue
+            initializer = constructorParameter?.let { parameter ->
+                buildPropertyAccessExpression {
+                    source = parameter.source ?: anchor
+                    coneTypeOrNull = type
+                    calleeReference = buildPropertyFromParameterResolvedNamedReference {
+                        source = parameter.source ?: anchor
+                        this.name = name
+                        resolvedSymbol = parameter.symbol
+                    }
+                }
+            } ?: constructorParameter?.defaultValue
             isVar = true
+        }.apply {
+            if (constructorParameter != null) {
+                constructorParameter.correspondingProperty = this
+                fromPrimaryConstructor = true
+            }
+        }
+
+        /**
+         * Marks projection declarations as compiler-plugin generated.
+         */
+        private fun projectionOrigin(): FirDeclarationOrigin =
+            FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
+
+        /**
+         * Creates the public final status shared by generated projection declarations.
+         */
+        private fun projectionStatus(): FirResolvedDeclarationStatusImpl {
+            return FirResolvedDeclarationStatusImpl(
+                Visibilities.Public,
+                Modality.FINAL,
+                EffectiveVisibility.Public
+            )
         }
     }
 }
 
-object KronosProjectionGeneratedDeclarationKey : org.jetbrains.kotlin.GeneratedDeclarationKey()
+data class KronosProjectionGeneratedMembers(
+    val constructor: FirConstructor,
+    val properties: List<FirProperty>,
+)
 
-private val PROJECTION_PACKAGE: FqName = FqName("com.kotlinorm.generated.projection")
+/**
+ * Marks FIR declarations synthesized for generated select projection classes.
+ */
+object KronosProjectionGeneratedDeclarationKey : GeneratedDeclarationKey()
+
+/**
+ * Caches generated constructor/property FIR per projection class symbol within the compiler session.
+ */
+private val projectionMemberCache = ConcurrentHashMap<FirRegularClassSymbol, KronosProjectionGeneratedMembers>()

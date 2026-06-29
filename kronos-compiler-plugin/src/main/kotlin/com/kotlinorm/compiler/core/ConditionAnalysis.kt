@@ -24,7 +24,7 @@ import com.kotlinorm.compiler.utils.funcName
 import com.kotlinorm.compiler.utils.getValueArgumentSafe
 import com.kotlinorm.compiler.utils.isKronosFunction
 import com.kotlinorm.compiler.utils.valueArguments
-import com.kotlinorm.compiler.transformers.getTableNameExpr
+import com.kotlinorm.compiler.backend.transformers.getTableNameExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder

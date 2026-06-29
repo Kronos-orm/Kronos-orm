@@ -16,7 +16,7 @@
 
 @file:Suppress("DEPRECATION")
 
-package com.kotlinorm.compiler.transformers
+package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.buildFieldFromProperty
 import com.kotlinorm.compiler.core.fieldClassSymbol

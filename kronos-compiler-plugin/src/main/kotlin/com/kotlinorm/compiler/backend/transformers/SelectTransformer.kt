@@ -14,32 +14,25 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.transformers
+package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.KTableTransformer
-import com.kotlinorm.compiler.core.addRefFieldSymbol
-import com.kotlinorm.compiler.core.buildFieldFromPropertyRef
+import com.kotlinorm.compiler.core.addFieldMethodSymbol
+import com.kotlinorm.compiler.core.analyzeAndBuildFields
 import com.kotlinorm.compiler.utils.extensionReceiver
-import com.kotlinorm.compiler.utils.funcName
-import com.kotlinorm.compiler.utils.valueArguments
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
 import org.jetbrains.kotlin.ir.expressions.IrReturn
-import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
-import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 
 /**
- * Reference Transformer
+ * Select Transformer
  *
  * A Kotlin compiler plugin transformer that manipulates IR elements related to table fields.
  * @author: OUSC
@@ -49,8 +42,8 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
  *     // file: Foo.kt
  *     ```kotlin
  *     fun <T: KPojo> T.foo() {
- *          val action: (KTableForReference<T>.(T) -> Unit) = { it: T ->
- *              [it::prop1, Entity::prop2, it::prop3]
+ *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
+ *              [it.username, it.password, it.createTime.as_("time")]
  *          }
  *          KTable<T>().action(this)
  *     }
@@ -61,17 +54,17 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
  *    // file: Foo.kt
  *    ```kotlin
  *     fun <T: KPojo> foo() {
- *          val action: (KTableForReference<T>.(T) -> Unit) = { it: T ->
- *              addField(Field("prop1",...))
- *              addField(Field("prop2",...))
- *              addField(Field("prop3",...))
- *              [it::prop1, Entity::prop2, it::prop3]
+ *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
+ *              addField(Field("username",...))
+ *              addField(Field("password",...))
+ *              addField(Field("createTime",...).setAlias("time"))
+ *              [it.username, it.password, it.createTime.as_("time")]
  *          }
  *          KTable<T>().action(this)
  *    }
  *    ```
  */
-class ReferenceTransformer(
+class SelectTransformer(
     private val pluginContext: IrPluginContext,
     irFunction: IrFunction,
     errorReporter: ErrorReporter
@@ -85,45 +78,21 @@ class ReferenceTransformer(
 
         return with(pluginContext) {
             DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                val fields = analyzeAndBuildFields(irFunction, expression.value, errorReporter)
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
-                val fields = collectReferences(expression.value)
+
                 if (fields.isEmpty()) {
                     +expression
                 } else {
-                    fields.forEach { fieldExpr ->
-                        +irCall(addRefFieldSymbol).apply {
+                    fields.forEach { field ->
+                        +irCall(addFieldMethodSymbol).apply {
                             dispatchReceiver = irGet(receiver)
-                            arguments[1] = fieldExpr
+                            arguments[1] = field
                         }
                     }
                 }
             }
         }
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    context(context: IrPluginContext, builder: IrBlockBuilder)
-    private fun collectReferences(expression: IrExpression): List<IrExpression> {
-        val result = mutableListOf<IrExpression>()
-        when {
-            expression is IrPropertyReference -> {
-                result += buildFieldFromPropertyRef(expression, errorReporter)
-            }
-            expression is IrCall && expression.symbol.owner.name.asString() in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf") -> {
-                expression.valueArguments.forEach { arg ->
-                    when (arg) {
-                        is IrVararg -> arg.elements.forEach { element ->
-                            if (element is IrExpression) result += collectReferences(element)
-                        }
-                        is IrExpression -> result += collectReferences(arg)
-                    }
-                }
-            }
-            expression is IrTypeOperatorCall -> {
-                result += collectReferences(expression.argument)
-            }
-        }
-        return result
     }
 }

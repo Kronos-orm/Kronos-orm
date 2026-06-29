@@ -61,7 +61,8 @@ object CascadeDeleteClause {
      * @param cascade Whether the cascade is enabled.
      * @param cascadeAllowed The properties that are allowed to cascade.
      * @param pojo The pojo to be deleted.
-     * @param whereClauseSql The condition to be met.
+     * @param where The condition to be met.
+     * @param paramMap The map of parameters.
      * @param logic The logic to be used.
      * @param rootTask The delete task.
      * @return The list of atomic tasks.

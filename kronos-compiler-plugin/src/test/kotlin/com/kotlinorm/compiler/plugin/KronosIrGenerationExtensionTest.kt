@@ -16,6 +16,7 @@
 
 package com.kotlinorm.compiler.plugin
 
+import com.kotlinorm.compiler.backend.KronosIrGenerationExtension
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.plugin
+package com.kotlinorm.compiler.backend
 
 import com.kotlinorm.compiler.core.ErrorReporter
-import com.kotlinorm.compiler.transformers.KClassMapGenerator
-import com.kotlinorm.compiler.transformers.KronosParserTransformer
-import com.kotlinorm.compiler.transformers.KronosProjectionIrTransformer
+import com.kotlinorm.compiler.backend.transformers.KronosProjectionIrTransformer
+import com.kotlinorm.compiler.backend.transformers.KClassMapGenerator
+import com.kotlinorm.compiler.backend.transformers.KronosParserTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
@@ -54,21 +54,27 @@ class KronosIrGenerationExtension(
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         println("[Kronos] Kronos compiler plugin K2 initialized")
-        
+
+        val errorReporter = ErrorReporter(messageCollector)
+
         // Apply transformations
         val transformer = KronosParserTransformer(pluginContext, messageCollector)
         moduleFragment.transform(transformer, null)
-        moduleFragment.transform(KronosProjectionIrTransformer(pluginContext), null)
+        val projectionTransformer = KronosProjectionIrTransformer(pluginContext, errorReporter)
+        moduleFragment.transform(projectionTransformer, null)
 
-        // Process @KronosInit call-site lambdas (for test compilation where the
-        // @KronosInit function declaration is already compiled in the main jar)
-        val errorReporter = ErrorReporter(messageCollector)
+        // Process @KronosInit after projection materialization so generated
+        // projection classes with no-arg constructors are also instantiable.
+        val kPojoClasses = transformer.kPojoClasses + projectionTransformer.projectionClasses
+        transformer.initFunctions.forEach { initFunction ->
+            KClassMapGenerator.generate(pluginContext, initFunction, kPojoClasses, errorReporter)
+        }
         transformer.initCallSiteLambdas.forEach { lambdaFunction ->
             KClassMapGenerator.generateForCallSite(
-                pluginContext, lambdaFunction, transformer.kPojoClasses, errorReporter
+                pluginContext, lambdaFunction, kPojoClasses, errorReporter
             )
         }
-        
+
         // Dump IR if enabled
         if (dumpIr) {
             println("[Kronos] IR dump enabled - mode: $dumpIrMode, path: $dumpIrPath")

@@ -14,44 +14,49 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.plugin.fir
+package com.kotlinorm.compiler.fir
 
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
 import org.jetbrains.kotlin.name.ClassId
-import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import java.util.concurrent.ConcurrentHashMap
 
-// Holds projection models shared across FIR callbacks during one compilation session.
+/**
+ * Holds generated projection models shared across FIR callbacks during one compilation.
+ */
 object KronosProjectionRegistry {
     private val projectionsByClassId = ConcurrentHashMap<ClassId, KronosProjectionModel>()
-    private val projectionsBySymbol = ConcurrentHashMap<FirRegularClassSymbol, KronosProjectionModel>()
     private val declarationGeneratorsBySession = ConcurrentHashMap<FirSession, FirDeclarationGenerationExtension>()
+    private val topLevelClassIds = ConcurrentHashMap.newKeySet<ClassId>()
 
+    /**
+     * Registers a projection model produced while refining a select call.
+     */
     fun register(model: KronosProjectionModel) {
         projectionsByClassId[model.classId] = model
-        projectionsBySymbol[model.symbol] = model
+        topLevelClassIds += model.classId
     }
 
+    /**
+     * Looks up a projection model by its generated class id.
+     */
     fun find(classId: ClassId): KronosProjectionModel? = projectionsByClassId[classId]
 
-    fun find(symbol: FirRegularClassSymbol): KronosProjectionModel? = projectionsBySymbol[symbol]
+    /**
+     * Returns all generated top-level projection class ids known to this compilation.
+     */
+    fun allTopLevelClassIds(): Set<ClassId> =
+        topLevelClassIds
 
-    fun findNested(owner: ClassId, name: org.jetbrains.kotlin.name.Name): KronosProjectionModel? {
-        return projectionsByClassId[owner.createNestedClassId(name)]
-    }
-
-    fun nestedNames(owner: ClassId): Set<org.jetbrains.kotlin.name.Name> {
-        return projectionsByClassId.keys
-            .filter { it.outerClassId == owner }
-            .mapTo(mutableSetOf()) { it.shortClassName }
-    }
-
-    fun allClassIds(): Set<ClassId> = projectionsByClassId.keys
-
+    /**
+     * Stores the FIR declaration generator registered for the current session.
+     */
     fun registerDeclarationGenerator(session: FirSession, generator: FirDeclarationGenerationExtension) {
         declarationGeneratorsBySession[session] = generator
     }
 
+    /**
+     * Returns the FIR declaration generator registered for the current session.
+     */
     fun declarationGenerator(session: FirSession): FirDeclarationGenerationExtension? = declarationGeneratorsBySession[session]
 }

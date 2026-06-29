@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.compiler.plugin.fir
+package com.kotlinorm.compiler.fir
 
 import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
@@ -22,7 +22,9 @@ import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 
-// Carries the analyzed projection shape for one select call.
+/**
+ * Carries the generated top-level projection class shape for one refined select call.
+ */
 data class KronosProjectionModel(
     val classId: ClassId,
     val name: Name,
@@ -32,8 +34,13 @@ data class KronosProjectionModel(
     val anchor: KtSourceElement,
 )
 
-// Describes one generated projection field and its resolved Kotlin type.
+/**
+ * Describes one generated projection field and its resolved Kotlin type.
+ */
 data class KronosProjectionField(
     val name: Name,
     val type: ConeKotlinType,
+    val source: KtSourceElement?,
+    val sourceName: Name = name,
+    val signature: String = name.asString(),
 )

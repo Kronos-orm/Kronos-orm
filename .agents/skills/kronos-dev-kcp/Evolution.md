@@ -293,3 +293,23 @@ result = callData.extension.transform(result, callData.originalSymbol)
 
 ### 预防措施
 不要试图让 `transform` 直接返回 block。实现 local declaration wrapper 时，优先检查 Kotlin 当前版本的 FIR builder 和 body resolve 调用点。
+
+## 2026-06-30 - 生成投影类要在后端物化后再进入 KClassCreator 映射
+
+### 问题症状
+`ProjectionBoxTest.generatedSelectProjection` 前端类型和 bytecode 物化后，运行期仍可能报：
+
+```text
+KClass GeneratedProjectionUser instantiation failed
+```
+
+或如果把 FIR-generated projection lazy class 直接纳入普通 KPojo 收集器，则容易再次触发 lazy declaration 展开和 unbound symbol 问题。
+
+### 问题原因
+`kClassCreator` 映射生成发生在 `@KronosInit` / `Kronos.init {}` 处理阶段。自动 select projection 的真实可调用 IR class 是后端 materializer 生成的 concrete class，不是 FIR2IR 暴露出来的 lazy projection class。若 map 生成早于 projection materialization，或把 lazy projection class 当成普通源码 KPojo 展开，会导致实例化路径缺失或 lazy symbol 失败。
+
+### 解决方案
+`KronosParserTransformer` 只收集源码 KPojo 和 init 入口，跳过 generated projection lazy class。`KronosProjectionIrTransformer` materialize 同名顶层 concrete projection class，生成无参构造并暴露 concrete `IrClass` 集合。`KronosIrGenerationExtension` 在 projection materialization 之后统一把源码 KPojo 与 materialized projection classes 合并传给 `KClassMapGenerator`。
+
+### 预防措施
+FIR 负责声明形状和 IDE/前端可见类型；backend IR 负责生成 projection class body、无参构造和实例化映射。不要把 FIR lazy projection class 传给普通 KPojo body transformer 或提前放进 `kClassCreator`。

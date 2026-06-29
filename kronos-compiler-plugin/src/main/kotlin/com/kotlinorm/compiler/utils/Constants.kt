@@ -17,7 +17,9 @@
 package com.kotlinorm.compiler.utils
 
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 
 /**
  * FQN constants for Kronos classes and interfaces
@@ -38,9 +40,55 @@ val KTableForSortFqName = FqName("com.kotlinorm.beans.dsl.KTableForSort")
 val KTableForReferenceFqName = FqName("com.kotlinorm.beans.dsl.KTableForReference")
 
 // Kotlin standard library
+val BooleanFqName = FqName("kotlin.Boolean")
+val ByteFqName = FqName("kotlin.Byte")
+val ShortFqName = FqName("kotlin.Short")
+val IntFqName = FqName("kotlin.Int")
+val LongFqName = FqName("kotlin.Long")
+val FloatFqName = FqName("kotlin.Float")
+val DoubleFqName = FqName("kotlin.Double")
+val CharFqName = FqName("kotlin.Char")
 val PairFqName = FqName("kotlin.Pair")
 val StringFqName = FqName("kotlin.String")
 val FunctionHandlerFqName = FqName("com.kotlinorm.functions.FunctionHandler")
+
+// Select operation and generated projection support
+val SelectPackageFqName = FqName("com.kotlinorm.orm.select")
+val SelectFunctionName = Name.identifier("select")
+val SelectAliasFunctionName = "as_"
+val SelectGeneratedProjectionFunctionName = Name.identifier("selectGeneratedProjection")
+val SelectFunctionFqName = FqName("com.kotlinorm.orm.select.select")
+val SelectGeneratedProjectionCallableId = CallableId(
+    SelectPackageFqName,
+    null,
+    SelectGeneratedProjectionFunctionName
+)
+val SelectClauseFqName = FqName("com.kotlinorm.orm.select.SelectClause")
+val GeneratedProjectionPackageFqName = FqName("com.kotlinorm.generated.projection")
+val GeneratedProjectionClassPrefix = "KronosSelectResult_"
+val GeneratedProjectionFieldIdentifierRegex = Regex("[A-Za-z_][A-Za-z0-9_]*")
+val QueryListFunctionName = "queryList"
+val QueryOneFunctionName = "queryOne"
+val QueryOneOrNullFunctionName = "queryOneOrNull"
+val SelectQueryFunctionNames = setOf(QueryListFunctionName, QueryOneFunctionName, QueryOneOrNullFunctionName)
+val KPojoTableNamePropertyName = Name.identifier("__tableName")
+val KPojoTableCommentPropertyName = Name.identifier("__tableComment")
+val TypedQueryFunctionFqNames = setOf(
+    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryListFunctionName"),
+    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryOneFunctionName"),
+    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryOneOrNullFunctionName"),
+    FqName("com.kotlinorm.orm.select.SelectClause.$QueryListFunctionName"),
+    FqName("com.kotlinorm.orm.select.SelectClause.$QueryOneFunctionName"),
+    FqName("com.kotlinorm.orm.select.SelectClause.$QueryOneOrNullFunctionName"),
+    FqName("com.kotlinorm.database.SqlHandler.$QueryListFunctionName"),
+    FqName("com.kotlinorm.database.SqlHandler.$QueryOneFunctionName"),
+    FqName("com.kotlinorm.database.SqlHandler.$QueryOneOrNullFunctionName")
+)
+val SelectFromQueryFunctionRegexes = setOf(
+    Regex("com\\.kotlinorm\\.orm\\.join\\.SelectFrom\\d\\.$QueryListFunctionName"),
+    Regex("com\\.kotlinorm\\.orm\\.join\\.SelectFrom\\d\\.$QueryOneFunctionName"),
+    Regex("com\\.kotlinorm\\.orm\\.join\\.SelectFrom\\d\\.$QueryOneOrNullFunctionName")
+)
 
 // Enums
 val KColumnTypeFqName = FqName("com.kotlinorm.enums.KColumnType")
@@ -111,3 +159,6 @@ val NoValueStrategyTypeClassId = ClassId.topLevel(NoValueStrategyTypeFqName)
 // Config
 val KronosCommonStrategyClassId = ClassId.topLevel(KronosCommonStrategyFqName)
 val KronosObjectClassId = ClassId.topLevel(KronosObjectFqName)
+
+// Select operation and generated projection support
+val SelectClauseClassId = ClassId.topLevel(SelectClauseFqName)

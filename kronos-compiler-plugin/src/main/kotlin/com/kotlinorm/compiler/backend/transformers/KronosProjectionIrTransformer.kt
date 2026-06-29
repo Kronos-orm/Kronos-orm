@@ -1,0 +1,259 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.kotlinorm.compiler.backend.transformers
+
+import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.core.kPojoClassSymbol
+import com.kotlinorm.compiler.fir.KronosProjectionRegistry
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+import com.kotlinorm.compiler.utils.KPojoTableCommentPropertyName
+import com.kotlinorm.compiler.utils.KPojoTableNamePropertyName
+import com.kotlinorm.compiler.utils.SelectFunctionFqName
+import com.kotlinorm.compiler.utils.SelectGeneratedProjectionCallableId
+import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.descriptors.ClassKind
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.impl.MutablePackageFragmentDescriptor
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
+import org.jetbrains.kotlin.ir.builders.declarations.addConstructor
+import org.jetbrains.kotlin.ir.builders.declarations.addDefaultGetter
+import org.jetbrains.kotlin.ir.builders.declarations.addDefaultSetter
+import org.jetbrains.kotlin.ir.builders.declarations.addProperty
+import org.jetbrains.kotlin.ir.builders.declarations.buildClass
+import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irDelegatingConstructorCall
+import org.jetbrains.kotlin.ir.builders.irExprBody
+import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrFile
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
+import org.jetbrains.kotlin.ir.types.IrSimpleType
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrTypeProjection
+import org.jetbrains.kotlin.ir.types.classOrNull
+import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
+import org.jetbrains.kotlin.ir.types.typeWith
+import org.jetbrains.kotlin.ir.util.addFakeOverrides
+import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
+import org.jetbrains.kotlin.ir.declarations.moduleDescriptor
+import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+
+/**
+ * Materializes FIR-declared select projection classes as concrete backend IR classes.
+ */
+class KronosProjectionIrTransformer(
+    private val pluginContext: IrPluginContext,
+    private val errorReporter: ErrorReporter
+) : IrElementTransformerVoidWithContext() {
+    private val materializedProjectionClasses = linkedMapOf<FqName, IrClass>()
+    val projectionClasses: Collection<IrClass>
+        get() = materializedProjectionClasses.values
+
+    private var moduleFragment: IrModuleFragment? = null
+    private var projectionFile: IrFile? = null
+
+    override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment {
+        moduleFragment = declaration
+        return super.visitModuleFragment(declaration)
+    }
+
+    /**
+     * Rewrites bare select calls after their FIR-refined return type exposes a generated projection class.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitCall(expression: IrCall): IrExpression {
+        val call = super.visitCall(expression) as IrCall
+        return buildGeneratedSelectCall(call)
+            ?: redirectProjectionAccessorCall(call)
+            ?: call
+    }
+
+    /**
+     * Redirects property reads from FIR-lazy projection getters to the materialized backend class.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun redirectProjectionAccessorCall(call: IrCall): IrCall? {
+        if (call.origin != IrStatementOrigin.GET_PROPERTY) return null
+        val lazyProjectionClass = call.symbol.owner.parent as? IrClass ?: return null
+        if (!lazyProjectionClass.isGeneratedProjectionClass()) return null
+        val materializedProjectionClass = materializedProjectionClasses[lazyProjectionClass.kotlinFqName] ?: return null
+        val propertyName = call.symbol.owner.correspondingPropertySymbol?.owner?.name ?: return null
+        val materializedGetter = materializedProjectionClass.properties
+            .firstOrNull { it.name == propertyName }
+            ?.getter
+            ?: return null
+
+        call.symbol = materializedGetter.symbol
+        call.type = materializedGetter.returnType
+        call.superQualifierSymbol = null
+        return call
+    }
+
+    /**
+     * Rewrites bare select calls to pass the generated projection KClass at runtime.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun buildGeneratedSelectCall(call: IrCall): IrCall? {
+        val function = call.symbol.owner
+        if (function.kotlinFqName != SelectFunctionFqName) return null
+
+        val selectType = call.type as? IrSimpleType ?: return null
+        val sourceType = (selectType.arguments.getOrNull(0) as? IrTypeProjection)?.type ?: return null
+        val projectionType = (selectType.arguments.getOrNull(1) as? IrTypeProjection)?.type ?: return null
+        val projectionClass = projectionType.classOrNull?.owner ?: return null
+        if (!projectionClass.isGeneratedProjectionClass()) return null
+        val materializedProjectionClass = materializeProjectionClass(projectionClass, sourceType)
+        val materializedProjectionType = materializedProjectionClass.symbol.defaultType
+
+        val selectGeneratedSymbol = pluginContext.referenceFunctions(SelectGeneratedProjectionCallableId)
+            .firstOrNull { it.owner.parameters.size == 3 }
+            ?: return null
+
+        return DeclarationIrBuilder(pluginContext, currentScope!!.scope.scopeOwnerSymbol).irCall(selectGeneratedSymbol).apply {
+            typeArguments[0] = sourceType
+            typeArguments[1] = materializedProjectionType
+            arguments[0] = call.arguments[0]
+            arguments[1] = IrClassReferenceImpl(
+                call.startOffset,
+                call.endOffset,
+                pluginContext.irBuiltIns.kClassClass.typeWith(materializedProjectionType),
+                materializedProjectionClass.symbol,
+                materializedProjectionType
+            )
+            arguments[2] = call.arguments[1]
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun materializeProjectionClass(projectionClass: IrClass, sourceType: IrType): IrClass {
+        val fqName = projectionClass.kotlinFqName
+        materializedProjectionClasses[fqName]?.let { return it }
+        val model = KronosProjectionRegistry.find(ClassId.topLevel(fqName)) ?: return projectionClass
+
+        val file = projectionFile ?: createProjectionFile().also { projectionFile = it }
+        val irClass = pluginContext.irFactory.buildClass {
+            origin = IrDeclarationOrigin.DEFINED
+            name = projectionClass.name
+            visibility = DescriptorVisibilities.PUBLIC
+            kind = ClassKind.CLASS
+            modality = Modality.FINAL
+            isData = true
+        }.apply {
+            parent = file
+            superTypes = listOf(with(pluginContext) { kPojoClassSymbol.defaultType })
+            createThisReceiverParameter()
+        }
+
+        file.declarations += irClass
+        materializedProjectionClasses[fqName] = irClass
+
+        val sourceProperties = sourceType.classOrNull?.owner?.properties?.associateBy { it.name }.orEmpty()
+        model.fields.forEach { field ->
+            val sourceProperty = sourceProperties[field.sourceName]
+            val propertyType = sourceProperty?.getter?.returnType
+                ?: sourceProperty?.backingField?.type
+                ?: pluginContext.irBuiltIns.anyNType
+            irClass.addProjectionProperty(field.name, propertyType)
+        }
+        irClass.addNoArgConstructor()
+        irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))
+        irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
+        return irClass
+    }
+
+    private fun createProjectionFile(): IrFile {
+        val module = moduleFragment ?: error("Kronos projection materializer has no module fragment")
+        val sourceFile = module.files.firstOrNull()
+            ?: error("Kronos projection materializer requires at least one source file")
+        val fileEntry = sourceFile.fileEntry
+            ?: error("Kronos projection materializer requires at least one source file")
+        val packageFragment = MutablePackageFragmentDescriptor(sourceFile.moduleDescriptor, GeneratedProjectionPackageFqName)
+        return IrFileImpl(
+            fileEntry = fileEntry,
+            packageFragmentDescriptor = packageFragment,
+            module = module
+        ).also { module.files += it }
+    }
+
+    private fun IrClass.addProjectionProperty(
+        name: Name,
+        type: IrType,
+        initialString: String? = null
+    ): IrProperty {
+        return addProperty {
+            origin = IrDeclarationOrigin.DEFINED
+            this.name = name
+            visibility = DescriptorVisibilities.PUBLIC
+            modality = Modality.FINAL
+            isVar = true
+        }.also { property ->
+            val backingField = property.addBackingField {
+                this.type = type
+            }
+            backingField.initializer = initialString?.let { value ->
+                DeclarationIrBuilder(pluginContext, property.symbol).irExprBody(
+                    DeclarationIrBuilder(pluginContext, property.symbol).irString(value)
+                )
+            }
+            property.addDefaultGetter(this, pluginContext.irBuiltIns)
+            property.addDefaultSetter(this, pluginContext.irBuiltIns)
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.addNoArgConstructor() {
+        addConstructor {
+            origin = IrDeclarationOrigin.DEFINED
+            visibility = DescriptorVisibilities.PUBLIC
+            isPrimary = true
+        }.also { constructor ->
+            constructor.body = DeclarationIrBuilder(pluginContext, constructor.symbol).irBlockBody {
+                +irDelegatingConstructorCall(pluginContext.irBuiltIns.anyClass.owner.constructors.single())
+                +IrInstanceInitializerCallImpl(
+                    UNDEFINED_OFFSET,
+                    UNDEFINED_OFFSET,
+                    this@addNoArgConstructor.symbol,
+                    pluginContext.irBuiltIns.unitType
+                )
+            }
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.isGeneratedProjectionClass(): Boolean =
+        kotlinFqName.parent() == GeneratedProjectionPackageFqName
+}

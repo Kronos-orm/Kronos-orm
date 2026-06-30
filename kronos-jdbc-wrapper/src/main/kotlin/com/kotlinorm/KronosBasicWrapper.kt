@@ -452,7 +452,7 @@ class KronosBasicWrapper(val dataSource: DataSource) : KronosDataSourceWrapper {
             for (i in 1..metaData.columnCount) {
                 val label = metaData.getColumnLabel(i)
                 columns[label]?.let { field ->
-                    this[label] = getObjectValue(
+                    this[field.name] = getObjectValue(
                         i, field.kClass!!, field.superTypes
                     )
                 }

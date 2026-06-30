@@ -21,9 +21,11 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.LinkedHashSet
+import kotlin.reflect.KClass
 
-abstract class KSelectable<T : KPojo>(
-    internal open val pojo: T
+abstract class KSelectable<Selected : KPojo>(
+    internal open val pojo: KPojo,
+    internal open val selectedKClass: KClass<Selected>
 ) {
     open var selectFields: LinkedHashSet<Field> = []
     abstract var selectAll: Boolean
@@ -39,4 +41,9 @@ abstract class KSelectable<T : KPojo>(
      * @return SelectStatement representing this query
      */
     abstract fun toStatement(wrapper: KronosDataSourceWrapper? = null): SelectStatement
+
+    open fun toStatement(
+        wrapper: KronosDataSourceWrapper? = null,
+        parameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): SelectStatement = toStatement(wrapper)
 }

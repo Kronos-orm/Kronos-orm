@@ -25,6 +25,7 @@ import com.kotlinorm.compiler.utils.DateTimeFormatAnnotationFqName
 import com.kotlinorm.compiler.utils.DefaultValueAnnotationFqName
 import com.kotlinorm.compiler.utils.ErrorMessages
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
+import com.kotlinorm.compiler.utils.KSelectableFqName
 import com.kotlinorm.compiler.utils.NonNullAnnotationFqName
 import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationFqName
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
@@ -69,9 +70,12 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.isString
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.types.typeWith
+import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.hasAnnotation
+import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.ClassId
@@ -148,14 +152,7 @@ private fun analyzeCallFields(
             [buildFieldFromPropertyAccess(call, errorReporter)]
         }
 
-        IrStatementOrigin.PLUS -> {
-            errorReporter.reportError(
-                call,
-                ErrorMessages.UNSUPPORTED_FIELD_OPERATOR,
-                ErrorMessages.UNSUPPORTED_FIELD_OPERATOR_FIX
-            )
-            emptyList()
-        }
+        IrStatementOrigin.PLUS -> [buildOperatorFunctionField(irFunction, call, errorReporter)]
         
         IrStatementOrigin.MINUS -> {
             val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
@@ -163,7 +160,7 @@ private fun analyzeCallFields(
                 // Field exclusion: it - it.password
                 analyzeMinusFields(irFunction, call, errorReporter)
             } else {
-                emptyList()
+                [buildOperatorFunctionField(irFunction, call, errorReporter)]
             }
         }
         
@@ -175,15 +172,8 @@ private fun analyzeCallFields(
                     analyzeFieldProjection(irFunction, call, errorReporter)
                 }
 
-                "plus" -> {
-                    errorReporter.reportError(
-                        call,
-                        ErrorMessages.UNSUPPORTED_FIELD_OPERATOR,
-                        ErrorMessages.UNSUPPORTED_FIELD_OPERATOR_FIX
-                    )
-                    emptyList()
-                }
-                "unaryPlus", "times", "div", "rem" -> {
+                "plus", "minus", "times", "div", "rem" -> [buildOperatorFunctionField(irFunction, call, errorReporter)]
+                "unaryPlus" -> {
                     errorReporter.reportError(
                         call,
                         ErrorMessages.UNSUPPORTED_FIELD_OPERATOR,
@@ -229,11 +219,95 @@ private fun analyzeCallFields(
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun IrCall.operatorOperands(): List<IrExpression> {
+internal fun IrCall.operatorOperands(): List<IrExpression> {
     val operands = mutableListOf<IrExpression>()
     (extensionReceiverArgument ?: dispatchReceiverArgument)?.let { operands += it }
     getValueArgumentSafe(0)?.let { operands += it }
     return operands
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+internal fun IrCall.operatorFunctionName(): String? {
+    val rawName = symbol.owner.name.asString()
+    return when {
+        origin == IrStatementOrigin.PLUS || rawName == "plus" ->
+            if (operatorOperands().any { it.type.isString() || it.type.classFqName?.asString() == "kotlin.CharSequence" }) "concat" else "add"
+        origin == IrStatementOrigin.MINUS || rawName == "minus" -> "sub"
+        rawName == "times" -> "mul"
+        rawName == "div" -> "div"
+        rawName == "rem" -> "mod"
+        else -> null
+    }
+}
+
+internal sealed class SelectProjectionIr {
+    data class FieldProjection(val field: IrExpression) : SelectProjectionIr()
+    data class ScalarSubqueryProjection(val query: IrExpression, val alias: String) : SelectProjectionIr()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+internal fun analyzeAndBuildSelectProjections(
+    irFunction: IrFunction,
+    expression: IrExpression,
+    errorReporter: ErrorReporter
+): List<SelectProjectionIr> {
+    return when {
+        expression is IrCall && expression.isProjectionCollectionCall() -> {
+            expression.valueArguments.flatMap { arg ->
+                when (arg) {
+                    is IrVararg -> arg.elements.flatMap { element ->
+                        if (element is IrExpression) {
+                            analyzeAndBuildSelectProjections(irFunction, element, errorReporter)
+                        } else {
+                            emptyList()
+                        }
+                    }
+                    is IrExpression -> analyzeAndBuildSelectProjections(irFunction, arg, errorReporter)
+                    else -> emptyList()
+                }
+            }
+        }
+
+        expression is IrCall && expression.symbol.owner.name.asString() == "as_" -> {
+            val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiverArgument
+            val aliasArg = expression.getValueArgumentSafe(0)
+            if (receiver != null && receiver.type.isKSelectableType() && aliasArg is IrConst) {
+                (aliasArg.value as? String)?.let { alias ->
+                    listOf(SelectProjectionIr.ScalarSubqueryProjection(receiver, alias))
+                } ?: emptyList()
+            } else {
+                analyzeAndBuildFields(irFunction, expression, errorReporter)
+                    .map { SelectProjectionIr.FieldProjection(it) }
+            }
+        }
+
+        else -> analyzeAndBuildFields(irFunction, expression, errorReporter)
+            .map { SelectProjectionIr.FieldProjection(it) }
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.isProjectionCollectionCall(): Boolean {
+    return when (symbol.owner.name.asString()) {
+        "get", "of", "listOf", "mutableListOf", "setOf", "arrayOf" -> true
+        else -> false
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+internal fun buildOperatorFunctionField(
+    irFunction: IrFunction,
+    call: IrCall,
+    errorReporter: ErrorReporter
+): IrExpression {
+    return buildFunctionField(irFunction, call, errorReporter, functionName = call.operatorFunctionName() ?: call.funcName())
+}
+
+context(context: IrPluginContext)
+internal fun IrType.isKSelectableType(): Boolean {
+    return classFqName == KSelectableFqName || superTypes().any { it.classFqName == KSelectableFqName }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -330,7 +404,7 @@ fun buildFieldFromPropertyRef(
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBuilderWithScope)
-fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
+fun buildFieldFromProperty(irProperty: IrProperty, metadataClass: IrClass? = null): IrExpression {
     val propertyName = irProperty.name.asString()
 
     // Get property type
@@ -378,7 +452,8 @@ fun buildFieldFromProperty(irProperty: IrProperty): IrExpression {
 
     // Table name
     val parent = irProperty.parent as? IrClass
-    val tableNameExpr = if (parent != null) builder.getTableNameExpr(parent) else builder.irString("")
+    val tableNameOwner = metadataClass ?: parent
+    val tableNameExpr = if (tableNameOwner != null) builder.getTableNameExpr(tableNameOwner) else builder.irString("")
 
     // Check @Default annotation
     val defaultValueAnnotation = irProperty.annotations.firstOrNull {
@@ -819,10 +894,9 @@ context(context: IrPluginContext, builder: IrBuilderWithScope)
 fun buildFunctionField(
     irFunction: IrFunction,
     call: IrCall,
-    errorReporter: ErrorReporter
+    errorReporter: ErrorReporter,
+    functionName: String = call.funcName()
 ): IrExpression {
-    val functionName = call.funcName()
-
     // Build argument list: List<Pair<Field?, Any?>>
     val argumentPairs = mutableListOf<IrExpression>()
 
@@ -832,19 +906,21 @@ fun buildFunctionField(
 
     fun processArg(arg: IrExpression) {
         // Check if argument is a Field (KPojo property or nested function)
-        val fieldExpr = if (arg.isKPojoProperty() || arg.isKronosFunction()) {
+        val fieldExpr = if (arg.isKronosFieldExpression()) {
             val fields = analyzeAndBuildFields(irFunction, arg, errorReporter)
             if (fields.isNotEmpty()) fields.first() else builder.irNull()
         } else {
             builder.irNull()
         }
 
-        // Create Pair<Field?, Any?>(fieldExpr, arg)
-        argumentPairs.add(irPairOf(nullableFieldType, anyNullableType, fieldExpr, arg))
+        // Create Pair<Field?, Any?>(fieldExpr, arg copy). The original expression remains in the user's tree.
+        argumentPairs.add(irPairOf(nullableFieldType, anyNullableType, fieldExpr, arg.deepCopyWithSymbols()))
     }
 
     // Process each value argument, unpacking varargs
-    call.valueArguments.forEach { arg ->
+    call.operatorOperands().takeIf { call.operatorFunctionName() != null }?.forEach { arg ->
+        processArg(arg)
+    } ?: call.valueArguments.forEach { arg ->
         if (arg != null) {
             if (arg is IrVararg) {
                 // Unpack vararg elements
@@ -931,4 +1007,12 @@ fun IrExpression.isKPojoProperty(): Boolean {
         is IrPropertyReference -> true
         else -> false
     }
+}
+
+/**
+ * Checks whether an expression should be lowered into a Field or FunctionField argument.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrExpression.isKronosFieldExpression(): Boolean {
+    return isKPojoProperty() || (this is IrCall && (isKronosFunction() || operatorFunctionName() != null))
 }

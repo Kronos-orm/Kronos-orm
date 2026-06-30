@@ -25,28 +25,33 @@ import java.util.concurrent.ConcurrentHashMap
  * Holds generated projection models shared across FIR callbacks during one compilation.
  */
 object KronosProjectionRegistry {
-    private val projectionsByClassId = ConcurrentHashMap<ClassId, KronosProjectionModel>()
+    private val projectionsBySession = ConcurrentHashMap<FirSession, ConcurrentHashMap<ClassId, KronosProjectionModel>>()
     private val declarationGeneratorsBySession = ConcurrentHashMap<FirSession, FirDeclarationGenerationExtension>()
-    private val topLevelClassIds = ConcurrentHashMap.newKeySet<ClassId>()
 
     /**
      * Registers a projection model produced while refining a select call.
      */
-    fun register(model: KronosProjectionModel) {
-        projectionsByClassId[model.classId] = model
-        topLevelClassIds += model.classId
+    fun register(session: FirSession, model: KronosProjectionModel) {
+        projectionsBySession.computeIfAbsent(session) { ConcurrentHashMap() }[model.classId] = model
     }
 
     /**
      * Looks up a projection model by its generated class id.
      */
-    fun find(classId: ClassId): KronosProjectionModel? = projectionsByClassId[classId]
+    fun find(session: FirSession, classId: ClassId): KronosProjectionModel? =
+        projectionsBySession[session]?.get(classId)
+
+    /**
+     * Looks up a projection model after FIR session information is no longer available.
+     */
+    fun findAny(classId: ClassId): KronosProjectionModel? =
+        projectionsBySession.values.asSequence().mapNotNull { it[classId] }.firstOrNull()
 
     /**
      * Returns all generated top-level projection class ids known to this compilation.
      */
-    fun allTopLevelClassIds(): Set<ClassId> =
-        topLevelClassIds
+    fun allTopLevelClassIds(session: FirSession): Set<ClassId> =
+        projectionsBySession[session]?.keys?.toSet().orEmpty()
 
     /**
      * Stores the FIR declaration generator registered for the current session.

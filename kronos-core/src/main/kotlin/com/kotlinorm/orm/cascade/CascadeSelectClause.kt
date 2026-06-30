@@ -46,6 +46,12 @@ import kotlin.reflect.KClass
  * 该对象用于为数据库操作构建级联查询子句
  */
 object CascadeSelectClause {
+    private fun Field.matches(other: Field): Boolean =
+        name == other.name && tableName == other.tableName
+
+    private fun Collection<Field>.containsField(field: Field): Boolean =
+        any { it.matches(field) }
+
     /**
      * Build a cascade select clause.
      *
@@ -69,15 +75,18 @@ object CascadeSelectClause {
         selectFields: LinkedHashSet<Field>,
         operationType: KOperationType,
         cascadeSelectedProps: Set<Field>
-    ) = if (cascade) generateTask(
-        cascadeAllowed,
-        pojo,
-        kClass,
-        kPojoAllFieldsCache[kClass]!!.filter { selectFields.contains(it) },
-        operationType,
-        rootTask,
-        cascadeSelectedProps
-    ) else rootTask.toKronosQueryTask()
+    ) = if (cascade) {
+        val selectedFieldNames = selectFields.map { it.name }.toSet()
+        generateTask(
+            cascadeAllowed,
+            pojo,
+            kClass,
+            kPojoAllFieldsCache[kClass]!!.filter { it.name in selectedFieldNames },
+            operationType,
+            rootTask,
+            cascadeSelectedProps
+        )
+    } else rootTask.toKronosQueryTask()
 
     /**
      * Generate a task for the cascade select operation.
@@ -103,6 +112,7 @@ object CascadeSelectClause {
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
         val tableName = pojo.__tableName
+        val selectedCascadeProps = cascadeSelectedProps.filter { it.tableName == tableName }
         val validCascades = findValidRefs(
             kClass,
             columns,
@@ -121,8 +131,8 @@ object CascadeSelectClause {
                             val lastStepResult = this as List<KPojo> // this为主表查询的结果
                             if (lastStepResult.isEmpty()) return@forEach // 若该级联属性查询结果为空，不进行级联查询
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
-                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
-                            if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
+                            if (selectedCascadeProps.isNotEmpty() && !selectedCascadeProps.containsField(prop)) return@forEach // 若该级联属性未被select，不进行级联查询
+                            if (!cascadeAllowed.isNullOrEmpty() && !cascadeAllowed.containsField(prop)) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
                             setValues(
                                 lastStepResult,
                                 prop.name,
@@ -141,8 +151,8 @@ object CascadeSelectClause {
                             val lastStepResult = this as KPojo? // this为主表查询的结果
                             if (lastStepResult == null) return@forEach // 若该级联属性查询结果为空，不进行级联查询
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
-                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
-                            if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
+                            if (selectedCascadeProps.isNotEmpty() && !selectedCascadeProps.containsField(prop)) return@forEach // 若该级联属性未被select，不进行级联查询
+                            if (!cascadeAllowed.isNullOrEmpty() && !cascadeAllowed.containsField(prop)) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
                             setValues(
                                 [lastStepResult],
                                 prop.name,
@@ -215,10 +225,8 @@ object CascadeSelectClause {
             return
         }
         val isCollection = propField.cascadeIsCollectionOrArray
-        val tableName = parentFirst.__tableName
-
         // 确定 FK 映射方向：本地属性 → 远程属性
-        val isLocalTable = tableName == validRef.tableName
+        val isLocalTable = validRef.mapperByThis
         val (localProps, remoteProps) = if (isLocalTable) {
             validRef.kCascade.properties to validRef.kCascade.targetProperties
         } else {
@@ -230,6 +238,9 @@ object CascadeSelectClause {
             this.operationType = operationType
             this.cascadeAllowed = cascadeAllowed
             this.cascadeSelectedProps = cascadeSelectedProps
+            if (operationType == KOperationType.SELECT) {
+                cascade(false)
+            }
         }
 
         // 从父行 dataMap 中提取 FK 键值对，用于填充子 POJO 查询条件

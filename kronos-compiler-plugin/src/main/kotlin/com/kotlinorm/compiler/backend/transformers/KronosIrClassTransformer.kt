@@ -87,19 +87,14 @@ import org.jetbrains.kotlin.name.FqName
 class KronosIrClassTransformer(
     private val pluginContext: IrPluginContext,
     private val irClass: IrClass,
-    @Suppress("unused") private val errorReporter: ErrorReporter
+    @Suppress("unused") private val errorReporter: ErrorReporter,
+    private val metadataClass: IrClass = irClass
 ) : IrElementTransformerVoidWithContext() {
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
         if (declaration !is IrSimpleFunction || !declaration.isFakeOverride) {
             return super.visitFunctionNew(declaration)
-        }
-
-        // Make all properties mutable (needed for set/fromMapData)
-        irClass.properties.forEach {
-            it.isVar = true
-            it.isConst = false
         }
 
         fun replaceFakeBody(bodyFactory: DeclarationIrBuilder.() -> IrBlockBody) {
@@ -110,7 +105,7 @@ class KronosIrClassTransformer(
 
         with(pluginContext) {
             when (declaration.name.asString()) {
-                "kronosColumns" -> replaceFakeBody { createKronosColumns(irClass) }
+                "kronosColumns" -> replaceFakeBody { createKronosColumns(irClass, metadataClass) }
                 "kronosTableIndex" -> replaceFakeBody { createKronosTableIndex(irClass) }
                 "kronosCreateTime" -> replaceFakeBody { createKronosSpecialField(irClass, AnnotationFqNames.CreateTime) }
                 "kronosUpdateTime" -> replaceFakeBody { createKronosSpecialField(irClass, AnnotationFqNames.UpdateTime) }
@@ -143,8 +138,8 @@ class KronosIrClassTransformer(
             with(DeclarationIrBuilder(pluginContext, declaration.symbol)) {
                 with(pluginContext) {
                     when (declaration.name.asString()) {
-                        "__tableName" -> replaceFakeProp { createTableName(irClass) }
-                        "__tableComment" -> replaceFakeProp { createTableComment(irClass) }
+                        "__tableName" -> replaceFakeProp { createTableName(metadataClass) }
+                        "__tableComment" -> replaceFakeProp { createTableComment(metadataClass) }
                     }
                 }
             }

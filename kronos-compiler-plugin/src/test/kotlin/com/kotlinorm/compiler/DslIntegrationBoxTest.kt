@@ -43,4 +43,5 @@ class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
      */
     @Test
     fun multiFileKPojo() = box("multiFileKPojo")
+
 }

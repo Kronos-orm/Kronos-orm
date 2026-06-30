@@ -230,10 +230,21 @@ object StringFunctionBuilder : FunctionBuilder {
                 else -> "LENGTH"
             }
 
+            "concat" -> {
+                field.fields = flattenConcatFields(field.fields)
+                "CONCAT"
+            }
 
             else -> field.functionName.uppercase()
         }
         return buildFields(field.functionName, alias, field.fields, dataSource, showTable)
+    }
+
+    private fun flattenConcatFields(fields: List<Pair<Field?, Any?>>): List<Pair<Field?, Any?>> {
+        return fields.flatMap { field ->
+            val nested = field.first as? FunctionField
+            if (nested?.functionName == "concat") flattenConcatFields(nested.fields) else listOf(field)
+        }
     }
     
     override fun transformAst(
@@ -264,7 +275,7 @@ object StringFunctionBuilder : FunctionBuilder {
             }
             
             "concat" -> {
-                val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
+                val args = flattenConcatArguments(function.arguments).joinToString(", ") { renderExpression(it, context) }
                 "CONCAT($args)"
             }
             
@@ -327,6 +338,13 @@ object StringFunctionBuilder : FunctionBuilder {
                 val args = function.arguments.joinToString(", ") { renderExpression(it, context) }
                 "${funcName.uppercase()}($args)"
             }
+        }
+    }
+
+    private fun flattenConcatArguments(arguments: List<Expression>): List<Expression> {
+        return arguments.flatMap { argument ->
+            val nested = argument as? FunctionCall
+            if (nested?.functionName?.lowercase() == "concat") flattenConcatArguments(nested.arguments) else listOf(argument)
         }
     }
 }

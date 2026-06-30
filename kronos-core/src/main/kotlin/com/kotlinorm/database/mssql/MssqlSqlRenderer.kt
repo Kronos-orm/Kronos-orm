@@ -29,13 +29,13 @@ import com.kotlinorm.enums.PrimaryKeyType
  * MssqlSqlRenderer
  *
  * SQL Server-specific SQL renderer implementation. Handles SQL Server-specific syntax including:
- * - Square brackets for identifiers [identifier]
+ * - Square brackets for identifiers `[identifier]`
  * - OFFSET/FETCH syntax (SQL Server 2012+)
  * - String literal escaping
  * - Date/time literal formatting
  * - IF EXISTS ... UPDATE ... ELSE INSERT for conflict resolution
  * - ROWLOCK hint for pessimistic locking
- * - [dbo] schema prefix for tables
+ * - `[dbo]` schema prefix for tables
  *
  * @author OUSC
  */
@@ -109,7 +109,7 @@ class MssqlSqlRenderer : AbstractSqlRenderer() {
     override fun renderLimitClause(limit: LimitClause, context: RenderContext): String {
         // SQL Server 2012+ uses: OFFSET n ROWS FETCH NEXT m ROWS ONLY
         // Note: OFFSET requires ORDER BY clause
-        return if (limit.offset != null && limit.offset!! > 0) {
+        return if (limit.offset != null && limit.offset > 0) {
             " OFFSET ${limit.offset} ROWS FETCH NEXT ${limit.limit} ROWS ONLY"
         } else {
             " FETCH NEXT ${limit.limit} ROWS ONLY"
@@ -133,6 +133,23 @@ class MssqlSqlRenderer : AbstractSqlRenderer() {
         return "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[${create.tableName}]') AND type in (N'U')) BEGIN CREATE TABLE $tableName ($tableDefinition); END;$comment"
     }
 
+    override fun renderCreateTableAsSelect(
+            create: DdlStatement.CreateTableAsSelectStatement,
+            context: RenderContext
+    ): String {
+        val tableName = "[dbo].${context.quote(create.tableName)}"
+        require(create.query is com.kotlinorm.ast.SelectStatement) {
+            "SQL Server CTAS with UNION source is not supported by SELECT INTO rendering."
+        }
+        val query = renderSelectStatement(create.query, context)
+        val selectInto = query.insertIntoClause(tableName)
+        return if (create.ifNotExists) {
+            "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[${create.tableName}]') AND type in (N'U')) BEGIN $selectInto; END;"
+        } else {
+            selectInto
+        }
+    }
+
     override fun renderAlterTable(
             alter: DdlStatement.AlterTableStatement,
             context: RenderContext
@@ -151,7 +168,6 @@ class MssqlSqlRenderer : AbstractSqlRenderer() {
                 val column = renderColumnDefinition(alter.column, context)
                 "ALTER TABLE $tableName ALTER COLUMN $column"
             }
-            else -> throw IllegalArgumentException("Unsupported ALTER TABLE statement type")
         }
     }
 
@@ -258,5 +274,28 @@ class MssqlSqlRenderer : AbstractSqlRenderer() {
         val method = if (index.method.isNotEmpty()) " USING ${index.method}" else ""
         return "${type}INDEX $indexName ($columns)$method"
     }
-}
 
+    private fun String.insertIntoClause(tableName: String): String {
+        val fromIndex = indexOfTopLevelFrom()
+        require(fromIndex > 0) { "SQL Server CTAS requires a SELECT statement with a FROM clause." }
+        return substring(0, fromIndex) + " INTO $tableName" + substring(fromIndex)
+    }
+
+    private fun String.indexOfTopLevelFrom(): Int {
+        var depth = 0
+        var index = 0
+        while (index <= length - 6) {
+            when (this[index]) {
+                '(' -> depth++
+                ')' -> if (depth > 0) depth--
+                ' ', '\n', '\r', '\t' -> {
+                    if (depth == 0 && regionMatches(index, " FROM ", 0, 6, ignoreCase = true)) {
+                        return index
+                    }
+                }
+            }
+            index++
+        }
+        return -1
+    }
+}

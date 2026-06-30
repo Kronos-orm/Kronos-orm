@@ -4,6 +4,13 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-nowarn")
+        freeCompilerArgs.add("-Xcollection-literals")
+    }
+}
+
 dependencies {
     kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     kover(project(":kronos-core"))

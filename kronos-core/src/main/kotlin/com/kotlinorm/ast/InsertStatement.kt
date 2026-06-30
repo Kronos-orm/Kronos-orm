@@ -32,5 +32,7 @@ data class InsertStatement(
         val table: TableReference,
         val columns: List<ColumnReference>,
         val values: List<Expression>,
-        val conflictResolver: ConflictResolver? = null
+        val conflictResolver: ConflictResolver? = null,
+        val source: Statement? = null,
+        val conflictAssignments: List<Assignment> = emptyList()
 ) : Statement

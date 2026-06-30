@@ -17,8 +17,10 @@
 package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.core.firstTypeArgument
 import com.kotlinorm.compiler.core.kPojoClassSymbol
 import com.kotlinorm.compiler.fir.KronosProjectionRegistry
+import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoTableCommentPropertyName
 import com.kotlinorm.compiler.utils.KPojoTableNamePropertyName
@@ -49,10 +51,13 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
+import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.IrTypeProjection
@@ -162,7 +167,7 @@ class KronosProjectionIrTransformer(
     private fun materializeProjectionClass(projectionClass: IrClass, sourceType: IrType): IrClass {
         val fqName = projectionClass.kotlinFqName
         materializedProjectionClasses[fqName]?.let { return it }
-        val model = KronosProjectionRegistry.find(ClassId.topLevel(fqName)) ?: return projectionClass
+        val model = KronosProjectionRegistry.findAny(ClassId.topLevel(fqName)) ?: return projectionClass
 
         val file = projectionFile ?: createProjectionFile().also { projectionFile = it }
         val irClass = pluginContext.irFactory.buildClass {
@@ -181,8 +186,10 @@ class KronosProjectionIrTransformer(
         file.declarations += irClass
         materializedProjectionClasses[fqName] = irClass
 
-        val sourceProperties = sourceType.classOrNull?.owner?.properties?.associateBy { it.name }.orEmpty()
-        model.fields.forEach { field ->
+        val sourceClass = sourceType.classOrNull?.owner ?: irClass
+        val sourceProperties = sourceClass.properties.associateBy { it.name }
+        val projectionFields = model.fields.withCascadeLocalKeyFields(sourceClass, sourceProperties)
+        projectionFields.forEach { field ->
             val sourceProperty = sourceProperties[field.sourceName]
             val propertyType = sourceProperty?.getter?.returnType
                 ?: sourceProperty?.backingField?.type
@@ -191,8 +198,74 @@ class KronosProjectionIrTransformer(
         }
         irClass.addNoArgConstructor()
         irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))
-        irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
+        irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter, sourceClass), null)
         return irClass
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun List<com.kotlinorm.compiler.fir.KronosProjectionField>.withCascadeLocalKeyFields(
+        sourceClass: IrClass,
+        sourceProperties: Map<Name, IrProperty>
+    ): List<com.kotlinorm.compiler.fir.KronosProjectionField> {
+        val result = linkedMapOf<Name, com.kotlinorm.compiler.fir.KronosProjectionField>()
+        fun add(field: com.kotlinorm.compiler.fir.KronosProjectionField) {
+            result.putIfAbsent(field.name, field)
+        }
+
+        forEach { field ->
+            add(field)
+            val sourceProperty = sourceProperties[field.sourceName] ?: return@forEach
+            val localKeys = sourceProperty.directCascadeLocalProperties() +
+                sourceProperty.reverseCascadeLocalProperties(sourceClass)
+
+            localKeys.forEach { localName ->
+                if (result.containsKey(localName)) return@forEach
+                val localProperty = sourceProperties[localName] ?: return@forEach
+                add(
+                    field.copy(
+                        name = localName,
+                        source = field.source,
+                        sourceName = localName,
+                        signature = "cascadeLocal:${sourceProperty.name.asString()}:${localName.asString()}"
+                    )
+                )
+            }
+        }
+
+        return result.values.toList()
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrProperty.directCascadeLocalProperties(): List<Name> =
+        cascadeStringArguments(index = 0)
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrProperty.reverseCascadeLocalProperties(sourceClass: IrClass): List<Name> {
+        val targetClass = cascadeTargetClass() ?: return emptyList()
+        return targetClass.properties
+            .filter { property ->
+                property.cascadeStringArguments(index = 0).isNotEmpty() &&
+                    property.cascadeTargetClass() == sourceClass
+            }
+            .flatMap { property -> property.cascadeStringArguments(index = 1) }
+            .toList()
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrProperty.cascadeStringArguments(index: Int): List<Name> {
+        val cascade = annotations.firstOrNull {
+            it.symbol.owner.returnType.classFqName == CascadeAnnotationFqName
+        } ?: return emptyList()
+        val vararg = cascade.arguments.getOrNull(index) as? IrVararg ?: return emptyList()
+        return vararg.elements.mapNotNull { element ->
+            (element as? IrConst)?.value?.toString()?.let(Name::identifier)
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrProperty.cascadeTargetClass(): IrClass? {
+        val type = getter?.returnType ?: backingField?.type ?: return null
+        return type.firstTypeArgument()?.classOrNull?.owner ?: type.classOrNull?.owner
     }
 
     private fun createProjectionFile(): IrFile {

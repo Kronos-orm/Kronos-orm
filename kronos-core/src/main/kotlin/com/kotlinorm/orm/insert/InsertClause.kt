@@ -18,10 +18,22 @@ package com.kotlinorm.orm.insert
 
 import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.FieldToExpressionConverter
 import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.Literal
 import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.SelectItem
+import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.Statement
+import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.UnionStatement
+import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.QueryMaterializeContext
+import com.kotlinorm.ast.toScalarSubqueryExpression
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.generator.SnowflakeIdGenerator
 import com.kotlinorm.beans.generator.UUIDGenerator
@@ -45,6 +57,7 @@ import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
+import com.kotlinorm.orm.union.UnionClause
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
@@ -60,6 +73,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
     internal var allColumns = kPojoAllColumnsCache[kClass]!!
     private var cascadeEnabled = true
     var stash = mutableMapOf<String, Any?>()
+    private var sourceQuery: KSelectable<*>? = null
+    private var sourceUnion: UnionClause? = null
+    private var sourceValueProvider: ((List<Field>) -> List<Any?>)? = null
 
     /**
      * cascadeAllowed
@@ -87,8 +103,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): KronosActionTask {
-        val finalStatement = toStatement(wrapper)
-        val (sql, paramMapNew) = renderStatement(wrapper, finalStatement)
+        val sourceParameterValues = mutableMapOf<String, Any?>()
+        val finalStatement = toStatement(wrapper, sourceParameterValues)
+        val (sql, paramMapNew) = renderStatement(wrapper, finalStatement, sourceParameterValues)
 
         return CascadeInsertClause.build(
             cascadeEnabled,
@@ -109,6 +126,30 @@ class InsertClause<T : KPojo>(val pojo: T) {
         return build().execute(wrapper)
     }
 
+    @PublishedApi
+    internal fun fromSource(
+        query: KSelectable<*>,
+        values: ((List<Field>) -> List<Any?>)? = null
+    ): InsertClause<T> {
+        sourceQuery = query
+        sourceUnion = null
+        sourceValueProvider = values
+        cascadeEnabled = false
+        return this
+    }
+
+    @PublishedApi
+    internal fun fromSource(
+        query: UnionClause,
+        values: ((List<Field>) -> List<Any?>)? = null
+    ): InsertClause<T> {
+        sourceQuery = null
+        sourceUnion = query
+        sourceValueProvider = values
+        cascadeEnabled = false
+        return this
+    }
+
     /**
      * Converts the InsertClause to an InsertStatement AST.
      * This method constructs the complete AST representation including:
@@ -120,7 +161,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
      * @param wrapper Optional KronosDataSourceWrapper for processing
      * @return Complete InsertStatement AST
      */
-    fun toStatement(wrapper: KronosDataSourceWrapper? = null): InsertStatement {
+    fun toStatement(
+        wrapper: KronosDataSourceWrapper? = null,
+        parameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): InsertStatement {
         var useIdentity = false
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
@@ -168,9 +212,34 @@ class InsertClause<T : KPojo>(val pojo: T) {
             ColumnReference(database = null, tableAlias = null, columnName = field.columnName)
         }
         
-        // Build value expressions (parameters)
-        val values = toInsertFields.map { field ->
-            Parameter.NamedParameter(field.name) as Expression
+        val sourceStatement: Statement? = when {
+            sourceQuery != null -> sourceQuery?.toStatement(wrapper, parameterValues)
+            sourceUnion != null -> sourceUnion?.toStatement(wrapper, parameterValues)
+            else -> null
+        }
+        val values = if (sourceStatement == null) {
+            toInsertFields.map { field ->
+                Parameter.NamedParameter(field.name) as Expression
+            }
+        } else {
+            sourceValueProvider?.invoke(toInsertFields)
+                ?.also { provided ->
+                    require(provided.size == toInsertFields.size) {
+                        "Insert-select value count (${provided.size}) must match target insertable field count (${toInsertFields.size})."
+                    }
+                }
+                ?.mapIndexed { index, value ->
+                    value.toInsertSelectExpression(toInsertFields[index], parameterValues)
+                }
+                ?: emptyList()
+        }
+        val finalSourceStatement = sourceStatement?.let { statement ->
+            if (values.isEmpty()) {
+                validateDefaultInsertSelectArity(statement, toInsertFields.size)
+                statement
+            } else {
+                rewriteInsertSelectProjection(statement, values)
+            }
         }
         
         // Build table reference
@@ -189,8 +258,82 @@ class InsertClause<T : KPojo>(val pojo: T) {
             table = table,
             columns = columns,
             values = values,
-            conflictResolver = null
+            conflictResolver = null,
+            source = finalSourceStatement
         )
+    }
+
+    private fun validateDefaultInsertSelectArity(statement: Statement, targetFieldCount: Int) {
+        val arities = queryOutputArities(statement)
+        arities.forEach { sourceFieldCount ->
+            require(sourceFieldCount == targetFieldCount) {
+                "Insert-select source column count ($sourceFieldCount) must match target insertable field count ($targetFieldCount)."
+            }
+        }
+    }
+
+    private fun queryOutputArities(statement: Statement): List<Int> {
+        return when (statement) {
+            is SelectStatement -> listOf(statement.selectList.size)
+            is UnionStatement -> statement.queries.map { it.selectList.size }
+            else -> error("Insert-select source must be a SELECT or UNION statement, but was ${statement::class.simpleName}.")
+        }
+    }
+
+    private fun rewriteInsertSelectProjection(statement: Statement, values: List<Expression>): Statement {
+        return when (statement) {
+            is SelectStatement -> {
+                statement.selectList.clear()
+                statement.selectList.addAll(values.map { SelectItem.ExpressionSelectItem(it, null) })
+                statement
+            }
+            is UnionStatement -> {
+                val rewrittenQueries = statement.queries.map { query ->
+                    val copy = query.copyForProjectionRewrite()
+                    copy.selectList.clear()
+                    copy.selectList.addAll(values.map { SelectItem.ExpressionSelectItem(it, null) })
+                    copy
+                }
+                statement.copy(queries = rewrittenQueries)
+            }
+            else -> error("Insert-select source must be a SELECT or UNION statement, but was ${statement::class.simpleName}.")
+        }
+    }
+
+    private fun SelectStatement.copyForProjectionRewrite(): SelectStatement {
+        return SelectStatement(
+            selectList = selectList.toMutableList(),
+            from = from,
+            where = where,
+            groupBy = groupBy?.toMutableList(),
+            having = having,
+            orderBy = orderBy?.toMutableList(),
+            limit = limit,
+            distinct = distinct,
+            lock = lock
+        )
+    }
+
+    private fun Any?.toInsertSelectExpression(
+        targetField: Field,
+        parameterValues: MutableMap<String, Any?>
+    ): Expression {
+        return when (this) {
+            null -> Literal.NullLiteral
+            is Expression -> this
+            is Field -> FieldToExpressionConverter.fieldToExpression(this)
+            is com.kotlinorm.ast.SelectQueryRef -> toScalarSubqueryExpression()
+            is KSelectable<*> -> toScalarSubqueryExpression()
+            else -> {
+                val paramName = CriteriaToAstConverter.getUniqueParamName(
+                    targetField.name,
+                    parameterValues,
+                    mutableMapOf()
+                )
+                parameterValues[paramName] = this
+                Parameter.NamedParameter(paramName)
+            }
+        }
     }
 
     /**
@@ -202,13 +345,19 @@ class InsertClause<T : KPojo>(val pojo: T) {
      */
     private fun renderStatement(
         wrapper: KronosDataSourceWrapper?,
-        finalStatement: InsertStatement = toStatement(wrapper)
+        finalStatement: InsertStatement = toStatement(wrapper),
+        sourceParameterValues: MutableMap<String, Any?> = mutableMapOf()
     ): Pair<String, Map<String, Any?>> {
         val dataSource = wrapper.orDefault()
         val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
 
-        // Render AST to SQL with parameters
-        val renderedSql = support.getInsertSqlWithParams(dataSource, finalStatement)
+        val loweredStatement = SubqueryLowering.lower(
+            finalStatement,
+            QueryMaterializeContext(wrapper = dataSource, parameterValues = sourceParameterValues)
+        ) as InsertStatement
+        val renderContext = RenderContext(quotes = support.quotes, dbType = dataSource.dbType)
+        renderContext.boundParameters.putAll(sourceParameterValues)
+        val renderedSql = support.renderer.render(loweredStatement, renderContext)
 
         // Process parameters (field type conversion, etc.)
         val paramMapNew = mutableMapOf<String, Any?>()
@@ -221,6 +370,18 @@ class InsertClause<T : KPojo>(val pojo: T) {
                 paramMapNew[key] = support.processParams(dataSource, field, value)
             } else {
                 paramMapNew[key] = value
+            }
+        }
+
+        // Include parameters materialized by the source SELECT in INSERT ... SELECT.
+        sourceParameterValues.forEach { (key, value) ->
+            if (!paramMapNew.containsKey(key) && renderedSql.sql.contains(":$key")) {
+                val field = fieldsMap[key]
+                if (field != null && value != null) {
+                    paramMapNew[key] = support.processParams(dataSource, field, value)
+                } else {
+                    paramMapNew[key] = value
+                }
             }
         }
         

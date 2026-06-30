@@ -84,7 +84,7 @@ class ProjectionRecordingWrapper : KronosDataSourceWrapper {
     ): Any? = null
 }
 
-fun buildProjection(user: ProjectionSource): com.kotlinorm.orm.select.SelectClause<ProjectionSource, ProjectionRow> {
+fun buildProjection(user: ProjectionSource): com.kotlinorm.orm.select.SelectClause<ProjectionSource, ProjectionRow, ProjectionSource> {
     return user.select(ProjectionRow::class) {
         it.ignored
         [it.id, it.name]

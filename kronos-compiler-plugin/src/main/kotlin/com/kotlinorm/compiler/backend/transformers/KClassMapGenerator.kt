@@ -136,8 +136,17 @@ object KClassMapGenerator {
                             kPojoClasses
                                 .distinctBy { it.fqNameWhenAvailable ?: it.symbol }
                                 .mapNotNull { klass ->
-                                    // Only include classes with a no-arg constructor
-                                    val ctor = klass.constructors.firstOrNull { ctor ->
+                                    // Only include classes with a no-arg constructor.
+                                    val constructors = try {
+                                        klass.constructors
+                                    } catch (_: IllegalStateException) {
+                                        errorReporter.reportWarning(
+                                            klass,
+                                            ErrorMessages.kpojoNoNoArgConstructor(klass.fqNameWhenAvailable)
+                                        )
+                                        return@mapNotNull null
+                                    }
+                                    val ctor = constructors.firstOrNull { ctor ->
                                         ctor.parameters.none { p ->
                                             p.kind == IrParameterKind.Regular && p.defaultValue == null
                                         }
@@ -227,7 +236,16 @@ object KClassMapGenerator {
                             kPojoClasses
                                 .distinctBy { it.fqNameWhenAvailable ?: it.symbol }
                                 .mapNotNull { klass ->
-                                    val ctor = klass.constructors.firstOrNull { ctor ->
+                                    val constructors = try {
+                                        klass.constructors
+                                    } catch (_: IllegalStateException) {
+                                        errorReporter.reportWarning(
+                                            klass,
+                                            ErrorMessages.kpojoNoNoArgConstructor(klass.fqNameWhenAvailable)
+                                        )
+                                        return@mapNotNull null
+                                    }
+                                    val ctor = constructors.firstOrNull { ctor ->
                                         ctor.parameters.none { p ->
                                             p.kind == IrParameterKind.Regular && p.defaultValue == null
                                         }

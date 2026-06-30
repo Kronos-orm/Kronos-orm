@@ -27,4 +27,10 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
      */
     @Test
     fun generatedSelectProjection() = box("generatedSelectProjection")
+
+    /**
+     * Verifies cascade projections keep hidden local key fields needed by after-query loading.
+     */
+    @Test
+    fun cascadeProjectionKeepsLocalKey() = box("cascadeProjectionKeepsLocalKey")
 }

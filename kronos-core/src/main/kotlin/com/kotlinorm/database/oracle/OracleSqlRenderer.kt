@@ -110,7 +110,7 @@ class OracleSqlRenderer : AbstractSqlRenderer() {
 
     override fun renderLimitClause(limit: LimitClause, context: RenderContext): String {
         // Oracle 12c+ uses: FETCH FIRST n ROWS ONLY or OFFSET n ROWS FETCH NEXT m ROWS ONLY
-        return if (limit.offset != null && limit.offset!! > 0) {
+        return if (limit.offset != null && limit.offset > 0) {
             " OFFSET ${limit.offset} ROWS FETCH NEXT ${limit.limit} ROWS ONLY"
         } else {
             " FETCH FIRST ${limit.limit} ROWS ONLY"
@@ -138,6 +138,18 @@ class OracleSqlRenderer : AbstractSqlRenderer() {
         return "CREATE TABLE $tableName ($tableDefinition)$comment"
     }
 
+    override fun renderCreateTableAsSelect(
+            create: DdlStatement.CreateTableAsSelectStatement,
+            context: RenderContext
+    ): String {
+        require(!create.ifNotExists) {
+            "Oracle CTAS does not support IF NOT EXISTS. Set ifNotExists = false or check table existence before rendering."
+        }
+        val tableName = context.quote(create.tableName.uppercase())
+        val query = renderQueryStatement(create.query, context)
+        return "CREATE TABLE $tableName AS $query"
+    }
+
     override fun renderAlterTable(
             alter: DdlStatement.AlterTableStatement,
             context: RenderContext
@@ -156,7 +168,6 @@ class OracleSqlRenderer : AbstractSqlRenderer() {
                 val column = renderColumnDefinition(alter.column, context)
                 "ALTER TABLE $tableName MODIFY $column"
             }
-            else -> throw IllegalArgumentException("Unsupported ALTER TABLE statement type")
         }
     }
 

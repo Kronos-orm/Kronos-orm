@@ -20,11 +20,14 @@ import com.kotlinorm.ast.Assignment
 import com.kotlinorm.ast.BinaryExpression
 import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.CriteriaSubqueryValue
 import com.kotlinorm.ast.DeleteStatement
 import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.Literal
 import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.QueryMaterializeContext
 import com.kotlinorm.ast.SqlOperator
+import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
 import com.kotlinorm.ast.UpdateStatement
 import com.kotlinorm.beans.config.KronosCommonStrategy
@@ -43,6 +46,7 @@ import com.kotlinorm.cache.kPojoLogicDeleteCache
 import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
+import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
@@ -238,6 +242,11 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         if (criteria.field != null && criteria.field.name.isNotEmpty()) {
             return criteria
         }
+
+        // SQL/subquery criteria can be fieldless structured expressions, e.g. EXISTS or row-value IN.
+        if (criteria.value is CriteriaSubqueryValue || (criteria.type == ConditionType.SQL && criteria.value != null)) {
+            return criteria
+        }
         
         // If it's a container criteria (AND/OR/ROOT), filter children
         val filteredChildren = criteria.children.mapNotNull { child ->
@@ -279,8 +288,13 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         // Get complete statement with all parameters and checks applied
         val statementToRender = finalStatement ?: toStatement(wrapper, criteriaParameterValues)
 
+        val loweredStatement = SubqueryLowering.lower(
+            statementToRender,
+            QueryMaterializeContext(wrapper = wrapper, parameterValues = criteriaParameterValues)
+        )
+
         // Render AST to SQL with parameters
-        val renderedSql = support.getDeleteSqlWithParams(dataSource, statementToRender)
+        val renderedSql = support.getDeleteSqlWithParams(dataSource, loweredStatement)
 
         // Process parameters (field type conversion, etc.)
         val paramMapNew = mutableMapOf<String, Any?>()
@@ -427,8 +441,13 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
             )
         }
         
+        val loweredUpdateStatement = SubqueryLowering.lower(
+            updateStatement,
+            QueryMaterializeContext(wrapper = wrapper, parameterValues = criteriaParameterValues)
+        )
+
         // Render to SQL
-        val rendered = support.getUpdateSqlWithParams(wrapper.orDefault(), updateStatement, fieldMap)
+        val rendered = support.getUpdateSqlWithParams(wrapper.orDefault(), loweredUpdateStatement, fieldMap)
         
         // Build final parameter map
         val finalParamMap = mutableMapOf<String, Any?>()
@@ -461,11 +480,11 @@ class DeleteClause<T : KPojo>(private val pojo: T) {
         }
         
         return CascadeDeleteClause.build(
-            cascadeEnabled, cascadeAllowed, kClass, pojo, updateStatement.where, finalParamMap, true, KronosAtomicActionTask(
+            cascadeEnabled, cascadeAllowed, kClass, pojo, loweredUpdateStatement.where, finalParamMap, true, KronosAtomicActionTask(
                 rendered.sql,
                 finalParamMap,
                 operationType = KOperationType.DELETE,
-                statement = updateStatement
+                statement = loweredUpdateStatement
             )
         )
     }

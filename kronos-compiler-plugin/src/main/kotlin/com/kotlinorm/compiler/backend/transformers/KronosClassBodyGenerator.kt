@@ -119,10 +119,10 @@ import org.jetbrains.kotlin.name.Name
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext)
-fun DeclarationIrBuilder.createKronosColumns(irClass: IrClass): IrBlockBody {
+fun DeclarationIrBuilder.createKronosColumns(irClass: IrClass, metadataClass: IrClass = irClass): IrBlockBody {
     val fields = irClass.properties
         .filter { !it.isIgnoredForAll() }
-        .map { buildFieldFromProperty(it) }
+        .map { buildFieldFromProperty(it, metadataClass) }
         .toList()
     return irBlockBody {
         +irReturn(buildListOf(fieldClassSymbol.defaultType, fields))
@@ -346,7 +346,7 @@ fun DeclarationIrBuilder.createPropertySetter(irClass: IrClass, irFunction: IrFu
         fun nameParam() = irGet(irFunction.parameters.valueParameters[0])
         fun valueParam() = irGet(irFunction.parameters.valueParameters[1])
         val branches = irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && it.setter != null }
+            .filter { it.backingField != null && !it.isDelegated }
             .map { prop ->
                 val fieldType = prop.backingField!!.type
                 val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()
@@ -385,7 +385,7 @@ fun DeclarationIrBuilder.createFromMapData(irClass: IrClass, irFunction: IrFunct
         val mapGetSymbol = context.irBuiltIns.mapClass.getSimpleFunction("get")!!
 
         irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && it.setter != null && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
+            .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
                 val mapGet = irCall(mapGetSymbol).apply {
                     dispatchReceiver = mapParam()
@@ -417,7 +417,7 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
         fun mapParam() = irGet(irFunction.parameters.valueParameters.first())
 
         irClass.properties
-            .filter { it.backingField != null && !it.isDelegated && it.setter != null && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
+            .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
                 val fieldType = prop.backingField!!.type
                 // Build: getSafeValue(this, FieldType::class, listOf(supertype1, ...), map, "propName", isSerializable)

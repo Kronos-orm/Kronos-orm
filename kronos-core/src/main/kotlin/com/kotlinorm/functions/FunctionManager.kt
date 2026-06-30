@@ -19,6 +19,7 @@ package com.kotlinorm.functions
 import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.FunctionCall
 import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.SelectItemSourceScope
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder
@@ -71,5 +72,12 @@ object FunctionManager {
         return registeredFunctionBuilders
             .firstOrNull { it.support(function.functionName, dbType) }
             ?.transformAst(function, context, renderExpression)
+    }
+
+    fun getSelectItemScope(functionName: String): SelectItemSourceScope {
+        return registeredFunctionBuilders
+            .firstOrNull { it.supportFunctionNames(functionName).isNotEmpty() }
+            ?.selectItemScope(functionName)
+            ?: SelectItemSourceScope.UNKNOWN
     }
 }

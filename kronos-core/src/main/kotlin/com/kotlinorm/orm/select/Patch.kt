@@ -21,7 +21,7 @@ import com.kotlinorm.types.ToSelect
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
-fun <T : KPojo> T.select(fields: ToSelect<T, Any?> = null): SelectClause<T, T> {
+fun <T : KPojo> T.select(fields: ToSelect<T, Any?> = null): SelectClause<T, T, T> {
     return SelectClause(this, fields, kClass() as KClass<T>)
 }
 
@@ -29,7 +29,7 @@ fun <T : KPojo> T.select(fields: ToSelect<T, Any?> = null): SelectClause<T, T> {
 internal fun <T : KPojo, R : KPojo> T.selectGeneratedProjection(
     projectionClass: KClass<R>,
     fields: ToSelect<T, Any?> = null
-): SelectClause<T, R> {
+): SelectClause<T, R, T> {
     return SelectClause(this, fields, projectionClass)
 }
 
@@ -37,7 +37,7 @@ internal fun <T : KPojo, R : KPojo> T.selectGeneratedProjection(
 inline fun <reified T : KPojo, reified R : KPojo> T.select(
     projectionClass: KClass<R> = R::class,
     noinline fields: ToSelect<T, Any?> = null
-): SelectClause<T, R> {
+): SelectClause<T, R, T> {
     return SelectClause(this, fields, projectionClass)
 }
 
@@ -45,9 +45,9 @@ fun <T : KPojo> T.db(name: String) = this to name
 
 @Suppress("UNCHECKED_CAST")
 fun <T : KPojo> Pair<T, String>.select(fields: ToSelect<T, Any?> = null) =
-    SelectClause(this.first, fields, this.first.kClass() as KClass<T>).db(this.second)
+    SelectClause<T, T, T>(this.first, fields, this.first.kClass() as KClass<T>).db(this.second)
 
 fun <T : KPojo, R : KPojo> Pair<T, String>.select(
     projectionClass: KClass<R>,
     fields: ToSelect<T, Any?> = null
-) = SelectClause(this.first, fields, projectionClass).db(this.second)
+) = SelectClause<T, R, T>(this.first, fields, projectionClass).db(this.second)

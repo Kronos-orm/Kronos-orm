@@ -17,10 +17,13 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.ast.*
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -71,7 +74,7 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testToStatementWithSelectFields() {
         val user = MysqlUser()
-        val selectClause = user.select { [it.id, it.username] }
+        val selectClause = user.select(fields = { [it.id, it.username] })
         
         val statement = selectClause.toStatement()
         
@@ -88,6 +91,54 @@ class SelectClauseAstTest : MysqlTestBase() {
         }
         assertTrue(columns.contains("id"))
         assertTrue(columns.contains("username"))
+    }
+
+    @Test
+    fun testAliasRegistryForSourceAndAliasedFields() {
+        val user = MysqlUser()
+        val statement = user.select(fields = { [it.id, it.username.as_("name")] }).toStatement()
+
+        val id = statement.findSelectOutput("id")
+        val name = statement.findSelectOutput("name")
+
+        assertNotNull(id)
+        assertEquals(SelectItemSourceScope.SOURCE, id.scope)
+        assertEquals("id", id.sourceField?.name)
+        assertTrue(id.expression is ColumnReference)
+
+        assertNotNull(name)
+        assertEquals(SelectItemSourceScope.SELECTED, name.scope)
+        assertEquals("name", name.outputName)
+        assertEquals("username", name.sourceField?.columnName)
+        assertTrue(name.expression is ColumnReference)
+    }
+
+    @Test
+    fun testAliasRegistryForFunctionSelectItem() {
+        val user = MysqlUser()
+        val statement = user.select(fields = {
+            addField(FunctionField("count", listOf(Field("id") to null)).also { it.name = "total" })
+        }).toStatement()
+
+        val total = statement.findSelectOutput("total")
+
+        assertNotNull(total)
+        assertEquals(SelectItemSourceScope.AGGREGATE, total.scope)
+        assertEquals("total", total.outputName)
+        assertTrue(total.expression is FunctionCall)
+        assertEquals("count", total.sourceField?.columnName)
+    }
+
+    @Test
+    fun testAliasRegistryMarksUnaliasedExpressionInternalOnly() {
+        val user = MysqlUser()
+        val statement = user.select(fields = { ["COUNT(1)"] }).toStatement()
+        val metadata = statement.selectItemMetadata().single()
+
+        assertEquals(SelectItemSourceScope.UNKNOWN, metadata.scope)
+        assertFalse(metadata.userReferenceable)
+        assertTrue(metadata.outputName.startsWith("__kronos_expr_"))
+        assertTrue(statement.aliasRegistry.isEmpty())
     }
 
     @Test
@@ -148,7 +199,7 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testToStatementWithGroupBy() {
         val user = MysqlUser()
-        val selectClause = user.select { it.gender }.groupBy { it.gender }
+        val selectClause = user.select(fields = { [it.gender] }).groupBy { [it.gender] }
         
         val statement = selectClause.toStatement()
         
@@ -161,8 +212,8 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testToStatementWithHaving() {
         val user = MysqlUser()
-        val selectClause = user.select { it.gender }
-            .groupBy { it.gender }
+        val selectClause = user.select(fields = { [it.gender] })
+            .groupBy { [it.gender] }
             .having { it.gender == 1 }
         
         val statement = selectClause.toStatement()

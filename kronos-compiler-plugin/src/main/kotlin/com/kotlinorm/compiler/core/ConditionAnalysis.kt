@@ -54,7 +54,6 @@ import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.ir.util.superTypes
 
 /**
  * Condition analysis and construction
@@ -278,6 +277,13 @@ private fun analyzeMethodCriteria(
             }
             buildCriteriaNode(field = fieldExpr, type = "BETWEEN", not = funcName == "notBetween", value = range, tableName = extractTableNameExpr(receiver))
         }
+        "exists" -> {
+            val query = call.getValueArgumentSafe(0) ?: run {
+                errorReporter.reportError(call, "Missing query argument for 'exists()' call")
+                return null
+            }
+            buildExistsCriteria(query, not = setNot)
+        }
         "like", "notLike", "startsWith", "endsWith", "contains", "regexp", "notRegexp" ->
             analyzeStringMatchCriteria(irFunction, call, funcName, extensionReceiver, dispatchReceiver, errorReporter, setNot)
         "asSql" -> {
@@ -335,6 +341,27 @@ private fun analyzeMethodCriteria(
             null
         }
     }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildExistsCriteria(
+    query: IrExpression,
+    not: Boolean
+): IrExpression {
+    val queryRef = builder.irCall(kSelectableQueryRefConstructorSymbol).apply {
+        arguments[0] = query
+    }
+    val subqueryValue = builder.irCall(criteriaSubqueryValueExistsConstructorSymbol).apply {
+        arguments[0] = queryRef
+        arguments[1] = builder.irBoolean(not)
+    }
+    return buildCriteriaNode(
+        field = null,
+        type = "SQL",
+        not = false,
+        value = subqueryValue
+    )
 }
 
 /**
@@ -401,7 +428,9 @@ private fun analyzeStringMatchCriteria(
             }
             val arg = call.getValueArgumentSafe(0)
             if (arg != null) {
-                if (receiver.type.classFqName?.asString() == "kotlin.String") {
+                if (receiver.type.isKSelectableType()) {
+                    buildInSubqueryCriteria(irFunction, query = receiver, value = arg, not = setNot, errorReporter = errorReporter)
+                } else if (receiver.type.classFqName?.asString() == "kotlin.String") {
                     val fieldExpr = extractFieldExpression(irFunction, receiver, errorReporter) ?: return null
                     val pattern = concatIrString(concatIrString(builder.irString("%"), arg), builder.irString("%"))
                     buildCriteriaNode(field = fieldExpr, type = "LIKE", not = setNot, value = pattern, tableName = extractTableNameExpr(receiver))
@@ -428,6 +457,59 @@ private fun analyzeStringMatchCriteria(
         }
         else -> null
     }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildInSubqueryCriteria(
+    irFunction: IrFunction,
+    query: IrExpression,
+    value: IrExpression,
+    not: Boolean,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    val tupleFields = buildTupleFieldList(irFunction, value, errorReporter)
+    val fieldExpr = if (tupleFields == null) {
+        extractFieldExpression(irFunction, value, errorReporter) ?: return null
+    } else {
+        null
+    }
+    val queryRef = builder.irCall(kSelectableQueryRefConstructorSymbol).apply {
+        arguments[0] = query
+    }
+    val subqueryValue = builder.irCall(criteriaSubqueryValueInConstructorSymbol).apply {
+        arguments[0] = queryRef
+        arguments[1] = tupleFields ?: builder.irNull()
+        arguments[2] = builder.irBoolean(not)
+    }
+    return buildCriteriaNode(
+        field = fieldExpr,
+        type = "IN",
+        not = not,
+        value = subqueryValue,
+        tableName = if (fieldExpr != null) extractTableNameExpr(value) else null
+    )
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildTupleFieldList(
+    irFunction: IrFunction,
+    expression: IrExpression,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    val fields = analyzeAndBuildFields(irFunction, expression, errorReporter)
+    if (fields.size <= 1) {
+        if (fields.size == 1 && expression is IrCall && expression.symbol.owner.name.asString() in setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")) {
+        errorReporter.reportError(
+            expression,
+            "Tuple IN requires at least two fields. Use `field in query` for a single-field subquery."
+        )
+        }
+        return null
+    }
+
+    return com.kotlinorm.compiler.utils.irListOf(fieldClassSymbol.defaultType, fields)
 }
 
 // In K2 IR, && and || are lowered to IrWhen:
@@ -484,6 +566,8 @@ internal fun extractFieldExpression(irFunction: IrFunction, expression: IrExpres
             }
             expression.isKronosFunction() ->
                 buildFunctionField(irFunction, expression, errorReporter)
+            expression.operatorFunctionName() != null ->
+                buildOperatorFunctionField(irFunction, expression, errorReporter)
             else -> null
         }
         is IrPropertyReference -> buildFieldFromPropertyRef(expression, errorReporter)
@@ -516,6 +600,11 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
                     extractTableNameExpr(arg)
                 }
             }
+            expression.operatorFunctionName() != null -> {
+                expression.operatorOperands().firstNotNullOfOrNull { arg ->
+                    extractTableNameExpr(arg)
+                }
+            }
             else -> null
         }
         is IrTypeOperatorCall -> extractTableNameExpr(expression.argument)
@@ -526,8 +615,7 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrExpression.isUnsupportedOperatorExpression(): Boolean {
     if (this !is IrCall) return false
-    if (origin in setOf(IrStatementOrigin.PLUS, IrStatementOrigin.MINUS)) return true
-    return symbol.owner.name.asString() in setOf("plus", "minus", "times", "div", "rem")
+    return false
 }
 
 /**
@@ -544,7 +632,48 @@ private fun resolveValueExpression(irFunction: IrFunction, expression: IrExpress
             ErrorMessages.UNSUPPORTED_FIELD_OPERATOR_FIX
         )
     }
+    buildQuantifiedComparisonValue(expression)?.let { return it }
+    if (expression.type.isKSelectableType()) {
+        val queryRef = builder.irCall(kSelectableQueryRefConstructorSymbol).apply {
+            arguments[0] = expression
+        }
+        return builder.irCall(criteriaSubqueryValueScalarConstructorSymbol).apply {
+            arguments[0] = queryRef
+        }
+    }
     return extractFieldExpression(irFunction, expression, errorReporter) ?: expression
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBlockBuilder)
+private fun buildQuantifiedComparisonValue(expression: IrExpression): IrExpression? {
+    val call = expression as? IrCall ?: return null
+    val quantifierName = when (call.funcName()) {
+        "any" -> "ANY"
+        "some" -> "SOME"
+        "all" -> "ALL"
+        else -> return null
+    }
+    val query = call.getValueArgumentSafe(0) ?: return null
+    if (!query.type.isKSelectableType()) return null
+
+    val queryRef = builder.irCall(kSelectableQueryRefConstructorSymbol).apply {
+        arguments[0] = query
+    }
+    val quantifierEntry = subqueryExpressionQuantifierEnumSymbol.owner.declarations
+        .filterIsInstance<IrEnumEntry>()
+        .firstOrNull { it.name.asString() == quantifierName }
+        ?: error("SubqueryExpression.Quantifier.$quantifierName not found")
+    val quantifier = IrGetEnumValueImpl(
+        builder.startOffset,
+        builder.endOffset,
+        subqueryExpressionQuantifierEnumSymbol.defaultType,
+        quantifierEntry.symbol
+    )
+    return builder.irCall(criteriaSubqueryValueQuantifiedComparisonConstructorSymbol).apply {
+        arguments[0] = queryRef
+        arguments[1] = quantifier
+    }
 }
 
 // ============================================================================
@@ -635,6 +764,36 @@ private fun buildBinaryComparisonCriteria(
     // For comparison, we need to extract extensionReceiver (field access) and valueArgument[0] (value)
 
     val args = call.valueArguments
+
+    val directLeft = call.getValueArgumentSafe(0)
+    val directRight = call.getValueArgumentSafe(1)
+    if (directLeft != null && directRight != null) {
+        val leftField = extractFieldExpression(irFunction, directLeft, errorReporter)
+        if (leftField != null) {
+            return buildCriteriaNode(
+                field = leftField,
+                type = operator,
+                not = not,
+                value = resolveValueExpression(irFunction, directRight, errorReporter),
+                tableName = extractTableNameExpr(directLeft)
+            )
+        }
+
+        val rightField = extractFieldExpression(irFunction, directRight, errorReporter)
+        if (rightField != null) {
+            val reversedOp = when (operator) {
+                "GT" -> "LT"; "LT" -> "GT"; "GE" -> "LE"; "LE" -> "GE"
+                else -> operator
+            }
+            return buildCriteriaNode(
+                field = rightField,
+                type = reversedOp,
+                not = not,
+                value = resolveValueExpression(irFunction, directLeft, errorReporter),
+                tableName = extractTableNameExpr(directRight)
+            )
+        }
+    }
 
     // Try to find compareTo call in valueArguments
     val compareToCall = args.filterIsInstance<IrCall>().firstOrNull { it.symbol.owner.name.asString() == "compareTo" }

@@ -61,4 +61,16 @@ class SelectBoxTest : AbstractKronosJvmBoxSuite("select") {
      */
     @Test
     fun propertyReferenceFields() = box("propertyReferenceFields")
+
+    /**
+     * Verifies binary operator expressions are lowered into function fields.
+     */
+    @Test
+    fun operatorFunctionFields() = box("operatorFunctionFields")
+
+    /**
+     * Verifies aliased selectable expressions are lowered into scalar subquery select items.
+     */
+    @Test
+    fun scalarSubquerySelectItem() = box("scalarSubquerySelectItem")
 }

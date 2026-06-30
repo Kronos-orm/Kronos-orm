@@ -32,24 +32,10 @@ kotlin {
         freeCompilerArgs.add("-Xsuppress-deprecated-jvm-target-warning")
         freeCompilerArgs.add("-Xskip-prerelease-check")
         freeCompilerArgs.add("-Xallow-unstable-dependencies")
-        allWarningsAsErrors.set(false)
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
         freeCompilerArgs.add("-Xsuppress-version-warnings")
         freeCompilerArgs.add("-Xskip-prerelease-check")
+        freeCompilerArgs.add("-Xcollection-literals")
         allWarningsAsErrors.set(false)
-    }
-}
-
-tasks.named<KotlinCompile>("compileTestKotlin") {
-    compilerOptions {
-        freeCompilerArgs.addAll(
-            "-Xcontext-sensitive-resolution",
-            "-Xcollection-literals"
-        )
     }
 }
 

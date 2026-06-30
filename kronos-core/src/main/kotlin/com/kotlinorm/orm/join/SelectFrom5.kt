@@ -44,7 +44,7 @@ class SelectFrom5<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo>(
         kClass5 to t5
     )
     
-    fun withTotal(): PagedClause<T1, SelectFrom5<T1, T2, T3, T4, T5>> {
+    fun withTotal(): PagedClause<T1, T1, SelectFrom5<T1, T2, T3, T4, T5>> {
         return PagedClause(this)
     }
 }

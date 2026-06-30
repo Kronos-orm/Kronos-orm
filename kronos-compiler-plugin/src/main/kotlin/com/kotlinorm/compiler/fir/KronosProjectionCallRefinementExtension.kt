@@ -98,7 +98,7 @@ class KronosProjectionCallRefinementExtension(
         if (!isBareSelectCall(symbol, callInfo)) return null
 
         val model = buildProjectionModel(callInfo) ?: return null
-        KronosProjectionRegistry.register(model)
+        KronosProjectionRegistry.register(session, model)
         KronosProjectionDeclarationGenerationExtension.ensureProjectionClassBound(session, model)
         val typeRef = buildResolvedTypeRef {
             source = callInfo.callSite.source
@@ -137,7 +137,7 @@ class KronosProjectionCallRefinementExtension(
         if (receiverType.lookupTag.classId != SelectClauseClassId) return emptyList()
         val projectionArgument = receiverType.typeArguments.getOrNull(1) as? ConeKotlinTypeProjection ?: return emptyList()
         val projectionType = projectionArgument.type as? ConeClassLikeType ?: return emptyList()
-        return listOfNotNull(KronosProjectionRegistry.find(projectionType.lookupTag.classId))
+        return listOfNotNull(KronosProjectionRegistry.find(session, projectionType.lookupTag.classId))
     }
 
     /**
@@ -331,14 +331,15 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Maps the refined projection class into SelectClause<User, Projection>.
+     * Maps the refined projection class into SelectClause<Source, Projection, Source>.
      */
     private fun selectClauseType(sourceType: ConeKotlinType, model: KronosProjectionModel): ConeClassLikeTypeImpl {
         return ConeClassLikeTypeImpl(
             SelectClauseClassId.toLookupTag(),
             arrayOf(
                 sourceType,
-                projectionType(model, isNullable = false)
+                projectionType(model, isNullable = false),
+                sourceType
             ),
             false,
             ConeAttributes.Empty

@@ -16,6 +16,9 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.ast.DeferredSubqueryExpression
+import com.kotlinorm.ast.Expression
+import com.kotlinorm.ast.KSelectableQueryRef
 import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.SortType
 import com.kotlinorm.enums.SortType.Companion.Asc
@@ -30,35 +33,76 @@ import com.kotlinorm.interfaces.KPojo
  */
 class KTableForSort<T : KPojo>: KTableForSelect<T>() {
     val sortedFields = mutableListOf<Pair<Field, SortType>>()
+    val sortedItems = mutableListOf<SortItem>()
 
     @Suppress("UNCHECKED_CAST", "UNUSED")
     fun addSortField(field: Any) {
         when (field) {
             is Pair<*, *> -> {
-                sortedFields.add(field as Pair<Field, SortType>)
+                val value = field.first
+                val sortType = field.second as SortType
+                when (value) {
+                    is Field -> addFieldSort(value, sortType)
+                    is Expression -> addExpressionSort(value, sortType)
+                    is KSelectable<*> -> addSelectableSort(value, sortType)
+                    else -> addFieldSort(value as Field, sortType)
+                }
             }
 
             is String -> {
-                sortedFields.add(Field(field, field, type = CUSTOM_CRITERIA_SQL) to Asc)
+                addFieldSort(Field(field, field, type = CUSTOM_CRITERIA_SQL), Asc)
+            }
+
+            is Expression -> {
+                addExpressionSort(field, Asc)
+            }
+
+            is KSelectable<*> -> {
+                addSelectableSort(field, Asc)
             }
 
             else -> {
-                sortedFields.add((field to Asc) as Pair<Field, SortType>)
+                addFieldSort(field as Field, Asc)
             }
         }
     }
 
+    fun addSortExpression(expression: Expression, sortType: SortType = Asc) {
+        addExpressionSort(expression, sortType)
+    }
+
+    fun addSortSubquery(query: KSelectable<*>, sortType: SortType = Asc) {
+        addSelectableSort(query, sortType)
+    }
+
     @Suppress("UNUSED")
     fun Any?.desc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(
-            this.toString(),
-            this.toString(),
-            type = CUSTOM_CRITERIA_SQL
-        )) to Desc
+        sortPair(Desc)
 
     @Suppress("UNUSED")
     fun Any?.asc(): Pair<Any?, SortType> =
-        (this.takeUnless { it is String } ?: Field(this.toString(), this.toString(), type = CUSTOM_CRITERIA_SQL)) to Asc
+        sortPair(Asc)
+
+    private fun Any?.sortPair(sortType: SortType): Pair<Any?, SortType> {
+        return (this.takeUnless { it is String } ?: Field(
+            this.toString(),
+            this.toString(),
+            type = CUSTOM_CRITERIA_SQL
+        )) to sortType
+    }
+
+    private fun addFieldSort(field: Field, sortType: SortType) {
+        sortedFields.add(field to sortType)
+        sortedItems.add(SortItem.FieldItem(field, sortType))
+    }
+
+    private fun addExpressionSort(expression: Expression, sortType: SortType) {
+        sortedItems.add(SortItem.ExpressionItem(expression, sortType))
+    }
+
+    private fun addSelectableSort(query: KSelectable<*>, sortType: SortType) {
+        addExpressionSort(DeferredSubqueryExpression.Scalar(KSelectableQueryRef(query)), sortType)
+    }
 
     companion object {
         /**
@@ -70,5 +114,10 @@ class KTableForSort<T : KPojo>: KTableForSelect<T>() {
          */
         fun <T : KPojo> T.afterSort(block: KTableForSort<T>.(T) -> Unit) =
             KTableForSort<T>().block(this)
+    }
+
+    sealed class SortItem {
+        data class FieldItem(val field: Field, val sortType: SortType) : SortItem()
+        data class ExpressionItem(val expression: Expression, val sortType: SortType) : SortItem()
     }
 }

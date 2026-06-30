@@ -17,6 +17,7 @@ package com.kotlinorm.functions
 
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.FunctionField
+import com.kotlinorm.ast.SelectItemSourceScope
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder
@@ -186,6 +187,29 @@ class FunctionBuildersTest : MysqlTestBase() {
         }
         FunctionManager.registerFunctionBuilder(custom)
         assertEquals("CUSTOM(x)", FunctionManager.getBuiltFunctionField(ff("customTestFunc", [fp("x")]), mysql))
+    }
+
+    @Test
+    fun testFmRegisterSelectItemScope() {
+        val custom = object : FunctionBuilder {
+            override val supportFunctionNames: (String) -> Array<DBType> = {
+                if (it == "customWindowScopeFunc") arrayOf(DBType.Mysql) else emptyArray()
+            }
+
+            override fun selectItemScope(functionName: String): SelectItemSourceScope =
+                SelectItemSourceScope.WINDOW
+
+            override fun transform(
+                field: FunctionField,
+                dataSource: KronosDataSourceWrapper,
+                showTable: Boolean,
+                showAlias: Boolean
+            ) = "CUSTOM_WINDOW(${field.fields.joinToString(", ") { it.first?.columnName ?: it.second.toString() }})"
+        }
+
+        FunctionManager.registerFunctionBuilder(custom)
+
+        assertEquals(SelectItemSourceScope.WINDOW, FunctionManager.getSelectItemScope("customWindowScopeFunc"))
     }
 
     // Support coverage

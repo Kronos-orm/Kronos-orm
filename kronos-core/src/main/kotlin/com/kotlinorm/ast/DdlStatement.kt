@@ -42,6 +42,21 @@ sealed class DdlStatement : Statement {
     ) : DdlStatement()
 
     /**
+     * CreateTableAsSelectStatement
+     *
+     * Represents CREATE TABLE ... AS SELECT.
+     *
+     * @property tableName The name of the table to create
+     * @property query The query statement used as the table source
+     * @property ifNotExists Whether to include IF NOT EXISTS when the dialect supports it
+     */
+    data class CreateTableAsSelectStatement(
+            val tableName: String,
+            val query: Statement,
+            val ifNotExists: Boolean = true
+    ) : DdlStatement()
+
+    /**
      * AlterTableStatement
      *
      * Represents an ALTER TABLE statement. This is a sealed class itself to represent different

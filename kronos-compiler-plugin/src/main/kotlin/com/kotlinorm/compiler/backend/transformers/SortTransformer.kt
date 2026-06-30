@@ -24,6 +24,7 @@ import com.kotlinorm.compiler.core.buildFieldFromProperty
 import com.kotlinorm.compiler.core.buildFieldFromPropertyAccess
 import com.kotlinorm.compiler.core.descMethodSymbol
 import com.kotlinorm.compiler.core.isColumnType
+import com.kotlinorm.compiler.core.isKSelectableType
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
@@ -129,14 +130,20 @@ class SortTransformer(
             }
             expression is IrCall && expression.funcName() == "desc" -> {
                 val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiver ?: return result
-                if (receiver is IrCall && receiver.origin == IrStatementOrigin.GET_PROPERTY) {
-                    result += buildFieldFromPropertyAccess(receiver, errorReporter) to false
+                when {
+                    receiver is IrCall && receiver.origin == IrStatementOrigin.GET_PROPERTY ->
+                        result += buildFieldFromPropertyAccess(receiver, errorReporter) to false
+                    receiver.type.isKSelectableType() ->
+                        result += receiver to false
                 }
             }
             expression is IrCall && expression.funcName() == "asc" -> {
                 val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiver ?: return result
-                if (receiver is IrCall && receiver.origin == IrStatementOrigin.GET_PROPERTY) {
-                    result += buildFieldFromPropertyAccess(receiver, errorReporter) to true
+                when {
+                    receiver is IrCall && receiver.origin == IrStatementOrigin.GET_PROPERTY ->
+                        result += buildFieldFromPropertyAccess(receiver, errorReporter) to true
+                    receiver.type.isKSelectableType() ->
+                        result += receiver to true
                 }
             }
             expression is IrCall && expression.origin == IrStatementOrigin.GET_PROPERTY -> {

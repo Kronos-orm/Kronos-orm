@@ -181,21 +181,21 @@ class TableOperationPostgres {
             "插入的用户创建时间应该为160000000000L对应的时间戳"
         )
         val list = PgUser().select { [it.id, it.regTime] }
-            .where { it.regTime == Instant.ofEpochMilli(160000000000L) && it.id == f.any([8]) }
+            .where { it.regTime == Instant.ofEpochMilli(160000000000L) && it.id == f.any(intArrayOf(8)) }
             .queryList()
         assertEquals(
             1, list.size, "查询到的用户数量应该为1"
         )
-        selected.update().set { it.id = 9 }.where { it.id == 8 }.execute()
+        PgUser().update().set { it.id = 9 }.where { it.id == 8 }.execute()
 
-        val updated = PgUser().select { [it.id, it.regTime] }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
+        val updated = PgUser().select { [it.id, it.regTime, it.age.as_("aa")] }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
             .queryOne()
 
         assertEquals(
             9, updated.id, "更新后的用户ID应该为9"
         )
 
-        updated.delete().by { it.id }.execute()
+        PgUser(id = 9).delete().by { it.id }.execute()
         val total = PgUser().select { f.count(it.id) }
             .where { it.regTime == Instant.ofEpochMilli(160000000000L) }
             .queryOne<Int>()

@@ -51,7 +51,7 @@ fun union(vararg selectables: KSelectable<out KPojo>): UnionClause {
  * @param other The selectable query to union with this one
  * @return UnionClause for further configuration and execution
  */
-infix fun <T : KPojo> KSelectable<T>.union(other: KSelectable<out KPojo>): UnionClause {
+infix fun <R : KPojo> KSelectable<R>.union(other: KSelectable<out KPojo>): UnionClause {
     return UnionClause([this, other], initialUnionAll = false)
 }
 
@@ -68,7 +68,7 @@ infix fun <T : KPojo> KSelectable<T>.union(other: KSelectable<out KPojo>): Union
  * @param other The selectable query to union with this one
  * @return UnionClause for further configuration and execution
  */
-infix fun <T : KPojo> KSelectable<T>.unionAll(other: KSelectable<out KPojo>): UnionClause {
+infix fun <R : KPojo> KSelectable<R>.unionAll(other: KSelectable<out KPojo>): UnionClause {
     return UnionClause([this, other], initialUnionAll = true)
 }
 

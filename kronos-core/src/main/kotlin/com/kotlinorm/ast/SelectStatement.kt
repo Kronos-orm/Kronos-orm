@@ -43,4 +43,18 @@ class SelectStatement(
         var limit: LimitClause? = null,
         var distinct: Boolean = false,
         var lock: PessimisticLock? = null
-) : Statement
+) : Statement {
+    val aliasRegistry: Map<String, SelectItemAliasMetadata>
+        get() = selectList
+            .mapIndexedNotNull { index, item -> item.aliasMetadata(index) }
+            .filter { it.userReferenceable }
+            .associateBy { it.outputName }
+
+    fun selectItemMetadata(): List<SelectItemAliasMetadata> {
+        return selectList.mapIndexedNotNull { index, item -> item.aliasMetadata(index) }
+    }
+
+    fun findSelectOutput(name: String): SelectItemAliasMetadata? {
+        return aliasRegistry[name]
+    }
+}

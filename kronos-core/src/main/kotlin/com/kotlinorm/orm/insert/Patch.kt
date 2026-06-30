@@ -16,11 +16,27 @@
 
 package com.kotlinorm.orm.insert
 
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.orm.union.UnionClause
+import com.kotlinorm.utils.createInstance
 
 
 fun <T : KPojo> T.insert(): InsertClause<T> {
     return InsertClause(this)
+}
+
+inline fun <reified Target : KPojo> KSelectable<*>.insert(
+    noinline values: ((List<Field>) -> List<Any?>)? = null
+): InsertClause<Target> {
+    return InsertClause(Target::class.createInstance()).fromSource(this, values)
+}
+
+inline fun <reified Target : KPojo> UnionClause.insert(
+    noinline values: ((List<Field>) -> List<Any?>)? = null
+): InsertClause<Target> {
+    return InsertClause(Target::class.createInstance()).fromSource(this, values)
 }
 
 fun <T : KPojo> Array<T>.insert(): List<InsertClause<T>> {

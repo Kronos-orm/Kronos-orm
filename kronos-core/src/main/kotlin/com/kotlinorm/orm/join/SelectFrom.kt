@@ -82,7 +82,8 @@ import kotlin.reflect.KClass
  *
  * @property t1 the instance of the first pojo
  */
-open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
+@Suppress("UNCHECKED_CAST")
+open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kClass() as KClass<T1>) {
     open lateinit var tableName: String
     open lateinit var paramMap: MutableMap<String, Any?>
     private var kClass = pojo.kClass()
@@ -306,7 +307,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun select(someFields: ToSelect<T1, Any?>) {
         if (null == someFields) return
 
-        pojo.afterSelect {
+        t1.afterSelect {
             someFields(t1)
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
@@ -336,7 +337,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun cascade(someFields: ToReference<T1, Any?>) {
         if (someFields == null) throw EmptyFieldsException()
         cascadeEnabled = true
-        pojo.afterReference {
+        t1.afterReference {
             someFields(t1)
             if (fields.isEmpty()) throw EmptyFieldsException()
             cascadeAllowed = fields.toSet()
@@ -353,7 +354,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         if (someFields == null) throw EmptyFieldsException()
 
         orderEnabled = true
-        pojo.afterSort {
+        t1.afterSort {
             someFields(t1)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
             orderByFields = sortedFields.toLinkedSet()
         }
@@ -370,7 +371,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         groupEnabled = true
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (null == someFields) throw EmptyFieldsException()
-        pojo.afterSelect {
+        t1.afterSelect {
             someFields(t1)
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
@@ -417,7 +418,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
     fun by(someFields: ToSelect<T1, Any?>) {
         // 检查someFields是否为空，为空则抛出异常
         if (null == someFields) throw EmptyFieldsException()
-        pojo.afterSelect {
+        t1.afterSelect {
             // 执行someFields中定义的查询逻辑
             someFields(t1)
             if (fields.isEmpty()) {
@@ -447,7 +448,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
                 allFields.first { it.name == propName }.eq(paramMap[propName])
             }.toCriteria()
         } else {
-            pojo.afterFilter {
+            t1.afterFilter {
                 criteriaParamMap = paramMap
                 selectCondition(t1) // 执行用户提供的条件函数
                 if (criteria == null) return@afterFilter
@@ -473,7 +474,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
         // 检查是否提供了条件，未提供则抛出异常
         if (selectCondition == null) throw EmptyFieldsException()
         havingEnabled = true // 标记为HAVING条件
-        pojo.afterFilter {
+        t1.afterFilter {
             criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(t1) // 执行传入的条件函数
             if (criteria == null) return@afterFilter
@@ -599,7 +600,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1) {
      * @param parameterValues Mutable map to collect parameter values during Criteria conversion
      * @return SelectStatement with properly constructed JoinTable nodes
      */
-    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): SelectStatement {
+    override fun toStatement(wrapper: KronosDataSourceWrapper?, parameterValues: MutableMap<String, Any?>): SelectStatement {
         val dataSource = wrapper.orDefault()
         
         // Build select list

@@ -26,8 +26,8 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn
 
-class PagedClause<K : KPojo, T : KSelectable<K>>(
-    private val selectClause: T
+class PagedClause<Source : KPojo, Selected : KPojo, Clause : KSelectable<Selected>>(
+    private val selectClause: Clause
 ) {
     fun query(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Map<String, Any>>> {
         val tasks = this.build(wrapper)
@@ -45,18 +45,18 @@ class PagedClause<K : KPojo, T : KSelectable<K>>(
 
     @JvmName("queryForList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<K>> {
-        val tasks = this.build()
+    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Selected>> {
+        val tasks = this.build(wrapper)
         val total = tasks.first.queryOne<Int>()
         with(tasks.second) {
             beforeQuery?.invoke(this)
             val records =
                 atomicTask.logAndReturn(
-                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class, true, []), QueryList
+                    wrapper.orDefault().forList(atomicTask, selectClause.selectedKClass, true, []), QueryList
                 )
 
             afterQuery?.invoke(records, QueryList, wrapper.orDefault())
-            return total to records as List<K>
+            return total to records as List<Selected>
         }
     }
 

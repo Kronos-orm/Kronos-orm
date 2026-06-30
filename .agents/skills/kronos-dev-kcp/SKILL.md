@@ -9,7 +9,7 @@ Use this skill for Kotlin compiler plugin (KCP) programming. The guidance is abo
 
 ## Required Reading
 
-- For every compiler-plugin error, backend crash, invalid IR, or unexpected generated-declaration behavior, read [Evolution.md](Evolution.md) before changing code. Reuse any matching solution or prevention rule, and append newly verified pitfalls after a successful fix.
+- For every compiler-plugin error, backend crash, invalid IR, or unexpected generated-declaration behavior, read [Evolution.index.md](Evolution.index.md) before changing code. Do not read all of `Evolution.md` by default, and do not open it at all unless the index or a targeted search points to a relevant entry. If the index matches, read only the corresponding `Evolution.md` entry with targeted search/context, reuse the documented solution, and after a verified fix update both `Evolution.md` and `Evolution.index.md` only for reusable, confirmed pitfalls.
 - Start with [references/build-a-plugin.md](references/build-a-plugin.md) when implementing a plugin or when the task is broad.
 - If the agent is new to Kotlin compiler plugins, read [references/minimal-plugin-walkthrough.md](references/minimal-plugin-walkthrough.md) before writing production code.
 - Read [references/kcp-overview.md](references/kcp-overview.md) before choosing frontend vs backend architecture.

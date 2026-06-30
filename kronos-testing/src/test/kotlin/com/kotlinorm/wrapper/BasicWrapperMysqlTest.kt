@@ -267,14 +267,14 @@ class BasicWrapperTest {
                         "total_amount" to 1.0,
                         "status" to 1,
                         "version" to 1,
-                        "createTime" to "2022-01-01T00:00",
-                        "updateTime" to LocalDateTime.parse("2022-01-01T00:00")
+                        "create_time" to "2022-01-01T00:00",
+                        "update_time" to LocalDateTime.parse("2022-01-01T00:00")
                     )
                 )
             ),
         )
         val result = wrapper.forObject(
-            KronosAtomicQueryTask("select id, user_id userId, order_date orderDate from tb_order where id = 1"),
+            KronosAtomicQueryTask("select id, user_id, order_date from tb_order where id = 1"),
             Order::class,
             true,
             []

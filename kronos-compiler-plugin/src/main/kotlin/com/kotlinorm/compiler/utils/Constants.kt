@@ -38,6 +38,14 @@ val KTableForSetFqName = FqName("com.kotlinorm.beans.dsl.KTableForSet")
 val KTableForConditionFqName = FqName("com.kotlinorm.beans.dsl.KTableForCondition")
 val KTableForSortFqName = FqName("com.kotlinorm.beans.dsl.KTableForSort")
 val KTableForReferenceFqName = FqName("com.kotlinorm.beans.dsl.KTableForReference")
+val KSelectableFqName = FqName("com.kotlinorm.beans.dsl.KSelectable")
+val KSelectableQueryRefFqName = FqName("com.kotlinorm.ast.KSelectableQueryRef")
+val CriteriaSubqueryValueScalarFqName = FqName("com.kotlinorm.ast.CriteriaSubqueryValue.Scalar")
+val CriteriaSubqueryValueInFqName = FqName("com.kotlinorm.ast.CriteriaSubqueryValue.In")
+val CriteriaSubqueryValueExistsFqName = FqName("com.kotlinorm.ast.CriteriaSubqueryValue.Exists")
+val CriteriaSubqueryValueQuantifiedComparisonFqName = FqName("com.kotlinorm.ast.CriteriaSubqueryValue.QuantifiedComparison")
+val QuantifiedSubqueryValueFqName = FqName("com.kotlinorm.beans.dsl.QuantifiedSubqueryValue")
+val SubqueryExpressionQuantifierFqName = FqName("com.kotlinorm.ast.SubqueryExpression.Quantifier")
 
 // Kotlin standard library
 val BooleanFqName = FqName("kotlin.Boolean")
@@ -146,6 +154,34 @@ val KTableForSetClassId = ClassId.topLevel(KTableForSetFqName)
 val KTableForConditionClassId = ClassId.topLevel(KTableForConditionFqName)
 val KTableForSortClassId = ClassId.topLevel(KTableForSortFqName)
 val KTableForReferenceClassId = ClassId.topLevel(KTableForReferenceFqName)
+val KSelectableClassId = ClassId.topLevel(KSelectableFqName)
+val KSelectableQueryRefClassId = ClassId.topLevel(KSelectableQueryRefFqName)
+val CriteriaSubqueryValueScalarClassId = ClassId(
+    FqName("com.kotlinorm.ast"),
+    FqName("CriteriaSubqueryValue.Scalar"),
+    false
+)
+val CriteriaSubqueryValueInClassId = ClassId(
+    FqName("com.kotlinorm.ast"),
+    FqName("CriteriaSubqueryValue.In"),
+    false
+)
+val CriteriaSubqueryValueExistsClassId = ClassId(
+    FqName("com.kotlinorm.ast"),
+    FqName("CriteriaSubqueryValue.Exists"),
+    false
+)
+val CriteriaSubqueryValueQuantifiedComparisonClassId = ClassId(
+    FqName("com.kotlinorm.ast"),
+    FqName("CriteriaSubqueryValue.QuantifiedComparison"),
+    false
+)
+val QuantifiedSubqueryValueClassId = ClassId.topLevel(QuantifiedSubqueryValueFqName)
+val SubqueryExpressionQuantifierClassId = ClassId(
+    FqName("com.kotlinorm.ast"),
+    FqName("SubqueryExpression.Quantifier"),
+    false
+)
 
 // Kotlin standard library
 val PairClassId = ClassId.topLevel(PairFqName)

@@ -21,8 +21,12 @@ import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.CriteriaToAstConverter
 import com.kotlinorm.ast.FieldToExpressionConverter
 import com.kotlinorm.ast.Parameter
+import com.kotlinorm.ast.QueryMaterializeContext
+import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
 import com.kotlinorm.ast.UpdateStatement
+import com.kotlinorm.ast.requiresBuilderParameter
+import com.kotlinorm.ast.toBuilderExpression
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
@@ -267,8 +271,13 @@ class UpdateClause<T : KPojo>(
         // Get complete statement with all parameters and checks applied
         val statementToRender = finalStatement ?: toStatement(wrapper, criteriaParameterValues)
 
+        val loweredStatement = SubqueryLowering.lower(
+            statementToRender,
+            QueryMaterializeContext(wrapper = wrapper, parameterValues = criteriaParameterValues)
+        )
+
         // Render AST to SQL with parameters
-        val renderedSql = support.getUpdateSqlWithParams(dataSource, statementToRender)
+        val renderedSql = support.getUpdateSqlWithParams(dataSource, loweredStatement)
 
         // Process parameters
         val paramMapNew = mutableMapOf<String, Any?>()
@@ -372,9 +381,11 @@ class UpdateClause<T : KPojo>(
                         // Handle regular field assignment
                         val columnRef = fieldToColumnReference(field)
                         val paramName = "${field.name}New"
-                        val param = Parameter.NamedParameter(paramName)
-                        statement.assignments.add(Assignment(columnRef, param))
-                        assignmentParams[paramName] = fieldParamMap[field]
+                        val value = fieldParamMap[field]
+                        statement.assignments.add(Assignment(columnRef, value.toBuilderExpression(paramName)))
+                        if (value.requiresBuilderParameter()) {
+                            assignmentParams[paramName] = value
+                        }
                     }
                 }
             }
@@ -505,11 +516,12 @@ class UpdateClause<T : KPojo>(
             val field = allColumns.find { it.name == fieldName } ?: return@forEach
             val columnRef = fieldToColumnReference(field)
             val paramName = "${fieldName}New"
-            val param = Parameter.NamedParameter(paramName)
             // Remove existing assignment for this field if any
             statement.assignments.removeAll { it.column.columnName == field.columnName }
-            statement.assignments.add(Assignment(columnRef, param))
-            assignmentParams[paramName] = value
+            statement.assignments.add(Assignment(columnRef, value.toBuilderExpression(paramName)))
+            if (value.requiresBuilderParameter()) {
+                assignmentParams[paramName] = value
+            }
         }
         return this
     }

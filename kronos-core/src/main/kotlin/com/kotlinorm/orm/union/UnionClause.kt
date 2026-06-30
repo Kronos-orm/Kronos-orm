@@ -31,8 +31,6 @@ import com.kotlinorm.enums.SortType
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.join.SelectFrom
-import com.kotlinorm.orm.select.SelectClause
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
 /**
@@ -200,18 +198,7 @@ class UnionClause internal constructor(
             val queryParams = mutableMapOf<String, Any?>()
             
             // Call toStatement with parameter collection
-            val statement = when (selectable) {
-                is SelectClause<*, *> -> {
-                    selectable.toStatement(wrapper, queryParams)
-                }
-                is SelectFrom<*> -> {
-                    selectable.toStatement(wrapper, queryParams)
-                }
-                else -> {
-                    // For other types, just call the single-parameter version
-                    selectable.toStatement(wrapper)
-                }
-            }
+            val statement = selectable.toStatement(wrapper, queryParams)
             
             // Rename parameters to ensure uniqueness and merge into main parameter map
             queryParams.forEach { (paramName, value) ->

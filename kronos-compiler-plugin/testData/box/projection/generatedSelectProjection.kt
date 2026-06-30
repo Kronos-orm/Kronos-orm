@@ -23,12 +23,14 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.annotations.Table
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.utils.Extensions.mapperTo
 import kotlin.reflect.KClass
 
+@Table("tb_projection_source")
 data class ProjectionSourceRow(
     var id: Int? = null,
     var name: String? = null,
@@ -90,6 +92,10 @@ fun box(): String {
         expect(rows.size == 1) { "row count was ${rows.size}" },
         expect(row?.id == 7) { "generated projection id was ${row?.id}" },
         expect(row?.xx == "Ada") { "generated projection alias xx was ${row?.xx}" },
+        expect(row?.__tableName == "tb_projection_source") { "projection table name was ${row?.__tableName}" },
+        expect(row?.kronosColumns()?.all { it.tableName == "tb_projection_source" } == true) {
+            "projection column table names were ${row?.kronosColumns()?.map { it.tableName }}"
+        },
         expect(wrapper.mappedClasses.singleOrNull() != ProjectionSourceRow::class) {
             "queryList mapped with source class ${ProjectionSourceRow::class}"
         },

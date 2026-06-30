@@ -22,6 +22,7 @@ import com.kotlinorm.compiler.core.kTableForReferenceSymbol
 import com.kotlinorm.compiler.core.kTableForSelectSymbol
 import com.kotlinorm.compiler.core.kTableForSetSymbol
 import com.kotlinorm.compiler.core.kTableForSortSymbol
+import com.kotlinorm.compiler.core.firstTypeArgument
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoFqName
 import com.kotlinorm.compiler.utils.KronosInitAnnotationFqName
@@ -47,6 +48,7 @@ import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
 
@@ -93,31 +95,9 @@ class KronosParserTransformer(
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitClassReference(expression: IrClassReference): IrExpression {
-        val cls = expression.classType.classOrNull?.owner
-        if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
-            processKPojoClass(cls)
-        }
-        return super.visitClassReference(expression)
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
-        val cls = expression.type.classOrNull?.owner
-        if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
-            processKPojoClass(cls)
-        }
-        return super.visitConstructorCall(expression)
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitCall(expression: IrCall): IrExpression {
-        // Collect KPojo types from type arguments
         for (i in 0 until expression.typeArguments.size) {
-            val cls = expression.typeArguments[i]?.getClass()
-            if (cls != null && cls.superTypes.any { it.classFqName == KPojoFqName }) {
-                processKPojoClass(cls)
-            }
+            collectKPojoFactoryCandidate(expression.typeArguments[i]?.getClass())
         }
         // Detect calls to @KronosInit-annotated functions and collect the lambda argument
         if (expression.symbol.owner.hasAnnotation(KronosInitAnnotationFqName)) {
@@ -134,6 +114,18 @@ class KronosParserTransformer(
         return result
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitClassReference(expression: IrClassReference): IrExpression {
+        collectKPojoFactoryCandidate(expression.classType.classOrNull?.owner)
+        return super.visitClassReference(expression)
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
+        collectKPojoFactoryCandidate(expression.type.classOrNull?.owner)
+        return super.visitConstructorCall(expression)
+    }
+
     /**
      * Collects and enhances each source KPojo class once.
      */
@@ -142,8 +134,37 @@ class KronosParserTransformer(
             return
         }
         kPojoClasses.add(irClass)
+        collectCascadeTargetKPojoClasses(irClass)
         if (transformedKPojoClasses.add(irClass)) {
+            irClass.properties.forEach { property ->
+                property.isVar = true
+                property.isConst = false
+            }
             irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter), null)
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun collectCascadeTargetKPojoClasses(irClass: IrClass) {
+        irClass.properties.forEach { property ->
+            val propertyType = property.getter?.returnType ?: property.backingField?.type ?: return@forEach
+            val targets = sequenceOf(
+                propertyType.classOrNull?.owner,
+                propertyType.firstTypeArgument()?.classOrNull?.owner
+            )
+            targets
+                .filterNotNull()
+                .filter { target -> target.superTypes.any { it.classFqName == KPojoFqName } }
+                .filterNot { target -> target.isGeneratedProjectionClass() }
+                .forEach { target -> kPojoClasses.add(target) }
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun collectKPojoFactoryCandidate(irClass: IrClass?) {
+        if (irClass == null || irClass.isGeneratedProjectionClass()) return
+        if (irClass.superTypes.any { it.classFqName == KPojoFqName }) {
+            kPojoClasses.add(irClass)
         }
     }
 

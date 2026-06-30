@@ -36,4 +36,10 @@ class SortBoxTest : AbstractKronosJvmBoxSuite("sort") {
      */
     @Test
     fun customSortFields() = box("customSortFields")
+
+    /**
+     * Verifies scalar subquery sort expressions are handed off as expression sort items.
+     */
+    @Test
+    fun scalarSubquerySortItem() = box("scalarSubquerySortItem")
 }

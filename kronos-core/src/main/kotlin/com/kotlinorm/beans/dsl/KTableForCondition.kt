@@ -18,9 +18,11 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.annotations.UnsafeCriteria
+import com.kotlinorm.ast.SubqueryExpression
 import com.kotlinorm.enums.NoValueStrategyType
 import com.kotlinorm.functions.FunctionHandler
 import com.kotlinorm.interfaces.KPojo
+import kotlin.jvm.JvmName
 
 /**
  * kTableForCondition
@@ -33,6 +35,8 @@ open class KTableForCondition<T : KPojo> {
     var criteria: Criteria? = null
     var criteriaParamMap: MutableMap<String, Any?> = mutableMapOf()
     val f: FunctionHandler = FunctionHandler
+
+    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Any? = null
 
     operator fun Any?.minus(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
 
@@ -93,6 +97,20 @@ open class KTableForCondition<T : KPojo> {
     operator fun CharSequence?.contains(other: @kotlin.internal.NoInfer Char?) = true
     
     operator fun CharSequence?.contains(other: CharSequence): Boolean = true
+
+    @JvmName("containsSelectable")
+    operator fun KSelectable<*>?.contains(@Suppress("UNUSED_PARAMETER") other: Any?) = true
+
+    fun exists(@Suppress("UNUSED_PARAMETER") query: KSelectable<*>): Boolean = true
+
+    fun <T> any(query: KSelectable<*>): T? =
+        QuantifiedSubqueryValue(query, SubqueryExpression.Quantifier.ANY) as T?
+
+    fun <T> some(query: KSelectable<*>): T? =
+        QuantifiedSubqueryValue(query, SubqueryExpression.Quantifier.SOME) as T?
+
+    fun <T> all(query: KSelectable<*>): T? =
+        QuantifiedSubqueryValue(query, SubqueryExpression.Quantifier.ALL) as T?
 
     val CharSequence?.contains get() = true
 
@@ -418,3 +436,8 @@ open class KTableForCondition<T : KPojo> {
             KTableForCondition<T>().block(this)
     }
 }
+
+data class QuantifiedSubqueryValue(
+    val query: KSelectable<*>,
+    val quantifier: SubqueryExpression.Quantifier
+)

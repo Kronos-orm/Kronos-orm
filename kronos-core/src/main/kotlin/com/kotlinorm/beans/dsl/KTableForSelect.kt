@@ -16,6 +16,11 @@
 
 package com.kotlinorm.beans.dsl
 
+import com.kotlinorm.ast.DeferredSubqueryExpression
+import com.kotlinorm.ast.KSelectableQueryRef
+import com.kotlinorm.ast.SelectItem
+import com.kotlinorm.ast.SelectItemAliasMetadata
+import com.kotlinorm.ast.SelectItemSourceScope
 import com.kotlinorm.functions.FunctionHandler
 import com.kotlinorm.interfaces.KPojo
 
@@ -34,10 +39,14 @@ import com.kotlinorm.interfaces.KPojo
  */
 open class KTableForSelect<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
+    val selectItems: MutableList<SelectItem> = mutableListOf()
+    internal val projectionItems: MutableList<ProjectionItem> = mutableListOf()
     val f: FunctionHandler = FunctionHandler
 
     @Suppress("UNUSED_PARAMETER")
     operator fun get(vararg fields: Any?): Unit = Unit
+
+    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Any? = null
 
     operator fun Any?.minus(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
 
@@ -72,6 +81,24 @@ open class KTableForSelect<T : KPojo> {
     @Suppress("MemberVisibilityCanBePrivate")
     fun addField(property: Field) {
         fields += property
+        projectionItems += ProjectionItem.FieldItem(property)
+    }
+
+    fun addScalarSubquery(query: KSelectable<*>, alias: String) {
+        val expression = DeferredSubqueryExpression.Scalar(KSelectableQueryRef(query))
+        val item = SelectItem.ExpressionSelectItem(
+            expression = expression,
+            alias = alias,
+            metadata = SelectItemAliasMetadata(
+                outputName = alias,
+                expression = expression,
+                scope = SelectItemSourceScope.SELECTED,
+                sourceField = null,
+                userReferenceable = true
+            )
+        )
+        selectItems += item
+        projectionItems += ProjectionItem.SelectItemValue(item)
     }
 
     fun Field.setAlias(alias: String): Field {
@@ -88,5 +115,10 @@ open class KTableForSelect<T : KPojo> {
          * @return The resulting KTable instance after applying the block.
          */
         fun <T : KPojo> T.afterSelect(block: KTableForSelect<T>.(T) -> Unit) = KTableForSelect<T>().block(this)
+    }
+
+    internal sealed class ProjectionItem {
+        data class FieldItem(val field: Field) : ProjectionItem()
+        data class SelectItemValue(val item: SelectItem) : ProjectionItem()
     }
 }

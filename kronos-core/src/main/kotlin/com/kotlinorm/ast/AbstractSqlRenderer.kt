@@ -26,14 +26,15 @@ import com.kotlinorm.enums.SortType
  */
 abstract class AbstractSqlRenderer : SqlRenderer {
     override fun render(statement: Statement, context: RenderContext): RenderedSql {
+        val lowered = SubqueryLowering.lower(statement)
         val sql =
-                when (statement) {
-                    is SelectStatement -> renderSelectStatement(statement, context)
-                    is InsertStatement -> renderInsertStatement(statement, context)
-                    is UpdateStatement -> renderUpdateStatement(statement, context)
-                    is DeleteStatement -> renderDeleteStatement(statement, context)
-                    is DdlStatement -> renderDdlStatement(statement, context)
-                    is UnionStatement -> renderUnionStatement(statement, context)
+                when (lowered) {
+                    is SelectStatement -> renderSelectStatement(lowered, context)
+                    is InsertStatement -> renderInsertStatement(lowered, context)
+                    is UpdateStatement -> renderUpdateStatement(lowered, context)
+                    is DeleteStatement -> renderDeleteStatement(lowered, context)
+                    is DdlStatement -> renderDdlStatement(lowered, context)
+                    is UnionStatement -> renderUnionStatement(lowered, context)
                 }
         return RenderedSql(sql, context.boundParameters.toMap())
     }
@@ -47,6 +48,9 @@ abstract class AbstractSqlRenderer : SqlRenderer {
             is UnaryExpression -> renderUnaryExpression(expression, context)
             is FunctionCall -> renderFunctionCall(expression, context)
             is CaseExpression -> renderCaseExpression(expression, context)
+            is RowValueExpression -> renderRowValueExpression(expression, context)
+            is DeferredSubqueryExpression ->
+                    error("Deferred subquery expression must be lowered before rendering.")
             is SubqueryExpression -> renderSubqueryExpression(expression, context)
             is SpecialExpression -> renderSpecialExpression(expression, context)
         }
@@ -185,6 +189,12 @@ abstract class AbstractSqlRenderer : SqlRenderer {
         }
     }
 
+    protected fun renderRowValueExpression(row: RowValueExpression, context: RenderContext): String {
+        return row.values.joinToString(", ", prefix = "(", postfix = ")") {
+            renderExpression(it, context)
+        }
+    }
+
     override fun renderSubqueryExpression(
             subquery: SubqueryExpression,
             context: RenderContext
@@ -295,9 +305,21 @@ abstract class AbstractSqlRenderer : SqlRenderer {
     override fun renderInsertStatement(insert: InsertStatement, context: RenderContext): String {
         val table = renderTableReference(insert.table, context)
         val columns = insert.columns.joinToString(", ") { renderColumnReference(it, context) }
-        val values = insert.values.joinToString(", ") { renderExpression(it, context) }
-        val conflict = insert.conflictResolver?.let { renderConflictResolver(it, context) } ?: ""
-        return "INSERT INTO $table ($columns) VALUES ($values)$conflict"
+        val source = insert.source
+        val body = if (source != null) {
+            renderQueryStatement(source, context)
+        } else {
+            val values = insert.values.joinToString(", ") { renderExpression(it, context) }
+            "VALUES ($values)"
+        }
+        val conflict = when {
+            insert.conflictAssignments.isNotEmpty() ->
+                renderConflictAssignments(insert, context)
+            insert.conflictResolver != null ->
+                renderConflictResolver(insert.conflictResolver, context)
+            else -> ""
+        }
+        return "INSERT INTO $table ($columns) $body$conflict"
     }
 
     override fun renderUpdateStatement(update: UpdateStatement, context: RenderContext): String {
@@ -316,6 +338,7 @@ abstract class AbstractSqlRenderer : SqlRenderer {
     override fun renderDdlStatement(ddl: DdlStatement, context: RenderContext): String {
         return when (ddl) {
             is DdlStatement.CreateTableStatement -> renderCreateTable(ddl, context)
+            is DdlStatement.CreateTableAsSelectStatement -> renderCreateTableAsSelect(ddl, context)
             is DdlStatement.AlterTableStatement -> renderAlterTable(ddl, context)
             is DdlStatement.DropTableStatement -> renderDropTable(ddl, context)
             is DdlStatement.CreateIndexStatement -> renderCreateIndex(ddl, context)
@@ -370,6 +393,45 @@ abstract class AbstractSqlRenderer : SqlRenderer {
         val column = renderColumnReference(assignment.column, context)
         val value = renderExpression(assignment.value, context)
         return "$column = $value"
+    }
+
+    protected open fun renderConflictAssignments(
+            insert: InsertStatement,
+            context: RenderContext
+    ): String {
+        val assignments = insert.conflictAssignments.joinToString(", ") {
+            renderAssignment(it, context)
+        }
+        return when (context.dbType) {
+            com.kotlinorm.enums.DBType.Mysql ->
+                " ON DUPLICATE KEY UPDATE $assignments"
+            com.kotlinorm.enums.DBType.Postgres,
+            com.kotlinorm.enums.DBType.SQLite -> {
+                val conflictTarget = insert.conflictResolver?.onFields
+                    ?.joinToString(", ") { context.quote(it.columnName) }
+                    ?: error("Expression upsert for ${context.dbType} requires conflictResolver.onFields.")
+                " ON CONFLICT ($conflictTarget) DO UPDATE SET $assignments"
+            }
+            else -> error("Expression upsert rendering is not implemented for ${context.dbType}.")
+        }
+    }
+
+    protected open fun renderCreateTableAsSelect(
+            create: DdlStatement.CreateTableAsSelectStatement,
+            context: RenderContext
+    ): String {
+        val ifNotExists = if (create.ifNotExists) "IF NOT EXISTS " else ""
+        val tableName = context.quote(create.tableName)
+        val query = renderQueryStatement(create.query, context)
+        return "CREATE TABLE $ifNotExists$tableName AS $query"
+    }
+
+    protected fun renderQueryStatement(statement: Statement, context: RenderContext): String {
+        return when (statement) {
+            is SelectStatement -> renderSelectStatement(statement, context)
+            is UnionStatement -> renderUnionStatement(statement, context)
+            else -> error("Query source must be a SELECT or UNION statement, but was ${statement::class.simpleName}.")
+        }
     }
 
     protected fun renderWindowClause(window: WindowClause, context: RenderContext): String {

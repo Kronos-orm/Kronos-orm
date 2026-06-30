@@ -119,24 +119,64 @@ object CriteriaToAstConverter {
         // Handle different condition types
         val expression = when (criteria.type) {
             ConditionType.EQUAL -> {
-                val rightExpr = convertValue(criteria.value, criteria.field.name, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)
-                BinaryExpression(columnRef, SqlOperator.EQUAL, rightExpr)
+                buildComparisonExpression(
+                    columnRef,
+                    SqlOperator.EQUAL,
+                    criteria.value,
+                    criteria.field.name,
+                    parameterValues,
+                    paramNameCounter,
+                    databaseOfTable,
+                    useTableAliases
+                )
             }
             ConditionType.GT -> {
-                val rightExpr = convertValue(criteria.value, criteria.field.name + "Min", parameterValues, paramNameCounter, databaseOfTable, useTableAliases)
-                BinaryExpression(columnRef, SqlOperator.GREATER_THAN, rightExpr)
+                buildComparisonExpression(
+                    columnRef,
+                    SqlOperator.GREATER_THAN,
+                    criteria.value,
+                    criteria.field.name + "Min",
+                    parameterValues,
+                    paramNameCounter,
+                    databaseOfTable,
+                    useTableAliases
+                )
             }
             ConditionType.GE -> {
-                val rightExpr = convertValue(criteria.value, criteria.field.name + "Min", parameterValues, paramNameCounter, databaseOfTable, useTableAliases)
-                BinaryExpression(columnRef, SqlOperator.GREATER_THAN_OR_EQUAL, rightExpr)
+                buildComparisonExpression(
+                    columnRef,
+                    SqlOperator.GREATER_THAN_OR_EQUAL,
+                    criteria.value,
+                    criteria.field.name + "Min",
+                    parameterValues,
+                    paramNameCounter,
+                    databaseOfTable,
+                    useTableAliases
+                )
             }
             ConditionType.LT -> {
-                val rightExpr = convertValue(criteria.value, criteria.field.name + "Max", parameterValues, paramNameCounter, databaseOfTable, useTableAliases)
-                BinaryExpression(columnRef, SqlOperator.LESS_THAN, rightExpr)
+                buildComparisonExpression(
+                    columnRef,
+                    SqlOperator.LESS_THAN,
+                    criteria.value,
+                    criteria.field.name + "Max",
+                    parameterValues,
+                    paramNameCounter,
+                    databaseOfTable,
+                    useTableAliases
+                )
             }
             ConditionType.LE -> {
-                val rightExpr = convertValue(criteria.value, criteria.field.name + "Max", parameterValues, paramNameCounter, databaseOfTable, useTableAliases)
-                BinaryExpression(columnRef, SqlOperator.LESS_THAN_OR_EQUAL, rightExpr)
+                buildComparisonExpression(
+                    columnRef,
+                    SqlOperator.LESS_THAN_OR_EQUAL,
+                    criteria.value,
+                    criteria.field.name + "Max",
+                    parameterValues,
+                    paramNameCounter,
+                    databaseOfTable,
+                    useTableAliases
+                )
             }
             ConditionType.LIKE -> {
                 val patternExpr = convertValue(criteria.value, criteria.field.name, parameterValues, paramNameCounter, databaseOfTable, useTableAliases)
@@ -149,6 +189,19 @@ object CriteriaToAstConverter {
             }
             ConditionType.IN -> {
                 val value = criteria.value
+                when (value) {
+                    is CriteriaSubqueryValue.In -> {
+                        val left = when (val subqueryValue = value.value) {
+                            is Expression -> subqueryValue
+                            is List<*> -> rowValueFromFields(subqueryValue, databaseOfTable, useTableAliases)
+                            else -> columnRef
+                        }
+                        DeferredSubqueryExpression.In(left, value.query, not = value.not || criteria.not)
+                    }
+                    is SelectQueryRef -> {
+                        DeferredSubqueryExpression.In(columnRef, value, not = criteria.not)
+                    }
+                    else -> {
                 // Store the entire collection as a single parameter with "List" suffix
                 // NamedParameterUtils will expand it into multiple ? placeholders for JDBC
                 val paramName = getUniqueParamName("${criteria.field.name}List", parameterValues, paramNameCounter)
@@ -166,6 +219,8 @@ object CriteriaToAstConverter {
                     values = [Parameter.NamedParameter(paramName)],
                     not = criteria.not
                 )
+                    }
+                }
             }
             ConditionType.ISNULL -> {
                 SpecialExpression.IsNullExpression(
@@ -229,6 +284,7 @@ object CriteriaToAstConverter {
                 // For now, return the value as-is if it's already an Expression, or convert it
                 val value = criteria.value
                 when (value) {
+                    is CriteriaSubqueryValue.Exists -> DeferredSubqueryExpression.Exists(value.query, value.not)
                     is Expression -> value
                     is String -> {
                         // Raw SQL string - use RawSqlExpression to render as-is without quoting
@@ -246,6 +302,45 @@ object CriteriaToAstConverter {
         return applyNot(criteria, expression)
     }
 
+    private fun buildComparisonExpression(
+        leftExpr: Expression,
+        operator: SqlOperator,
+        value: Any?,
+        fieldName: String,
+        parameterValues: MutableMap<String, Any?>,
+        paramNameCounter: MutableMap<String, Int>,
+        databaseOfTable: Map<String, String>,
+        useTableAliases: Boolean
+    ): Expression {
+        return when (value) {
+            is CriteriaSubqueryValue.Scalar -> {
+                BinaryExpression(leftExpr, operator, DeferredSubqueryExpression.Scalar(value.query))
+            }
+            is CriteriaSubqueryValue.QuantifiedComparison -> {
+                DeferredSubqueryExpression.QuantifiedComparison(
+                    expression = leftExpr,
+                    operator = operator,
+                    quantifier = value.quantifier,
+                    query = value.query
+                )
+            }
+            is SelectQueryRef -> {
+                BinaryExpression(leftExpr, operator, DeferredSubqueryExpression.Scalar(value))
+            }
+            else -> {
+                val rightExpr = convertValue(
+                    value,
+                    fieldName,
+                    parameterValues,
+                    paramNameCounter,
+                    databaseOfTable,
+                    useTableAliases
+                )
+                BinaryExpression(leftExpr, operator, rightExpr)
+            }
+        }
+    }
+
     /**
      * Applies NOT negation to an expression if the criteria requires it.
      * SpecialExpression types (LikeExpression, IsNullExpression, BetweenExpression, InExpression)
@@ -257,10 +352,19 @@ object CriteriaToAstConverter {
      * @return The expression, possibly wrapped with NOT
      */
     private fun applyNot(criteria: Criteria, expression: Expression): Expression {
-        if (!criteria.not || expression is SpecialExpression || criteria.type == ConditionType.REGEXP) {
+        if (
+            !criteria.not ||
+            expression is SpecialExpression ||
+            expression is DeferredSubqueryExpression.In ||
+            criteria.type == ConditionType.REGEXP
+        ) {
             return expression
         }
         return when (expression) {
+            is DeferredSubqueryExpression.Exists -> expression.copy(not = !expression.not)
+            is DeferredSubqueryExpression.In -> expression.copy(not = !expression.not)
+            is SubqueryExpression.ExistsExpression -> expression.copy(not = !expression.not)
+            is SpecialExpression.InSubqueryExpression -> expression.copy(not = !expression.not)
             is BinaryExpression -> {
                 val notOperator = when (expression.operator) {
                     SqlOperator.EQUAL -> SqlOperator.NOT_EQUAL
@@ -331,6 +435,27 @@ object CriteriaToAstConverter {
             database = database,
             tableAlias = if (shouldUseAlias) criteria.field.tableName else null,
             columnName = criteria.field.columnName
+        )
+    }
+
+    private fun rowValueFromFields(
+        values: List<*>,
+        databaseOfTable: Map<String, String>,
+        useTableAliases: Boolean
+    ): RowValueExpression {
+        val fields = values.filterIsInstance<com.kotlinorm.beans.dsl.Field>()
+        require(fields.size == values.size && fields.size > 1) {
+            "Tuple IN requires at least two fields."
+        }
+        return RowValueExpression(
+            fields.map { field ->
+                val shouldUseAlias = useTableAliases && !field.tableName.isNullOrEmpty()
+                ColumnReference(
+                    database = if (shouldUseAlias) databaseOfTable[field.tableName] else null,
+                    tableAlias = if (shouldUseAlias) field.tableName else null,
+                    columnName = field.columnName
+                )
+            }
         )
     }
 

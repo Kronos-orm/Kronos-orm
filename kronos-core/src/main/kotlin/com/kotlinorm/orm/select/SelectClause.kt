@@ -24,11 +24,17 @@ import com.kotlinorm.ast.LimitClause
 import com.kotlinorm.ast.Literal
 import com.kotlinorm.ast.OrderByItem
 import com.kotlinorm.ast.SelectItem
+import com.kotlinorm.ast.SelectItemAliasMetadata
+import com.kotlinorm.ast.SelectItemSourceScope
 import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.ast.SqlOperator
+import com.kotlinorm.ast.QueryMaterializeContext
+import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.KTableForSelect
+import com.kotlinorm.beans.dsl.KTableForSort
 import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
@@ -51,6 +57,7 @@ import com.kotlinorm.enums.SortType
 import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
+import com.kotlinorm.functions.FunctionManager
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeSelectClause
@@ -71,11 +78,12 @@ import com.kotlinorm.utils.processParams
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KClass
 
-class SelectClause<T : KPojo, R : KPojo>(
-    override val pojo: T,
-    setSelectFields: ToSelect<T, Any?> = null,
-    private val projectionClass: KClass<R>
-) : KSelectable<T>(pojo) {
+class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
+    override val pojo: Source,
+    setSelectFields: ToSelect<Source, Any?> = null,
+    private val projectionClass: KClass<Selected>,
+    internal val contextPojo: Context = pojo as Context
+) : KSelectable<Selected>(pojo, projectionClass) {
     private var kClass = pojo.kClass()
     private var tableName = pojo.__tableName
     internal var paramMap = pojo.toDataMap()
@@ -151,18 +159,18 @@ class SelectClause<T : KPojo, R : KPojo>(
         if (setSelectFields != null) {
             pojo.afterSelect {
                 setSelectFields(it) // 设置选择的字段
-                if (fields.isEmpty()) {
+                if (fields.isEmpty() && selectItems.isEmpty()) {
                     throw EmptyFieldsException()
                 }
                 val fieldsSet = fields.toLinkedSet()
-                if (fieldsSet.isNotEmpty()) {
+                if (fieldsSet.isNotEmpty() || selectItems.isNotEmpty()) {
                     // Split into DB columns and cascade fields
                     val columnFields = fieldsSet.filter { f -> f.isColumn }.toLinkedSet()
                     selectCascadeFields = fieldsSet.filter { f -> !f.isColumn }.toLinkedSet()
-                    if (columnFields.isNotEmpty()) {
+                    if (columnFields.isNotEmpty() || selectItems.isNotEmpty()) {
                         selectAll = false
                         statement.selectList.clear()
-                        statement.selectList.addAll(fieldsToSelectItems(columnFields))
+                        statement.selectList.addAll(projectionItemsToSelectItems(projectionItems, columnFields.toSet()))
                     }
                     // If only cascade fields, selectAll stays true (select all DB columns)
                 }
@@ -189,26 +197,71 @@ class SelectClause<T : KPojo, R : KPojo>(
             if (field is com.kotlinorm.beans.dsl.FunctionField) {
                 // For FunctionField, convert to function call expression with alias
                 val expression = FieldToExpressionConverter.fieldToExpression(field, useTableAlias = false)
+                val alias = functionAlias(field)
                 SelectItem.ExpressionSelectItem(
                     expression = expression,
-                    alias = field.functionName.lowercase()  // Use lowercase function name as alias
+                    alias = alias,
+                    metadata = SelectItemAliasMetadata(
+                        outputName = alias,
+                        expression = expression,
+                        scope = FunctionManager.getSelectItemScope(field.functionName),
+                        sourceField = field,
+                        userReferenceable = true
+                    )
                 )
             } else if (field.type == CUSTOM_CRITERIA_SQL) {
                 // For CUSTOM_CRITERIA_SQL fields, convert to expression
                 val expression = FieldToExpressionConverter.fieldToExpression(field, useTableAlias = false)
                 SelectItem.ExpressionSelectItem(
                     expression = expression,
-                    alias = null
+                    alias = null,
+                    metadata = SelectItemAliasMetadata(
+                        outputName = "__kronos_expr_${field.columnName.hashCode().toUInt()}",
+                        expression = expression,
+                        scope = SelectItemSourceScope.UNKNOWN,
+                        sourceField = field,
+                        userReferenceable = false
+                    )
                 )
             } else {
                 // Add alias if field name differs from column name
                 val alias = if (field.name != field.columnName) field.name else null
+                val column = fieldToColumnReference(field)
                 SelectItem.ColumnSelectItem(
-                    column = fieldToColumnReference(field),
-                    alias = alias
+                    column = column,
+                    alias = alias,
+                    metadata = SelectItemAliasMetadata(
+                        outputName = alias ?: field.columnName,
+                        expression = column,
+                        scope = if (alias == null) SelectItemSourceScope.SOURCE else SelectItemSourceScope.SELECTED,
+                        sourceField = field,
+                        userReferenceable = true
+                    )
                 )
             }
         }
+    }
+
+    private fun projectionItemsToSelectItems(
+        projections: Collection<KTableForSelect.ProjectionItem>,
+        columnFields: Set<Field>
+    ): List<SelectItem> {
+        if (projections.isEmpty()) {
+            return fieldsToSelectItems(columnFields)
+        }
+
+        return projections.mapNotNull { projection ->
+            when (projection) {
+                is KTableForSelect.ProjectionItem.FieldItem ->
+                    projection.field.takeIf { it in columnFields }
+                        ?.let { fieldsToSelectItems(listOf(it)).single() }
+                is KTableForSelect.ProjectionItem.SelectItemValue -> projection.item
+            }
+        }
+    }
+
+    private fun functionAlias(field: com.kotlinorm.beans.dsl.FunctionField): String {
+        return field.name.takeIf { it != field.functionName } ?: field.functionName.lowercase()
     }
 
     /**
@@ -216,14 +269,13 @@ class SelectClause<T : KPojo, R : KPojo>(
      * This method ensures the statement is complete and ready for rendering.
      *
      * @param wrapper Optional KronosDataSourceWrapper for logic delete strategy and other database-specific logic
-     * @param parameterValues Optional mutable map to collect parameter values during Criteria conversion
      * @return The complete SelectStatement ready for SQL rendering
      */
     override fun toStatement(wrapper: KronosDataSourceWrapper?): SelectStatement {
         return toStatement(wrapper, mutableMapOf())
     }
     
-    fun toStatement(wrapper: KronosDataSourceWrapper? = null, parameterValues: MutableMap<String, Any?> = mutableMapOf()): SelectStatement {
+    override fun toStatement(wrapper: KronosDataSourceWrapper?, parameterValues: MutableMap<String, Any?>): SelectStatement {
         val dataSource = wrapper.orDefault()
 
         // Copy criteriaParams (from where/by/having methods) to parameterValues
@@ -289,8 +341,15 @@ class SelectClause<T : KPojo, R : KPojo>(
         // Get complete statement with all parameters and checks applied
         val finalStatement = toStatement(wrapper, criteriaParameterValues)
 
+        // Lower deferred subqueries here so nested selectable parameters are collected into
+        // the same parameter map used by the outer query build.
+        val loweredStatement = SubqueryLowering.lower(
+            finalStatement,
+            QueryMaterializeContext(wrapper = wrapper, parameterValues = criteriaParameterValues)
+        )
+
         // Render AST to SQL with parameters
-        val renderedSql = support.getSelectSqlWithParams(dataSource, finalStatement)
+        val renderedSql = support.getSelectSqlWithParams(dataSource, loweredStatement)
 
         // Build final parameter map from:
         // 1. Parameters extracted from Criteria in where()/by()/having() methods
@@ -338,17 +397,17 @@ class SelectClause<T : KPojo, R : KPojo>(
         return Pair(renderedSql.sql, paramMapNew)
     }
 
-    fun single(): SelectClause<T, R> {
+    fun single(): SelectClause<Source, Selected, Context> {
         statement.limit = LimitClause(limit = 1, offset = null)
         return this
     }
 
-    fun limit(capacity: Int): SelectClause<T, R> {
+    fun limit(capacity: Int): SelectClause<Source, Selected, Context> {
         statement.limit = if (capacity > 0) LimitClause(limit = capacity, offset = statement.limit?.offset) else null
         return this
     }
 
-    fun db(databaseName: String): SelectClause<T, R> {
+    fun db(databaseName: String): SelectClause<Source, Selected, Context> {
         if (databaseName.isNotBlank()) {
             // Update table name in statement
             val currentFrom = statement.from as? TableName
@@ -366,22 +425,38 @@ class SelectClause<T : KPojo, R : KPojo>(
      *                   该参数指定了排序时所依据的字段。
      * @return 返回 [SelectClause] 对象，允许链式调用。
      */
-    fun orderBy(someFields: ToSort<T, Any?>): SelectClause<T, R> {
+    fun orderBy(someFields: ToSort<Context, Any?>): SelectClause<Source, Selected, Context> {
         if (someFields == null) throw EmptyFieldsException()
 
-        pojo.afterSort {
+        contextPojo.afterSort {
             someFields(it)// 在这里对排序操作进行封装，为后续的链式调用提供支持。
             // Update statement with order by items directly
             if (statement.orderBy == null) {
                 statement.orderBy = mutableListOf()
             }
             statement.orderBy!!.clear()
-            statement.orderBy!!.addAll(sortedFields.map { (field, sortType) ->
-                OrderByItem(
-                    expression = fieldToColumnReference(field),
-                    direction = sortType
-                )
-            })
+            val orderItems = if (sortedItems.isNotEmpty()) {
+                sortedItems.map { item ->
+                    when (item) {
+                        is KTableForSort.SortItem.FieldItem -> OrderByItem(
+                            expression = fieldToColumnReference(item.field),
+                            direction = item.sortType
+                        )
+                        is KTableForSort.SortItem.ExpressionItem -> OrderByItem(
+                            expression = item.expression,
+                            direction = item.sortType
+                        )
+                    }
+                }
+            } else {
+                sortedFields.map { (field, sortType) ->
+                    OrderByItem(
+                        expression = fieldToColumnReference(field),
+                        direction = sortType
+                    )
+                }
+            }
+            statement.orderBy!!.addAll(orderItems)
         }
         return this // 返回当前对象，允许继续进行其他查询操作。
     }
@@ -394,7 +469,7 @@ class SelectClause<T : KPojo, R : KPojo>(
      * @return 返回 SelectClause<T> 实例，允许链式调用。
      * @throws EmptyFieldsException 如果 someFields 为空，则抛出此异常。
      */
-    fun groupBy(someFields: ToSelect<T, Any?>): SelectClause<T, R> {
+    fun groupBy(someFields: ToSelect<Source, Any?>): SelectClause<Source, Selected, Context> {
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         someFields ?: throw EmptyFieldsException()
         pojo.afterSelect {
@@ -418,7 +493,7 @@ class SelectClause<T : KPojo, R : KPojo>(
      *
      * @return [SelectClause<T>] 返回当前选择语句实例，允许链式调用。
      */
-    fun distinct(): SelectClause<T, R> {
+    fun distinct(): SelectClause<Source, Selected, Context> {
         statement.distinct = true
         return this
     }
@@ -431,7 +506,7 @@ class SelectClause<T : KPojo, R : KPojo>(
      * @param ps 每页的记录数，指定每页显示的数据量。
      * @return 返回 SelectClause<T> 实例，支持链式调用。
      */
-    fun page(pi: Int, ps: Int): SelectClause<T, R> {
+    fun page(pi: Int, ps: Int): SelectClause<Source, Selected, Context> {
         pageEnabled = true
         // Calculate offset: (pageIndex - 1) * pageSize
         val offset = if (pi > 0) (pi - 1) * ps else 0
@@ -439,12 +514,12 @@ class SelectClause<T : KPojo, R : KPojo>(
         return this
     }
 
-    fun cascade(enabled: Boolean): SelectClause<T, R> {
+    fun cascade(enabled: Boolean): SelectClause<Source, Selected, Context> {
         cascadeEnabled = enabled
         return this
     }
 
-    fun cascade(someFields: ToReference<T, Any?>): SelectClause<T, R> {
+    fun cascade(someFields: ToReference<Source, Any?>): SelectClause<Source, Selected, Context> {
         someFields ?: throw EmptyFieldsException()
         cascadeEnabled = true
         pojo.afterReference {
@@ -464,7 +539,7 @@ class SelectClause<T : KPojo, R : KPojo>(
      *                   不能为空，否则会抛出EmptyFieldsException异常。
      * @return 返回当前SelectClause实例，允许链式调用。
      */
-    fun by(someFields: ToSelect<T, Any?>): SelectClause<T, R> {
+    fun by(someFields: ToSelect<Source, Any?>): SelectClause<Source, Selected, Context> {
         // 检查someFields是否为空，为空则抛出异常
         someFields ?: throw EmptyFieldsException()
         pojo.afterSelect { t ->
@@ -507,9 +582,9 @@ class SelectClause<T : KPojo, R : KPojo>(
      *                        并返回一个 [Boolean]? 类型的值，用于指定条件是否成立。如果为 null，则表示选择所有字段。
      * @return [SelectClause] 的实例，代表了一个查询的选择子句。
      */
-    fun where(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T, R> {
+    fun where(selectCondition: ToFilter<Context, Boolean?> = null): SelectClause<Source, Selected, Context> {
         selectCondition ?: return this
-        pojo.afterFilter {
+        contextPojo.afterFilter {
             criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
             if (criteria == null) return@afterFilter
@@ -545,10 +620,10 @@ class SelectClause<T : KPojo, R : KPojo>(
      * @return 返回SelectClause类型的实例，允许链式调用。
      * @throws EmptyFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
      */
-    fun having(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T, R> {
+    fun having(selectCondition: ToFilter<Context, Boolean?> = null): SelectClause<Source, Selected, Context> {
         // 检查是否提供了条件，未提供则抛出异常
         selectCondition ?: throw EmptyFieldsException()
-        pojo.afterFilter {
+        contextPojo.afterFilter {
             criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
             if (criteria == null) return@afterFilter
@@ -576,17 +651,17 @@ class SelectClause<T : KPojo, R : KPojo>(
         return this // 允许链式调用
     }
 
-    fun withTotal(): PagedClause<T, SelectClause<T, R>> {
+    fun withTotal(): PagedClause<Source, Selected, SelectClause<Source, Selected, Context>> {
         return PagedClause(this)
     }
 
-    fun patch(vararg pairs: Pair<String, Any?>): SelectClause<T, R> {
+    fun patch(vararg pairs: Pair<String, Any?>): SelectClause<Source, Selected, Context> {
         paramMap.putAll(pairs)
         patchParamMap.putAll(pairs)
         return this
     }
 
-    fun lock(lock: PessimisticLock? = PessimisticLock.X): SelectClause<T, R> {
+    fun lock(lock: PessimisticLock? = PessimisticLock.X): SelectClause<Source, Selected, Context> {
         statement.lock = lock
         return this
     }
@@ -605,7 +680,11 @@ class SelectClause<T : KPojo, R : KPojo>(
         val (sql, paramMap) = renderStatement(wrapper)
 
         // 返回构建好的KronosAtomicTask对象
-        val finalSelectFields = if (selectAll) allFields else (selectFields + selectCascadeFields).toLinkedSet()
+        val finalSelectFields = if (selectAll) {
+            (allFields + selectCascadeFields).toLinkedSet()
+        } else {
+            (selectFields + selectCascadeFields).toLinkedSet()
+        }
         return CascadeSelectClause.build(
             cascadeEnabled, cascadeAllowed, pojo, kClass, KronosAtomicQueryTask(
                 sql, paramMap + patchParamMap, operationType = KOperationType.SELECT
@@ -635,11 +714,11 @@ class SelectClause<T : KPojo, R : KPojo>(
 
     @JvmName("queryForList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): List<R> {
+    fun queryList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
         with(this.build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, projectionClass, true, []) as List<R>, QueryList
+                wrapper.orDefault().forList(atomicTask, projectionClass, true, []) as List<Selected>, QueryList
             )
             afterQuery?.invoke(result, QueryList, wrapper.orDefault())
             return result
@@ -668,13 +747,13 @@ class SelectClause<T : KPojo, R : KPojo>(
 
     @JvmName("queryForObject")
     @Suppress("UNCHECKED_CAST")
-    fun queryOne(wrapper: KronosDataSourceWrapper? = null): R {
+    fun queryOne(wrapper: KronosDataSourceWrapper? = null): Selected {
         limit(1)
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
                 (wrapper.orDefault().forObject(atomicTask, projectionClass, true, [])
-                    ?: throw NullPointerException("No such record")) as R, QueryOne
+                    ?: throw NullPointerException("No such record")) as Selected, QueryOne
             )
             afterQuery?.invoke(result, QueryOne, wrapper.orDefault())
             return result
@@ -692,12 +771,12 @@ class SelectClause<T : KPojo, R : KPojo>(
 
     @JvmName("queryForObjectOrNull")
     @Suppress("UNCHECKED_CAST")
-    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): R? {
+    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
         limit(1)
         with(build()) {
             beforeQuery?.invoke(this)
             val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, projectionClass, true, []) as R?, QueryOneOrNull
+                wrapper.orDefault().forObject(atomicTask, projectionClass, true, []) as Selected?, QueryOneOrNull
             )
             afterQuery?.invoke(result, QueryOneOrNull, wrapper.orDefault())
             return result
@@ -706,19 +785,21 @@ class SelectClause<T : KPojo, R : KPojo>(
 
     companion object {
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.by(someFields: ToSelect<T, Any?>): List<SelectClause<T, R>> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.by(
+            someFields: ToSelect<Source, Any?>
+        ): List<SelectClause<Source, Selected, Context>> {
             return map { it.by(someFields) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.cascade(
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.cascade(
             enabled: Boolean
-        ): List<SelectClause<T, R>> {
+        ): List<SelectClause<Source, Selected, Context>> {
             return map { it.cascade(enabled) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.cascade(
-            someFields: ToReference<T, Any?>
-        ): List<SelectClause<T, R>> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.cascade(
+            someFields: ToReference<Source, Any?>
+        ): List<SelectClause<Source, Selected, Context>> {
             return map { it.cascade(someFields) }
         }
 
@@ -728,7 +809,9 @@ class SelectClause<T : KPojo, R : KPojo>(
          * @param selectCondition the condition for the update clause. Defaults to null.
          * @return a list of UpdateClause objects with the updated condition
          */
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.where(selectCondition: ToFilter<T, Boolean?> = null): List<SelectClause<T, R>> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.where(
+            selectCondition: ToFilter<Context, Boolean?> = null
+        ): List<SelectClause<Source, Selected, Context>> {
             return map { it.where(selectCondition) }
         }
 
@@ -738,7 +821,7 @@ class SelectClause<T : KPojo, R : KPojo>(
          * @param T The type of KPojo objects in the list.
          * @return A KronosAtomicBatchTask object with the SQL and parameter map array from the UpdateClause objects.
          */
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.build(): KronosAtomicBatchTask {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.build(): KronosAtomicBatchTask {
             val tasks = this.map { it.build() }
             return KronosAtomicBatchTask(
                 sql = tasks.first().atomicTask.sql,
@@ -747,27 +830,39 @@ class SelectClause<T : KPojo, R : KPojo>(
             )
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.query(wrapper: KronosDataSourceWrapper? = null): List<List<Map<String, Any>>> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.query(
+            wrapper: KronosDataSourceWrapper? = null
+        ): List<List<Map<String, Any>>> {
             return map { it.query(wrapper) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.queryList(wrapper: KronosDataSourceWrapper? = null): List<List<R>> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.queryList(
+            wrapper: KronosDataSourceWrapper? = null
+        ): List<List<Selected>> {
             return map { it.queryList(wrapper) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.queryMap(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.queryMap(
+            wrapper: KronosDataSourceWrapper? = null
+        ): List<Map<String, Any>> {
             return map { it.queryMap(wrapper) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>?> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.queryMapOrNull(
+            wrapper: KronosDataSourceWrapper? = null
+        ): List<Map<String, Any>?> {
             return map { it.queryMapOrNull(wrapper) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.queryOne(wrapper: KronosDataSourceWrapper? = null): List<R> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.queryOne(
+            wrapper: KronosDataSourceWrapper? = null
+        ): List<Selected> {
             return map { it.queryOne(wrapper) }
         }
 
-        fun <T : KPojo, R : KPojo> Iterable<SelectClause<T, R>>.queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): List<R?> {
+        fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.queryOneOrNull(
+            wrapper: KronosDataSourceWrapper? = null
+        ): List<Selected?> {
             return map { it.queryOneOrNull(wrapper) }
         }
     }

@@ -50,7 +50,7 @@ class SelectFrom8<T1: KPojo, T2: KPojo, T3: KPojo, T4: KPojo, T5: KPojo, T6: KPo
         kClass8 to t8
     )
     
-    fun withTotal(): PagedClause<T1, SelectFrom8<T1, T2, T3, T4, T5, T6, T7, T8>> {
+    fun withTotal(): PagedClause<T1, T1, SelectFrom8<T1, T2, T3, T4, T5, T6, T7, T8>> {
         return PagedClause(this)
     }
 }

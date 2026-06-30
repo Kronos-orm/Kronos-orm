@@ -17,8 +17,15 @@
 package com.kotlinorm.orm.ddl
 
 import com.kotlinorm.ast.DdlStatement
+import com.kotlinorm.ast.QueryMaterializeContext
+import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.Statement
+import com.kotlinorm.ast.SubqueryLowering
+import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
+import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosAtomicActionTask
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.database.SqlHandler.execute
 import com.kotlinorm.database.SqlManager.getTableColumns
 import com.kotlinorm.database.SqlManager.getTableCreateSqlList
@@ -28,8 +35,10 @@ import com.kotlinorm.database.SqlManager.getTableSyncSqlList
 import com.kotlinorm.database.SqlManager.getTableTruncateSql
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.union.UnionClause
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.createInstance
 
@@ -78,6 +87,68 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         }.toKronosActionTask().execute(dataSource)
         // Execute CONCURRENTLY index statements outside the transaction
         concurrentSql.forEach { dataSource.execute(it) }
+    }
+
+    inline fun <reified T : KPojo> createTable(
+        instance: T = T::class.createInstance(),
+        query: KSelectable<*>
+    ) {
+        buildCreateTableAsSelectTask(instance, query).execute(dataSource)
+    }
+
+    inline fun <reified T : KPojo> createTable(
+        instance: T = T::class.createInstance(),
+        query: UnionClause
+    ) {
+        buildCreateTableAsSelectTask(instance, query).execute(dataSource)
+    }
+
+    inline fun <reified T : KPojo> buildCreateTableAsSelectTask(
+        instance: T = T::class.createInstance(),
+        query: KSelectable<*>
+    ): KronosActionTask {
+        val parameterValues = mutableMapOf<String, Any?>()
+        val statement = buildCreateTableAsSelectStatement(instance, query, parameterValues)
+        return buildCreateTableAsSelectTaskFromStatement(statement, parameterValues)
+    }
+
+    inline fun <reified T : KPojo> buildCreateTableAsSelectTask(
+        instance: T = T::class.createInstance(),
+        query: UnionClause
+    ): KronosActionTask {
+        val parameterValues = mutableMapOf<String, Any?>()
+        val statement = buildCreateTableAsSelectStatement(instance, query, parameterValues)
+        return buildCreateTableAsSelectTaskFromStatement(statement, parameterValues)
+    }
+
+    fun buildCreateTableAsSelectTaskFromStatement(
+        statement: DdlStatement.CreateTableAsSelectStatement,
+        parameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): KronosActionTask {
+        val loweredStatement = SubqueryLowering.lower(
+            statement,
+            QueryMaterializeContext(wrapper = dataSource, parameterValues = parameterValues)
+        ) as DdlStatement.CreateTableAsSelectStatement
+        val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+        val context = RenderContext(quotes = support.quotes, dbType = dataSource.dbType)
+        context.boundParameters.putAll(parameterValues)
+        val rendered = support.renderer.render(
+            loweredStatement,
+            context
+        )
+        val params = rendered.parameters.toMutableMap()
+        parameterValues.forEach { (key, value) ->
+            if (!params.containsKey(key) && rendered.sql.contains(":$key")) {
+                params[key] = value
+            }
+        }
+
+        return KronosAtomicActionTask(
+            rendered.sql,
+            params,
+            KOperationType.CREATE,
+            statement = loweredStatement
+        ).toKronosActionTask()
     }
 
     /**
@@ -225,6 +296,38 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             columns = columns,
             indexes = instance.kronosTableIndex(),
             comment = instance.__tableComment
+        )
+    }
+
+    inline fun <reified T : KPojo> buildCreateTableAsSelectStatement(
+        instance: T = T::class.createInstance(),
+        query: KSelectable<*>,
+        parameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): DdlStatement.CreateTableAsSelectStatement {
+        return DdlStatement.CreateTableAsSelectStatement(
+            tableName = instance.__tableName,
+            query = query.toStatement(dataSource, parameterValues)
+        )
+    }
+
+    inline fun <reified T : KPojo> buildCreateTableAsSelectStatement(
+        instance: T = T::class.createInstance(),
+        query: UnionClause,
+        parameterValues: MutableMap<String, Any?> = mutableMapOf()
+    ): DdlStatement.CreateTableAsSelectStatement {
+        return DdlStatement.CreateTableAsSelectStatement(
+            tableName = instance.__tableName,
+            query = query.toStatement(dataSource, parameterValues)
+        )
+    }
+
+    inline fun <reified T : KPojo> buildCreateTableAsSelectStatement(
+        instance: T = T::class.createInstance(),
+        query: Statement
+    ): DdlStatement.CreateTableAsSelectStatement {
+        return DdlStatement.CreateTableAsSelectStatement(
+            tableName = instance.__tableName,
+            query = query
         )
     }
 

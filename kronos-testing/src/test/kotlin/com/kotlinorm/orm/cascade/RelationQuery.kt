@@ -221,9 +221,9 @@ class RelationQuery {
         Book(
             id = 1,
             chapters = [
-                Chapter(1),
-                Chapter(2),
-                Chapter(3)
+                Chapter(1, bookId = 1),
+                Chapter(2, bookId = 1),
+                Chapter(3, bookId = 1)
             ]
         ).insert().execute()
 

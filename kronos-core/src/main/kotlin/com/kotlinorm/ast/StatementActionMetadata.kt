@@ -21,6 +21,7 @@ fun Statement.tableNameOrNull(): String? = when (this) {
     is UpdateStatement -> table.tableNameOrNull()
     is DeleteStatement -> table.tableNameOrNull()
     is DdlStatement.CreateTableStatement -> tableName
+    is DdlStatement.CreateTableAsSelectStatement -> tableName
     is DdlStatement.AlterTableStatement -> tableName
     is DdlStatement.DropTableStatement -> tableName
     is DdlStatement.CreateIndexStatement -> tableName

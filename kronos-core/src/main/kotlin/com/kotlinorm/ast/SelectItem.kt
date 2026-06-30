@@ -13,6 +13,25 @@
  */
 package com.kotlinorm.ast
 
+import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.functions.FunctionManager
+
+enum class SelectItemSourceScope {
+    SOURCE,
+    SELECTED,
+    AGGREGATE,
+    WINDOW,
+    UNKNOWN
+}
+
+data class SelectItemAliasMetadata(
+    val outputName: String,
+    val expression: Expression,
+    val scope: SelectItemSourceScope,
+    val sourceField: Field? = null,
+    val userReferenceable: Boolean = true
+)
+
 /**
  * SelectItem
  *
@@ -30,7 +49,11 @@ sealed class SelectItem {
      * @property column The column reference
      * @property alias Optional alias for the column
      */
-    data class ColumnSelectItem(val column: ColumnReference, val alias: String?) : SelectItem()
+    data class ColumnSelectItem(
+        val column: ColumnReference,
+        val alias: String?,
+        val metadata: SelectItemAliasMetadata? = null
+    ) : SelectItem()
 
     /**
      * ExpressionSelectItem
@@ -40,7 +63,11 @@ sealed class SelectItem {
      * @property expression The expression to select
      * @property alias Optional alias for the expression
      */
-    data class ExpressionSelectItem(val expression: Expression, val alias: String?) : SelectItem()
+    data class ExpressionSelectItem(
+        val expression: Expression,
+        val alias: String?,
+        val metadata: SelectItemAliasMetadata? = null
+    ) : SelectItem()
 
     /**
      * AllColumnsSelectItem
@@ -50,4 +77,34 @@ sealed class SelectItem {
      * @property table Optional table name or alias for table.*, null for *
      */
     data class AllColumnsSelectItem(val table: String?) : SelectItem()
+
+    fun aliasMetadata(index: Int): SelectItemAliasMetadata? {
+        return when (this) {
+            is ColumnSelectItem -> metadata ?: SelectItemAliasMetadata(
+                outputName = alias ?: column.columnName,
+                expression = column,
+                scope = if (alias == null) SelectItemSourceScope.SOURCE else SelectItemSourceScope.SELECTED,
+                sourceField = null,
+                userReferenceable = true
+            )
+
+            is ExpressionSelectItem -> metadata ?: SelectItemAliasMetadata(
+                outputName = alias ?: "__kronos_expr_$index",
+                expression = expression,
+                scope = if (alias == null) SelectItemSourceScope.UNKNOWN else expression.defaultScope(),
+                sourceField = null,
+                userReferenceable = alias != null
+            )
+
+            is AllColumnsSelectItem -> null
+        }
+    }
+}
+
+private fun Expression.defaultScope(): SelectItemSourceScope {
+    return when (this) {
+        is ColumnReference -> SelectItemSourceScope.SELECTED
+        is FunctionCall -> FunctionManager.getSelectItemScope(functionName)
+        else -> SelectItemSourceScope.UNKNOWN
+    }
 }

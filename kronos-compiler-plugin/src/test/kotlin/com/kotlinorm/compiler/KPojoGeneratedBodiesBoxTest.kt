@@ -43,4 +43,10 @@ class KPojoGeneratedBodiesBoxTest : AbstractKronosJvmBoxSuite("kpojoGeneratedBod
      */
     @Test
     fun dynamicAccessors() = box("dynamicAccessors")
+
+    /**
+     * Verifies that source `val` KPojo properties are still writable by generated mapping bodies.
+     */
+    @Test
+    fun valPropertiesAreWritable() = box("valPropertiesAreWritable")
 }

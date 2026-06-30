@@ -18,14 +18,17 @@ package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.KTableTransformer
+import com.kotlinorm.compiler.core.SelectProjectionIr
 import com.kotlinorm.compiler.core.addFieldMethodSymbol
-import com.kotlinorm.compiler.core.analyzeAndBuildFields
+import com.kotlinorm.compiler.core.addScalarSubqueryMethodSymbol
+import com.kotlinorm.compiler.core.analyzeAndBuildSelectProjections
 import com.kotlinorm.compiler.utils.extensionReceiver
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
@@ -78,17 +81,28 @@ class SelectTransformer(
 
         return with(pluginContext) {
             DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
-                val fields = analyzeAndBuildFields(irFunction, expression.value, errorReporter)
+                val projections = analyzeAndBuildSelectProjections(irFunction, expression.value, errorReporter)
                 val receiver = irFunction.parameters.extensionReceiver
                     ?: return@irBlock run { +expression }
 
-                if (fields.isEmpty()) {
+                if (projections.isEmpty()) {
                     +expression
                 } else {
-                    fields.forEach { field ->
-                        +irCall(addFieldMethodSymbol).apply {
-                            dispatchReceiver = irGet(receiver)
-                            arguments[1] = field
+                    projections.forEach { projection ->
+                        when (projection) {
+                            is SelectProjectionIr.FieldProjection -> {
+                                +irCall(addFieldMethodSymbol).apply {
+                                    dispatchReceiver = irGet(receiver)
+                                    arguments[1] = projection.field
+                                }
+                            }
+                            is SelectProjectionIr.ScalarSubqueryProjection -> {
+                                +irCall(addScalarSubqueryMethodSymbol).apply {
+                                    dispatchReceiver = irGet(receiver)
+                                    arguments[1] = projection.query
+                                    arguments[2] = irString(projection.alias)
+                                }
+                            }
                         }
                     }
                 }

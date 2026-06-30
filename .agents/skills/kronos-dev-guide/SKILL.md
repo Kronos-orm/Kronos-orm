@@ -19,14 +19,15 @@ Kotlin compiler-plugin-powered ORM. Zero reflection, AST-based SQL generation, m
 
 ## Evolution Memory Protocol
 
-For every error, failure, or unexpected behavior, read `Evolution.md` first before attempting a fix. This file is the highest-priority troubleshooting memory for this skill and must be checked before consulting other reference files, searching the codebase, or changing files.
+For every error, failure, or unexpected behavior, consult `Evolution.index.md` first before attempting a fix. The index is the highest-priority troubleshooting memory and keeps the context cost low. Do not read all of `Evolution.md` by default, and do not open it at all unless the index or a targeted search points to a relevant entry.
 
 Priority order for error handling:
 
-1. Read `Evolution.md` and look for a matching symptom, module, command, or error message.
-2. Reuse any documented solution or prevention rule that applies.
-3. If no matching record exists, continue to the relevant reference file below.
-4. After a successful build or verified fix, append important new problems and solutions to `Evolution.md` using the required format.
+1. Read `Evolution.index.md` and look for a matching symptom, module, command, or error message.
+2. If the index matches, read only the corresponding `Evolution.md` entry with targeted search/context, for example `Select-String -Path .agents/skills/kronos-dev-guide/Evolution.md -Pattern "entry title" -Context 0,20`.
+3. Reuse any documented solution or prevention rule that applies.
+4. If no matching index record exists, continue to the relevant reference file below or search code/tests normally without opening the full evolution log.
+5. After a successful build or verified fix, append only reusable, confirmed pitfalls to `Evolution.md` using the required format, then add one concise row to `Evolution.index.md`.
 
 Use this protocol to preserve discovered project pitfalls and avoid repeating the same mistakes.
 
@@ -183,7 +184,8 @@ Read these for deep implementation details:
 
 | File | When to Read |
 |------|-------------|
-| `Evolution.md` | Required first read before fixing any error; stores historical problems, root causes, solutions, and prevention rules |
+| `Evolution.index.md` | Required first read before fixing any error; maps symptoms and keywords to targeted `Evolution.md` entries |
+| `Evolution.md` | Historical problem database; read only the indexed matching entry or use targeted search/context |
 | `references/compiler-plugin.md` | Modifying compiler plugin, adding/changing IR transforms, debugging IR output. Before compiler plugin architecture, FIR/frontend, IR/backend, diagnostics, or compiler-test work, use `.agents/skills/kronos-dev-kcp` first. |
 | `references/ast-and-rendering.md` | Working with AST nodes, SQL rendering, adding/modifying database dialects, functions system |
 | `references/orm-and-dsl.md` | ORM clause classes, DSL beans, plugin/hook system, task execution, transactions, value transformers |

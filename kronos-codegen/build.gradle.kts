@@ -5,6 +5,13 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-nowarn")
+        freeCompilerArgs.add("-Xcollection-literals")
+    }
+}
+
 dependencies {
     implementation(project(":kronos-core"))
     implementation(libs.jackson.dataformat.toml)

@@ -19,6 +19,7 @@ package com.kotlinorm.functions.bundled.builders
 import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.FunctionCall
 import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.SelectItemSourceScope
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder.buildFields
@@ -82,6 +83,10 @@ object PolymerizationFunctionBuilder : FunctionBuilder {
             "groupconcat" -> all
             else -> emptyArray()
         }
+    }
+
+    override fun selectItemScope(functionName: String): SelectItemSourceScope {
+        return SelectItemSourceScope.AGGREGATE
     }
 
     override fun transform(field: FunctionField, dataSource: KronosDataSourceWrapper, showTable: Boolean, showAlias: Boolean): String {

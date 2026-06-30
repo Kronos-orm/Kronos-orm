@@ -19,6 +19,7 @@ package com.kotlinorm.interfaces
 import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.FunctionCall
 import com.kotlinorm.ast.RenderContext
+import com.kotlinorm.ast.SelectItemSourceScope
 import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.enums.DBType
 
@@ -37,6 +38,10 @@ interface FunctionBuilder {
     
     fun support(functionName: String, dbType: DBType): Boolean {
         return supportFunctionNames(functionName).contains(dbType)
+    }
+
+    fun selectItemScope(functionName: String): SelectItemSourceScope {
+        return SelectItemSourceScope.SELECTED
     }
 
     /**

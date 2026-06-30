@@ -4,9 +4,11 @@
 
 ## 使用方式
 
-- 修任何 KCP、FIR、IR 编译错误前，先读这个文件。
-- 优先按错误症状、编译阶段、关键栈信息匹配已有记录。
-- 修复成功后，把新确认的问题、原因、方案和预防经验追加到这里。
+- 修任何 KCP、FIR、IR 编译错误前，先读 `Evolution.index.md`，不要默认读取本文档全量内容；索引未命中时不要打开全文。
+- 优先在索引里按错误症状、编译阶段、关键栈信息匹配已有记录。
+- 只有索引命中时，才用定向搜索读取本文档中的对应条目，例如 `Select-String -Path .agents/skills/kronos-dev-kcp/Evolution.md -Pattern "问题描述" -Context 0,22`。
+- 如果索引没有命中，继续读取相关 KCP reference 或代码搜索排查。
+- 修复成功后，把新确认的问题、原因、方案和预防经验追加到这里，并同步给 `Evolution.index.md` 增加一条简短索引。
 - 只记录已经验证过或高度确定的经验，不把猜测写成结论。
 
 ## 记录格式
@@ -313,3 +315,137 @@ KClass GeneratedProjectionUser instantiation failed
 
 ### 预防措施
 FIR 负责声明形状和 IDE/前端可见类型；backend IR 负责生成 projection class body、无参构造和实例化映射。不要把 FIR lazy projection class 传给普通 KPojo body transformer 或提前放进 `kClassCreator`。
+
+## 2026-06-30 - KPojo val 属性写入和 projection 元数据需要官方 box 测试覆盖
+
+### 问题症状
+集成测试中 JDBC 映射 `Order(id, userId, orderDate)` 时，如果测试实体保持源码 `val`，动态 `set(name, value)` 没有写入任何字段；cascade projection 中生成类虽然能映射 projection 字段，但 source 表名和本地关联键不足会导致后置查询失败。
+
+### 问题原因
+后端把 KPojo 属性标记为 var 不等于已有生成逻辑会写入这些属性。`createPropertySetter`、`fromMapData`、`safeFromMapData` 之前按 `prop.setter != null` 过滤，源码 `val` 没有 setter 时不会生成写入分支。projection class 的 KPojo 元数据默认按生成类自身计算，不能表达 source table。
+
+### 解决方案
+KPojo 生成的动态 setter 和 map 写入逻辑按 backing field 生成写入分支，不再要求源码 setter。新增 official compiler box 测试覆盖源码 `val` 的 `set/fromMapData/safeFromMapData` 可写性，由官方 runner/IR verifier 验证生成 IR。projection materializer 对生成类传入 source metadata class，并新增 box 测试验证 projection 继承 source 表名、cascade-only projection 隐式保留本地键。
+
+### 预防措施
+凡是修改 KPojo body generation、projection materialization、cascade projection 行为，都要优先加 official `testData/box` 测试，不能只靠数据库集成测试发现运行期缺字段或无效 IR。
+
+## 2026-06-30 - 二元运算符字段表达式不能再被旧字段列表诊断误拦截
+
+### 问题症状
+`select { it.score + 10 + 20 }`、`select { it.score % 2 }`、`where { it.score + 10 > it.score - 10 }` 等用户侧合法计算表达式在 `:kronos-core:test` 编译测试阶段失败，插件报：
+
+```text
+[Kronos] Operator expressions are no longer supported in Kronos field DSL.
+[Kronos] Missing operand for 'GT' comparison
+```
+
+### 问题原因
+字段列表已经从旧的 `it.a + it.b` 迁移到 `[]`，但 compiler plugin 的 `FieldAnalysis` 仍把所有 `plus/times/div/rem` 等 operator call 当成旧字段列表误用处理。给 core DSL 增加 `Any?.plus` 只能让 Kotlin nullable receiver 解析通过，不能让插件生成 SQL 表达式。
+
+### 解决方案
+保留旧字段列表的禁用语义，但允许二元 operator expression 作为计算字段或条件字段：
+
+- `+` 根据操作数类型映射为 `add` 或 `concat`
+- `-` 映射为 `sub`
+- `*` 映射为 `mul`
+- `/` 映射为 `div`
+- `%` 映射为 `mod`
+- `unaryPlus` 继续报错，不能静默忽略或支持
+
+`ConditionAnalysis.extractFieldExpression` 也要识别这些 operator expression，否则比较表达式左侧/右侧是计算字段时会报 missing operand。
+
+### 预防措施
+修改字段列表语法诊断时，区分“旧投影列表写法”与“合法计算表达式”。新增运算符 DSL 能力时同时验证 select 字段、where/having 比较、字符串 concat 三类场景，不能只改 core 的占位 DSL 函数签名。
+
+## 2026-06-30 - `Kronos.init` 调用点生成的 kClassCreator 在增量编译下可能变成旧快照
+
+### 问题症状
+core 普通测试新增顶层 `KPojo` 后，测试运行时报：
+
+```text
+NullPointerException: KClass Scene2User instantiation failed
+```
+
+但 `javap` 检查目标 class 已被插件增强，且有无参构造。进一步检查共享初始化入口 `KronosTestBase$Companion.ensureInitialized`，发现生成的 `kClassCreator` lambda 没有新 KPojo 分支。
+
+### 问题原因
+`KClassMapGenerator.generateForCallSite` 把当前编译看到的 `kPojoClasses` 快照写进 `Kronos.init {}` 调用点。如果该调用点在另一个文件中，增量编译新增 KPojo 文件时可能不重新编译 init 调用点，于是运行期 map 仍是旧快照。
+
+### 解决方案
+先用 module clean 验证是否为增量 stale：
+
+```powershell
+.\gradlew.bat "-Dkotlin.incremental=false" :kronos-core:clean :kronos-core:test --tests com.kotlinorm.orm.subquery.MysqlSubqueryDslTest --no-daemon --no-build-cache --console=plain
+```
+
+clean 后通过说明 KPojo 生成本身没坏，问题在 init 调用点快照失效。
+
+### 预防措施
+不要只根据 `KClass ... instantiation failed` 判断为无参构造缺失。对 `KClassMapGenerator` 相关问题要同时检查目标 KPojo class 和 init 调用点字节码。后续需要从 compiler/Gradle 集成层让 `Kronos.init` 调用点依赖全模块 KPojo 集合变化，或改造 map 生成机制避免旧快照。
+
+## 2026-06-30 - 移动嵌套 selectable 调用时不要 deep-copy lambda local function
+
+### 问题症状
+为 `select { [query.as_("alias")] }` 生成 `addScalarSubquery(query, alias)` 调用时，官方 compiler box 在 IR verifier 阶段失败：
+
+```text
+Declaration with wrong parent:
+FUN LOCAL_FUNCTION_FOR_LAMBDA name:<anonymous> ...
+expectedParent: null
+actualParent: FUN LOCAL_FUNCTION_FOR_LAMBDA ...
+```
+
+### 问题原因
+`query` 表达式本身可能是 `Order().select { ... }`，内部携带 nested lambda local function。对整个 query expression 使用 `deepCopyWithSymbols()` 会复制 local function / lambda 节点，但 parent 没有按 FIR/IR 树重新归属，导致 verifier 认为插件生成了 invalid IR。
+
+### 解决方案
+当原始 return/list 表达式不会继续保留时，直接把原 `query` expression 移入生成的 `addScalarSubquery(...)` 调用，不要 deep-copy 整个 nested selectable call。只有在“原语句保留 + 额外插入派生调用”时才 deep-copy RHS，避免节点复用。
+
+### 预防措施
+IR transformer 处理嵌套 `select { ... }`、lambda、local function、function expression 时，不要机械套用 `deepCopyWithSymbols()`。先判断原节点是否还会留在树中：如果原节点被替换或搬移，优先 move；如果原节点仍保留，再对无 local declaration 风险的表达式做 deep-copy，并用官方 compiler test 的 IR verifier 验证。
+
+## 2026-06-30 - Condition tuple IN 不要把 Field 塞进用户侧 Array<T>
+
+### 问题症状
+新增 official box 测试 `[it.id, it.status] in query` 时，编译通过但 box 运行失败：
+
+```text
+java.lang.ArrayStoreException: com.kotlinorm.beans.dsl.Field
+at TupleInSelectableSubqueryKt.box$lambda$1(...)
+```
+
+### 问题原因
+Kotlin 2.4 collection literal 在该条件表达式里会推断成用户字段类型数组，例如 `Array<Int?>`。如果 compiler plugin 试图直接把每个元素替换成 `Field` 或把 `Field` 当成 AST `Expression` 塞回这个数组，运行时就会向 `Integer[]` 写入 `Field`，触发 `ArrayStoreException`。
+
+### 解决方案
+Condition transformer 不要把 tuple 左值改写为用户侧数组结果。对 `KSelectable.contains(tuple)` 只构造 Criteria handoff：`CriteriaSubqueryValue.In(value = List<Field>, query = KSelectableQueryRef(...))`。core 的 `CriteriaToAstConverter` 再把 `List<Field>` lowering 成 `RowValueExpression(ColumnReference...)`。
+
+### 预防措施
+compiler plugin 的 condition 测试应验证 Criteria 结构，不要在 compiler 层直接构造 SQL AST。凡是处理 `[]` collection literal，都要注意源表达式的静态数组元素类型，不能把 `Field`/AST 节点写回用户数组。
+
+## 2026-06-30 - Scalar subquery comparison RHS must be wrapped as CriteriaSubqueryValue.Scalar
+
+### 问题症状
+新增 official box 测试 `it.status > Order().select { it.status }.limit(1)` 时，Criteria 能生成 `ConditionType.GT`，但 `criteria.value` 是运行时 `SelectClause` 对象：
+
+```text
+Fail: value was com.kotlinorm.orm.select.SelectClause
+```
+
+core 的 `CriteriaToAstConverter` 因此会把 RHS 当普通值/字符串处理，而不是渲染成 `(SELECT ... LIMIT 1)`。
+
+### 问题原因
+`ConditionAnalysis.resolveValueExpression` 只会把字段/函数表达式转成 `Field` / `FunctionField`，其他表达式原样作为 Criteria value。`KSelectable` RHS 没有被包装成结构化 handoff，core converter 无法区分“普通参数值”和“标量子查询”。
+
+### 解决方案
+当 comparison RHS 的 IR type 是 `KSelectable` 或其子类型时，compiler 侧生成：
+
+```kotlin
+CriteriaSubqueryValue.Scalar(KSelectableQueryRef(query))
+```
+
+core 的 `CriteriaToAstConverter.buildComparisonExpression` 再把它 lowering 成 `DeferredSubqueryExpression.Scalar`，最终由 renderer 输出 scalar subquery SQL。
+
+### 预防措施
+新增任何子查询条件 DSL 时，compiler box 要断言 Criteria 的结构化 value 类型，而不是只看 ConditionType。不要把 `SelectClause` / `KSelectable` 运行时对象直接塞进普通 Criteria value。

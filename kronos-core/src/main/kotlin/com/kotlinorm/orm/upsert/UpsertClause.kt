@@ -16,10 +16,19 @@
 
 package com.kotlinorm.orm.upsert
 
+import com.kotlinorm.ast.Assignment
+import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.InsertStatement
+import com.kotlinorm.ast.QueryMaterializeContext
+import com.kotlinorm.ast.SubqueryLowering
+import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.requiresBuilderParameter
+import com.kotlinorm.ast.toBuilderExpression
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
+import com.kotlinorm.beans.dsl.KTableForSet.Companion.afterSet
 import com.kotlinorm.beans.task.KronosActionTask
 import com.kotlinorm.beans.task.KronosActionTask.Companion.merge
 import com.kotlinorm.beans.task.KronosActionTask.Companion.toKronosActionTask
@@ -33,10 +42,12 @@ import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.ConflictResolver
 import com.kotlinorm.database.SqlManager
+import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PessimisticLock
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
@@ -44,6 +55,7 @@ import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
+import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.Extensions.eq
 import com.kotlinorm.utils.Extensions.toCriteria
@@ -84,6 +96,7 @@ class UpsertClause<T : KPojo>(
     private var cascadeAllowed: Set<Field>? = null
     private var lock: PessimisticLock? = null
     private var paramMapNew = mutableMapOf<Field, Any?>()
+    private var conflictAssignmentValues = mutableMapOf<Field, Any?>()
 
     init {
         if (setUpsertFields != null) {
@@ -153,7 +166,26 @@ class UpsertClause<T : KPojo>(
     }
 
     fun patch(vararg pairs: Pair<String, Any?>): UpsertClause<T> {
-        paramMapNew.putAll(pairs.map { Field(it.first) to it.second })
+        pairs.forEach { (fieldName, value) ->
+            val field = allFields.find { it.name == fieldName } ?: Field(fieldName)
+            paramMapNew[field] = value
+            conflictAssignmentValues[field] = value
+            toUpdateFields += field
+        }
+        return this
+    }
+
+    fun set(newValue: ToSet<T, Unit>): UpsertClause<T> {
+        newValue ?: throw EmptyFieldsException()
+        pojo.afterSet {
+            newValue(it)
+            fields.forEach { field ->
+                val value = fieldParamMap[field]
+                paramMapNew[field] = value
+                conflictAssignmentValues[field] = value
+                toUpdateFields += field
+            }
+        }
         return this
     }
 
@@ -175,6 +207,9 @@ class UpsertClause<T : KPojo>(
         // 合并参数映射，准备执行SQL所需的参数
         val fieldMap = fieldsMapCache[kClass]!!
         paramMapNew.forEach { (key, value) ->
+            if (!value.requiresBuilderParameter()) {
+                return@forEach
+            }
             val field = fieldMap[key.name]
             if (field != null && value != null) {
                 paramMap[key.name] = processParams(wrapper.orDefault(), field, value)
@@ -205,6 +240,58 @@ class UpsertClause<T : KPojo>(
                 toInsertFields += field
                 toUpdateFields += field
                 paramMap[field.name] = value
+            }
+            if (conflictAssignmentValues.any { (_, value) -> !value.requiresBuilderParameter() }) {
+                val columns = toInsertFields.map { field ->
+                    ColumnReference(database = null, tableAlias = null, columnName = field.columnName)
+                }
+                val values = toInsertFields.map { field ->
+                    com.kotlinorm.ast.Parameter.NamedParameter(field.name) as com.kotlinorm.ast.Expression
+                }
+                val assignments = conflictAssignmentValues.mapNotNull { (field, value) ->
+                    val targetField = allFields.find { it.name == field.name } ?: return@mapNotNull null
+                    Assignment(
+                        ColumnReference(database = null, tableAlias = null, columnName = targetField.columnName),
+                        value.toBuilderExpression(targetField.name)
+                    )
+                }
+                val statement = InsertStatement(
+                    table = TableName(table = tableName),
+                    columns = columns,
+                    values = values,
+                    conflictResolver = ConflictResolver(tableName, onFields, toUpdateFields, toInsertFields),
+                    conflictAssignments = assignments
+                )
+                val support = getDBSupport(dataSource.dbType)
+                    ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+                val subqueryParameterValues = mutableMapOf<String, Any?>()
+                val loweredStatement = SubqueryLowering.lower(
+                    statement,
+                    QueryMaterializeContext(wrapper = wrapper, parameterValues = subqueryParameterValues)
+                ) as InsertStatement
+                val rendered = support.getInsertSqlWithParams(dataSource, loweredStatement, fieldMap)
+                val renderedParams = mutableMapOf<String, Any?>()
+                paramMap.forEach { (key, value) ->
+                    if (rendered.sql.contains(":$key")) {
+                        renderedParams[key] = value
+                    }
+                }
+                subqueryParameterValues.forEach { (key, value) ->
+                    if (!renderedParams.containsKey(key) && rendered.sql.contains(":$key")) {
+                        renderedParams[key] = value
+                    }
+                }
+                rendered.parameters.forEach { (key, value) ->
+                    if (!renderedParams.containsKey(key)) {
+                        renderedParams[key] = value
+                    }
+                }
+                return KronosAtomicActionTask(
+                    rendered.sql,
+                    renderedParams,
+                    operationType = KOperationType.UPSERT,
+                    statement = loweredStatement
+                ).toKronosActionTask()
             }
             return KronosAtomicActionTask(
                 SqlManager.getOnConflictSql(
@@ -264,7 +351,12 @@ class UpsertClause<T : KPojo>(
                         }
                         .set {
                             this@UpsertClause.toUpdateFields.forEach { field ->
-                                setValue(field, paramMap[field.name])
+                                val value = if (conflictAssignmentValues.containsKey(field)) {
+                                    conflictAssignmentValues[field]
+                                } else {
+                                    paramMap[field.name]
+                                }
+                                setValue(field, value)
                             }
                             this@UpsertClause.logicDeleteStrategy?.execute(
                                 defaultValue = getDefaultBoolean(

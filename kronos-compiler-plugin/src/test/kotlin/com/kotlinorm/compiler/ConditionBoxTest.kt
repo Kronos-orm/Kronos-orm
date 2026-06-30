@@ -98,4 +98,57 @@ class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
     @Test
     fun fieldValueCriteria() = box("fieldValueCriteria")
 
+    /**
+     * Verifies operator function fields work inside comparisons and string match values.
+     */
+    @Test
+    fun operatorFunctionCriteria() = box("operatorFunctionCriteria")
+
+    /**
+     * Verifies field-in-selectable conditions produce deferred subquery criteria values.
+     */
+    @Test
+    fun fieldInSelectableSubquery() = box("fieldInSelectableSubquery")
+
+    /**
+     * Verifies negated field-in-selectable conditions keep deferred subquery criteria values.
+     */
+    @Test
+    fun fieldNotInSelectableSubquery() = box("fieldNotInSelectableSubquery")
+
+    /**
+     * Verifies tuple field-in-selectable conditions produce row-value subquery criteria.
+     */
+    @Test
+    fun tupleInSelectableSubquery() = box("tupleInSelectableSubquery")
+
+    /**
+     * Verifies negated tuple field-in-selectable conditions produce row-value subquery criteria.
+     */
+    @Test
+    fun tupleNotInSelectableSubquery() = box("tupleNotInSelectableSubquery")
+
+    /**
+     * Verifies field comparisons against selectable queries produce scalar subquery criteria.
+     */
+    @Test
+    fun scalarSubqueryComparison() = box("scalarSubqueryComparison")
+
+    /**
+     * Verifies quantified comparisons against selectable queries produce structured criteria.
+     */
+    @Test
+    fun quantifiedSubqueryComparison() = box("quantifiedSubqueryComparison")
+
+    /**
+     * Verifies exists-selectable conditions produce deferred subquery criteria values.
+     */
+    @Test
+    fun existsSelectableSubquery() = box("existsSelectableSubquery")
+
+    /**
+     * Verifies negated exists-selectable conditions produce NOT EXISTS criteria values.
+     */
+    @Test
+    fun notExistsSelectableSubquery() = box("notExistsSelectableSubquery")
 }

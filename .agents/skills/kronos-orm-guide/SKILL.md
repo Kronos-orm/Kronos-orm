@@ -11,6 +11,17 @@ description: >
 
 Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、强类型、支持多数据库（MySQL、PostgreSQL、SQLite、SQL Server、Oracle）。
 
+## Evolution Memory Protocol
+
+当遇到 ORM 使用问题、报错、行为不符合预期或重复踩坑时，先读 `Evolution.index.md`，不要默认读取完整 `Evolution.md`。除非索引或定向搜索命中相关条目，否则不要打开全文。
+
+优先级：
+
+1. 读 `Evolution.index.md`，按症状、API、错误信息、数据库类型匹配。
+2. 如果索引命中，只用定向搜索读取对应的 `Evolution.md` 条目，例如 `Select-String -Path .agents/skills/kronos-orm-guide/Evolution.md -Pattern "entry title" -Context 0,20`。
+3. 如果索引没有命中，不打开完整演进记录，直接读本 skill 的相关章节或 `references/advanced.md` / `references/annotations.md`。
+4. 验证修复后，只有可复用、已确认的问题才写入 `Evolution.md`，并给 `Evolution.index.md` 增加一行关键词索引。
+
 ## 目录
 
 1. [项目配置](#项目配置)

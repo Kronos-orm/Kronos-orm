@@ -33,13 +33,44 @@
 - `[]` 是用户侧统一列表语法；编译器按上下文生成投影列表、排序列表、窗口字段列表、row-value tuple 等内部结构。
 - `select { ... }` 之后的 `where { ... }`、`orderBy { ... }`、`having { ... }` 的 `it` 是 FIR 插件生成的上下文类。
 - 生成上下文类包含原 DTO 的全部列，以及 `select { ... }` 中通过 `.as_("xxx")` 等方式新增的投影列。
+- 用户侧不需要关心 SQL 同层是否允许引用 select alias；`where` / `having` 引用上下文类中的投影字段时，Kronos 按五种数据库的兼容语义自动决定是否包外层派生查询。
+- 不推荐对同一个 query 连续写多个 `.where { ... }` 来表达同一组筛选条件。示例和文档应优先把同一阶段条件合并到一个 `where { ... }` 中，便于判断哪些条件可以下推、哪些条件需要外层过滤。
+
+## 类型模型
+
+概念上，`select { ... }` 之后存在三种类型：
+
+- `Source`：原始查询源 KPojo，例如 `User`。
+- `Selected`：最终查询结果投影类型，只包含 `select { ... }` 选择出来的字段。
+- `Context`：后续查询子句可见的上下文类型，包含 `Source` 的全部列，以及 `Selected` 中由字段选择、表达式、`.as_("xxx")`、窗口函数等产生的投影字段。
+
+因此概念模型可以理解为：
+
+```kotlin
+SelectClause<Source, Selected, Context>
+```
+
+用户不显式书写这些泛型。FIR 插件负责生成 `Selected` 和 `Context`：
+
+```kotlin
+User()
+    .select { it.name }      // it: Source
+    .where { it.status == 1 } // it: Context
+    .queryList()             // List<Selected>
+```
+
+`where` / `having` 使用 `Context` 不表示 SQL 会在同层直接引用 select alias。Kronos 必须根据字段来源自动分层：
+
+- 引用 `Source` 字段的条件可以下推到当前查询的 `WHERE` / `HAVING`。
+- 引用 `Selected` 新增投影字段、计算字段、聚合 alias、窗口 alias 的条件，如果目标数据库不能合法在同层使用，则提升到自动生成的外层派生查询中过滤。
+- `queryList()`、`queryOne()`、`queryOneOrNull()` 等最终返回 `Selected`，不是 `Context`。
 
 ## 术语：KSelectable
 
 本文档用 `KSelectable` 指代所有可被当作查询源消费的 select-like 对象。
 
-- `select { ... }` 仍然返回具体的 `SelectClause<T, R>`。
-- `SelectClause<T, R>` 实现 `KSelectable`。
+- `select { ... }` 仍然返回具体的 `SelectClause<Source, Selected, Context>`。
+- `SelectClause<Source, Selected, Context>` 实现 `KSelectable`。
 - join 查询、union 查询等只要实现 `KSelectable`，也可以被子查询、insert-select、CTAS 等能力消费。
 - 用户通常不需要显式声明 `KSelectable` 类型；它主要用于描述 DSL 能力边界。
 
@@ -102,6 +133,85 @@ val rows = User()
 ```
 
 如果当前数据库不能在同层 `WHERE` 中引用 select alias，Kronos 根据 `where` 是否引用新增投影列自动决定是否包外层派生查询；用户语法不变。
+
+推荐把同一阶段的过滤写在同一个 `where { ... }` 中，而不是拆成多次 `.where { ... }`：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            Order()
+                .select { it.amount }
+                .where { it.userId == u.id }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("lastOrderAmount")
+        ]
+    }
+    .where {
+        it.status == ACTIVE &&
+            it.lastOrderAmount > 100
+    }
+    .queryList()
+```
+
+### 嵌套子查询示例
+
+子查询可以继续包含子查询。下面示例查询“最近订单金额大于该用户所在等级最低额度”的用户：
+
+```kotlin
+val rows = User()
+    .select { u ->
+        [
+            u.id,
+            u.name,
+            Order()
+                .select { o -> o.amount }
+                .where { o ->
+                    o.userId == u.id &&
+                        o.amount > UserLevel()
+                            .select { l -> l.minOrderAmount }
+                            .where { l -> l.level == u.level }
+                            .limit(1)
+                }
+                .orderBy { it.createTime.desc() }
+                .limit(1)
+                .as_("qualifiedLastOrderAmount")
+        ]
+    }
+    .where {
+        it.status == ACTIVE &&
+            it.qualifiedLastOrderAmount > 0
+    }
+    .queryList()
+```
+
+SQL 形态上，外层 select item 是标量子查询，该标量子查询的 `where` 内部又包含一个标量子查询：
+
+```sql
+SELECT
+    u.id,
+    u.name,
+    (
+        SELECT o.amount
+        FROM orders o
+        WHERE o.user_id = u.id
+          AND o.amount > (
+              SELECT l.min_order_amount
+              FROM user_level l
+              WHERE l.level = u.level
+              LIMIT 1
+          )
+        ORDER BY o.create_time DESC
+        LIMIT 1
+    ) AS qualifiedLastOrderAmount
+FROM user u
+WHERE u.status = ?
+```
+
+如果后续 `where` 同时引用 `it.qualifiedLastOrderAmount`，Kronos 仍按上下文字段来源决定是否自动包外层派生查询，确保 MySQL、PostgreSQL、SQLite、SQL Server、Oracle 的语义一致。
 
 如果需要显式类型提示，可以使用 Kotlin cast：
 
@@ -1647,6 +1757,8 @@ val rows = Order()
 
 本场景不引入 `setSubquery(...)` 等新 API。`set { field = KSelectable }` 直接表示 `SET field = (SELECT ...)`。
 
+除类型安全的 `set { ... }` 外，`patch(...)` 也保留为动态字段入口。它适合字段名来自配置、接口参数、代码生成结果，或需要批量组装更新值的场景；当字段在源码中已知时，仍优先使用 `set { ... }`。
+
 ### 基础语法
 
 ```kotlin
@@ -1735,6 +1847,33 @@ UserStats()
     .execute()
 ```
 
+### 动态 patch 赋值
+
+当更新字段需要动态构造时，可以使用 `patch(...)`。右侧值允许是普通值、`null`、函数表达式或标量子查询：
+
+```kotlin
+User()
+    .update()
+    .patch(
+        "lastOrderAmount" to Order()
+            .select { it.amount }
+            .where { it.userId == userId }
+            .orderBy { it.createTime.desc() }
+            .limit(1),
+        "updatedBy" to operatorId
+    )
+    .where { it.id == userId }
+    .execute()
+```
+
+语义：
+
+- `patch("field" to KSelectable)` 表示 `SET field = (SELECT ...)`。
+- `patch` 使用字段名或字段引用承接动态更新，不提供 `set` lambda receiver。
+- 右侧标量子查询仍必须只选择一列。
+- 右侧非聚合标量子查询仍必须 `.limit(1)`。
+- 如果需要在子查询中引用被更新行字段，优先使用 `set { u -> ... }`，因为它能给相关子查询提供明确的源对象。
+
 ### 可选类型提示
 
 通常不需要显式类型提示；如果右侧表达式类型无法推断，可以使用 Kotlin cast：
@@ -1785,6 +1924,7 @@ User()
 - 聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`。
 - `set` lambda 参数是被更新的源 KPojo。
 - 右侧子查询可以引用 `set` lambda 参数字段，表示相关更新。
+- `patch(...)` 是保留的动态字段入口，也可以承接标量子查询；字段已知时推荐 `set { ... }`。
 - `where` 用于限制被更新行。
 - 类型提示使用 `limit(1) as T`，只作为类型提示。
 - 不引入 `setSubquery(...)`。
@@ -2245,6 +2385,8 @@ join 查询的最终投影就是 insert 的源投影。
 
 本场景不引入 upsert 专属的 `setSubquery(...)`。`upsert().set { field = KSelectable }` 直接表示冲突更新时使用标量子查询赋值。
 
+`upsert().patch(...)` 同样保留为动态字段入口，用于运行期组装冲突更新字段；字段在源码中已知时，推荐使用类型安全的 `set { ... }`。
+
 ### 基础语法
 
 ```kotlin
@@ -2346,6 +2488,35 @@ UserStats(
 
 这里对象属性提供插入时的初始值，`set` block 提供冲突更新时的值。
 
+### 动态 patch 冲突更新
+
+当冲突更新字段来自动态配置或需要批量组装时，可以使用 `patch(...)`：
+
+```kotlin
+UserStats(userId = userId)
+    .upsert()
+    .on { it.userId }
+    .patch(
+        "orderCount" to Order()
+            .select { f.count(it.id) }
+            .where { it.userId == userId },
+        "lastOrderAmount" to Order()
+            .select { it.amount }
+            .where { it.userId == userId }
+            .orderBy { it.createTime.desc() }
+            .limit(1)
+    )
+    .onConflict()
+    .execute()
+```
+
+语义：
+
+- `upsert().patch("field" to KSelectable)` 表示冲突更新阶段的 `field = (SELECT ...)`。
+- `patch` 的普通值进入对应字段的冲突更新值；`KSelectable` / 表达式值进入 SQL 表达式赋值。
+- 右侧标量子查询仍遵守单列/单行规则。
+- 需要相关子查询引用目标 KPojo 字段时，优先使用 `set { s -> ... }`。
+
 ### 可选类型提示
 
 与其他标量子查询场景一致，可以使用 Kotlin cast 作为可选类型提示：
@@ -2374,6 +2545,7 @@ UserStats(userId = userId)
 - 聚合且无 `groupBy` 的子查询天然单行，不需要 `.limit(1)`。
 - `set` lambda 参数是目标 KPojo。
 - 子查询可以引用目标 KPojo 字段，表示相关子查询。
+- `patch(...)` 是保留的动态字段入口，也可以承接冲突更新阶段的标量子查询；字段已知时推荐 `set { ... }`。
 - `on { ... }` 只表示冲突键，不承载子查询条件。
 - 类型提示使用 `limit(1) as T`，只作为类型提示。
 - 方言差异由 Kronos 处理，DSL 不暴露。

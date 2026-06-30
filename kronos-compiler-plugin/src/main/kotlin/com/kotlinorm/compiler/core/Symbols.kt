@@ -44,12 +44,20 @@ import com.kotlinorm.compiler.utils.KTableForSetFqName
 import com.kotlinorm.compiler.utils.KTableForSortClassId
 import com.kotlinorm.compiler.utils.KTableForSortFqName
 import com.kotlinorm.compiler.utils.CriteriaClassId
+import com.kotlinorm.compiler.utils.CriteriaSubqueryValueExistsClassId
+import com.kotlinorm.compiler.utils.CriteriaSubqueryValueInClassId
+import com.kotlinorm.compiler.utils.CriteriaSubqueryValueQuantifiedComparisonClassId
+import com.kotlinorm.compiler.utils.CriteriaSubqueryValueScalarClassId
 import com.kotlinorm.compiler.utils.CriteriaFqName
+import com.kotlinorm.compiler.utils.KSelectableClassId
+import com.kotlinorm.compiler.utils.KSelectableQueryRefClassId
 import com.kotlinorm.compiler.utils.KronosInitAnnotationFqName
 import com.kotlinorm.compiler.utils.PairClassId
 import com.kotlinorm.compiler.utils.PairFqName
+import com.kotlinorm.compiler.utils.QuantifiedSubqueryValueClassId
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
 import com.kotlinorm.compiler.utils.StringClassId
+import com.kotlinorm.compiler.utils.SubqueryExpressionQuantifierClassId
 import com.kotlinorm.compiler.utils.valueParameters
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -100,6 +108,7 @@ fun resolveAndLogAllSymbols() {
     
     // Resolve method symbols - each in its own try-catch
     runCatching { addFieldMethodSymbol }
+    runCatching { addScalarSubqueryMethodSymbol }
     runCatching { setValueMethodSymbol }
     runCatching { setAssignMethodSymbol }
     runCatching { setCriteriaMethodSymbol }
@@ -380,6 +389,80 @@ val kTableForReferenceSymbol: IrClassSymbol
     }
 
 /**
+ * KSelectable class symbol.
+ */
+context(context: IrPluginContext)
+val kSelectableSymbol: IrClassSymbol
+    get() = context.referenceClass(KSelectableClassId)
+        ?: error("KSelectable class not found")
+
+/**
+ * KSelectableQueryRef constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val kSelectableQueryRefConstructorSymbol: IrConstructorSymbol
+    get() = (context.referenceClass(KSelectableQueryRefClassId)
+        ?: error("KSelectableQueryRef class not found")).constructors.firstOrNull()
+        ?: error("KSelectableQueryRef constructor not found")
+
+/**
+ * CriteriaSubqueryValue.Scalar constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val criteriaSubqueryValueScalarConstructorSymbol: IrConstructorSymbol
+    get() = (context.referenceClass(CriteriaSubqueryValueScalarClassId)
+        ?: error("CriteriaSubqueryValue.Scalar class not found")).constructors.firstOrNull()
+        ?: error("CriteriaSubqueryValue.Scalar constructor not found")
+
+/**
+ * CriteriaSubqueryValue.In constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val criteriaSubqueryValueInConstructorSymbol: IrConstructorSymbol
+    get() = (context.referenceClass(CriteriaSubqueryValueInClassId)
+        ?: error("CriteriaSubqueryValue.In class not found")).constructors.firstOrNull()
+        ?: error("CriteriaSubqueryValue.In constructor not found")
+
+/**
+ * CriteriaSubqueryValue.Exists constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val criteriaSubqueryValueExistsConstructorSymbol: IrConstructorSymbol
+    get() = (context.referenceClass(CriteriaSubqueryValueExistsClassId)
+        ?: error("CriteriaSubqueryValue.Exists class not found")).constructors.firstOrNull()
+        ?: error("CriteriaSubqueryValue.Exists constructor not found")
+
+/**
+ * CriteriaSubqueryValue.QuantifiedComparison constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val criteriaSubqueryValueQuantifiedComparisonConstructorSymbol: IrConstructorSymbol
+    get() = (context.referenceClass(CriteriaSubqueryValueQuantifiedComparisonClassId)
+        ?: error("CriteriaSubqueryValue.QuantifiedComparison class not found")).constructors.firstOrNull()
+        ?: error("CriteriaSubqueryValue.QuantifiedComparison constructor not found")
+
+/**
+ * QuantifiedSubqueryValue class symbol.
+ */
+context(context: IrPluginContext)
+val quantifiedSubqueryValueSymbol: IrClassSymbol
+    get() = context.referenceClass(QuantifiedSubqueryValueClassId)
+        ?: error("QuantifiedSubqueryValue class not found")
+
+/**
+ * SubqueryExpression.Quantifier enum class symbol.
+ */
+context(context: IrPluginContext)
+val subqueryExpressionQuantifierEnumSymbol: IrClassSymbol
+    get() = context.referenceClass(SubqueryExpressionQuantifierClassId)
+        ?: error("SubqueryExpression.Quantifier enum not found")
+
+/**
  * addField method symbol from KTableForReference
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -403,6 +486,17 @@ val addFieldMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForSelectSymbol.getSimpleFunction("addField")
         return symbol ?: error("addField method not found in KTableForSelect")
+    }
+
+/**
+ * addScalarSubquery method symbol from KTableForSelect.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val addScalarSubqueryMethodSymbol: IrSimpleFunctionSymbol
+    get() {
+        val symbol = kTableForSelectSymbol.getSimpleFunction("addScalarSubquery")
+        return symbol ?: error("addScalarSubquery method not found in KTableForSelect")
     }
 
 /**

@@ -37,4 +37,10 @@ class SetBoxTest : AbstractKronosJvmBoxSuite("set") {
      */
     @Test
     fun diverseAssignments() = box("diverseAssignments")
+
+    /**
+     * Verifies that explicit setValue calls can carry selectable RHS values for core builders.
+     */
+    @Test
+    fun selectableSetValue() = box("selectableSetValue")
 }

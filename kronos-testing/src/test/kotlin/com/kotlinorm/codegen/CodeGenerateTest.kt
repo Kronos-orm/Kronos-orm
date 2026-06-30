@@ -25,6 +25,7 @@ class CodeGenerateTest {
     @BeforeTest
     fun createTempDir() {
         tempDir = createTempDirectory("kotlinFileTest").toFile()
+        val targetDir = tempDir.invariantSeparatorsPath
         configPath = File(tempDir, "testConfig.toml").apply {
             parentFile.mkdirs()
             writeTomlContent(
@@ -45,7 +46,7 @@ class CodeGenerateTest {
                 logicDeleteStrategy = "deleted"
 
                 [output]
-                targetDir = "$tempDir"
+                targetDir = "$targetDir"
                 packageName = "com.kotlinorm.orm.table"
                 tableCommentLineWords = 80
 

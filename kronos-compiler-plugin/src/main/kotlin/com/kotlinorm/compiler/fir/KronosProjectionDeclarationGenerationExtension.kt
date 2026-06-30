@@ -86,7 +86,7 @@ class KronosProjectionDeclarationGenerationExtension(
     /**
      * Projection classes are created on demand from the call-refinement registry.
      */
-    override fun getTopLevelClassIds(): Set<ClassId> = KronosProjectionRegistry.allTopLevelClassIds()
+    override fun getTopLevelClassIds(): Set<ClassId> = KronosProjectionRegistry.allTopLevelClassIds(session)
 
     /**
      * Makes the generated projection package visible to top-level class lookup and backend output.
@@ -98,7 +98,7 @@ class KronosProjectionDeclarationGenerationExtension(
      * Resolves a generated top-level projection class from registry state.
      */
     override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
-        val model = KronosProjectionRegistry.find(classId) ?: return null
+        val model = KronosProjectionRegistry.find(session, classId) ?: return null
         val symbol = model.symbol
         if (symbol.isBound) return symbol
         val fir = buildProjectionClass(session, symbol, model)
@@ -114,7 +114,7 @@ class KronosProjectionDeclarationGenerationExtension(
         classSymbol: FirClassSymbol<*>,
         context: MemberGenerationContext
     ): Set<Name> {
-        val model = KronosProjectionRegistry.find(classSymbol.classId) ?: return emptySet()
+        val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptySet()
         return model.fields.mapTo(mutableSetOf(SpecialNames.INIT)) { it.name }
     }
 
@@ -126,7 +126,7 @@ class KronosProjectionDeclarationGenerationExtension(
         context: MemberGenerationContext?
     ): List<FirPropertySymbol> {
         val classSymbol = context?.owner as? FirRegularClassSymbol ?: return emptyList()
-        val model = KronosProjectionRegistry.find(classSymbol.classId) ?: return emptyList()
+        val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptyList()
         return projectionMembers(session, classSymbol, model).properties
             .filter { it.name == callableId.callableName }
             .map { it.symbol }
@@ -137,7 +137,7 @@ class KronosProjectionDeclarationGenerationExtension(
      */
     override fun generateConstructors(context: MemberGenerationContext): List<FirConstructorSymbol> {
         val classSymbol = context.owner as? FirRegularClassSymbol ?: return emptyList()
-        val model = KronosProjectionRegistry.find(classSymbol.classId) ?: return emptyList()
+        val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptyList()
         return listOf(projectionMembers(session, classSymbol, model).constructor.symbol)
     }
 

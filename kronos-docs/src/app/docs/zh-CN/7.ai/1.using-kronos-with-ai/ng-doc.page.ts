@@ -4,7 +4,7 @@ import {AnimateLogoComponent} from "../../../../components/animate-logo.componen
 
 /**
  * 本章介绍如何在 AI 编程助手中安装和使用 Kronos ORM 技能。
- * @status:info 新的
+ * @status:info 新
  */
 const UsingKronosWithAiPage: NgDocPage = {
 	title: `使用 AI 编写 Kronos 代码`,

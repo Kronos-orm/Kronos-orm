@@ -53,15 +53,15 @@ val users: List<User> =
 
 ## {{ $.title("select") }}Specify the query fields
 
-In Kronos, we can specify query fields using the `select` method, with `+` joins between multiple fields.
+In Kronos, we can specify query fields using the `select` method, with `[]` for multiple fields.
 
-You can use `as_` to specify aliases for the field, such as `select { [user.id, user.name.as_("userName"), userInfo.age] }`.
+You can use `alias` to specify aliases for the field, such as `select { [user.id, user.name.alias("userName"), userInfo.age] }`.
 
 If you need to query all fields of a table, you can use `select { user }`, `select { [user, userInfo, userTeam.teamId] }`.
 
 When you don't specify query fields, all fields are queried by default. We will rename the same fields in different tables to avoid field conflicts.
 
-Strings can be used as custom query fields, such as `select { "count(`user.id`)".as_("count") }`.
+Strings can be used as custom query fields, such as `select { "count(`user.id`)".alias("count") }`.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -86,13 +86,13 @@ val users: List<User> =
 
 ## {{ $.title("by") }}Specifying Query Fields
 
-In Kronos, we can use `by` method to specify the query fields, with `+` joins between multiple fields.
+In Kronos, we can use `by` method to specify the query fields, with `[]` for multiple fields.
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        by { user.id + user.name + userInfo.age }
+        by { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -333,4 +333,3 @@ val users: List<User> =
         select { [user.id, user.name, userInfo.age] }
     }.queryLIST(customWrapper)
 ```
-

@@ -1,24 +1,543 @@
 /* 头部控件 */
 :host ::ng-deep .ng-doc-navbar,
+:host ::ng-deep ng-doc-navbar,
 :host ::ng-deep .ng-doc-navbar-container,
 :host ::ng-deep .ng-doc-navbar-content {
   width: 100% !important;
   max-width: none !important;
 }
 
+:host {
+  display: block;
+  min-height: 100vh;
+  color: var(--kronos-doc-text);
+  background: var(--kronos-doc-background);
+  font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
+  --kronos-nav-height: 4.9rem;
+  --kronos-doc-header-offset: 6.15rem;
+  --kronos-doc-sidebar-top: 6.15rem;
+  --kronos-doc-background: linear-gradient(180deg, #f8fafc 0, #eef2f7 34rem, #f7f9fc 100%);
+  --kronos-doc-surface: #ffffff;
+  --kronos-doc-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.68));
+  --kronos-doc-text: rgba(15, 23, 42, 0.82);
+  --kronos-doc-heading: #0f172a;
+  --kronos-doc-muted: rgba(51, 65, 85, 0.68);
+  --kronos-doc-primary: #2563eb;
+  --kronos-doc-base-2: rgba(15, 23, 42, 0.055);
+  --kronos-doc-base-3: rgba(15, 23, 42, 0.1);
+  --kronos-doc-base-4: rgba(15, 23, 42, 0.16);
+  --kronos-doc-base-5: rgba(15, 23, 42, 0.22);
+  --kronos-doc-base-6: rgba(15, 23, 42, 0.3);
+  --kronos-doc-code-bg: rgba(248, 250, 252, 0.92);
+  --kronos-doc-code-text: #111827;
+  --kronos-doc-code-muted: #64748b;
+  --kronos-doc-code-border: rgba(15, 23, 42, 0.13);
+  --kronos-doc-code-highlight: rgba(37, 99, 235, 0.1);
+  --kronos-doc-code-corner: rgba(37, 99, 235, 0.32);
+  --kronos-doc-inline-code-bg: rgba(37, 99, 235, 0.08);
+  --kronos-doc-inline-code-text: #1d4ed8;
+  --kronos-doc-rule: rgba(15, 23, 42, 0.12);
+  --kronos-doc-soft-bg: rgba(255, 255, 255, 0.58);
+  --kronos-doc-sidebar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(248, 250, 252, 0.72));
+  --kronos-doc-sidebar-shadow: 0 18px 52px rgba(15, 23, 42, 0.1);
+  --kronos-doc-nav-text: rgba(30, 41, 59, 0.78);
+  --kronos-doc-control-bg: rgba(255, 255, 255, 0.7);
+  --kronos-doc-control-border: rgba(148, 163, 184, 0.34);
+  --kronos-doc-control-hover-bg: rgba(37, 99, 235, 0.08);
+  --kronos-doc-control-hover-text: #0f172a;
+  --kronos-doc-floating-bg: rgba(255, 255, 255, 0.74);
+  --kronos-doc-table-head-bg: rgba(15, 23, 42, 0.045);
+  --kronos-doc-table-head-text: #0f172a;
+  --kronos-nav-background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.72));
+  --kronos-nav-border: rgba(148, 163, 184, 0.34);
+  --kronos-nav-shadow: 0 18px 56px rgba(15, 23, 42, 0.12);
+}
+
+:host-context(.dark),
+:host-context([data-theme="dark"]) {
+  --kronos-doc-background:
+    linear-gradient(180deg, rgba(5, 6, 6, 0.62), #050606 28rem),
+    radial-gradient(circle at center, rgba(223, 255, 103, 0.045) 0 0.0625rem, transparent 0.09375rem) 0 0 / 30px 30px,
+    #050606;
+  --kronos-doc-surface: #080909;
+  --kronos-doc-text: rgba(246, 247, 239, 0.82);
+  --kronos-doc-heading: #ffffff;
+  --kronos-doc-muted: rgba(246, 247, 239, 0.56);
+  --kronos-doc-primary: #dfff67;
+  --kronos-doc-base-2: rgba(246, 247, 239, 0.07);
+  --kronos-doc-base-3: rgba(246, 247, 239, 0.12);
+  --kronos-doc-base-4: rgba(246, 247, 239, 0.18);
+  --kronos-doc-base-5: #141817;
+  --kronos-doc-base-6: #202620;
+  --kronos-doc-code-bg: #080909;
+  --kronos-doc-code-text: #f6f7ef;
+  --kronos-doc-code-muted: rgba(246, 247, 239, 0.44);
+  --kronos-doc-code-border: rgba(246, 247, 239, 0.14);
+  --kronos-doc-code-highlight: rgba(223, 255, 103, 0.18);
+  --kronos-doc-code-corner: rgba(223, 255, 103, 0.38);
+  --kronos-doc-inline-code-bg: rgba(223, 255, 103, 0.08);
+  --kronos-doc-inline-code-text: #faffd7;
+  --kronos-doc-rule: rgba(246, 247, 239, 0.12);
+  --kronos-doc-soft-bg: rgba(255, 255, 255, 0.02);
+  --kronos-doc-sidebar-bg: linear-gradient(180deg, rgba(223, 255, 103, 0.035), transparent 16rem), rgba(5, 6, 6, 0.82);
+  --kronos-doc-sidebar-shadow: none;
+  --kronos-doc-nav-text: rgba(246, 247, 239, 0.72);
+  --kronos-doc-control-bg: rgba(255, 255, 255, 0.04);
+  --kronos-doc-control-border: rgba(246, 247, 239, 0.16);
+  --kronos-doc-control-hover-bg: rgba(223, 255, 103, 0.1);
+  --kronos-doc-control-hover-text: #ffffff;
+  --kronos-doc-floating-bg: rgba(8, 9, 9, 0.82);
+  --kronos-doc-table-head-bg: rgba(223, 255, 103, 0.08);
+  --kronos-doc-table-head-text: #ffffff;
+  --kronos-nav-background: linear-gradient(180deg, rgba(223, 255, 103, 0.04), rgba(223, 255, 103, 0) 62%), rgba(5, 6, 6, 0.94);
+  --kronos-nav-border: rgba(246, 247, 239, 0.14);
+  --kronos-nav-shadow: 0 18px 64px rgba(0, 0, 0, 0.32);
+}
+
+:host ::ng-deep ng-doc-root {
+  display: block;
+  min-height: 100vh;
+  --ng-doc-navbar-height: var(--kronos-doc-sidebar-top);
+  --ng-doc-primary: var(--kronos-doc-primary) !important;
+  --ng-doc-link-color: var(--kronos-doc-primary) !important;
+  --ng-doc-background: var(--kronos-doc-surface);
+  --ng-doc-page-background: transparent;
+  --ng-doc-navbar-background: var(--kronos-doc-surface);
+  --ng-doc-sidebar-background: var(--kronos-doc-surface);
+  --ng-doc-main-padding: var(--kronos-doc-header-offset) 0 0 0;
+  --ng-doc-text: var(--kronos-doc-heading);
+  --ng-doc-text-muted: var(--kronos-doc-muted);
+  --ng-doc-border-color: var(--kronos-doc-rule);
+  --ng-doc-base-1: var(--kronos-doc-surface);
+  --ng-doc-base-2: var(--kronos-doc-base-2);
+  --ng-doc-base-3: var(--kronos-doc-base-3);
+  --ng-doc-base-4: var(--kronos-doc-base-4);
+  --ng-doc-base-5: var(--kronos-doc-base-5);
+  --ng-doc-base-6: var(--kronos-doc-base-6);
+  --ng-doc-code-background: var(--kronos-doc-code-bg);
+  --ng-doc-code-highlight-color: var(--kronos-doc-code-highlight);
+  --p-menu-background: transparent !important;
+  --p-menu-border-color: var(--kronos-doc-rule) !important;
+  --p-menu-item-color: var(--kronos-doc-muted) !important;
+  --p-menu-item-focus-background: var(--kronos-doc-control-hover-bg) !important;
+  --p-popover-background: var(--kronos-doc-surface) !important;
+  --p-popover-border-color: var(--kronos-doc-rule) !important;
+  color: var(--kronos-doc-text);
+  background: var(--kronos-doc-background) !important;
+}
+
+:host ::ng-deep .ng-doc-app {
+  background: var(--kronos-doc-background) !important;
+  color: var(--kronos-doc-text);
+  font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
+}
+
+:host ::ng-deep .ng-doc-app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px) 0 0 / 88px 88px,
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 / 88px 88px;
+  mask-image: linear-gradient(180deg, black, transparent 72%);
+  opacity: 0;
+  z-index: 0;
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-app::before,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-app::before {
+  opacity: 0.72;
+}
+
+:host ::ng-deep .ng-doc-header {
+  position: fixed !important;
+  top: 0;
+  z-index: 20;
+  height: var(--kronos-doc-header-offset);
+  padding: 0.9rem 1rem 0.65rem;
+  background: transparent !important;
+}
+
+:host ::ng-deep ng-doc-sidenav .ng-doc-sidenav {
+  top: var(--kronos-doc-sidebar-top) !important;
+}
+
+:host ::ng-deep ng-doc-navbar .navbar-container {
+  width: 100% !important;
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+:host ::ng-deep ng-doc-navbar .ng-doc-navbar-left,
+:host ::ng-deep ng-doc-navbar .ng-doc-navbar-right {
+  height: 100%;
+  align-items: center;
+}
+
+:host ::ng-deep ng-doc-navbar,
+:host ::ng-deep .ng-doc-navbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-sizing: border-box;
+  height: var(--kronos-nav-height) !important;
+  min-height: var(--kronos-nav-height) !important;
+  padding: 0 1.05rem !important;
+  border: 1px solid var(--kronos-nav-border) !important;
+  border-radius: 8px;
+  background: var(--kronos-nav-background) !important;
+  box-shadow: var(--kronos-nav-shadow);
+  backdrop-filter: blur(22px) saturate(1.28);
+  -webkit-backdrop-filter: blur(22px) saturate(1.28);
+  color: var(--kronos-doc-nav-text) !important;
+  overflow: hidden;
+}
+
 :host ::ng-deep .ng-doc-navbar-content {
-  padding-left: calc(var(--ng-doc-base-gutter) * 3) !important;
-  padding-right: calc(var(--ng-doc-base-gutter) * 3) !important;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: var(--kronos-nav-height);
+}
+
+:host ::ng-deep .ng-doc-root-wrapper main {
+  padding-top: var(--kronos-doc-header-offset) !important;
+}
+
+:host ::ng-deep .ng-doc-sidenav {
+  padding: 0.25rem 0 0 1rem;
+  border-right: 0 !important;
+  background: transparent !important;
+}
+
+:host ::ng-deep .ng-doc-sidenav-content {
+  position: relative;
+  z-index: 1;
+}
+
+:host ::ng-deep .ng-doc-page {
+  background: transparent !important;
+}
+
+:host ::ng-deep .ng-doc-page-wrapper {
+  color: var(--kronos-doc-text);
+}
+
+:host ::ng-deep article {
+  padding-top: 2.4rem;
+  color: var(--kronos-doc-text);
+  font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
+}
+
+:host ::ng-deep .ng-doc-page-controls {
+  top: 0.05rem !important;
+  right: 0 !important;
+  z-index: 12;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem !important;
+  padding: 0.25rem;
+  border: 1px solid var(--kronos-doc-control-border);
+  border-radius: 8px;
+  background: var(--kronos-doc-floating-bg);
+  box-shadow: 0 14px 42px rgba(15, 23, 42, 0.11);
+  backdrop-filter: blur(20px) saturate(1.22);
+  -webkit-backdrop-filter: blur(20px) saturate(1.22);
+}
+
+:host ::ng-deep .ng-doc-page-controls a[ng-doc-button-icon],
+:host ::ng-deep .ng-doc-page-controls button[ng-doc-button-icon],
+:host ::ng-deep .kronos-copy-md-btn {
+  width: 2rem !important;
+  min-width: 2rem !important;
+  height: 2rem !important;
+  min-height: 2rem !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--kronos-doc-nav-text) !important;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+:host ::ng-deep .ng-doc-page-controls a[ng-doc-button-icon]:hover,
+:host ::ng-deep .ng-doc-page-controls button[ng-doc-button-icon]:hover,
+:host ::ng-deep .kronos-copy-md-btn:hover {
+  background: var(--kronos-doc-control-hover-bg) !important;
+  color: var(--kronos-doc-control-hover-text) !important;
+}
+
+:host ::ng-deep article h1,
+:host ::ng-deep article h2,
+:host ::ng-deep article h3,
+:host ::ng-deep article h4 {
+  color: var(--kronos-doc-heading);
+  font-family: "Space Grotesk", "IBM Plex Sans", Inter, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+:host ::ng-deep article h1 {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+:host ::ng-deep article h2 {
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--kronos-doc-rule);
+}
+
+:host ::ng-deep article p,
+:host ::ng-deep article li {
+  line-height: 1.75;
+}
+
+:host ::ng-deep article a {
+  color: var(--kronos-doc-primary);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+:host ::ng-deep .ng-doc-breadcrumb {
+  color: var(--kronos-doc-muted);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+:host ::ng-deep .ng-doc-toc {
+  color: var(--kronos-doc-muted);
+}
+
+:host ::ng-deep .ng-doc-toc a:hover,
+:host ::ng-deep .ng-doc-toc a.ng-doc-active {
+  color: var(--kronos-doc-primary) !important;
+}
+
+:host ::ng-deep .ng-doc-code-wrapper {
+  border: 1px solid var(--kronos-doc-code-border) !important;
+  border-radius: 8px !important;
+  background: var(--kronos-doc-code-bg) !important;
+  color: var(--kronos-doc-code-text);
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08) !important;
+}
+
+:host ::ng-deep .ng-doc-blockquote {
+  border: 1px solid var(--kronos-doc-rule) !important;
+  border-radius: 8px !important;
+  background: var(--kronos-doc-soft-bg) !important;
+  color: var(--kronos-doc-text);
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .ng-doc-code-wrapper {
+  position: relative;
+}
+
+:host ::ng-deep .ng-doc-code-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(currentColor 0 0) top left / 1.4rem 1px no-repeat,
+    linear-gradient(currentColor 0 0) top left / 1px 1.4rem no-repeat,
+    linear-gradient(currentColor 0 0) bottom right / 1.4rem 1px no-repeat,
+    linear-gradient(currentColor 0 0) bottom right / 1px 1.4rem no-repeat;
+  color: var(--kronos-doc-code-corner);
+}
+
+:host ::ng-deep .ng-doc-code-body pre,
+:host ::ng-deep .ng-doc-code-body code {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+:host ::ng-deep .ng-doc-code-body {
+  background: var(--kronos-doc-code-bg) !important;
+  color: var(--kronos-doc-code-text);
+}
+
+:host ::ng-deep .ng-doc-code-body pre {
+  max-height: none !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  background: var(--kronos-doc-code-bg) !important;
+  color: var(--kronos-doc-code-text);
+}
+
+:host ::ng-deep .ng-doc-code-body code {
+  background: transparent !important;
+  color: var(--kronos-doc-code-text);
+}
+
+:host ::ng-deep .ng-doc-code-body .line::before {
+  color: var(--kronos-doc-code-muted);
+}
+
+:host ::ng-deep .ng-doc-code-body .token.comment,
+:host ::ng-deep .ng-doc-code-body .token.prolog,
+:host ::ng-deep .ng-doc-code-body .token.doctype,
+:host ::ng-deep .ng-doc-code-body .token.cdata {
+  color: #64748b;
+}
+
+:host ::ng-deep .ng-doc-code-body .token.keyword,
+:host ::ng-deep .ng-doc-code-body .token.operator {
+  color: #7c3aed;
+}
+
+:host ::ng-deep .ng-doc-code-body .token.string,
+:host ::ng-deep .ng-doc-code-body .token.char {
+  color: #047857;
+}
+
+:host ::ng-deep .ng-doc-code-body .token.number,
+:host ::ng-deep .ng-doc-code-body .token.boolean {
+  color: #b45309;
+}
+
+:host ::ng-deep .ng-doc-code-body .token.function,
+:host ::ng-deep .ng-doc-code-body .token.method {
+  color: #0369a1;
+}
+
+:host ::ng-deep .ng-doc-code-body .token.class-name,
+:host ::ng-deep .ng-doc-code-body .token.annotation,
+:host ::ng-deep .ng-doc-code-body .token.builtin {
+  color: #5a3e8a;
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.comment,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.comment,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.prolog,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.prolog,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.doctype,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.doctype,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.cdata,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.cdata {
+  color: rgba(246, 247, 239, 0.46);
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.keyword,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.keyword,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.operator,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.operator {
+  color: #f4c56a;
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.string,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.string,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.char,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.char {
+  color: #8fd894;
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.number,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.number,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.boolean,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.boolean {
+  color: #f3b36a;
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.function,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.function,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.method,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.method {
+  color: #80d4e8;
+}
+
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.class-name,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.class-name,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.annotation,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.annotation,
+:host-context(.dark) ::ng-deep .ng-doc-code-body .token.builtin,
+:host-context([data-theme="dark"]) ::ng-deep .ng-doc-code-body .token.builtin {
+  color: #df8edb;
+}
+
+:host ::ng-deep code:not(.ngde),
+:host ::ng-deep :not(pre) > code.ngde {
+  border: 1px solid var(--ng-doc-base-3);
+  border-radius: 4px;
+  background: var(--kronos-doc-inline-code-bg);
+  color: var(--kronos-doc-inline-code-text);
+}
+
+:host ::ng-deep table {
+  overflow: hidden;
+  border: 1px solid var(--kronos-doc-rule);
+  border-radius: 8px !important;
+}
+
+:host ::ng-deep th {
+  background: var(--kronos-doc-table-head-bg);
+  color: var(--kronos-doc-table-head-text);
+}
+
+:host ::ng-deep .ng-doc-navbar-content {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 .ng-doc-header-controls {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .ng-doc-header-controls a[ng-doc-button-icon],
 .ng-doc-header-controls button[ng-doc-button-icon],
 .ng-doc-header-controls ng-doc-theme-toggle {
-  margin-left: calc(var(--ng-doc-base-gutter) * 2);
+  margin-left: 0;
+}
+
+:host ::ng-deep .ng-doc-header-controls a[ng-doc-button-icon],
+:host ::ng-deep .ng-doc-header-controls button[ng-doc-button-icon],
+:host ::ng-deep ng-doc-theme-toggle {
+  width: 2.65rem;
+  min-width: 2.65rem;
+  height: 2.65rem;
+  min-height: 2.65rem;
+  border: 1px solid var(--kronos-doc-control-border) !important;
+  border-radius: 8px !important;
+  background: var(--kronos-doc-control-bg);
+  color: var(--kronos-doc-nav-text);
+  backdrop-filter: blur(14px) saturate(1.18);
+  -webkit-backdrop-filter: blur(14px) saturate(1.18);
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+:host ::ng-deep .ng-doc-header-controls a[ng-doc-button-icon]:hover,
+:host ::ng-deep .ng-doc-header-controls button[ng-doc-button-icon]:hover {
+  background: var(--kronos-doc-control-hover-bg);
+  color: var(--kronos-doc-control-hover-text);
+}
+
+.sidebar-toggle-button {
+  opacity: 0.82;
+  border: 1px solid var(--kronos-doc-control-border) !important;
+  background: var(--kronos-doc-control-bg) !important;
+}
+
+.sidebar-toggle-icon {
+  color: currentColor;
+  display: block;
+}
+
+.sidebar-toggle-icon .sidebar-toggle-rail,
+.sidebar-toggle-icon .sidebar-toggle-line {
+  transition: transform 180ms ease, opacity 180ms ease;
+  transform-origin: center;
+}
+
+.sidebar-toggle-icon-collapsed .sidebar-toggle-rail {
+  transform: translateX(6px);
+}
+
+.sidebar-toggle-icon-collapsed .sidebar-toggle-line {
+  transform: translateX(-4px);
+  opacity: 0.72;
 }
 
 /* 移动端适配 */
@@ -26,14 +545,15 @@
   .ng-doc-header-controls a[ng-doc-button-icon],
   .ng-doc-header-controls button[ng-doc-button-icon],
   .ng-doc-header-controls ng-doc-theme-toggle {
-    margin-left: var(--ng-doc-base-gutter);
+    margin-left: 0;
   }
 }
 
 /* 深度样式穿透 */
 :host ::ng-deep .ng-doc-blockquote,
 :host ::ng-deep .ng-doc-code-wrapper {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 :host ::ng-deep .ng-doc-code-body pre {
@@ -47,7 +567,7 @@
 }
 
 :host ::ng-deep li.ngde::marker {
-  color: deeppink;
+  color: var(--kronos-doc-primary);
 }
 
 /* ngde 相关样式 */
@@ -121,6 +641,10 @@
 }
 
 :host ::ng-deep .wiki_mode main {
+  padding-top: 0 !important;
+}
+
+:host ::ng-deep .wiki_mode article {
   padding-top: 0 !important;
 }
 
@@ -207,23 +731,27 @@
 
 /* Logo 样式 */
 .logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  gap: 0.75rem;
   margin-right: auto;
   text-decoration: none;
   width: fit-content;
+  color: var(--kronos-doc-control-hover-text);
+  font-weight: 700;
 }
 
 .logo img {
-  width: 40px;
-  height: 40px;
-  margin-right: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 0;
 }
 
 .logo span {
   font-size: 1rem;
-  font-weight: 600;
-  color: var(--ng-doc-text);
+  font-weight: 700;
+  color: var(--kronos-doc-control-hover-text);
+  font-family: "Space Grotesk", "IBM Plex Sans", Inter, system-ui, sans-serif;
 }
 
 /* 页脚 */
@@ -283,7 +811,8 @@
   padding: calc(var(--ng-doc-base-gutter) * 3);
   color: var(--ng-doc-text-muted);
   font-size: 12px;
-  border-top: 1px solid var(--ng-doc-base-2);
+  border-top: 1px solid var(--kronos-doc-rule);
+  background: var(--kronos-doc-soft-bg);
 }
 
 :host ::ng-deep .doc-footer a {
@@ -299,4 +828,38 @@
 :host ::ng-deep .doc-footer-sep {
   margin: 0 4px;
   opacity: 0.4;
+}
+
+@media screen and (max-width: 900px) {
+  :host ::ng-deep .ng-doc-header {
+    height: 5rem;
+    padding: 0.75rem 0.75rem 0;
+  }
+
+  :host ::ng-deep .ng-doc-root-wrapper main {
+    padding-top: 5rem !important;
+  }
+
+  :host ::ng-deep ng-doc-sidenav .ng-doc-sidenav {
+    top: 5rem !important;
+  }
+
+  :host ::ng-deep .ng-doc-navbar-content {
+    min-height: 4rem;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  :host ::ng-deep .ng-doc-navbar {
+    height: 4rem !important;
+    min-height: 4rem !important;
+  }
+
+  :host ::ng-deep article h1 {
+    font-size: 2.6rem;
+  }
+
+  :host ::ng-deep .ng-doc-sidenav {
+    padding-left: 0.75rem;
+  }
 }

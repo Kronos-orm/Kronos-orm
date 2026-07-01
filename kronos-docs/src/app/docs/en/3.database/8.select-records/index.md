@@ -40,12 +40,12 @@ The `select` method is used to specify the query fields. At this time, Kronos wi
 
 It's supported to use `String` as a custom query field.
 
-Multiple fields are concatenated using `+` and the `as_` method is used to set field aliases.
+Multiple fields are written with `[]` and the `alias` method is used to set field aliases.
 
 ```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-5}
 val listOfUser: List<User> = User()
     .select {
-        it.id + it.name.as_("username") + "count(*) as total" + "1"
+        [it.id, it.name.alias("username"), "count(*) as total", "1"]
     }
     .queryList()
 ```

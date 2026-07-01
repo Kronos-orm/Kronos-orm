@@ -55,15 +55,15 @@ val users: List<User> =
 
 ## {{ $.title("select") }}指定查询字段
 
-在Kronos中，我们可以使用`select`方法指定查询字段，多个字段之间使用`+`连接。
+在Kronos中，我们可以使用`select`方法指定查询字段，多个字段使用`[]`书写。
 
-可以使用`as_`为字段指定别名，如```select { [user.id, user.name.as_("userName"), userInfo.age] }```。
+可以使用`alias`为字段指定别名，如```select { [user.id, user.name.alias("userName"), userInfo.age] }```。
 
 如需要查询某张表的所有字段，可以使用`select { user }`、`select { [user, userInfo, userTeam.teamId] }`。
 
 不指定查询字段时，默认查询所有字段，我们会对不同表相同字段进行重新命名，以避免字段冲突。
 
-可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".as_("count") }```。
+可以使用字符串作为自定义查询字段，如```select { "count(`user.id`)".alias("count") }```。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
@@ -88,13 +88,13 @@ val users: List<User> =
 
 ## {{ $.title("by") }}指定查询条件
 
-在Kronos中，我们可以使用`by`方法指定查询字段，多个字段之间使用`+`连接。
+在Kronos中，我们可以使用`by`方法指定查询字段，多个字段使用`[]`书写。
 
 ```kotlin name="demo" icon="kotlin" {2-5}
 val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
-        by { user.id + user.name + userInfo.age }
+        by { [user.id, user.name, userInfo.age] }
     }.query()
 ```
 
@@ -335,4 +335,3 @@ val users: List<User> =
         select { [user.id, user.name, userInfo.age] }
     }.queryLIST(customWrapper)
 ```
-

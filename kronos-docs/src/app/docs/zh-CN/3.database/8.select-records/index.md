@@ -40,12 +40,12 @@ FROM "user"
 
 Kronos支持直接传入字符串作为查询字段。
 
-使用`+`连接多个字段，`as_`方法用于设置字段别名。
+使用`[]`书写多个字段，`alias`方法用于设置字段别名。
 
 ```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-5}
 val listOfUser: List<User> = User()
     .select {
-        it.id + it.name.as_("username") + "count(*) as total" + "1"
+        [it.id, it.name.alias("username"), "count(*) as total", "1"]
     }
     .queryList()
 ```

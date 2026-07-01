@@ -29,3 +29,5 @@ If no entry matches, do not open the full evolution log; continue with the relev
 | Moving nested selectable | `wrong parent`, lambda local function, `deepCopyWithSymbols` | `2026-06-30 - 移动嵌套 selectable 调用时不要 deep-copy lambda local function` |
 | Tuple IN array store | `ArrayStoreException`, `Field` in `Array<Int?>`, collection literal | `2026-06-30 - Condition tuple IN 不要把 Field 塞进用户侧 Array<T>` |
 | Scalar subquery RHS | raw `SelectClause` as Criteria value, wrap as `CriteriaSubqueryValue.Scalar` | `2026-06-30 - Scalar subquery comparison RHS must be wrapped as CriteriaSubqueryValue.Scalar` |
+| FIR member filtering | `name.asString().startsWith("<")`, synthetic member, source fields, structured FIR metadata | `2026-07-01 - FIR 成员过滤不要用名字字符串启发式` |
+| Compiler test layering | `task.sql`, SQL string in box, renderer assertion, testData boundary | `2026-07-01 - compiler plugin 测试不要断言最终 SQL 字符串` |

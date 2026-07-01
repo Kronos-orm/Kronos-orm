@@ -42,7 +42,6 @@ class ProjectionMappingWrapper : KronosDataSourceWrapper {
     override val userName: String = ""
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
-    val executedSql = mutableListOf<String>()
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
 
@@ -53,7 +52,6 @@ class ProjectionMappingWrapper : KronosDataSourceWrapper {
         superTypes: List<String>
     ): List<Any> {
         mappedClasses.add(kClass)
-        executedSql.add(task.sql)
         return [mapOf("id" to 7, "xx" to "Ada").mapperTo(kClass as KClass<out KPojo>)]
     }
 
@@ -87,6 +85,7 @@ fun box(): String {
 
     val rows = source.select { [it.id, it.name.as_("xx")] }.queryList(wrapper)
     val row = rows.singleOrNull()
+    val fieldNames = row?.kronosColumns().orEmpty().map { it.name }.toSet()
 
     val failures = listOfNotNull(
         expect(rows.size == 1) { "row count was ${rows.size}" },
@@ -102,8 +101,8 @@ fun box(): String {
         expect(wrapper.mappedClasses.singleOrNull()?.simpleName?.startsWith("KronosSelectResult_") == true) {
             "mapped class was ${wrapper.mappedClasses.singleOrNull()}"
         },
-        expect(wrapper.executedSql.singleOrNull()?.contains("ignored_in_projection") != true) {
-            "projection SQL selected ignored source field: ${wrapper.executedSql.singleOrNull()}"
+        expect("ignoredInProjection" !in fieldNames) {
+            "projection field names were $fieldNames"
         },
     )
 

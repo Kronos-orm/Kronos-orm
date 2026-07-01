@@ -19,6 +19,7 @@
 package com.kotlinorm.compiler.fir
 
 import com.kotlinorm.compiler.utils.GeneratedProjectionClassPrefix
+import com.kotlinorm.compiler.utils.GeneratedContextClassPrefix
 import com.kotlinorm.compiler.utils.GeneratedProjectionFieldIdentifierRegex
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.QueryListFunctionName
@@ -35,6 +36,8 @@ import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.extensions.FirExtensionApiInternals
 import org.jetbrains.kotlin.fir.extensions.FirFunctionCallRefinementExtension
+import org.jetbrains.kotlin.fir.declarations.FirProperty
+import org.jetbrains.kotlin.fir.declarations.processAllDeclarations
 import org.jetbrains.kotlin.fir.expressions.FirAnonymousFunctionExpression
 import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
@@ -50,6 +53,7 @@ import org.jetbrains.kotlin.fir.resolve.toClassSymbol
 import org.jetbrains.kotlin.fir.scopes.impl.declaredMemberScope
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagWithFixedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.types.ConeAttributes
@@ -100,6 +104,7 @@ class KronosProjectionCallRefinementExtension(
         val model = buildProjectionModel(callInfo) ?: return null
         KronosProjectionRegistry.register(session, model)
         KronosProjectionDeclarationGenerationExtension.ensureProjectionClassBound(session, model)
+        KronosProjectionDeclarationGenerationExtension.ensureContextClassBound(session, model)
         val typeRef = buildResolvedTypeRef {
             source = callInfo.callSite.source
             coneType = selectClauseType(model.sourceType, model)
@@ -316,22 +321,30 @@ class KronosProjectionCallRefinementExtension(
         if (fields.isEmpty()) return null
 
         val name = Name.identifier("$GeneratedProjectionClassPrefix${mangleProjectionName(sourceType, fields)}")
+        val contextFields = mergeContextFields(sourceType, fields)
+        val contextName = Name.identifier("$GeneratedContextClassPrefix${mangleProjectionName(sourceType, contextFields)}")
         val anchor = callInfo.callSite.source ?: lambda.source ?: return null
         val classId = ClassId(GeneratedProjectionPackageFqName, FqName.topLevel(name), isLocal = false)
+        val contextClassId = ClassId(GeneratedProjectionPackageFqName, FqName.topLevel(contextName), isLocal = false)
         val symbol = FirRegularClassSymbol(classId)
+        val contextSymbol = FirRegularClassSymbol(contextClassId)
         val model = KronosProjectionModel(
             classId = classId,
             name = name,
             symbol = symbol,
+            contextClassId = contextClassId,
+            contextName = contextName,
+            contextSymbol = contextSymbol,
             sourceType = sourceType,
             fields = fields,
+            contextFields = contextFields,
             anchor = anchor,
         )
         return model
     }
 
     /**
-     * Maps the refined projection class into SelectClause<Source, Projection, Source>.
+     * Maps the refined projection class into SelectClause<Source, Projection, Context>.
      */
     private fun selectClauseType(sourceType: ConeKotlinType, model: KronosProjectionModel): ConeClassLikeTypeImpl {
         return ConeClassLikeTypeImpl(
@@ -339,7 +352,7 @@ class KronosProjectionCallRefinementExtension(
             arrayOf(
                 sourceType,
                 projectionType(model, isNullable = false),
-                sourceType
+                contextType(model, isNullable = false)
             ),
             false,
             ConeAttributes.Empty
@@ -352,6 +365,18 @@ class KronosProjectionCallRefinementExtension(
     private fun projectionType(model: KronosProjectionModel, isNullable: Boolean): ConeClassLikeTypeImpl {
         return ConeClassLikeTypeImpl(
             ConeClassLikeLookupTagWithFixedSymbol(model.classId, model.symbol),
+            ConeTypeProjection.EMPTY_ARRAY,
+            isNullable,
+            ConeAttributes.Empty
+        )
+    }
+
+    /**
+     * Builds the generated Context type used by where/having/orderBy after select.
+     */
+    private fun contextType(model: KronosProjectionModel, isNullable: Boolean): ConeClassLikeTypeImpl {
+        return ConeClassLikeTypeImpl(
+            ConeClassLikeLookupTagWithFixedSymbol(model.contextClassId, model.contextSymbol),
             ConeTypeProjection.EMPTY_ARRAY,
             isNullable,
             ConeAttributes.Empty
@@ -386,6 +411,40 @@ class KronosProjectionCallRefinementExtension(
             }
         }
         return stableHash(raw)
+    }
+
+    /**
+     * Builds the post-select Context shape: all source properties plus selected projection fields.
+     */
+    private fun mergeContextFields(
+        sourceType: ConeKotlinType,
+        selectedFields: List<KronosProjectionField>
+    ): List<KronosProjectionField> {
+        val result = linkedMapOf<Name, KronosProjectionField>()
+        readSourceFields(sourceType).forEach { field -> result[field.name] = field }
+        selectedFields.forEach { field -> result[field.name] = field }
+        return result.values.toList()
+    }
+
+    /**
+     * Reads source KPojo properties as Context fields so post-select clauses can still filter source columns.
+     */
+    private fun readSourceFields(sourceType: ConeKotlinType): List<KronosProjectionField> {
+        val classSymbol = sourceType.toClassSymbol(session) ?: return emptyList()
+        val fields = mutableListOf<KronosProjectionField>()
+        classSymbol.processAllDeclarations(session, FirResolvePhase.STATUS) { symbol ->
+            val property = (symbol as? FirPropertySymbol)?.fir ?: return@processAllDeclarations
+            val name = property.name
+            val type = (property.returnTypeRef as? FirResolvedTypeRef)?.coneType ?: return@processAllDeclarations
+            fields += KronosProjectionField(
+                name = name,
+                type = type,
+                source = property.source,
+                sourceName = name,
+                signature = "contextSource:${name.asString()}"
+            )
+        }
+        return fields
     }
 
     /**

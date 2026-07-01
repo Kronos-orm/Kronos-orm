@@ -29,8 +29,12 @@ data class KronosProjectionModel(
     val classId: ClassId,
     val name: Name,
     val symbol: FirRegularClassSymbol,
+    val contextClassId: ClassId,
+    val contextName: Name,
+    val contextSymbol: FirRegularClassSymbol,
     val sourceType: ConeKotlinType,
     val fields: List<KronosProjectionField>,
+    val contextFields: List<KronosProjectionField>,
     val anchor: KtSourceElement,
 )
 

@@ -18,6 +18,7 @@ package com.kotlinorm.orm.select
 
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
+import com.kotlinorm.utils.createInstance
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
@@ -31,6 +32,15 @@ internal fun <T : KPojo, R : KPojo> T.selectGeneratedProjection(
     fields: ToSelect<T, Any?> = null
 ): SelectClause<T, R, T> {
     return SelectClause(this, fields, projectionClass)
+}
+
+@PublishedApi
+internal fun <T : KPojo, R : KPojo, C : KPojo> T.selectGeneratedProjection(
+    projectionClass: KClass<R>,
+    contextClass: KClass<C>,
+    fields: ToSelect<T, Any?> = null
+): SelectClause<T, R, C> {
+    return SelectClause(this, fields, projectionClass, contextClass.createInstance())
 }
 
 @JvmName("selectProjection")

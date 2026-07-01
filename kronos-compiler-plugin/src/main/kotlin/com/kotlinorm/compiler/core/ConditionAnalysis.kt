@@ -17,6 +17,7 @@
 package com.kotlinorm.compiler.core
 
 import com.kotlinorm.compiler.utils.ErrorMessages
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.dispatchReceiverArgument
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
@@ -35,6 +36,7 @@ import org.jetbrains.kotlin.ir.builders.irIfThenElse
 import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -53,6 +55,7 @@ import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.dumpKotlinLike
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 
 /**
@@ -590,6 +593,9 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
             expression.origin == IrStatementOrigin.GET_PROPERTY -> {
                 val receiverType = expression.dispatchReceiver?.type
                 val irClass = receiverType?.classOrNull?.owner ?: return null
+                if (irClass.isGeneratedProjectionClass()) {
+                    return builder.irString("")
+                }
                 if (irClass.superTypes.any { it.classFqName?.asString() == "com.kotlinorm.interfaces.KPojo" }) {
                     builder.getTableNameExpr(irClass)
                 } else null
@@ -611,6 +617,10 @@ internal fun extractTableNameExpr(expression: IrExpression): IrExpression? {
         else -> null
     }
 }
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrClass.isGeneratedProjectionClass(): Boolean =
+    kotlinFqName.parent() == GeneratedProjectionPackageFqName
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrExpression.isUnsupportedOperatorExpression(): Boolean {

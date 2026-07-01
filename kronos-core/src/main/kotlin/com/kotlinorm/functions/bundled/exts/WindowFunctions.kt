@@ -1,5 +1,5 @@
 /**
- * Copyright 2022-2025 kronos-orm
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package com.kotlinorm.beans.dsl
+package com.kotlinorm.functions.bundled.exts
 
-import com.kotlinorm.ast.WindowClause
+import com.kotlinorm.functions.FunctionHandler
 
-/**
- *@program: kronos-orm
- *@author: Jieyao Lu
- *@description:
- *@create: 2024/10/22 10:36
- **/
-class FunctionField(
-    var functionName: String,
-    var fields: List<Pair<Field?, Any?>> = [],
-    var over: WindowClause? = null
-) : Field(functionName)
+@Suppress("unused")
+object WindowFunctions {
+    @Suppress("unused", "UnusedReceiverParameter")
+    fun FunctionHandler.rowNumber(): Int? = null
+}

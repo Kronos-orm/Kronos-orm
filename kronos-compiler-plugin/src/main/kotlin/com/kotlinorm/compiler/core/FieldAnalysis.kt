@@ -24,6 +24,7 @@ import com.kotlinorm.compiler.utils.ColumnTypeAnnotationFqName
 import com.kotlinorm.compiler.utils.DateTimeFormatAnnotationFqName
 import com.kotlinorm.compiler.utils.DefaultValueAnnotationFqName
 import com.kotlinorm.compiler.utils.ErrorMessages
+import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
 import com.kotlinorm.compiler.utils.KSelectableFqName
 import com.kotlinorm.compiler.utils.NonNullAnnotationFqName
@@ -76,6 +77,7 @@ import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.ClassId
@@ -359,6 +361,10 @@ fun buildFieldFromPropertyAccess(
         // Return a simple field with just the name
         return buildSimpleField(propertyName, "VARCHAR")
     }
+
+    if (irClass.isGeneratedProjectionClass()) {
+        return buildSimpleField(propertyName, mapTypeToKColumnType(propertyGetter.returnType))
+    }
     
     // Find the property in the class
     val irProperty = irClass.properties.firstOrNull { it.name.asString() == propertyName }
@@ -373,6 +379,10 @@ fun buildFieldFromPropertyAccess(
     // Build field from property
     return buildFieldFromProperty(irProperty)
 }
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrClass.isGeneratedProjectionClass(): Boolean =
+    kotlinFqName.parent() == GeneratedProjectionPackageFqName
 
 /**
  * Builds a Field IR from property reference (User::name)

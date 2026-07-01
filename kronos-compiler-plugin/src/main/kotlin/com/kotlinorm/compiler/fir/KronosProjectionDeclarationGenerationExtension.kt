@@ -99,9 +99,9 @@ class KronosProjectionDeclarationGenerationExtension(
      */
     override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
         val model = KronosProjectionRegistry.find(session, classId) ?: return null
-        val symbol = model.symbol
+        val symbol = model.symbolFor(classId)
         if (symbol.isBound) return symbol
-        val fir = buildProjectionClass(session, symbol, model)
+        val fir = buildProjectionClass(session, symbol, model, classId)
         fir.ownerGenerator = this
         symbol.bind(fir)
         return symbol
@@ -115,7 +115,7 @@ class KronosProjectionDeclarationGenerationExtension(
         context: MemberGenerationContext
     ): Set<Name> {
         val model = KronosProjectionRegistry.find(session, classSymbol.classId) ?: return emptySet()
-        return model.fields.mapTo(mutableSetOf(SpecialNames.INIT)) { it.name }
+        return model.fieldsFor(classSymbol.classId).mapTo(mutableSetOf(SpecialNames.INIT)) { it.name }
     }
 
     /**
@@ -153,7 +153,23 @@ class KronosProjectionDeclarationGenerationExtension(
             if (symbol.isBound) return
             val generator = KronosProjectionRegistry.declarationGenerator(session)
                 ?: error("Kronos projection declaration generator is not registered for this FIR session")
-            val fir = buildProjectionClass(session, symbol, model)
+            val fir = buildProjectionClass(session, symbol, model, model.classId)
+            fir.ownerGenerator = generator
+            symbol.bind(fir)
+        }
+
+        /**
+         * Binds the generated Context class early so SelectClause's third type argument resolves in FIR.
+         */
+        fun ensureContextClassBound(
+            session: FirSession,
+            model: KronosProjectionModel
+        ) {
+            val symbol = model.contextSymbol
+            if (symbol.isBound) return
+            val generator = KronosProjectionRegistry.declarationGenerator(session)
+                ?: error("Kronos projection declaration generator is not registered for this FIR session")
+            val fir = buildProjectionClass(session, symbol, model, model.contextClassId)
             fir.ownerGenerator = generator
             symbol.bind(fir)
         }
@@ -164,7 +180,8 @@ class KronosProjectionDeclarationGenerationExtension(
         fun buildProjectionClass(
             session: FirSession,
             symbol: FirRegularClassSymbol,
-            model: KronosProjectionModel
+            model: KronosProjectionModel,
+            classId: ClassId
         ) = buildRegularClass {
             source = model.anchor
             resolvePhase = FirResolvePhase.STATUS
@@ -175,7 +192,7 @@ class KronosProjectionDeclarationGenerationExtension(
                 isData = true
             }
             classKind = ClassKind.CLASS
-            name = model.name
+            name = model.nameFor(classId)
             this.symbol = symbol
             superTypeRefs += buildResolvedTypeRef {
                 coneType = ConeClassLikeTypeImpl(
@@ -200,7 +217,7 @@ class KronosProjectionDeclarationGenerationExtension(
             model: KronosProjectionModel
         ): KronosProjectionGeneratedMembers = projectionMemberCache.computeIfAbsent(classSymbol) {
             val primaryConstructor = buildProjectionPrimaryConstructor(session, classSymbol, model)
-            val properties = model.fields.map { field ->
+            val properties = model.fieldsFor(classSymbol.classId).map { field ->
                 val parameter = primaryConstructor.valueParameters.single { it.name == field.name }
                 buildProjectionProperty(session, classSymbol, field.name, field.type, model.anchor, parameter)
             }
@@ -230,7 +247,7 @@ class KronosProjectionDeclarationGenerationExtension(
                 )
             }
             symbol = FirConstructorSymbol(classSymbol.classId)
-            valueParameters += model.fields.map { field ->
+            valueParameters += model.fieldsFor(classSymbol.classId).map { field ->
                 buildProjectionConstructorParameter(session, symbol, field, model.anchor)
             }
         }.apply {
@@ -343,3 +360,24 @@ object KronosProjectionGeneratedDeclarationKey : GeneratedDeclarationKey()
  * Caches generated constructor/property FIR per projection class symbol within the compiler session.
  */
 private val projectionMemberCache = ConcurrentHashMap<FirRegularClassSymbol, KronosProjectionGeneratedMembers>()
+
+private fun KronosProjectionModel.fieldsFor(classId: ClassId): List<KronosProjectionField> =
+    when (classId) {
+        this.classId -> fields
+        contextClassId -> contextFields
+        else -> emptyList()
+    }
+
+private fun KronosProjectionModel.nameFor(classId: ClassId): Name =
+    when (classId) {
+        this.classId -> name
+        contextClassId -> contextName
+        else -> classId.shortClassName
+    }
+
+private fun KronosProjectionModel.symbolFor(classId: ClassId): FirRegularClassSymbol =
+    when (classId) {
+        this.classId -> symbol
+        contextClassId -> contextSymbol
+        else -> error("Unknown Kronos projection class id: $classId")
+    }

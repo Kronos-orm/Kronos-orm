@@ -31,6 +31,7 @@ import com.kotlinorm.ast.SqlOperator
 import com.kotlinorm.ast.QueryMaterializeContext
 import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
+import com.kotlinorm.ast.applyAutomaticLayering
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForSelect
@@ -321,7 +322,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             logicDeleteApplied = true
         }
 
-        return statement
+        return statement.applyAutomaticLayering("q")
     }
 
     /**

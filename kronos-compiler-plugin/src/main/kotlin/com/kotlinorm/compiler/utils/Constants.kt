@@ -74,6 +74,7 @@ val SelectGeneratedProjectionCallableId = CallableId(
 val SelectClauseFqName = FqName("com.kotlinorm.orm.select.SelectClause")
 val GeneratedProjectionPackageFqName = FqName("com.kotlinorm.generated.projection")
 val GeneratedProjectionClassPrefix = "KronosSelectResult_"
+val GeneratedContextClassPrefix = "KronosSelectContext_"
 val GeneratedProjectionFieldIdentifierRegex = Regex("[A-Za-z_][A-Za-z0-9_]*")
 val QueryListFunctionName = "queryList"
 val QueryOneFunctionName = "queryOne"

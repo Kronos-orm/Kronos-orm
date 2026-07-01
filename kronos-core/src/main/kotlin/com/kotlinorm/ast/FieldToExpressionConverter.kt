@@ -72,7 +72,8 @@ object FieldToExpressionConverter {
             }
             return FunctionCall(
                 functionName = field.functionName,
-                arguments = arguments
+                arguments = arguments,
+                over = field.over
             )
         }
         

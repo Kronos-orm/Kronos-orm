@@ -32,7 +32,10 @@ object KronosProjectionRegistry {
      * Registers a projection model produced while refining a select call.
      */
     fun register(session: FirSession, model: KronosProjectionModel) {
-        projectionsBySession.computeIfAbsent(session) { ConcurrentHashMap() }[model.classId] = model
+        projectionsBySession.computeIfAbsent(session) { ConcurrentHashMap() }.also { models ->
+            models[model.classId] = model
+            models[model.contextClassId] = model
+        }
     }
 
     /**

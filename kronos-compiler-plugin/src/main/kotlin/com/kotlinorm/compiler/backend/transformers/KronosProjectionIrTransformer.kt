@@ -19,6 +19,8 @@ package com.kotlinorm.compiler.backend.transformers
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.firstTypeArgument
 import com.kotlinorm.compiler.core.kPojoClassSymbol
+import com.kotlinorm.compiler.fir.KronosProjectionField
+import com.kotlinorm.compiler.fir.KronosProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionRegistry
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
@@ -129,7 +131,7 @@ class KronosProjectionIrTransformer(
     }
 
     /**
-     * Rewrites bare select calls to pass the generated projection KClass at runtime.
+     * Rewrites bare select calls to pass the generated projection and context KClasses at runtime.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun buildGeneratedSelectCall(call: IrCall): IrCall? {
@@ -139,18 +141,24 @@ class KronosProjectionIrTransformer(
         val selectType = call.type as? IrSimpleType ?: return null
         val sourceType = (selectType.arguments.getOrNull(0) as? IrTypeProjection)?.type ?: return null
         val projectionType = (selectType.arguments.getOrNull(1) as? IrTypeProjection)?.type ?: return null
+        val contextType = (selectType.arguments.getOrNull(2) as? IrTypeProjection)?.type ?: return null
         val projectionClass = projectionType.classOrNull?.owner ?: return null
+        val contextClass = contextType.classOrNull?.owner ?: return null
         if (!projectionClass.isGeneratedProjectionClass()) return null
-        val materializedProjectionClass = materializeProjectionClass(projectionClass, sourceType)
+        if (!contextClass.isGeneratedProjectionClass()) return null
+        val materializedProjectionClass = materializeGeneratedProjectionClass(projectionClass, sourceType)
+        val materializedContextClass = materializeGeneratedProjectionClass(contextClass, sourceType)
         val materializedProjectionType = materializedProjectionClass.symbol.defaultType
+        val materializedContextType = materializedContextClass.symbol.defaultType
 
         val selectGeneratedSymbol = pluginContext.referenceFunctions(SelectGeneratedProjectionCallableId)
-            .firstOrNull { it.owner.parameters.size == 3 }
+            .firstOrNull { it.owner.parameters.size == 4 }
             ?: return null
 
         return DeclarationIrBuilder(pluginContext, currentScope!!.scope.scopeOwnerSymbol).irCall(selectGeneratedSymbol).apply {
             typeArguments[0] = sourceType
             typeArguments[1] = materializedProjectionType
+            typeArguments[2] = materializedContextType
             arguments[0] = call.arguments[0]
             arguments[1] = IrClassReferenceImpl(
                 call.startOffset,
@@ -159,20 +167,28 @@ class KronosProjectionIrTransformer(
                 materializedProjectionClass.symbol,
                 materializedProjectionType
             )
-            arguments[2] = call.arguments[1]
+            arguments[2] = IrClassReferenceImpl(
+                call.startOffset,
+                call.endOffset,
+                pluginContext.irBuiltIns.kClassClass.typeWith(materializedContextType),
+                materializedContextClass.symbol,
+                materializedContextType
+            )
+            arguments[3] = call.arguments[1]
         }
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun materializeProjectionClass(projectionClass: IrClass, sourceType: IrType): IrClass {
-        val fqName = projectionClass.kotlinFqName
+    private fun materializeGeneratedProjectionClass(generatedClass: IrClass, sourceType: IrType): IrClass {
+        val fqName = generatedClass.kotlinFqName
         materializedProjectionClasses[fqName]?.let { return it }
-        val model = KronosProjectionRegistry.findAny(ClassId.topLevel(fqName)) ?: return projectionClass
+        val classId = ClassId.topLevel(fqName)
+        val model = KronosProjectionRegistry.findAny(classId) ?: return generatedClass
 
         val file = projectionFile ?: createProjectionFile().also { projectionFile = it }
         val irClass = pluginContext.irFactory.buildClass {
             origin = IrDeclarationOrigin.DEFINED
-            name = projectionClass.name
+            name = generatedClass.name
             visibility = DescriptorVisibilities.PUBLIC
             kind = ClassKind.CLASS
             modality = Modality.FINAL
@@ -188,7 +204,7 @@ class KronosProjectionIrTransformer(
 
         val sourceClass = sourceType.classOrNull?.owner ?: irClass
         val sourceProperties = sourceClass.properties.associateBy { it.name }
-        val projectionFields = model.fields.withCascadeLocalKeyFields(sourceClass, sourceProperties)
+        val projectionFields = model.fieldsFor(classId).withCascadeLocalKeyFields(sourceClass, sourceProperties)
         projectionFields.forEach { field ->
             val sourceProperty = sourceProperties[field.sourceName]
             val propertyType = sourceProperty?.getter?.returnType
@@ -202,13 +218,23 @@ class KronosProjectionIrTransformer(
         return irClass
     }
 
+    /**
+     * Selects the generated fields that belong to the materialized result or context class.
+     */
+    private fun KronosProjectionModel.fieldsFor(classId: ClassId): List<KronosProjectionField> =
+        when (classId) {
+            this.classId -> fields
+            contextClassId -> contextFields
+            else -> emptyList()
+        }
+
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun List<com.kotlinorm.compiler.fir.KronosProjectionField>.withCascadeLocalKeyFields(
+    private fun List<KronosProjectionField>.withCascadeLocalKeyFields(
         sourceClass: IrClass,
         sourceProperties: Map<Name, IrProperty>
-    ): List<com.kotlinorm.compiler.fir.KronosProjectionField> {
-        val result = linkedMapOf<Name, com.kotlinorm.compiler.fir.KronosProjectionField>()
-        fun add(field: com.kotlinorm.compiler.fir.KronosProjectionField) {
+    ): List<KronosProjectionField> {
+        val result = linkedMapOf<Name, KronosProjectionField>()
+        fun add(field: KronosProjectionField) {
             result.putIfAbsent(field.name, field)
         }
 

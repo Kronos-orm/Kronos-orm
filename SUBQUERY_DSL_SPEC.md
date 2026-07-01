@@ -4,6 +4,8 @@
 
 本文档只讨论用户侧 DSL 长什么样。当前正在逐个确认子查询使用场景。
 
+实现进度请看 `SUBQUERY_TASK_LIST.md`。截至 2026-07-01，core / AST / renderer 已覆盖大量子查询底层能力，真实 `Context` FIR 生成、基础字段 alias 补全和 selected alias 自动 SQL 分层已打通第一条竖切；函数/标量子查询/聚合/window alias 字段模型、窗口函数用户 DSL、derived join 和 set/upsert 类型安全入口仍在推进中。本文档中的示例代表目标语法，不表示每个场景都已完整可用。
+
 ## 场景目录
 
 - 场景 1：`SELECT` 列表中的标量子查询

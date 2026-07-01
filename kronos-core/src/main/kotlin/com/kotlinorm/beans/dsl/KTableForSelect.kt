@@ -74,6 +74,15 @@ open class KTableForSelect<T : KPojo> {
     infix fun Any?.as_(alias: String): String = alias
 
     /**
+     * Adds a SQL window `OVER (...)` clause to a function expression.
+     */
+    @Suppress("UNUSED")
+    fun <R> R.over(block: KTableForWindow<T>.() -> Unit): R {
+        KTableForWindow<T>().block()
+        return this
+    }
+
+    /**
      * Adds a field to the collection of fields.
      *
      * @param property the field to be added

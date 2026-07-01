@@ -33,4 +33,16 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
      */
     @Test
     fun cascadeProjectionKeepsLocalKey() = box("cascadeProjectionKeepsLocalKey")
+
+    /**
+     * Verifies select aliases are visible on the post-select Context receiver.
+     */
+    @Test
+    fun selectAliasContextWhere() = box("selectAliasContextWhere")
+
+    /**
+     * Verifies select aliases are visible on post-select orderBy and having Context receivers.
+     */
+    @Test
+    fun selectAliasContextOrderByHaving() = box("selectAliasContextOrderByHaving")
 }

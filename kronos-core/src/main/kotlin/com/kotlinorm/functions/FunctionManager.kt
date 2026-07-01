@@ -25,6 +25,7 @@ import com.kotlinorm.exceptions.UnSupportedFunctionException
 import com.kotlinorm.functions.bundled.builders.MathFunctionBuilder
 import com.kotlinorm.functions.bundled.builders.PolymerizationFunctionBuilder
 import com.kotlinorm.functions.bundled.builders.StringFunctionBuilder
+import com.kotlinorm.functions.bundled.builders.WindowFunctionBuilder
 import com.kotlinorm.interfaces.FunctionBuilder
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
@@ -37,6 +38,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 object FunctionManager {
     private val registeredFunctionBuilders = mutableListOf<FunctionBuilder>(
         PolymerizationFunctionBuilder,
+        WindowFunctionBuilder,
         MathFunctionBuilder,
         StringFunctionBuilder
     )

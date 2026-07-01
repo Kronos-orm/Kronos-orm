@@ -30,4 +30,10 @@ class KClassMapBoxTest : AbstractKronosJvmBoxSuite("kclassMap") {
      */
     @Test
     fun kclassCreator() = box("kclassCreator")
+
+    /**
+     * Verifies function-local KPojo classes are visible to generated KClass creator entries.
+     */
+    @Test
+    fun localKPojoCreator() = box("localKPojoCreator")
 }

@@ -1,1052 +1,513 @@
-# Kronos 子查询任务清单
-
-状态：按任务分状态跟踪
+# Kronos 子查询实现任务清单
 
 更新时间：2026-07-01
 
-本文档跟踪 `SUBQUERY_DSL_SPEC.md` 对应能力的实际实现进度，范围包含 core / AST / renderer / compiler plugin 的已落地竖切和剩余缺口。早期只按 core 完成度计数的口径已经不够准确；当前更重要的是区分三类状态：
+本文档按当前 `SUBQUERY_DSL_SPEC.md` 刷新，是实现计划和验收清单，不再沿用旧版“同层 `where/having` 可访问 `Selected` alias 并自动分层”的设计。
 
-- core / AST / renderer 已能表达并渲染；
-- compiler plugin 已能把用户 DSL 底层 handoff 到 core；
-- spec 里的最终用户语法、FIR 可见类型和 IDE 补全还未闭合。
+## 设计锁定点
 
-本文档必须与 `SUBQUERY_DSL_SPEC.md` 的核心语义保持一致：
-
-- 概念目标是 `SelectClause<Source, Selected, Context>`。
-- `select { ... }` 的 receiver 是 `Source`。
-- `where` / `having` / `orderBy` 的 receiver 是 `Context`。
-- `queryList` / `queryOne` / `queryOneOrNull` 的返回类型是 `Selected`。
-- `where` / `having` 引用 select alias、聚合 alias、窗口 alias 时，core 负责提供自动派生表分层的承载结构，不能依赖数据库同层 alias 支持。
-
-## 2026-07-01 实际进度快照
-
-已经比较稳的部分：
-
-- core 已落地 `SelectClause<Source, Selected, Context>`，并且 `queryList/queryOne/queryOneOrNull` 返回 `Selected`。
-- `KSelectable<Selected>`、`selectedKClass`、deferred subquery、统一 lowering、scalar/IN validation、row-value tuple、derived wrapper、alias metadata、`CriteriaToAstConverter` 子查询承接都已存在。
-- compiler plugin 已生成真实 `Selected` projection class 和真实 `Context` class，并把 bare `select` refine 成 `SelectClause<Source, Selected, Context>`；基础 `.as_("xx")` alias 已能在 `where` / `having` / `orderBy` 中被 FIR 解析。
-- `SelectClause.toStatement()` 已接入 `SelectConditionLayering.applyAutomaticLayering("q")`，core renderer 测试覆盖 selected alias 外层分层。
-- core SQL 竖切已覆盖 select/update/delete 中的 `IN` / `NOT IN` / tuple IN / `EXISTS` / scalar comparison / quantified comparison，以及 select-list scalar subquery、order-by scalar subquery、update-set scalar、insert-select、upsert scalar、CTAS。
-- compiler plugin 已有一批底层 handoff box：`KSelectable.as_("alias")` 作为 scalar select item、`field in/!in query`、tuple IN、`exists/!exists`、scalar comparison、`any/some/all`、`KSelectable.desc()`、`setValue(field, selectable)`。
-
-当前最大缺口：
-
-- `.as_("xxx")` 的基础字段 alias 已进入 `Selected + Context`，并已覆盖 `where` / `having` / `orderBy` 的 compiler handoff；函数 alias、标量子查询 alias、聚合 alias、窗口 alias 还没有完整进入两套字段模型，`orderBy { it.rn.asc() }` 这类 spec 写法还没闭合。
-- `SelectConditionLayering.applyAutomaticLayering(...)` 已接入 `SelectClause.toStatement()`，但复杂条件树、窗口 alias、隐藏支撑投影和更多方言/DSL 场景仍需补齐。
-- Window AST/rendering/lowering 有地基，用户 DSL `f.rowNumber().over(...).as_("rn")` 还未完成。
-- derived query join 的最终用户语法、`set { field = query }` / `upsert().set { field = query }`、insert-select 类型兼容校验、诊断定位仍需继续做。
-- 测试分层需要保持清晰：compiler-plugin 只做 FIR/IR/DSL handoff 的最小功能验证，不断言最终 SQL 字符串；core 单测覆盖 AST/SQL/rendering；testing 模块覆盖真实数据库集成。
+- `Source`：当前查询层 FROM / JOIN 暴露给 DSL 的输入类型。
+- `Selected`：当前查询层 `select { ... }` 生成的结果类型。
+- `Context`：`Source + Selected` 合成上下文，只用于当前层 `orderBy`。
+- `KSelectable<Selected>`：查询对象，被下一层消费时，上一层 `Selected` 成为下一层 `Source`。
+- `KPojo.where { ... }` 是语法糖，等价于 `KPojo.select().where { ... }`，结果仍是 `KSelectable<Source>`。
+- 当前层 `where/groupBy/having` 的 receiver 是 `Source`，不能访问当前层 `Selected` alias。
+- 当前层 `orderBy` 的 receiver 是 `Context`，可以访问 `Source` 字段和当前层 `Selected` 字段。
+- 需要过滤窗口字段、聚合 alias、标量子查询 alias 时，必须进入下一层查询。
+- `.alias("name")` 是新的命名 API，旧 `.as_("name")` 不保留兼容。
+- `select { ... }` 中直接字段投影可继承字段名，非直接字段投影必须显式 `.alias("name")`。
+- 同一层 `Selected` 最终字段名必须唯一；新增 `Selected` 字段与 `Source` 字段同名导致 `Context` 生成失败。
+- `[]` 是用户侧统一列表语法，由编译器按上下文解释为投影列表、排序列表、窗口字段列表或 row-value tuple。
 
 ## 总览
 
-| 完成度 | 任务 | 状态 | 当前判断 |
-|--------|------|------|----------|
-| 88% | 任务 1：建立 `SelectClause<Source, Selected, Context>` core 类型地基 | 部分完成 | 三泛型、`Selected` 返回、`Context` receiver 签名、`contextPojo`、FIR generated Context 和 IR runtime context class handoff 已打通；基础字段 alias 的 where/having/orderBy 已覆盖，复杂 alias 字段模型和 join/union/derived 兼容仍需继续核验。 |
-| 78% | 任务 2：收敛 `KSelectable` 语义 | 部分完成 | `KSelectable<Selected>` 和 `selectedKClass` 已落地，pagination / union / join 已适配；join/union/derived 的专项 shape 兼容测试仍需补齐。 |
-| 70% | 任务 3：引入延迟 materialize 的 query expression | 部分完成 | `SelectQueryRef`、`KSelectableQueryRef`、`DeferredSubqueryExpression` 已有，`parameterValues` 可透传；相关子查询外层字段/alias 协调仍未完整。 |
-| 84% | 任务 4：补 deferred subquery lowering pass | 部分完成 | lowering 已覆盖 select/update/delete/insert/upsert/union/DDL 主要表达式位置，并在 renderer 前自动执行；非渲染入口和复杂参数命名仍需继续核验。 |
-| 74% | 任务 5：前移 alias registry 与字段来源 metadata | 部分完成 | alias/source metadata、alias registry、投影输出名推导和条件来源分析地基已落地；基础字段 alias 已进入 Context 并覆盖 where/having/orderBy；函数/标量子查询/聚合/window alias 字段模型仍需补齐。 |
-| 68% | 任务 6：支持 select item 标量子查询 | 部分完成 | `KTableForSelect` 已能按顺序收集 aliased `KSelectable` scalar select item，compiler box 覆盖 `KSelectable.as_` 收集，core DSL 测试覆盖 SQL/参数；scalar subquery alias 自动进入 Selected/Context 仍未完整接入。 |
-| 98% | 任务 7：补 `IN` / `NOT IN` 子查询构造入口 | 基本完成 | compiler 底层测试已覆盖 `field in/!in SelectClause` 和 tuple `in/!in` 到 deferred subquery Criteria；core 测试已覆盖 select/update/delete build SQL/参数以及左右列数校验，剩余主要是诊断质量。 |
-| 100% | 任务 8：补 row-value tuple 表达式 | 已完成 | `RowValueExpression` 已有，单元素拒绝，renderer/test 覆盖 tuple IN/NOT IN，用户侧 `[field1, field2] in/!in query` 已有 compiler handoff 与 core SQL/参数竖切。 |
-| 70% | 任务 9：派生表包装与外层过滤 | 部分完成 | wrapper 工具、outer where/orderBy、automatic layering 工具测试和 SelectClause 默认调用已落地；基础 having/orderBy alias handoff 已覆盖，隐藏支撑投影、复杂 window 和更多 DSL 场景仍未完成。 |
-| 68% | 任务 10：条件来源与自动分层执行 | 部分完成 | `SelectConditionLayering` 可基于 alias/source metadata 拆分 source 与 selected/aggregate/window alias，并已接入 `SelectClause.toStatement()`；基础 selected alias 的 where/having/orderBy 竖切已覆盖，复杂条件树和 window/orderBy 竖切仍需补齐。 |
-| 78% | 任务 11：补标量子查询公共校验 | 部分完成 | `SubqueryValidator.validateScalar` 已由统一 lowering 覆盖 select/update/delete/insert/upsert/DDL 表达式位置；`validateInSubquery` 已覆盖 IN 子查询左右列数校验；错误定位、类型提示和唯一键证明仍未做。 |
-| 90% | 任务 12：扩展 `CriteriaToAstConverter` | 部分完成 | scalar RHS、exists、IN/NOT IN query、row tuple IN/NOT IN、quantified comparison 的结构化承接已落地；compiler 已覆盖 scalar RHS、`exists/!exists`、`in/!in`、tuple IN/NOT IN 和 `any/some/all` quantified comparison 的底层 Criteria 生成。 |
-| 72% | 任务 13：补 `ORDER BY` 子查询和表达式排序承接 | 部分完成 | AST/render/lowering 已支持 order by scalar subquery 和 selected alias；`SelectClause.orderBy` 已可承接 expression/scalar subquery sort item，compiler sort box 已覆盖 selectable sort handoff；`it.alias.desc()` 仍依赖 Context。 |
-| 72% | 任务 14：补 `UPDATE SET` 标量子查询承接 | 部分完成 | AST/renderer/lowering 和 `UpdateClause` builder 已可承接 scalar subquery/expression assignment；core DSL 已覆盖动态 `patch` 与 `.set { setValue(field, query) }` scalar subquery SQL/参数，最终推荐语法 `.set { field = query }` 的 FIR/类型安全入口仍需补。 |
-| 92% | 任务 15：补 `UPDATE` / `DELETE WHERE` 子查询承接 | 基本完成 | AST/renderer/lowering 可表达 update/delete where exists/in/scalar/quantified；core DSL 已覆盖 update/delete where `in/!in`、tuple IN/NOT IN、scalar comparison、quantified comparison 与 `exists/!exists` 的 SQL/参数。 |
-| 88% | 任务 16：补 `INSERT SELECT` | 部分完成 | `InsertStatement.source`、renderer/lowering、`KSelectable.insert<Target>` 和 `UnionClause.insert<Target>` builder 入口已落地；普通 select、join source、union source、显式 values 映射和默认列数校验的 core DSL SQL/参数测试已覆盖，类型兼容校验仍需补。 |
-| 76% | 任务 17：补 `UPSERT` 子查询表达式 | 部分完成 | `conflictAssignments`、Upsert builder、fallback upsert update 分支和 MySQL/Postgres/SQLite expression upsert renderer 已有；MySQL core DSL 已覆盖动态 `patch` 与 `.set { setValue(field, query) }` conflict assignment scalar subquery SQL/参数，spec 已确认 `patch` 可保留；最终推荐语法 `.set { field = query }` 的 FIR/类型安全入口仍需补。 |
-| 90% | 任务 18：补 `CREATE TABLE AS SELECT` | 部分完成 | `CreateTableAsSelectStatement`、`TableOperation.createTable(target, query)`、CTAS task 参数透传和五方言 CTAS 渲染策略已落地；普通 select、join source、union source 的 core DSL SQL/参数测试已覆盖，schema 保留策略和 Oracle `ifNotExists` 入口仍需补。 |
-| 97% | 任务 19：补 core AST / renderer 测试 | 部分完成 | `SubqueryRendererTest` 已覆盖 nested scalar、quantified、order by scalar/alias、criteria converter、layering、update/delete/insert/upsert/CTAS 和五方言矩阵；core DSL 已补 select/update/delete 的 exists/in/scalar/quantified comparison、select/update/delete tuple IN/NOT IN、order by scalar subquery、update-set scalar、insert-select select/join/union source、insert-select 显式 values 映射与列数校验、upsert scalar、CTAS select/join/union source SQL/参数竖切，更深 builder/compiler 测试仍不完整。 |
-| 25% | 任务 20：窗口函数 DSL 与窗口 alias 分层 | 未完成 | AST/render/lowering 已有 `WindowClause` / `WindowFrame` / `FunctionCall.over` 地基；用户 DSL `f.rowNumber().over(...).as_("rn")`、Context 字段生成和外层 `where { it.rn == 1 }` 仍未完成。 |
-
-## 当前事实
-
-- `SelectClause<Source, Selected, Context>` 已存在，`queryList` / `queryOne` / `queryOneOrNull` 返回 `Selected`。
-- `select { ... }` 仍以 `Source` 为 receiver；`where` / `having` / `orderBy` 的 core 签名已切到 `Context`，compiler plugin 的 bare select 入口已可传入真实 generated Context。
-- compiler plugin 当前生成 `Selected` projection class 和 `Context` class；FIR refined 类型已能变成 `SelectClause<Source, Selected, Context>`。
-- `KSelectable` 当前已收敛为 `KSelectable<Selected>`，包含 `selectedKClass: KClass<Selected>`。
-- `PagedClause<Source, Selected, Clause : KSelectable<Selected>>` 已使用 `selectedKClass` 返回 `Selected`。
-- core 中已经存在一批子查询 AST：
-  - `SubqueryExpression.ExistsExpression`
-  - `SubqueryExpression.ScalarSubquery`
-  - `SubqueryExpression.QuantifiedComparison`
-  - `SpecialExpression.InSubqueryExpression`
-  - `SubqueryTable`
-- core 已新增 deferred subquery / lowering / row value / derived wrapper / scalar validation / criteria converter 承接 / DML DDL AST 地基 / `SubqueryRendererTest` 等地基，`:kronos-core:test` 已通过。
-- select item alias/source metadata 地基已部分落地：select item 可推导 metadata，`SelectStatement` 已维护 alias registry，并提供 select item metadata / 输出名查询能力；`SelectConditionLayering` 已能消费这些 metadata。
-- `select { [it.id, it.name.as_("xx")] }.where { it.xx == "Ada" }` 已有 compiler 最小竖切：FIR 能解析 generated Context 上的 alias 字段，IR 能构造 runtime context，core AST/参数能承接 alias 条件。该 compiler box 不断言 SQL，SQL 分层由 core 测试覆盖。
-- `select { [it.id, it.name.as_("xx")] }.having { it.xx == "Ada" }.orderBy { it.xx.desc() }` 已有 compiler 最小竖切：FIR 能解析 generated Context 上的 alias 字段，IR/core 能承接 filter/order AST 和参数。该 compiler box 同样不绑定最终 SQL。
-- `select { [it.id, query.limit(1).as_("alias"), it.name] }` 已有最小竖切：compiler 会把 aliased `KSelectable` 注入为 scalar subquery select item，core build 可渲染 SQL/参数并保持 select item 顺序。
-- `where { exists(query) }` / `where { !exists(query) }` 已有最小竖切：compiler 会生成 `CriteriaSubqueryValue.Exists(KSelectableQueryRef(...))`，core DSL build 已覆盖 select/update/delete 的 SQL/参数。
-- `where { it.field > any(query) }` / `some(query)` / `all(query)` 已有最小竖切：compiler 会生成 `CriteriaSubqueryValue.QuantifiedComparison(KSelectableQueryRef(...), quantifier)`，core DSL build 已覆盖 update/delete quantified comparison 的 SQL/参数。
-- `where { [it.a, it.b] in query }` / `where { [it.a, it.b] !in query }` 已有最小竖切：compiler 会生成 `CriteriaSubqueryValue.In(value = List<Field>, not = ...)`，core converter 会 lower 为 `RowValueExpression`，core DSL build 已覆盖 select tuple IN/NOT IN 的 SQL/参数。
-- `update().patch("field" to query.limit(1))` 已有最小竖切：core build 可渲染 `SET field = (SELECT ... LIMIT 1)` 并保留子查询参数。`patch` 已纳入 spec，定位为动态字段入口；`.set { setValue(field, query) }` 也已可渲染 SQL/参数。字段已知时仍推荐后续补齐最终语法 `.set { field = query }`。
-- `KSelectable.insert<Target>()` / `UnionClause.insert<Target>()` 已有最小竖切：普通 select、join source 与 union source 均可渲染 `INSERT INTO target (...) SELECT ...` 并透传 source query 参数。
-- `upsert().patch("field" to query.limit(1)).onConflict()` 已有 MySQL 最小竖切：core build 可渲染 `ON DUPLICATE KEY UPDATE field = (SELECT ... LIMIT 1)` 并透传子查询参数。`patch` 已纳入 spec，定位为动态字段入口；`.set { setValue(field, query) }` 也已可渲染 SQL/参数。字段已知时仍推荐后续补齐最终语法 `.set { field = query }`。
-- `dataSource.table.buildCreateTableAsSelectTask(target, query)` 已有 MySQL 最小竖切：普通 select、join source 与 union source 均可渲染 `CREATE TABLE ... AS SELECT ...` 并透传 source query 参数。
-- Window AST/rendering/lowering 有初步地基，但用户 DSL 的 `f.rowNumber().over(...).as_("rn")` 还没有完整竖切。
-- renderer 已具备渲染这些 AST 的基础能力；`AbstractSqlRenderer` 不直接渲染 deferred node，会在 `render(statement)` 前统一 lowering。
-- 当前阶段不要无计划地破坏已跑通的 projection 链路，但 core 类型地基必须朝 `SelectClause<Source, Selected, Context>` 收敛。
-
-## 目标
-
-让 core 能稳定表达并渲染以下能力：
-
-- select list 中的标量子查询；
-- `EXISTS` / `NOT EXISTS`；
-- `IN` / `NOT IN` 子查询；
-- row-value tuple `IN` 子查询；
-- 嵌套子查询；
-- 派生表包装与外层过滤；
-- `where` / `having` / `orderBy` 使用 `Context` 时所需的类型承载点；
-- select item alias registry、字段来源 metadata、自动 SQL 分层基础；
-- `ORDER BY` 子查询或表达式排序；
-- `UPDATE SET` 标量子查询；
-- `UPDATE` / `DELETE WHERE` 子查询；
-- `INSERT SELECT`；
-- `UPSERT` 子查询表达式；
-- `CREATE TABLE AS SELECT`。
-- 窗口函数与窗口 alias 自动分层。
-
-## 任务 1（88%）：建立 `SelectClause<Source, Selected, Context>` core 类型地基（部分完成）
-
-`SUBQUERY_DSL_SPEC.md` 已经确认三种类型：
-
-- `Source`：原始查询源 KPojo。
-- `Selected`：最终查询结果投影。
-- `Context`：`where` / `having` / `orderBy` 的 receiver，包含 `Source` 全字段 + `Selected` 投影字段。
-
-core 不能继续只把 Context 视为 compiler plugin 的后置事项。即使第一阶段暂时让 `Context = Source` 或 `Context = Selected` 的某个兼容形态存在，`SelectClause` 的目标类型也必须明确为：
-
-```kotlin
-class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
-    ...
-)
-```
-
-目标方法签名方向：
-
-```kotlin
-fun where(condition: ToFilter<Context, Boolean?> = null): SelectClause<Source, Selected, Context>
-
-fun having(condition: ToFilter<Context, Boolean?> = null): SelectClause<Source, Selected, Context>
-
-fun orderBy(fields: ToSort<Context, Any?>): SelectClause<Source, Selected, Context>
-
-fun queryList(wrapper: KronosDataSourceWrapper? = null): List<Selected>
-```
-
-当前落地情况：
-
-- `SelectClause<Source, Selected, Context>` 已存在。
-- `queryList` / `queryOne` / `queryOneOrNull` 的非 reified 版本返回 `Selected`。
-- `withTotal()` 返回的 `PagedClause` 已携带 `Selected`。
-- `where` / `having` / `orderBy` 的 core 签名已切到 `Context` receiver。
-- `SelectClause` 已新增 `contextPojo` 承载点，当前默认入口仍以 `Source` 作为 Context。
-- `select` / `groupBy` / `by` / `cascade` 等仍以 `Source` 为 receiver，这与 `select {}` 使用 `Source` 的目标一致。
-- FIR call refinement 已能生成 `Selected` projection class 和 `Context` class，并 refine 为 `SelectClause<Source, Selected, Context>`。
-- backend IR 已把 generated projection/context class materialize 为真实 IR class，并把 bare `select` 调用改写到四参数 `selectGeneratedProjection(projectionClass, contextClass, fields)`。
-- compiler official box `projection/selectAliasContextWhere.kt` 已验证基础 alias 字段可在 `where` generated Context receiver 上解析并进入 AST/参数 handoff。
-- compiler official box `projection/selectAliasContextOrderByHaving.kt` 已验证基础 alias 字段可在 `having` / `orderBy` generated Context receiver 上解析并进入 AST/参数 handoff。
-
-剩余工作：
-
-- 需要把函数 alias、标量子查询 alias、聚合 alias、窗口 alias 都纳入 `Selected + Context` 字段模型。
-- 需要补函数 alias、标量子查询 alias、聚合 alias、窗口 alias 的 generated Context 竖切和 IDE/FIR 可见性测试。
-- 需要继续保证现有投影链路和 join/union/derived 入口在真实 Context 接入后不回归。
-
-验收：
-
-- core API 能表达 `Source` / `Selected` / `Context` 三种类型。
-- `queryList` / `queryOne` / `queryOneOrNull` 仍然返回 `Selected`。
-- compiler plugin 可以把生成的 Context 类型加载到 SelectClause 上，并能在 `where` / `having` / `orderBy` 访问基础 alias 字段。
-
-## 任务 2（78%）：收敛 `KSelectable` 语义（部分完成）
-
-当前 `KSelectable<T : KPojo>` 的 `T` 更像 source pojo。子查询消费侧更关心 query 的结果投影类型。
-
-目标方向：
-
-```kotlin
-abstract class KSelectable<R : KPojo>(
-    internal open val pojo: KPojo,
-    open val selectedKClass: KClass<R>
-)
-```
-
-`SelectClause<Source, Selected, Context>` 应实现：
-
-```kotlin
-class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
-    ...
-) : KSelectable<Selected>(pojo, selectedKClass)
-```
-
-注意：
-
-- `KSelectable<R>` 的 `R` 是 query 的最终投影类型，不是 source 类型。
-- `Context` 不属于 `KSelectable` 的泛型核心，但属于 `SelectClause` 的子句 receiver 类型。
-- 保留 `toStatement(wrapper)` 作为 `KSelectable` 的核心能力。
-
-当前落地情况：
-
-- `KSelectable` 已收敛为 `KSelectable<Selected>`，并包含 `selectedKClass: KClass<Selected>`。
-- `SelectClause` 以 `projectionClass` 传入 `selectedKClass`。
-- `PagedClause` 使用 `selectClause.selectedKClass` 查询并返回 `Selected`。
-- pagination / union / join 代码已适配单泛型 `KSelectable<Selected>`。
-
-剩余工作：
-
-- join / union / derived query 的 `selectedKClass` 规则需要系统核实和补测试，不能仅凭字段存在视为完成。
-
-验收：
-
-- `SelectClause<Source, Selected, Context>` 可作为 `KSelectable<Selected>` 被消费。
-- union / join / select 现有对 `KSelectable` 的使用不破坏。
-- join / union / derived query 都必须能稳定提供 `selectedKClass`：
-  - 显式 DTO 投影使用用户传入的 `KClass`。
-  - 自动 DTO 投影使用 FIR 生成的 projection `KClass`。
-  - join 查询的投影类型来自 join `select { ... }` 的 `Selected`。
-  - union 查询要求所有分支投影 shape 兼容，并以统一的 `Selected` 类型暴露。
-  - derived query 的 `selectedKClass` 来自被包装 query 的 `Selected`。
-- 现有 projection 回归测试仍能通过。
-
-## 任务 3（70%）：引入延迟 materialize 的 query expression（部分完成）
-
-已有 AST 直接吃 `SelectStatement`，但 DSL/compiler 更自然地产生 `KSelectable`。不能在 helper 调用时过早执行 `toStatement(wrapper)`，否则相关子查询中的外层字段引用、参数命名、派生表包装会被提前冻结。
-
-目标是引入延迟 materialize 的 core 表达能力，例如：
-
-```kotlin
-interface SelectQueryRef {
-    fun materialize(context: QueryMaterializeContext): SelectStatement
-}
-
-data class KSelectableQueryRef(
-    val query: KSelectable<*>
-) : SelectQueryRef
-```
-
-表达式层不要急着把 query 变成 `SelectStatement`：
-
-```kotlin
-sealed class DeferredSubqueryExpression : Expression {
-    data class Scalar(val query: SelectQueryRef) : DeferredSubqueryExpression()
-    data class Exists(val query: SelectQueryRef, val not: Boolean = false) : DeferredSubqueryExpression()
-    data class In(
-        val value: Expression,
-        val query: SelectQueryRef,
-        val not: Boolean = false
-    ) : DeferredSubqueryExpression()
-    data class QuantifiedComparison(
-        val expression: Expression,
-        val operator: SqlOperator,
-        val quantifier: SubqueryExpression.Quantifier,
-        val query: SelectQueryRef
-    ) : DeferredSubqueryExpression()
-}
-```
-
-最终在 outer query 的 `toStatement` / statement build 阶段统一 materialize：
-
-- 统一分配 table alias。
-- 统一收集参数。
-- 统一处理相关子查询中的外层字段引用。
-- 统一决定内外层 SQL 分层。
-
-当前落地情况：
-
-- 已有 `QueryMaterializeContext`、`SelectQueryRef`、`KSelectableQueryRef`。
-- 已有 `DeferredSubqueryExpression.Scalar` / `Exists` / `In` / `QuantifiedComparison`。
-- `KSelectableQueryRef.materialize` 延迟调用 `query.toStatement(context.wrapper, context.parameterValues)`，可透传参数 map。
-- 已新增 internal deferred subquery builders，避免 helper 立即 render 或绑定参数。
-- select item scalar、condition subquery、order-by scalar、set/upsert assignment、insert-select/CTAS source 已经不同程度消费这套 query ref。
-
-剩余工作：
-
-- 外层 alias 分配、相关子查询外层字段引用协调、自动分层决策尚未完整落地。
-- 用户侧 DSL/compiler 已有多条底层竖切，但还没有覆盖 derived join、真实 Context alias 字段、窗口函数等最终 spec 场景。
-
-验收：
-
-- helper 不立即 render 或绑定参数。
-- 相关子查询可以安全引用外层 query 字段。
-- 最终 materialize 后仍能落到已有 `SubqueryExpression.*` / `SpecialExpression.InSubqueryExpression` AST。
-
-## 任务 4（84%）：补 deferred subquery lowering pass（部分完成）
-
-renderer 应继续只吃 concrete AST，不直接认识 deferred node。所有 `DeferredSubqueryExpression` 必须在 renderer 前统一 lower。
-
-lowering 目标：
-
-- `DeferredSubqueryExpression.Scalar` -> `SubqueryExpression.ScalarSubquery`
-- `DeferredSubqueryExpression.Exists` -> `SubqueryExpression.ExistsExpression`
-- `DeferredSubqueryExpression.In` -> `SpecialExpression.InSubqueryExpression`
-- `DeferredSubqueryExpression.QuantifiedComparison` -> `SubqueryExpression.QuantifiedComparison`
-
-lowering pass 负责：
-
-- 调用 `SelectQueryRef.materialize(context)`。
-- 收集并合并子查询参数。
-- 分配或传递相关子查询需要的外层上下文。
-- 在 materialize 之后执行公共子查询校验。
-
-当前落地情况：
-
-- `SubqueryLowering.lower(statement: Statement)` 已覆盖 `SelectStatement`、`UpdateStatement`、`DeleteStatement`、`InsertStatement`、`UnionStatement` 和 DDL。
-- `SubqueryLowering.lower(select)` 已覆盖 select/from/where/groupBy/having/orderBy。
-- `lowerExpression` 已能 lower scalar、exists、in、quantified comparison。
-- scalar lowering 会调用 `SubqueryValidator.validateScalar`。
-- `AbstractSqlRenderer.renderExpression` 遇到 deferred node 会报错，保持 renderer 不直接消费 deferred。
-- `AbstractSqlRenderer.render(statement)` 会在渲染前统一执行 lowering。
-
-剩余工作：
-
-- 参数合并、外层上下文传递、相关子查询 alias 协调仍未完整。
-- 需要确认所有非 renderer 的 statement 消费入口也不会绕过 lowering。
-
-验收：
-
-- renderer 不需要新增 deferred expression 分支。
-- concrete AST 与现有 renderer 兼容。
-- delayed query ref 在 lowering 前不会冻结参数或 wrapper。
-
-## 任务 5（74%）：前移 alias registry 与字段来源 metadata（部分完成）
-
-自动分层不能等到最后才猜。select item 生成时就需要记录字段名和来源。
-
-建议在 `SelectStatement` 或 builder 上维护 alias registry：
-
-```kotlin
-data class SelectAliasInfo(
-    val outputName: String,
-    val expression: Expression,
-    val scope: ExpressionScope,
-    val sourceField: Field? = null
-)
-
-enum class ExpressionScope {
-    SOURCE,
-    SELECTED,
-    AGGREGATE,
-    WINDOW,
-    UNKNOWN
-}
-```
-
-规则：
-
-- 普通 source 字段：`SOURCE`。
-- `.as_("xxx")` 的计算表达式或标量子查询：`SELECTED`。
-- 聚合表达式 alias：`AGGREGATE`。
-- 窗口函数 alias：`WINDOW`。
-- 无法判断来源：`UNKNOWN`，需要保守处理或报错。
-
-Context 字段解析时必须能查询 alias registry，以便把条件拆到 inner where / outer where / inner having / outer filter。
-
-当前落地情况：
-
-- `SelectItem.kt` 已新增 `SelectItemAliasMetadata` 和 `SelectItemSourceScope`，select item 可推导输出 alias/source metadata。
-- `SelectStatement.kt` 已新增 `aliasRegistry`、`selectItemMetadata()`、`findSelectOutput()`，开始承载 select item 输出名与来源查询。
-- `SelectStatementDerivation.kt` 的 derived wrapper 投影输出名已优先使用 metadata。
-- `SelectClause.kt` 的 `fieldsToSelectItems` 已同步记录普通字段、字段 alias、`FunctionField`、无 alias expression 的 metadata。
-- 函数 select item 的 scope 不再在 `SelectClause` 或 `SelectItem` 中按函数名写死；`FunctionManager.getSelectItemScope()` 会从已注册的 `FunctionBuilder.selectItemScope()` 动态获取，内置聚合 builder 返回 `AGGREGATE`，自定义 builder 可返回 `WINDOW` / `SELECTED` 等 scope。
-- 相关 `SelectClauseAstTest` / `SubqueryRendererTest` 已通过。
-
-剩余工作：
-
-- 补齐 registry 覆盖面，确认所有 select item 生成路径都登记输出名、表达式、来源 scope、source field。
-- 明确 `SelectItemSourceScope` 与任务 10 所需 `SOURCE` / `SELECTED` / `AGGREGATE` / `WINDOW` / `UNKNOWN` 分层语义的映射。
-- 让 Context 字段解析和自动分层使用 registry，而不是事后猜测。
-- 补更多 alias/source metadata 的 builder 与派生表场景测试。
-
-验收：
-
-- select item 产生字段名时同步登记来源。
-- 基础字段 alias 在 `where` / `having` / `orderBy` 中已能通过 Context 和 alias metadata 被识别；函数/聚合/window/scalar subquery alias 仍需补齐。
-- 没有 alias 的 expression select item 如需被 Context 引用，必须报错或生成稳定内部 alias。
-
-## 任务 6（65%）：支持 select item 标量子查询（部分完成）
-
-目标语法最终形态：
-
-```kotlin
-User()
-    .select { u ->
-        [
-            u.id,
-            Order()
-                .select { it.amount }
-                .where { it.userId == u.id }
-                .orderBy { it.createTime.desc() }
-                .limit(1)
-                .as_("lastOrderAmount")
-        ]
-    }
-```
-
-core 侧要能表达为：
-
-```kotlin
-SelectItem.ExpressionSelectItem(
-    expression = DeferredSubqueryExpression.Scalar(KSelectableQueryRef(orderSelect)),
-    alias = "lastOrderAmount"
-)
-```
-
-必须确认并实现：
-
-- `KSelectable` 可以作为 scalar select item 输入。
-- selectable / scalar subquery expression 必须可 alias 化，支持 `.as_("xxx")` 对应 spec 中的 `lastOrderAmount`。
-- `.as_("xxx")` 生成 `Selected` 字段，也生成 `Context` 字段。
-- 没有 alias 的 scalar select item 不适合作为 Context 字段引用，应报错或由 builder 生成稳定内部 alias。
-
-当前落地情况：
-
-- `SelectItem.ExpressionSelectItem(SubqueryExpression.ScalarSubquery(...), alias)` 可由 renderer 渲染。
-- `DeferredSubqueryExpression.Scalar` 可 lower 成 `ScalarSubquery`。
-- `SubqueryRendererTest` 覆盖了 select list scalar subquery 和 deferred scalar lowering。
-- `KTableForSelect` 已新增保序 projection item 通道，字段和 scalar subquery select item 可以按用户 `[]` 顺序进入 `SelectClause.statement.selectList`。
-- compiler `SelectTransformer` 已能识别 `KSelectable.as_("alias")`，并注入 `addScalarSubquery(query, alias)`，官方 box `select/scalarSubquerySelectItem.kt` 覆盖该底层转换契约。
-- core 普通测试 `MysqlSubqueryDslTest` 已覆盖 `select { [it.id, query.limit(1).as_("alias"), it.name] }` 的 SQL/参数输出。
-
-剩余工作：
-
-- `.as_("xxx")` 到 `Selected` / `Context` 自动投影字段的完整承接未完成。
-- scalar select item 的 Context 引用、自动分层和 FIR projection 类型推导仍未完整完成。
-- 当前只开放 aliased `KSelectable` 作为 select item；未 alias 的 scalar subquery 仍应保持拒绝或不可引用，避免输出名不稳定。
-
-验收：
-
-- AST renderer 可以渲染 select list 中的 scalar subquery。
-- 支持嵌套 scalar subquery。
-- alias registry 记录 `lastOrderAmount`。
-- 用户 DSL `select { [it.id, query.limit(1).as_("lastOrderAmount")] }` 可 build 出正确 SQL/参数。
-
-## 任务 7（98%）：补 `IN` / `NOT IN` 子查询构造入口（基本完成）
-
-已有：
-
-```kotlin
-SpecialExpression.InSubqueryExpression(
-    value: Expression,
-    subquery: SelectStatement,
-    not: Boolean = false
-)
-```
-
-需要补 helper：
-
-```kotlin
-internal fun Expression.toInSubqueryExpression(query: SelectQueryRef): DeferredSubqueryExpression.In
-
-internal fun Expression.toNotInSubqueryExpression(query: SelectQueryRef): DeferredSubqueryExpression.In
-```
-
-实际结构应归入任务 3 的延迟模型：
-
-```kotlin
-DeferredSubqueryExpression.In(
-    value = expression,
-    query = query,
-    not = false
-)
-```
-
-后续 compiler/DSL 再把：
-
-```kotlin
-it.id in Order().select { it.userId }
-it.id !in Order().select { it.userId }
-```
-
-转成上述 AST。
-
-这些 helper 只能作为 internal/core builder 使用，不能放到用户可见 DSL extension 包中，避免和 spec 中“不引入 `inSubquery` 用户 API”的结论冲突。
-
-当前落地情况：
-
-- `SpecialExpression.InSubqueryExpression` 已存在。
-- `DeferredSubqueryExpression.In` 已存在并可 lower 到 `InSubqueryExpression`。
-- 已新增 internal `Expression.toInSubqueryExpression(...)` / `toNotInSubqueryExpression(...)` 及 `KSelectable` / `SelectQueryRef` 变体 helper。
-- `CriteriaToAstConverter` 已能承接结构化 query IN / NOT IN。
-- compiler plugin 已支持 `field in KSelectable` / `field !in KSelectable`。
-- compiler official box 只覆盖底层转换契约：`field in/!in SelectClause` 生成 `CriteriaSubqueryValue.In`，并携带 `KSelectableQueryRef`，不在 compiler 模块断言 SQL。
-- compiler official box 已覆盖 `[field1, field2] in/!in SelectClause` 生成 `CriteriaSubqueryValue.In(value = List<Field>, not = ...)`。
-- core 普通测试覆盖 `select().where { field in/!in SelectClause }`、`update().where { field in/!in SelectClause }` 和 `delete().where { field in/!in SelectClause }` 的 `build()` SQL/参数输出。
-- core 普通测试覆盖 `select/update/delete.where { [field1, field2] in/!in SelectClause }` 的 `build()` SQL/参数输出。
-- core 普通测试覆盖逻辑删除转 `UPDATE` 分支中的 `delete().where { field in SelectClause }`，确认子查询参数不会在手写 update 渲染路径丢失。
-- `DeleteClause.filterEmptyCriteria` 已保留所有 `CriteriaSubqueryValue` fieldless criteria，避免普通 delete 丢弃 tuple IN、EXISTS、后续 scalar/quantified 等结构化子查询条件。
-- `SelectClause.renderStatement`、`UpdateClause.renderStatement`、`DeleteClause.renderStatement` 和 `DeleteClause` 逻辑删除 update 分支已在渲染前用同一份 parameter map lower deferred subquery，子查询 where 参数能透传到外层 query/action task。
-- `SqlRendererTest.testInSubquery` 和 `SubqueryRendererTest` 覆盖了部分 IN subquery 渲染。
-- `SubqueryValidator.validateInSubquery` 已在 lowering 阶段校验左侧表达式列数与子查询 select item 数量一致。
-- `SubqueryRendererTest` 已覆盖 scalar/tuple IN 子查询列数不匹配错误。
-- `MysqlSubqueryDslTest` 已覆盖用户 DSL tuple IN 子查询列数不匹配错误。
-
-剩余工作：
-
-- 更多错误形态诊断仍可增强，例如错误信息关联 DSL/source 位置。
-
-验收：
-
-- 单列 `IN (SELECT ...)` / `NOT IN (SELECT ...)` renderer 单测通过。
-- row-value tuple 左右列数不匹配时报错；普通单列 IN 右侧多列也会报错。
-
-## 任务 8（100%）：补 row-value tuple 表达式（已完成）
-
-目标支持：
-
-```kotlin
-[it.userId, it.createTime] in Order()
-    .select { [it.userId, f.max(it.createTime)] }
-    .groupBy { it.userId }
-```
-
-core AST 建议新增：
-
-```kotlin
-data class RowValueExpression(
-    val values: List<Expression>
-) : Expression
-```
-
-renderer 渲染为：
-
-```sql
-(col1, col2)
-```
-
-注意：
-
-- 单元素 tuple 不允许；单列应使用普通 `field in query`。
-- row-value tuple 右侧 query 的 select item 数量必须匹配。
-- 数量校验可以先在 builder/helper 层做，compiler 后续补类型和诊断。
-
-当前落地情况：
-
-- `RowValueExpression` 已存在并要求至少两个 expression。
-- `AbstractSqlRenderer` 已支持 row value 渲染。
-- `SubqueryLowering` 已递归 lower row value 内部表达式。
-- `SubqueryRendererTest` 覆盖 row-value tuple IN 和单元素拒绝。
-- compiler/core 已支持用户侧 `[field1, field2] in query` 的最小竖切：compiler handoff 为 `List<Field>`，core converter 生成 `RowValueExpression`。
-- `SubqueryValidator.validateInSubquery` 已在 lowering 阶段统一校验左侧 tuple 元素数量与右侧 select item 数量。
-- `SubqueryRendererTest` 和 `MysqlSubqueryDslTest` 已覆盖列数不匹配错误。
-
-剩余工作：
-
-- 类型兼容校验和更友好的 source 位置诊断仍可增强。
-
-验收：
-
-- `(a, b) IN (SELECT x, y FROM ...)` 渲染通过。
-- 单元素 row-value tuple helper 报错或拒绝创建。
-- 左右列数不匹配会在 lowering/build 阶段报错。
-
-## 任务 9（55%）：派生表包装与外层过滤（部分完成）
-
-目标让 core 能表达：
-
-```sql
-SELECT q.id, q.name, q.lastOrderAmount
-FROM (
-    SELECT u.id, u.name, (...) AS lastOrderAmount
-    FROM user u
-    WHERE u.status = ?
-) q
-WHERE q.lastOrderAmount > ?
-```
-
-需要补工具：
-
-```kotlin
-fun SelectStatement.asDerivedTable(alias: String): SubqueryTable
-
-fun SelectStatement.wrapWithOuterFilter(
-    alias: String,
-    outerWhere: Expression? = null,
-    outerHaving: Expression? = null,
-    outerOrderBy: MutableList<OrderByItem>? = null
-): SelectStatement
-```
-
-还需要补外层 select list 生成：
-
-```kotlin
-fun SelectStatement.projectFromAlias(alias: String): MutableList<SelectItem>
-```
-
-字段名规则：
-
-- `ColumnSelectItem(alias = null)`：外层字段名取原 column name。
-- `ColumnSelectItem(alias = "x")`：外层字段名取 `x`。
-- `ExpressionSelectItem(alias = "x")`：外层字段名取 `x`。
-- 没有 alias 的 expression select item 不适合作为外层字段引用，应报错或由 builder 生成内部 alias。
-
-当前落地情况：
-
-- 已有 `SelectStatement.asDerivedTable(alias)`。
-- 已有 `SelectStatement.projectFromAlias(alias)`。
-- 已有 `SelectStatement.wrapWithOuterFilter(...)`。
-- 无 alias 的 expression select item 会报错； all-columns select item 不展开时会报错。
-- `SubqueryRendererTest` 覆盖外层 where/orderBy 渲染。
-- `SelectConditionLayering.applyAutomaticLayering(...)` 已能复用 wrapper 将 selected/aggregate/window alias 条件和排序移到外层。
-
-剩余工作：
-
-- `SelectClause.toStatement()` 已接入自动分层；还需要补齐复杂 builder 组合、having/window/orderBy 的用户 DSL 竖切。
-- 方言矩阵已覆盖主要 CTAS / insert-select / subquery order/update/delete / expression upsert 分支；更多 builder 组合仍需补。
-- 外层支撑投影和隐藏字段策略尚未实现。
-
-验收：
-
-- 可以把任意 `SelectStatement` 包成派生表外层 select。
-- outer where / outer order by 能正常渲染。
-- MySQL、PostgreSQL、SQLite、SQL Server、Oracle renderer 都不依赖同层 select alias。
-
-## 任务 10（65%）：条件来源与自动分层执行（部分完成）
-
-任务 5 已部分前移 alias registry 和字段来源 metadata。本任务负责把 metadata 用到 statement build 中，形成实际分层。
-
-第一版分层规则：
-
-- `SOURCE` 条件可以下推到 inner where / inner having。
-- `SELECTED`、`AGGREGATE`、`WINDOW` 条件默认进入 outer where。
-- `UNKNOWN` 先保守留在原位置或要求调用方明确来源。
-
-当前落地情况：
-
-- 已新增 `SelectConditionLayering`，可基于 `SelectStatement.aliasRegistry` / metadata 分析字段来源。
-- `SOURCE` 条件可保留在 inner where；`SELECTED`、`AGGREGATE`、`WINDOW` alias 条件和排序可包装为 outer query。
-- `SubqueryRendererTest` 已覆盖 selected/aggregate alias 自动分层示例。
-- `SelectClause.toStatement()` 已默认调用 `applyAutomaticLayering("q")`；基础 `select alias -> where` 的 compiler 竖切和 core SQL 分层测试已通过。
-
-剩余工作：
-
-- 补齐复杂条件树、窗口函数、隐藏支撑投影的覆盖。
-- 继续评估默认分层对分页、锁、级联、join/union/derived 等入口的影响。
-
-验收：
-
-- builder 能把一组条件拆成 inner where / outer where。
-- `having` 中引用聚合 alias 时不依赖数据库同层 alias 支持。
-
-## 任务 11（78%）：补标量子查询公共校验（部分完成）
-
-标量子查询的规则是全局规则，不只属于 `UPDATE SET`：
-
-- select item 标量子查询；
-- where / having 中的 scalar comparison；
-- update set scalar subquery；
-- upsert set scalar subquery；
-- insert value scalar subquery。
-
-公共校验规则：
-
-- 标量子查询必须只选择一列。
-- 聚合且无 `groupBy` 的标量子查询可以不写 `.limit(1)`。
-- 其他非聚合标量子查询必须显式 `.limit(1)`。
-- 唯一键证明可以后续增强，不作为第一版主规则。
-- `limit(1) as T` 只是类型提示，不改变 SQL，也不能绕过单列/单行校验。
-
-当前落地情况：
-
-- 已有 `SubqueryValidator.validateScalar`。
-- 已校验 select item 数量必须为 1。
-- 聚合且无 groupBy 可免 `limit(1)`；其他非聚合要求 `limit(1)`。
-- `SubqueryLowering` 对 deferred scalar 和 concrete scalar subquery 都会调用公共校验。
-- 已有 `SubqueryValidator.validateInSubquery`。
-- `SubqueryLowering` 对 deferred/concrete IN subquery 都会校验左右列数。
-
-剩余工作：
-
-- 错误报告目前是 `require` 异常文本，尚不能指向 DSL/source 对应 query expression。
-- update/upsert/insert 等 scalar 使用场景还需继续核验是否都经过统一 lowering/validation。
-- 唯一键证明和类型提示规则尚未增强。
-
-验收：
-
-- 所有 scalar subquery lowering 统一经过同一套校验。
-- 所有 IN subquery lowering 统一经过左右列数校验。
-- 错误报告位置能指向对应 query expression。
-- 不同使用场景不会各自复制一套 limit 规则。
-
-## 任务 12（90%）：扩展 `CriteriaToAstConverter`（部分完成）
-
-后续条件表达式需要能承载：
-
-- scalar subquery RHS；
-- `exists(query)`；
-- `field in query`；
-- `field !in query`；
-- quantified comparison：`any(query)` / `some(query)` / `all(query)`；
-- row-value tuple `IN`。
-
-core 侧需要为 converter 预留并补充对应 branch。compiler/plugin 后续负责把 DSL 表达式转成这些 Criteria/AST 输入。
-
-当前落地情况：
-
-- `CriteriaToAstConverter` 能处理普通比较、普通集合 `IN`、`BETWEEN`、`LIKE`、`IS NULL`、raw SQL 等。
-- 已新增内部 `CriteriaSubqueryValue`，可承接 scalar RHS、exists、query IN / NOT IN、row tuple IN、quantified comparison。
-- `CriteriaToAstConverter` 已能把 tuple IN 的 `List<Field>` handoff 转成 `RowValueExpression`。
-- `ConditionType.SQL` 仍可透传已有 `Expression`，也可承接 structured exists。
-- compiler official box 已覆盖 `field in/!in SelectClause` 生成 `CriteriaSubqueryValue.In(KSelectableQueryRef)`。
-- compiler official box 已覆盖 `[field1, field2] in/!in SelectClause` 生成 `CriteriaSubqueryValue.In(value = List<Field>, not = ...)`。
-- compiler official box 已覆盖 `exists(query)` / `!exists(query)` 生成 `CriteriaSubqueryValue.Exists(KSelectableQueryRef)`，并正确记录 `not` 标记。
-- compiler official box 已覆盖 `field > SelectClause.limit(1)` 生成 `CriteriaSubqueryValue.Scalar(KSelectableQueryRef)`。
-- compiler official box 已覆盖 `field > any(query)` / `some(query)` / `all(query)` 生成 `CriteriaSubqueryValue.QuantifiedComparison(KSelectableQueryRef, quantifier)`。
-
-剩余工作：
-
-- 保持现有普通条件转换不回归。
-- 补更多比较操作符和错误形态诊断的专项测试。
-
-验收：
-
-- converter 能处理已有普通条件，不发生回归。
-- 新增 subquery 条件 AST 能被 converter 或 helper 生成。
-
-## 任务 13（72%）：补 `ORDER BY` 子查询和表达式排序承接（部分完成）
-
-覆盖 spec 场景 8。
-
-core 需要支持：
-
-- `orderBy` receiver 使用 `Context`。
-- `orderBy` 可以引用 source 字段。
-- `orderBy` 可以引用 selected alias / 计算字段 / 聚合 alias / 窗口 alias。
-- `orderBy` 可以承接标量子查询或函数表达式。
-- 当目标数据库不能稳定在同层排序某个投影字段时，builder 可以复用派生表 wrapper。
-
-当前落地情况：
-
-- AST 层 `OrderByItem.expression` 可承载任意 `Expression`，`SubqueryLowering` 也会 lower orderBy item。
-- `SelectStatement.wrapWithOuterFilter` 已支持传入 `outerOrderBy`。
-- `SubqueryRendererTest` 已覆盖 order by scalar subquery 和 selected alias。
-- `SelectConditionLayering` 可把 selected/aggregate/window alias 排序移动到 outer order by。
-- `KTableForSort` 已新增 expression/scalar subquery sort item 承载，保留 `sortedFields` 兼容旧字段排序路径。
-- `SelectClause.orderBy` 已能把 expression/scalar subquery sort item 转成 `OrderByItem(Expression, SortType)`。
-- compiler official box `sort/scalarSubquerySortItem.kt` 已覆盖 `KSelectable.desc()` 进入 expression sort item 的底层 handoff。
-- core 普通测试 `MysqlSubqueryDslTest` 已覆盖 `orderBy { addSortSubquery(query.limit(1), DESC) }` 的 SQL/参数输出。
-
-剩余工作：
-
-- 基础 selected alias 的用户侧 builder/compiler 接入已覆盖。
-- 聚合 alias、窗口 alias 和 scalar subquery alias 的用户侧 builder/compiler 接入仍不完整。
-- spec 推荐的 `orderBy { it.lastOrderAmount.desc() }` / `orderBy { it.rn.asc() }` 依赖这些 alias 进入真实 Context class，目前还不能完整实现。
-- 计算字段排序还需要和 operator/function expression handoff 统一。
-- 需要结合自动分层决定同层或外层排序。
-
-验收：
-
-- `ORDER BY q.alias DESC` 外层排序可渲染。
-- 标量子查询 order item 可渲染。
-- source 字段排序不要求该字段进入最终 `Selected`，但如果需要外层排序，builder 必须保证外层可引用字段存在或生成内部支撑投影。
-
-## 任务 14（72%）：补 `UPDATE SET` 标量子查询承接（部分完成）
-
-覆盖 spec 场景 9。
-
-core 需要支持：
-
-- `UpdateStatement` 的 assignment value 可以是 scalar subquery expression。
-- scalar subquery 仍使用延迟 query ref，最终在 update statement build 阶段 materialize。
-- 右侧 query 可以引用被更新行的字段，形成相关 update。
-- 非聚合 scalar subquery 的 `.limit(1)` 校验复用任务 11 的公共规则。
-
-当前落地情况：
-
-- AST `Assignment.value` 是 `Expression`，renderer 可渲染表达式值，这提供了底层承载可能。
-- `SubqueryLowering` 已 lower update assignments。
-- `SubqueryRendererTest` 已覆盖 `UPDATE ... SET col = (SELECT ... LIMIT 1)`。
-- `UpdateClause.set {}` / `patch(...)` 已可把 `KSelectable` / `SelectQueryRef` / `Expression` RHS 转成 builder expression，用于 `UPDATE SET col = (SELECT ...)`。
-- core 普通测试已覆盖 `update().patch("field" to selectable.limit(1)).where { ... }.build()` 和 `.set { setValue(field, selectable.limit(1)) }` 的 SQL/参数输出。
-
-剩余工作：
-
-- 相关 update 外层字段引用未处理。
-- compiler plugin 低层 set box 已覆盖 `setValue(field, selectable)` 会把 `KSelectable` RHS 原样收集到 `fieldParamMap`。
-- spec 最终推荐的 `set { u.field = selectable }` 需要让赋值 RHS 在 FIR 可类型检查；当前仍需插件介入解决 `field` 属性真实 Kotlin 类型与 `KSelectable` RHS 类型不匹配的问题。
-
-验收：
-
-- `SET col = (SELECT ... LIMIT 1)` 可渲染。
-- MySQL、PostgreSQL、SQLite、SQL Server、Oracle 方言不暴露给用户 DSL。
-
-## 任务 15（92%）：补 `UPDATE` / `DELETE WHERE` 子查询承接（基本完成）
-
-覆盖 spec 场景 10。
-
-core 需要在 update/delete 条件中复用：
-
-- `IN` / `NOT IN` 子查询；
-- `EXISTS` / `!EXISTS`；
-- scalar comparison；
-- quantified comparison；
-- row-value tuple `IN`。
-
-当前落地情况：
-
-- select 侧已有部分 subquery AST/render/lowering 地基。
-- update/delete 条件可通过 AST 表达 exists/in/scalar，并由 renderer 前 lowering 处理。
-- `CriteriaToAstConverter` 已支持结构化 subquery 条件输入。
-- `SubqueryRendererTest` 已覆盖 update/delete where subquery 渲染。
-- `field in query` / `field !in query` 的 compiler condition box 已覆盖底层 Criteria 转换；core DSL 测试已覆盖 update/delete where 的 SQL/参数输出，包含普通 delete 和逻辑删除转 update 分支。
-- `exists(query)` / `!exists(query)` 的 compiler condition box 已覆盖底层 Criteria 转换；core DSL 测试已覆盖 update/delete where 的 SQL/参数输出。
-- tuple IN/NOT IN 的 compiler handoff 已通，core DSL 已覆盖 select/update/delete where tuple IN/NOT IN 的 SQL/参数。
-- scalar comparison 的 compiler handoff 已通，core DSL 已覆盖 update/delete where `field > query.limit(1)` 的 SQL/参数。
-- quantified comparison 的 compiler handoff 已通，core DSL 已覆盖 update/delete where `field > any(query)` / `field <= all(query)` 的 SQL/参数。
-- `DeleteClause.filterEmptyCriteria` 已保留所有 `CriteriaSubqueryValue` fieldless criteria，普通 delete 不再误删 row tuple IN/NOT IN 条件。
-
-剩余工作：
-
-- `UpdateClause` / `DeleteClause` 的 query ref、deferred lowering 已有基本竖切，相关 source 字段上下文仍未完整处理。
-- 仍需补更多比较操作符、相关 source 字段场景和错误形态诊断。
-
-验收：
-
-- `UPDATE ... WHERE EXISTS (...)` 可渲染。
-- `DELETE ... WHERE id IN (SELECT ...)` 可渲染。
-- 条件子查询可以引用 update/delete 的 source 字段。
-
-## 任务 16（88%）：补 `INSERT SELECT`（部分完成）
-
-覆盖 spec 场景 11。
-
-core 需要提供 `KSelectable` 作为 insert source 的承接能力：
-
-```kotlin
-KSelectable<SourceProjection>.insert<Target> { ... }
-```
-
-核心规则：
-
-- `insert<Target>` 的 lambda receiver 是源 query 的 `Selected`。
-- 插入值按目标表可插入字段顺序映射。
-- `null`、常量、函数表达式、源投影字段、标量子查询都可以作为插入值。
-- 源 query 可以是普通 select、join select、union 或派生查询；普通 select / join select 使用 `KSelectable`，union 使用 `UnionClause`。
-
-当前落地情况：
-
-- `InsertStatement` 已新增 `source: Statement?` 承载 `INSERT ... SELECT`，renderer/lowering 支持 `SelectStatement` 与 `UnionStatement`。
-- `AbstractSqlRenderer.renderInsertStatement` 已支持 source query。
-- `SubqueryLowering` 已 lower insert source。
-- `SubqueryRendererTest` 已覆盖 `INSERT INTO ... SELECT ...`。
-- 已新增 `KSelectable<*>.insert<Target>()` core builder 入口，生成 `InsertStatement.source`。
-- 已新增 `UnionClause.insert<Target>()` core builder 入口，生成 union source 的 `InsertStatement.source`。
-- `InsertClause` materialize source query 时会复用外层 parameter map，source `where` 参数可进入最终 action task。
-- core 普通测试已覆盖普通 select source、join source、union source 的 `insert<Target>().build()` SQL/参数输出，并验证 union 分支参数重命名。
-- `insert<Target> { [...] }` 的显式 values 会按目标可插入字段顺序重写 source query 的 select list，已覆盖源字段、`NULL`、常量参数、函数表达式和标量子查询参数输出。
-- 默认 `insert<Target>()` 会校验 source select item 数量与目标可插入字段数量一致，避免生成必然失败的 `INSERT ... SELECT`。
-
-剩余工作：
-
-- 补目标字段类型兼容校验。
-- `insert<Target> { ... }` lambda 的最终 receiver 应是源 query 的 `Selected`；当前 core builder 可重写 select list，但真实自动投影/Context 接入后还要补 compiler 侧用户语法测试。
-
-验收：
-
-- `INSERT INTO target (...) SELECT ...` 可由 AST 表达并渲染。
-- `INSERT INTO target (...) (SELECT ...) UNION (SELECT ...)` 可由 AST 表达并渲染。
-- 源 query 如因投影过滤需要派生表，insert source 能消费该派生结果。
-
-## 任务 17（76%）：补 `UPSERT` 子查询表达式（部分完成）
-
-覆盖 spec 场景 12。
-
-core 需要支持 upsert conflict update 阶段的 assignment value 为 scalar subquery：
-
-- `upsert().set { field = KSelectable }` 的 core 表达能力。
-- 子查询可以引用 upsert target/source 字段。
-- 方言差异由现有 upsert renderer 或 support 层处理。
-
-当前落地情况：
-
-- `UpsertClause` 当前仍围绕字段选择、参数和现有 insert/update 任务构建。
-- `InsertStatement` 已新增 `conflictAssignments: List<Assignment>` 承载 expression-based upsert assignment。
-- `AbstractSqlRenderer.renderConflictAssignments` 已支持 MySQL、PostgreSQL、SQLite 的基础渲染。
-- `SubqueryRendererTest` 已覆盖 MySQL upsert scalar subquery assignment。
-- `UpsertClause.set {}` 已新增与 `UpdateClause.set {}` 对齐的 ToSet 入口，能把 `KSelectable` / `Expression` RHS 收集为 conflict assignment。
-- `UpsertClause.patch(...)` 已可收集 `KSelectable` / `Expression` conflict assignment，并在 expression assignment 场景走 AST upsert 渲染。
-- expression upsert 分支已在渲染前用共享 `QueryMaterializeContext` lower statement，scalar subquery 参数能进入最终 action task。
-- core 普通测试已覆盖 MySQL `upsert().patch("field" to selectable.limit(1)).onConflict().build()` 和 `.set { setValue(field, selectable.limit(1)) }` 的 SQL/参数输出。
-- 非 `onConflict()` 的先查后改 fallback upsert 已保留 `patch` 中的 `KSelectable` / `Expression` RHS，并在更新分支生成 scalar subquery assignment。
-- MSSQL / Oracle native expression upsert 当前明确不支持并抛错；这不影响既有 fallback upsert 机制。
-
-剩余工作：
-
-- 补 PostgreSQL/SQLite builder 级测试，并为 MSSQL/Oracle 单独设计或保持明确不支持。
-- compiler plugin 低层 set box 已覆盖 `setValue(field, selectable)` 会把 `KSelectable` RHS 原样收集到 `fieldParamMap`。
-- 最终 `it.field = selectable` 语法仍需 FIR/类型系统承接，和 update set 场景共享同一个问题。
-
-验收：
-
-- PostgreSQL `ON CONFLICT DO UPDATE SET col = (SELECT ...)` 可表达。
-- MySQL `ON DUPLICATE KEY UPDATE col = (SELECT ...)` 可表达。
-- 不引入用户可见 `setSubquery(...)`。
-
-## 任务 18（90%）：补 `CREATE TABLE AS SELECT`（部分完成）
-
-覆盖 spec 场景 13。
-
-core 需要扩展现有 DDL 入口，让 `createTable(target, query)` 可表达 CTAS：
-
-```kotlin
-dataSource.table.createTable(target)
-dataSource.table.createTable(target, query)
-```
-
-核心规则：
-
-- 第一个参数是目标 KPojo。
-- 第二个参数是 query source：普通 select / join select 使用 `KSelectable`，union 使用 `UnionClause`。
-- 源 query 的最终 `Selected` 作为 CTAS select list。
-- 是否完整保留 schema 取决于方言；如需完整 schema，推荐 `createTable(target)` + `query.insert<Target> { ... }`。
-
-当前落地情况：
-
-- `TableOperation.createTable` / `buildCreateTableStatement` 当前是普通 schema create。
-- `DdlStatement.CreateTableAsSelectStatement` 已新增，携带 `SelectStatement` source。
-- `AbstractSqlRenderer` 已提供默认 CTAS 渲染。
-- `SubqueryLowering` 已 lower CTAS query。
-- `SubqueryRendererTest` 已覆盖 MySQL 风格 CTAS。
-- `TableOperation.createTable(target, query)` 和 `buildCreateTableAsSelectStatement(target, query)` 已新增。
-- `buildCreateTableAsSelectTask(target, query)` 已新增，CTAS source query 使用共享 parameter map materialize，并把 source `where` 参数合入最终 action task。
-- core 普通测试已覆盖 MySQL 普通 select source 的 `CREATE TABLE ... AS SELECT ... WHERE ...` SQL/参数输出。
-- core 普通测试已覆盖 MySQL join source 的 `CREATE TABLE ... AS SELECT ... LEFT JOIN ... WHERE ...` SQL/参数输出。
-- core 普通测试已覆盖 MySQL union source 的 `CREATE TABLE ... AS (SELECT ...) UNION (SELECT ...)` SQL/参数输出，并验证 union 分支参数重命名。
-- `SelectFrom` 实现了 `KSelectable`，因此 join source 可直接作为 CTAS source 消费。
-- `CreateTableAsSelectStatement.query` 已放宽为 query statement，renderer/lowering 支持 `SelectStatement` 与 `UnionStatement`；`TableOperation` 已提供 `UnionClause` CTAS builder 入口。
-- MSSQL 使用 `SELECT ... INTO [dbo].[table]`，Oracle 使用 `CREATE TABLE NAME AS SELECT ...` 且拒绝 `IF NOT EXISTS`。
-
-剩余工作：
-
-- 补 schema 保留策略说明和更多 builder 测试。
-- SQL Server 的 `SELECT INTO` CTAS 暂只支持单个 `SelectStatement` source；union source 需要单独设计或保持明确不支持。
-- Oracle `ifNotExists = false` 的用户入口或调用策略需要在上层明确。
-
-验收：
-
-- `CREATE TABLE target AS SELECT ...` 可渲染。
-- 普通 select、join select、union 等 query source 都可作为 CTAS source。
-
-## 任务 19（97%）：补 core AST / renderer 测试（部分完成）
-
-先用 core 单测验证，不等 compiler plugin。
-
-建议测试：
-
-- scalar subquery in select list；
-- nested scalar subquery；
-- exists；
-- not exists；
-- in subquery；
-- not in subquery；
-- row tuple in subquery；
-- derived table outer where；
-- derived table outer order by；
-- quantified comparison：`ANY` / `SOME` / `ALL`。
-- order by scalar subquery / selected alias；
-- update set scalar subquery；
-- update/delete where subquery；
-- insert select；
-- upsert scalar subquery；
-- create table as select。
-
-五种数据库 renderer 至少覆盖：
-
-- MySQL
-- PostgreSQL
-- SQLite
-- SQL Server
-- Oracle
-
-当前落地情况：
-
-- 已有 `kronos-core/src/test/kotlin/com/kotlinorm/ast/SubqueryRendererTest.kt`。
-- 已覆盖 scalar subquery in select list、nested scalar、exists/not exists、IN/NOT IN、row tuple in subquery、derived table outer where/orderBy、deferred scalar lowering、quantified comparison、order by scalar/alias、criteria converter、automatic layering、update/delete where、update set scalar、insert select、upsert scalar、CTAS。
-- 已补五方言 renderer 矩阵，覆盖 CTAS、insert-select、update/delete/order subquery，以及 MySQL/PostgreSQL/SQLite expression upsert。
-- 不再以零散 builder shape 测试作为完成依据；子查询场景验收应优先使用“用户 DSL -> clause -> SQL/参数”的完整竖切测试。
-- `SqlRendererTest` 中有基础 `InSubqueryExpression` 渲染测试。
-- `MysqlSubqueryDslTest` 已覆盖 `select/update/delete where field in/!in SelectClause`、select/update/delete where tuple IN/NOT IN、update/delete where scalar comparison、update/delete where quantified comparison、逻辑删除转 update 的 IN 子查询、select-list scalar subquery、order-by scalar subquery、`select/update/delete where exists/!exists`、update-set scalar subquery（patch 与 setValue 路径）、insert-select 普通 select / join source / union source、insert-select 显式 values 映射与列数校验、upsert scalar subquery（patch 与 setValue 路径），以及 CTAS 普通 select / join source / union source 的 SQL/参数输出。
-- `FunctionBuildersTest` 已覆盖自定义 `FunctionBuilder` 可通过 `selectItemScope` 动态声明函数 select item scope，避免把聚合/窗口函数识别写死在 select builder 中。
-- 已知 `:kronos-core:test` 已通过。
-
-剩余工作：
-
-- compiler official box 测试目前覆盖了 scalar comparison、`field in query` / `field !in query`、tuple IN/NOT IN、`exists` / `!exists` 的 Criteria 转换契约，`KSelectable.as_` 作为 scalar select item 的收集契约，`KSelectable.desc()` 作为 scalar sort item 的收集契约，以及 `setValue(field, selectable)` 的 KSelectable RHS 收集契约；core 普通测试覆盖了 select/update/delete where、select/update/delete tuple IN/NOT IN、update/delete scalar comparison、select-list scalar subquery、order-by scalar subquery、update/upsert setValue scalar subquery 的 SQL/参数输出。其他 DSL 场景仍需按同样边界补测试。
-- insert-select 字段类型兼容校验、真实 Context 接入后的 builder 行为仍需补测试。
-
-验收：
+| 进度 | 任务 | 状态 | 说明 |
+|------|------|------|------|
+| 0% | 任务 1：旧实现和旧测试清理 | 未开始 | 先删除/改写与新 spec 冲突的正向路径，避免后续任务继续兼容旧目标。 |
+| 15% | 任务 2：查询层类型模型重置 | 需重做 | 当前实现有三泛型地基，但 `where/having` 仍按旧 Context 方向，需要改回 Source。 |
+| 5% | 任务 3：`KPojo.where` 语法糖 | 未开始 | 新 spec 增加的入口，等价 `select().where()`。 |
+| 25% | 任务 4：`KSelectable` 作为下一层 Source | 部分可复用 | derived/lowering 可复用，但类型语义和测试要按新规则重验。 |
+| 10% | 任务 5：alias API 与命名诊断 | 需重做 | `.as_` 正向路径要删除，`.alias` 与强制 alias 诊断要补齐。 |
+| 10% | 任务 6：receiver 签名与 compiler refine | 需重做 | `select/where/groupBy/having/orderBy/queryList` 的类型承载要按新 receiver 表重刷。 |
+| 20% | 任务 7：同层 where/having alias 能力删除 | 需重做 | 旧正向能力变成负向诊断，自动分层不再是用户语义主路径。 |
+| 35% | 任务 8：orderBy Context | 部分可复用 | selected alias 排序地基可复用，但要迁到 `.alias` 并补 Context 冲突诊断。 |
+| 60% | 任务 9：标量子查询 | 部分可复用 | AST/lowering 多数可用，select item alias 规则和 `.limit(1)` 诊断要补。 |
+| 70% | 任务 10：谓词子查询 | 部分可复用 | `IN/EXISTS/ANY/ALL/tuple IN` 地基可用，诊断和新语法验收要补。 |
+| 25% | 任务 11：窗口函数与下一层过滤 | 需重做 | 旧 `select(...rn).where { it.rn }` 目标删除，改为下一层过滤。 |
+| 55% | 任务 12：DML 子查询 | 部分可复用 | update/delete/upsert AST 可复用，最终 typed set 语法和方言验收要补。 |
+| 60% | 任务 13：INSERT SELECT 与 CTAS | 部分可复用 | source query 消费已存在，receiver/类型兼容/方言边界要重验。 |
+| 10% | 任务 14：测试矩阵重建 | 需重做 | core/compiler/integration 的职责边界要重新分配。 |
+
+## 任务 1：旧实现和旧测试清理
+
+目标：
+
+- 先清掉所有与当前 spec 冲突的旧正向路径。
+- 后续实现只面向一个目标：`.alias`、`where/having = Source`、`orderBy = Context`、过滤当前层 `Selected` 必须进入下一层查询。
+- 可复用底层能力可以保留，但不能继续作为“同层 where/having alias 可用”的用户语义。
+
+### 1.1 Compiler 清理
+
+| 子项 | 文件或测试 | 当前问题 | 动作 |
+|------|------------|----------|------|
+| 1.1.1 | `kronos-compiler-plugin/src/main/kotlin/com/kotlinorm/compiler/utils/Constants.kt` | `SelectAliasFunctionName = "as_"` | 改为 `alias`；旧 `as_` 只允许作为 diagnostics 负例。 |
+| 1.1.2 | `KronosProjectionCallRefinementExtension.kt` | `toAliasProjectionField`、`toAliasCallProjectionField`、`recordAliasedExpressionType`、`toAliasLiteralProjectionField` 都围绕 `as_` | 迁移到 `.alias()`；补 `.as_()` 使用错误。 |
+| 1.1.3 | `KronosProjectionCallRefinementExtension.kt` | 注释和模型仍写 Context 用于 `where/having/orderBy` | 改为 Context 仅供同层 `orderBy`；`where/having` 使用 `Source`。 |
+| 1.1.4 | `KronosProjectionCallRefinementExtension.kt` | `mergeContextFields` 对同名字段可能覆盖 | 改为冲突检测；原 Source 字段按原名直接投影放行。 |
+| 1.1.5 | `FieldAnalysis.kt` / `SelectTransformer.kt` | 识别 `as_` 作为 alias；注释仍用旧示例 | 迁移到 `alias`；非直接投影缺 alias 进入 diagnostics。 |
+| 1.1.6 | `KronosProjectionRegistry.kt` / `KronosProjectionIrTransformer.kt` | Context runtime/class 可被旧 where/having 路径使用 | 保留给 `orderBy` 和 derived metadata；不得作为 where/having receiver。 |
+
+需要删除、拆分或迁移的 compiler 正向测试：
+
+| 测试入口 | testData | 动作 |
+|----------|----------|------|
+| `ProjectionBoxTest.selectAliasContextWhere()` | `testData/box/projection/selectAliasContextWhere.kt` | 改 diagnostics：同层 `where` 引用当前层 alias 报错；另补下一层正向测试。 |
+| `ProjectionBoxTest.selectAliasContextOrderByHaving()` | `testData/box/projection/selectAliasContextOrderByHaving.kt` | 拆分：`having { it.xx }` 改 diagnostics；`orderBy { it.xx }` 改 `.alias` 后保留正向。 |
+| `ProjectionBoxTest.scalarSubqueryAliasContextWhereOrderBy()` | `testData/box/projection/scalarSubqueryAliasContextWhereOrderBy.kt` | 拆分：同层 where 改 diagnostics 或下一层正向；同层 orderBy 改 `.alias` 后保留。 |
+| `ProjectionBoxTest.functionAliasContext()` | `testData/box/projection/functionAliasContext.kt` | `having { it.totalCount }` 改 diagnostics；`orderBy` / `Selected` 类型正向改 `.alias`。 |
+| `ProjectionBoxTest.generatedSelectProjection()` | `testData/box/projection/generatedSelectProjection.kt` | `.as_("xx")` 改 `.alias("xx")` 后保留。 |
+| select box | `testData/box/select/projectionFields.kt` | `.as_("mobile")` 改 `.alias("mobile")`。 |
+| select box | `testData/box/select/functionFields.kt` | `.as_("cnt")` 改 `.alias("cnt")`；未 alias 的非直接投影按目标语义改 diagnostics。 |
+| select box | `testData/box/select/scalarSubquerySelectItem.kt` | `KSelectable.as_("lastAmount")` 改 `.alias("lastAmount")`。 |
+
+### 1.2 Core 清理
+
+| 子项 | 文件或测试 | 当前问题 | 动作 |
+|------|------------|----------|------|
+| 1.2.1 | `kronos-core/src/main/kotlin/com/kotlinorm/orm/select/SelectClause.kt` | `where(selectCondition: ToFilter<Context, ...>)` | 改为 `ToFilter<Source, ...>`，使用 `pojo.afterFilter`。 |
+| 1.2.2 | `SelectClause.kt` | `having(selectCondition: ToFilter<Context, ...>)` | 改为 `ToFilter<Source, ...>`，聚合过滤写表达式而不是 alias。 |
+| 1.2.3 | `SelectClause.kt` iterable extension | 批量 `where` 仍用 `ToFilter<Context, ...>` | 同步改为 `Source`。 |
+| 1.2.4 | `SelectClause.kt` | `toStatement()` 默认 `applyAutomaticLayering("q")` | 从默认主路径移除或降级；同层 where/having 不再触发 alias 外包。 |
+| 1.2.5 | `SelectConditionLayering.kt` | `whereParts.outer` / `havingParts.outer` 服务旧自动分层 | 保留为内部工具或重命名；不能作为用户 DSL 正向验收。 |
+| 1.2.6 | `SelectStatementDerivation.kt` | `wrapWithOuterFilter` 名称和测试容易绑定旧主路径 | 保留给 `KSelectable` 下一层、derived source、方言内部改写。 |
+| 1.2.7 | `KTableForSelect.kt` | `Field.as_`、`FunctionField.as_`、`Expression.as_`、generic `R.as_` | 新增/迁移 `.alias`；删除或诊断 `.as_`；收紧 generic alias。 |
+| 1.2.8 | `KSelectable.kt` | `KSelectable.as_` | 改为 `.alias`；旧 API 删除或负例。 |
+| 1.2.9 | `FunctionHandler.kt` | `FunctionHandler.as_` | 改为/新增 `alias`，旧入口移除或负例。 |
+
+需要删除、拆分或迁移的 core 正向测试：
+
+| 测试 | 当前问题 | 动作 |
+|------|----------|------|
+| `SubqueryRendererTest` 的 `automatic layering moves selected alias predicates to outer query` | 明确把 selected alias predicate 自动搬外层作为正向目标 | 删除或改成内部工具测试，不能作为用户 DSL 验收。 |
+| `SubqueryRendererTest` 的 `wrap select statement with outer filter` | 工具可用，但测试语义要转为 explicit derived query / next-layer source | 改名和断言说明。 |
+| `MysqlSelectTest.testAsSql` | 使用 `.as_` | 改 `.alias` 或迁负例。 |
+| `MysqlSelectTest.testAlias` | 使用 `.as_` | 改 `.alias`。 |
+| `MysqlSelectTest.testSetDbName` | 使用 `.as_` | 改 `.alias`。 |
+| `MysqlSubqueryDslTest.select scalar subquery item renders sql and params` | 标量子查询 select item 用 `.as_` | 改 `.alias`，另补缺 alias 负例。 |
+| `SelectClauseAstTest` 中 alias 断言 | 使用 `.as_` | 改 `.alias`。 |
+
+不应删除：
+
+- `orderBy` 访问 selected alias 的 core 能力。
+- 普通 `select { [it.id] }.where { it.gender == 0 }`，这是过滤未投影 Source 字段，符合新 spec。
+- derived wrapper、subquery lowering、参数透传、alias metadata，只要不作为同层 where/having alias 正向语义。
+
+### 1.3 Docs / Skills 清理
+
+| 文件 | 当前问题 | 动作 |
+|------|----------|------|
+| `README.MD` / `README-zh_CN.MD` | `relation.id.as_("relationId")`、`f.count(1).as_("count")` | 改 `.alias(...)`。 |
+| `kronos-docs/src/app/docs/en/3.database/8.select-records/index.md` | 正文说 `+` 连接字段、`as_` alias | 改为 `[]` 字段列表和 `.alias(...)`。 |
+| `kronos-docs/src/app/docs/zh-CN/3.database/8.select-records/index.md` | 同上 | 同步中文。 |
+| `kronos-docs/src/app/docs/en/3.database/9.select-join-tables/index.md` | 正文和示例仍有 `+` 字段列表、`.as_` | 改为 `[]` 和 `.alias(...)`。 |
+| `kronos-docs/src/app/docs/zh-CN/3.database/9.select-join-tables/index.md` | 同上 | 同步中文。 |
+| `.agents/skills/kronos-dev-guide/references/api-design.md` | 写 `.as_`，并称 `where/orderBy/having` 都操作 generated context | 改为 `.alias`；明确同层 `where/having = Source`，`orderBy = Context`。 |
+| `.agents/skills/kronos-dev-guide/references/api-design.md` | 写“Filtering selected aliases ... where { it.alias }” | 改为进入下一层 `KSelectable.select {}` 后再过滤。 |
+| `.agents/skills/kronos-dev-guide/references/orm-and-dsl.md` | `it.field1 + it.field2`、`it.field1 as_ "alias"` | 改为 `select { [it.field1, it.field2] }` 和 `.alias(...)`。 |
+| `.agents/skills/kronos-dev-guide/references/compiler-plugin.md` | `it.name + it.age` 字段列表、`it.name as_ "n"` | 改为 `[]` 列表解析和 `.alias("n")`。 |
+| `.agents/skills/kronos-dev-kcp/Evolution.md` | 历史记录含 alias where / 自动分层旧目标 | 历史可保留，但追加“已被新版 spec 废弃”的索引或注记。 |
+
+### 1.4 测试迁移规则
+
+| 旧正向测试 | 新处理 |
+|------------|--------|
+| `.as_("x")` alias | 改 diagnostics：`.as_` 不可解析或报旧 API 已删除。 |
+| 同层 `where { it.alias }` | 改 diagnostics。 |
+| 同层 `having { it.aggregateAlias }` | 改 diagnostics。 |
+| 同层 `where { it.windowAlias }` | 改 diagnostics。 |
+| scalar alias same-level where | 改 diagnostics 或改为下一层正向。 |
+| derived query 外层 where | 保留或新增正向。 |
+| orderBy alias | 保留正向，迁到 `.alias`。 |
+| `having { f.sum(it.amount) > ... }` | 保留正向。 |
+
+### 1.5 清理验收
+
+静态扫描：
 
 ```powershell
+rg -n "as_\(|\.as_|where.*Context|having.*Context|自动分层|Selected alias|selectAliasContext|scalarSubqueryAliasContext" SUBQUERY_TASK_LIST.md SUBQUERY_DSL_SPEC.md .agents kronos-docs README.MD README-zh_CN.MD kronos-core kronos-compiler-plugin
+```
+
+期望：
+
+- spec/tasklist/docs/skills 中不再有与当前 spec 冲突的 `.as_` 正向描述。
+- compiler/core 正向测试中不再有 `.as_` alias。
+- `where/having Context` 只允许出现在历史说明或待删除代码注释中，不能作为目标描述。
+- 旧 box runner 不再引用已删除 testData。
+- 新 diagnostics 覆盖旧正向行为。
+
+测试命令：
+
+```powershell
+.\gradlew.bat :kronos-compiler-plugin:test --no-daemon --console=plain
 .\gradlew.bat :kronos-core:test --no-daemon --console=plain
 ```
 
-在当前 compiler plugin 未完成时，如果 `:kronos-core:test` 被跨模块编译阻断，应至少跑 core AST 测试所在的最小 task，并记录阻断原因。
+任务 1 完成判定：
 
-## 任务 20（25%）：窗口函数 DSL 与窗口 alias 分层（未完成）
+- 旧正向能力不再被测试、文档、skill 鼓励。
+- 可复用底层能力没有被误删。
+- 后续任务可以从“查询层类型模型重置”开始，不需要再兼容旧 DSL 目标。
 
-覆盖 spec 场景 7。
+## 任务 2：查询层类型模型重置
 
-目标语法：
+目标：
 
-```kotlin
-Order()
-    .select { o ->
-        [
-            o.id,
-            o.groupCol,
-            o.sortCol,
-            f.rowNumber()
-                .over(
-                    partitionBy = [o.groupCol],
-                    orderBy = [o.sortCol.asc()]
-                )
-                .as_("rn")
-        ]
-    }
-    .where {
-        it.rn == 1
-    }
-```
+- 保留 `SelectClause<Source, Selected, Context>` 概念模型。
+- `select { ... }` 使用 `Source`。
+- `where { ... }` 使用 `Source`。
+- `groupBy { ... }` 使用 `Source`。
+- `having { ... }` 使用 `Source`。
+- `orderBy { ... }` 使用 `Context`。
+- `queryList/queryOne/queryOneOrNull` 返回 `Selected`。
 
-当前落地情况：
+需要重做：
 
-- AST 层已有 `WindowClause`、`WindowFrame`，`FunctionCall` 可携带 `over`。
-- renderer 已能渲染 `OVER (...)`、`PARTITION BY`、窗口 `ORDER BY` 和 frame。
-- `SubqueryLowering` 已递归 lower `FunctionCall.over`、window order item 和 frame boundary。
-- `FunctionBuilder.selectItemScope()` 可声明 `WINDOW` scope，为 alias metadata 和自动分层预留了扩展点。
-
-剩余工作：
-
-- 用户 DSL 还没有 `f.rowNumber()` / 通用 `.over(...)` / frame builder 的完整入口。
-- `.over(...).as_("rn")` 还不能驱动 FIR 生成 `Selected.rn` 和 `Context.rn`。
-- `where { it.rn == 1 }` / `orderBy { it.rn.asc() }` 依赖真实 Context 与自动分层，当前尚未闭合。
-- 需要补第一条完整竖切：`ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...) AS rn` + 外层过滤。
+- core 中 `SelectClause.where` / `having` 的目标签名不能再是 `ToFilter<Context, ...>`，应回到 `ToFilter<Source, ...>`。
+- iterable 扩展、cascade、join select 等链路同步 Source/Selected/Context 语义。
+- compiler FIR call refinement 不得因为存在 `Context` 而让 `where/having` 解析到当前层 alias。
 
 验收：
 
-- 用户 DSL 能生成 `ROW_NUMBER() OVER (...) AS rn`。
-- `where/orderBy` 可以访问 `it.rn`，IDE/FIR 可见。
-- 需要外层过滤时自动包派生查询，用户不写 `asTable` / `selectFrom`。
+- `User().select { [it.id] }.where { it.status == 1 }` 合法，即使 `status` 未投影。
+- `User().select { [it.id, f.length(it.name).alias("nameLength")] }.where { it.nameLength > 8 }` 编译期错误。
+- `queryList()` 返回当前层 `Selected`。
 
-## 暂不做 / 不设计
+## 任务 3：`KPojo.where` 语法糖
 
-- 暂不引入用户可见的 `inSubquery` / `setSubquery` / `asTable`。
-- 暂不引入 CTE。
-- `UPDATE FROM` / joined update、multi-table delete 不作为第一阶段主语法。
+目标：
+
+- 支持 `User().where { it.id > 1 }`。
+- 语义完全等价 `User().select().where { it.id > 1 }`。
+- 结果类型是 `KSelectable<User>`，不是独立的前置 where 查询模型。
+
+验收：
+
+- core DSL build 输出与 `select().where()` 一致。
+- compiler official box 验证 `User().where { ... }.queryList()` 返回 `List<User>`。
+- `KPojo.where().select { ... }` 进入下一层时，`Source` 仍按 `select()` 的 `Selected = Source` 处理。
+
+## 任务 4：`KSelectable` 作为下一层 Source
+
+目标：
+
+- `KSelectable<S>.select { ... }` 的 receiver 是上一层 `Selected`。
+- derived query、join query、union consumer 都能稳定暴露 `Selected` 输出列。
+- 过滤当前层 `Selected` 字段时，通过下一层查询表达。
+
+示例目标：
+
+```kotlin
+val q = User()
+    .select { [it.id, f.length(it.name).alias("nameLength")] }
+
+q.select { [it.id, it.nameLength] }
+    .where { it.nameLength > 8 }
+    .queryList()
+```
+
+需要重做：
+
+- derived table/source wrapper 不再作为“同层 where alias 自动分层”的补丁，而是正式查询层边界。
+- `join(KSelectable)` 右侧 receiver 必须是右侧 query 的 `Selected`。
+- `SelectFrom`、分页、union、insert-select、CTAS 消费 `KSelectable` 时统一使用 `Selected`。
+
+验收：
+
+- derived select where 可生成 `FROM (SELECT ...) q WHERE q.alias ...`。
+- `join(KSelectable)` 的 right lambda receiver 只暴露右侧 `Selected`。
+- 内层参数能透传并在外层安全重命名。
+
+## 任务 5：alias API 与命名诊断
+
+目标：
+
+- `.alias("name")` 命名当前层 `Selected` 字段。
+- `.as_("name")` 删除、不可解析或报编译期错误。
+- 直接字段投影可继承字段名。
+- 函数、聚合、窗口函数、标量子查询、计算表达式作为 select item 时必须显式 alias。
+- 同一层 `Selected` 最终字段名必须唯一。
+- 新增 `Selected` 字段与 `Source` 字段同名时，`Context` 生成失败。
+- 原 `Source` 字段按原名直接投影不算冲突。
+
+诊断验收：
+
+- `select { [f.length(it.name)] }` 报错。
+- `select { [f.sum(it.amount)] }` 报错。
+- `select { [Order().select { it.amount }.limit(1)] }` 报错。
+- `select { [it.id, f.length(it.name).alias("id")] }` 报错。
+- `select { [it.id, it.id] }` 报错。
+- `select { [it.id, f.length(it.name).alias("status")] }` 在 `Source` 存在 `status` 时因 `Context` 冲突报错。
+
+## 任务 6：receiver 签名与 compiler refine
+
+目标：
+
+- FIR/IR 生成 `Selected` projection class。
+- FIR/IR 生成 `Context = Source + Selected`，但仅供 `orderBy` 使用。
+- `select()` 无投影时，`Selected = Source`。
+- `select { ... }` 有投影时，`Selected` 由投影列表生成。
+- `KSelectable<S>.select { ... }` 使用 `S` 作为新层 `Source`。
+
+需要重做：
+
+- 旧的 “where/having/orderBy 都吃 Context” refine 删除。
+- `where/having` 的 generated receiver 改为 `Source`。
+- `orderBy` 的 generated receiver 保持 `Context`。
+- `.alias` 字段进入 `Selected` 和 `Context`。
+
+验收：
+
+- `select { [it.id] }.where { it.name != null }` 可解析。
+- `select { [it.id, f.length(it.name).alias("len")] }.orderBy { it.len.desc() }` 可解析。
+- 同层 `where { it.len > 1 }` 不可解析或报自定义诊断。
+
+## 任务 7：同层 where/having alias 能力删除
+
+目标：
+
+- 当前层 `where` 只能过滤输入行，即 `Source`。
+- 当前层 `having` 只能使用基于 `Source` 的分组后表达式。
+- 当前层 `where/having` 不允许访问当前层 `Selected` alias、聚合 alias、窗口 alias、标量子查询 alias。
+- 旧自动分层能力降级为内部工具或删除，不能作为新 DSL 的正向语义。
+
+需要删除或改写：
+
+- `select { [it.id, it.name.as_("xx")] }.where { it.xx == "Ada" }` 正向测试。
+- `select { [it.id, f.sum(...).as_("total")] }.having { it.total > 1 }` 正向测试。
+- scalar subquery alias same-level where 正向测试。
+- window alias same-level where 正向测试。
+
+验收：
+
+- 上述场景全部变成 diagnostics。
+- 下一层过滤写法作为正向路径通过。
+
+## 任务 8：orderBy Context
+
+目标：
+
+- `orderBy` 可以访问 `Source` 字段。
+- `orderBy` 可以访问当前层 `Selected` 字段。
+- `orderBy { it.alias.desc() }` 渲染为同层 `ORDER BY alias`，必要时由方言层处理合法性。
+- `DISTINCT`、`GROUP BY` 后排序字段的 SQL 合法性按方言约束处理。
+
+验收：
+
+- `User().select { [it.id, f.length(it.name).alias("nameLength")] }.orderBy { it.nameLength.desc() }` 可用。
+- `User().select { [it.id] }.orderBy { it.name.asc() }` 可用。
+- window alias 可用于同层 `orderBy`。
+- 非法 distinct/group 排序按生成期或方言诊断处理。
+
+## 任务 9：标量子查询
+
+目标：
+
+- 标量子查询可出现在 select item、where 比较、orderBy、update set、upsert set。
+- 标量子查询必须单列。
+- 非聚合标量子查询必须显式 `.limit(1)`。
+- `query.limit(1) as T` 是类型提示，不改变 SQL。
+- 标量子查询作为 select item 时必须 `.alias("name")`。
+
+需要补：
+
+- `.alias` 替代 `.as_` 的 core/compiler handoff。
+- scalar shape 公共校验：单列、单行、limit、类型提示。
+- 错误定位尽量放在 compiler diagnostics，runtime builder 保留兜底校验。
+
+验收：
+
+- `select { [it.id, query.limit(1).alias("lastAmount")] }` 正向。
+- `where { it.price > query.limit(1) }` 正向。
+- 多列 scalar、缺 limit、select item 缺 alias 均报错。
+
+## 任务 10：谓词子查询
+
+目标：
+
+- 支持 `field in query` / `field !in query`。
+- 支持 `exists(query)` / `!exists(query)`。
+- 支持 `any(query)` / `some(query)` / `all(query)`。
+- 支持 `[a, b] in query` / `[a, b] !in query` row-value tuple。
+- 单元素 tuple 不允许，单列必须写 `field in query`。
+
+需要补：
+
+- 单值谓词右侧多列诊断。
+- tuple 左右列数不一致诊断。
+- SQLite / SQL Server 等方言不支持能力的生成期报错或改写策略。
+
+验收：
+
+- select/update/delete where 均可使用谓词子查询。
+- 相关子查询可引用外层 lambda receiver。
+- 五方言 renderer 矩阵覆盖 `ANY/SOME/ALL`、tuple IN、EXISTS。
+
+## 任务 11：窗口函数与下一层过滤
+
+目标：
+
+- 窗口函数只允许出现在当前层 `select` 或 `orderBy` 表达式中。
+- 窗口函数作为 select item 必须 `.alias("rn")`。
+- 当前层 `where/groupBy/having` 不可访问窗口 alias。
+- top-N / rn 过滤通过下一层查询完成。
+
+目标写法：
+
+```kotlin
+val ranked = Order()
+    .select {
+        [
+            it.id,
+            it.userId,
+            f.rowNumber()
+                .over(partitionBy = [it.userId], orderBy = [it.createTime.desc()])
+                .alias("rn")
+        ]
+    }
+
+ranked
+    .select { [it.id, it.userId] }
+    .where { it.rn == 1 }
+    .queryList()
+```
+
+验收：
+
+- 同层 `where { it.rn == 1 }` 报错。
+- 下一层过滤渲染为派生表外层 `WHERE rn = ?`。
+- `orderBy { it.rn.asc() }` 可在当前层使用。
+
+## 任务 12：DML 子查询
+
+目标：
+
+- `update().set` 可承接标量子查询。
+- `update().where` / `delete().where` 可承接所有谓词子查询和标量比较。
+- `upsert().set` / `patch` 可承接标量子查询。
+- DML lambda receiver 均为目标表 `Source`。
+- upsert `set { s -> ... }` 中的 `s` 表示冲突更新的目标行；incoming/excluded DSL 不在当前 spec 中定义。
+- `.patch` 作为动态字段入口保留。
+
+需要补：
+
+- 最终 typed assignment 语法 `field = query` 的 FIR/类型系统承接。
+- PostgreSQL/SQLite/MySQL upsert expression assignment 测试。
+- Oracle/SQL Server native upsert 不支持或 fallback 策略明确化。
+- 相关 update/upsert 子查询引用目标行字段。
+
+验收：
+
+- `UPDATE ... SET col = (SELECT ... LIMIT 1)` 可渲染。
+- `UPDATE/DELETE ... WHERE EXISTS/IN/ANY/tuple` 可渲染。
+- `UPSERT ... DO UPDATE SET col = (SELECT ...)` 在支持方言可渲染，不支持方言明确报错或走 fallback。
+
+## 任务 13：INSERT SELECT 与 CTAS
+
+目标：
+
+- `KSelectable<Selected>.insert<Target> { ... }` 的 receiver 是源 query 的 `Selected`。
+- `insert<Target> { [...] }` 按目标表可插入字段顺序映射。
+- `null`、常量、函数表达式、源投影字段、标量子查询都可作为插入值。
+- CTAS 使用 `dataSource.table.createTable(target, query)`，消费源 query 的最终 `Selected`。
+
+需要补：
+
+- 字段数量静态或 build 阶段校验。
+- 字段类型兼容校验。
+- 目标表可插入字段序列与策略字段、忽略字段、默认值字段规则对齐。
+- CTAS 参数化按方言支持处理。
+- join select / union source / derived query source 全部可作为 consumer 输入。
+
+验收：
+
+- 普通 select、join select、union source 均可 insert-select。
+- `insert<Target> { [it.id, null, it.amount] }` 按顺序映射。
+- CTAS 五方言 renderer 有明确输出或明确不支持原因。
+
+## 任务 14：测试矩阵重建
+
+测试职责：
+
+- core unit / renderer tests：验证 AST、lowering、SQL、参数、方言边界。
+- compiler official box：验证 FIR/IR/DSL handoff、生成类型、lambda receiver、KClass、运行期最小行为。
+- compiler diagnostics：验证非法 DSL 在编译期失败。
+- integration tests：抽样验证真实数据库语义，不替代 core renderer 矩阵。
+
+必须补的 compiler diagnostics：
+
+- `.as_("x")` 使用报错或不可解析。
+- 非直接 select item 缺 alias。
+- 标量子查询 select item 缺 alias。
+- 当前层 `where` 引用当前层 `Selected` alias。
+- 当前层 `having` 引用当前层聚合 alias。
+- 当前层 `where` 引用窗口 alias。
+- 标量子查询多列或缺 `.limit(1)`。
+- 单值 `IN/ANY/SOME/ALL` 右侧多列。
+- tuple IN 左右列数不一致。
+- 单元素 tuple `[it.id] in query`。
+- `Selected` 最终字段名重复。
+- 新增 `Selected` 字段与 `Source` 字段冲突导致 `Context` 失败。
+
+必须补的 compiler box：
+
+- `KPojo.where { ... }` 返回 `List<Source>`。
+- `select().queryList()` 返回 `Source`。
+- `select { [it.id] }.queryList()` 返回 generated `Selected`。
+- `where` 可访问未投影的 `Source` 字段。
+- `orderBy` 可访问当前层 alias。
+- `KSelectable<S>.select { ... }` 以上一层 `Selected` 为 `Source`。
+- 聚合 alias 下一层过滤。
+- 窗口 alias 下一层过滤。
+- `join(KSelectable)` 右侧 receiver 是右侧 `Selected`。
+- `insert<Target> { ... }` receiver 是源 `Selected`。
+- `[]` 在 select、orderBy、window、tuple IN 四种上下文被正确区分。
+
+必须补的 core tests：
+
+- derived query 外层 where / join / 参数透传。
+- select-list scalar subquery、where scalar comparison、orderBy scalar subquery。
+- IN / NOT IN / EXISTS / NOT EXISTS / ANY / SOME / ALL / tuple IN。
+- update set scalar、update/delete where 子查询、upsert scalar。
+- insert-select 普通 select / join / union / derived source。
+- CTAS 普通 select / join / union source。
+- 五方言 renderer 对方言边界给出稳定输出或稳定错误。
+
+集成测试优先级：
+
+1. 相关标量子查询。
+2. derived query 外层过滤。
+3. tuple IN 与 quantified comparison 的方言差异。
+4. DML 子查询。
+5. CTAS 参数化。
 
 ## 推荐实施顺序
 
-1. 让函数 alias、scalar subquery alias、aggregate/window alias 同时进入 `Selected` 与 `Context` 字段模型。
-2. 补 aggregate/window/scalar subquery alias 的 `orderBy` / `having` 用户 DSL 测试；compiler 层验证 FIR/IR/AST/参数 handoff，SQL 字符串留给 core。
-3. 做窗口函数第一条竖切：`f.rowNumber().over(...).as_("rn")` + `where { it.rn == 1 }`。
-4. 补 derived query join 的最终用户语法和 selectedKClass shape 测试。
-5. 补 `set { field = query }` / `upsert().set { field = query }` 的 FIR 类型安全入口。
-6. 补 insert-select 字段类型兼容校验和真实 projection receiver 测试。
-7. 继续增强错误诊断，把 `require` 异常升级为能定位 DSL/source 的 compiler/core 诊断。
-9. 补 insert-select 字段类型兼容校验和真实 projection receiver 测试。
-10. 继续增强错误诊断，把 `require` 异常升级为能定位 DSL/source 的 compiler/core 诊断。
+1. 先完成任务 1：清理旧实现、旧正向测试、旧 docs/skills 说明。
+2. 改 `SelectClause` 与 compiler receiver：`where/having = Source`，`orderBy = Context`。
+3. 加 `KPojo.where` 语法糖。
+4. 删除 `.as_` 正向路径，补 `.alias` API 与诊断。
+5. 把同层 where/having alias 正向测试改成 diagnostics。
+6. 打通 `KSelectable<S>.select { ... }` 下一层 Source。
+7. 重验 orderBy Context。
+8. 重验标量/谓词/tuple 子查询公共校验。
+9. 重做窗口函数示例和测试：下一层过滤。
+10. 重验 DML、insert-select、CTAS。
+11. 同步 docs、README、skills 中旧语法和旧 receiver 说明。
+
+## 暂不做
+
+- 不引入用户可见 `inSubquery` / `setSubquery` / `asTable`。
+- 不引入 CTE。
+- 不设计 incoming / excluded upsert DSL。
+- 不把同层 `where/having` 访问当前层 `Selected` alias 作为新 DSL 能力。

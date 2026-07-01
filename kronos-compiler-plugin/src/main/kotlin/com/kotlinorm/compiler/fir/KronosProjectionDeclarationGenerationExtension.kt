@@ -175,6 +175,15 @@ class KronosProjectionDeclarationGenerationExtension(
         }
 
         /**
+         * Drops generated member cache when a projection model is refined before
+         * member lookup, for example after a scalar subquery alias type becomes known.
+         */
+        fun invalidateMemberCache(model: KronosProjectionModel) {
+            projectionMemberCache.remove(model.symbol)
+            projectionMemberCache.remove(model.contextSymbol)
+        }
+
+        /**
          * Builds the synthetic projection class and attaches generated projection fields directly to it.
          */
         fun buildProjectionClass(
@@ -201,10 +210,6 @@ class KronosProjectionDeclarationGenerationExtension(
                     false,
                     ConeAttributes.Empty
                 )
-            }
-            projectionMembers(session, symbol, model).let { members ->
-                declarations += members.constructor
-                declarations += members.properties
             }
         }
 

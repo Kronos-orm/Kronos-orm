@@ -28,13 +28,10 @@ tasks.withType<Test>().configureEach {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-Xcontext-sensitive-resolution")
         freeCompilerArgs.add("-Xsuppress-deprecated-jvm-target-warning")
         freeCompilerArgs.add("-Xskip-prerelease-check")
         freeCompilerArgs.add("-Xallow-unstable-dependencies")
         freeCompilerArgs.add("-Xsuppress-version-warnings")
-        freeCompilerArgs.add("-Xskip-prerelease-check")
-        freeCompilerArgs.add("-Xcollection-literals")
         allWarningsAsErrors.set(false)
     }
 }

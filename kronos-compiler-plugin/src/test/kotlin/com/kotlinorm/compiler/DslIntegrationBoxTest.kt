@@ -39,6 +39,12 @@ class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
     fun typedProjection() = box("typedProjection")
 
     /**
+     * Verifies function-local DTO projections can be instantiated through query result mapping.
+     */
+    @Test
+    fun localTypedProjection() = box("localTypedProjection")
+
+    /**
      * Verifies KPojo discovery and generated members across multiple source files in one box test.
      */
     @Test

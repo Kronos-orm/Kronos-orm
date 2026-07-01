@@ -83,7 +83,7 @@ class TableOperationMysql {
         dataSource.table.createTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
-        assertEquals(exists, true)
+        assertEquals(true, exists)
 
         val actualColumns = getTableColumns(dataSource(), "tb_user")
 
@@ -117,12 +117,12 @@ class TableOperationMysql {
         dataSource.table.createTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
-        assertEquals(exists, true)
+        assertEquals(true, exists)
         // 删除表
         dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists2 = dataSource.table.exists(user)
-        assertEquals(exists2, false)
+        assertEquals(false, exists2)
     }
 
     /**

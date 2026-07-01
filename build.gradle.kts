@@ -34,6 +34,8 @@ allprojects {
             jvmTarget.set(JvmTarget.JVM_1_8)
             apiVersion.set(KotlinVersion.KOTLIN_2_4)
             languageVersion.set(KotlinVersion.KOTLIN_2_4)
+            freeCompilerArgs.add("-Xcollection-literals")
+            freeCompilerArgs.add("-Xcontext-sensitive-resolution")
         }
     }
 

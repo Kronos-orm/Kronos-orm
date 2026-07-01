@@ -7,7 +7,6 @@ plugins {
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-nowarn")
-        freeCompilerArgs.add("-Xcollection-literals")
     }
 }
 

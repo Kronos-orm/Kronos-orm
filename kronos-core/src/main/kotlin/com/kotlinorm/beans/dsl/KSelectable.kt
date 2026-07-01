@@ -42,6 +42,9 @@ abstract class KSelectable<Selected : KPojo>(
      */
     abstract fun toStatement(wrapper: KronosDataSourceWrapper? = null): SelectStatement
 
+    @Suppress("UNUSED")
+    infix fun as_(@Suppress("UNUSED_PARAMETER") alias: String): KSelectable<Selected> = this
+
     open fun toStatement(
         wrapper: KronosDataSourceWrapper? = null,
         parameterValues: MutableMap<String, Any?> = mutableMapOf()

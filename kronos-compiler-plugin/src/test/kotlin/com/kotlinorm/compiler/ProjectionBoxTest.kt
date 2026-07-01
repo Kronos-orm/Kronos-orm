@@ -45,4 +45,16 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
      */
     @Test
     fun selectAliasContextOrderByHaving() = box("selectAliasContextOrderByHaving")
+
+    /**
+     * Verifies scalar subquery aliases are visible on generated Selected and Context receivers.
+     */
+    @Test
+    fun scalarSubqueryAliasContextWhereOrderBy() = box("scalarSubqueryAliasContextWhereOrderBy")
+
+    /**
+     * Verifies function and aggregate aliases are visible on generated Selected and Context receivers.
+     */
+    @Test
+    fun functionAliasContext() = box("functionAliasContext")
 }

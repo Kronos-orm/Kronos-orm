@@ -18,7 +18,9 @@ package com.kotlinorm.compiler.fir
 
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
+import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.Name
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -35,6 +37,29 @@ object KronosProjectionRegistry {
         projectionsBySession.computeIfAbsent(session) { ConcurrentHashMap() }.also { models ->
             models[model.classId] = model
             models[model.contextClassId] = model
+        }
+    }
+
+    /**
+     * Refines fields that were first seen as receiver-less alias literals before
+     * FIR resolved the aliased scalar query call.
+     */
+    fun refineAliasFieldType(session: FirSession, alias: String, type: ConeKotlinType) {
+        val models = projectionsBySession[session] ?: return
+        val aliasName = Name.identifier(alias)
+        val updated = models.values.distinctBy { it.classId }.mapNotNull { model ->
+            val fields = model.fields.refineAlias(aliasName, type)
+            val contextFields = model.contextFields.refineAlias(aliasName, type)
+            if (fields === model.fields && contextFields === model.contextFields) {
+                null
+            } else {
+                model.copy(fields = fields, contextFields = contextFields)
+            }
+        }
+        updated.forEach { model ->
+            models[model.classId] = model
+            models[model.contextClassId] = model
+            KronosProjectionDeclarationGenerationExtension.invalidateMemberCache(model)
         }
     }
 
@@ -67,4 +92,20 @@ object KronosProjectionRegistry {
      * Returns the FIR declaration generator registered for the current session.
      */
     fun declarationGenerator(session: FirSession): FirDeclarationGenerationExtension? = declarationGeneratorsBySession[session]
+}
+
+private fun List<KronosProjectionField>.refineAlias(
+    alias: Name,
+    type: ConeKotlinType
+): List<KronosProjectionField> {
+    var changed = false
+    val refined = map { field ->
+        if (field.name == alias && field.type != type) {
+            changed = true
+            field.copy(type = type, signature = "${field.signature}:refined:${type}")
+        } else {
+            field
+        }
+    }
+    return if (changed) refined else this
 }

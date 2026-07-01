@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.ast.DeferredSubqueryExpression
+import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.KSelectableQueryRef
 import com.kotlinorm.ast.SelectItem
 import com.kotlinorm.ast.SelectItemAliasMetadata
@@ -71,7 +72,16 @@ open class KTableForSelect<T : KPojo> {
      * @return the provided alias
      */
     @Suppress("UNUSED")
-    infix fun Any?.as_(alias: String): String = alias
+    infix fun Field.as_(@Suppress("UNUSED_PARAMETER") alias: String): Field = this
+
+    @Suppress("UNUSED")
+    infix fun FunctionField.as_(@Suppress("UNUSED_PARAMETER") alias: String): FunctionField = this
+
+    @Suppress("UNUSED")
+    infix fun Expression.as_(@Suppress("UNUSED_PARAMETER") alias: String): Expression = this
+
+    @Suppress("UNUSED")
+    infix fun <R> R.as_(@Suppress("UNUSED_PARAMETER") alias: String): R = this
 
     /**
      * Adds a SQL window `OVER (...)` clause to a function expression.

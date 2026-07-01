@@ -243,6 +243,74 @@ class SubqueryRendererTest {
     }
 
     @Test
+    fun `lower deferred subqueries inside derived table source`() {
+        val existsRef = SelectQueryRef {
+            SelectStatement(
+                selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id", "o"), null)),
+                from = TableName(table = "orders", alias = "o")
+            )
+        }
+        val derived = SelectStatement(
+            selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id", "u"), null)),
+            from = TableName(table = "users", alias = "u"),
+            where = DeferredSubqueryExpression.Exists(existsRef)
+        )
+        val statement = SelectStatement(
+            selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id", "q"), null)),
+            from = SubqueryTable(derived, "q")
+        )
+
+        val lowered = SubqueryLowering.lower(statement)
+        val loweredSource = lowered.from as SubqueryTable
+        val loweredWhere = loweredSource.subquery.where
+
+        assertTrue(loweredWhere is SubqueryExpression.ExistsExpression)
+        assertTrue(renderer.render(lowered).sql.contains("FROM (SELECT"))
+    }
+
+    @Test
+    fun `lower deferred subqueries inside joined table source and condition`() {
+        val scalarRef = SelectQueryRef {
+            SelectStatement(
+                selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id", "o"), null)),
+                from = TableName(table = "orders", alias = "o"),
+                limit = LimitClause(limit = 1, offset = null)
+            )
+        }
+        val right = SelectStatement(
+            selectList = mutableListOf(SelectItem.ColumnSelectItem(col("user_id", "s"), null)),
+            from = TableName(table = "scores", alias = "s"),
+            where = BinaryExpression(
+                col("user_id", "s"),
+                SqlOperator.EQUAL,
+                DeferredSubqueryExpression.Scalar(scalarRef)
+            )
+        )
+        val statement = SelectStatement(
+            selectList = mutableListOf(SelectItem.ColumnSelectItem(col("id", "u"), null)),
+            from = JoinTable(
+                left = TableName(table = "users", alias = "u"),
+                joinType = com.kotlinorm.enums.JoinType.LEFT_JOIN,
+                right = SubqueryTable(right, "sq"),
+                condition = BinaryExpression(
+                    col("id", "u"),
+                    SqlOperator.EQUAL,
+                    DeferredSubqueryExpression.Scalar(scalarRef)
+                )
+            )
+        )
+
+        val lowered = SubqueryLowering.lower(statement)
+        val join = lowered.from as JoinTable
+        val rightSource = join.right as SubqueryTable
+        val rightWhere = (rightSource.subquery.where as BinaryExpression).right
+        val joinRight = (join.condition as BinaryExpression).right
+
+        assertTrue(rightWhere is SubqueryExpression.ScalarSubquery)
+        assertTrue(joinRight is SubqueryExpression.ScalarSubquery)
+    }
+
+    @Test
     fun `render nested scalar subquery`() {
         val inner = SelectStatement(
             selectList = mutableListOf(SelectItem.ColumnSelectItem(col("amount", "p"), null)),

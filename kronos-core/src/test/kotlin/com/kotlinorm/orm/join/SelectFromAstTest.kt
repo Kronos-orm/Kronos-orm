@@ -20,17 +20,46 @@ import com.kotlinorm.ast.*
 import com.kotlinorm.beans.sample.UserRelation
 import com.kotlinorm.beans.sample.database.MysqlUser
 import com.kotlinorm.enums.JoinType
+import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.orm.select.select
 import com.kotlinorm.testutils.MysqlTestBase
+import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.reflect.KClass
 
 /**
  * Test for SelectFrom AST generation (toStatement method)
  * Tests JOIN query AST structure
  */
 class SelectFromAstTest : MysqlTestBase() {
+
+    @Test
+    fun `select clause uses projection class as selected type`() {
+        val wrapper = CapturingMysqlWrapper()
+        val clause = MysqlUser().select(UserRelation::class) { it.username }
+
+        clause.queryList(wrapper)
+
+        assertEquals(UserRelation::class, clause.selectedKClass)
+        assertEquals(UserRelation::class, wrapper.lastForListKClass)
+    }
+
+    @Test
+    fun `join selectable currently keeps source class as selected type`() {
+        val wrapper = CapturingMysqlWrapper()
+        val selectFrom = MysqlUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
+            leftJoin(relation) { user.id == relation.id2 }
+            select { [user.id, relation.gender] }
+        }
+
+        selectFrom.queryList(wrapper)
+
+        assertEquals(MysqlUser::class, selectFrom.selectedKClass)
+        assertEquals(MysqlUser::class, wrapper.lastForListKClass)
+    }
 
     @Test
     fun testToStatementGeneratesCorrectAst() {
@@ -272,5 +301,19 @@ class SelectFromAstTest : MysqlTestBase() {
         
         // Verify DISTINCT flag is set
         assertTrue(statement.distinct)
+    }
+}
+
+private class CapturingMysqlWrapper : SampleMysqlJdbcWrapper() {
+    var lastForListKClass: KClass<*>? = null
+
+    override fun forList(
+        task: KAtomicQueryTask,
+        kClass: KClass<*>,
+        isKPojo: Boolean,
+        superTypes: List<String>
+    ): List<Any> {
+        lastForListKClass = kClass
+        return emptyList()
     }
 }

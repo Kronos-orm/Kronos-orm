@@ -380,3 +380,50 @@ not = criteria.not
 
 ### 预防措施
 新增结构化 Criteria handoff 时，区分“语义标记的多来源合并”和“逻辑反转”。对于 NOT IN / NOT EXISTS 这类结构化表达式，优先用普通测试同时覆盖手写 core Criteria 和用户 DSL 生成路径，避免只修一边。
+
+## 2026-07-02 - SqlType.Int shadows Kotlin Int inside nested type declarations
+
+### 问题症状
+在 `kronos-syntax` 新 AST 中定义 `sealed interface SqlType`，并添加 `object Int : SqlType` 后，`data class Varchar(val maxLength: Int?)`、`data class Decimal(val precision: Pair<Int, Int>?)` 等构造参数会被 Kotlin 解析成 `SqlType.Int`，测试里调用 `SqlType.Varchar(64)` 报：
+
+```text
+Argument type mismatch: actual type is 'Int', but 'SqlType.Int?' was expected.
+```
+
+### 问题原因
+嵌套在 `SqlType` 内部的成员名 `Int` 会遮蔽同一声明作用域中的 Kotlin 标准库 `Int` 类型名。Kotlin 在解析同一个 sealed interface 内的嵌套声明类型参数时，会优先命中 `SqlType.Int`。
+
+### 解决方案
+保留 sqala 风格的 `SqlType.Int` 命名，但所有需要 Kotlin 原生整型的类型位置显式写成 `kotlin.Int`，例如：
+
+```kotlin
+data class Varchar(val maxLength: kotlin.Int? = null) : SqlType
+data class Decimal(val precision: Pair<kotlin.Int, kotlin.Int>? = null) : SqlType
+```
+
+### 预防措施
+在 AST 中如果为贴近 SQL/sqala 使用 `Int`、`Long`、`Boolean` 等标准类型同名节点，内部声明的 Kotlin 标准类型必须全限定为 `kotlin.Int`、`kotlin.Long`、`kotlin.Boolean`。新增类型节点后至少跑 `compileTestKotlin`，因为主源码可能编译通过，测试构造调用才会暴露遮蔽问题。
+
+## 2026-07-02 - SqlDialect data equality must not decide renderer family
+
+### 问题症状
+`kronos-syntax` 中 `SqlDialect.PostgreSql` 和 `SqlDialect.SQLite` 都使用双引号、标准字符串转义和 `LimitOffset`，作为 data class 实例时两者结构相等。`sqlRenderer(dialect)` 用 `when (dialect)` 分派时，SQLite 会先匹配到 PostgreSQL 分支，导致：
+
+```text
+INSERT OR REPLACE INTO ...
+```
+
+被错误渲染为：
+
+```text
+INSERT INTO ... ON CONFLICT (...) DO UPDATE SET ...
+```
+
+### 问题原因
+方言身份不等于引用字符、字符串转义和分页风格这些渲染属性的组合。不同数据库可以共享同一组属性，但仍需要不同 DML/function/upsert 渲染规则。
+
+### 解决方案
+给 `SqlDialect` 增加显式 `SqlDialectFamily`，renderer 工厂和 pretty upsert 分派都基于 `dialect.family`，而不是 data class 结构相等。
+
+### 预防措施
+新增方言时必须写至少一个“属性相同但行为不同”的分派测试，尤其覆盖 SQLite/PostgreSQL 这类引号和分页策略相同但 upsert/function 规则不同的数据库。

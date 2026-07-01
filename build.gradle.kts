@@ -13,6 +13,7 @@ plugins {
 
 dependencies {
     kover(project(":kronos-core"))
+    kover(project(":kronos-syntax"))
     kover(project(":kronos-compiler-plugin"))
     kover(project(":kronos-codegen"))
     kover(project(":kronos-testing"))

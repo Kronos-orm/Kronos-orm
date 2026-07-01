@@ -65,6 +65,7 @@ jobs:
       - name: Create badges dir if not exists 📁
         run: |
           mkdir -p coverage/kronos-core
+          mkdir -p coverage/kronos-syntax
           mkdir -p coverage/kronos-compiler-plugin
           mkdir -p coverage/kronos-codegen
 
@@ -84,6 +85,34 @@ jobs:
           # 从XML报告提取分支覆盖率
           if [ -f "kronos-core/build/reports/kover/report.xml" ]; then
             BRANCH_DATA=$(grep -o 'BRANCH.*missed="[0-9]*".*covered="[0-9]*"' kronos-core/build/reports/kover/report.xml | tail -1)
+            BRANCH_MISSED=$(echo "$BRANCH_DATA" | grep -o 'missed="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_COVERED=$(echo "$BRANCH_DATA" | grep -o 'covered="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+            if [ $BRANCH_TOTAL -gt 0 ]; then
+              BRANCH_COVERAGE=$(echo "scale=2; $BRANCH_COVERED * 100 / $BRANCH_TOTAL" | bc)
+            else
+              BRANCH_COVERAGE="0.00"
+            fi
+          else
+            BRANCH_COVERAGE="N/A"
+          fi
+          echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
+
+      - name: Run Syntax Test Coverage 🧪
+        id: syntax-coverage
+        run: |
+          ./gradlew :kronos-syntax:koverLog
+          ./gradlew :kronos-syntax:koverXmlReport
+          ./gradlew :kronos-syntax:koverHtmlReport
+          ./gradlew :kronos-syntax:koverVerify
+          cat kronos-syntax/build/kover/coverage.txt
+          cp -rf kronos-syntax/build/reports/kover/html/* coverage/kronos-syntax
+          # 提取行覆盖率
+          LINE_COVERAGE="$(cat kronos-syntax/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          # 从XML报告提取分支覆盖率
+          if [ -f "kronos-syntax/build/reports/kover/report.xml" ]; then
+            BRANCH_DATA=$(grep -o 'BRANCH.*missed="[0-9]*".*covered="[0-9]*"' kronos-syntax/build/reports/kover/report.xml | tail -1)
             BRANCH_MISSED=$(echo "$BRANCH_DATA" | grep -o 'missed="[0-9]*"' | cut -d'"' -f2)
             BRANCH_COVERED=$(echo "$BRANCH_DATA" | grep -o 'covered="[0-9]*"' | cut -d'"' -f2)
             BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
@@ -167,6 +196,8 @@ jobs:
           script: |
             const coreLines   = '${{ steps.core-coverage.outputs.lines }}';
             const coreBranch  = '${{ steps.core-coverage.outputs.branch }}';
+            const syntaxLines = '${{ steps.syntax-coverage.outputs.lines }}';
+            const syntaxBranch= '${{ steps.syntax-coverage.outputs.branch }}';
             const pluginLines = '${{ steps.compiler-plugin-coverage.outputs.lines }}';
             const pluginBranch= '${{ steps.compiler-plugin-coverage.outputs.branch }}';
             const codegenLines= '${{ steps.codegen-coverage.outputs.lines }}';
@@ -178,11 +209,13 @@ jobs:
               '| Module | Line Coverage | Branch Coverage |',
               '|--------|:-------------:|:---------------:|',
               `| \`kronos-core\`            | ${coreLines}    | ${coreBranch}      |`,
+              `| \`kronos-syntax\`          | ${syntaxLines}  | ${syntaxBranch}    |`,
               `| \`kronos-compiler-plugin\` | ${pluginLines}  | ${pluginBranch}    |`,
               `| \`kronos-codegen\`         | ${codegenLines} | ${codegenBranch}   |`,
               '',
               '### 📈 Coverage Analysis',
               `- **kronos-core**: Branch coverage ${coreBranch}, consider adding more conditional statement tests`,
+              `- **kronos-syntax**: Line coverage target is 90%+, branch coverage target is 70%+`,
               `- **kronos-compiler-plugin**: Branch coverage ${pluginBranch}, suggest testing more transformation scenarios`,
               `- **kronos-codegen**: Branch coverage ${codegenBranch}, good performance`,
               '',
@@ -225,6 +258,15 @@ jobs:
           status: ${{ steps.core-coverage.outputs.lines }}
           color: 'blue,555,daf'
           path: 'coverage/coverage-core.svg'
+
+      - name: Generate the badge SVG image for Syntax
+        if: github.event_name != 'pull_request'
+        uses: emibcn/badge-action@v2.0.3
+        with:
+          label: 'syntax coverage'
+          status: ${{ steps.syntax-coverage.outputs.lines }}
+          color: 'blue,555,daf'
+          path: 'coverage/coverage-syntax.svg'
 
       - name: Generate the badge SVG image for Compiler Plugin
         if: github.event_name != 'pull_request'

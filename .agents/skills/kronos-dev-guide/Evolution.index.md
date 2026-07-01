@@ -26,3 +26,5 @@ If no entry matches, do not open the full evolution log; continue normal investi
 | Tuple IN handoff | `[field1, field2] in query`, `List<Field>`, row-value lower in core | `2026-06-30 - Tuple IN compiler handoff should lower List<Field> in core` |
 | Delete tuple IN | `DELETE` drops tuple IN, fieldless structured criteria | `2026-06-30 - DeleteClause must preserve all fieldless structured subquery criteria` |
 | Structured IN NOT | `CriteriaSubqueryValue.In.not`, `Criteria.not`, `!in` becomes `IN`, NOT flags | `2026-06-30 - CriteriaSubqueryValue.In NOT flags must be merged with OR, not XOR` |
+| Syntax AST type declarations | `SqlType.Int`, `Argument type mismatch`, `kotlin.Int`, nested type name shadowing | `2026-07-02 - SqlType.Int shadows Kotlin Int inside nested type declarations` |
+| Syntax dialect routing | `SqlDialect.PostgreSql`, `SqlDialect.SQLite`, data class equality, wrong renderer, `INSERT OR REPLACE`, `ON CONFLICT` | `2026-07-02 - SqlDialect data equality must not decide renderer family` |

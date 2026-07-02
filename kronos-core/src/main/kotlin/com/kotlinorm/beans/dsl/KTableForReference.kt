@@ -26,7 +26,7 @@ import com.kotlinorm.interfaces.KPojo
  * 1. `[it::<field1>, it::<field2>]`
  * 3. `addField(Field(columnName, optionalName))`
  * 4. `Field(columnName, optionalName).setAlias("<alias>")`
- * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).as_("<alias>")`
+ * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).alias("<alias>")`
  *
  * @param T the type of the table
  */

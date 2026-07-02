@@ -36,7 +36,7 @@ fun box(): String {
     }
 
     val user = SelectUser()
-    val fields = user.collectSelect { [it.id, it.name, it.phone.as_("mobile"), "1"] }
+    val fields = user.collectSelect { [it.id, it.name, it.phone.alias("mobile"), "1"] }
 
     return when {
         fields.size != 4 -> "Fail: size was ${fields.size}"

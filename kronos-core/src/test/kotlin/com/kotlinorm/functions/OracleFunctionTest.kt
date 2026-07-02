@@ -23,13 +23,13 @@ class OracleFunctionTest : OracleTestBase() {
     // Math functions with Oracle-specific behavior
     @Test
     fun testRandInSelect() {
-        val (sql, _) = user.select { f.rand() }.build()
+        val (sql, _) = user.select { f.rand().alias("rand") }.build()
         assertEquals("""SELECT DBMS_RANDOM.VALUE AS rand FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
     fun testModInSelect() {
-        val (sql, _) = user.select { it.score % 2 }.build()
+        val (sql, _) = user.select { (it.score % 2).alias("mod") }.build()
         assertEquals("""SELECT MOD("score", 2) AS mod FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -41,7 +41,7 @@ class OracleFunctionTest : OracleTestBase() {
 
     @Test
     fun testTruncInSelect() {
-        val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
+        val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
         assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -54,7 +54,7 @@ class OracleFunctionTest : OracleTestBase() {
     // String functions with Oracle-specific behavior
     @Test
     fun testJoinInSelect() {
-        val (sql, _) = user.select { f.join(", ", it.username, it.username) }.build()
+        val (sql, _) = user.select { f.join(", ", it.username, it.username).alias("join") }.build()
         assertEquals("""SELECT "username" || ', ' || "username" AS join FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -66,7 +66,7 @@ class OracleFunctionTest : OracleTestBase() {
 
     @Test
     fun testLeftInSelect() {
-        val (sql, _) = user.select { f.left(it.username, 5) }.build()
+        val (sql, _) = user.select { f.left(it.username, 5).alias("left") }.build()
         assertEquals("""SELECT SUBSTR("username", 1, 5) AS left FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -78,7 +78,7 @@ class OracleFunctionTest : OracleTestBase() {
 
     @Test
     fun testRightInSelect() {
-        val (sql, _) = user.select { f.right(it.username, 5) }.build()
+        val (sql, _) = user.select { f.right(it.username, 5).alias("right") }.build()
         assertEquals("""SELECT SUBSTR("username", -5) AS right FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -90,7 +90,7 @@ class OracleFunctionTest : OracleTestBase() {
 
     @Test
     fun testRepeatInSelect() {
-        val (sql, _) = user.select { f.repeat(it.username, 3) }.build()
+        val (sql, _) = user.select { f.repeat(it.username, 3).alias("repeat") }.build()
         assertEquals("""SELECT RPAD("username", 3 * LENGTH("username"), "username") AS repeat FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 

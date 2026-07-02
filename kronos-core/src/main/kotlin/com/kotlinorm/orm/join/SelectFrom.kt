@@ -18,16 +18,22 @@ package com.kotlinorm.orm.join
 
 import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.DeferredSubqueryTable
 import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.FieldToExpressionConverter
 import com.kotlinorm.ast.JoinTable
 import com.kotlinorm.ast.LimitClause
 import com.kotlinorm.ast.Literal
 import com.kotlinorm.ast.OrderByItem
+import com.kotlinorm.ast.QueryMaterializeContext
 import com.kotlinorm.ast.SelectItem
 import com.kotlinorm.ast.SelectStatement
+import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
 import com.kotlinorm.ast.TableReference
+import com.kotlinorm.ast.qualifyUnqualifiedColumns
+import com.kotlinorm.ast.rewriteColumnTableAliases
+import com.kotlinorm.ast.toSelectQueryRef
 import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KJoinable
@@ -97,6 +103,11 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
     private var selectFieldsWithNames: MutableMap<String, Field> = mutableMapOf()
     private var keyCounters: KeyCounter = KeyCounter()
     val listOfJoinable: MutableList<KJoinable> = mutableListOf()
+    @PublishedApi
+    internal val derivedJoinTables = mutableMapOf<String, TableReference>()
+
+    @PublishedApi
+    internal val derivedJoinAliasOverrides = mutableMapOf<String, String>()
     private var groupByFields: LinkedHashSet<Field> = []
     private var orderByFields: LinkedHashSet<Pair<Field, SortType>> = []
     private var distinctEnabled = false
@@ -174,7 +185,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
 
             criteriaMap.putAll(constMap)
             criteriaMap.keys.forEach { tableName ->
-                val (kClass, kPojo) = listOfPojo.first { it.second.__tableName == tableName }
+                val (kClass, kPojo) = findJoinedPojoByTableName(tableName)
                 listOfJoinable.add(
                     KJoinable(
                         tableName,
@@ -186,6 +197,15 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
                 )
             }
         }
+    }
+
+    private fun findJoinedPojoByTableName(tableName: String): Pair<KClass<KPojo>, KPojo> {
+        for (entry in listOfPojo) {
+            if (entry.second.__tableName == tableName) {
+                return entry
+            }
+        }
+        throw NoSuchElementException("No joined KPojo found for table `$tableName`.")
     }
 
     private fun setInMap(
@@ -208,6 +228,28 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         map[criteriaTableName] = criteriaList
     }
 
+    internal fun registerDerivedJoinSource(row: KPojo, query: KSelectable<*>, alias: String) {
+        val tableName = row.__tableName
+        derivedJoinTables[tableName] = DeferredSubqueryTable(query.toSelectQueryRef(), alias)
+        derivedJoinAliasOverrides[tableName] = alias
+    }
+
+    @PublishedApi
+    internal fun aliasOverridesFor(tableName: String): Map<String, String> {
+        return derivedJoinAliasOverrides[tableName]?.let { alias -> mapOf(tableName to alias) }.orEmpty()
+    }
+
+    private fun Expression.rewriteDerivedJoinReferences(
+        replacements: Map<String, String> = derivedJoinAliasOverrides
+    ): Expression {
+        val rewritten = rewriteColumnTableAliases(replacements)
+        return if (replacements.size == 1) {
+            rewritten.qualifyUnqualifiedColumns(replacements.values.single())
+        } else {
+            rewritten
+        }
+    }
+
     /**
      * Performs a left join operation between two tables.
      *
@@ -222,7 +264,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.LEFT_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                KJoinable(
+                    tableName,
+                    JoinType.LEFT_JOIN,
+                    criteria,
+                    T::class as KClass<KPojo>,
+                    another,
+                    tableReference = derivedJoinTables[tableName],
+                    tableAliasOverrides = aliasOverridesFor(tableName)
+                )
+            )
         }
     }
 
@@ -240,7 +292,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.RIGHT_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                KJoinable(
+                    tableName,
+                    JoinType.RIGHT_JOIN,
+                    criteria,
+                    T::class as KClass<KPojo>,
+                    another,
+                    tableReference = derivedJoinTables[tableName],
+                    tableAliasOverrides = aliasOverridesFor(tableName)
+                )
+            )
         }
     }
 
@@ -258,7 +320,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.CROSS_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                KJoinable(
+                    tableName,
+                    JoinType.CROSS_JOIN,
+                    criteria,
+                    T::class as KClass<KPojo>,
+                    another,
+                    tableReference = derivedJoinTables[tableName],
+                    tableAliasOverrides = aliasOverridesFor(tableName)
+                )
+            )
         }
     }
 
@@ -276,7 +348,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.INNER_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                KJoinable(
+                    tableName,
+                    JoinType.INNER_JOIN,
+                    criteria,
+                    T::class as KClass<KPojo>,
+                    another,
+                    tableReference = derivedJoinTables[tableName],
+                    tableAliasOverrides = aliasOverridesFor(tableName)
+                )
+            )
         }
     }
 
@@ -294,7 +376,17 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         t1.afterFilter {
             criteriaParamMap = paramMap
             on(t1)
-            listOfJoinable.add(KJoinable(tableName, JoinType.FULL_JOIN, criteria, T::class as KClass<KPojo>, another))
+            listOfJoinable.add(
+                KJoinable(
+                    tableName,
+                    JoinType.FULL_JOIN,
+                    criteria,
+                    T::class as KClass<KPojo>,
+                    another,
+                    tableReference = derivedJoinTables[tableName],
+                    tableAliasOverrides = aliasOverridesFor(tableName)
+                )
+            )
         }
     }
 
@@ -617,7 +709,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
                 expression.copy(database = databaseOfTable[expression.tableAlias])
             } else {
                 expression
-            }
+            }.rewriteDerivedJoinReferences()
             
             selectList.add(
                 SelectItem.ExpressionSelectItem(
@@ -636,28 +728,36 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         
         // Build JoinTable nodes for each join
         listOfJoinable.forEach { joinable ->
-            val rightTable = TableName(
-                table = joinable.tableName,
-                database = databaseOfTable[joinable.tableName],
-                alias = null
+            val rightTable = joinable.tableReference ?: TableName(
+                    table = joinable.tableName,
+                    database = databaseOfTable[joinable.tableName],
+                    alias = null
             )
             
             // Convert join condition to AST Expression
             var joinCondition = joinable.condition
             
             // Apply logic delete strategy to join condition if applicable
-            val logicDeleteStrategy = kPojoLogicDeleteCache[joinable.kClass]
-            logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value ->
-                val logicDeleteCondition = "${field.quoted(dataSource)} = $value".asSql()
-                joinCondition = listOfNotNull(
-                    joinCondition,
-                    logicDeleteCondition
-                ).toCriteria()
+            if (joinable.tableReference == null) {
+                val logicDeleteStrategy = kPojoLogicDeleteCache[joinable.kClass]
+                logicDeleteStrategy?.execute(defaultValue = getDefaultBoolean(dataSource, false)) { field, value ->
+                    val logicDeleteCondition = "${field.quoted(dataSource)} = $value".asSql()
+                    joinCondition = listOfNotNull(
+                            joinCondition,
+                            logicDeleteCondition
+                    ).toCriteria()
+                }
             }
             
             val onExpression = if (joinCondition != null) {
                 val criteriaParams = mutableMapOf<String, Any?>()
-                CriteriaToAstConverter.convert(joinCondition!!, criteriaParams, KOperationType.SELECT, databaseOfTable, useTableAliases = true).also {
+                CriteriaToAstConverter.convert(
+                    joinCondition!!,
+                    criteriaParams,
+                    KOperationType.SELECT,
+                    databaseOfTable,
+                    useTableAliases = true
+                )?.rewriteDerivedJoinReferences(joinable.tableAliasOverrides).also {
                     // Collect parameters into parameterValues
                     parameterValues.putAll(criteriaParams)
                 }
@@ -696,7 +796,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
         
         val whereExpression = if (buildCondition != null) {
             val criteriaParams = mutableMapOf<String, Any?>()
-            CriteriaToAstConverter.convert(buildCondition, criteriaParams, KOperationType.SELECT, useTableAliases = true).also {
+            CriteriaToAstConverter.convert(buildCondition, criteriaParams, KOperationType.SELECT, useTableAliases = true)
+                ?.rewriteDerivedJoinReferences().also {
                 // Collect parameters into parameterValues
                 parameterValues.putAll(criteriaParams)
             }
@@ -708,7 +809,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
                 ColumnReference(
                     tableAlias = field.tableName,
                     columnName = field.columnName
-                )
+                ).rewriteDerivedJoinReferences()
             }.toMutableList()
         } else null
         
@@ -717,7 +818,8 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
             val havingCond = havingCondition
             if (havingCond != null) {
                 val criteriaParams = mutableMapOf<String, Any?>()
-                CriteriaToAstConverter.convert(havingCond, criteriaParams, KOperationType.SELECT, useTableAliases = true).also {
+                CriteriaToAstConverter.convert(havingCond, criteriaParams, KOperationType.SELECT, useTableAliases = true)
+                    ?.rewriteDerivedJoinReferences().also {
                     // Collect parameters into parameterValues
                     parameterValues.putAll(criteriaParams)
                 }
@@ -735,7 +837,7 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
                         ColumnReference(
                             tableAlias = field.tableName,
                             columnName = field.columnName
-                        )
+                        ).rewriteDerivedJoinReferences()
                     },
                     direction = sortType
                 )
@@ -778,20 +880,30 @@ open class SelectFrom<T1 : KPojo>(open val t1: T1) : KSelectable<T1>(t1, t1.kCla
             selectFields += allFields
         }
         
-        // Build the SelectStatement using AST
-        val statement = toStatement(wrapper)
+        // Build the SelectStatement using AST and collect criteria/subquery parameters.
+        val criteriaParameterValues = mutableMapOf<String, Any?>()
+        val statement = toStatement(wrapper, criteriaParameterValues)
+        val loweredStatement = SubqueryLowering.lower(
+            statement,
+            QueryMaterializeContext(wrapper = wrapper, parameterValues = criteriaParameterValues)
+        ) as SelectStatement
         
         // Get database support for rendering
         val support = getDBSupport(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
         
         // Render the statement to SQL with parameters
-        val renderedSql = support.getSelectSqlWithParams(dataSource, statement)
+        val renderedSql = support.getSelectSqlWithParams(dataSource, loweredStatement)
         
         // Process parameters (field type conversion, etc.)
         val paramMapNew = mutableMapOf<String, Any?>()
         
         // First, add parameters from renderedSql (parameters extracted from AST)
         paramMapNew.putAll(renderedSql.parameters)
+
+        // Also include parameters extracted while building criteria and deferred subqueries.
+        criteriaParameterValues.forEach { (key, value) ->
+            paramMapNew.putIfAbsent(key, value)
+        }
         
         // Second, add parameters from paramMap (pojo data)
         // These are the parameters from the pojo instances passed to join()

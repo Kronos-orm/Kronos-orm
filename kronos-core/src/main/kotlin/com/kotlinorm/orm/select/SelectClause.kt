@@ -19,6 +19,7 @@ package com.kotlinorm.orm.select
 import com.kotlinorm.ast.BinaryExpression
 import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.CriteriaToAstConverter
+import com.kotlinorm.ast.Expression
 import com.kotlinorm.ast.FieldToExpressionConverter
 import com.kotlinorm.ast.LimitClause
 import com.kotlinorm.ast.Literal
@@ -31,7 +32,7 @@ import com.kotlinorm.ast.SqlOperator
 import com.kotlinorm.ast.QueryMaterializeContext
 import com.kotlinorm.ast.SubqueryLowering
 import com.kotlinorm.ast.TableName
-import com.kotlinorm.ast.applyAutomaticLayering
+import com.kotlinorm.ast.qualifyUnqualifiedColumns
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.dsl.KTableForSelect
@@ -92,6 +93,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
     internal var logicDeleteStrategy = kPojoLogicDeleteCache[kClass]
     private var allFields = kPojoAllFieldsCache[kClass]!!
     private var allColumns = kPojoAllColumnsCache[kClass]!!
+    internal var sourceTableAlias: String? = null
 
     /**
      * 级联查询允许的字段，若为空则表示所有字段均可级联查询，优先级高于[com.kotlinorm.annotations.Ignore[com.kotlinorm.enums.IgnoreAction.CASCADE_SELECT]]
@@ -185,6 +187,36 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
      */
     private fun fieldToColumnReference(field: Field): ColumnReference {
         return FieldToExpressionConverter.fieldToColumnReference(field, useTableAlias = false)
+            .qualifySourceColumn()
+    }
+
+    private fun ColumnReference.qualifySourceColumn(): ColumnReference {
+        val alias = sourceTableAlias ?: return this
+        return if (database == null && tableAlias == null) copy(tableAlias = alias) else this
+    }
+
+    private fun qualifySourceExpression(expression: Expression): Expression {
+        val alias = sourceTableAlias ?: return expression
+        return expression.qualifyUnqualifiedColumns(alias)
+    }
+
+    private fun qualifySourceSelectItem(item: SelectItem): SelectItem {
+        return when (item) {
+            is SelectItem.ColumnSelectItem -> item.copy(column = item.column.qualifySourceColumn())
+            is SelectItem.ExpressionSelectItem -> item.copy(expression = qualifySourceExpression(item.expression))
+            is SelectItem.AllColumnsSelectItem -> item
+        }
+    }
+
+    internal fun useSourceTableAlias(alias: String) {
+        sourceTableAlias = alias
+        statement.selectList = statement.selectList.map { qualifySourceSelectItem(it) }.toMutableList()
+        statement.where = statement.where?.let { qualifySourceExpression(it) }
+        statement.having = statement.having?.let { qualifySourceExpression(it) }
+        statement.groupBy = statement.groupBy?.map { qualifySourceExpression(it) }?.toMutableList()
+        statement.orderBy = statement.orderBy?.map { item ->
+            item.copy(expression = qualifySourceExpression(item.expression))
+        }?.toMutableList()
     }
 
     /**
@@ -197,7 +229,9 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
         return fields.map { field ->
             if (field is com.kotlinorm.beans.dsl.FunctionField) {
                 // For FunctionField, convert to function call expression with alias
-                val expression = FieldToExpressionConverter.fieldToExpression(field, useTableAlias = false)
+                val expression = qualifySourceExpression(
+                    FieldToExpressionConverter.fieldToExpression(field, useTableAlias = false)
+                )
                 val alias = functionAlias(field)
                 SelectItem.ExpressionSelectItem(
                     expression = expression,
@@ -256,7 +290,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                 is KTableForSelect.ProjectionItem.FieldItem ->
                     projection.field.takeIf { it in columnFields }
                         ?.let { fieldsToSelectItems(listOf(it)).single() }
-                is KTableForSelect.ProjectionItem.SelectItemValue -> projection.item
+                is KTableForSelect.ProjectionItem.SelectItemValue -> qualifySourceSelectItem(projection.item)
             }
         }
     }
@@ -322,7 +356,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             logicDeleteApplied = true
         }
 
-        return statement.applyAutomaticLayering("q")
+        return statement
     }
 
     /**
@@ -444,7 +478,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
                             direction = item.sortType
                         )
                         is KTableForSort.SortItem.ExpressionItem -> OrderByItem(
-                            expression = item.expression,
+                            expression = qualifySourceExpression(item.expression),
                             direction = item.sortType
                         )
                     }
@@ -554,6 +588,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
             // Convert to Expression and merge with existing where condition
             val localCriteriaParams = mutableMapOf<String, Any?>()
             val newExpression = CriteriaToAstConverter.convert(newCondition, localCriteriaParams, KOperationType.SELECT)
+                ?.let { qualifySourceExpression(it) }
             
             // Store criteria parameters for later use in renderStatement
             criteriaParams.putAll(localCriteriaParams)
@@ -583,15 +618,16 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
      *                        并返回一个 [Boolean]? 类型的值，用于指定条件是否成立。如果为 null，则表示选择所有字段。
      * @return [SelectClause] 的实例，代表了一个查询的选择子句。
      */
-    fun where(selectCondition: ToFilter<Context, Boolean?> = null): SelectClause<Source, Selected, Context> {
+    fun where(selectCondition: ToFilter<Source, Boolean?> = null): SelectClause<Source, Selected, Context> {
         selectCondition ?: return this
-        contextPojo.afterFilter {
+        pojo.afterFilter {
             criteriaParamMap = paramMap
             selectCondition(it) // 执行用户提供的条件函数
             if (criteria == null) return@afterFilter
             // Convert Criteria to Expression and merge with existing where condition
             val localCriteriaParams = mutableMapOf<String, Any?>()
             val newExpression = CriteriaToAstConverter.convert(criteria!!, localCriteriaParams, KOperationType.SELECT)
+                ?.let { qualifySourceExpression(it) }
             
             // Store criteria parameters for later use in renderStatement
             criteriaParams.putAll(localCriteriaParams)
@@ -621,16 +657,17 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
      * @return 返回SelectClause类型的实例，允许链式调用。
      * @throws EmptyFieldsException 如果selectCondition为null，则抛出此异常，表示需要提供条件字段。
      */
-    fun having(selectCondition: ToFilter<Context, Boolean?> = null): SelectClause<Source, Selected, Context> {
+    fun having(selectCondition: ToFilter<Source, Boolean?> = null): SelectClause<Source, Selected, Context> {
         // 检查是否提供了条件，未提供则抛出异常
         selectCondition ?: throw EmptyFieldsException()
-        contextPojo.afterFilter {
+        pojo.afterFilter {
             criteriaParamMap = paramMap // 设置属性参数映射
             selectCondition(it) // 执行传入的条件函数
             if (criteria == null) return@afterFilter
             // Convert Criteria to Expression and merge with existing having condition
             val localCriteriaParams = mutableMapOf<String, Any?>()
             val newExpression = CriteriaToAstConverter.convert(criteria!!, localCriteriaParams, KOperationType.SELECT)
+                ?.let { qualifySourceExpression(it) }
             
             // Store criteria parameters for later use in renderStatement
             criteriaParams.putAll(localCriteriaParams)
@@ -811,7 +848,7 @@ class SelectClause<Source : KPojo, Selected : KPojo, Context : KPojo>(
          * @return a list of UpdateClause objects with the updated condition
          */
         fun <Source : KPojo, Selected : KPojo, Context : KPojo> Iterable<SelectClause<Source, Selected, Context>>.where(
-            selectCondition: ToFilter<Context, Boolean?> = null
+            selectCondition: ToFilter<Source, Boolean?> = null
         ): List<SelectClause<Source, Selected, Context>> {
             return map { it.where(selectCondition) }
         }

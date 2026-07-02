@@ -83,7 +83,7 @@ fun box(): String {
         dataSource = { wrapper }
     }
 
-    val rows = source.select { [it.id, it.name.as_("xx")] }.queryList(wrapper)
+    val rows = source.select { [it.id, it.name.alias("xx")] }.queryList(wrapper)
     val row = rows.singleOrNull()
     val fieldNames = row?.kronosColumns().orEmpty().map { it.name }.toSet()
 

@@ -50,12 +50,12 @@ The source lambda receiver and the query result projection are different concept
 - Keep explicit names only when they improve clarity or are required for correlated subqueries, joins, or multiple simultaneously visible receivers.
 - The result projection should be generated from selected fields by the compiler plugin when possible.
 - Users should not write `select<User, UserView>` in the final syntax.
-- `.as_("name")` names a selected result field and should become a property on the generated projection type.
-- After a projected `select { ... }`, `where { ... }`, `orderBy { ... }`, and `having { ... }` should operate on a compiler-generated context class.
-- The generated context class contains every column from the original source DTO plus every newly selected projection field such as `lastOrderAmount` or `rn`.
-- Source-field filters should not require projecting the filtered field because the generated context already contains all source columns.
-- Filtering selected aliases or window outputs should use ordinary `where { it.alias }`; Kronos decides whether SQL needs an outer derived query layer.
-- `having` may operate on aggregation/projection outputs when the SQL semantics require it.
+- `.alias("name")` names a selected result field and should become a property on the generated projection type.
+- After a projected `select { ... }`, same-layer `where { ... }`, `groupBy { ... }`, and `having { ... }` operate on the source DTO.
+- Same-layer `orderBy { ... }` operates on a compiler-generated context class containing source fields plus selected result fields.
+- Source-field filters should not require projecting the filtered field because `where/having` still use the source receiver.
+- Filtering selected aliases, aggregate aliases, scalar-subquery aliases, or window outputs must enter the next query layer with `KSelectable.select { ... }.where { ... }`.
+- `having` may use aggregate expressions based on the source receiver, but not the current layer's selected aliases.
 
 Avoid designs where `select` lambda `it` becomes the projection type; that loses access to the full source DTO and breaks subquery/join composition.
 
@@ -90,7 +90,7 @@ A scalar subquery must be single-column and single-row.
 Avoid user-managed alias tokens for ordinary query flow.
 
 - Do not require `val rn = alias<Int>("rn")` just so later clauses can refer to a selected value.
-- Prefer `.as_("rn")` on the selected expression and then `it.rn` in later clauses.
+- Prefer `.alias("rn")` on the selected expression and then `it.rn` in `orderBy` or the next query layer.
 - If the same alias appears twice, the design must define how ambiguity is prevented or reported.
 - Derived table aliases should be generated internally unless the SQL feature genuinely exposes a user-visible name as part of semantics.
 

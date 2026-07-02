@@ -161,7 +161,7 @@ class SubqueryRendererTest {
     }
 
     @Test
-    fun `wrap select statement with outer filter`() {
+    fun `wrap derived select statement with explicit outer filter`() {
         val inner = SelectStatement(
             selectList = mutableListOf(
                 SelectItem.ColumnSelectItem(col("id", "u"), null),
@@ -430,34 +430,6 @@ class SubqueryRendererTest {
             value = CriteriaSubqueryValue.QuantifiedComparison(oneColumn, SubqueryExpression.Quantifier.SOME)
         )
         assertTrue(CriteriaToAstConverter.convert(quantified) is DeferredSubqueryExpression.QuantifiedComparison)
-    }
-
-    @Test
-    fun `automatic layering moves selected alias predicates to outer query`() {
-        val statement = SelectStatement(
-            selectList = mutableListOf(
-                SelectItem.ColumnSelectItem(col("id", "u"), null),
-                SelectItem.ExpressionSelectItem(
-                    FunctionCall("MAX", listOf(col("amount", "o"))),
-                    "maxAmount"
-                )
-            ),
-            from = TableName(table = "users", alias = "u"),
-            where = BinaryExpression(
-                BinaryExpression(col("id"), SqlOperator.GREATER_THAN, Literal.NumberLiteral("10")),
-                SqlOperator.AND,
-                BinaryExpression(col("maxAmount"), SqlOperator.GREATER_THAN, Literal.NumberLiteral("100"))
-            ),
-            orderBy = mutableListOf(OrderByItem(col("maxAmount"), SortType.DESC))
-        )
-
-        val layered = statement.applyAutomaticLayering("q")
-        val sql = renderer.render(layered).sql
-
-        assertTrue(sql.contains("FROM (SELECT"))
-        assertTrue(sql.contains("WHERE `id` > 10"))
-        assertTrue(sql.contains("WHERE `q`.`maxAmount` > 100"))
-        assertTrue(sql.contains("ORDER BY `q`.`maxAmount` DESC"))
     }
 
     @Test

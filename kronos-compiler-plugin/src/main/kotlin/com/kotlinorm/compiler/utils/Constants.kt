@@ -34,6 +34,7 @@ val FunctionFieldFqName = FqName("com.kotlinorm.beans.dsl.FunctionField")
 val KCascadeFqName = FqName("com.kotlinorm.beans.dsl.KCascade")
 val CriteriaFqName = FqName("com.kotlinorm.beans.dsl.Criteria")
 val KTableForSelectFqName = FqName("com.kotlinorm.beans.dsl.KTableForSelect")
+val KTableForInsertSelectFqName = FqName("com.kotlinorm.beans.dsl.KTableForInsertSelect")
 val KTableForSetFqName = FqName("com.kotlinorm.beans.dsl.KTableForSet")
 val KTableForConditionFqName = FqName("com.kotlinorm.beans.dsl.KTableForCondition")
 val KTableForSortFqName = FqName("com.kotlinorm.beans.dsl.KTableForSort")
@@ -46,6 +47,11 @@ val CriteriaSubqueryValueExistsFqName = FqName("com.kotlinorm.ast.CriteriaSubque
 val CriteriaSubqueryValueQuantifiedComparisonFqName = FqName("com.kotlinorm.ast.CriteriaSubqueryValue.QuantifiedComparison")
 val QuantifiedSubqueryValueFqName = FqName("com.kotlinorm.beans.dsl.QuantifiedSubqueryValue")
 val SubqueryExpressionQuantifierFqName = FqName("com.kotlinorm.ast.SubqueryExpression.Quantifier")
+val ExpressionFqName = FqName("com.kotlinorm.ast.Expression")
+val FieldToExpressionConverterFqName = FqName("com.kotlinorm.ast.FieldToExpressionConverter")
+val WindowClauseFqName = FqName("com.kotlinorm.ast.WindowClause")
+val OrderByItemFqName = FqName("com.kotlinorm.ast.OrderByItem")
+val SortTypeFqName = FqName("com.kotlinorm.enums.SortType")
 
 // Kotlin standard library
 val BooleanFqName = FqName("kotlin.Boolean")
@@ -58,12 +64,16 @@ val DoubleFqName = FqName("kotlin.Double")
 val CharFqName = FqName("kotlin.Char")
 val PairFqName = FqName("kotlin.Pair")
 val StringFqName = FqName("kotlin.String")
+val KotlinListOfFunctionName = Name.identifier("listOf")
 val FunctionHandlerFqName = FqName("com.kotlinorm.functions.FunctionHandler")
 
 // Select operation and generated projection support
 val SelectPackageFqName = FqName("com.kotlinorm.orm.select")
 val SelectFunctionName = Name.identifier("select")
-val SelectAliasFunctionName = "as_"
+val SelectAliasFunctionName = "alias"
+val SelectAliasFunctionNameIdentifier = Name.identifier(SelectAliasFunctionName)
+val SelectLimitFunctionName = Name.identifier("limit")
+val SelectGroupByFunctionName = Name.identifier("groupBy")
 val SelectGeneratedProjectionFunctionName = Name.identifier("selectGeneratedProjection")
 val SelectFunctionFqName = FqName("com.kotlinorm.orm.select.select")
 val SelectGeneratedProjectionCallableId = CallableId(
@@ -80,6 +90,22 @@ val QueryListFunctionName = "queryList"
 val QueryOneFunctionName = "queryOne"
 val QueryOneOrNullFunctionName = "queryOneOrNull"
 val SelectQueryFunctionNames = setOf(QueryListFunctionName, QueryOneFunctionName, QueryOneOrNullFunctionName)
+val CompareToFunctionName = Name.identifier("compareTo")
+val ContainsFunctionName = Name.identifier("contains")
+val EqualsFunctionName = Name.identifier("equals")
+val SortAscendingFunctionName = Name.identifier("asc")
+val SortDescendingFunctionName = Name.identifier("desc")
+val WindowOverFunctionName = "over"
+val WindowPartitionByFunctionName = "partitionBy"
+val WindowOrderByFunctionName = "orderBy"
+val SortTypeAscendingName = "ASC"
+val SortTypeDescendingName = "DESC"
+val PlainAggregateFunctionNames = setOf("count", "sum", "avg", "min", "max")
+val SubqueryQuantifierFunctionNames = setOf(
+    Name.identifier("any"),
+    Name.identifier("some"),
+    Name.identifier("all")
+)
 val KPojoTableNamePropertyName = Name.identifier("__tableName")
 val KPojoTableCommentPropertyName = Name.identifier("__tableComment")
 val TypedQueryFunctionFqNames = setOf(
@@ -151,6 +177,7 @@ val FunctionFieldClassId = ClassId.topLevel(FunctionFieldFqName)
 val KCascadeClassId = ClassId.topLevel(KCascadeFqName)
 val CriteriaClassId = ClassId.topLevel(CriteriaFqName)
 val KTableForSelectClassId = ClassId.topLevel(KTableForSelectFqName)
+val KTableForInsertSelectClassId = ClassId.topLevel(KTableForInsertSelectFqName)
 val KTableForSetClassId = ClassId.topLevel(KTableForSetFqName)
 val KTableForConditionClassId = ClassId.topLevel(KTableForConditionFqName)
 val KTableForSortClassId = ClassId.topLevel(KTableForSortFqName)
@@ -183,6 +210,11 @@ val SubqueryExpressionQuantifierClassId = ClassId(
     FqName("SubqueryExpression.Quantifier"),
     false
 )
+val ExpressionClassId = ClassId.topLevel(ExpressionFqName)
+val FieldToExpressionConverterClassId = ClassId.topLevel(FieldToExpressionConverterFqName)
+val WindowClauseClassId = ClassId.topLevel(WindowClauseFqName)
+val OrderByItemClassId = ClassId.topLevel(OrderByItemFqName)
+val SortTypeClassId = ClassId.topLevel(SortTypeFqName)
 
 // Kotlin standard library
 val PairClassId = ClassId.topLevel(PairFqName)

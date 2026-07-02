@@ -22,6 +22,7 @@ import com.kotlinorm.compiler.utils.GeneratedProjectionClassPrefix
 import com.kotlinorm.compiler.utils.GeneratedContextClassPrefix
 import com.kotlinorm.compiler.utils.GeneratedProjectionFieldIdentifierRegex
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+import com.kotlinorm.compiler.utils.KotlinListOfFunctionName
 import com.kotlinorm.compiler.utils.KSelectableClassId
 import com.kotlinorm.compiler.utils.QueryListFunctionName
 import com.kotlinorm.compiler.utils.QueryOneFunctionName
@@ -45,6 +46,7 @@ import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
 import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
+import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
 import org.jetbrains.kotlin.fir.expressions.FirWrappedExpression
@@ -187,6 +189,11 @@ class KronosProjectionCallRefinementExtension(
         }
 
         val call = expression as? FirFunctionCall ?: return emptyList()
+        if (call.calleeReference.name == KotlinListOfFunctionName) {
+            val listVararg = call.argumentList.arguments.singleOrNull() as? FirVarargArgumentsExpression
+            return (listVararg?.arguments ?: call.argumentList.arguments).mapNotNull { it.toProjectionField(sourceType) }
+        }
+
         val vararg = call.argumentList.arguments.singleOrNull() as? FirVarargArgumentsExpression ?: return emptyList()
         return vararg.arguments.mapNotNull { it.toProjectionField(sourceType) }
     }
@@ -222,7 +229,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Converts `source.property.as_("alias")` into a generated projection field named by the alias.
+     * Converts `source.property.alias("alias")` into a generated projection field named by the alias.
      */
     private fun FirFunctionCall.toAliasProjectionField(sourceType: ConeKotlinType): KronosProjectionField? {
         if (calleeReference.name.asString() != SelectAliasFunctionName) return null
@@ -239,7 +246,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Converts an `as_("alias")` call into a projection field when FIR has erased the call receiver.
+     * Converts an `alias("alias")` call into a projection field when FIR has erased the call receiver.
      */
     private fun FirFunctionCall.toAliasCallProjectionField(): KronosProjectionField? {
         if (calleeReference.name.asString() != SelectAliasFunctionName) return null
@@ -261,7 +268,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Infers an alias field type from the receiver of `receiver.as_("alias")`.
+     * Infers an alias field type from the receiver of `receiver.alias("alias")`.
      */
     private fun FirFunctionCall.aliasReceiverType(): ConeKotlinType? {
         return aliasReceiverStatement()?.resolvedConeType()
@@ -310,7 +317,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * FIR can later expose `as_("alias")` inside a collection literal as only the
+     * FIR can later expose `alias("alias")` inside a collection literal as only the
      * alias literal, without the original receiver. Record the resolved receiver
      * type while resolving the actual call so the outer projection can still be typed.
      */
@@ -326,7 +333,7 @@ class KronosProjectionCallRefinementExtension(
 
     /**
      * Recovers the selected field type from a receiver chain such as
-     * `Order().select { it.amount }.limit(1).as_("lastAmount")` when FIR has not
+     * `Order().select { it.amount }.limit(1).alias("lastAmount")` when FIR has not
      * yet made the nested SelectClause projection model visible through the call type.
      */
     private fun FirStatement.scalarSelectProjectionType(): ConeKotlinType? {
@@ -346,7 +353,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Converts a resolved alias literal from `as_()` into a projection field when FIR loses the receiver call.
+     * Converts a resolved alias literal from `alias()` into a projection field when FIR loses the receiver call.
      */
     private fun FirStatement.toAliasLiteralProjectionField(): KronosProjectionField? {
         val alias = stringLiteralValue() ?: return null
@@ -392,7 +399,10 @@ class KronosProjectionCallRefinementExtension(
         val source: KtSourceElement?,
     )
 
-    private fun FirBlock.lastExpression(): FirStatement? = statements.lastOrNull()
+    private fun FirBlock.lastExpression(): FirStatement? {
+        val statement = statements.lastOrNull() ?: return null
+        return (statement as? FirReturnExpression)?.result ?: statement
+    }
 
     /**
      * Rewrites query return types to the generated projection class or list of it.
@@ -410,7 +420,7 @@ class KronosProjectionCallRefinementExtension(
      * Extracts one select projection model from the lambda body.
      */
     private fun buildProjectionModel(callInfo: CallInfo): KronosProjectionModel? {
-        val sourceType = callInfo.explicitReceiver?.coneTypeOrNull ?: return null
+        val sourceType = callInfo.selectSourceType() ?: return null
         val lambda = callInfo.arguments.lastOrNull() as? FirAnonymousFunctionExpression ?: return null
         val returned = lambda.anonymousFunction.body?.lastExpression() ?: return null
         val fields = readProjectionFields(returned, sourceType)
@@ -437,6 +447,22 @@ class KronosProjectionCallRefinementExtension(
             anchor = anchor,
         )
         return model
+    }
+
+    /**
+     * Uses the KPojo receiver as Source for normal selects, and the receiver's Selected
+     * type as Source when selecting from a selectable query layer.
+     */
+    private fun CallInfo.selectSourceType(): ConeKotlinType? {
+        val receiverType = explicitReceiver?.coneTypeOrNull ?: return null
+        val receiverClassType = receiverType as? ConeClassLikeType ?: return receiverType
+        val selectedArgumentIndex = when (receiverClassType.lookupTag.classId) {
+            SelectClauseClassId -> 1
+            KSelectableClassId -> 0
+            else -> return receiverType
+        }
+        val selectedArgument = receiverClassType.typeArguments.getOrNull(selectedArgumentIndex) as? ConeKotlinTypeProjection
+        return selectedArgument?.type ?: receiverType
     }
 
     /**
@@ -468,7 +494,7 @@ class KronosProjectionCallRefinementExtension(
     }
 
     /**
-     * Builds the generated Context type used by where/having/orderBy after select.
+     * Builds the generated Context type used by orderBy after select.
      */
     private fun contextType(model: KronosProjectionModel, isNullable: Boolean): ConeClassLikeTypeImpl {
         return ConeClassLikeTypeImpl(

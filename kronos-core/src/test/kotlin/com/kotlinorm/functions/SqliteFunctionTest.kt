@@ -19,7 +19,7 @@ class SqliteFunctionTest : SqliteTestBase() {
     // Math functions with SQLite-specific behavior
     @Test
     fun testRandInSelect() {
-        val (sql, _) = user.select { f.rand() }.build()
+        val (sql, _) = user.select { f.rand().alias("rand") }.build()
         assertEquals("""SELECT RANDOM() AS rand FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -31,7 +31,7 @@ class SqliteFunctionTest : SqliteTestBase() {
 
     @Test
     fun testModInSelect() {
-        val (sql, _) = user.select { it.score % 2 }.build()
+        val (sql, _) = user.select { (it.score % 2).alias("mod") }.build()
         assertEquals("""SELECT ("score" % 2) AS mod FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -43,7 +43,7 @@ class SqliteFunctionTest : SqliteTestBase() {
 
     @Test
     fun testTruncInSelect() {
-        val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
+        val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
         assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 

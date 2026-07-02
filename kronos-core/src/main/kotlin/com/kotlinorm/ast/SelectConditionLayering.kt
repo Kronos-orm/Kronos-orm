@@ -187,6 +187,155 @@ fun Expression.rewriteSelectOutputsForOuterAlias(statement: SelectStatement, ali
     }
 }
 
+fun Expression.qualifyUnqualifiedColumns(alias: String): Expression {
+    return when (this) {
+        is ColumnReference ->
+            if (database == null && tableAlias == null) {
+                copy(tableAlias = alias)
+            } else {
+                this
+            }
+        is BinaryExpression -> copy(
+            left = left.qualifyUnqualifiedColumns(alias),
+            right = right.qualifyUnqualifiedColumns(alias)
+        )
+        is UnaryExpression -> copy(operand = operand.qualifyUnqualifiedColumns(alias))
+        is FunctionCall -> copy(
+            arguments = arguments.map { it.qualifyUnqualifiedColumns(alias) },
+            filter = filter?.qualifyUnqualifiedColumns(alias),
+            over = over?.qualifyUnqualifiedColumns(alias)
+        )
+        is RowValueExpression -> copy(values = values.map { it.qualifyUnqualifiedColumns(alias) })
+        is CaseExpression.SimpleCaseExpression -> copy(
+            operand = operand.qualifyUnqualifiedColumns(alias),
+            whenClauses = whenClauses.map {
+                it.copy(
+                    whenCondition = it.whenCondition.qualifyUnqualifiedColumns(alias),
+                    thenResult = it.thenResult.qualifyUnqualifiedColumns(alias)
+                )
+            },
+            elseResult = elseResult?.qualifyUnqualifiedColumns(alias)
+        )
+        is CaseExpression.SearchedCaseExpression -> copy(
+            whenClauses = whenClauses.map {
+                it.copy(
+                    whenCondition = it.whenCondition.qualifyUnqualifiedColumns(alias),
+                    thenResult = it.thenResult.qualifyUnqualifiedColumns(alias)
+                )
+            },
+            elseResult = elseResult?.qualifyUnqualifiedColumns(alias)
+        )
+        is SpecialExpression.BetweenExpression -> copy(
+            value = value.qualifyUnqualifiedColumns(alias),
+            low = low.qualifyUnqualifiedColumns(alias),
+            high = high.qualifyUnqualifiedColumns(alias)
+        )
+        is SpecialExpression.InExpression -> copy(
+            value = value.qualifyUnqualifiedColumns(alias),
+            values = values.map { it.qualifyUnqualifiedColumns(alias) }
+        )
+        is SpecialExpression.InSubqueryExpression -> copy(
+            value = value.qualifyUnqualifiedColumns(alias)
+        )
+        is SpecialExpression.IsNullExpression -> copy(
+            expression = expression.qualifyUnqualifiedColumns(alias)
+        )
+        is SpecialExpression.LikeExpression -> copy(
+            value = value.qualifyUnqualifiedColumns(alias),
+            pattern = pattern.qualifyUnqualifiedColumns(alias),
+            escape = escape?.qualifyUnqualifiedColumns(alias)
+        )
+        is SubqueryExpression.QuantifiedComparison -> copy(
+            expression = expression.qualifyUnqualifiedColumns(alias)
+        )
+        is DeferredSubqueryExpression.In -> copy(value = value.qualifyUnqualifiedColumns(alias))
+        is DeferredSubqueryExpression.QuantifiedComparison -> copy(
+            expression = expression.qualifyUnqualifiedColumns(alias)
+        )
+        is Literal,
+        is Parameter,
+        is SpecialExpression.RawSqlExpression,
+        is SubqueryExpression.ExistsExpression,
+        is SubqueryExpression.ScalarSubquery,
+        is DeferredSubqueryExpression.Scalar,
+        is DeferredSubqueryExpression.Exists -> this
+    }
+}
+
+fun Expression.rewriteColumnTableAliases(replacements: Map<String, String>): Expression {
+    if (replacements.isEmpty()) return this
+    return when (this) {
+        is ColumnReference ->
+            tableAlias?.let { replacements[it] }?.let { alias ->
+                copy(database = null, tableAlias = alias)
+            } ?: this
+        is BinaryExpression -> copy(
+            left = left.rewriteColumnTableAliases(replacements),
+            right = right.rewriteColumnTableAliases(replacements)
+        )
+        is UnaryExpression -> copy(operand = operand.rewriteColumnTableAliases(replacements))
+        is FunctionCall -> copy(
+            arguments = arguments.map { it.rewriteColumnTableAliases(replacements) },
+            filter = filter?.rewriteColumnTableAliases(replacements),
+            over = over?.rewriteColumnTableAliases(replacements)
+        )
+        is RowValueExpression -> copy(values = values.map { it.rewriteColumnTableAliases(replacements) })
+        is CaseExpression.SimpleCaseExpression -> copy(
+            operand = operand.rewriteColumnTableAliases(replacements),
+            whenClauses = whenClauses.map {
+                it.copy(
+                    whenCondition = it.whenCondition.rewriteColumnTableAliases(replacements),
+                    thenResult = it.thenResult.rewriteColumnTableAliases(replacements)
+                )
+            },
+            elseResult = elseResult?.rewriteColumnTableAliases(replacements)
+        )
+        is CaseExpression.SearchedCaseExpression -> copy(
+            whenClauses = whenClauses.map {
+                it.copy(
+                    whenCondition = it.whenCondition.rewriteColumnTableAliases(replacements),
+                    thenResult = it.thenResult.rewriteColumnTableAliases(replacements)
+                )
+            },
+            elseResult = elseResult?.rewriteColumnTableAliases(replacements)
+        )
+        is SpecialExpression.BetweenExpression -> copy(
+            value = value.rewriteColumnTableAliases(replacements),
+            low = low.rewriteColumnTableAliases(replacements),
+            high = high.rewriteColumnTableAliases(replacements)
+        )
+        is SpecialExpression.InExpression -> copy(
+            value = value.rewriteColumnTableAliases(replacements),
+            values = values.map { it.rewriteColumnTableAliases(replacements) }
+        )
+        is SpecialExpression.InSubqueryExpression -> copy(
+            value = value.rewriteColumnTableAliases(replacements)
+        )
+        is SpecialExpression.IsNullExpression -> copy(
+            expression = expression.rewriteColumnTableAliases(replacements)
+        )
+        is SpecialExpression.LikeExpression -> copy(
+            value = value.rewriteColumnTableAliases(replacements),
+            pattern = pattern.rewriteColumnTableAliases(replacements),
+            escape = escape?.rewriteColumnTableAliases(replacements)
+        )
+        is SubqueryExpression.QuantifiedComparison -> copy(
+            expression = expression.rewriteColumnTableAliases(replacements)
+        )
+        is DeferredSubqueryExpression.In -> copy(value = value.rewriteColumnTableAliases(replacements))
+        is DeferredSubqueryExpression.QuantifiedComparison -> copy(
+            expression = expression.rewriteColumnTableAliases(replacements)
+        )
+        is Literal,
+        is Parameter,
+        is SpecialExpression.RawSqlExpression,
+        is SubqueryExpression.ExistsExpression,
+        is SubqueryExpression.ScalarSubquery,
+        is DeferredSubqueryExpression.Scalar,
+        is DeferredSubqueryExpression.Exists -> this
+    }
+}
+
 private fun Expression.collectColumnReferences(): List<ColumnReference> {
     return when (this) {
         is ColumnReference -> listOf(this)
@@ -283,6 +432,72 @@ private fun WindowFrame.FrameBoundary.rewriteSelectOutputsForOuterAlias(
         is WindowFrame.FrameBoundary.Following -> copy(
             value = value.rewriteSelectOutputsForOuterAlias(statement, alias)
         )
+        WindowFrame.FrameBoundary.CurrentRow,
+        WindowFrame.FrameBoundary.UnboundedFollowing,
+        WindowFrame.FrameBoundary.UnboundedPreceding -> this
+    }
+}
+
+private fun WindowClause.qualifyUnqualifiedColumns(alias: String): WindowClause {
+    return copy(
+        partitionBy = partitionBy?.map { it.qualifyUnqualifiedColumns(alias) },
+        orderBy = orderBy?.map {
+            OrderByItem(it.expression.qualifyUnqualifiedColumns(alias), it.direction)
+        },
+        frame = frame?.qualifyUnqualifiedColumns(alias)
+    )
+}
+
+private fun WindowFrame.qualifyUnqualifiedColumns(alias: String): WindowFrame {
+    return when (this) {
+        is WindowFrame.BetweenFrame -> copy(
+            start = start.qualifyUnqualifiedColumns(alias),
+            end = end.qualifyUnqualifiedColumns(alias)
+        )
+        is WindowFrame.SingleBoundaryFrame -> copy(
+            boundary = boundary.qualifyUnqualifiedColumns(alias)
+        )
+    }
+}
+
+private fun WindowFrame.FrameBoundary.qualifyUnqualifiedColumns(alias: String): WindowFrame.FrameBoundary {
+    return when (this) {
+        is WindowFrame.FrameBoundary.Preceding -> copy(value = value.qualifyUnqualifiedColumns(alias))
+        is WindowFrame.FrameBoundary.Following -> copy(value = value.qualifyUnqualifiedColumns(alias))
+        WindowFrame.FrameBoundary.CurrentRow,
+        WindowFrame.FrameBoundary.UnboundedFollowing,
+        WindowFrame.FrameBoundary.UnboundedPreceding -> this
+    }
+}
+
+private fun WindowClause.rewriteColumnTableAliases(replacements: Map<String, String>): WindowClause {
+    return copy(
+        partitionBy = partitionBy?.map { it.rewriteColumnTableAliases(replacements) },
+        orderBy = orderBy?.map {
+            OrderByItem(it.expression.rewriteColumnTableAliases(replacements), it.direction)
+        },
+        frame = frame?.rewriteColumnTableAliases(replacements)
+    )
+}
+
+private fun WindowFrame.rewriteColumnTableAliases(replacements: Map<String, String>): WindowFrame {
+    return when (this) {
+        is WindowFrame.BetweenFrame -> copy(
+            start = start.rewriteColumnTableAliases(replacements),
+            end = end.rewriteColumnTableAliases(replacements)
+        )
+        is WindowFrame.SingleBoundaryFrame -> copy(
+            boundary = boundary.rewriteColumnTableAliases(replacements)
+        )
+    }
+}
+
+private fun WindowFrame.FrameBoundary.rewriteColumnTableAliases(
+    replacements: Map<String, String>
+): WindowFrame.FrameBoundary {
+    return when (this) {
+        is WindowFrame.FrameBoundary.Preceding -> copy(value = value.rewriteColumnTableAliases(replacements))
+        is WindowFrame.FrameBoundary.Following -> copy(value = value.rewriteColumnTableAliases(replacements))
         WindowFrame.FrameBoundary.CurrentRow,
         WindowFrame.FrameBoundary.UnboundedFollowing,
         WindowFrame.FrameBoundary.UnboundedPreceding -> this

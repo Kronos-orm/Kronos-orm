@@ -31,3 +31,4 @@ If no entry matches, do not open the full evolution log; continue with the relev
 | Scalar subquery RHS | raw `SelectClause` as Criteria value, wrap as `CriteriaSubqueryValue.Scalar` | `2026-06-30 - Scalar subquery comparison RHS must be wrapped as CriteriaSubqueryValue.Scalar` |
 | FIR member filtering | `name.asString().startsWith("<")`, synthetic member, source fields, structured FIR metadata | `2026-07-01 - FIR 成员过滤不要用名字字符串启发式` |
 | Compiler test layering | `task.sql`, SQL string in box, renderer assertion, testData boundary | `2026-07-01 - compiler plugin 测试不要断言最终 SQL 字符串` |
+| Nested projection source | `IrConstructorSymbolImpl is unbound`, generated projection as Source, next-layer select | `2026-07-02 - generated projection 作为下一层 Source 时不要展开 FIR lazy class` |

@@ -25,7 +25,7 @@ class FunctionHandlerTest {
     @Test
     fun testAsThrowsException() {
         val exception = assertFailsWith<UnsupportedOperationException> {
-            FunctionHandler.as_("alias")
+            FunctionHandler.alias("alias")
         }
         assertEquals("You will never want to alias an empty function handle.", exception.message)
     }

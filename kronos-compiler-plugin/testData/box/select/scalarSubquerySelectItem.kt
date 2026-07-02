@@ -64,7 +64,7 @@ fun box(): String {
             ScalarSelectOrder()
                 .select { order -> order.amount }
                 .limit(1)
-                .as_("lastAmount"),
+                .alias("lastAmount"),
             it.name
         ]
     }

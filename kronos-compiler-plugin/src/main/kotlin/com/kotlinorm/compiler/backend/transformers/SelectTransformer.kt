@@ -46,7 +46,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
  *     ```kotlin
  *     fun <T: KPojo> T.foo() {
  *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
- *              [it.username, it.password, it.createTime.as_("time")]
+ *              [it.username, it.password, it.createTime.alias("time")]
  *          }
  *          KTable<T>().action(this)
  *     }
@@ -61,7 +61,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
  *              addField(Field("username",...))
  *              addField(Field("password",...))
  *              addField(Field("createTime",...).setAlias("time"))
- *              [it.username, it.password, it.createTime.as_("time")]
+ *              [it.username, it.password, it.createTime.alias("time")]
  *          }
  *          KTable<T>().action(this)
  *    }

@@ -120,8 +120,8 @@ Each transformer handles a specific `KTableFor*<T>` lambda. The compiler plugin 
 ### SelectTransformer
 Handles `KTableForSelect<T>` lambdas (used in `select { }` blocks).
 - On `visitReturn`, analyzes the return expression via `FieldAnalysis.analyzeAndBuildFieldList()`
-- Converts `it.name + it.age` into `listOf(Field("name"), Field("age"))`
-- Handles aliasing: `it.name as_ "n"` → `Field("name", alias="n")`
+- Converts `[it.name, it.age]` into `listOf(Field("name"), Field("age"))`
+- Handles aliasing: `it.name.alias("n")` → `Field("name", alias="n")`
 - Handles functions: `f.count(it.id)` → `FunctionField("count", [Field("id")])`
 
 ### SetTransformer
@@ -136,7 +136,7 @@ Handles `KTableForCondition<T>` lambdas (used in `where { }`, `having { }`, `on 
 
 ### SortTransformer
 Handles `KTableForSort<T>` lambdas (used in `orderBy { }` blocks).
-- Converts `it.age.desc() + it.name.asc()` into sorted field list
+- Converts `[it.age.desc(), it.name.asc()]` into sorted field list
 
 ### ReferenceTransformer
 Handles `KTableForReference<T>` lambdas (used in `cascade { }` blocks).
@@ -152,9 +152,9 @@ Key method: `analyzeAndBuildFieldList(expression, irBuilder)` → `List<IrExpres
 
 Handles:
 - **Property access**: `it.name` → `Field("name_col", "name", VARCHAR, ...)`
-- **Plus operator**: `it.name + it.age` → two fields concatenated
-- **Unary plus**: `+it.name` → single field
-- **Aliasing**: `it.name as_ "alias"` → field with alias set
+- **Collection literal**: `[it.name, it.age]` → two selected fields
+- **Single expression**: `it.name` → single selected field
+- **Aliasing**: `it.name.alias("alias")` → field with alias set
 - **Function calls**: `f.count(it.id)` → `FunctionField("count", [(Field("id"), null)])`
 - **Minus operator**: `it - it.id` → all fields except id (exclusion)
 - **All fields**: `it.eq` → all columns of the entity

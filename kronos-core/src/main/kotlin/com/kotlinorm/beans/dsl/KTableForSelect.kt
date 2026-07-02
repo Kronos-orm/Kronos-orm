@@ -31,10 +31,10 @@ import com.kotlinorm.interfaces.KPojo
  * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
  * to add Fields, you can use following:
  * 1. `[it.<field1>, it.<field2>]`
- * 2. `[it.<field1>, it.<field2>.as_("<alias>")]`
+ * 2. `[it.<field1>, it.<field2>.alias("<alias>")]`
  * 3. `addField(Field(columnName, optionalName))`
  * 4. `Field(columnName, optionalName).setAlias("<alias>")`
- * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).as_("<alias>")`
+ * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).alias("<alias>")`
  *
  * @param T the type of the table
  */
@@ -72,16 +72,16 @@ open class KTableForSelect<T : KPojo> {
      * @return the provided alias
      */
     @Suppress("UNUSED")
-    infix fun Field.as_(@Suppress("UNUSED_PARAMETER") alias: String): Field = this
+    fun Field.alias(@Suppress("UNUSED_PARAMETER") alias: String): Field = this
 
     @Suppress("UNUSED")
-    infix fun FunctionField.as_(@Suppress("UNUSED_PARAMETER") alias: String): FunctionField = this
+    fun FunctionField.alias(@Suppress("UNUSED_PARAMETER") alias: String): FunctionField = this
 
     @Suppress("UNUSED")
-    infix fun Expression.as_(@Suppress("UNUSED_PARAMETER") alias: String): Expression = this
+    fun Expression.alias(@Suppress("UNUSED_PARAMETER") alias: String): Expression = this
 
     @Suppress("UNUSED")
-    infix fun <R> R.as_(@Suppress("UNUSED_PARAMETER") alias: String): R = this
+    fun <R> R.alias(@Suppress("UNUSED_PARAMETER") alias: String): R = this
 
     /**
      * Adds a SQL window `OVER (...)` clause to a function expression.

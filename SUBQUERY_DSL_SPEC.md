@@ -117,7 +117,7 @@ Kronos 的 receiver 设计按这个顺序约束字段可见性。
 
 同一层 `Selected` 的最终字段名必须唯一。
 
-这是对原 `.as_("name")` 的破坏性改名。原 API 不保留兼容，使用 `.as_("name")` 应报编译期错误或不可解析。
+这是对旧版命名 API 的破坏性改名。原 API 不保留兼容，新增代码统一使用 `.alias("name")`。
 
 DSL：
 
@@ -142,7 +142,7 @@ FROM user u
 |------|------|
 | `select { [a, b] }` | 投影列表 |
 | `orderBy { [a.asc(), b.desc()] }` | 排序列表 |
-| `over(partitionBy = [a], orderBy = [b.asc()])` | 窗口字段列表 |
+| `over { partitionBy(a); orderBy(b.asc()) }` | 窗口字段列表 |
 | `[a, b] in query` | row-value tuple |
 
 ### 3.5 SQL 示例 alias
@@ -541,7 +541,10 @@ val ranked = Order()
             it.userId,
             it.amount,
             f.rowNumber()
-                .over(partitionBy = [it.userId], orderBy = [it.createTime.desc()])
+                .over {
+                    partitionBy(it.userId)
+                    orderBy(it.createTime.desc())
+                }
                 .alias("rn")
         ]
     }
@@ -839,7 +842,6 @@ WHERE u.status = ?
 | 同层 `where` 引用当前层 `Selected` 字段 | 编译期错误 |
 | `select { ... }` 中非直接字段投影缺少 `.alias("name")` | 编译期错误 |
 | 同一层 `Selected` 的最终字段名重复 | 编译期错误 |
-| 使用 `.as_("name")` | 编译期错误或不可解析 |
 | `insert<Target>` 字段数量可静态判断且不匹配 | 编译期错误 |
 | DML 目标表字段和子查询字段类型可静态判断且不兼容 | 编译期错误 |
 

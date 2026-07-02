@@ -81,9 +81,9 @@ DSL class for `where {}` / `having {}` / `on {}` blocks. Provides operator overl
 
 ### KTableForSelect<T>
 DSL for `select {}` blocks:
-- `it.field1 + it.field2` (operator `+` returns 1, compiler captures fields)
-- `+it.field1` (unary plus for single field)
-- `it.field1 as_ "alias"` (aliasing)
+- `[it.field1, it.field2]` (collection literal, compiler captures fields)
+- `it.field1` (single selected field)
+- `it.field1.alias("alias")` (aliasing)
 - `addField(Field(...))` (manual field addition)
 - `it - it.id` (exclusion — all fields except id)
 - `it.eq` (all columns)
@@ -98,7 +98,7 @@ DSL for `set {}` blocks in updates:
 DSL for `orderBy {}` blocks:
 - `it.age.desc()` — descending
 - `it.name.asc()` — ascending
-- `it.age.desc() + it.name.asc()` — multiple sort fields
+- `[it.age.desc(), it.name.asc()]` — multiple sort fields
 
 ### KTableForReference<T>
 DSL for `cascade {}` blocks:

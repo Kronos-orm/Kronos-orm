@@ -24,6 +24,7 @@ import com.kotlinorm.compiler.fir.KronosProjectionModel
 import com.kotlinorm.compiler.fir.KronosProjectionRegistry
 import com.kotlinorm.compiler.utils.CascadeAnnotationFqName
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
+import com.kotlinorm.compiler.utils.KSelectableFqName
 import com.kotlinorm.compiler.utils.KPojoTableCommentPropertyName
 import com.kotlinorm.compiler.utils.KPojoTableNamePropertyName
 import com.kotlinorm.compiler.utils.SelectFunctionFqName
@@ -67,6 +68,7 @@ import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
 import org.jetbrains.kotlin.ir.types.typeWith
+import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.util.addFakeOverrides
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
@@ -87,6 +89,7 @@ class KronosProjectionIrTransformer(
     private val errorReporter: ErrorReporter
 ) : IrElementTransformerVoidWithContext() {
     private val materializedProjectionClasses = linkedMapOf<FqName, IrClass>()
+    private val projectionMetadataClasses = linkedMapOf<FqName, IrClass>()
     val projectionClasses: Collection<IrClass>
         get() = materializedProjectionClasses.values
 
@@ -151,8 +154,12 @@ class KronosProjectionIrTransformer(
         val materializedProjectionType = materializedProjectionClass.symbol.defaultType
         val materializedContextType = materializedContextClass.symbol.defaultType
 
+        val selectableReceiver = call.arguments[0]?.type?.isKSelectableReceiver() == true
         val selectGeneratedSymbol = pluginContext.referenceFunctions(SelectGeneratedProjectionCallableId)
-            .firstOrNull { it.owner.parameters.size == 4 }
+            .firstOrNull { symbol ->
+                symbol.owner.parameters.size == 4 &&
+                    (symbol.owner.parameters[0].type.classFqName == KSelectableFqName) == selectableReceiver
+            }
             ?: return null
 
         return DeclarationIrBuilder(pluginContext, currentScope!!.scope.scopeOwnerSymbol).irCall(selectGeneratedSymbol).apply {
@@ -202,7 +209,11 @@ class KronosProjectionIrTransformer(
         file.declarations += irClass
         materializedProjectionClasses[fqName] = irClass
 
-        val sourceClass = sourceType.classOrNull?.owner ?: irClass
+        val rawSourceClass = sourceType.classOrNull?.owner
+        val sourceClass = rawSourceClass?.materializedSourceClassOrNull() ?: irClass
+        val metadataClass = rawSourceClass?.metadataSourceClassOrNull() ?: sourceClass
+        projectionMetadataClasses[fqName] = metadataClass
+
         val sourceProperties = sourceClass.properties.associateBy { it.name }
         val projectionFields = model.fieldsFor(classId).withCascadeLocalKeyFields(sourceClass, sourceProperties)
         projectionFields.forEach { field ->
@@ -214,8 +225,29 @@ class KronosProjectionIrTransformer(
         }
         irClass.addNoArgConstructor()
         irClass.addFakeOverrides(IrTypeSystemContextImpl(pluginContext.irBuiltIns))
-        irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter, sourceClass), null)
+        irClass.transform(KronosIrClassTransformer(pluginContext, irClass, errorReporter, metadataClass), null)
         return irClass
+    }
+
+    /**
+     * Uses the concrete backend class for generated projection sources.
+     *
+     * FIR-generated projection classes are lazy wrappers; reading their properties here can
+     * request constructor/property symbols before FIR2IR has bound them.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.materializedSourceClassOrNull(): IrClass? {
+        if (!isGeneratedProjectionClass()) return this
+        return materializedProjectionClasses[kotlinFqName]
+    }
+
+    /**
+     * Keeps generated projection table metadata tied to the original source class.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrClass.metadataSourceClassOrNull(): IrClass? {
+        if (!isGeneratedProjectionClass()) return this
+        return projectionMetadataClasses[kotlinFqName]
     }
 
     /**
@@ -355,4 +387,8 @@ class KronosProjectionIrTransformer(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun IrClass.isGeneratedProjectionClass(): Boolean =
         kotlinFqName.parent() == GeneratedProjectionPackageFqName
+
+    private fun IrType.isKSelectableReceiver(): Boolean {
+        return classFqName == KSelectableFqName || superTypes().any { it.classFqName == KSelectableFqName }
+    }
 }

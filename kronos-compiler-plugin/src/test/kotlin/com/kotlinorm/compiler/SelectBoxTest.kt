@@ -69,6 +69,12 @@ class SelectBoxTest : AbstractKronosJvmBoxSuite("select") {
     fun operatorFunctionFields() = box("operatorFunctionFields")
 
     /**
+     * Verifies window function OVER clauses are lowered into `FunctionField` metadata.
+     */
+    @Test
+    fun windowFunctionOver() = box("windowFunctionOver")
+
+    /**
      * Verifies aliased selectable expressions are lowered into scalar subquery select items.
      */
     @Test

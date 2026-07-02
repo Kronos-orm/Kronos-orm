@@ -18,6 +18,7 @@ package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.kTableForConditionSymbol
+import com.kotlinorm.compiler.core.kTableForInsertSelectSymbol
 import com.kotlinorm.compiler.core.kTableForReferenceSymbol
 import com.kotlinorm.compiler.core.kTableForSelectSymbol
 import com.kotlinorm.compiler.core.kTableForSetSymbol
@@ -188,6 +189,8 @@ class KronosParserTransformer(
             when (extensionReceiverFqName) {
                 kTableForSelectSymbol.owner.kotlinFqName.asString() ->
                     declaration.body = transformWith(declaration) { SelectTransformer(pluginContext, it, errorReporter) }
+                kTableForInsertSelectSymbol.owner.kotlinFqName.asString() ->
+                    declaration.body = transformWith(declaration) { InsertSelectTransformer(pluginContext, it, errorReporter) }
                 kTableForSetSymbol.owner.kotlinFqName.asString() ->
                     declaration.body = transformWith(declaration) { SetTransformer(pluginContext, it, errorReporter) }
                 kTableForConditionSymbol.owner.kotlinFqName.asString() ->

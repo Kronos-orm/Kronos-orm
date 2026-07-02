@@ -116,12 +116,12 @@ class TableOperationPostgres {
         dataSource.table.createTable(user)
         // 判断表是否存在
         val exists = dataSource.table.exists(user)
-        assertEquals(exists, true)
+        assertEquals(true, exists)
         // 删除表
         dataSource.table.dropTable(user)
         // 判断表是否存在
         val exists2 = dataSource.table.exists(user)
-        assertEquals(exists2, false)
+        assertEquals(false, exists2)
     }
 
     /**
@@ -188,7 +188,7 @@ class TableOperationPostgres {
         )
         PgUser().update().set { it.id = 9 }.where { it.id == 8 }.execute()
 
-        val updated = PgUser().select { [it.id, it.regTime, it.age.as_("aa")] }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
+        val updated = PgUser().select { [it.id, it.regTime, it.age.alias("aa")] }.where { it.regTime == Instant.ofEpochMilli(160000000000L) }
             .queryOne()
 
         assertEquals(
@@ -196,7 +196,7 @@ class TableOperationPostgres {
         )
 
         PgUser(id = 9).delete().by { it.id }.execute()
-        val total = PgUser().select { f.count(it.id) }
+        val total = PgUser().select { f.count(it.id).alias("total") }
             .where { it.regTime == Instant.ofEpochMilli(160000000000L) }
             .queryOne<Int>()
         assertEquals(

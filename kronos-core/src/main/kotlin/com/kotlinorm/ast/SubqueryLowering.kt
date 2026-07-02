@@ -216,6 +216,8 @@ object SubqueryLowering {
     private fun lowerTableReference(table: TableReference, context: QueryMaterializeContext): TableReference {
         return when (table) {
             is SubqueryTable -> table.copy(subquery = lower(table.subquery, context))
+            is DeferredSubqueryTable ->
+                SubqueryTable(lower(table.query.materialize(context), context), table.alias)
             is JoinTable -> table.copy(
                 left = lowerTableReference(table.left, context),
                 right = lowerTableReference(table.right, context),

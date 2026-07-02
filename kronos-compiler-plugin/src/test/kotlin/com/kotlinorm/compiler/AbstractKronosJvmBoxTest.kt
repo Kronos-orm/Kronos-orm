@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.test.FirParser
 import org.jetbrains.kotlin.test.builders.TestConfigurationBuilder
 import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
 import org.jetbrains.kotlin.test.directives.JvmEnvironmentConfigurationDirectives
+import org.jetbrains.kotlin.test.runners.AbstractFirLightTreeDiagnosticsTest
 import org.jetbrains.kotlin.test.model.TestModule
 import org.jetbrains.kotlin.test.runners.codegen.AbstractFirBlackBoxCodegenTestBase
 import org.jetbrains.kotlin.test.services.EnvironmentBasedStandardLibrariesPathProvider
@@ -33,6 +34,7 @@ import org.jetbrains.kotlin.test.services.EnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.KotlinStandardLibrariesPathProvider
 import org.jetbrains.kotlin.test.services.RuntimeClasspathProvider
 import org.jetbrains.kotlin.test.services.TestServices
+import org.opentest4j.AssertionFailedError
 import java.io.File
 
 /**
@@ -88,6 +90,68 @@ abstract class AbstractKronosJvmBoxSuite(
      */
     protected fun box(name: String) {
         runTest("$testDataDir/box/$directory/$name.kt")
+    }
+}
+
+/**
+ * Base class for Kronos official FIR diagnostics tests.
+ */
+abstract class AbstractKronosJvmDiagnosticsTest : AbstractFirLightTreeDiagnosticsTest() {
+    /**
+     * Uses the Kotlin test framework's environment-provided stdlib locations.
+     */
+    override fun createKotlinStandardLibrariesPathProvider(): KotlinStandardLibrariesPathProvider {
+        return EnvironmentBasedStandardLibrariesPathProvider
+    }
+
+    /**
+     * Registers Kronos compiler plugin configuration and language flags for diagnostics testData sources.
+     */
+    override fun configure(builder: TestConfigurationBuilder) = with(builder) {
+        super.configure(this)
+
+        defaultDirectives {
+            +JvmEnvironmentConfigurationDirectives.FULL_JDK
+            LanguageSettingsDirectives.LANGUAGE with "+CollectionLiterals"
+        }
+
+        useConfigurators(::KronosCompilerPluginConfigurator)
+    }
+
+    protected val testDataDir: String
+        get() = requireNotNull(System.getProperty("kronos.compiler.plugin.projectDir")) {
+            "Missing kronos.compiler.plugin.projectDir"
+        } + "/testData"
+}
+
+/**
+ * Binds a JUnit test class to one `testData/diagnostics/<directory>` suite.
+ */
+abstract class AbstractKronosJvmDiagnosticsSuite(
+    private val directory: String
+) : AbstractKronosJvmDiagnosticsTest() {
+    /**
+     * Runs one `.kt` file from this suite's `testData/diagnostics` directory.
+     */
+    protected fun diagnostics(name: String) {
+        val testDataFile = "$testDataDir/diagnostics/$directory/$name.kt"
+        try {
+            runTest(testDataFile)
+        } catch (error: AssertionFailedError) {
+            writeDiagnosticsActual(name, error)
+            throw error
+        }
+    }
+
+    private fun writeDiagnosticsActual(name: String, error: AssertionFailedError) {
+        if (!error.isActualDefined) return
+        val actual = error.actual.stringRepresentation ?: return
+        val projectDir = requireNotNull(System.getProperty("kronos.compiler.plugin.projectDir")) {
+            "Missing kronos.compiler.plugin.projectDir"
+        }
+        val actualFile = File(projectDir, "build/tmp/kronos-diagnostics-actual/$directory/$name.kt")
+        actualFile.parentFile.mkdirs()
+        actualFile.writeText(actual)
     }
 }
 

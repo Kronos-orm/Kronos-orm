@@ -494,3 +494,34 @@ SQL 字符串、自动派生表分层、方言 quoting 和参数渲染放到 cor
 
 ### 预防措施
 新增 compiler-plugin testData 时，避免读取 `task.sql`、断言 `SELECT` / `WHERE` 字符串或依赖方言 quoting。需要验证 SQL 时，新增 core 单测；需要验证真实数据库语义时，新增 testing 集成测试。compiler 层优先断言 FIR 可见性、IR verifier、生成类映射、Criteria/AST handoff 和参数 map。
+
+## 2026-07-02 - generated projection 作为下一层 Source 时不要展开 FIR lazy class
+
+### 问题症状
+新增窗口函数下一层过滤 core 测试时，`ranked.select { ... }` 触发 core 测试源码编译阶段崩溃：
+
+```text
+IrGenerationExtensionException: IrConstructorSymbolImpl is unbound. Signature: null
+at KronosProjectionIrTransformer.materializeGeneratedProjectionClass
+```
+
+### 问题原因
+外层 `KSelectable<S>.select { ... }` 的 `Source` 可能是上一层 FIR-generated projection class。backend materializer 在创建外层 generated projection 时，如果直接读取 `sourceType.classOrNull.owner.properties`，就会展开 FIR2IR lazy class 的 constructor/property symbols。上一层 projection 已经有 backend materialized concrete class，但旧逻辑没有优先使用它。
+
+### 解决方案
+`KronosProjectionIrTransformer` 对 generated projection source 分两类处理：
+
+- 字段类型来源优先使用 `materializedProjectionClasses[sourceFqName]` 的 concrete class。
+- 表元数据来源使用上一层记录的 metadata class，避免外层 projection 把表名退化成 generated class 名。
+- 如果 generated source 尚未 materialize，则保守不展开 lazy class。
+
+已用以下命令验证：
+
+```text
+./gradlew :kronos-compiler-plugin:compileKotlin --no-daemon --console=plain -Dkotlin.incremental=false -Dorg.gradle.workers.max=1
+./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.SelectBoxTest.windowFunctionOver --no-daemon --console=plain -Dkotlin.incremental=false -Dorg.gradle.workers.max=1
+./gradlew :kronos-core:test --tests 'com.kotlinorm.orm.subquery.MysqlSubqueryDslTest.window*' --no-daemon --console=plain -Dkotlin.incremental=false -Dorg.gradle.workers.max=1
+```
+
+### 预防措施
+任何从 `IrType.classOrNull.owner` 得到的 generated projection class 都应先判断是否已有 backend materialized class。不要在下一层 select、join selectable、insert-select、CTAS 等消费 generated `Selected` 的路径中直接展开 FIR lazy class declarations。

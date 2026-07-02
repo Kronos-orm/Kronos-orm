@@ -34,6 +34,7 @@ import com.kotlinorm.ast.QueryMaterializeContext
 import com.kotlinorm.ast.toScalarSubqueryExpression
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
+import com.kotlinorm.beans.dsl.KTableForInsertSelect.Companion.afterInsertSelect
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.beans.generator.SnowflakeIdGenerator
 import com.kotlinorm.beans.generator.UUIDGenerator
@@ -58,8 +59,10 @@ import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeInsertClause
 import com.kotlinorm.orm.union.UnionClause
+import com.kotlinorm.types.ToInsertSelect
 import com.kotlinorm.types.ToReference
 import com.kotlinorm.utils.DataSourceUtil.orDefault
+import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.execute
 
 class InsertClause<T : KPojo>(val pojo: T) {
@@ -127,13 +130,18 @@ class InsertClause<T : KPojo>(val pojo: T) {
     }
 
     @PublishedApi
-    internal fun fromSource(
-        query: KSelectable<*>,
-        values: ((List<Field>) -> List<Any?>)? = null
+    internal fun <S : KPojo> fromSource(
+        query: KSelectable<S>,
+        values: ToInsertSelect<S, Any?> = null
     ): InsertClause<T> {
         sourceQuery = query
         sourceUnion = null
-        sourceValueProvider = values
+        sourceValueProvider = values?.let { insertValues ->
+            {
+                val source = query.selectedKClass.createInstance()
+                source.afterInsertSelect { insertValues(it) }
+            }
+        }
         cascadeEnabled = false
         return this
     }

@@ -20,7 +20,10 @@ import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.insert.InsertClause
+import com.kotlinorm.types.ToInsertSelect
 import com.kotlinorm.utils.LinkedHashSet
+import com.kotlinorm.utils.createInstance
 import kotlin.reflect.KClass
 
 abstract class KSelectable<Selected : KPojo>(
@@ -43,7 +46,16 @@ abstract class KSelectable<Selected : KPojo>(
     abstract fun toStatement(wrapper: KronosDataSourceWrapper? = null): SelectStatement
 
     @Suppress("UNUSED")
-    infix fun as_(@Suppress("UNUSED_PARAMETER") alias: String): KSelectable<Selected> = this
+    fun alias(@Suppress("UNUSED_PARAMETER") alias: String): KSelectable<Selected> = this
+
+    /**
+     * Builds an INSERT SELECT clause using this query's Selected row type as the value-mapping receiver.
+     */
+    inline fun <reified Target : KPojo> insert(
+        noinline values: ToInsertSelect<Selected, Any?> = null
+    ): InsertClause<Target> {
+        return InsertClause(Target::class.createInstance()).fromSource(this, values)
+    }
 
     open fun toStatement(
         wrapper: KronosDataSourceWrapper? = null,

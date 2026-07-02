@@ -35,26 +35,26 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun cascadeProjectionKeepsLocalKey() = box("cascadeProjectionKeepsLocalKey")
 
     /**
-     * Verifies select aliases are visible on the post-select Context receiver.
+     * Verifies select aliases are visible on post-select orderBy Context receivers.
      */
     @Test
-    fun selectAliasContextWhere() = box("selectAliasContextWhere")
+    fun selectAliasContextOrderBy() = box("selectAliasContextOrderBy")
 
     /**
-     * Verifies select aliases are visible on post-select orderBy and having Context receivers.
+     * Verifies scalar subquery aliases are visible on generated Selected and orderBy Context receivers.
      */
     @Test
-    fun selectAliasContextOrderByHaving() = box("selectAliasContextOrderByHaving")
+    fun scalarSubqueryAliasContextOrderBy() = box("scalarSubqueryAliasContextOrderBy")
 
     /**
-     * Verifies scalar subquery aliases are visible on generated Selected and Context receivers.
-     */
-    @Test
-    fun scalarSubqueryAliasContextWhereOrderBy() = box("scalarSubqueryAliasContextWhereOrderBy")
-
-    /**
-     * Verifies function and aggregate aliases are visible on generated Selected and Context receivers.
+     * Verifies function and aggregate aliases are visible on generated Selected and orderBy Context receivers.
      */
     @Test
     fun functionAliasContext() = box("functionAliasContext")
+
+    /**
+     * Verifies window aliases are visible on post-select orderBy Context receivers.
+     */
+    @Test
+    fun windowAliasContextOrderBy() = box("windowAliasContextOrderBy")
 }

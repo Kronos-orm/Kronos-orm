@@ -17,6 +17,7 @@
 package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.ast.TableReference
 import com.kotlinorm.enums.JoinType
 import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KClass
@@ -37,5 +38,7 @@ class KJoinable (
     val joinType: JoinType,
     val condition: Criteria?,
     val kClass: KClass<KPojo>,
-    val kPojo: KPojo
+    val kPojo: KPojo,
+    val tableReference: TableReference? = null,
+    val tableAliasOverrides: Map<String, String> = emptyMap()
 )

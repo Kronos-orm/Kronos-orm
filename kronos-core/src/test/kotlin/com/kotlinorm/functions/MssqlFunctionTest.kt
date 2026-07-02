@@ -23,7 +23,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     // Math functions with MSSQL-specific behavior
     @Test
     fun testCeilInSelect() {
-        val (sql, _) = user.select { f.ceil(it.score) }.build()
+        val (sql, _) = user.select { f.ceil(it.score).alias("ceil") }.build()
         assertEquals("SELECT CEILING([score]) AS ceil FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -35,7 +35,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testLnInSelect() {
-        val (sql, _) = user.select { f.ln(it.score) }.build()
+        val (sql, _) = user.select { f.ln(it.score).alias("ln") }.build()
         assertEquals("SELECT LOG([score], EXP(1)) AS ln FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -47,7 +47,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testRandInSelect() {
-        val (sql, _) = user.select { f.rand() }.build()
+        val (sql, _) = user.select { f.rand().alias("rand") }.build()
         assertEquals("SELECT RAND() AS rand FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -59,7 +59,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testModInSelect() {
-        val (sql, _) = user.select { it.score % 2 }.build()
+        val (sql, _) = user.select { (it.score % 2).alias("mod") }.build()
         assertEquals("SELECT ([score] % 2) AS mod FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -71,7 +71,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testTruncInSelect() {
-        val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
+        val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
         assertEquals("SELECT ROUND([score], 2) AS trunc FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -84,7 +84,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     // String functions with MSSQL-specific behavior
     @Test
     fun testLengthInSelect() {
-        val (sql, _) = user.select { f.length(it.username) }.build()
+        val (sql, _) = user.select { f.length(it.username).alias("length") }.build()
         assertEquals("SELECT LEN([username]) AS length FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -96,7 +96,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testRepeatInSelect() {
-        val (sql, _) = user.select { f.repeat(it.username, 3) }.build()
+        val (sql, _) = user.select { f.repeat(it.username, 3).alias("repeat") }.build()
         assertEquals("SELECT REPLICATE([username], 3) AS repeat FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 

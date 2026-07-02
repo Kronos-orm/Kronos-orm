@@ -60,6 +60,8 @@ abstract class AbstractSqlRenderer : SqlRenderer {
         return when (table) {
             is TableName -> renderTableName(table, context)
             is SubqueryTable -> renderSubqueryTable(table, context)
+            is DeferredSubqueryTable ->
+                    error("Deferred subquery table must be lowered before rendering.")
             is JoinTable -> renderJoinTable(table, context)
             is TableReferenceImpl.SimpleTableReference -> renderSimpleTableReference(table, context)
             is TableReferenceImpl.SubqueryTableReference ->

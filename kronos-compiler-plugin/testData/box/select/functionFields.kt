@@ -34,13 +34,14 @@ fun box(): String {
     }
 
     val user = FunctionSelectUser()
-    val fields = user.collectFields { [f.count(it.id).as_("cnt"), f.sum(it.age)] }
+    val fields = user.collectFields { [f.count(it.id).alias("cnt"), f.sum(it.age).alias("sumAge")] }
 
     return when {
         fields.size != 2 -> "Fail: size was ${fields.size}"
         fields[0].name != "cnt" -> "Fail: alias was ${fields[0].name}"
         fields[0] !is FunctionField -> "Fail: count should be FunctionField"
         fields[1] !is FunctionField -> "Fail: sum should be FunctionField"
+        fields[1].name != "sumAge" -> "Fail: second alias was ${fields[1].name}"
         else -> "OK"
     }
 }

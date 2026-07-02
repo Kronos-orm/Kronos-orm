@@ -19,6 +19,17 @@ plugins {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs = listOf("-Xmx2048m")
+    val ideaTestHome = layout.buildDirectory.dir("idea-test/home").get().asFile
+    val ideaTestConfig = layout.buildDirectory.dir("idea-test/config").get().asFile
+    val ideaTestSystem = layout.buildDirectory.dir("idea-test/system").get().asFile
+    val ideaTestPlugins = layout.buildDirectory.dir("idea-test/plugins").get().asFile
+    doFirst {
+        listOf(ideaTestHome, ideaTestConfig, ideaTestSystem, ideaTestPlugins).forEach { it.mkdirs() }
+    }
+    systemProperty("idea.home.path", ideaTestHome.absolutePath)
+    systemProperty("idea.config.path", ideaTestConfig.absolutePath)
+    systemProperty("idea.system.path", ideaTestSystem.absolutePath)
+    systemProperty("idea.plugins.path", ideaTestPlugins.absolutePath)
     systemProperty("kronos.compiler.plugin.projectDir", projectDir.absolutePath)
     systemProperty("kronos.compiler.test.classpath", sourceSets.test.get().runtimeClasspath.asPath)
     kotlinCompilerTestRuntimeJars.forEach { (propertyName, jarName) ->

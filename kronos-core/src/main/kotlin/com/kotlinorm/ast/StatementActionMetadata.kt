@@ -44,6 +44,7 @@ fun TableReference.tableNameOrNull(): String? = when (this) {
     is JoinTable -> left.tableNameOrNull()
     is TableReferenceImpl.JoinedTableReference -> baseTable.tableNameOrNull()
     is SubqueryTable,
+    is DeferredSubqueryTable,
     is TableReferenceImpl.SubqueryTableReference -> null
 }
 

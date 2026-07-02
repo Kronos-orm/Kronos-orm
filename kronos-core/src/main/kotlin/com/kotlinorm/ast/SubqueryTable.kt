@@ -24,3 +24,11 @@ package com.kotlinorm.ast
  * @author OUSC
  */
 data class SubqueryTable(val subquery: SelectStatement, val alias: String) : TableReference
+
+/**
+ * Builder-stage derived table that materializes its query during subquery lowering.
+ *
+ * Keeping the source query deferred lets the outer build share one parameter map with
+ * the inner selectable instead of freezing the inner statement too early.
+ */
+data class DeferredSubqueryTable(val query: SelectQueryRef, val alias: String) : TableReference

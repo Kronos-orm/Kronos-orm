@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-// Verifies that function and aggregate aliases are FIR-visible on generated Selected and Context receivers.
+// Verifies that function and aggregate aliases are FIR-visible on generated Selected and orderBy Context receivers.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.ast.BinaryExpression
 import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.OrderByItem
-import com.kotlinorm.ast.Parameter
 import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.ast.SubqueryTable
 import com.kotlinorm.enums.SortType
@@ -40,8 +39,6 @@ data class ProjectionFunctionAliasUser(
 ) : KPojo
 
 fun box(): String {
-    val params = mutableMapOf<String, Any?>()
-
     Kronos.init {
         registerFunctionBuilder(PostgresFunctionBuilder)
     }
@@ -50,11 +47,10 @@ fun box(): String {
         .select {
             [
                 it.id,
-                f.length(it.username).as_("nameLength"),
-                f.count(it.id).as_("totalCount")
+                f.length(it.username).alias("nameLength"),
+                f.count(it.id).alias("totalCount")
             ]
         }
-        .having { it.totalCount > 1 }
         .orderBy { it.nameLength.desc() }
 
     @Suppress("UNREACHABLE_CODE")
@@ -65,14 +61,11 @@ fun box(): String {
         return "Fail: selected aliases unexpectedly evaluated as $nameLength/$totalCount"
     }
 
-    val statement = clause.toStatement(null, params)
+    val statement = clause.toStatement()
     val failures = listOfNotNull(
         expect(statement.hasProjectionAlias("nameLength")) { "select aliases were ${statement.selectAliases()}" },
         expect(statement.hasProjectionAlias("totalCount")) { "select aliases were ${statement.selectAliases()}" },
-        expect(statement.hasFilterColumn("totalCount")) { "filter expressions were ${statement.allFilterExpressions()}" },
-        expect(statement.hasFilterParameter("totalCountMin")) { "filter expressions were ${statement.allFilterExpressions()}" },
         expect(statement.hasOrderByColumn("nameLength", SortType.DESC)) { "order by was ${statement.allOrderBy()}" },
-        expect(params["totalCountMin"] == 1) { "alias having param was $params" },
     )
 
     return failures.firstOrNull() ?: "OK"
@@ -94,22 +87,6 @@ fun SelectStatement.hasProjectionAlias(name: String): Boolean {
     }
 }
 
-fun SelectStatement.hasFilterColumn(name: String): Boolean {
-    return allSelectStatements().any { statement ->
-        statement.allFilterExpressions().any { expression ->
-            expression.containsExpression(ColumnReference::class) { it.columnName == name }
-        }
-    }
-}
-
-fun SelectStatement.hasFilterParameter(name: String): Boolean {
-    return allSelectStatements().any { statement ->
-        statement.allFilterExpressions().any { expression ->
-            expression.containsExpression(Parameter.NamedParameter::class) { it.name == name }
-        }
-    }
-}
-
 fun SelectStatement.hasOrderByColumn(name: String, direction: SortType): Boolean {
     return allOrderBy().any { item ->
         item.direction == direction &&
@@ -119,10 +96,6 @@ fun SelectStatement.hasOrderByColumn(name: String, direction: SortType): Boolean
 
 fun SelectStatement.allOrderBy(): List<OrderByItem> {
     return allSelectStatements().flatMap { it.orderBy.orEmpty() }
-}
-
-fun SelectStatement.allFilterExpressions(): List<Any?> {
-    return allSelectStatements().flatMap { listOf(it.where, it.having) }
 }
 
 fun SelectStatement.allSelectStatements(): List<SelectStatement> {

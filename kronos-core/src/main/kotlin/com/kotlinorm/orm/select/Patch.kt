@@ -16,14 +16,34 @@
 
 package com.kotlinorm.orm.select
 
+import com.kotlinorm.ast.DeferredSubqueryTable
+import com.kotlinorm.ast.toSelectQueryRef
+import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.types.ToFilter
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.utils.createInstance
 import kotlin.reflect.KClass
 
+private const val DerivedQueryAlias = "q"
+
 @Suppress("UNCHECKED_CAST")
 fun <T : KPojo> T.select(fields: ToSelect<T, Any?> = null): SelectClause<T, T, T> {
     return SelectClause(this, fields, kClass() as KClass<T>)
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <T : KPojo> T.where(selectCondition: ToFilter<T, Boolean?> = null): SelectClause<T, T, T> {
+    return SelectClause<T, T, T>(this, null, kClass() as KClass<T>).where(selectCondition)
+}
+
+fun <S : KPojo> KSelectable<S>.select(fields: ToSelect<S, Any?> = null): SelectClause<S, S, S> {
+    val source = selectedKClass.createInstance()
+    return SelectClause<S, S, S>(source, fields, selectedKClass).also { clause ->
+        clause.statement.from = DeferredSubqueryTable(toSelectQueryRef(), DerivedQueryAlias)
+        clause.useSourceTableAlias(DerivedQueryAlias)
+        clause.logicDeleteStrategy = null
+    }
 }
 
 @PublishedApi
@@ -41,6 +61,20 @@ internal fun <T : KPojo, R : KPojo, C : KPojo> T.selectGeneratedProjection(
     fields: ToSelect<T, Any?> = null
 ): SelectClause<T, R, C> {
     return SelectClause(this, fields, projectionClass, contextClass.createInstance())
+}
+
+@PublishedApi
+internal fun <S : KPojo, R : KPojo, C : KPojo> KSelectable<S>.selectGeneratedProjection(
+    projectionClass: KClass<R>,
+    contextClass: KClass<C>,
+    fields: ToSelect<S, Any?> = null
+): SelectClause<S, R, C> {
+    val source = selectedKClass.createInstance()
+    return SelectClause(source, fields, projectionClass, contextClass.createInstance()).also { clause ->
+        clause.statement.from = DeferredSubqueryTable(toSelectQueryRef(), DerivedQueryAlias)
+        clause.useSourceTableAlias(DerivedQueryAlias)
+        clause.logicDeleteStrategy = null
+    }
 }
 
 @JvmName("selectProjection")

@@ -17,9 +17,8 @@
 package com.kotlinorm.orm.select
 
 import com.kotlinorm.ast.*
-import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
 import com.kotlinorm.beans.sample.database.MysqlUser
+import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.count
 import com.kotlinorm.testutils.MysqlTestBase
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -96,7 +95,7 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testAliasRegistryForSourceAndAliasedFields() {
         val user = MysqlUser()
-        val statement = user.select(fields = { [it.id, it.username.as_("name")] }).toStatement()
+        val statement = user.select(fields = { [it.id, it.username.alias("name")] }).toStatement()
 
         val id = statement.findSelectOutput("id")
         val name = statement.findSelectOutput("name")
@@ -116,9 +115,7 @@ class SelectClauseAstTest : MysqlTestBase() {
     @Test
     fun testAliasRegistryForFunctionSelectItem() {
         val user = MysqlUser()
-        val statement = user.select(fields = {
-            addField(FunctionField("count", listOf(Field("id") to null)).also { it.name = "total" })
-        }).toStatement()
+        val statement = user.select(fields = { f.count(it.id).alias("total") }).toStatement()
 
         val total = statement.findSelectOutput("total")
 
@@ -131,8 +128,15 @@ class SelectClauseAstTest : MysqlTestBase() {
 
     @Test
     fun testAliasRegistryMarksUnaliasedExpressionInternalOnly() {
-        val user = MysqlUser()
-        val statement = user.select(fields = { ["COUNT(1)"] }).toStatement()
+        val statement = SelectStatement(
+            selectList = mutableListOf(
+                SelectItem.ExpressionSelectItem(
+                    expression = SpecialExpression.RawSqlExpression("COUNT(1)"),
+                    alias = null
+                )
+            ),
+            from = TableName(table = "tb_user")
+        )
         val metadata = statement.selectItemMetadata().single()
 
         assertEquals(SelectItemSourceScope.UNKNOWN, metadata.scope)

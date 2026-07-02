@@ -29,7 +29,15 @@ import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
 import com.kotlinorm.compiler.utils.KSelectableFqName
 import com.kotlinorm.compiler.utils.NonNullAnnotationFqName
 import com.kotlinorm.compiler.utils.PrimaryKeyAnnotationFqName
+import com.kotlinorm.compiler.utils.SelectAliasFunctionName
+import com.kotlinorm.compiler.utils.SortAscendingFunctionName
+import com.kotlinorm.compiler.utils.SortDescendingFunctionName
+import com.kotlinorm.compiler.utils.SortTypeAscendingName
+import com.kotlinorm.compiler.utils.SortTypeDescendingName
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
+import com.kotlinorm.compiler.utils.WindowOrderByFunctionName
+import com.kotlinorm.compiler.utils.WindowOverFunctionName
+import com.kotlinorm.compiler.utils.WindowPartitionByFunctionName
 import com.kotlinorm.compiler.utils.extensionReceiverArgument
 import com.kotlinorm.compiler.utils.dispatchReceiverArgument
 import com.kotlinorm.compiler.utils.funcName
@@ -41,6 +49,7 @@ import com.kotlinorm.compiler.utils.mapTypeToKColumnType
 import com.kotlinorm.compiler.utils.valueArguments
 import com.kotlinorm.compiler.backend.transformers.getTableNameExpr
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBoolean
@@ -56,13 +65,16 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrFunctionExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetEnumValue
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
+import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
@@ -134,7 +146,7 @@ fun analyzeAndBuildFields(
  * - GET_PROPERTY: Property access (it.name)
  * - projection collection calls: Field combination ([it.name, it.age])
  * - MINUS: Field exclusion (it - User::password)
- * - Function calls: as_() for aliases
+ * - Function calls: alias() for aliases
  *
  * @param irFunction The function being transformed
  * @param call The IrCall to analyze
@@ -175,6 +187,7 @@ private fun analyzeCallFields(
                 }
 
                 "plus", "minus", "times", "div", "rem" -> [buildOperatorFunctionField(irFunction, call, errorReporter)]
+                WindowOverFunctionName -> [buildFunctionField(irFunction, call, errorReporter)]
                 "unaryPlus" -> {
                     errorReporter.reportError(
                         call,
@@ -184,8 +197,8 @@ private fun analyzeCallFields(
                     emptyList()
                 }
 
-                "as_" -> {
-                    // Alias: it.name.as_("alias")
+                "alias" -> {
+                    // Alias: it.name.alias("alias")
                     val receiver = call.extensionReceiverArgument ?: call.dispatchReceiverArgument
                     val aliasArg = call.getValueArgumentSafe(0)
                     if (receiver != null && aliasArg is IrConst) {
@@ -271,7 +284,7 @@ internal fun analyzeAndBuildSelectProjections(
             }
         }
 
-        expression is IrCall && expression.symbol.owner.name.asString() == "as_" -> {
+        expression is IrCall && expression.symbol.owner.name.asString() == "alias" -> {
             val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiverArgument
             val aliasArg = expression.getValueArgumentSafe(0)
             if (receiver != null && receiver.type.isKSelectableType() && aliasArg is IrConst) {
@@ -286,6 +299,76 @@ internal fun analyzeAndBuildSelectProjections(
 
         else -> analyzeAndBuildFields(irFunction, expression, errorReporter)
             .map { SelectProjectionIr.FieldProjection(it) }
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+internal fun analyzeAndBuildInsertSelectValues(
+    irFunction: IrFunction,
+    expression: IrExpression,
+    errorReporter: ErrorReporter
+): List<IrExpression> {
+    return when {
+        expression is IrCall && expression.isProjectionCollectionCall() -> {
+            expression.valueArguments.flatMap { arg ->
+                when (arg) {
+                    is IrVararg -> arg.elements.flatMap { element ->
+                        if (element is IrExpression) {
+                            analyzeAndBuildInsertSelectValues(irFunction, element, errorReporter)
+                        } else {
+                            emptyList()
+                        }
+                    }
+                    is IrExpression -> analyzeAndBuildInsertSelectValues(irFunction, arg, errorReporter)
+                    else -> emptyList()
+                }
+            }
+        }
+
+        expression is IrVararg -> expression.elements.flatMap { element ->
+            if (element is IrExpression) {
+                analyzeAndBuildInsertSelectValues(irFunction, element, errorReporter)
+            } else {
+                emptyList()
+            }
+        }
+
+        else -> listOf(buildInsertSelectValue(irFunction, expression, errorReporter))
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildInsertSelectValue(
+    irFunction: IrFunction,
+    expression: IrExpression,
+    errorReporter: ErrorReporter
+): IrExpression {
+    return when (expression) {
+        is IrPropertyReference -> buildFieldFromPropertyRef(expression, errorReporter)
+        is IrCall -> when {
+            expression.origin == IrStatementOrigin.GET_PROPERTY ->
+                buildFieldFromPropertyAccess(expression, errorReporter)
+
+            expression.operatorFunctionName() != null ->
+                buildOperatorFunctionField(irFunction, expression, errorReporter)
+
+            expression.symbol.owner.name.asString() == WindowOverFunctionName ->
+                buildFunctionField(irFunction, expression, errorReporter)
+
+            expression.isKronosFunction() ->
+                buildFunctionField(irFunction, expression, errorReporter)
+
+            expression.symbol.owner.name.asString() == SelectAliasFunctionName -> {
+                val receiver = expression.extensionReceiverArgument ?: expression.dispatchReceiverArgument
+                receiver?.let { buildInsertSelectValue(irFunction, it, errorReporter) } ?: expression
+            }
+
+            else -> expression
+        }
+
+        else -> expression
     }
 }
 
@@ -907,6 +990,15 @@ fun buildFunctionField(
     errorReporter: ErrorReporter,
     functionName: String = call.funcName()
 ): IrExpression {
+    val windowReceiver = call.windowReceiverCall()
+    val sourceCall = windowReceiver ?: call
+    val effectiveFunctionName = windowReceiver?.funcName() ?: functionName
+    val windowClause = if (windowReceiver != null) {
+        buildWindowClause(irFunction, call, errorReporter)
+    } else {
+        null
+    }
+
     // Build argument list: List<Pair<Field?, Any?>>
     val argumentPairs = mutableListOf<IrExpression>()
 
@@ -928,9 +1020,9 @@ fun buildFunctionField(
     }
 
     // Process each value argument, unpacking varargs
-    call.operatorOperands().takeIf { call.operatorFunctionName() != null }?.forEach { arg ->
+    sourceCall.operatorOperands().takeIf { sourceCall.operatorFunctionName() != null }?.forEach { arg ->
         processArg(arg)
-    } ?: call.valueArguments.forEach { arg ->
+    } ?: sourceCall.valueArguments.forEach { arg ->
         if (arg != null) {
             if (arg is IrVararg) {
                 // Unpack vararg elements
@@ -953,12 +1045,164 @@ fun buildFunctionField(
     // Construct FunctionField(functionName, fields)
     return builder.irCall(functionFieldConstructorSymbol).apply {
         // Parameter 0: functionName (String)
-        arguments[0] = builder.irString(functionName)
+        arguments[0] = builder.irString(effectiveFunctionName)
 
         // Parameter 1: fields (List<Pair<Field?, Any?>>)
         arguments[1] = listExpr
+
+        // Parameter 2: optional WindowClause for functions with OVER.
+        arguments[2] = windowClause ?: builder.irNull()
     }
 }
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrCall.windowReceiverCall(): IrCall? {
+    if (funcName() != WindowOverFunctionName) return null
+    return (extensionReceiverArgument ?: dispatchReceiverArgument) as? IrCall
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildWindowClause(
+    irFunction: IrFunction,
+    call: IrCall,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    val lambda = call.valueArguments.firstNotNullOfOrNull { it as? IrFunctionExpression } ?: return null
+    val body = lambda.function.body as? IrBlockBody ?: return null
+    val parts = WindowParts()
+
+    body.statements.forEach { statement ->
+        collectWindowStatement(irFunction, statement, errorReporter, parts)
+    }
+
+    return builder.irCall(windowClauseConstructorSymbol).apply {
+        arguments[0] = parts.partitionBy.takeIf { it.isNotEmpty() }?.let {
+            irListOf(expressionClassSymbol.defaultType, it)
+        } ?: builder.irNull()
+        arguments[1] = parts.orderBy.takeIf { it.isNotEmpty() }?.let {
+            irListOf(orderByItemClassSymbol.defaultType, it)
+        } ?: builder.irNull()
+        arguments[2] = builder.irNull()
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun collectWindowStatement(
+    irFunction: IrFunction,
+    statement: IrStatement,
+    errorReporter: ErrorReporter,
+    parts: WindowParts
+) {
+    val expression = when (statement) {
+        is IrReturn -> statement.value
+        is IrExpression -> statement
+        else -> return
+    }
+    val call = expression as? IrCall ?: return
+
+    when (call.funcName()) {
+        WindowPartitionByFunctionName -> {
+            parts.partitionBy += call.flattenValueArguments().mapNotNull {
+                buildWindowExpression(irFunction, it, errorReporter)
+            }
+        }
+        WindowOrderByFunctionName -> {
+            parts.orderBy += call.flattenValueArguments().mapNotNull {
+                buildWindowOrderByItem(irFunction, it, errorReporter)
+            }
+        }
+    }
+}
+
+private fun IrCall.flattenValueArguments(): List<IrExpression> {
+    return valueArguments.flatMap { argument ->
+        when (argument) {
+            is IrVararg -> argument.elements.mapNotNull { it as? IrExpression }
+            is IrExpression -> listOf(argument)
+            else -> emptyList()
+        }
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildWindowOrderByItem(
+    irFunction: IrFunction,
+    expression: IrExpression,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    val call = expression as? IrCall
+    val sortTypeName = when (call?.funcName()) {
+        SortDescendingFunctionName.asString() -> SortTypeDescendingName
+        SortAscendingFunctionName.asString() -> SortTypeAscendingName
+        else -> SortTypeAscendingName
+    }
+    val value = if (
+        call?.funcName() == SortDescendingFunctionName.asString() ||
+        call?.funcName() == SortAscendingFunctionName.asString()
+    ) {
+        call.extensionReceiverArgument ?: call.dispatchReceiverArgument
+    } else {
+        expression
+    } ?: return null
+
+    val orderExpression = buildWindowExpression(irFunction, value, errorReporter) ?: return null
+    return builder.irCall(orderByItemConstructorSymbol).apply {
+        arguments[0] = orderExpression
+        arguments[1] = buildSortTypeEnum(sortTypeName)
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildWindowExpression(
+    irFunction: IrFunction,
+    expression: IrExpression,
+    errorReporter: ErrorReporter
+): IrExpression? {
+    return when {
+        expression is IrCall && expression.origin == IrStatementOrigin.GET_PROPERTY ->
+            buildExpressionFromField(buildFieldFromPropertyAccess(expression, errorReporter))
+
+        expression is IrCall && (expression.isKronosFunction() ||
+            expression.funcName() == WindowOverFunctionName ||
+            expression.operatorFunctionName() != null) ->
+            buildExpressionFromField(buildFunctionField(irFunction, expression, errorReporter))
+
+        else -> null
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildExpressionFromField(fieldExpression: IrExpression): IrExpression {
+    return builder.irCall(fieldToExpressionMethodSymbol).apply {
+        dispatchReceiver = builder.irGetObject(fieldToExpressionConverterSymbol)
+        arguments[1] = fieldExpression
+        arguments[2] = builder.irBoolean(false)
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext, builder: IrBuilderWithScope)
+private fun buildSortTypeEnum(name: String): IrExpression {
+    val entry = sortTypeClassSymbol.owner.declarations
+        .filterIsInstance<IrEnumEntry>()
+        .first { it.name.asString() == name }
+    return IrGetEnumValueImpl(
+        builder.startOffset,
+        builder.endOffset,
+        sortTypeClassSymbol.defaultType,
+        entry.symbol
+    )
+}
+
+private data class WindowParts(
+    val partitionBy: MutableList<IrExpression> = mutableListOf(),
+    val orderBy: MutableList<IrExpression> = mutableListOf()
+)
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 context(context: IrPluginContext, builder: IrBuilderWithScope)

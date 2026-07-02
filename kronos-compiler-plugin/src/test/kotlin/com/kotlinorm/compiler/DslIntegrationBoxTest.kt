@@ -45,6 +45,18 @@ class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
     fun localTypedProjection() = box("localTypedProjection")
 
     /**
+     * Verifies KPojo.where is select().where() sugar and keeps Source as the query result type.
+     */
+    @Test
+    fun kpojoWhereSugar() = box("kpojoWhereSugar")
+
+    /**
+     * Verifies join(KSelectable) exposes the right query's Selected type to the join lambda.
+     */
+    @Test
+    fun joinSelectableSource() = box("joinSelectableSource")
+
+    /**
      * Verifies KPojo discovery and generated members across multiple source files in one box test.
      */
     @Test

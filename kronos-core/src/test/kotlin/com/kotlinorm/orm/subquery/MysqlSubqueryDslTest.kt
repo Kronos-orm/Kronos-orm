@@ -19,14 +19,14 @@ package com.kotlinorm.orm.subquery
 import com.kotlinorm.annotations.LogicDelete
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.FunctionField
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.delete.delete
 import com.kotlinorm.orm.ddl.table
 import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.join.join
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.select.where
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.orm.upsert.upsert
 import com.kotlinorm.orm.union.union
@@ -102,25 +102,6 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
             notInSql
         )
         assertEquals(mapOf("status" to 20), notInParams)
-    }
-
-    @Test
-    fun `select where row tuple in selectable subquery rejects column count mismatch`() {
-        val error = assertFailsWith<IllegalArgumentException> {
-            Scene2Order()
-                .select()
-                .where {
-                    [it.userId, it.status] in Scene2Order()
-                        .select { order -> order.userId }
-                        .where { order -> order.status == 21 }
-                }
-                .build()
-        }
-
-        assertEquals(
-            "IN subquery column count mismatch: left side has 2 column(s), but subquery selects 1 column(s).",
-            error.message
-        )
     }
 
     @Test
@@ -363,7 +344,7 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
                         .select { order -> order.userId }
                         .where { order -> order.status == 6 }
                         .limit(1)
-                        .as_("lastOrderUserId"),
+                        .alias("lastOrderUserId"),
                     it.name
                 ]
             }
@@ -374,6 +355,42 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
             sql
         )
         assertEquals(mapOf("status" to 6), params)
+    }
+
+    @Test
+    fun `select from selectable source renders derived query sql and params`() {
+        val (sql, params) = Scene2User()
+            .where { it.id == 1 }
+            .select { [it.id, it.name] }
+            .where { it.name == "Ada" }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`id`, `q`.`name` FROM (SELECT `id`, `name` FROM `tb_scene2_user` WHERE `id` = :id) AS `q` WHERE `q`.`name` = :name",
+            sql
+        )
+        assertEquals(mapOf("id" to 1, "name" to "Ada"), params)
+    }
+
+    @Test
+    fun `join selectable source renders derived table sql and params`() {
+        val orders = Scene2Order()
+            .select { [it.userId, it.status] }
+            .where { it.status == 40 }
+
+        val task = Scene2User()
+            .join(orders) { user, order ->
+                leftJoin(order) { user.id == order.userId }
+                select { [user.id, order.status] }
+            }
+            .build()
+            .atomicTask
+
+        assertEquals(
+            "SELECT `tb_scene2_user`.`id` AS `id`, `q`.`status` AS `status` FROM `tb_scene2_user` LEFT JOIN (SELECT `user_id` AS `userId`, `status` FROM `tb_scene2_order` WHERE `status` = :status) AS `q` ON `tb_scene2_user`.`id` = `q`.`userId`",
+            task.sql
+        )
+        assertEquals(mapOf("status" to 40), task.paramMap)
     }
 
     @Test
@@ -577,9 +594,9 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
         val (sql, params) = Scene2Order()
             .select()
             .where { it.status == 36 }
-            .insert<Scene2OrderArchive> { target ->
+            .insert<Scene2OrderArchive> {
                 [
-                    Field("id"),
+                    it.id,
                     null,
                     99
                 ]
@@ -606,6 +623,28 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
             "Insert-select source column count (1) must match target insertable field count (3).",
             error.message
         )
+    }
+
+    @Test
+    fun `insert derived selectable source renders insert select sql and params`() {
+        val (sql, params) = Scene2Order()
+            .where { it.status == 41 }
+            .select {
+                [
+                    it.id,
+                    it.userId,
+                    it.status
+                ]
+            }
+            .where { it.userId == 42 }
+            .insert<Scene2OrderArchive>()
+            .build()
+
+        assertEquals(
+            "INSERT INTO `tb_scene2_order_archive` (`id`, `user_id`, `status`) SELECT `q`.`id`, `q`.`user_id` AS `userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_scene2_order` WHERE `status` = :status) AS `q` WHERE `q`.`user_id` = :userId",
+            sql
+        )
+        assertEquals(mapOf("status" to 41, "userId" to 42), params)
     }
 
     @Test
@@ -666,9 +705,9 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
                 ]
             }
             .where { it.status == 36 }
-            .insert<Scene2OrderArchive> { _ ->
+            .insert<Scene2OrderArchive> {
                 [
-                    Field("user_id", "userId"),
+                    it.userId,
                     null,
                     99
                 ]
@@ -676,7 +715,7 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
             .build()
 
         assertEquals(
-            "INSERT INTO `tb_scene2_order_archive` (`id`, `user_id`, `status`) SELECT `user_id`, NULL, :status@1 FROM `tb_scene2_order` WHERE `status` = :status",
+            "INSERT INTO `tb_scene2_order_archive` (`id`, `user_id`, `status`) SELECT `userId`, NULL, :status@1 FROM `tb_scene2_order` WHERE `status` = :status",
             sql
         )
         assertEquals(mapOf("status" to 36, "status@1" to 99), params)
@@ -693,16 +732,10 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
                 ]
             }
             .where { it.status == 37 }
-            .insert<Scene2OrderArchive> { _ ->
+            .insert<Scene2OrderArchive> {
                 [
-                    Field("id"),
-                    FunctionField(
-                        "add",
-                        listOf(
-                            Field("user_id", "userId") to null,
-                            null to 1
-                        )
-                    ),
+                    it.id,
+                    it.userId + 1,
                     Scene2Order()
                         .select { it.status }
                         .where { it.userId == 38 }
@@ -712,7 +745,7 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
             .build()
 
         assertEquals(
-            "INSERT INTO `tb_scene2_order_archive` (`id`, `user_id`, `status`) SELECT `id`, (`user_id` + 1), (SELECT `status` FROM `tb_scene2_order` WHERE `user_id` = :userId LIMIT 1) FROM `tb_scene2_order` WHERE `status` = :status",
+            "INSERT INTO `tb_scene2_order_archive` (`id`, `user_id`, `status`) SELECT `id`, (`userId` + 1), (SELECT `status` FROM `tb_scene2_order` WHERE `user_id` = :userId LIMIT 1) FROM `tb_scene2_order` WHERE `status` = :status",
             sql
         )
         assertEquals(mapOf("status" to 37, "userId" to 38), params)
@@ -807,6 +840,30 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
     }
 
     @Test
+    fun `create table as derived selectable source renders sql and params`() {
+        val (sql, params) = Kronos.dataSource.table
+            .buildCreateTableAsSelectTask(
+                Scene2OrderArchive(),
+                Scene2Order()
+                    .where { it.status == 43 }
+                    .select {
+                        [
+                            it.id,
+                            it.userId,
+                            it.status
+                        ]
+                    }
+                    .where { it.userId == 44 }
+            )
+
+        assertEquals(
+            "CREATE TABLE IF NOT EXISTS `tb_scene2_order_archive` AS SELECT `q`.`id`, `q`.`user_id` AS `userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status` FROM `tb_scene2_order` WHERE `status` = :status) AS `q` WHERE `q`.`user_id` = :userId",
+            sql
+        )
+        assertEquals(mapOf("status" to 43, "userId" to 44), params)
+    }
+
+    @Test
     fun `create table as join source renders sql and params`() {
         val joinQuery = Scene2User().join(Scene2Order()) { user, order ->
             leftJoin(order) { user.id == order.userId }
@@ -849,6 +906,59 @@ class MysqlSubqueryDslTest : MysqlTestBase() {
             sql
         )
         assertEquals(mapOf("status" to 31, "status@1" to 32), params)
+    }
+
+    @Test
+    fun `window alias next layer filter renders derived sql and params`() {
+        val ranked = Scene2Order()
+            .select {
+                [
+                    it.id,
+                    it.userId,
+                    it.status,
+                    f.rowNumber()
+                        .over {
+                            partitionBy(it.userId)
+                            orderBy(it.status.asc())
+                        }
+                        .alias("rn")
+                ]
+            }
+
+        val (sql, params) = ranked
+            .select { [it.id, it.userId, it.status] }
+            .where { it.rn == 1 }
+            .build()
+
+        assertEquals(
+            "SELECT `q`.`id`, `q`.`userId`, `q`.`status` FROM (SELECT `id`, `user_id` AS `userId`, `status`, ROW_NUMBER() OVER (PARTITION BY `user_id` ORDER BY `status` ASC) AS rn FROM `tb_scene2_order`) AS `q` WHERE `q`.`rn` = :rn",
+            sql
+        )
+        assertEquals(mapOf("rn" to 1), params)
+    }
+
+    @Test
+    fun `window alias order by renders current layer sql`() {
+        val (sql, params) = Scene2Order()
+            .select {
+                [
+                    it.id,
+                    f.rowNumber()
+                        .over {
+                            partitionBy(it.userId)
+                            orderBy(it.status.desc())
+                        }
+                        .alias("rn")
+                ]
+            }
+            .orderBy { it.rn.asc() }
+            .build()
+
+        assertEquals(
+            "SELECT `id`, ROW_NUMBER() OVER (PARTITION BY `user_id` ORDER BY `status` DESC) AS rn FROM `tb_scene2_order` ORDER BY `rn` ASC",
+            sql
+        )
+        assertEquals(emptyMap(), params)
     }
 }
 

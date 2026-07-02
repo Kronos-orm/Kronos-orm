@@ -35,6 +35,8 @@ import com.kotlinorm.compiler.utils.KronosCommonStrategyClassId
 import com.kotlinorm.compiler.utils.KronosObjectClassId
 import com.kotlinorm.compiler.utils.KTableForConditionClassId
 import com.kotlinorm.compiler.utils.KTableForConditionFqName
+import com.kotlinorm.compiler.utils.KTableForInsertSelectClassId
+import com.kotlinorm.compiler.utils.KTableForInsertSelectFqName
 import com.kotlinorm.compiler.utils.KTableForReferenceClassId
 import com.kotlinorm.compiler.utils.KTableForReferenceFqName
 import com.kotlinorm.compiler.utils.KTableForSelectClassId
@@ -49,15 +51,21 @@ import com.kotlinorm.compiler.utils.CriteriaSubqueryValueInClassId
 import com.kotlinorm.compiler.utils.CriteriaSubqueryValueQuantifiedComparisonClassId
 import com.kotlinorm.compiler.utils.CriteriaSubqueryValueScalarClassId
 import com.kotlinorm.compiler.utils.CriteriaFqName
+import com.kotlinorm.compiler.utils.ExpressionClassId
+import com.kotlinorm.compiler.utils.ExpressionFqName
+import com.kotlinorm.compiler.utils.FieldToExpressionConverterClassId
 import com.kotlinorm.compiler.utils.KSelectableClassId
 import com.kotlinorm.compiler.utils.KSelectableQueryRefClassId
 import com.kotlinorm.compiler.utils.KronosInitAnnotationFqName
+import com.kotlinorm.compiler.utils.OrderByItemClassId
 import com.kotlinorm.compiler.utils.PairClassId
 import com.kotlinorm.compiler.utils.PairFqName
 import com.kotlinorm.compiler.utils.QuantifiedSubqueryValueClassId
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
+import com.kotlinorm.compiler.utils.SortTypeClassId
 import com.kotlinorm.compiler.utils.StringClassId
 import com.kotlinorm.compiler.utils.SubqueryExpressionQuantifierClassId
+import com.kotlinorm.compiler.utils.WindowClauseClassId
 import com.kotlinorm.compiler.utils.valueParameters
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -108,6 +116,7 @@ fun resolveAndLogAllSymbols() {
     
     // Resolve method symbols - each in its own try-catch
     runCatching { addFieldMethodSymbol }
+    runCatching { addInsertSelectValueMethodSymbol }
     runCatching { addScalarSubqueryMethodSymbol }
     runCatching { setValueMethodSymbol }
     runCatching { setAssignMethodSymbol }
@@ -185,6 +194,73 @@ context(context: IrPluginContext)
 val functionFieldConstructorSymbol: IrConstructorSymbol
     get() = functionFieldClassSymbol.constructors.firstOrNull()
         ?: error("FunctionField constructor not found")
+
+/**
+ * Expression sealed interface symbol.
+ */
+context(context: IrPluginContext)
+val expressionClassSymbol: IrClassSymbol
+    get() = context.referenceClass(ExpressionClassId)
+        ?: error("Expression interface not found: ${ExpressionFqName.asString()}")
+
+/**
+ * FieldToExpressionConverter object symbol.
+ */
+context(context: IrPluginContext)
+val fieldToExpressionConverterSymbol: IrClassSymbol
+    get() = context.referenceClass(FieldToExpressionConverterClassId)
+        ?: error("FieldToExpressionConverter object not found")
+
+/**
+ * FieldToExpressionConverter.fieldToExpression method symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val fieldToExpressionMethodSymbol: IrSimpleFunctionSymbol
+    get() = fieldToExpressionConverterSymbol.getSimpleFunction("fieldToExpression")
+        ?: error("fieldToExpression method not found")
+
+/**
+ * WindowClause class symbol.
+ */
+context(context: IrPluginContext)
+val windowClauseClassSymbol: IrClassSymbol
+    get() = context.referenceClass(WindowClauseClassId)
+        ?: error("WindowClause class not found")
+
+/**
+ * WindowClause constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val windowClauseConstructorSymbol: IrConstructorSymbol
+    get() = windowClauseClassSymbol.constructors.firstOrNull()
+        ?: error("WindowClause constructor not found")
+
+/**
+ * OrderByItem class symbol.
+ */
+context(context: IrPluginContext)
+val orderByItemClassSymbol: IrClassSymbol
+    get() = context.referenceClass(OrderByItemClassId)
+        ?: error("OrderByItem class not found")
+
+/**
+ * OrderByItem constructor symbol.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val orderByItemConstructorSymbol: IrConstructorSymbol
+    get() = orderByItemClassSymbol.constructors.firstOrNull()
+        ?: error("OrderByItem constructor not found")
+
+/**
+ * SortType enum class symbol.
+ */
+context(context: IrPluginContext)
+val sortTypeClassSymbol: IrClassSymbol
+    get() = context.referenceClass(SortTypeClassId)
+        ?: error("SortType enum not found")
 
 /**
  * Pair class symbol (kotlin.Pair)
@@ -349,6 +425,16 @@ val kTableForSelectSymbol: IrClassSymbol
     }
 
 /**
+ * KTableForInsertSelect class symbol.
+ */
+context(context: IrPluginContext)
+val kTableForInsertSelectSymbol: IrClassSymbol
+    get() {
+        val symbol = context.referenceClass(KTableForInsertSelectClassId)
+        return symbol ?: error("KTableForInsertSelect class not found: ${KTableForInsertSelectFqName.asString()}")
+    }
+
+/**
  * KTableForSet class symbol
  */
 context(context: IrPluginContext)
@@ -486,6 +572,17 @@ val addFieldMethodSymbol: IrSimpleFunctionSymbol
     get() {
         val symbol = kTableForSelectSymbol.getSimpleFunction("addField")
         return symbol ?: error("addField method not found in KTableForSelect")
+    }
+
+/**
+ * addValue method symbol from KTableForInsertSelect.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+context(context: IrPluginContext)
+val addInsertSelectValueMethodSymbol: IrSimpleFunctionSymbol
+    get() {
+        val symbol = kTableForInsertSelectSymbol.getSimpleFunction("addValue")
+        return symbol ?: error("addValue method not found in KTableForInsertSelect")
     }
 
 /**

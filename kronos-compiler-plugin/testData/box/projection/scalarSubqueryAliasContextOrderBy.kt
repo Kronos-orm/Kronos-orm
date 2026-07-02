@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies that scalar subquery aliases are FIR-visible on Selected and post-select Context receivers.
+// Verifies that scalar subquery aliases are FIR-visible on Selected and orderBy Context receivers.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -22,7 +22,6 @@ import com.kotlinorm.ast.BinaryExpression
 import com.kotlinorm.ast.ColumnReference
 import com.kotlinorm.ast.DeferredSubqueryExpression
 import com.kotlinorm.ast.OrderByItem
-import com.kotlinorm.ast.Parameter
 import com.kotlinorm.ast.SelectItem
 import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.ast.SubqueryTable
@@ -45,8 +44,6 @@ data class ProjectionScalarAliasOrder(
 ) : KPojo
 
 fun box(): String {
-    val params = mutableMapOf<String, Any?>()
-
     Kronos.init {
         fieldNamingStrategy = lineHumpNamingStrategy
         tableNamingStrategy = lineHumpNamingStrategy
@@ -59,10 +56,9 @@ fun box(): String {
                 ProjectionScalarAliasOrder()
                     .select { order -> order.amount }
                     .limit(1)
-                    .as_("lastAmount")
+                    .alias("lastAmount")
             ]
         }
-        .where { it.lastAmount == 100 }
         .orderBy { it.lastAmount.desc() }
 
     @Suppress("UNREACHABLE_CODE")
@@ -72,14 +68,11 @@ fun box(): String {
         return "Fail: selected alias unexpectedly evaluated as $aliasValue"
     }
 
-    val statement = clause.toStatement(null, params)
+    val statement = clause.toStatement()
 
     val failures = listOfNotNull(
         expect(statement.hasScalarSubqueryAlias("lastAmount")) { "select aliases were ${statement.selectAliases()}" },
-        expect(statement.hasWhereColumn("lastAmount")) { "where expression was ${statement.where}" },
-        expect(statement.hasWhereParameter("lastAmount")) { "where expression was ${statement.where}" },
         expect(statement.hasOrderByColumn("lastAmount", SortType.DESC)) { "order by was ${statement.allOrderBy()}" },
-        expect(params["lastAmount"] == 100) { "alias where param was $params" },
     )
 
     return failures.firstOrNull() ?: "OK"
@@ -103,18 +96,6 @@ fun SelectStatement.hasScalarSubqueryAlias(name: String): Boolean {
                 item.expression is DeferredSubqueryExpression.Scalar &&
                 item.aliasMetadata(0)?.outputName == name
         }
-    }
-}
-
-fun SelectStatement.hasWhereColumn(name: String): Boolean {
-    return allSelectStatements().any { statement ->
-        statement.where.containsExpression(ColumnReference::class) { it.columnName == name }
-    }
-}
-
-fun SelectStatement.hasWhereParameter(name: String): Boolean {
-    return allSelectStatements().any { statement ->
-        statement.where.containsExpression(Parameter.NamedParameter::class) { it.name == name }
     }
 }
 

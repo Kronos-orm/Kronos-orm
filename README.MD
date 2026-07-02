@@ -255,8 +255,8 @@ val (total, list) = User()
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
-        [user.id, user.username, relation.id.as_("relationId"),
-                role.role, f.count(1).as_("count")]
+        [user.id, user.username, relation.id.alias("relationId"),
+                role.role, f.count(1).alias("count")]
     }
     where { user.id < 10 }
 }.query()

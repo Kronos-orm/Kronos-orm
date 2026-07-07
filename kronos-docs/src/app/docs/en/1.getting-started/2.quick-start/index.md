@@ -1,269 +1,167 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
-## 🖥 JDK, Kotlin versions and build tools
+## Prepare the project
 
-- **JDK** 8+
-- **Kotlin** 2.1.0+
-- **Maven** 3.6.3+ 或 **Gradle** 6.8.3+
+Add the ORM runtime, the Kronos compiler plugin, the JDBC wrapper, and the database driver used by this example.
 
-> **Warning**
-> **Please make sure that the kotlin plugin you use with your IDE supports kotlin 2.0.0 or later**.
->
-> If you fail to build with Maven in Intellij IDEA (or Android Studio), try enabling the following settings:
->
-> `Settings` / `Build, Execution, Deployment` / `Build Tools` / `Maven` / `Runner` /
-`Delegate IDE build/run actions to Maven`
-
-## 📦 Adding Kronos Dependencies
-
-Simply introduce the `kronos-core` module and the `kronos-compiler-plugin` plugin to use Kronos in your project.
-
-```kotlin group="import" name="gradle(kts)" icon="gradlekts"
-dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.0") // Provides basic ORM functionality
-}
-
+```kotlin group="Gradle" name="build.gradle.kts" icon="gradlekts"
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0" // Compile-time support is provided
+    kotlin("jvm") version "2.4.0"
+    id("com.kotlinorm.kronos-gradle-plugin") version "{{ $.kronosVersion() }}"
 }
-```
 
-```groovy group="import" name="gradle(groovy)" icon="gradle"
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.1.0' // Provides basic ORM functionality
-}
-
-plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0' // Compile-time support is provided
+    implementation("com.kotlinorm:kronos-core:{{ $.kronosVersion() }}")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
+    implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
 
-```xml group="import" name="maven" icon="maven"
-<!--Add the plugin to your pom.xml file：-->
-<!--For more information, please refer to[https://kotlinlang.org/docs/all-open-plugin.html#maven]。-->
-<project>
-    <!--kronos-core provides basic ORM functionality.-->
-    <dependencies>
-        <dependency>
-            <groupId>com.kotlinorm</groupId>
-            <artifactId>kronos-core</artifactId>
-            <version>0.1.0</version>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <compilerPlugins>
-                        <!--kronos-maven-Plugin provides compile-time support-->
-                        <plugin>kronos-maven-plugin</plugin>
-                    </compilerPlugins>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.kotlinorm</groupId>
-                        <artifactId>kronos-maven-plugin</artifactId>
-                        <version>${kronos.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
-</project>
-```
-
-### Jdbc data source wrapper(kronos-jdbc-wrapper)
+Use a MySQL database named `kronos` for the following snippets. Replace `<latest-stable>` with driver and pool versions that match your JDK and database server.
 
 > **Note**
-> kronos-jdbc-wrapper is an optional module, this article uses it as an example to create a database connection, it provides a JDBC-based data source wrapper for the jvm platform, of course, you can use other wrapper plug-ins or write your own wrapper classes and with third-party frameworks (such as SpringData, Mybatis, Hibernate, Jdbi , etc.) to use
+> The compiler plugin is part of the runnable setup. It generates `KPojo` metadata, dynamic members, and query projection types. The full setup is documented in {{ $.keyword("configuration/compiler-plugins", ["Compiler Plugins"]) }}.
 
-Introducing dependencies：
+## Configure the wrapper
 
-```kotlin group="importDriver" name="gradle(kts)" icon="gradlekts"
-dependencies {
-    implementation("com.kotlinorm:kronos-jdbc-wrappere:0.1.0") // Provides basic functions for database operations
-}
-```
+Create one wrapper and set it on `Kronos.dataSource` before running ORM operations. This example keeps the wrapper at file scope so the same instance is available to DDL and CRUD code.
 
-```groovy group="importDriver" name="gradle(groovy)" icon="gradle"
-dependencies {
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.1.0' // Provides basic functions for database operations
-}
-```
-
-```xml group="importDriver" name="maven" icon="maven"
-<!--Add the plugin to your pom.xml file：-->
-<project>
-    <!--kronos-jdbc-wrapper provides a jdbc data source wrapper-->
-    <dependencies>
-        <dependency>
-            <groupId>com.kotlinorm</groupId>
-            <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.1.0</version>
-        </dependency>
-    </dependencies>
-</project>
-```
-
-For detailed usage and customizable wrappers, please refer to{{ $.keyword("plugin/datasource-wrapper-and-third-part-framework", ["Data source and third-party framework"]) }}。
-
-## 🔗 Configuration Database
-
-Kronos supports a variety of databases, in this article we take `Mysql database` with `commons-dbcp2`.
-connection pool as an example, for more information please refer to {{ $.keyword("database/connect-to-db", ["connect to database"]) }}.
-
-### Introduce relevant dependencies
-
-```kotlin group="importRelatedPackages" name="gradle(kts)" icon="gradlekts"
-dependencies {
-    implementation("org.apache.commons:commons-dbcp2:2.8.0")
-    implementation("mysql:mysql-connector-java:8.0.26")
-}
-```
-
-```groovy group="importRelatedPackages" name="gradle(groovy)" icon="gradle"
-dependencies {
-    implementation 'org.apache.commons:commons-dbcp2:2.8.0'
-    implementation 'mysql:mysql-connector-java:8.0.26'
-}
-```
-
-```xml group="importRelatedPackages" name="maven" icon="maven"
-
-<dependencies>
-    <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-dbcp2</artifactId>
-        <version>2.8.0</version>
-    </dependency>
-    <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <version>8.0.26</version>
-    </dependency>
-</dependencies>
-```
-
-### Configuring Database Connections
-
-```kotlin group="DataSourceConfig" name="Main.kt"
+```kotlin group="Setup" name="Db.kt" icon="kotlin"
 import com.kotlinorm.Kronos
-
-fun main() {
-    val wrapper by lazy {
-        BasicDataSource().apply {
-            driverClassName = "com.mysql.cj.jdbc.Driver"
-            url =
-                "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
-            username = "user"
-            password = "******"
-        }.let {
-            KronosBasicWrapper(it)
-        }
-    }
-    
-    Kronos.init{
-        dataSource = { wrapper }
-    }
-}
-```
-
-## ⚙️ global setting
-
-Kronos supports global settings such as table name strategy, field name strategy, creation time, update time, logical deletion, etc. Only some of them are listed below, for details, please refer to{{ $.keyword("getting-started/global-config", ["Global Setting"]) }}。
-
-```kotlin group="KronosConfig" name="Main.kt"
-import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import com.kotlinorm.beans.config.KronosCommonStrategy
+import com.kotlinorm.beans.dsl.Field
+import org.apache.commons.dbcp2.BasicDataSource
 import java.time.ZoneId
 
-fun main() {
-    Kronos.init {
-        // Table Name Strategy
-        tableNamingStrategy = lineHumpStrategy
-        // Field Name Strategy
-        fieldNamingStrategy = lineHumpStrategy
-        // Time zone
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "com.mysql.cj.jdbc.Driver"
+            url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
+            username = "user"
+            password = "******"
+        }
+    )
+}
+
+fun configureKronos() {
+    with(Kronos) {
+        dataSource = { wrapper }
+        tableNamingStrategy = lineHumpNamingStrategy
+        fieldNamingStrategy = lineHumpNamingStrategy
         timeZone = ZoneId.systemDefault()
-        // Default date format
-        dateFormat = "yyyy-MM-dd HH:mm:ss"
-        // Creation Time Strategy
-        createTimeStrategy = KronosCommonStrategy(true, Field("createTime"))
-        // Update Time Strategy
-        updateTimeStrategy = KronosCommonStrategy(true, Field("updateTime"))
-        // Logical Deletion Strategy
-        logicDeleteStrategy = KronosCommonStrategy(true, Field("deleted"))
-        // Optimistic Lock Strategy
-        optimisticLockStrategy = KronosCommonStrategy(true, Field("version"))
+        defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
+        createTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("create_time", "createTime"))
+        updateTimeStrategy = KronosCommonStrategy(enabled = true, field = Field("update_time", "updateTime"))
+        logicDeleteStrategy = KronosCommonStrategy(enabled = true, field = Field("deleted"))
+        optimisticLockStrategy = KronosCommonStrategy(enabled = true, field = Field("version"))
     }
 }
 ```
 
-When using other databases or using non-jvm platforms, you need to use the corresponding driver and configuration.
+For custom wrappers and database detection, see {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }} and {{ $.keyword("database/custom-wrapper", ["Custom Wrapper"]) }}.
 
-## 🎨 Create Data Classes
+## Define KPojo classes
 
-With Kronos, you can write entity classes in Kotlin, and Kronos will automatically generate database table structures based on the entity classes.
+Create Kotlin data classes, implement `KPojo`, and add annotations for table names, keys, indexes, and common fields.
 
-```kotlin group="KPojo" name="Director.kt"
+```kotlin group="Model" name="Director.kt" icon="kotlin"
+import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.LogicDelete
+import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.annotations.UpdateTime
+import com.kotlinorm.annotations.Version
+import com.kotlinorm.interfaces.KPojo
+import java.time.LocalDateTime
+
 data class Director(
     @PrimaryKey(identity = true)
     var id: Int? = null,
-    var name: String? = "",
-    var movies: List<Movie>? = emptyList(),
+    var name: String? = null,
     @CreateTime
     var createTime: LocalDateTime? = null,
-    @updateTime
-    @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
-    var updateTime: String? = "",
+    @UpdateTime
+    var updateTime: LocalDateTime? = null,
+    @LogicDelete
+    var deleted: Boolean? = false,
+    @Version
+    var version: Int? = 0
+) : KPojo
+```
+
+```kotlin group="Model" name="Movie.kt" icon="kotlin"
+import com.kotlinorm.annotations.Cascade
+import com.kotlinorm.annotations.Column
+import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.LogicDelete
+import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.annotations.TableIndex
+import com.kotlinorm.annotations.UpdateTime
+import com.kotlinorm.interfaces.KPojo
+import java.time.LocalDateTime
+
+@Table("tb_movie")
+@TableIndex("idx_movie_director", ["name", "director_id"], "UNIQUE", "BTREE")
+data class Movie(
+    @PrimaryKey(identity = true)
+    var id: Int? = null,
+    @Column("name")
+    var name: String? = null,
+    var directorId: Int? = null,
+    @Cascade(["directorId"], ["id"])
+    var director: Director? = null,
+    @CreateTime
+    var createTime: LocalDateTime? = null,
+    @UpdateTime
+    var updateTime: LocalDateTime? = null,
     @LogicDelete
     var deleted: Boolean? = false
 ) : KPojo
 ```
 
-```kotlin group="KPojo" name="Movie.kt"
-@Table(name = "tb_movie")
-@TableIndex("idx_name_director", ["name", "director_id"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
-data class Movie(
-    @PrimaryKey(identity = true)
-    var id: Int? = null,
-    @Column("name")
-    @ColumnType(CHAR)
-    var name: String? = "",
-    var directorId: Long? = 0,
-    @Cascade(["directorId"], ["id"])
-    var director: Director? = null,
-    @LogicDelete
-    @Default("0")
-    var deleted: Boolean? = false,
-    @CreateTime
-    var createTime: LocalDateTime? = null,
-    @updateTime
-    var updateTime: Date? = null
-) : KPojo
-```
+Mapping rules are covered in {{ $.keyword("mapping/kpojo", ["KPojo"]) }}, {{ $.keyword("mapping/annotations", ["Annotations"]) }}, and {{ $.keyword("mapping/indexes", ["Indexes"]) }}.
 
-## 🚀 Ready to use
+## Run the first flow
 
-Congratulations, you have completed the basic configuration of Kronos and are now ready to start using Kronos.
+Call `configureKronos()`, create the tables, insert a director, and read it back with query-by-example.
 
-```kotlin group="Kronos" name="Main.kt"
+```kotlin group="Run 1" name="Main.kt" icon="kotlin"
+import com.kotlinorm.orm.insert.insert
+import com.kotlinorm.orm.select.select
+
 fun main() {
-    val director = Director(
-        id = 1,
-        name = "Kronos"
-    )
+    configureKronos()
 
-    director.insert().execute()
+    wrapper.table.createTable(Director())
+    wrapper.table.createTable(Movie())
 
-    director.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
+    val result = Director(name = "Kronos")
+        .insert()
+        .execute()
 
-    val directors: List<Director> = director.select().where { it.id == 1 }.queryList()
+    val affectedRows = result.affectedRows
 
-    val movies: List<Movie> = Movie().select().where { it.director!!.id == director.id.value }.queryList()
+    val director = Director(name = "Kronos")
+        .select()
+        .where()
+        .queryOne()
 }
 ```
+
+The insert and select generate SQL like this for MySQL.
+
+```sql group="Run 2" name="MySQL" icon="mysql"
+INSERT INTO `director` (`name`, `create_time`, `update_time`, `deleted`, `version`)
+VALUES (:name, :createTime, :updateTime, :deleted, :version)
+
+SELECT `id`, `name`, `create_time` AS `createTime`, `update_time` AS `updateTime`, `deleted`, `version`
+FROM `director`
+WHERE `director`.`name` = :name
+  AND `deleted` = 0
+```
+
+Use {{ $.keyword("database/table-operations", ["Table Operations"]) }} for DDL, {{ $.keyword("mutation/insert", ["Insert"]) }} for writes, {{ $.keyword("query/conditions", ["Conditions"]) }} for `where()` behavior, and {{ $.keyword("resources/troubleshooting", ["Troubleshooting"]) }} when build or runtime behavior differs from this flow.

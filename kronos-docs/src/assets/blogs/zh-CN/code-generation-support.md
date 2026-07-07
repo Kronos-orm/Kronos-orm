@@ -6,7 +6,7 @@
 
 --------
 
-在`Kronos`0.0.3版本中，我们引入了代码生成器的支持。这个功能可以帮助开发者更快速地生成`Kronos`相关的代码，减少手动编写的工作量。
+Kronos Codegen 提供 Database First 入口，适用于项目中已经存在数据库表结构的场景。它读取表 metadata，按命名策略和注解策略生成 Kotlin `KPojo` 类，并通过 `toml` 配置和 Kotlin 脚本模板控制输出内容。
 
 ## Database First
 
@@ -51,7 +51,7 @@ logicDeleteStrategy = "deleted"
 optimisticLockStrategy = "version"
 
 [dataSource]
-wrapperClassName = "com.kotlinorm.KronosBasicWrapper"
+wrapperClassName = "com.kotlinorm.wrappers.KronosJdbcWrapper"
 dataSourceClassName = "com.alibaba.druid.pool.DruidDataSource"
 url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
 username = "root"
@@ -80,7 +80,7 @@ tableCommentLineWords = 80
     - `logicDeleteStrategy`：逻辑删除策略，默认为`NoneNamingStrategy`。
     - `optimisticLockStrategy`：乐观锁策略，默认为`NoneNamingStrategy`。
 - `dataSource`：定义数据库连接信息，包括数据源类名、连接URL、用户名、密码等。
-    - `wrapperClassName`：数据源包装类，默认为`com.kotlinorm.KronosBasicWrapper`。
+    - `wrapperClassName`：数据源包装类，默认为`com.kotlinorm.wrappers.KronosJdbcWrapper`。
     - `dataSourceClassName`：数据源类名。
     - `url`：数据库连接URL。
     - `username`：数据库用户名。
@@ -96,6 +96,8 @@ tableCommentLineWords = 80
 
 模板文件使用`kts`格式编写，可以使用字符串模板来生成代码。以下是一个示例模板文件：
 
+MySQL Connector/J 和连接池版本选择与数据库服务端、JDK 匹配的最新稳定版。
+
 **example.main.kts**
 
 ```kotlin
@@ -103,11 +105,11 @@ tableCommentLineWords = 80
 
 @file:Repository("https://central.sonatype.com/repository/maven-snapshots/")
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.1.0")
-@file:DependsOn("com.kotlinorm:kronos-core:0.1.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.1.0")
-@file:DependsOn("com.mysql:mysql-connector-j:9.2.0")
-@file:DependsOn("com.alibaba:druid:1.2.24")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.1.1")
+@file:DependsOn("com.kotlinorm:kronos-core:0.1.1")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.1.1")
+@file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
+@file:DependsOn("com.alibaba:druid:<latest-stable>")
 
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
@@ -127,7 +129,7 @@ template {
     +"// @author: Kronos-Codegen"
     +"// @date: $now"
     +""
-    +"@Table(name = \"$tableName\")"
+    +"@Table(\"$tableName\")"
     +indexes.toAnnotations()
     +"data class $className("
     fields.forEach { field ->

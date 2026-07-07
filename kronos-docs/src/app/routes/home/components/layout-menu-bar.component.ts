@@ -195,7 +195,7 @@ export class LayoutMenuBarComponent implements OnInit {
                                     label: 'CLASS_DEFINITION',
                                     icon: 'pi pi-list',
                                     subtext: 'SUBTEXT_OF_CLASS_DEFINITION',
-                                    routerLink: `/documentation/${this.appService.language}/class-definition/table-class-definition`
+                                    routerLink: `/documentation/${this.appService.language}/mapping/kpojo`
                                 },
                                 {
                                     label: 'CONNECT_TO_DB',
@@ -213,19 +213,19 @@ export class LayoutMenuBarComponent implements OnInit {
                                     label: 'DATABASE_OPERATION',
                                     icon: 'pi pi-user',
                                     subtext: 'SUBTEXT_OF_DATABASE_OPERATION',
-                                    routerLink: `/documentation/${this.appService.language}/database/database-operation`
+                                    routerLink: `/documentation/${this.appService.language}/mutation/insert`
                                 },
                                 {
                                     label: 'SQL_EXECUTE',
                                     icon: 'pi pi-info',
                                     subtext: 'SUBTEXT_OF_SQL_EXECUTE',
-                                    routerLink: `/documentation/${this.appService.language}/database/named-arguments-base-sql`
+                                    routerLink: `/documentation/${this.appService.language}/query/native-sql`
                                 },
                                 {
                                     label: 'CRITERIA_DEFINITION',
                                     icon: 'pi pi-search',
                                     subtext: 'SUBTEXT_OF_CRITERIA_DEFINITION',
-                                    routerLink: `/documentation/${this.appService.language}/database/where-having-on-clause`
+                                    routerLink: `/documentation/${this.appService.language}/query/conditions`
                                 },
                             ]
                         }
@@ -237,19 +237,19 @@ export class LayoutMenuBarComponent implements OnInit {
                                     label: 'ADVANCED',
                                     icon: 'pi pi-star',
                                     subtext: 'SUBTEXT_OF_ADVANCED',
-                                    routerLink: `/documentation/${this.appService.language}/advanced/some-locks`
+                                    routerLink: `/documentation/${this.appService.language}/query/locks`
                                 },
                                 {
                                     label: 'PLUGIN',
                                     icon: 'pi pi-globe',
                                     subtext: 'SUBTEXT_OF_PLUGIN',
-                                    routerLink: `/documentation/${this.appService.language}/plugin/datasource-wrapper-and-third-part-framework`
+                                    routerLink: `/documentation/${this.appService.language}/database/custom-wrapper`
                                 },
                                 {
                                     label: 'CHANGELOG',
                                     icon: 'pi pi-clock',
                                     subtext: 'SUBTEXT_OF_CHANGELOG',
-                                    routerLink: `/documentation/${this.appService.language}/getting-started/changelog`
+                                    routerLink: `/documentation/${this.appService.language}/resources/release-notes`
                                 }
                             ]
                         }
@@ -294,6 +294,36 @@ export class LayoutMenuBarComponent implements OnInit {
                             command: () => {
                                 window.open('/api/kronos-jdbc-wrapper');
                             }
+                        }, {
+                            label: "KRONOS_CODEGEN_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('/api/kronos-codegen');
+                            }
+                        }, {
+                            label: "KRONOS_LOGGING_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('/api/kronos-logging');
+                            }
+                        }, {
+                            label: "KRONOS_SYNTAX_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('/api/kronos-syntax');
+                            }
+                        }, {
+                            label: "KRONOS_MAVEN_PLUGIN_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('/api/kronos-maven-plugin');
+                            }
+                        }, {
+                            label: "KRONOS_GRADLE_PLUGIN_API_DOCS",
+                            icon: 'pi pi-file',
+                            command: () => {
+                                window.open('/api/kronos-gradle-plugin');
+                            }
                         }]
                     }],
                     [{
@@ -329,10 +359,10 @@ export class LayoutMenuBarComponent implements OnInit {
                 this.menus = [
                     {
                         label: documentation,
-                        href: `/#/documentation/${this.appService.language}/getting-started/introduce`
+                        href: `/documentation/${this.appService.language}/getting-started/introduce`
                     },
                     {label: code_generator},
-                    {label: blog, href: '/#/blog'},
+                    {label: blog, href: '/blog'},
                     {label: discussion, href: 'https://github.com/Kronos-orm/Kronos-orm/discussions'},
                 ];
             })

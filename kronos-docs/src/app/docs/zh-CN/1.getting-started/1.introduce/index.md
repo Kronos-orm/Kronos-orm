@@ -2,11 +2,15 @@
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 # 什么是Kronos
-Kronos 是为 Kotlin 设计的现代 ORM 框架，**适用于后台和移动应用程序，支持多数据库。功能强大、高性能、且简单易用**。
+Kronos 是为 Kotlin 设计的现代 ORM 框架。它通过编译插件提供类型安全的 SQL DSL，并支持多种数据库。
 
 我们支持{{ $.noun("Code First") }}和{{ $.noun("Database First") }}两种模式，提供了**数据库表结构的自动创建、自动同步，以及对表结构、索引**和代码生成的支持。
 
-基于编译器插件实现的表达式树分析支持以及Kotlin本身泛型、高阶函数、扩展函数等语法特性，让Kronos拥有**强大的表现力和简洁、语义化的写法**，**使操作数据库变得更加简单**。
+Kronos 会分析 Kotlin 表达式，并让常见数据库操作保持接近 Kotlin 语法。普通 CRUD 流程可以使用 `==`、`>`、`<`、`in`、字段引用、投影 DSL 和表操作，不需要手写字符串 SQL。
+
+## 推荐阅读路径
+
+新读者先从 {{ $.keyword("getting-started/installation", ["安装"]) }} 开始，再按 {{ $.keyword("getting-started/first-query", ["第一条查询"]) }} 完成最小模型、建表、insert 和 select 流程。之后阅读 {{ $.keyword("mapping/kpojo", ["KPojo"]) }} 理解实体映射，阅读 {{ $.keyword("query/select", ["Select"]) }} 理解查询，阅读 {{ $.keyword("mutation/insert", ["Insert"]) }} 理解写入，最后用 {{ $.keyword("database/connect-to-db", ["连接数据库"]) }} 配置生产数据源。
 
 ```mermaid
 graph LR
@@ -19,7 +23,7 @@ graph LR
     C --> E[Kronos-gradle-plugin]
     A --> F[Kronos-data-source-wrapper]
     F --> G[DataSource]
-    G --> H[Mysql, Sqlite, Postgresql, Oracle, SqlServer, etc.]
+    G --> H[MySQL, SQLite, PostgreSQL, Oracle, SQL Server, etc.]
     A --> K[Kronos-logging, Kronos-codegen and Other Plugins]
 ```
 
@@ -32,7 +36,7 @@ graph LR
 * 强类型检查
 * 支持**事务**、**无外键复杂级联操作（一对一，一对多，多对多）**、**序列化反序列化**、**跨数据库查询**、**数据库表/索引/备注创建和结构同步**等功能
 * 支持**逻辑删除**、**乐观锁**、**创建时间**、**更新时间**，且支持灵活的自定义设置
-* 轻松与任何第三方框架集成，如`Spring`、`Ktor`、`Vert.x`、`Solon`等，请查看我们的示例项目
+* 轻松与第三方框架集成，如`Spring`、`Ktor`、`Vert.x`、`Solon`等；具体用法见示例项目
 * **基于命名参数的原生SQL数据库操作**
 * 通过编译期操作，支持轻松将**数据实体类转换为Map或从Map转换为数据实体类**，并且**无反射，近乎零开销**
 * 数据类就可以当作数据库表模型，**显著减少额外的类定义**
@@ -42,11 +46,20 @@ graph LR
 > 以下是一个简单的示例。
 
 ```kotlin name="demo" icon="kotlin"
-val wrapper = KronosBasicWrapper(
-    MysqlDataSource("jdbc:mysql://localhost:3306/test")
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper = KronosJdbcWrapper(
+    BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver"
+        url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
+        username = "user"
+        password = "******"
+    }
 )
 
-Kronos.init {
+with(Kronos) {
     dataSource = { wrapper }
 }
 
@@ -57,27 +70,27 @@ val user: User = User(
     age = 18
 )
 
- // 如果表不存在则创建表，否则同步表结构，包括表列、索引、备注等
-dataSource.table.syncTable(user)
+// 如果表不存在则创建表，否则同步列和索引
+wrapper.table.syncTable(user)
 
 // 插入数据
 user.insert().execute()
 
 // 根据id更新name字段
-user.update().set { it.name = "Kronos ORM" }.by{ it.id }.execute()
+user.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
 // 或
-user.update{ it.name }.by{ it.id }.execute()
+user.update { it.name }.by { it.id }.execute()
 
 // 根据对象值查询记录
-val name: User = user.select().by { it.id }.queryOne()
+val selectedUser: User = user.select().by { it.id }.queryOne()
 
 // 根据id查询name字段
-val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
+val selectedName: String = user.select { it.name }.where { it.id == 1 }.queryOne<String>()
 
 // 删除id为1的数据
-User().delete().where{ it.id == 1 }.execute()
+User().delete().where { it.id == 1 }.execute()
 // 或
-User(1).delete().by { it.id }.execute()
+User(id = 1).delete().by { it.id }.execute()
 ```
 
 {{ NgDocActions.demo("FeatureCardsComponent", {container: false}) }}

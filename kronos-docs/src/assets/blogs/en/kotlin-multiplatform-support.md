@@ -8,9 +8,9 @@
 
 --------
 
-Thank you very much for reading this article, but unfortunately, Kronos currently does not support any platform other than JVM.
+Thank you for reading this article. Kronos currently focuses its runnable ORM tutorial path on JVM and JDBC, while the product direction continues to include Kotlin Multiplatform, mobile, Android, and JavaScript scenarios.
 
-If you urgently need an ORM framework that can run on multiple platforms such as mobile and JS, we may not be the best choice at the moment. Perhaps the following libraries can meet your needs:
+If your current project needs an ORM framework that already runs on multiple platforms such as mobile and JS, the following libraries may also be useful references:
 
 - [SQLLin](https://github.com/ctripcorp/SQLlin)
 
@@ -30,8 +30,8 @@ We hope that our ORM can run on all platforms as soon as possible, and we hope t
 
 2. [ ] Use kotlinx.io to handle the default log file read and write, related YouTrack issue: ([Stabilize the kotlinx-io library](https://youtrack.jetbrains.com/issue/KT-71300))
 
-3. [x] Looking for alternatives to reflection that can be used only on the JVM platform (we implemented the dynamic instantiation of `KClass<KPojo>` without relying on reflection using a compiler plugin, related commit: [Commit 2499037](https://github.com/Kronos-orm/Kronos-orm/commit/2499037008d6affe4495142f2a907be4a85f182b)), for more information, please refer to [Dynamic Instantiation of KPojo](/#/documentation/en/concept/kpojo-dynamic-instantiate).
+3. [x] Provide a dynamic instantiation path for `KClass<KPojo>` used by Kronos model operations. For usage details, see [Dynamic Instantiation of KPojo](/documentation/en/advanced/kpojo-dynamic-instantiate).
 
 and `KClass<T>.newInstance()`, we have not yet found alternative solutions. If this cannot be achieved, we may have to give up features such as **chaining operations** and **automatic type conversion** for some platforms.
 
-You can check our latest progress [here](https://github.com/Kronos-orm/Kronos-orm/issues/50), and we welcome your valuable suggestions or PR contributions. We look forward to communicating and interacting with you.
+You can track the roadmap discussion [here](https://github.com/Kronos-orm/Kronos-orm/issues/50), and we welcome your valuable suggestions or PR contributions. We look forward to communicating and interacting with you.

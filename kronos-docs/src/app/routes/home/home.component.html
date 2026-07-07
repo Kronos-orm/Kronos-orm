@@ -1,31 +1,302 @@
-<layout-menu-bar/>
-<section class="landing-hero py-20 px-8 lg:px-20">
-    <div class="flex flex-wrap mb-20" style="position: relative; z-index: 1;">
-        <div class="w-full xl:w-6/12 flex flex-col lg:pr-20 items-center xl:items-stretch">
+<main class="kronos-home">
+    <nav class="site-nav" aria-label="Primary navigation">
+        <a class="brand" routerLink="/home" aria-label="Kronos ORM home">
+            <img src="/assets/images/logo_circle.png" alt="Kronos ORM logo"/>
+            <span>Kronos ORM</span>
+        </a>
+
+        <div class="nav-links" aria-label="Documentation shortcuts">
+            <a [routerLink]="quickStartUrl">{{ isZh ? '快速开始' : 'Quick start' }}</a>
+            <a [routerLink]="databaseOperationUrl">CRUD</a>
+            <a [routerLink]="advancedUrl">{{ isZh ? '进阶' : 'Advanced' }}</a>
+            <a [routerLink]="pluginUrl">{{ isZh ? '插件' : 'Plugins' }}</a>
+            <a routerLink="/blog">{{ isZh ? '博客' : 'Blog' }}</a>
+            <a href="/api/kronos-core">API</a>
+            <a href="https://github.com/Kronos-orm/Kronos-orm/discussions" target="_blank" rel="noreferrer">
+                {{ isZh ? '交流' : 'Discussion' }}
+            </a>
+        </div>
+
+        <div class="nav-actions">
+            <button type="button"
+                    class="language-button"
+                    [class.active]="language === 'zh-CN'"
+                    (click)="setLanguage(language === 'zh-CN' ? 'en' : 'zh-CN')">
+                {{ language === 'zh-CN' ? '中文' : 'EN' }}
+            </button>
+            <a class="nav-cta" [routerLink]="docsUrl">{{ isZh ? '打开文档' : 'Open docs' }}</a>
+        </div>
+    </nav>
+
+    <section class="hero-section" aria-labelledby="hero-title">
+        <div class="hero-background" aria-hidden="true">
+            <div class="trace trace-a"></div>
+            <div class="trace trace-b"></div>
+            <div class="trace trace-c"></div>
+        </div>
+
+        <div class="hero-copy reveal">
+            <p class="section-label">Kronos ORM &#123; Kotlin &#125;</p>
+            <h1 id="hero-title">
+                @if (isZh) {
+                    为 <em>Kotlin</em> 设计的现代 ORM 框架
+                } @else {
+                    A modern ORM framework designed for <em>Kotlin</em>
+                }
+            </h1>
+            <p class="hero-lede">
+                {{ isZh
+                    ? 'Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、多数据库支持，适用于服务端和移动端应用。使用 Kotlin 原生 DSL 完成建模、CRUD、Join、事务、级联、表结构同步和代码生成。'
+                    : 'Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing and multi-database support for server-side and mobile applications. Use a Kotlin-native DSL for modeling, CRUD, joins, transactions, cascades, schema sync and code generation.' }}
+            </p>
+
+            <div class="hero-actions" aria-label="Primary actions">
+                <a class="action action-primary" [routerLink]="quickStartUrl">
+                    <span>{{ isZh ? '快速上手' : 'Get started' }}</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h13m-5-5 5 5-5 5"/>
+                    </svg>
+                </a>
+                <a class="action action-secondary" routerLink="/blog">
+                    <span>{{ isZh ? '阅读博客' : 'Read blog' }}</span>
+                </a>
+                <a class="action action-secondary" href="https://github.com/Kronos-orm/Kronos-orm" target="_blank" rel="noreferrer">
+                    <span>GitHub</span>
+                </a>
+            </div>
+
+            <div class="metric-row" aria-label="Kronos highlights">
+                <div>
+                    <strong>0</strong>
+                    <span>{{ isZh ? '运行时反射' : 'runtime reflection' }}</span>
+                </div>
+                <div>
+                    <strong>10+</strong>
+                    <span>{{ isZh ? '数据库支持' : 'databases' }}</span>
+                </div>
+                <div>
+                    <strong>DSL</strong>
+                    <span>{{ isZh ? 'Kotlin 原生' : 'Kotlin native' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-console reveal delay-1" aria-label="Kronos quick start sample">
+            <div class="console-top">
+                <span></span><span></span><span></span>
+                <p>kronos.quickstart</p>
+            </div>
+
+            <div class="pipeline-visual">
+                <div class="node node-source">
+                    <small>Model</small>
+                    <strong>KPojo</strong>
+                </div>
+                <div class="node node-plugin">
+                    <small>CRUD</small>
+                    <strong>DSL</strong>
+                </div>
+                <div class="node node-renderer">
+                    <small>Join</small>
+                    <strong>Query</strong>
+                </div>
+                <div class="node node-jdbc">
+                    <small>Sync</small>
+                    <strong>Schema</strong>
+                </div>
+                <div class="pipeline-line line-one"></div>
+                <div class="pipeline-line line-two"></div>
+                <div class="pipeline-line line-three"></div>
+            </div>
+
+            <pre><code>@for (line of [
+                'data class User(',
+                '  @PrimaryKey(identity = true)',
+                '  val id: Long? = null,',
+                '  val username: String? = null,',
+                '  val age: Int? = null',
+                ') : KPojo',
+                '',
+                'dataSource.table.createTable<User>()',
+                '',
+                'val list = User().select { [it.id, it.username.alias("name")] }',
+                '  .where { it.age >= 18 }',
+                '  .queryList() // Type: List<{ id: Long?, name: String? }>'
+            ]; track $index) {<span class="code-line">@for (token of highlight(line); track $index) {<span [class]="'code-' + token.kind">{{ token.text }}</span>}</span>}</code></pre>
+
+            <div class="console-status">
+                <span class="pulse-dot"></span>
+                <p>{{ isZh ? '建模、查询、更新和同步表结构使用同一套 Kotlin API。' : 'Model, query, update and sync schemas with one Kotlin API.' }}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="stage-section" aria-labelledby="stage-title">
+        <div class="section-heading">
             <div>
-                <banner/>
+                <p class="section-label">{{ isZh ? '核心流程' : 'Core workflow' }}</p>
+                <h2 id="stage-title">{{ isZh ? '建模、操作、查询、集成。' : 'Model. Operate. Query. Integrate.' }}</h2>
+            </div>
+            <p class="section-summary">
+                {{ isZh
+                    ? '从数据类定义到数据库操作、复杂查询，再到框架集成和代码生成，Kronos 覆盖常见 ORM 使用路径。'
+                    : 'From data class definitions to database operations, advanced queries, framework integration and code generation, Kronos covers common ORM workflows.' }}
+            </p>
+        </div>
+
+        <div class="stage-tabs" role="tablist" aria-label="Kronos workflow stages">
+            @for (stage of stages; track stage.key; let i = $index) {
+                <button type="button"
+                        role="tab"
+                        [attr.aria-selected]="activeStage === i"
+                        [class.active]="activeStage === i"
+                        (click)="setStage(i)">
+                    <span>{{ '{ ' + stage.key + ' }' }}</span>
+                </button>
+            }
+        </div>
+
+        <div class="stage-panel">
+            <div class="stage-copy">
+                <p class="stage-eyebrow">{{ text(stages[activeStage].eyebrow) }}</p>
+                <h3>{{ text(stages[activeStage].title) }}</h3>
+                <p>{{ text(stages[activeStage].copy) }}</p>
+                <ul>
+                    @for (bullet of stages[activeStage].bullets; track $index) {
+                        <li>{{ text(bullet) }}</li>
+                    }
+                </ul>
+                <a class="text-link" [routerLink]="docRoute(stages[activeStage].docPath)">
+                    {{ isZh ? '查看相关文档' : 'View related docs' }}
+                </a>
+            </div>
+
+            <div class="stage-code" aria-label="Stage code sample">
+                <div class="code-header">
+                    <span>{{ stages[activeStage].key.toLowerCase() }}.kt</span>
+                    <span>Kronos DSL</span>
+                </div>
+                <pre><code>@for (line of stages[activeStage].code; track $index) {<span class="code-line">@for (token of highlight(line); track $index) {<span [class]="'code-' + token.kind">{{ token.text }}</span>}</span>}</code></pre>
             </div>
         </div>
-        <div class="w-full xl:w-6/12 pt-16 xl:pt-0 hidden! md:block!">
-            <div class="flex">
-                <online-editing/>
-            </div>
+    </section>
+
+    <section class="outcomes-section" aria-labelledby="outcomes-title">
+        <div class="section-heading compact">
+            <p class="section-label">{{ isZh ? '为什么选择 Kronos' : 'Why Kronos' }}</p>
+            <h2 id="outcomes-title">{{ isZh ? '为 Kotlin 项目准备的完整 ORM 能力。' : 'Complete ORM capabilities for Kotlin projects.' }}</h2>
         </div>
-    </div>
-    <div class="w-full flex justify-center" style="position: relative; z-index: 1;">
-        <install-package/>
-    </div>
-    <div class="section-divider"></div>
-    <div style="position: relative; z-index: 1;">
-        <highlights/>
-    </div>
-    <div class="section-divider"></div>
-    <div style="position: relative; z-index: 1;">
-        <banner-marquee/>
-    </div>
-    <div class="section-divider"></div>
-    <div style="position: relative; z-index: 1;">
-        <features/>
-    </div>
-</section>
-<kronos-footer/>
+
+        <div class="outcome-grid">
+            @for (capability of capabilities; track capability.label) {
+                <a class="outcome-card" [routerLink]="capability.docPath ? docRoute(capability.docPath) : docsUrl">
+                    <strong>{{ capability.label }}</strong>
+                    <h3>{{ text(capability.title) }}</h3>
+                    <p>{{ text(capability.copy) }}</p>
+                </a>
+            }
+        </div>
+    </section>
+
+    <section class="architecture-section" aria-labelledby="entry-title">
+        <div class="architecture-copy">
+            <p class="section-label">{{ isZh ? '入口' : 'Entrypoints' }}</p>
+            <h2 id="entry-title">{{ isZh ? '按你的任务进入文档。' : 'Enter docs by task.' }}</h2>
+            <p>
+                {{ isZh
+                    ? '新手从快速上手开始；业务开发查看数据库操作；集成场景进入插件章节；需要 AI 辅助时查看协作指南。'
+                    : 'Start with quick start, use database operation for application code, open plugins for integration work, and read the AI guide when using coding assistants.' }}
+            </p>
+        </div>
+
+        <div class="pillar-list">
+            @for (entry of docsEntries; track entry.label) {
+                <a class="pillar-row" [routerLink]="entry.docPath ? docRoute(entry.docPath) : entry.route">
+                    <span>{{ entry.label }}</span>
+                    <div>
+                        <h3>{{ text(entry.title) }}</h3>
+                        <p>{{ text(entry.copy) }}</p>
+                        <b>{{ text(entry.action) }}</b>
+                    </div>
+                </a>
+            }
+        </div>
+    </section>
+
+    <section class="database-marquee" aria-label="Supported database targets">
+        <div class="marquee-track">
+            @for (db of dbLogos; track db) {
+                <span>{{ db }}</span>
+            }
+            @for (db of dbLogos; track db + '-copy') {
+                <span>{{ db }}</span>
+            }
+        </div>
+    </section>
+
+    <section class="resource-section" aria-labelledby="resource-title">
+        <div class="section-heading">
+            <div>
+                <p class="section-label">{{ isZh ? '资源' : 'Resources' }}</p>
+                <h2 id="resource-title">{{ isZh ? '博客、API 文档和社区入口。' : 'Blog, API docs and community links.' }}</h2>
+            </div>
+            <p class="section-summary">
+                {{ isZh
+                    ? '博客记录路线图和功能进展，API 文档提供模块级参考，GitHub Discussions 用于问题反馈和设计讨论。'
+                    : 'Blog posts cover roadmap and feature updates, API docs provide module-level references, and GitHub Discussions hosts questions and design topics.' }}
+            </p>
+        </div>
+
+        <div class="resource-grid">
+            @for (blog of blogEntries; track blog.href) {
+                <a class="resource-card" routerLink="/blog" [queryParams]="{blog: blog.href}">
+                    <span>{{ blog.label }}</span>
+                    <h3>{{ text(blog.title) }}</h3>
+                    <p>{{ text(blog.copy) }}</p>
+                    <b>{{ text(blog.action) }}</b>
+                </a>
+            }
+            @for (api of apiEntries; track api.href) {
+                <a class="resource-card" [href]="api.href">
+                    <span>{{ api.label }}</span>
+                    <h3>{{ text(api.title) }}</h3>
+                    <p>{{ text(api.copy) }}</p>
+                    <b>{{ text(api.action) }}</b>
+                </a>
+            }
+            <a class="resource-card resource-card-accent" href="https://github.com/Kronos-orm/Kronos-orm/discussions" target="_blank" rel="noreferrer">
+                <span>GitHub</span>
+                <h3>{{ isZh ? '交流与讨论' : 'Discussion' }}</h3>
+                <p>{{ isZh ? '反馈问题、讨论设计、跟进发布计划。' : 'Ask questions, discuss design decisions and follow release plans.' }}</p>
+                <b>{{ isZh ? '进入讨论区' : 'Open discussions' }}</b>
+            </a>
+        </div>
+    </section>
+
+    <section class="install-section" aria-labelledby="install-title">
+        <div>
+            <p class="section-label">{{ isZh ? '安装' : 'Install' }}</p>
+            <h2 id="install-title">{{ isZh ? '添加依赖，然后开始写 Kotlin。' : 'Add dependencies, then write Kotlin.' }}</h2>
+            <p>
+                {{ isZh
+                    ? 'Kronos 支持 Gradle Kotlin DSL、Gradle Groovy 和 Maven。完整配置见快速上手文档。'
+                    : 'Kronos supports Gradle Kotlin DSL, Gradle Groovy and Maven. See quick start for the full setup.' }}
+            </p>
+        </div>
+        <pre><code>@for (line of installCode; track $index) {<span class="code-line">@for (token of highlight(line); track $index) {<span [class]="'code-' + token.kind">{{ token.text }}</span>}</span>}</code></pre>
+    </section>
+
+    <footer class="home-footer">
+        <div>
+            <strong>Kronos ORM</strong>
+            <span>{{ isZh ? '为 Kotlin 设计的现代 ORM 框架' : 'A modern ORM framework designed for Kotlin' }}</span>
+        </div>
+        <div>
+            <a [routerLink]="docsUrl">{{ isZh ? '文档' : 'Docs' }}</a>
+            <a routerLink="/blog">{{ isZh ? '博客' : 'Blog' }}</a>
+            <a href="/api/kronos-core">API</a>
+            <a href="https://github.com/Kronos-orm/Kronos-orm" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noreferrer">Apache 2.0</a>
+        </div>
+    </footer>
+</main>

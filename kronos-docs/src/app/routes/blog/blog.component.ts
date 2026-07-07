@@ -1,52 +1,123 @@
+import {CommonModule} from '@angular/common';
 import {Component} from '@angular/core';
-import {SharedModule} from "../../shared.module";
-import {AppService} from "../../app.service";
-import {LayoutMenuBarComponent} from "../home/components/layout-menu-bar.component";
-import {MarkdownComponent} from "ngx-markdown";
-import {ActivatedRoute, Router} from "@angular/router";
-import {TranslocoPipe} from "@jsverse/transloco";
-import {DataViewModule} from "primeng/dataview";
-import {FooterComponent} from "../home/components/footer.component";
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {MarkdownComponent} from 'ngx-markdown';
+import {AppService} from '../../app.service';
+
+type LocalizedText = {
+    zh: string;
+    en: string;
+};
+
+type BlogEntry = {
+    slug: string;
+    image: string;
+    title: LocalizedText;
+    copy: LocalizedText;
+    tag: LocalizedText;
+};
 
 @Component({
     selector: 'blog',
     imports: [
-        SharedModule,
-        LayoutMenuBarComponent,
-        MarkdownComponent,
-        TranslocoPipe,
-        DataViewModule,
-        FooterComponent
+        CommonModule,
+        RouterLink,
+        MarkdownComponent
     ],
-    templateUrl: `./blog.component.html`,
+    templateUrl: './blog.component.html',
     standalone: true,
-    styleUrl:"./blog.component.css"
+    styleUrl: './blog.component.css'
 })
 export class BlogComponent {
-    blog: string;
+    blog?: string;
+
+    readonly blogs: BlogEntry[] = [
+        {
+            slug: 'kotlin-multiplatform-support',
+            image: '/assets/images/features/img-1.png',
+            title: {
+                zh: 'Kotlin 多平台支持',
+                en: 'Kotlin multiplatform support'
+            },
+            copy: {
+                zh: 'Kronos 当前对 Kotlin 多平台的支持情况，以及后续开发和发布计划。',
+                en: 'Current Kotlin multiplatform support in Kronos, plus development and release plans.'
+            },
+            tag: {
+                zh: '路线图',
+                en: 'Roadmap'
+            }
+        },
+        {
+            slug: 'code-generation-support',
+            image: '/assets/images/features/img-3.png',
+            title: {
+                zh: 'Kronos 代码生成器',
+                en: 'Code generation framework'
+            },
+            copy: {
+                zh: '根据数据库表结构生成 Kotlin ORM 类和常用 Kotlin Class 的配置方式。',
+                en: 'Generate Kotlin ORM classes and common Kotlin classes from database table structures.'
+            },
+            tag: {
+                zh: '插件',
+                en: 'Plugin'
+            }
+        },
+        {
+            slug: 'intellij-idea-plugin',
+            image: '/assets/images/features/img-2.png',
+            title: {
+                zh: 'Kronos IntelliJ IDEA 插件',
+                en: 'Kronos IntelliJ IDEA plugin'
+            },
+            copy: {
+                zh: '让 IDEA K2 分析理解 Kronos 生成成员、生成投影和 DSL diagnostics。',
+                en: 'Make IDEA K2 analysis understand Kronos generated members, generated projections, and DSL diagnostics.'
+            },
+            tag: {
+                zh: 'IDE',
+                en: 'IDE'
+            }
+        }
+    ];
 
     constructor(public appService: AppService, activatedRoute: ActivatedRoute, private router: Router) {
         activatedRoute.queryParams.subscribe(params => {
             this.blog = params['blog'];
-        })
+        });
     }
 
-    blogs = [
-        {
-            title: 'FEATURE_BLOG_TITLE_1',
-            content: 'FEATURE_BLOG_CONTENT_1',
-            img: '/assets/images/features/img-1.png',
-            blog: 'kotlin-multiplatform-support'
-        },
-        {
-            title: 'FEATURE_BLOG_TITLE_2',
-            content: 'FEATURE_BLOG_CONTENT_2',
-            img: '/assets/images/features/img-3.png',
-            blog: 'code-generation-support'
-        }
-    ]
+    get language(): string {
+        return this.appService.language;
+    }
 
-    backToList() {
+    get isZh(): boolean {
+        return this.language === 'zh-CN';
+    }
+
+    get docsUrl(): string {
+        return `/documentation/${this.language}/getting-started/introduce`;
+    }
+
+    get quickStartUrl(): string {
+        return `/documentation/${this.language}/getting-started/quick-start`;
+    }
+
+    get articleTitle(): string {
+        const item = this.blogs.find(blog => blog.slug === this.blog);
+        return item ? this.text(item.title) : 'Kronos Blog';
+    }
+
+    text(value: LocalizedText): string {
+        return this.isZh ? value.zh : value.en;
+    }
+
+    setLanguage(language: string): void {
+        this.appService.language = language;
+    }
+
+    backToList(): void {
         this.blog = undefined;
         this.router.navigateByUrl('/blog');
     }

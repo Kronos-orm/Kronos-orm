@@ -6,6 +6,12 @@
     {{ common.keyword(url, page, 'zh-CN') }}
 {%- endmacro %}
 
+{% macro kronosVersion() -%}{{ common.kronosVersion() }}{%- endmacro %}
+
+{% macro kronosSnapshotVersion() -%}{{ common.kronosSnapshotVersion() }}{%- endmacro %}
+
+{% macro kronosSnapshotBadgeVersion() -%}{{ common.kronosSnapshotBadgeVersion() }}{%- endmacro %}
+
 {% macro title(name) -%}
     {{ common.title(name) }}
 {%- endmacro %}

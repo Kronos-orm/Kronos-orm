@@ -1,16 +1,51 @@
+:host {
+    display: block;
+}
+
 :host ::ng-deep .p-menu {
-    height: calc(100vh - var(--ng-doc-navbar-height, 60px));
-    max-height: calc(100vh - var(--ng-doc-navbar-height, 60px));
+    height: calc(100vh - var(--kronos-doc-sidebar-top, var(--ng-doc-navbar-height, 60px)) - 0.75rem);
+    max-height: calc(100vh - var(--kronos-doc-sidebar-top, var(--ng-doc-navbar-height, 60px)) - 0.75rem);
     overflow-y: auto;
     overflow-x: hidden;
     display: block;
-    border: none !important;
-    padding-bottom: 2rem;
+    position: relative;
+    isolation: isolate;
+    margin-right: 1rem;
+    padding: 0.9rem 0.75rem 2rem;
+    border: 1px solid color-mix(in srgb, var(--kronos-doc-rule, rgba(246, 247, 239, 0.12)), transparent 8%) !important;
+    border-radius: 8px !important;
+    background: var(--kronos-doc-sidebar-bg, rgba(255, 255, 255, 0.78)) !important;
+    background-clip: padding-box;
+    box-shadow: var(--kronos-doc-sidebar-shadow, none);
+    backdrop-filter: blur(42px) saturate(1.58) contrast(1.04);
+    -webkit-backdrop-filter: blur(42px) saturate(1.58) contrast(1.04);
+}
+
+:host ::ng-deep .p-menu::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(115deg, rgba(255, 255, 255, 0.34), transparent 22%, transparent 68%, rgba(255, 255, 255, 0.1)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 24%);
+    opacity: 0.72;
+}
+
+:host ::ng-deep .p-menu > * {
+    position: relative;
+    z-index: 1;
 }
 
 :host ::ng-deep .p-menu .p-menu-submenu-label {
-    font-weight: 600;
-    font-size: 18px;
+    color: var(--kronos-doc-primary, #dfff67);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 500;
+    font-size: 0.78rem;
+    letter-spacing: 0;
+    text-transform: uppercase;
 }
 
 /* 隐藏 visible: false 的菜单项 */
@@ -28,28 +63,29 @@
 }
 
 :host ::ng-deep .p-menu .p-submenu-header .p-menu-header-action {
-    color: var(--ng-doc-text);
-    padding: 0.6rem 1.0rem !important;
+    color: var(--kronos-doc-text, rgba(246, 247, 239, 0.78));
+    padding: 0.75rem 0.85rem !important;
 }
 
 :host ::ng-deep .p-menu .p-submenu-header .p-menuitem-text {
     font-weight: 600;
     font-size: 14px;
+    font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
 }
 
 :host ::ng-deep .p-menu .p-submenu-header.p-highlight .p-menuitem-text,
 :host ::ng-deep .p-menu .p-submenu-header.p-highlight .p-menu-header-action {
-    color: var(--ng-doc-link-color);
+    color: var(--kronos-doc-primary, var(--ng-doc-link-color));
 }
 
 :host ::ng-deep .p-menu .p-menuitem {
-    background-color: var(--ng-doc-sidebar-background);
+    background-color: transparent;
 }
 
 :host ::ng-deep i.p-menuitem-icon.pi.pi-circle-on {
     font-size: 5px;
     margin-right: 1rem;
-    color: var(--ng-doc-base-3);
+    color: var(--kronos-doc-muted, rgba(246, 247, 239, 0.22));
 }
 
 :host ::ng-deep .p-menu-item-content {
@@ -57,34 +93,39 @@
 }
 
 :host ::ng-deep a.p-menuitem-link.p-menuitem-link-active {
-    color: var(--ng-doc-text);
+    color: var(--kronos-doc-heading, #ffffff);
 }
 
 :host ::ng-deep a.p-menuitem-link {
-    padding: 0.2rem 2.0rem !important;
-    border-radius: 0.5rem !important;
+    padding: 0.34rem 0.85rem !important;
+    border-radius: 6px !important;
     display: block;
     font-size: 14px;
     width: 100%;
+    border-left: 1px solid transparent;
+    color: var(--kronos-doc-muted, rgba(246, 247, 239, 0.64));
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
 :host ::ng-deep a.p-menuitem-link:hover {
-    background-color: var(--ng-doc-base-2) !important;;
-    color: var(--ng-doc-text) !important;
+    background-color: var(--kronos-doc-control-hover-bg, rgba(223, 255, 103, 0.08)) !important;
+    border-left-color: color-mix(in srgb, var(--kronos-doc-primary, #dfff67), transparent 62%);
+    color: var(--kronos-doc-heading, #ffffff) !important;
 }
 
 :host ::ng-deep a.p-menuitem-link-active {
-    background-color: color-mix(in srgb, var(--ng-doc-code-highlight-color), transparent 90%) !important;
+    background-color: var(--kronos-doc-control-hover-bg, rgba(223, 255, 103, 0.12)) !important;
+    border-left-color: var(--kronos-doc-primary, #dfff67);
 }
 
 :host ::ng-deep a.p-menuitem-link-active .p-menuitem-icon {
     visibility: visible;
-    color: var(--ng-doc-link-color) !important;
+    color: var(--kronos-doc-primary, var(--ng-doc-link-color)) !important;
     animation: scale .5s ease-out;
 }
 
 :host ::ng-deep a.p-menuitem-link-active .p-menuitem-text {
-    color: var(--ng-doc-link-color) !important;
+    color: var(--kronos-doc-primary, var(--ng-doc-link-color)) !important;
     font-weight: 400;
 }
 

@@ -80,12 +80,17 @@ export class WikiComponent {
             // 用 setTimeout 推到下一个 microtask，避免在 CD 周期内修改状态
             setTimeout(() => {
                 try {
-                    this.url = `/documentation/${this.appService.language}/concept/` +
-                        this.routing
-                            .filter(item => item.path.startsWith(this.appService.language))
-                            .map(item => item.children)
-                            .flat()
-                            .find(item => item.path == val.id).path
+                    const page = this.routing
+                        .filter(item => item.path.startsWith(this.appService.language))
+                        .flatMap(item => (item.children ?? []).map(child => ({
+                            category: item.path,
+                            page: child
+                        })))
+                        .find(item => item.page.path == val.id);
+                    if (!page) {
+                        throw new Error(`Wiki page not found: ${val.id}`);
+                    }
+                    this.url = `/documentation/${page.category}/${page.page.path}`
                     const _anchor = val.anchor ? `#${val.anchor}` : ""
                     this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
                         '/#' + this.url + _anchor

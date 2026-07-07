@@ -24,7 +24,7 @@ const docSortFn = (a: NgDocNavigation, b: NgDocNavigation) => (a.order ?? 0) - (
         RouterLinkActive
     ],
     template: `
-        <p-menu [model]="items" class="w-full md:w-80 p-2">
+        <p-menu [model]="items" class="w-full md:w-80">
             <ng-template pTemplate="item" let-item>
                 <div class="p-menuitem-content" data-pc-section="content">
                     <a [routerLink]="item.routerLink" routerLinkActive="p-menuitem-link-active" pRipple
@@ -50,13 +50,16 @@ export class KronosNgDocSidebarComponent {
         this.router.events
             .pipe(filter(event => event instanceof NavigationEnd))
             .subscribe(() => this.updateMenuState());
+        this.updateMenuState();
     }
 
     items: MenuItem[] = [];
 
     updateMenuState() {
+        const routeLanguage = this.router.url.split("/")[2];
+        const language = routeLanguage === "en" || routeLanguage === "zh-CN" ? routeLanguage : this._app.language;
         this.items = this.context.navigation.sort(docSortFn)
-            .filter(item => item.route.startsWith(`/documentation/${this._app.language}/`))
+            .filter(item => item.route.startsWith(`/documentation/${language}/`))
             .map((item, index) => {
             return {
                 label: item.title,

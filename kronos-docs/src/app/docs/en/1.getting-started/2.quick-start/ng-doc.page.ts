@@ -10,7 +10,7 @@ const QuickStartPage: NgDocPage = {
     mdFile: './index.md',
     route: "quick-start",
     category: GettingStartedCategory,
-    order: 2,
+    order: 3,
     imports: [AnimateLogoComponent],
     demos: {AnimateLogoComponent},
 };

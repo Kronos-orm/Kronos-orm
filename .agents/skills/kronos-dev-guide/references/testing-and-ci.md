@@ -16,7 +16,7 @@
 ### Where Tests Go
 - **Unit tests**: each module's `src/test/kotlin/`. Tests that don't need real databases.
 - **Integration tests**: `kronos-testing/src/test/kotlin/`. Tests that connect to real DB instances.
-- **Compiler plugin tests**: `kronos-compiler-plugin/src/test/kotlin/`. Uses kotlin-compile-testing.
+- **Official compiler plugin tests**: `kronos-compiler-plugin/testData/` with runners in `kronos-compiler-plugin/src/test/kotlin/com/kotlinorm/compiler/`. Uses Kotlin's official compiler test infrastructure.
 
 ### Writing Unit Tests (kronos-core)
 
@@ -46,49 +46,129 @@ class SelectTest {
 }
 ```
 
-### Writing Compiler Plugin Tests
+### Writing Official Compiler Plugin Tests
 
-Uses `kotlin-compile-testing` (kct/kctfork) framework.
+Kronos is migrating compiler-plugin behavior to Kotlin's official compiler test infrastructure. These tests compile `kronos-compiler-plugin/testData` sources through the real FIR/IR/codegen pipeline with `KronosCompilerPluginRegistrar` registered.
 
-**IrTestFramework** (`utils/IrTestFramework.kt`):
-```kotlin
-object IrTestFramework {
-    fun compile(source: String): CompilationResult
-    // Compiles Kotlin source with the Kronos plugin active
-    // Returns compilation result for IR-level assertions
-}
+Read the Kronos official compiler testData style section in:
+
+```text
+.agents/skills/kronos-dev-kcp/SKILL.md
 ```
 
-**KotlinSourceDynamicCompiler** (`utils/KotlinSourceDynamicCompiler.kt`):
-```kotlin
-object KotlinSourceDynamicCompiler {
-    fun compile(source: String): ClassLoader
-    // Compiles and returns a ClassLoader for end-to-end testing
-    // Load classes, invoke methods, verify runtime behavior
-}
+Use official compiler tests for:
+
+- KPojo generated declarations and generated bodies.
+- DSL lambda transformations: condition, select, set, sort, reference, type-parameter injection.
+- FIR/frontend generated declarations or diagnostics.
+- IR verifier regressions.
+- Runtime behavior that depends on compiler-generated code.
+
+Do not use official compiler tests for:
+
+- Pure utility functions.
+- Broad smoke tests that only prove compilation.
+- Database integration requiring external services.
+
+#### Official Test Layout
+
+```text
+kronos-compiler-plugin/
+  testData/
+    box/
+      pluginLoading/
+      kpojoGeneratedBodies/
+      kpojoFieldMetadata/
+      condition/
+      select/
+      set/
+      sort/
+      reference/
+      dslIntegration/
+      typeParameterFixer/
+      kpojoFactory/
+      regression/
+    diagnostics/
+  src/test/kotlin/com/kotlinorm/compiler/
+    AbstractKronosJvmBoxTest.kt
+    *BoxTest.kt
 ```
 
-Example pattern:
+Each `testData/box/<area>/<case>.kt` file should have a matching thin runner method:
+
 ```kotlin
-class KTableParserForConditionTransformerTest {
+class SelectBoxTest : AbstractKronosJvmBoxSuite("select") {
     @Test
-    fun testEqualityCondition() {
-        val result = IrTestFramework.compile("""
-            data class User(val name: String? = null) : KPojo
-            fun test() {
-                User().select().where { it.name == "test" }
-            }
-        """)
-        // Assert compilation succeeds, inspect IR output
-    }
+    fun collectionLiteralFields() = box("collectionLiteralFields")
 }
 ```
 
-Test files in compiler plugin:
-- `core/`: ErrorReporterTest, FieldAnalysisTest, KTableTransformerTest, SymbolsTest
-- `plugin/`: KronosPluginTest
-- `transformers/`: Tests for each transformer (Condition, Reference, Select, Set, Sort, TypeParameterFixer)
-- `utils/`: AnnotationUtilsTest, TypeUtilsTest
+#### Official Box Test Requirements
+
+Every testData `.kt` file must:
+
+- Start with the Kronos Apache 2.0 copyright header.
+- Add a short top-level comment that states the compiler-plugin contract being tested.
+- Test one primary contract per file unless it is explicitly an integration scenario.
+- Expose `fun box(): String`.
+- Return exactly `"OK"` on success.
+- Return `"Fail: <specific reason>"` on failure, including observed values where useful.
+- Assert generated behavior, not merely that the source compiles.
+
+Preferred assertion style for multiple checks:
+
+```kotlin
+fun box(): String {
+    val failures = listOfNotNull(
+        expect(fields.size == 2) { "field count was ${fields.size}" },
+        expect(fields[0].name == "id") { "first field was ${fields[0].name}" },
+    )
+
+    return failures.firstOrNull() ?: "OK"
+}
+
+inline fun expect(condition: Boolean, message: () -> String): String? {
+    return if (condition) null else "Fail: ${message()}"
+}
+```
+
+When a compiler test depends on global naming strategies, default data source, serializers, or other `Kronos` singleton state, set only the required properties directly and restore/reset state if it can leak into later cases:
+
+```kotlin
+Kronos.fieldNamingStrategy = lineHumpNamingStrategy
+Kronos.tableNamingStrategy = lineHumpNamingStrategy
+```
+
+Collection literal tests using `[]` rely on the official test configuration enabling `+CollectionLiterals`; do not assume Gradle `compileTestKotlin` arguments apply to testData compilation.
+
+#### Positive, Negative, And Golden Tests
+
+- Use `testData/box` for generated runtime behavior. The test should fail if the relevant plugin transformer or generator is disabled.
+- Use `testData/diagnostics` for source that should fail compilation. Do not encode expected compiler failures as box tests.
+- Add `.fir.txt` or `.fir.ir.txt` golden dumps only for selected structural contracts such as FIR-generated declarations, call return type refinement, complex IR body generation, or invalid-IR regressions. Do not snapshot every box test.
+
+#### Removed kctfork Tests
+
+The compiler plugin no longer uses kotlin-compile-testing / kctfork tests. Do not reintroduce `KotlinSourceDynamicCompiler`, `IrTestFramework`, or `libs.kct`.
+
+When a removed behavior needs coverage:
+
+- Use official `testData/box` or `testData/diagnostics` if it depends on compiler-plugin generated code or DSL transformation.
+- Use ordinary unit tests if it is a pure utility or small deterministic helper.
+- Prefer precise behavior names and assertions over broad smoke tests.
+
+#### Running Official Compiler Tests
+
+```bash
+# All official compiler box tests
+./gradlew :kronos-compiler-plugin:test --tests "com.kotlinorm.compiler.*BoxTest" --no-daemon --console=plain
+
+# One official suite
+./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.ConditionBoxTest --no-daemon --console=plain
+
+# One test method
+./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.TypeParameterFixerBoxTest.queryReturnTypes --no-daemon --console=plain
+```
 
 ### Writing Integration Tests (kronos-testing)
 
@@ -126,11 +206,9 @@ class MysqlTest {
 
         @BeforeAll @JvmStatic
         fun setup() {
-            Kronos.init {
-                dataSource = { wrapper }
-                fieldNamingStrategy = lineHumpNamingStrategy
-                tableNamingStrategy = lineHumpNamingStrategy
-            }
+            Kronos.dataSource = { wrapper }
+            Kronos.fieldNamingStrategy = lineHumpNamingStrategy
+            Kronos.tableNamingStrategy = lineHumpNamingStrategy
             wrapper.table.syncTable(User())  // ensure table exists
         }
     }
@@ -176,6 +254,18 @@ source envsetup.sh  # sets DB env vars
 
 `test.sh` runs: DB connectivity check → kronos-testing → kronos-core → kronos-codegen → kronos-compiler-plugin, with output logged to `*-output.log` files.
 
+Windows equivalents:
+
+```bat
+rem All tests (checks DB connectivity, runs all modules)
+test.bat
+
+rem Environment defaults for local DB credentials
+call envsetup.bat
+```
+
+`test.bat` mirrors `test.sh` and writes the same `*-output.log` files at the repo root.
+
 ---
 
 ## CI/CD Workflows
@@ -190,8 +280,8 @@ All workflows in `.github/workflows/`:
 | `kronos-testing.yml` | push/PR to `main` | Integration tests with real DBs (MySQL 8.0, PostgreSQL 17, SQL Server 2022 via `ankane/setup-*` actions) |
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
-| `publish.yml` | push to `release/0.1.0` OR PR merged to `main` | Snapshot or release publishing to Maven Central |
-| `sync-skills.yml` | merged PRs to `main` that change `.agents/**` | Syncs `kronos-orm-guide` files to `release/llm` branch |
+| `publish.yml` | push to `main` | Snapshot or release publishing to Maven Central |
+| `sync-skills.yml` | push to `main` that changes `.agents/**` | Syncs `kronos-orm-guide` files to `release/llm` branch |
 | `greetings.yml` | new issues/PRs | Bilingual welcome messages |
 | `stale.yml` | daily 15:40 UTC | Marks stale issues (60d) and PRs, closes after grace period |
 
@@ -292,7 +382,7 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 - Secrets: `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`
 
 ### Release Publishing
-- Trigger: PR merged to `main` (version must NOT end with `-SNAPSHOT`)
+- Trigger: push to `main` (version must NOT end with `-SNAPSHOT`)
 - Flow:
   1. `bump-version.sh release-from-current` strips `-SNAPSHOT`
   2. Commit + tag `v$VERSION`
@@ -360,9 +450,9 @@ Deploy: `npx wrangler pages deploy dist/site --project-name=kotlinorm`
 ## Build System
 
 ### Root Settings
-`settings.gradle.kts` includes 8 modules:
+`settings.gradle.kts` includes 7 modules:
 ```kotlin
-include("kronos-core", "kronos-compiler-plugin", "kronos-compiler-plugin-legacy",
+include("kronos-core", "kronos-compiler-plugin",
         "kronos-maven-plugin", "kronos-logging", "kronos-jdbc-wrapper",
         "kronos-codegen", "kronos-testing")
 includeBuild("kronos-gradle-plugin")  // separate included build

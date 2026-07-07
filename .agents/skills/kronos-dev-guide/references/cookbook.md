@@ -259,43 +259,67 @@ Use the annotation data in clause classes, rendering, or strategy application.
 
 ## Write a Compiler Plugin Test
 
-File: `kronos-compiler-plugin/src/test/kotlin/com/kotlinorm/compiler/transformers/MyTest.kt`
+Use official compiler testData for compiler-plugin behavior. Do not add kotlin-compile-testing / kctfork tests.
+
+Step 1: add a focused `box` test under `kronos-compiler-plugin/testData/box/<area>/<case>.kt`.
 
 ```kotlin
-class MyTransformerTest {
-    @Test
-    fun testMyTransformation() {
-        // Option 1: IR-level test
-        val result = IrTestFramework.compile("""
-            import com.kotlinorm.interfaces.KPojo
-            import com.kotlinorm.annotations.*
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-            data class User(
-                @PrimaryKey(identity = true) val id: Int? = null,
-                val name: String? = null
-            ) : KPojo
+// Verifies that equality conditions are transformed into EQUAL criteria.
 
-            fun test() {
-                User().select().where { it.name == "test" }
-            }
-        """)
-        assertTrue(result.exitCode == KotlinCompilation.ExitCode.OK)
+import com.kotlinorm.beans.dsl.Criteria
+import com.kotlinorm.enums.ConditionType
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.orm.select.select
 
-        // Option 2: Runtime behavior test
-        val classLoader = KotlinSourceDynamicCompiler.compile("""
-            // ... same source ...
-            fun test(): Any {
-                return User(name = "hello").toDataMap()
-            }
-        """)
-        val testClass = classLoader.loadClass("TestKt")
-        val result = testClass.getMethod("test").invoke(null) as Map<*, *>
-        assertEquals("hello", result["name"])
-    }
+data class User(
+    val id: Int? = null,
+    val name: String? = null,
+) : KPojo
+
+fun box(): String {
+    val clause = User().select().where { it.name == "test" }
+    val criteria = clause.where as? Criteria
+        ?: return "Fail: where was ${clause.where}"
+
+    if (criteria.type != ConditionType.EQUAL) return "Fail: type was ${criteria.type}"
+    if (criteria.field.name != "name") return "Fail: field was ${criteria.field.name}"
+    if (criteria.value != "test") return "Fail: value was ${criteria.value}"
+    return "OK"
 }
 ```
 
-Run: `./gradlew :kronos-compiler-plugin:test`
+Step 2: add a thin runner method in `kronos-compiler-plugin/src/test/kotlin/com/kotlinorm/compiler/<Area>BoxTest.kt`.
+
+```kotlin
+class ConditionBoxTest : AbstractKronosJvmBoxSuite("condition") {
+    @Test
+    fun equalityCondition() = box("equalityCondition")
+}
+```
+
+Use `testData/diagnostics` for invalid source that should fail compilation. Use ordinary unit tests for pure helpers that do not require generated declarations or DSL IR rewriting.
+
+Run:
+
+```bash
+./gradlew :kronos-compiler-plugin:test --tests com.kotlinorm.compiler.ConditionBoxTest --no-daemon --console=plain
+```
 
 ---
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kronos Dev Docs"
+  short_description: "Maintain Kronos docs and synced ORM guidance"
+  default_prompt: "Use $kronos-dev-docs to update Kronos documentation and keep the ORM guide skill in sync."

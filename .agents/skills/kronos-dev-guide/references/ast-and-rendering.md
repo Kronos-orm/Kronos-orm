@@ -359,7 +359,7 @@ object FunctionManager {
 `FunctionHandler` is a marker object used as the receiver (`f`) for DSL function calls:
 ```kotlin
 // User code:
-User().select { f.count(it.id) + f.max(it.age) }.queryList()
+User().select { [f.count(it.id), f.max(it.age)] }.queryList()
 ```
 The compiler plugin transforms `f.count(it.id)` into `FunctionField("count", [(Field("id"), null)])`.
 

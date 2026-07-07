@@ -81,9 +81,9 @@ DSL class for `where {}` / `having {}` / `on {}` blocks. Provides operator overl
 
 ### KTableForSelect<T>
 DSL for `select {}` blocks:
-- `it.field1 + it.field2` (operator `+` returns 1, compiler captures fields)
-- `+it.field1` (unary plus for single field)
-- `it.field1 as_ "alias"` (aliasing)
+- `[it.field1, it.field2]` (collection literal, compiler captures fields)
+- `it.field1` (single selected field)
+- `it.field1.alias("alias")` (aliasing)
 - `addField(Field(...))` (manual field addition)
 - `it - it.id` (exclusion — all fields except id)
 - `it.eq` (all columns)
@@ -98,7 +98,7 @@ DSL for `set {}` blocks in updates:
 DSL for `orderBy {}` blocks:
 - `it.age.desc()` — descending
 - `it.name.asc()` — ascending
-- `it.age.desc() + it.name.asc()` — multiple sort fields
+- `[it.age.desc(), it.name.asc()]` — multiple sort fields
 
 ### KTableForReference<T>
 DSL for `cascade {}` blocks:
@@ -251,7 +251,7 @@ object DataGuardPlugin {
 `plugins/LastInsertIdPlugin.kt` — captures last insert ID after INSERT:
 ```kotlin
 object LastInsertIdPlugin {
-    var enabled = false  // auto-enabled by Kronos.init {}
+    var enabled = false
 }
 ```
 When enabled, INSERT execution returns the auto-generated key.
@@ -416,8 +416,6 @@ object Kronos {
     var loggerType: KLoggerType
     var logPath: List<String>
 
-    @KronosInit
-    fun init(action: Kronos.() -> Unit)  // enables LastInsertIdPlugin, runs config block
     fun transact(wrapper?, isolation?, timeout?, block)
 }
 ```
@@ -532,11 +530,9 @@ Built-in:
 
 Custom:
 ```kotlin
-Kronos.init {
-    fieldNamingStrategy = object : KronosNamingStrategy {
-        override fun k2db(name: String) = name.uppercase()
-        override fun db2k(name: String) = name.lowercase()
-    }
+Kronos.fieldNamingStrategy = object : KronosNamingStrategy {
+    override fun k2db(name: String) = name.uppercase()
+    override fun db2k(name: String) = name.lowercase()
 }
 ```
 
@@ -557,9 +553,7 @@ data class User(
 
 Configure a processor:
 ```kotlin
-Kronos.init {
-    serializeProcessor = GsonProcessor()  // or JacksonProcessor, custom impl
-}
+Kronos.serializeProcessor = GsonProcessor()  // or JacksonProcessor, custom impl
 ```
 
 Interface:

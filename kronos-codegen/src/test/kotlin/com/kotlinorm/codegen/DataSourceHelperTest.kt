@@ -1,6 +1,6 @@
 package com.kotlinorm.codegen
 
-import com.kotlinorm.KronosBasicWrapper
+import com.kotlinorm.wrappers.KronosJdbcWrapper
 import org.apache.commons.dbcp2.BasicDataSource
 import javax.sql.DataSource
 import kotlin.test.Ignore
@@ -135,15 +135,15 @@ class DataSourceHelperTest {
 
     @Test
     fun createWrapperWithNullClassNameUsesDefault() {
-        // When className is null, it falls back to "com.kotlinorm.KronosBasicWrapper"
-        // KronosBasicWrapper needs a real DataSource that can provide a connection,
+        // When className is null, it falls back to "com.kotlinorm.wrappers.KronosJdbcWrapper"
+        // KronosJdbcWrapper needs a real DataSource that can provide a connection,
         // so we verify the fallback path triggers by checking the exception message
         // since BasicDataSource without driver config cannot connect.
         val ds = BasicDataSource()
         try {
             createWrapper(null, ds)
         } catch (e: Exception) {
-            // Expected: either connection failure from KronosBasicWrapper init
+            // Expected: either connection failure from KronosJdbcWrapper init
             // or class not found if kronos-jdbc-wrapper not on classpath
             // The key point is that it attempted to use the default class name
             assertTrue(true)
@@ -169,7 +169,7 @@ class DataSourceHelperTest {
         val ex = assertFailsWith<IllegalStateException> {
             createWrapper("com.nonexistent.FakeWrapper", ds)
         }
-        assertTrue(ex.message!!.contains("Wrapper class not found"))
+        assertEquals("Wrapper class not found: com.nonexistent.FakeWrapper", ex.message)
     }
 
     @Test
@@ -178,7 +178,10 @@ class DataSourceHelperTest {
         val ex = assertFailsWith<IllegalStateException> {
             createWrapper("java.lang.String", ds)
         }
-        assertTrue(ex.message!!.contains("No compatible constructor found"))
+        assertEquals(
+            "No compatible constructor found for java.lang.String. Expected (org.apache.commons.dbcp2.BasicDataSource or javax.sql.DataSource).",
+            ex.message
+        )
     }
 
     @Test

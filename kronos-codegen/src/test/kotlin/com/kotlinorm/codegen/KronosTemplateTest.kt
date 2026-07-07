@@ -11,13 +11,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.assertContains
 
 class KronosTemplateTest {
 
     @BeforeTest
     fun setup() {
-        Kronos.init {
+        with(Kronos) {
             fieldNamingStrategy = Kronos.lineHumpNamingStrategy
             tableNamingStrategy = Kronos.lineHumpNamingStrategy
             createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "createTime"))
@@ -123,16 +122,23 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithPrimaryKeyIdentity() {
         val field = Field(columnName = "id", type = KColumnType.INT, primaryKey = PrimaryKeyType.IDENTITY)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it.contains("@PrimaryKey") })
-        assertContains(t.imports, "com.kotlinorm.annotations.PrimaryKey")
+        assertEquals(listOf("@PrimaryKey(identity = true)"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.PrimaryKey"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithPrimaryKeyDefault() {
         val field = Field(columnName = "pk_col", type = KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
         assertTrue(annotations.any { it == "@PrimaryKey" })
     }
@@ -140,65 +146,115 @@ class KronosTemplateTest {
     @Test
     fun annotationsWithDefaultValue() {
         val field = Field(columnName = "status", type = KColumnType.INT, defaultValue = "0")
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it.contains("@Default(\"0\")") })
-        assertContains(t.imports, "com.kotlinorm.annotations.Default")
+        assertEquals(listOf("@Default(\"0\")"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.Default"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithNonNullableField() {
         val field = Field(columnName = "name", type = KColumnType.VARCHAR, nullable = false)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it == "@Necessary" })
-        assertContains(t.imports, "com.kotlinorm.annotations.Necessary")
+        assertEquals(listOf("@NonNull"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.NonNull"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithCreateTimeStrategy() {
         val field = Field(columnName = "create_time", type = KColumnType.DATETIME)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it == "@CreateTime" })
-        assertContains(t.imports, "com.kotlinorm.annotations.CreateTime")
+        assertEquals(listOf("@CreateTime"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.CreateTime"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithUpdateTimeStrategy() {
         val field = Field(columnName = "update_time", type = KColumnType.DATETIME)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it == "@UpdateTime" })
-        assertContains(t.imports, "com.kotlinorm.annotations.UpdateTime")
+        assertEquals(listOf("@UpdateTime"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.UpdateTime"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithLogicDeleteStrategy() {
         val field = Field(columnName = "deleted", type = KColumnType.BIT)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it == "@LogicDelete" })
-        assertContains(t.imports, "com.kotlinorm.annotations.LogicDelete")
+        assertEquals(listOf("@LogicDelete"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.LogicDelete"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithVersionStrategy() {
         val field = Field(columnName = "version", type = KColumnType.INT)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it == "@Version" })
-        assertContains(t.imports, "com.kotlinorm.annotations.Version")
+        assertEquals(listOf("@Version"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.Version"
+            ),
+            t.imports
+        )
     }
 
     @Test
     fun annotationsWithColumnTypeNonDefaultLength() {
         // A DECIMAL field with non-default length/scale triggers @ColumnType
         val field = Field(columnName = "price", type = KColumnType.DECIMAL, length = 10, scale = 2)
-        val t = template(fields = listOf(field))
+        val t = template(fields = [field])
         val annotations = with(t) { field.annotations() }
-        assertTrue(annotations.any { it.contains("@ColumnType") })
-        assertContains(t.imports, "com.kotlinorm.annotations.ColumnType")
+        assertEquals(listOf("@ColumnType(type = KColumnType.DECIMAL, length = 10, scale = 2)"), annotations)
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.ColumnType",
+                "com.kotlinorm.enums.KColumnType"
+            ),
+            t.imports
+        )
     }
 
     // --- KTableIndex.toAnnotations() tests ---
@@ -206,29 +262,25 @@ class KronosTemplateTest {
     @Test
     fun indexToAnnotationsWithNameAndColumns() {
         val index = KTableIndex(name = "idx_user", columns = arrayOf("name", "email"), type = "UNIQUE")
-        val t = template(indexes = listOf(index))
+        val t = template(indexes = [index])
         val annotation = with(t) { index.toAnnotations() }
-        assertContains(annotation, "@TableIndex")
-        assertContains(annotation, "name = \"idx_user\"")
-        assertContains(annotation, "\"name\"")
-        assertContains(annotation, "\"email\"")
-        assertContains(annotation, "type = \"UNIQUE\"")
+        assertEquals("@TableIndex(name = \"idx_user\", columns = [\"name\", \"email\"], type = \"UNIQUE\")", annotation)
     }
 
     @Test
     fun indexToAnnotationsWithMethod() {
         val index = KTableIndex(name = "idx_geo", columns = arrayOf("location"), type = "", method = "GIST")
-        val t = template(indexes = listOf(index))
+        val t = template(indexes = [index])
         val annotation = with(t) { index.toAnnotations() }
-        assertContains(annotation, "method = \"GIST\"")
+        assertEquals("@TableIndex(name = \"idx_geo\", columns = [\"location\"], method = \"GIST\")", annotation)
     }
 
     @Test
     fun indexToAnnotationsWithConcurrently() {
         val index = KTableIndex(name = "idx_conc", columns = arrayOf("col1"), concurrently = true)
-        val t = template(indexes = listOf(index))
+        val t = template(indexes = [index])
         val annotation = with(t) { index.toAnnotations() }
-        assertContains(annotation, "concurrently = true")
+        assertEquals("@TableIndex(name = \"idx_conc\", columns = [\"col1\"], concurrently = true)", annotation)
     }
 
     @Test
@@ -242,10 +294,23 @@ class KronosTemplateTest {
     fun multipleIndexesToAnnotationsJoinsWithNewline() {
         val idx1 = KTableIndex(name = "idx1", columns = arrayOf("a"))
         val idx2 = KTableIndex(name = "idx2", columns = arrayOf("b"))
-        val t = template(indexes = listOf(idx1, idx2))
+        val t = template(indexes = [idx1, idx2])
         val result = with(t) { indexes.toAnnotations() }!!
         val lines = result.split("\n")
-        assertEquals(2, lines.size)
-        assertContains(t.imports, "com.kotlinorm.annotations.TableIndex")
+        assertEquals(
+            listOf(
+                "@TableIndex(name = \"idx1\", columns = [\"a\"])",
+                "@TableIndex(name = \"idx2\", columns = [\"b\"])"
+            ),
+            lines
+        )
+        assertEquals(
+            linkedSetOf(
+                "com.kotlinorm.annotations.Table",
+                "com.kotlinorm.interfaces.KPojo",
+                "com.kotlinorm.annotations.TableIndex"
+            ),
+            t.imports
+        )
     }
 }

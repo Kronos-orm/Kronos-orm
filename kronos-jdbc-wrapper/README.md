@@ -4,7 +4,7 @@ Default JDBC-based `KronosDataSourceWrapper` implementation for Kronos ORM.
 
 ## What It Provides
 
-- Wraps any `javax.sql.DataSource` into `KronosBasicWrapper`
+- Wraps any `javax.sql.DataSource` into `KronosJdbcWrapper`
 - Named parameter binding (`:name` → `?` conversion)
 - Query execution: `forList`, `forMap`, `forObject` with type-safe result mapping
 - DML execution: `update`, `batchUpdate` with last-insert-ID capture
@@ -14,11 +14,28 @@ Default JDBC-based `KronosDataSourceWrapper` implementation for Kronos ORM.
 ## Usage
 
 ```kotlin
-val wrapper = KronosBasicWrapper(dataSource)
-Kronos.init {
-    dataSource = { wrapper }
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+
+val wrapper = KronosJdbcWrapper(dataSource)
+Kronos.dataSource = { wrapper }
+```
+
+Force a database type or tune JDBC execution through the constructor configuration block:
+
+```kotlin
+import com.kotlinorm.enums.DBType
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import com.kotlinorm.wrappers.KronosSqlWarningPolicy
+
+val wrapper = KronosJdbcWrapper(dataSource, databaseType = DBType.Mysql) {
+    statement.fetchSize = 1000
+    statement.queryTimeoutSeconds = 30
+    warningPolicy = KronosSqlWarningPolicy.THROW
 }
 ```
+
+The configuration block exposes statement and result-set settings, SQL warning policy, exception translation, argument binders, column mappers, Oracle LONG handling, and the loaded plugin list.
 
 ## Dependencies
 

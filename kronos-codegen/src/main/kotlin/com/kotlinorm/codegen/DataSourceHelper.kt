@@ -25,9 +25,9 @@ import javax.sql.DataSource
 fun createWrapper(className: String?, dataSource: DataSource): KronosDataSourceWrapper {
     val className = className ?: run {
         Kronos.defaultLogger(dataSource).warn(
-            log { +"wrapperClassName is not set, using default: com.kotlinorm.KronosBasicWrapper" }
+            log { +"wrapperClassName is not set, using default: com.kotlinorm.wrappers.KronosJdbcWrapper" }
         )
-        "com.kotlinorm.KronosBasicWrapper"
+        "com.kotlinorm.wrappers.KronosJdbcWrapper"
     }
     val clazz: Class<*>
     try {
@@ -73,11 +73,11 @@ fun initialDataSource(config: Map<String, Any?>): DataSource {
             if (key in arrayOf("dataSourceClassName", "wrapperClassName")) return@forEach
             try {
                 // 生成可能的setter方法名（兼容不同命名风格）
-                val methodNames = listOf(
+                val methodNames = [
                     "set${key.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}",
                     "set${key.uppercase(Locale.ROOT)}",
                     "set${key.lowercase(Locale.ROOT)}"
-                )
+                ]
 
                 val targetMethod = methodNames.firstNotNullOfOrNull { name ->
                     findCompatibleMethod(this.javaClass, name, value)

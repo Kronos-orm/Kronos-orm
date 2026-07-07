@@ -18,7 +18,7 @@ class CodegenConfigTest {
     @BeforeTest
     fun setup() {
         codeGenConfig = null
-        Kronos.init {
+        with(Kronos) {
             fieldNamingStrategy = Kronos.lineHumpNamingStrategy
             tableNamingStrategy = Kronos.lineHumpNamingStrategy
             createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "createTime"))
@@ -98,9 +98,7 @@ class CodegenConfigTest {
             """.trimIndent())
             val config = readConfig(tomlFile.absolutePath)
             assertNotNull(config)
-            assertTrue(config.containsKey("dataSource"))
-            assertTrue(config.containsKey("output"))
-            assertTrue(config.containsKey("table"))
+            assertEquals(setOf("dataSource", "output", "table"), config.keys)
         } finally {
             tomlFile.delete()
         }
@@ -149,7 +147,7 @@ class CodegenConfigTest {
     fun testInitialDataSourceSkipsDataSourceClassName() {
         val config = mapOf<String, Any?>(
             "dataSourceClassName" to "org.apache.commons.dbcp2.BasicDataSource",
-            "wrapperClassName" to "com.kotlinorm.KronosBasicWrapper",
+            "wrapperClassName" to "com.kotlinorm.wrappers.KronosJdbcWrapper",
             "url" to "jdbc:mysql://localhost:3306/test"
         )
         val ds = initialDataSource(config)
@@ -213,7 +211,7 @@ class CodegenConfigTest {
             """.trimIndent())
             val config = readConfig(tomlFile.absolutePath)
             assertNotNull(config)
-            assertTrue(config.containsKey("strategy"))
+            assertEquals(setOf("dataSource", "output", "strategy", "table"), config.keys)
             val strategy = config["strategy"] as Map<*, *>
             assertEquals("lineHumpNamingStrategy", strategy["tableNamingStrategy"])
             assertEquals("noneNamingStrategy", strategy["fieldNamingStrategy"])

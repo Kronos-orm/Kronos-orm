@@ -18,7 +18,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
         if (task.sql.startsWith("SELECT DISTINCT INDEX_NAME")) {
-            return listOf(
+            return [
                 mapOf(
                     "tableName" to "tb_user",
                     "indexName" to "PRIMARY",
@@ -26,9 +26,9 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
                     "nonUnique" to 0,
                     "indexType" to "BTREE"
                 )
-            )
+            ]
         }
-        return listOf(
+        return [
             mapOf(
                 "COLUMN_NAME" to "id",
                 "DATA_TYPE" to "Int",
@@ -54,7 +54,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
                 "COLUMN_NAME" to "deleted",
                 "DATA_TYPE" to "Boolean"
             )
-        )
+        ]
     }
 
     override fun forList(
@@ -63,7 +63,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
         isKPojo: Boolean,
         superTypes: List<String>
     ): List<Any> {
-        return listOf()
+        return []
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
@@ -76,7 +76,8 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
         isKPojo: Boolean,
         superTypes: List<String>
     ): Any? {
-        if (task.sql.startsWith("SELECT `TABLE_COMMENT`")) {
+        val normalizedSql = task.sql.replace("`", "").uppercase()
+        if (normalizedSql.startsWith("SELECT TABLE_COMMENT") && normalizedSql.contains("INFORMATION_SCHEMA.TABLES")) {
             return "Sample Table Comment"
         }
         return null

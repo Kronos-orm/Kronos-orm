@@ -1,26 +1,31 @@
 [versions]
-kotlin = "2.3.0"
-dsl = "6.5.2"
-datetime = "0.7.1"
-serialization = "1.10.0"
+kotlin = "2.4.0"
+dsl = "6.7.4"
+datetime = "0.8.0"
+serialization = "1.11.0"
 dbcp2 = "2.14.0"
-mysql-jdbc-driver = "9.5.0"
-sqlite-jdbc-driver = "3.51.1.0"
-mssql-jdbc-driver = "13.2.1.jre8"
-postgresql-jdbc-driver = "42.7.8"
-oracle-jdbc-driver = "23.26.0.0.0"
-gsonVer = "2.13.2"
-dokkaVer = "2.2.0-Beta"
-mavenCore = "3.9.12"
+mysql-jdbc-driver = "9.7.0"
+sqlite-jdbc-driver = "3.53.2.0"
+mssql-jdbc-driver = "13.4.0.jre8"
+postgresql-jdbc-driver = "42.7.11"
+oracle-jdbc-driver = "23.26.2.0.0"
+gsonVer = "2.14.0"
+dokkaVer = "2.2.0"
+mavenCore = "3.9.16"
 autoService = "1.1.1"
-kotlinCompilerTest = "0.12.1"
-jackson = "2.20.1"
-kover = "0.9.7"
+jackson = "2.22.0"
+kover = "0.9.8"
+intellijPlatform = "2.17.0"
+kotlinpoet = "2.3.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-script-runtime = { module = "org.jetbrains.kotlin:kotlin-script-runtime", version.ref = "kotlin" }
+kotlin-annotations-jvm = { module = "org.jetbrains.kotlin:kotlin-annotations-jvm", version.ref = "kotlin" }
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin" }
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-compiler-internal-test-framework = { module = "org.jetbrains.kotlin:kotlin-compiler-internal-test-framework", version.ref = "kotlin" }
 kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-maven-plugin = { module = "org.jetbrains.kotlin:kotlin-maven-plugin", version.ref = "kotlin" }
@@ -38,9 +43,9 @@ gson = { module = "com.google.code.gson:gson", version.ref = "gsonVer" }
 maven-core = { module = "org.apache.maven:maven-core", version.ref="mavenCore" }
 maven-publish = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version = "0.34.0" }
 auto-service = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
-kct = { module = "dev.zacsweers.kctfork:core", version.ref = "kotlinCompilerTest" }
 mockk = { module = "io.mockk:mockk", version = "1.14.2" }
 jackson-dataformat-toml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 
 [bundles]
 ktx-serialization = ["ktx-serialization-core", "ktx-serialization-json"]
@@ -53,4 +58,6 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokkaVer" }
 kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kronos-publishing = { id = "kronos.publishing" }
 kronos-dokka = { id = "kronos.dokka-convention" }
+kronos-gradle = { id = "com.kotlinorm.kronos-gradle-plugin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellijPlatform" }

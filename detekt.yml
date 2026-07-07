@@ -631,7 +631,7 @@ style:
     excludes: [ '**/NamedParameterUtils.kt', '**/IrKDocUtil.kt' ]
   MagicNumber:
     active: true
-    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/database/**/**SqlRenderer.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", "**/com/kotlinorm/compiler/core/FieldAnalysis.kt", "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt", "**/com/kotlinorm/compiler/core/ErrorReporter.kt", "**/com/kotlinorm/compiler/transformers/SetTransformer.kt", "**/com/kotlinorm/compiler/transformers/KronosClassBodyGenerator.kt", "**/com/kotlinorm/orm/update/UpdateClause.kt", "**/com/kotlinorm/orm/delete/DeleteClause.kt", "**/com/kotlinorm/functions/bundled/builders/StringFunctionBuilder.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
+    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/database/**/**SqlRenderer.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", "**/com/kotlinorm/compiler/core/FieldAnalysis.kt", "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt", "**/com/kotlinorm/compiler/core/ErrorReporter.kt", "**/com/kotlinorm/compiler/transformers/SetTransformer.kt", "**/com/kotlinorm/compiler/transformers/KronosClassBodyGenerator.kt", "**/com/kotlinorm/orm/update/UpdateClause.kt", "**/com/kotlinorm/orm/delete/DeleteClause.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
     ignoreNumbers:
       - '-1'
       - '0'

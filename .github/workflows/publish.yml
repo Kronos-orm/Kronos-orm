@@ -1,8 +1,7 @@
 name: Publish Kronos
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [ main ]
 
 permissions:
@@ -12,7 +11,6 @@ permissions:
 jobs:
   publish:
     name: Publish 🚀
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -57,7 +55,7 @@ jobs:
       - name: Release 🏷️ - tag and push version commit
         if: steps.detect.outputs.mode == 'release'
         run: |
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git push origin HEAD:${{ github.ref_name }}
           ver=${{ steps.release_set.outputs.version }}
           if [ -z "$ver" ]; then ver=${{ steps.detect.outputs.current }}; fi
           git tag "v$ver"
@@ -85,7 +83,7 @@ jobs:
           git commit -m "chore(version): start $NEXT_SNAPSHOT [skip ci]" || echo "No changes to commit"
           git push origin "$BRANCH_NAME"
           gh pr create \
-            --base "${{ github.event.pull_request.base.ref }}" \
+            --base "${{ github.ref_name }}" \
             --head "$BRANCH_NAME" \
             --title "chore(version): start $NEXT_SNAPSHOT" \
             --body "Start the next development cycle after publishing ${{ steps.release_set.outputs.version }} by bumping release configuration to $NEXT_SNAPSHOT."

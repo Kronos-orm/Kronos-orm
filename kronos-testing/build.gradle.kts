@@ -1,16 +1,23 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kronos.gradle)
     alias(libs.plugins.ktx.serialization)
     alias(libs.plugins.kover)
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-nowarn")
+    }
+}
+
 dependencies {
-    kotlinCompilerPluginClasspathTest(project(":kronos-compiler-plugin"))
     kover(project(":kronos-core"))
     kover(project(":kronos-codegen"))
     kover(project(":kronos-compiler-plugin"))
-    testImplementation(project(":kronos-codegen"))
     testImplementation(project(":kronos-core"))
+    testImplementation(project(":kronos-syntax"))
+    testImplementation(project(":kronos-codegen"))
     testImplementation(project(":kronos-logging"))
     testImplementation(project(":kronos-jdbc-wrapper"))
     testImplementation(libs.kotlin.test)
@@ -20,5 +27,4 @@ dependencies {
     testImplementation(libs.driver.jdbc.mssql)
     testImplementation(libs.driver.jdbc.postgresql)
     testImplementation(libs.driver.jdbc.oracle)
-    testImplementation(libs.gson)
 }

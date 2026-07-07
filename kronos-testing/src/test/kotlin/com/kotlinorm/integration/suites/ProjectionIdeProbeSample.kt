@@ -1,0 +1,63 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.kotlinorm.integration.suites
+
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.functions.bundled.exts.WindowFunctions.rowNumber
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.orm.select.select
+
+@Table(name = "tb_projection_ide_probe")
+data class ProjectionIdeProbeOrder(
+    var id: Int? = null,
+    var createdAt: Int? = null,
+) : KPojo
+
+fun projectionIdeProbeRows() =
+    ProjectionIdeProbeOrder()
+        .select {
+            [
+                it.id,
+                f.rowNumber()
+                    .over {
+                        orderBy(it.createdAt.desc())
+                    }
+                    .alias("rn")
+            ]
+        }
+        .orderBy { it.rn }
+        .queryList()
+
+fun projectionIdeProbeResultAlias(): Int? =
+    projectionIdeProbeRows().firstOrNull()?.rn
+
+fun projectionIdeProbeLocalRows(): Int? {
+    val rows = ProjectionIdeProbeOrder()
+        .select {
+            [
+                it.id,
+                f.rowNumber()
+                    .over {
+                        orderBy(it.createdAt.desc())
+                    }
+                    .alias("rn")
+            ]
+        }
+        .queryList()
+    val row = rows.firstOrNull()
+    return row?.rn
+}

@@ -255,6 +255,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
             useIdentity = false
         }
         stash["useIdentity"] = useIdentity
+        if (useIdentity) {
+            stash["identityTable"] = tableName
+            stash["identityColumn"] = primaryKeyField.columnName
+        }
 
         allColumns.forEach {
             if (it.defaultValue != null && paramMap[it.name] == null) {

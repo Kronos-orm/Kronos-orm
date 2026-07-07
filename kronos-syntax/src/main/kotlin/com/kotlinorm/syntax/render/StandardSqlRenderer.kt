@@ -108,7 +108,7 @@ open class StandardSqlRenderer(
         is SqlTable.Graph -> renderGraphTable(table)
     }
 
-    private fun renderSelect(query: SqlQuery.Select): String = buildString {
+    protected open fun renderSelect(query: SqlQuery.Select): String = buildString {
         append("SELECT")
         query.quantifier?.let { append(" ${renderQuantifier(it)}") }
         append(" ")
@@ -595,7 +595,7 @@ open class StandardSqlRenderer(
         }
     }
 
-    private fun renderWindowItem(item: SqlWindowItem): String =
+    protected fun renderWindowItem(item: SqlWindowItem): String =
         "${renderIdentifier(item.name)} AS (${renderWindow(item.window)})"
 
     private fun renderWindow(window: SqlWindow): String = listOfNotNull(

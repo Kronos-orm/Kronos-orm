@@ -111,6 +111,12 @@ class DslIntegrationBoxTest : AbstractKronosJvmBoxSuite("dslIntegration") {
     fun insertSelectValueExpressionMatrix() = box("insertSelectValueExpressionMatrix")
 
     /**
+     * Verifies insert-select target filtering is reflected in emitted target columns.
+     */
+    @Test
+    fun insertSelectTargetFilteringStatement() = box("insertSelectTargetFilteringStatement")
+
+    /**
      * Verifies KPojo discovery and generated members across multiple source files in one box test.
      */
     @Test

@@ -28,5 +28,5 @@ data class ProjectionDiagIdeUser(
 
 fun invalidDuplicateProjectionIdeActive() {
     ProjectionDiagIdeUser()
-        .<!MISSING_DEPENDENCY_CLASS, MISSING_DEPENDENCY_CLASS!>select<!> { [it.id, <!KRONOS_DUPLICATE_PROJECTION_FIELD!>it.id<!>] }
+        .select { [it.id, <!KRONOS_DUPLICATE_PROJECTION_FIELD!>it.id<!>] }
 }

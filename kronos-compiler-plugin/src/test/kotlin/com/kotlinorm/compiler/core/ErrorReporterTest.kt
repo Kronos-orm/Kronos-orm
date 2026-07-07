@@ -22,12 +22,13 @@ import kotlin.test.assertEquals
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.ir.AbstractIrFileEntry
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 
 class ErrorReporterTest {
-    private lateinit var messages: MutableList<Pair<CompilerMessageSeverity, String>>
+    private lateinit var messages: MutableList<Triple<CompilerMessageSeverity, String, CompilerMessageSourceLocation?>>
     private lateinit var errorReporter: ErrorReporter
 
     @BeforeTest
@@ -48,7 +49,7 @@ class ErrorReporterTest {
                     message: String,
                     location: CompilerMessageSourceLocation?,
                 ) {
-                    messages += severity to message
+                    messages += Triple(severity, message, location)
                 }
             }
         )
@@ -92,6 +93,20 @@ class ErrorReporterTest {
     }
 
     @Test
+    fun reportsErrorWithExceptionDetailsWithoutSuggestion() {
+        errorReporter.reportError(
+            mockIrElement(),
+            "Failed to transform",
+            IllegalArgumentException("bad argument"),
+        )
+
+        assertEquals(
+            "[Kronos] Failed to transform\n  Exception: IllegalArgumentException: bad argument\n  IR: <IR dump failed: dump unavailable>",
+            messages.single().second
+        )
+    }
+
+    @Test
     fun reportsWarningAndInfo() {
         errorReporter.reportWarning(mockIrElement(), "Condition fallback")
         errorReporter.reportInfo("Plugin initialized")
@@ -102,9 +117,40 @@ class ErrorReporterTest {
         assertEquals("[Kronos] Plugin initialized", messages[1].second)
     }
 
-    private fun mockIrElement(): IrElement {
+    @Test
+    fun reportsSourceLocationWhenFileEntryAndOffsetAreAvailable() {
+        errorReporter.currentFileEntry = object : AbstractIrFileEntry() {
+            override val name: String = "User.kt"
+            override val maxOffset: Int = 32
+            override val lineStartOffsets: IntArray = intArrayOf(0, 12)
+            override val firstRelevantLineIndex: Int = 0
+        }
+
+        errorReporter.reportWarning(mockIrElement(startOffset = 14), "Located warning")
+
+        val location = messages.single().third
+        assertEquals("User.kt", location?.path)
+        assertEquals(2, location?.line)
+        assertEquals(3, location?.column)
+    }
+
+    @Test
+    fun reportsNullSourceLocationWhenOffsetIsUnavailable() {
+        errorReporter.currentFileEntry = object : AbstractIrFileEntry() {
+            override val name: String = "User.kt"
+            override val maxOffset: Int = 32
+            override val lineStartOffsets: IntArray = intArrayOf(0, 12)
+            override val firstRelevantLineIndex: Int = 0
+        }
+
+        errorReporter.reportWarning(mockIrElement(startOffset = -1), "Unlocated warning")
+
+        assertEquals(null, messages.single().third)
+    }
+
+    private fun mockIrElement(startOffset: Int = -1): IrElement {
         return object : IrElement {
-            override var startOffset: Int = -1
+            override var startOffset: Int = startOffset
             override var endOffset: Int = -1
             override var attributeOwnerId: IrElement = this
 

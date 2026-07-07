@@ -663,7 +663,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         )
         assertEquals(
             listOf<Map<String, Any?>>(
-                mapOf("id" to 30, "parentId" to 7, "deleted" to false),
+                mapOf("id" to 30, "parentId" to 7, "deleted" to 0),
                 mapOf("id" to 7)
             ),
             wrapper.actionParams

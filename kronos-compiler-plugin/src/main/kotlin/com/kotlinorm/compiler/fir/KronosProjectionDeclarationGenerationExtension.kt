@@ -21,7 +21,9 @@ package com.kotlinorm.compiler.fir
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
 import org.jetbrains.kotlin.GeneratedDeclarationKey
+import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.KtSourceElement
+import org.jetbrains.kotlin.SuspiciousFakeSourceCheck
 import org.jetbrains.kotlin.descriptors.EffectiveVisibility
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
@@ -43,7 +45,6 @@ import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.builder.buildRegularClass
 import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
-import org.jetbrains.kotlin.fir.declarations.utils.fromPrimaryConstructor
 import org.jetbrains.kotlin.fir.expressions.builder.buildLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildPropertyAccessExpression
 import org.jetbrains.kotlin.fir.extensions.ExperimentalTopLevelDeclarationsGenerationApi
@@ -70,6 +71,7 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.types.ConstantValueKind
+import java.lang.reflect.Constructor
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -196,7 +198,7 @@ class KronosProjectionDeclarationGenerationExtension(
             source = model.generatedDeclarationSource()
             resolvePhase = FirResolvePhase.BODY_RESOLVE
             moduleData = session.moduleData
-            origin = projectionOrigin()
+            origin = projectionOriginForIde()
             scopeProvider = FirKotlinScopeProvider()
             status = projectionStatus().apply {
                 isData = true
@@ -241,7 +243,7 @@ class KronosProjectionDeclarationGenerationExtension(
             source = model.generatedDeclarationSource()
             resolvePhase = FirResolvePhase.BODY_RESOLVE
             moduleData = session.moduleData
-            origin = projectionOrigin()
+            origin = projectionOriginForIde()
             status = projectionStatus()
             isLocal = false
             returnTypeRef = buildResolvedTypeRef {
@@ -272,7 +274,7 @@ class KronosProjectionDeclarationGenerationExtension(
             source = fallbackSource
             resolvePhase = FirResolvePhase.BODY_RESOLVE
             moduleData = session.moduleData
-            origin = projectionOrigin()
+            origin = projectionOriginForIde()
             returnTypeRef = buildResolvedTypeRef { coneType = field.type }
             this.name = field.name
             this.symbol = FirValueParameterSymbol()
@@ -301,7 +303,7 @@ class KronosProjectionDeclarationGenerationExtension(
             source = constructorParameter?.source
             resolvePhase = FirResolvePhase.BODY_RESOLVE
             moduleData = session.moduleData
-            origin = projectionOrigin()
+            origin = projectionOriginForIde()
             this.isLocal = false
             status = projectionStatus()
             this.dispatchReceiverType = ConeClassLikeTypeImpl(
@@ -338,6 +340,9 @@ class KronosProjectionDeclarationGenerationExtension(
          */
         private fun projectionOrigin(): FirDeclarationOrigin =
             FirDeclarationOrigin.Plugin(KronosProjectionGeneratedDeclarationKey)
+
+        private fun projectionOriginForIde(): FirDeclarationOrigin =
+            projectionOrigin()
 
         /**
          * Creates the public final status shared by generated projection declarations.
@@ -377,7 +382,52 @@ private fun KronosProjectionModel.symbolFor(classId: ClassId): FirRegularClassSy
     if (classId == contextClassId) contextSymbol else symbol
 
 private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement? =
-    if (KronosProjectionIdeBridge.isIdeActive()) null else sourceDeclaration
+    if (KronosProjectionIdeBridge.isIdeActive()) {
+        sourceDeclaration.fakeElement()
+    } else {
+        sourceDeclaration
+    }
 
 private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement? =
-    if (KronosProjectionIdeBridge.isIdeActive()) null else field.source ?: anchor
+    if (KronosProjectionIdeBridge.isIdeActive()) {
+        (field.source ?: anchor).fakeElement()
+    } else {
+        field.source ?: anchor
+    }
+
+@OptIn(SuspiciousFakeSourceCheck::class)
+private fun KtSourceElement.fakeElement(): KtSourceElement =
+    KronosSourceElementCompat.fakePsiSourceElement(this) ?: this
+
+@OptIn(SuspiciousFakeSourceCheck::class)
+private object KronosSourceElementCompat {
+    private val fakeSourceElementKind = KtFakeSourceElementKind.PropertyFromParameter
+
+    private val fakePsiSourceElementConstructor: Constructor<*>? by lazy {
+        classOrNull("org.jetbrains.kotlin.KtFakePsiSourceElement")
+            ?.constructors
+            ?.firstOrNull { constructor ->
+                constructor.parameterTypes.size == 2 &&
+                    constructor.parameterTypes[1].isInstance(fakeSourceElementKind)
+            }
+            ?.also { it.isAccessible = true }
+    }
+
+    fun fakePsiSourceElement(source: KtSourceElement): KtSourceElement? {
+        val psi = source.psiReflectively() ?: return null
+        val constructor = fakePsiSourceElementConstructor ?: return null
+        return runCatching {
+            constructor.newInstance(psi, fakeSourceElementKind) as? KtSourceElement
+        }.getOrNull()
+    }
+
+    private fun KtSourceElement.psiReflectively(): Any? =
+        runCatching {
+            javaClass.methods
+                .firstOrNull { method -> method.name == "getPsi" && method.parameterCount == 0 }
+                ?.invoke(this)
+        }.getOrNull()
+
+    private fun classOrNull(name: String): Class<*>? =
+        runCatching { Class.forName(name) }.getOrNull()
+}

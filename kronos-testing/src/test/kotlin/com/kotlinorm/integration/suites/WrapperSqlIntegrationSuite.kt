@@ -145,7 +145,7 @@ abstract class WrapperSqlIntegrationSuite(
     }
 
     private fun selectIdsWhere(whereSql: String, params: Map<String, Any?>): List<Int> =
-        wrapper.queryList<Int>(
+        wrapper.queryList<Number>(
             """
             SELECT ${quote("id")} AS ${quote("id")}
             FROM ${table("kt_integration_typed_value")}
@@ -153,7 +153,7 @@ abstract class WrapperSqlIntegrationSuite(
             ORDER BY ${quote("id")}
             """.trimIndent(),
             params,
-        )
+        ).map { it.toInt() }.toList()
 
     private fun selectUserSql(where: String? = null, orderBy: String? = null): String =
         buildString {

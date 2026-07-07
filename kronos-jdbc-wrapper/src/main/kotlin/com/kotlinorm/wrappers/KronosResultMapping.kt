@@ -30,6 +30,7 @@ import java.sql.Blob
 import java.sql.Clob
 import java.sql.ResultSet
 import java.sql.SQLXML
+import java.sql.Types
 import kotlin.jvm.javaObjectType
 import kotlin.reflect.KClass
 
@@ -101,6 +102,17 @@ class KronosColumnMapperRegistry private constructor(
         private val defaultMapper = KronosColumnMapper { resultSet, position, targetType, superTypes, context ->
             if (targetType == Any::class) {
                 context.config.columnMappers.readJdbcValue(resultSet, position, context)
+            } else if (targetType == Boolean::class) {
+                val value = context.oracleNumberValueForBoolean(resultSet, position)
+                    ?: context.config.columnMappers.readJdbcValue(resultSet, position, context)
+                value?.let {
+                    getTypeSafeValue(
+                        targetType.qualifiedName ?: targetType.java.name,
+                        it,
+                        superTypes,
+                        kClassOfVal = it::class
+                    )
+                }
             } else if (strictSetValue) {
                 resultSet.getObject(position, javaTypeOf(targetType))
             } else {
@@ -129,6 +141,20 @@ class KronosColumnMapperRegistry private constructor(
                 Char::class -> Char::class.javaObjectType
                 else -> kClass.java
             } as Class<Any>
+
+        private fun KronosStatementContext.oracleNumberValueForBoolean(
+            resultSet: ResultSet,
+            position: Int
+        ): Any? {
+            if (dbType != DBType.Oracle && dbType != DBType.DM8) return null
+            val metaData = resultSet.metaData
+            val jdbcType = runCatching { metaData.getColumnType(position) }.getOrNull()
+            val typeName = runCatching { metaData.getColumnTypeName(position) }.getOrNull()
+            val isNumberColumn = jdbcType == Types.NUMERIC ||
+                jdbcType == Types.DECIMAL ||
+                typeName.equals("NUMBER", ignoreCase = true)
+            return if (isNumberColumn) resultSet.getBigDecimal(position) else null
+        }
     }
 }
 

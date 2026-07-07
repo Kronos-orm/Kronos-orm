@@ -31,4 +31,16 @@ class TypeParameterFixerBoxTest : AbstractKronosJvmBoxSuite("typeParameterFixer"
      */
     @Test
     fun queryReturnTypes() = box("queryReturnTypes")
+
+    /**
+     * Verifies non-KPojo typed query APIs receive explicit non-KPojo metadata.
+     */
+    @Test
+    fun nonKPojoQueryReturnTypes() = box("nonKPojoQueryReturnTypes")
+
+    /**
+     * Verifies the KPojo interface type itself is recognized as KPojo metadata.
+     */
+    @Test
+    fun kpojoInterfaceQueryReturnType() = box("kpojoInterfaceQueryReturnType")
 }

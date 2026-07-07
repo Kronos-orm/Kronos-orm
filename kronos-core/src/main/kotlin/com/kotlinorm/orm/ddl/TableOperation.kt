@@ -351,6 +351,11 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
             .dropTable(tableName, true)
             .map { it.toActionTask(KOperationType.DROP) }
             .toKronosActionTask()
+            .doBeforeExecute { wrapper ->
+                if (wrapper.dbType == DBType.Oracle && !queryTableExistence(tableName, wrapper)) {
+                    atomicTasks.clear()
+                }
+            }
     }
 
     fun buildTruncateTableStatement(tableName: String, restartIdentity: Boolean = true): SqlDmlStatement.Truncate =

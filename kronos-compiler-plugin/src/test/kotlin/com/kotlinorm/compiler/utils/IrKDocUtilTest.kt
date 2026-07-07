@@ -305,4 +305,50 @@ class IrKDocUtilTest {
         val comment = extractDeclarationComment(lines, 2..2)
         assertNull(comment)
     }
+
+    @Test
+    fun `extractDeclarationComment ignores unterminated block marker inside range`() {
+        val lines = [
+            "/* Existing",
+            "val name: String"
+        ]
+        val comment = extractDeclarationComment(lines, 0..1)
+        assertNull(comment)
+    }
+
+    @Test
+    fun `extractDeclarationComment skips blank lines while searching above`() {
+        val lines = [
+            "// Existing",
+            "",
+            "",
+            "val name: String"
+        ]
+        val comment = extractDeclarationComment(lines, 3..3)
+        assertEquals("Existing", comment)
+    }
+
+    @Test
+    fun `extractDeclarationComment reads multi-line body with blank middle line`() {
+        val lines = [
+            "/* First",
+            "",
+            " * Second",
+            " */",
+            "val name: String"
+        ]
+        val comment = extractDeclarationComment(lines, 4..4)
+        assertEquals("FirstSecond", comment)
+    }
+
+    @Test
+    fun `extractDeclarationComment continues single-line scan to block comment above`() {
+        val lines = [
+            "/* Block */",
+            "// Nearby",
+            "val name: String"
+        ]
+        val comment = extractDeclarationComment(lines, 2..2)
+        assertEquals("Block", comment)
+    }
 }

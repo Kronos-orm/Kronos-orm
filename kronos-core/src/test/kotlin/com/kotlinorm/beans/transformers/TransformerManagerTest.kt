@@ -17,6 +17,8 @@
 package com.kotlinorm.beans.transformers
 
 import com.kotlinorm.interfaces.ValueTransformer
+import java.math.BigDecimal
+import java.math.BigInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -89,6 +91,37 @@ class TransformerManagerTest {
         )
         
         assertEquals(123, result, "Should transform string to int using BasicTypeTransformer")
+    }
+
+    @Test
+    fun `basic type transformer converts numeric zero to boolean false`() {
+        assertEquals(
+            false,
+            TransformerManager.getValueTransformed(
+                targetKotlinType = "kotlin.Boolean",
+                value = BigDecimal.ZERO,
+                superTypes = emptyList(),
+                kClassOfVal = BigDecimal::class
+            )
+        )
+        assertEquals(
+            false,
+            TransformerManager.getValueTransformed(
+                targetKotlinType = "kotlin.Boolean",
+                value = BigInteger.ZERO,
+                superTypes = emptyList(),
+                kClassOfVal = BigInteger::class
+            )
+        )
+        assertEquals(
+            true,
+            TransformerManager.getValueTransformed(
+                targetKotlinType = "kotlin.Boolean",
+                value = BigDecimal.ONE,
+                superTypes = emptyList(),
+                kClassOfVal = BigDecimal::class
+            )
+        )
     }
 
     @Test

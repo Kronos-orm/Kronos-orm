@@ -90,6 +90,20 @@ object BasicTypeTransformer : ValueTransformer {
         else -> BigInteger(toString())
     }
 
+    private fun Number.toBooleanValue(): Boolean = when (this) {
+        is BigDecimal -> compareTo(BigDecimal.ZERO) != 0
+        is BigInteger -> this != BigInteger.ZERO
+        is Byte,
+        is Short,
+        is Int,
+        is Long -> toLong() != 0L
+
+        is Float,
+        is Double -> toDouble() != 0.0
+
+        else -> BigDecimal(toString()).compareTo(BigDecimal.ZERO) != 0
+    }
+
     override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
         return targetKotlinType in basicTypes
     }
@@ -109,7 +123,16 @@ object BasicTypeTransformer : ValueTransformer {
             "kotlin.Double" -> value.safeCast(Number::toDouble, String::toDouble)
             "kotlin.Byte" -> value.safeCast(Number::toByte, String::toByte)
             "kotlin.Char" -> value.toChar()
-            "kotlin.Boolean" -> (value is Number && value != 0) || value.toString().ifBlank { "false" }.toBoolean()
+            "kotlin.Boolean" -> when (value) {
+                is Number -> value.toBooleanValue()
+                else -> value.toString().trim().let {
+                    when {
+                        it == "1" -> true
+                        it == "0" -> false
+                        else -> it.ifBlank { "false" }.toBoolean()
+                    }
+                }
+            }
             "java.math.BigDecimal" -> value.toBigDecimal()
             "java.math.BigInteger" -> value.toBigInteger()
             else -> null

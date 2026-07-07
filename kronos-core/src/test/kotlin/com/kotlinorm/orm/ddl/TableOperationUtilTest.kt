@@ -104,6 +104,42 @@ class TableOperationUtilTest {
     }
 
     @Test
+    fun `column differ matches oracle metadata columns case insensitively`() {
+        val expected = listOf(
+            field("id", KColumnType.INT, nullable = false),
+            field("status", KColumnType.INT)
+        )
+        val current = listOf(
+            field("ID", KColumnType.INT, nullable = false),
+            field("STATUS", KColumnType.INT)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.Oracle, expected, current)
+        )
+    }
+
+    @Test
+    fun `column differ treats oracle default numeric precision as stable`() {
+        val expected = listOf(
+            field("id", KColumnType.INT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("score", KColumnType.INT),
+            field("flag", KColumnType.BIT)
+        )
+        val current = listOf(
+            field("ID", KColumnType.INT, length = 10, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("SCORE", KColumnType.INT, length = 10),
+            field("FLAG", KColumnType.BIT, length = 1)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.Oracle, expected, current)
+        )
+    }
+
+    @Test
     fun `index differ reports exact additions and deletions`() {
         val expected = listOf(
             KTableIndex("idx_account_name", arrayOf("tenant_id", "name"), "UNIQUE", "BTREE"),
@@ -166,7 +202,7 @@ class TableOperationUtilTest {
                     statementType = "Select"
                 ),
                 QueryShape(
-                    sql = "SELECT c.COLUMN_NAME, c.DATA_TYPE, c.CHARACTER_MAXIMUM_LENGTH AS LENGTH, c.NUMERIC_PRECISION AS SCALE, c.COLUMN_TYPE, c.IS_NULLABLE, c.COLUMN_DEFAULT, c.COLUMN_COMMENT, CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NO' END AS IDENTITY, CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NO' END AS PRIMARY_KEY FROM `INFORMATION_SCHEMA`.`COLUMNS` AS `c` WHERE c.TABLE_SCHEMA = DATABASE() AND c.TABLE_NAME = :tableName ORDER BY ORDINAL_POSITION ASC",
+                    sql = "SELECT c.COLUMN_NAME, c.DATA_TYPE, c.CHARACTER_MAXIMUM_LENGTH AS LENGTH, c.NUMERIC_SCALE AS SCALE, c.COLUMN_TYPE, c.IS_NULLABLE, c.COLUMN_DEFAULT, c.COLUMN_COMMENT, CASE WHEN c.EXTRA = 'auto_increment' THEN 'YES' ELSE 'NO' END AS IDENTITY, CASE WHEN c.COLUMN_KEY = 'PRI' THEN 'YES' ELSE 'NO' END AS PRIMARY_KEY FROM `INFORMATION_SCHEMA`.`COLUMNS` AS `c` WHERE c.TABLE_SCHEMA = DATABASE() AND c.TABLE_NAME = :tableName ORDER BY ORDINAL_POSITION ASC",
                     params = mapOf("tableName" to "account"),
                     statementType = "Select"
                 )

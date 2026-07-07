@@ -206,6 +206,9 @@ fun toDatabaseValue(
     if (value == null) return null
     if (value is TransformerSafeValue) return value.toTypeSafeValue()
     if (field.serializable) return serializeProcessor.serialize(value)
+    if (value is Boolean && !field.acceptsNativeBoolean(wrapper) && field.storesBooleanValue()) {
+        return toDatabaseBooleanValue(wrapper, field, value)
+    }
 
     val targetKotlinType = field.databaseTargetKotlinType(wrapper)
 

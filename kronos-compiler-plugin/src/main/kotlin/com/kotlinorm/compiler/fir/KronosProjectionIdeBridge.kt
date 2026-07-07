@@ -64,11 +64,12 @@ object KronosProjectionIdeBridge {
     fun isResolveExtensionFallbackEnabled(): Boolean =
         System.getProperty(ResolveExtensionFallbackPropertyName) == "true"
 
-    fun read(): List<KronosIdeProjectionModel> =
-        System.getProperty(PropertyName)
-            ?.lineSequence()
-            ?.filter { it.isNotBlank() }
-            ?.mapNotNull { line ->
+    fun read(): List<KronosIdeProjectionModel> {
+        val payload = System.getProperty(PropertyName) ?: return emptyList()
+        return payload
+            .lineSequence()
+            .filter { it.isNotBlank() }
+            .mapNotNull { line ->
                 val parts = line.split("|")
                 if (parts.size != 5) return@mapNotNull null
                 KronosIdeProjectionModel(
@@ -79,9 +80,9 @@ object KronosProjectionIdeBridge {
                     contextFields = parts[4].decode().decodeFields(),
                 )
             }
-            ?.distinctBy { "${it.moduleName}:${it.name}" }
-            ?.toList()
-            .orEmpty()
+            .distinctBy { "${it.moduleName}:${it.name}" }
+            .toList()
+    }
 
     fun lastPublishSummary(): String =
         "count=${System.getProperty(LastPublishCountPropertyName, "0")}, " +
@@ -126,10 +127,11 @@ data class KronosIdeProjectionField(
 private fun ConeKotlinType.renderIdeType(): String {
     val classLike = this as? ConeClassLikeType ?: return "kotlin.Any?"
     val base = classLike.lookupTag.classId.asFqNameString()
-    val args = classLike.typeArguments
-        .mapNotNull { (it as? ConeKotlinTypeProjection)?.type?.renderIdeType()?.removeSuffix("?") }
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(prefix = "<", postfix = ">")
-        .orEmpty()
-    return base + args + if (classLike.isMarkedNullable) "?" else ""
+    val args = mutableListOf<String>()
+    for (argument in classLike.typeArguments) {
+        val projection = argument as? ConeKotlinTypeProjection ?: continue
+        args += projection.type.renderIdeType().removeSuffix("?")
+    }
+    val renderedArgs = if (args.isEmpty()) "" else args.joinToString(prefix = "<", postfix = ">")
+    return base + renderedArgs + if (classLike.isMarkedNullable) "?" else ""
 }

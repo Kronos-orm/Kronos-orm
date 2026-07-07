@@ -21,6 +21,7 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     maxHeapSize = providers.gradleProperty("kronosCompilerTestMaxHeap").getOrElse("4g")
     maxParallelForks = 1
+    forkEvery = providers.gradleProperty("kronosCompilerTestForkEvery").map(String::toLong).getOrElse(10L)
     val ideaTestHome = layout.buildDirectory.dir("idea-test/home").get().asFile
     val ideaTestConfig = layout.buildDirectory.dir("idea-test/config").get().asFile
     val ideaTestSystem = layout.buildDirectory.dir("idea-test/system").get().asFile
@@ -32,6 +33,9 @@ tasks.withType<Test>().configureEach {
     systemProperty("idea.config.path", ideaTestConfig.absolutePath)
     systemProperty("idea.system.path", ideaTestSystem.absolutePath)
     systemProperty("idea.plugins.path", ideaTestPlugins.absolutePath)
+    systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    systemProperty("junit.jupiter.execution.parallel.mode.default", "same_thread")
+    systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "same_thread")
     systemProperty("kronos.compiler.plugin.projectDir", projectDir.absolutePath)
     systemProperty("kronos.compiler.test.classpath", sourceSets.test.get().runtimeClasspath.asPath)
     kotlinCompilerTestRuntimeJars.forEach { (propertyName, jarName) ->

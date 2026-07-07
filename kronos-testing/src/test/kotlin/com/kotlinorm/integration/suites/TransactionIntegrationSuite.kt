@@ -32,7 +32,7 @@ abstract class TransactionIntegrationSuite(
         assertFailsWith<IllegalStateException> {
             Kronos.transact(wrapper = wrapper) {
                 assertEquals(1, profile.insertUser(IntegrationUserRecord(id = 42, name = "Rollback", score = 42, status = 4)))
-                throw IllegalStateException("force rollback")
+                error("force rollback")
             }
         }
         assertEquals(

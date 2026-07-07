@@ -17,8 +17,11 @@
 // Verifies valid projection checker boundary forms do not report diagnostics.
 
 import com.kotlinorm.annotations.PrimaryKey
+import com.kotlinorm.functions.bundled.exts.MathFunctions.abs
+import com.kotlinorm.functions.bundled.exts.MathFunctions.add
 import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.max
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 
 data class ProjectionCheckerPositiveUser(
@@ -113,4 +116,25 @@ fun validScalarAggregateAndLimitedCandidateForms() {
                     .alias("lastAmount")
             ]
         }
+
+    ProjectionCheckerPositiveOrder()
+        .select()
+        .where {
+            it.status > ProjectionCheckerPositiveOrder()
+                .select { other -> f.abs(f.max(other.status)).alias("maxStatusAbs") }
+                .where { other -> other.userId == it.userId }
+        }
+
+    ProjectionCheckerPositiveOrder()
+        .select()
+        .where {
+            it.status > ProjectionCheckerPositiveOrder()
+                .select { other -> f.add(f.max(other.status), 1).alias("maxStatusPlusOne") }
+                .where { other -> other.userId == it.userId }
+        }
+}
+
+fun validPlainInsertIsNotCheckedAsInsertSelect() {
+    ProjectionCheckerPositiveUser(name = "Ada", status = 1)
+        .insert()
 }

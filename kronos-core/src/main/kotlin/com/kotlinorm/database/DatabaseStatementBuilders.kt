@@ -65,13 +65,23 @@ internal fun Field.sameDefinitionAs(other: Field): Boolean =
         kDoc.orEmpty() == other.kDoc.orEmpty()
 
 internal fun Field.sameDefinitionAs(other: Field, dbType: DBType): Boolean =
-    if (dbType == DBType.SQLite) {
-        sqliteStorageClass(type) == sqliteStorageClass(other.type) &&
-            nullable == other.nullable &&
-            primaryKey == other.primaryKey &&
-            defaultValue.orEmpty() == other.defaultValue.orEmpty()
-    } else {
-        sameDefinitionAs(other)
+    when (dbType) {
+        DBType.SQLite -> {
+            sqliteStorageClass(type) == sqliteStorageClass(other.type) &&
+                nullable == other.nullable &&
+                primaryKey == other.primaryKey &&
+                defaultValue.orEmpty() == other.defaultValue.orEmpty()
+        }
+
+        DBType.Oracle -> {
+            oracleEquivalentType(type, length, scale, other.type, other.length, other.scale) &&
+                nullable == other.nullable &&
+                primaryKey == other.primaryKey &&
+                defaultValue.orEmpty() == other.defaultValue.orEmpty() &&
+                kDoc.orEmpty() == other.kDoc.orEmpty()
+        }
+
+        else -> sameDefinitionAs(other)
     }
 
 private fun sqliteStorageClass(type: KColumnType): String = when (type) {
@@ -100,6 +110,30 @@ private fun sqliteStorageClass(type: KColumnType): String = when (type) {
     KColumnType.LONGBLOB -> "BLOB"
 
     else -> "TEXT"
+}
+
+private fun oracleEquivalentType(
+    expectedType: KColumnType,
+    expectedLength: Int,
+    expectedScale: Int,
+    currentType: KColumnType,
+    currentLength: Int,
+    currentScale: Int
+): Boolean {
+    if (expectedType != currentType || expectedScale != currentScale) return false
+    val defaultLength = when (expectedType) {
+        KColumnType.BIT -> 1
+        KColumnType.TINYINT -> 3
+        KColumnType.SMALLINT -> 5
+        KColumnType.MEDIUMINT -> 7
+        KColumnType.INT -> 10
+        KColumnType.BIGINT -> 19
+        KColumnType.DECIMAL,
+        KColumnType.NUMERIC -> 10
+        else -> null
+    }
+    return expectedLength == currentLength ||
+        (expectedLength == 0 && defaultLength == currentLength)
 }
 
 internal fun Map<String, Any>.cell(name: String): Any? =

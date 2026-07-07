@@ -58,6 +58,16 @@ fun invalidScalarComparisonWithoutLimit() {
         }
 }
 
+fun invalidScalarComparisonReceiverWithoutLimit() {
+    ProjectionLimitOrder()
+        .select()
+        .where {
+            <!KRONOS_SCALAR_SUBQUERY_REQUIRES_LIMIT!>ProjectionLimitOrder()
+                .select { other -> other.status }
+                .where { other -> other.userId == it.userId }<!> < it.status
+        }
+}
+
 fun validScalarSubqueriesWithLimit() {
     ProjectionLimitUser()
         .select {
@@ -78,6 +88,15 @@ fun validScalarSubqueriesWithLimit() {
                 .select { other -> other.status }
                 .where { other -> other.userId == it.userId }
                 .limit(1)
+        }
+
+    ProjectionLimitOrder()
+        .select()
+        .where {
+            ProjectionLimitOrder()
+                .select { other -> other.status }
+                .where { other -> other.userId == it.userId }
+                .limit(1) < it.status
         }
 }
 

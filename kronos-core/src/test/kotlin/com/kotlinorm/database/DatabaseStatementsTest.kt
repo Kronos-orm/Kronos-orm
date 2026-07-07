@@ -21,6 +21,8 @@ import com.kotlinorm.orm.ddl.TableIndexDiff
 import com.kotlinorm.syntax.expr.SqlBinaryOperator
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlType
+import com.kotlinorm.syntax.render.SqlDialect
+import com.kotlinorm.syntax.render.toSql
 import com.kotlinorm.syntax.statement.SqlColumnPosition
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
@@ -89,6 +91,7 @@ class DatabaseStatementsTest {
                         "cols.data_type AS DATA_TYPE",
                         "cols.data_length AS LENGTH",
                         "cols.data_precision AS PRECISION",
+                        "cols.data_scale AS SCALE",
                         "cols.nullable AS IS_NULLABLE",
                         "cols.data_default AS COLUMN_DEFAULT",
                         "CASE WHEN EXISTS (SELECT 1 FROM all_cons_columns cons_cols JOIN all_constraints cons ON cons.owner = cons_cols.owner AND cons.constraint_name = cons_cols.constraint_name AND cons.table_name = cons_cols.table_name WHERE cons.constraint_type = 'P' AND cons_cols.owner = cols.owner AND cons_cols.table_name = cols.table_name AND cons_cols.column_name = cols.column_name) THEN '1' ELSE '0' END AS PRIMARY_KEY",
@@ -146,6 +149,14 @@ class DatabaseStatementsTest {
                 )
             ),
             actual
+        )
+    }
+
+    @Test
+    fun `mssql metadata queries render qualified system views`() {
+        assertEquals(
+            "SELECT COUNT(*) FROM [sys].[tables] AS [t], [sys].[schemas] AS [s] WHERE t.schema_id = s.schema_id AND s.name = 'dbo' AND t.name = :tableName",
+            MssqlStatements.tableExists().toSql(SqlDialect.SqlServer)
         )
     }
 
@@ -1010,15 +1021,15 @@ class DatabaseStatementsTest {
 
         assertEquals(
             listOf(
-                FieldShape("ID", KColumnType.BIGINT, 19, 0, "ACCOUNT", false, PrimaryKeyType.IDENTITY, null, "identifier"),
-                FieldShape("NAME", KColumnType.VARCHAR, 64, 0, "ACCOUNT", true, PrimaryKeyType.NOT, "'guest'", null)
+                FieldShape("id", KColumnType.BIGINT, 19, 0, "ACCOUNT", false, PrimaryKeyType.IDENTITY, null, "identifier"),
+                FieldShape("name", KColumnType.VARCHAR, 64, 0, "ACCOUNT", true, PrimaryKeyType.NOT, "'guest'", null)
             ),
             fields
         )
         assertEquals(
             listOf(
-                IndexShape("IDX_ACCOUNT", listOf("TENANT_ID", "NAME"), "UNIQUE", ""),
-                IndexShape("IDX_SPATIAL", listOf("SHAPE"), "NORMAL", "DOMAIN")
+                IndexShape("IDX_ACCOUNT", listOf("tenant_id", "name"), "UNIQUE", ""),
+                IndexShape("IDX_SPATIAL", listOf("shape"), "NORMAL", "DOMAIN")
             ),
             indexes
         )

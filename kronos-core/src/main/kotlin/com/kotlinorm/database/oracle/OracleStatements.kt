@@ -70,6 +70,7 @@ object OracleStatements : DatabaseStatements() {
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("cols.data_type AS DATA_TYPE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("cols.data_length AS LENGTH")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("cols.data_precision AS PRECISION")),
+            SqlSelectItem.Expr(SqlExpr.UnsafeRaw("cols.data_scale AS SCALE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("cols.nullable AS IS_NULLABLE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("cols.data_default AS COLUMN_DEFAULT")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("CASE WHEN EXISTS (SELECT 1 FROM all_cons_columns cons_cols JOIN all_constraints cons ON cons.owner = cons_cols.owner AND cons.constraint_name = cons_cols.constraint_name AND cons.table_name = cons_cols.table_name WHERE cons.constraint_type = 'P' AND cons_cols.owner = cols.owner AND cons_cols.table_name = cols.table_name AND cons_cols.column_name = cols.column_name) THEN '1' ELSE '0' END AS PRIMARY_KEY")),
@@ -108,14 +109,20 @@ object OracleStatements : DatabaseStatements() {
 
     override fun mapColumns(tableName: String, rows: List<Map<String, Any>>): List<Field> =
         rows.map {
-            val length = it.cell("LENGTH").asInt()
+            val dataType = it.cell("DATA_TYPE").toString()
             val precision = it.cell("PRECISION").asInt()
+            val scale = it.cell("SCALE").asInt()
+            val length = if (dataType.equals("NUMBER", ignoreCase = true) && precision > 0) {
+                precision
+            } else {
+                it.cell("LENGTH").asInt()
+            }
             val defaultValue = it.cell("COLUMN_DEFAULT")?.toString()
             Field(
-                columnName = it.cell("COLUMN_NAME").toString(),
-                type = getKColumnType(it.cell("DATA_TYPE").toString(), length, precision),
+                columnName = it.cell("COLUMN_NAME").toString().lowercase(),
+                type = getKColumnType(dataType, length, scale),
                 length = length,
-                scale = precision,
+                scale = scale,
                 tableName = tableName.uppercase(),
                 nullable = it.cell("IS_NULLABLE") == "Y",
                 primaryKey = when {
@@ -134,7 +141,7 @@ object OracleStatements : DatabaseStatements() {
             KTableIndex(
                 name = indexName,
                 columns = columns.sortedBy { it.cell("SEQ_IN_INDEX").asInt() }
-                    .map { it.cell("COLUMN_NAME").toString() }
+                    .map { it.cell("COLUMN_NAME").toString().lowercase() }
                     .toTypedArray(),
                 type = if (first.cell("UNIQUENESS") == "UNIQUE") "UNIQUE" else "NORMAL",
                 method = first.cell("INDEX_TYPE")?.toString()?.takeUnless { it.equals("NORMAL", ignoreCase = true) }.orEmpty()

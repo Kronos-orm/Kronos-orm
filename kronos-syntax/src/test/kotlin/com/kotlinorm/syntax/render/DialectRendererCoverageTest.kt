@@ -184,6 +184,14 @@ class DialectRendererCoverageTest {
     @Test
     fun rendersSqlServerSpecificBranches() {
         assertEquals(
+            "SELECT TOP (1) COUNT(1) AS total FROM [kt_integration_user]",
+            SqlQuery.Select(
+                select = listOf(SqlSelectItem.Expr(SqlExpr.Function(id("COUNT"), args = listOf(num("1"))), "total")),
+                from = listOf(table("kt_integration_user")),
+                limit = SqlLimit.limit(1)
+            ).toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
             "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[user]') AND type in (N'U')) BEGIN CREATE TABLE [dbo].[user] ([id] INTEGER IDENTITY NOT NULL PRIMARY KEY); END",
             SqlDdlStatement.CreateTable(
                 tableName = id("dbo", "user"),

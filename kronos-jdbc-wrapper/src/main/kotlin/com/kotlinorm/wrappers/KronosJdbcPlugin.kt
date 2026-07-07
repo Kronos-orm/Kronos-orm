@@ -93,15 +93,35 @@ object OracleJdbcPlugin : KronosJdbcPlugin {
 
     override fun customize(config: KronosJdbcConfig) {
         config.oracleLongColumnStrategy = KronosOracleLongColumnStrategy.READ_FIRST
-        config.columnMappers.registerVendorReader(KronosVendorValueReader { resultSet, position, value, _ ->
-            when (value.javaClass.name) {
-                "oracle.sql.TIMESTAMP",
-                "oracle.sql.TIMESTAMPTZ",
-                "oracle.sql.TIMESTAMPLTZ" -> resultSet.getTimestamp(position)
-
-                else -> oracleDateValue(resultSet, position, value)
+        config.arguments.register(KronosArgumentFactory { value, _ ->
+            if (value is Boolean) {
+                KronosArgument { position, statement, _ -> statement.setInt(position, if (value) 1 else 0) }
+            } else {
+                null
             }
         })
+        config.columnMappers.registerVendorReader(KronosVendorValueReader { resultSet, position, value, _ ->
+            oracleNumberBooleanValue(resultSet, position)
+                ?: when (value.javaClass.name) {
+                    "oracle.sql.TIMESTAMP",
+                    "oracle.sql.TIMESTAMPTZ",
+                    "oracle.sql.TIMESTAMPLTZ" -> resultSet.getTimestamp(position)
+
+                    else -> oracleDateValue(resultSet, position, value)
+                }
+        })
+    }
+
+    private fun oracleNumberBooleanValue(resultSet: java.sql.ResultSet, position: Int): Any? {
+        val metaData = resultSet.metaData
+        val typeName = runCatching { metaData.getColumnTypeName(position) }.getOrNull()
+        val precision = runCatching { metaData.getPrecision(position) }.getOrNull()
+        val scale = runCatching { metaData.getScale(position) }.getOrNull()
+        return if (typeName.equals("NUMBER", ignoreCase = true) && precision == 1 && scale == 0) {
+            resultSet.getBigDecimal(position)
+        } else {
+            null
+        }
     }
 
     private fun oracleDateValue(resultSet: java.sql.ResultSet, position: Int, value: Any): Any? {

@@ -64,7 +64,7 @@ object MysqlStatements : DatabaseStatements() {
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.COLUMN_NAME")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.DATA_TYPE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.CHARACTER_MAXIMUM_LENGTH AS LENGTH")),
-            SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.NUMERIC_PRECISION AS SCALE")),
+            SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.NUMERIC_SCALE AS SCALE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.COLUMN_TYPE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.IS_NULLABLE")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("c.COLUMN_DEFAULT")),

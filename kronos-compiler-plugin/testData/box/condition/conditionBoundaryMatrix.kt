@@ -79,10 +79,14 @@ fun box(): String {
     val fieldToField = conditionBoundaryWhere(user) { it.age == it.id }
     val kpojoRight = conditionBoundaryWhere(user) { other == it }
     val runtimeTrue = conditionBoundaryWhere(user) { 1 == 1 }
+    val negatedAnd = conditionBoundaryWhere(user) { !(it.id == 1 && it.age == 36) }
+    val negatedOr = conditionBoundaryWhere(user) { !(it.id == 1 || it.age == 36) }
 
     val fieldExpr = fieldToField.expr as? SqlExpr.Binary
     val kpojoLeaves = conditionBoundaryLeaves(kpojoRight.expr)
     val runtimeExpr = runtimeTrue.expr as? SqlExpr.BooleanLiteral
+    val negatedAndExpr = negatedAnd.expr as? SqlExpr.Binary
+    val negatedOrExpr = negatedOr.expr as? SqlExpr.Binary
 
     val failures = listOfNotNull(
         expectBoundary(fieldExpr?.operator == SqlBinaryOperator.Equal) { "field-to-field operator was ${fieldExpr?.operator}" },
@@ -100,6 +104,12 @@ fun box(): String {
         ) { "kpojo values were ${kpojoLeaves.map { conditionBoundaryParameter(kpojoRight, it.right) }}" },
         expectBoundary(runtimeExpr?.boolean == true) {
             "runtime expression was ${runtimeTrue.expr}"
+        },
+        expectBoundary(negatedAndExpr?.operator == SqlBinaryOperator.Or) {
+            "negated AND root was ${negatedAndExpr?.operator}"
+        },
+        expectBoundary(negatedOrExpr?.operator == SqlBinaryOperator.And) {
+            "negated OR root was ${negatedOrExpr?.operator}"
         },
     )
 

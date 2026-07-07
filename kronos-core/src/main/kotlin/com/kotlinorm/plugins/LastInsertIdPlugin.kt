@@ -69,13 +69,25 @@ object LastInsertIdPlugin : TaskEventPlugin {
             && task.stash["useIdentity"] == true // 目前仅支持自增主键
         ) {
             task.stash["lastInsertId"] = (wrapper.forObject(
-                KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.dbType)),
+                KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.dbType, task.stash)),
                 kClass = Long::class,
                 false,
                 []
             ) ?: 0L) as Long
         }
     }
+
+    private fun lastInsertIdObtainSql(dbType: DBType, stash: Map<String, Any?>): String {
+        if (dbType != DBType.Oracle) return lastInsertIdObtainSql(dbType)
+        val table = stash["identityTable"] as? String ?: return lastInsertIdObtainSql(dbType)
+        val column = stash["identityColumn"] as? String ?: return lastInsertIdObtainSql(dbType)
+        return "SELECT MAX(${quoteOracleIdentifier(column)}) FROM ${quoteOracleIdentifier(table)}"
+    }
+
+    private fun quoteOracleIdentifier(identifier: String): String =
+        identifier.split('.').joinToString(".") { part ->
+            "\"${part.trim('"').uppercase()}\""
+        }
 
     fun InsertClause<*>.withId(): InsertClause<*> {
         stash["queryId"] = true

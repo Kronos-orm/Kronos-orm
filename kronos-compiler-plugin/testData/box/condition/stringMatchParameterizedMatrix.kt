@@ -98,10 +98,22 @@ fun box(): String {
     val user = StringMatrixUser(name = "Ada", pattern = "^A.*")
     val failures = listOfNotNull(
         expectParameterizedLike(
+            "like",
+            stringMatrixWhere(user) { it.name like "A%" },
+            TransformerSafeValue("A%", "kotlin.String"),
+            not = false
+        ),
+        expectParameterizedLike(
             "notLike",
             stringMatrixWhere(user) { it.name notLike "A%" },
             TransformerSafeValue("A%", "kotlin.String"),
             not = true
+        ),
+        expectParameterizedLike(
+            "startsWith",
+            stringMatrixWhere(user) { it.name.startsWith("A") },
+            TransformerSafeValue("A%", "kotlin.String"),
+            not = false
         ),
         expectParameterizedLike(
             "negatedLike",
@@ -120,6 +132,12 @@ fun box(): String {
             stringMatrixWhere(user) { it.name.contains("d") },
             TransformerSafeValue("%d%", "kotlin.String"),
             not = false
+        ),
+        expectParameterizedRegexp(
+            "regexp",
+            stringMatrixWhere(user) { it.pattern regexp "^A.*" },
+            SqlBinaryOperator.Regexp,
+            "^A.*"
         ),
         expectParameterizedRegexp(
             "notRegexp",

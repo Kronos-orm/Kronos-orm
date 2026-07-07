@@ -59,6 +59,12 @@ class ProjectionBoxTest : AbstractKronosJvmBoxSuite("projection") {
     fun cascadeProjectionKeepsLocalKey() = box("cascadeProjectionKeepsLocalKey")
 
     /**
+     * Verifies direct single-object cascade projections keep hidden local key fields.
+     */
+    @Test
+    fun directCascadeProjectionKeepsLocalKey() = box("directCascadeProjectionKeepsLocalKey")
+
+    /**
      * Verifies select aliases are visible on post-select orderBy Context receivers.
      */
     @Test

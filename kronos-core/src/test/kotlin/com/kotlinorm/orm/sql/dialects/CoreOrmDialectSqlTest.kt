@@ -37,7 +37,7 @@ class CoreOrmDialectSqlTest {
                 mapOf("id" to 1, "username" to "neo")
             ),
             DBType.Mssql to ExpectedTask(
-                "SELECT [id], [username] FROM [tb_user] WHERE [tb_user].[id] = :id AND [tb_user].[username] = :username AND [deleted] = 0 FETCH NEXT 10 ROWS ONLY",
+                "SELECT TOP (10) [id], [username] FROM [tb_user] WHERE [tb_user].[id] = :id AND [tb_user].[username] = :username AND [deleted] = 0",
                 mapOf("id" to 1, "username" to "neo")
             ),
             DBType.Oracle to ExpectedTask(

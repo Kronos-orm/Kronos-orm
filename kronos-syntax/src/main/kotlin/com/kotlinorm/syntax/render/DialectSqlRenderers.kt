@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.statement.SqlInsertMode
 import com.kotlinorm.syntax.statement.SqlSelectItemAliasMetadata
 import com.kotlinorm.syntax.statement.SqlColumnDefinition
 import com.kotlinorm.syntax.statement.SqlPrimaryKeyMode
+import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
 import com.kotlinorm.syntax.statement.SqlUpsertAction
 import com.kotlinorm.syntax.table.SqlTableAlias
@@ -497,6 +498,33 @@ open class OracleSqlRenderer : StandardSqlRenderer(SqlDialect.Oracle) {
 }
 
 open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
+    override fun renderSelect(query: SqlQuery.Select): String {
+        val limit = query.limit
+        val fetch = limit?.fetch
+        if (limit?.offset == null && fetch != null) {
+            return renderSelectWithTop(query, fetch.limit)
+        }
+        return super.renderSelect(query)
+    }
+
+    private fun renderSelectWithTop(query: SqlQuery.Select, limit: SqlExpr): String = buildString {
+        append("SELECT")
+        query.quantifier?.let { append(" ${renderQuantifier(it)}") }
+        append(" TOP (${renderExpr(limit)}) ")
+        append(if (query.select.isEmpty()) "*" else query.select.joinToString(", ") { renderSelectItem(it) })
+        if (query.from.isNotEmpty()) append(query.from.joinToString(", ", " FROM ") { renderTable(it) })
+        query.where?.let { append(" WHERE ${renderExpr(it)}") }
+        query.groupBy?.let { append(" ${renderGroup(it)}") }
+        query.having?.let { append(" HAVING ${renderExpr(it)}") }
+        if (query.window.isNotEmpty()) {
+            append(query.window.joinToString(", ", " WINDOW ") { renderWindowItem(it) })
+        }
+        query.qualify?.let { append(" QUALIFY ${renderExpr(it)}") }
+        if (query.orderBy.isNotEmpty()) {
+            append(query.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
+        }
+    }
+
     override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
         is SqlDdlStatement.CreateTable -> renderSqlServerCreateTable(statement)
         is SqlDdlStatement.AlterTable.AddColumn -> {
@@ -552,6 +580,26 @@ open class SqlServerSqlRenderer : StandardSqlRenderer(SqlDialect.SqlServer) {
         if (!column.nullable) append(" NOT NULL")
         if (column.primaryKey != SqlPrimaryKeyMode.NotPrimary) append(" PRIMARY KEY")
         column.defaultValue?.let { append(" DEFAULT ${renderExpr(it)}") }
+    }
+
+    override fun renderLimit(limit: SqlLimit): String = buildString {
+        append("OFFSET ${limit.offset?.let { renderExpr(it) } ?: "0"} ROWS")
+        limit.fetch?.let {
+            append(" FETCH NEXT ${renderExpr(it.limit)} ")
+            append(
+                when (it.unit) {
+                    SqlFetchUnit.RowCount -> "ROWS"
+                    SqlFetchUnit.Percentage -> "PERCENT ROWS"
+                }
+            )
+            append(" ")
+            append(
+                when (it.mode) {
+                    SqlFetchMode.Only -> "ONLY"
+                    SqlFetchMode.WithTies -> "WITH TIES"
+                }
+            )
+        }
     }
 
     override fun renderExpr(expr: SqlExpr): String = when (expr) {

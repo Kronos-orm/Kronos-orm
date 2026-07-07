@@ -109,22 +109,29 @@ fun columnDiffer(
     expect: List<Field>,
     current: List<Field>
 ): TableColumnDiff {
+    fun String.columnKey(): String =
+        if (dbType == DBType.Oracle) uppercase() else this
+
+    val currentByName = current.associateBy { it.columnName.columnKey() }
+    val expectedNames = expect.map { it.columnName.columnKey() }.toSet()
+    val currentNames = currentByName.keys
+
     val toAdd = expect.mapIndexedNotNull { index, col ->
-        if (col.columnName !in current.map { it.columnName }) {
+        if (col.columnName.columnKey() !in currentNames) {
             Pair(col, if (index == 0) null else expect[index - 1])
         } else null
     }
 
     val need2Move = moveColumn(expect, current)
     val toModified = expect.mapIndexedNotNull { index, col ->
-        val tableColumn = current.find { col.columnName == it.columnName }
+        val tableColumn = currentByName[col.columnName.columnKey()]
         if (tableColumn != null && (!col.sameDefinitionAs(tableColumn, dbType) || col.columnName in need2Move)
         ) {
             Triple(col, if (index == 0) null else expect[index - 1], tableColumn)
         } else null
     }
 
-    val toDelete = current.filter { col -> col.columnName !in expect.map { it.columnName } }
+    val toDelete = current.filter { col -> col.columnName.columnKey() !in expectedNames }
 
     return TableColumnDiff(toAdd, toModified, toDelete)
 }

@@ -17,9 +17,9 @@
 package com.kotlinorm.compiler.backend.transformers
 
 import com.kotlinorm.compiler.utils.KPojoFqName
-import com.kotlinorm.compiler.utils.SelectFromQueryFunctionRegexes
 import com.kotlinorm.compiler.utils.TypedQueryFunctionFqNames
 import com.kotlinorm.compiler.utils.irListOf
+import com.kotlinorm.compiler.utils.isSelectFromQueryFunctionFqName
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
@@ -43,7 +43,7 @@ import org.jetbrains.kotlin.name.FqName
  */
 fun FqName.shouldFix(): Boolean {
     return this in TypedQueryFunctionFqNames ||
-            SelectFromQueryFunctionRegexes.any { it.matches(this.asString()) }
+            isSelectFromQueryFunctionFqName(this.asString())
 }
 
 /**
@@ -112,11 +112,12 @@ object TypeParameterFixer {
     }
 
     private fun IrType.flattenTypeArguments(): List<IrType> {
-        val nested = (this as? IrSimpleType)
-            ?.arguments
-            ?.mapNotNull { (it as? IrTypeProjection)?.type }
-            ?.flatMap { it.flattenTypeArguments() }
-            .orEmpty()
+        if (this !is IrSimpleType) return listOf(this)
+        val nested = mutableListOf<IrType>()
+        for (argument in arguments) {
+            val type = (argument as? IrTypeProjection)?.type ?: continue
+            nested += type.flattenTypeArguments()
+        }
         return listOf(this) + nested
     }
 }

@@ -59,6 +59,17 @@ fun invalidScalarComparisonMultipleColumns() {
         }
 }
 
+fun invalidScalarComparisonReceiverMultipleColumns() {
+    ProjectionScalarShapeOrder()
+        .select()
+        .where {
+            <!KRONOS_SCALAR_SUBQUERY_REQUIRES_SINGLE_COLUMN!>ProjectionScalarShapeOrder()
+                .select { other -> [other.status, other.amount] }
+                .where { other -> other.userId == it.userId }
+                .limit(1)<!> < it.status
+        }
+}
+
 fun validScalarSubquerySingleColumn() {
     ProjectionScalarShapeOrder()
         .select()
@@ -67,5 +78,14 @@ fun validScalarSubquerySingleColumn() {
                 .select { other -> other.status }
                 .where { other -> other.userId == it.userId }
                 .limit(1)
+        }
+
+    ProjectionScalarShapeOrder()
+        .select()
+        .where {
+            ProjectionScalarShapeOrder()
+                .select { other -> other.status }
+                .where { other -> other.userId == it.userId }
+                .limit(1) < it.status
         }
 }

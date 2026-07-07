@@ -114,11 +114,24 @@ val TypedQueryFunctionFqNames = setOf(
     FqName("com.kotlinorm.database.SqlHandler.$QueryOneFunctionName"),
     FqName("com.kotlinorm.database.SqlHandler.$QueryOneOrNullFunctionName")
 )
-val SelectFromQueryFunctionRegexes = setOf(
-    Regex("com\\.kotlinorm\\.orm\\.join\\.SelectFrom\\d\\.$QueryListFunctionName"),
-    Regex("com\\.kotlinorm\\.orm\\.join\\.SelectFrom\\d\\.$QueryOneFunctionName"),
-    Regex("com\\.kotlinorm\\.orm\\.join\\.SelectFrom\\d\\.$QueryOneOrNullFunctionName")
-)
+fun isSelectFromQueryFunctionFqName(fqName: String): Boolean {
+    val prefix = "com.kotlinorm.orm.join.SelectFrom"
+    if (!fqName.startsWith(prefix)) return false
+
+    val tail = fqName.removePrefix(prefix)
+    val separatorIndex = tail.indexOf('.')
+    if (separatorIndex <= 0) return false
+
+    val arity = tail.substring(0, separatorIndex)
+    if (arity.any { !it.isDigit() }) return false
+
+    return when (tail.substring(separatorIndex + 1)) {
+        QueryListFunctionName,
+        QueryOneFunctionName,
+        QueryOneOrNullFunctionName -> true
+        else -> false
+    }
+}
 
 // Enums
 val KColumnTypeFqName = FqName("com.kotlinorm.enums.KColumnType")

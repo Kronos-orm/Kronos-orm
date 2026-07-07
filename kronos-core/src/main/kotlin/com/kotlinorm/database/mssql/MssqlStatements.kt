@@ -35,11 +35,18 @@ object MssqlStatements : DatabaseStatements() {
 
     private fun table(tableName: String) = SqlIdentifier.of("dbo", tableName)
 
+    private fun metadataTable(schema: String, name: String, alias: String? = null): SqlTable.Ident =
+        SqlTable.Ident(
+            name = name,
+            alias = alias?.let { SqlTableAlias(it) },
+            identifier = SqlIdentifier.of(schema, name)
+        )
+
     override fun tableExists(): SqlQuery = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw("COUNT(*)"))),
         from = listOf(
-            SqlTable.Ident("sys.tables", alias = SqlTableAlias("t")),
-            SqlTable.Ident("sys.schemas", alias = SqlTableAlias("s"))
+            metadataTable("sys", "tables", "t"),
+            metadataTable("sys", "schemas", "s")
         ),
         where = SqlExpr.UnsafeRaw("t.schema_id = s.schema_id AND s.name = 'dbo' AND t.name = :tableName")
     )
@@ -47,9 +54,9 @@ object MssqlStatements : DatabaseStatements() {
     override fun tableComment(): SqlQuery = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.UnsafeRaw("CAST(ep.value AS NVARCHAR(MAX))"))),
         from = listOf(
-            SqlTable.Ident("sys.extended_properties", alias = SqlTableAlias("ep")),
-            SqlTable.Ident("sys.tables", alias = SqlTableAlias("t")),
-            SqlTable.Ident("sys.schemas", alias = SqlTableAlias("s"))
+            metadataTable("sys", "extended_properties", "ep"),
+            metadataTable("sys", "tables", "t"),
+            metadataTable("sys", "schemas", "s")
         ),
         where = SqlExpr.UnsafeRaw("ep.major_id = t.object_id AND t.schema_id = s.schema_id AND ep.minor_id = 0 AND ep.name = 'MS_Description' AND s.name = 'dbo' AND t.name = :tableName")
     )
@@ -66,7 +73,7 @@ object MssqlStatements : DatabaseStatements() {
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("CASE WHEN EXISTS (SELECT 1 FROM sysobjects a INNER JOIN syscolumns b ON a.id = b.id WHERE columnproperty(a.id, b.name, 'isIdentity') = 1 AND objectproperty(a.id, 'isTable') = 1 AND a.name = :tableName AND b.name = c.COLUMN_NAME) THEN 'YES' ELSE 'NO' END AS AUTOINCREAMENT")),
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("CAST((SELECT ep.value FROM sys.extended_properties ep WHERE ep.major_id = OBJECT_ID(:tableName) AND ep.minor_id = c.ORDINAL_POSITION AND ep.name = 'MS_Description') AS NVARCHAR(MAX)) AS COLUMN_COMMENT"))
         ),
-        from = listOf(SqlTable.Ident("INFORMATION_SCHEMA.COLUMNS", alias = SqlTableAlias("c"))),
+        from = listOf(metadataTable("INFORMATION_SCHEMA", "COLUMNS", "c")),
         where = SqlExpr.UnsafeRaw("c.TABLE_CATALOG = DB_NAME() AND c.TABLE_NAME = :tableName")
     )
 
@@ -79,11 +86,11 @@ object MssqlStatements : DatabaseStatements() {
             SqlSelectItem.Expr(SqlExpr.UnsafeRaw("i.type_desc AS indexType"))
         ),
         from = listOf(
-            SqlTable.Ident("sys.indexes", alias = SqlTableAlias("i")),
-            SqlTable.Ident("sys.index_columns", alias = SqlTableAlias("ic")),
-            SqlTable.Ident("sys.columns", alias = SqlTableAlias("c")),
-            SqlTable.Ident("sys.tables", alias = SqlTableAlias("t")),
-            SqlTable.Ident("sys.schemas", alias = SqlTableAlias("s"))
+            metadataTable("sys", "indexes", "i"),
+            metadataTable("sys", "index_columns", "ic"),
+            metadataTable("sys", "columns", "c"),
+            metadataTable("sys", "tables", "t"),
+            metadataTable("sys", "schemas", "s")
         ),
         where = SqlExpr.UnsafeRaw(
             "i.object_id = ic.object_id AND i.index_id = ic.index_id " +

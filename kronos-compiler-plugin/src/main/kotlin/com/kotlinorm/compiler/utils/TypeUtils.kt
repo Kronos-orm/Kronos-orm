@@ -44,199 +44,29 @@ import org.jetbrains.kotlin.ir.types.classFqName
 context(context: IrPluginContext)
 fun mapTypeToKColumnType(type: IrType): String {
     val fqName = type.classFqName?.asString() ?: return "VARCHAR"
-    
-    return when (fqName) {
-        // Boolean types
-        "kotlin.Boolean" -> "BIT"
-        
-        // Integer types
-        "kotlin.Byte" -> "TINYINT"
-        "kotlin.Short" -> "SMALLINT"
-        "kotlin.Int" -> "INT"
-        "kotlin.Long" -> "BIGINT"
-        
-        // Floating point types
-        "kotlin.Float" -> "FLOAT"
-        "kotlin.Double" -> "DOUBLE"
-        
-        // Decimal types
-        "java.math.BigDecimal" -> "DECIMAL"
-        
-        // Character types
-        "kotlin.Char" -> "CHAR"
-        "kotlin.String" -> "VARCHAR"
-        
-        // Date types
-        "java.util.Date",
-        "java.sql.Date",
-        "java.time.LocalDate",
-        "kotlinx.datetime.LocalDate" -> "DATE"
-        
-        // Time types
-        "java.time.LocalTime",
-        "kotlinx.datetime.LocalTime" -> "TIME"
-        
-        // DateTime types
-        "java.time.LocalDateTime",
-        "kotlinx.datetime.LocalDateTime" -> "DATETIME"
-        
-        // Timestamp types
-        "java.sql.Timestamp" -> "TIMESTAMP"
-        
-        // Binary types
-        "kotlin.ByteArray" -> "BLOB"
-        
-        // Special types
-        "CUSTOM_CRITERIA_SQL" -> "CUSTOM_CRITERIA_SQL"
-        
-        // Default fallback
-        else -> "VARCHAR"
-    }
+
+    return KColumnTypeByFqName[fqName] ?: "VARCHAR"
 }
 
-/**
- * Maps a Kotlin type name (as string) to its corresponding KColumnType enum name
- *
- * This is a convenience function that works with string type names instead of IrType.
- * Useful when you already have the fully qualified type name as a string.
- *
- * @param typeName The fully qualified Kotlin type name (e.g., "kotlin.Int")
- * @return The name of the corresponding KColumnType enum value (e.g., "INT")
- */
-fun mapTypeNameToKColumnType(typeName: String): String {
-    return when (typeName) {
-        // Boolean types
-        "kotlin.Boolean" -> "BIT"
-        
-        // Integer types
-        "kotlin.Byte" -> "TINYINT"
-        "kotlin.Short" -> "SMALLINT"
-        "kotlin.Int" -> "INT"
-        "kotlin.Long" -> "BIGINT"
-        
-        // Floating point types
-        "kotlin.Float" -> "FLOAT"
-        "kotlin.Double" -> "DOUBLE"
-        
-        // Decimal types
-        "java.math.BigDecimal" -> "DECIMAL"
-        
-        // Character types
-        "kotlin.Char" -> "CHAR"
-        "kotlin.String" -> "VARCHAR"
-        
-        // Date types
-        "java.util.Date",
-        "java.sql.Date",
-        "java.time.LocalDate",
-        "kotlinx.datetime.LocalDate" -> "DATE"
-        
-        // Time types
-        "java.time.LocalTime",
-        "kotlinx.datetime.LocalTime" -> "TIME"
-        
-        // DateTime types
-        "java.time.LocalDateTime",
-        "kotlinx.datetime.LocalDateTime" -> "DATETIME"
-        
-        // Timestamp types
-        "java.sql.Timestamp" -> "TIMESTAMP"
-        
-        // Binary types
-        "kotlin.ByteArray" -> "BLOB"
-        
-        // Special types
-        "CUSTOM_CRITERIA_SQL" -> "CUSTOM_CRITERIA_SQL"
-        
-        // Default fallback
-        else -> "VARCHAR"
-    }
-}
-
-/**
- * Checks if a type is a numeric type
- *
- * @param type The IrType to check
- * @return true if the type is numeric (integer or floating point)
- */
-context(context: IrPluginContext)
-fun isNumericType(type: IrType): Boolean {
-    val fqName = type.classFqName?.asString() ?: return false
-    
-    return fqName in setOf(
-        "kotlin.Byte",
-        "kotlin.Short",
-        "kotlin.Int",
-        "kotlin.Long",
-        "kotlin.Float",
-        "kotlin.Double",
-        "java.math.BigDecimal"
-    )
-}
-
-/**
- * Checks if a type is a temporal type (date, time, or datetime)
- *
- * @param type The IrType to check
- * @return true if the type represents a date, time, or datetime
- */
-context(context: IrPluginContext)
-fun isTemporalType(type: IrType): Boolean {
-    val fqName = type.classFqName?.asString() ?: return false
-    
-    return fqName in setOf(
-        "java.util.Date",
-        "java.sql.Date",
-        "java.sql.Timestamp",
-        "java.time.LocalDate",
-        "java.time.LocalTime",
-        "java.time.LocalDateTime",
-        "kotlinx.datetime.LocalDate",
-        "kotlinx.datetime.LocalTime",
-        "kotlinx.datetime.LocalDateTime"
-    )
-}
-
-/**
- * Checks if a type is a string type
- *
- * @param type The IrType to check
- * @return true if the type is String or Char
- */
-context(context: IrPluginContext)
-fun isStringType(type: IrType): Boolean {
-    val fqName = type.classFqName?.asString() ?: return false
-    
-    return fqName in setOf("kotlin.String", "kotlin.Char")
-}
-
-/**
- * Checks if a type is a binary type
- *
- * @param type The IrType to check
- * @return true if the type is ByteArray
- */
-context(context: IrPluginContext)
-fun isBinaryType(type: IrType): Boolean {
-    val fqName = type.classFqName?.asString() ?: return false
-    
-    return fqName == "kotlin.ByteArray"
-}
-
-/**
- * Gets a human-readable description of a type for error messages
- *
- * @param type The IrType to describe
- * @return A human-readable type description
- */
-context(context: IrPluginContext)
-fun getTypeDescription(type: IrType): String {
-    val fqName = type.classFqName?.asString() ?: return "Unknown"
-    
-    // Simplify common Kotlin types
-    return when {
-        fqName.startsWith("kotlin.") -> fqName.removePrefix("kotlin.")
-        fqName.startsWith("java.lang.") -> fqName.removePrefix("java.lang.")
-        else -> fqName
-    }
-}
+private val KColumnTypeByFqName = mapOf(
+    "kotlin.Boolean" to "BIT",
+    "kotlin.Byte" to "TINYINT",
+    "kotlin.Short" to "SMALLINT",
+    "kotlin.Int" to "INT",
+    "kotlin.Long" to "BIGINT",
+    "kotlin.Float" to "FLOAT",
+    "kotlin.Double" to "DOUBLE",
+    "java.math.BigDecimal" to "DECIMAL",
+    "kotlin.Char" to "CHAR",
+    "kotlin.String" to "VARCHAR",
+    "java.util.Date" to "DATE",
+    "java.sql.Date" to "DATE",
+    "java.time.LocalDate" to "DATE",
+    "kotlinx.datetime.LocalDate" to "DATE",
+    "java.time.LocalTime" to "TIME",
+    "kotlinx.datetime.LocalTime" to "TIME",
+    "java.time.LocalDateTime" to "DATETIME",
+    "kotlinx.datetime.LocalDateTime" to "DATETIME",
+    "java.sql.Timestamp" to "TIMESTAMP",
+    "kotlin.ByteArray" to "BLOB",
+)

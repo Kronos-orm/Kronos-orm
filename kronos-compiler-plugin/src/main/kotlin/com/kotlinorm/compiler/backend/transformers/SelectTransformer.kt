@@ -1,0 +1,134 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.kotlinorm.compiler.backend.transformers
+
+import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.core.KTableTransformer
+import com.kotlinorm.compiler.core.SelectProjectionIr
+import com.kotlinorm.compiler.core.addFieldMethodSymbol
+import com.kotlinorm.compiler.core.addFunctionMethodSymbol
+import com.kotlinorm.compiler.core.addRawSqlMethodSymbol
+import com.kotlinorm.compiler.core.addScalarSubqueryMethodSymbol
+import com.kotlinorm.compiler.core.analyzeAndBuildSelectProjections
+import com.kotlinorm.compiler.utils.extensionReceiver
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.ir.builders.irBlock
+import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irString
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+
+/**
+ * Select Transformer
+ *
+ * A Kotlin compiler plugin transformer that manipulates IR elements related to table fields.
+ * @author: OUSC
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     ```kotlin
+ *     fun <T: KPojo> T.foo() {
+ *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
+ *              [it.username, it.password, it.createTime.alias("time")]
+ *          }
+ *          KTable<T>().action(this)
+ *     }
+ *     ```
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *    ```kotlin
+ *     fun <T: KPojo> foo() {
+ *          val action: (KTableForSelect<T>.(T) -> Unit) = { it: T ->
+ *              addField(Field("username",...))
+ *              addField(Field("password",...))
+ *              addField(Field("createTime",...).setAlias("time"))
+ *              [it.username, it.password, it.createTime.alias("time")]
+ *          }
+ *          KTable<T>().action(this)
+ *    }
+ *    ```
+ */
+context(pluginContext: IrPluginContext)
+fun SelectTransformer(
+    irFunction: IrFunction,
+    errorReporter: ErrorReporter
+): KTableTransformer = SelectTransformerImpl(pluginContext, irFunction, errorReporter)
+
+private class SelectTransformerImpl(
+    private val pluginContext: IrPluginContext,
+    irFunction: IrFunction,
+    errorReporter: ErrorReporter
+) : KTableTransformer(irFunction, errorReporter) {
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitReturn(expression: IrReturn): IrExpression {
+        if (!shouldProcessReturn(expression)) {
+            return super.visitReturn(expression)
+        }
+
+        return with(pluginContext) {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                val projections = analyzeAndBuildSelectProjections(irFunction, expression.value, errorReporter)
+                val receiver = irFunction.parameters.extensionReceiver
+                    ?: return@irBlock run { +expression }
+
+                if (projections.isEmpty()) {
+                    +expression
+                } else {
+                    projections.forEach { projection ->
+                        when (projection) {
+                            is SelectProjectionIr.FieldProjection -> {
+                                +irCall(addFieldMethodSymbol).apply {
+                                    dispatchReceiver = irGet(receiver)
+                                    arguments[1] = projection.field
+                                }
+                            }
+                            is SelectProjectionIr.FunctionProjection -> {
+                                +irCall(addFunctionMethodSymbol).apply {
+                                    dispatchReceiver = irGet(receiver)
+                                    arguments[1] = projection.function
+                                }
+                            }
+                            is SelectProjectionIr.ScalarSubqueryProjection -> {
+                                +irCall(addScalarSubqueryMethodSymbol).apply {
+                                    dispatchReceiver = irGet(receiver)
+                                    arguments[1] = projection.query
+                                    arguments[2] = irString(projection.alias)
+                                }
+                            }
+                            is SelectProjectionIr.RawSqlProjection -> {
+                                +irCall(addRawSqlMethodSymbol).apply {
+                                    dispatchReceiver = irGet(receiver)
+                                    arguments[1] = irString(projection.sql)
+                                    arguments[2] = projection.alias?.let { irString(it) } ?: irNull()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

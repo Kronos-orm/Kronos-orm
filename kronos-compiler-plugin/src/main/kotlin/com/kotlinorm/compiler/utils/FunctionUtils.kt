@@ -18,6 +18,7 @@ package com.kotlinorm.compiler.utils
 
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
 
@@ -39,6 +40,19 @@ internal val IrCall.correspondingName
 fun IrCall.funcName() = correspondingName?.asString() ?: this.symbol.owner.name.asString()
 
 /**
+ * Gets the SQL function identifier for a FunctionHandler extension.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrFunction.kronosFunctionName(): String {
+    val annotation = findAnnotation(KronosFunctionAnnotationFqName)
+    return getAnnotationStringValue(annotation, 0)?.takeIf { it.isNotBlank() } ?: name.asString()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrCall.kronosFunctionName(): String =
+    correspondingName?.asString() ?: symbol.owner.kronosFunctionName()
+
+/**
  * Checks if an IrExpression is a Kronos function call (FunctionHandler extension)
  * 
  * Example: f.rand(), f.trunc(it.score, 2)
@@ -46,7 +60,6 @@ fun IrCall.funcName() = correspondingName?.asString() ?: this.symbol.owner.name.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrExpression?.isKronosFunction(): Boolean {
-    if (this == null) return false
-    return this is IrCall && 
-           this.extensionReceiverArgument?.type?.classFqName == FunctionHandlerFqName
+    val call = this as? IrCall ?: return false
+    return call.extensionReceiverArgument?.type?.classFqName == FunctionHandlerFqName
 }

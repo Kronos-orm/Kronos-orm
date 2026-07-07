@@ -16,6 +16,8 @@
 
 package com.kotlinorm.interfaces
 
+import com.kotlinorm.syntax.statement.SqlStatement
+
 /**
  * Kronos Atomic Task
  *
@@ -24,6 +26,6 @@ package com.kotlinorm.interfaces
  * @author OUSC
  */
 interface KAtomicActionTask : KAtomicTask {
-    val actionInfo: KActionInfo?
+    override val statement: SqlStatement?
     val stash: MutableMap<String, Any?>
 }

@@ -6,7 +6,6 @@ import com.kotlinorm.exceptions.InvalidDataAccessApiUsageException
 import com.kotlinorm.exceptions.InvalidParameterException
 import com.kotlinorm.interfaces.KPojo
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -18,14 +17,14 @@ class NamedParameterUtilsTest {
         val sql = "xxx :a yyyy :b :c :a zzzzz"
         val parsedSql = parseSqlStatement(sql)
         assertEquals("xxx ? yyyy ? ? ? zzzzz", parsedSql.jdbcSql)
-        assertEquals(listOf("a", "b", "c", "a"), parsedSql.parameterNames)
+        assertEquals(["a", "b", "c", "a"], parsedSql.parameterNames)
         assertEquals(4, parsedSql.totalParameterCount)
         assertEquals(3, parsedSql.namedParameterCount)
 
         val sql2 = "xxx &a yyyy ? zzzzz"
         val parsedSql2 = parseSqlStatement(sql2)
         assertEquals("xxx ? yyyy ? zzzzz", parsedSql2.jdbcSql)
-        assertContains(parsedSql2.parameterNames, "a")
+        assertEquals(["a"], parsedSql2.parameterNames)
         assertEquals(2, parsedSql2.totalParameterCount)
         assertEquals(1, parsedSql2.namedParameterCount)
 
@@ -170,7 +169,7 @@ class NamedParameterUtilsTest {
         val sql = "select '0\\:0' as a, foo from bar where baz < DATE(:p1 23\\:59\\:59) and baz = :p2"
 
         val parsedSql = parseSqlStatement(sql)
-        assertContentEquals(parsedSql.parameterNames, listOf("p1", "p2"))
+        assertContentEquals(parsedSql.parameterNames, ["p1", "p2"])
         assertEquals(expectedSql, parsedSql.jdbcSql)
     }
 
@@ -181,7 +180,7 @@ class NamedParameterUtilsTest {
 
         val parsedSql = parseSqlStatement(sql)
         assertEquals(expectedSql, parsedSql.jdbcSql)
-        assertContentEquals(parsedSql.parameterNames, listOf("p1", "p2"))
+        assertContentEquals(parsedSql.parameterNames, ["p1", "p2"])
     }
 
     @Test
@@ -207,7 +206,7 @@ class NamedParameterUtilsTest {
 
         val parsedSql = parseSqlStatement(sql)
         assertEquals(expectedSql, parsedSql.jdbcSql)
-        assertContentEquals(parsedSql.parameterNames, listOf("p"))
+        assertContentEquals(parsedSql.parameterNames, ["p"])
     }
 
     @Test
@@ -236,7 +235,7 @@ class NamedParameterUtilsTest {
         val sql = "SELECT ARRAY[:ext]"
         val parsedSql = parseSqlStatement(sql)
         assertEquals(1, parsedSql.namedParameterCount)
-        assertContentEquals(listOf("ext"), parsedSql.parameterNames)
+        assertContentEquals(["ext"], parsedSql.parameterNames)
         assertEquals("SELECT ARRAY[?]", parsedSql.jdbcSql)
     }
 
@@ -244,10 +243,10 @@ class NamedParameterUtilsTest {
     fun paramNameWithNestedSquareBrackets() {
         data class GeneratedAlways(val id: String, val firstName: String, val lastName: String) : KPojo
 
-        val records = listOf(
+        val records = [
             GeneratedAlways("1", "John", "Doe"),
             GeneratedAlways("2", "Jane", "Doe")
-        )
+        ]
 
         val paramMap = mapOf("records" to records)
 
@@ -257,10 +256,10 @@ class NamedParameterUtilsTest {
 
         val parsedSql = parseSqlStatement(sql, paramMap)
         assertContentEquals(
-            listOf(
+            [
                 "records[0].id", "records[0].firstName", "records[0].lastName",
                 "records[1].id", "records[1].firstName", "records[1].lastName"
-            ),
+            ],
             parsedSql.parameterNames
         )
         assertEquals(
@@ -282,7 +281,7 @@ class NamedParameterUtilsTest {
         val sql = "insert into foos (id) values (:headers[id])"
         val parsedSql = parseSqlStatement(sql)
         assertEquals(1, parsedSql.namedParameterCount)
-        assertContentEquals(listOf("headers[id]"), parsedSql.parameterNames)
+        assertContentEquals(["headers[id]"], parsedSql.parameterNames)
 
         val headers = mapOf(
             "id" to 1
@@ -293,7 +292,7 @@ class NamedParameterUtilsTest {
         assertEquals("insert into foos (id) values (?)", parseSqlStatement(sql, paramMap).jdbcSql)
         assertEquals(1, parseSqlStatement(sql, paramMap).jdbcParamList[0])
 
-        val headerList = listOf(1)
+        val headerList = [1]
 
         val sq2 = "insert into foos (id) values (:headers[0])"
 
@@ -315,17 +314,17 @@ class NamedParameterUtilsTest {
     @Test
     fun parseSqlStatementWithBrackets() {
         val sql = "select * from `tb&user` where id in (:id)"
-        val parsedSql = parseSqlStatement(sql, mapOf("id" to listOf(1, 2, 3)))
-        assertContentEquals(listOf("id"), parsedSql.parameterNames)
+        val parsedSql = parseSqlStatement(sql, mapOf("id" to [1, 2, 3]))
+        assertContentEquals(["id"], parsedSql.parameterNames)
         assertEquals("select * from `tb&user` where id in (?, ?, ?)", parsedSql.jdbcSql)
-        assertContentEquals(listOf(1, 2, 3), parsedSql.jdbcParamList.toList())
+        assertContentEquals([1, 2, 3], parsedSql.jdbcParamList.toList())
     }
 
     @Test
     fun parseSqlStatementWithBackticks() {
         val sql = "select * from `tb&user` where id = :id"
         val parsedSql = parseSqlStatement(sql)
-        assertContentEquals(listOf("id"), parsedSql.parameterNames)
+        assertContentEquals(["id"], parsedSql.parameterNames)
         assertEquals("select * from `tb&user` where id = ?", parsedSql.jdbcSql)
     }
 
@@ -358,7 +357,7 @@ class NamedParameterUtilsTest {
         val sql = "SELECT * FROM users WHERE data->'info'->>'name' = :name"
         val parsedSql = parseSqlStatement(sql)
         assertEquals("SELECT * FROM users WHERE data->'info'->>'name' = ?", parsedSql.jdbcSql)
-        assertContentEquals(listOf("name"), parsedSql.parameterNames)
+        assertContentEquals(["name"], parsedSql.parameterNames)
     }
 
     @Test
@@ -366,7 +365,7 @@ class NamedParameterUtilsTest {
         val sql = "SELECT * FROM users WHERE id = \\:id AND name = :name"
         val parsedSql = parseSqlStatement(sql)
         assertEquals("SELECT * FROM users WHERE id = :id AND name = ?", parsedSql.jdbcSql)
-        assertContentEquals(listOf("name"), parsedSql.parameterNames)
+        assertContentEquals(["name"], parsedSql.parameterNames)
     }
 
     @Test

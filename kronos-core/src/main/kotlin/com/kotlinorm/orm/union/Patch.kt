@@ -34,8 +34,8 @@ import com.kotlinorm.interfaces.KPojo
  * @param selectables The selectable queries to union
  * @return UnionClause for further configuration and execution
  */
-fun union(vararg selectables: KSelectable<out KPojo>): UnionClause {
-    return UnionClause(selectables.toList(), initialUnionAll = false)
+fun <R : KPojo> union(first: KSelectable<R>, vararg selectables: KSelectable<out KPojo>): UnionClause<R> {
+    return UnionClause(listOf(first, *selectables), first.selectedKClass, initialUnionAll = false)
 }
 
 /**
@@ -51,8 +51,8 @@ fun union(vararg selectables: KSelectable<out KPojo>): UnionClause {
  * @param other The selectable query to union with this one
  * @return UnionClause for further configuration and execution
  */
-infix fun <T : KPojo> KSelectable<T>.union(other: KSelectable<out KPojo>): UnionClause {
-    return UnionClause(listOf(this, other), initialUnionAll = false)
+infix fun <R : KPojo> KSelectable<R>.union(other: KSelectable<out KPojo>): UnionClause<R> {
+    return UnionClause([this, other], selectedKClass, initialUnionAll = false)
 }
 
 /**
@@ -68,8 +68,8 @@ infix fun <T : KPojo> KSelectable<T>.union(other: KSelectable<out KPojo>): Union
  * @param other The selectable query to union with this one
  * @return UnionClause for further configuration and execution
  */
-infix fun <T : KPojo> KSelectable<T>.unionAll(other: KSelectable<out KPojo>): UnionClause {
-    return UnionClause(listOf(this, other), initialUnionAll = true)
+infix fun <R : KPojo> KSelectable<R>.unionAll(other: KSelectable<out KPojo>): UnionClause<R> {
+    return UnionClause([this, other], selectedKClass, initialUnionAll = true)
 }
 
 /**
@@ -85,8 +85,10 @@ infix fun <T : KPojo> KSelectable<T>.unionAll(other: KSelectable<out KPojo>): Un
  * @param other The selectable query to add to this union
  * @return UnionClause for further configuration and execution
  */
-infix fun UnionClause.union(other: KSelectable<out KPojo>): UnionClause {
-    return this.addQueryWithUnion(other)
+infix fun <R : KPojo> UnionClause<R>.union(other: KSelectable<out KPojo>): UnionClause<R> {
+    return apply {
+        selectables += other
+    }
 }
 
 /**
@@ -102,6 +104,9 @@ infix fun UnionClause.union(other: KSelectable<out KPojo>): UnionClause {
  * @param other The selectable query to add to this union
  * @return UnionClause for further configuration and execution
  */
-infix fun UnionClause.unionAll(other: KSelectable<out KPojo>): UnionClause {
-    return this.addQueryWithUnionAll(other)
+infix fun <R : KPojo> UnionClause<R>.unionAll(other: KSelectable<out KPojo>): UnionClause<R> {
+    return apply {
+        selectables += other
+        unionAll = true
+    }
 }

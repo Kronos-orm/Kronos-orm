@@ -19,6 +19,7 @@ package com.kotlinorm.beans.task
 import com.kotlinorm.beans.parser.NamedParameterUtils.parseSqlStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.syntax.statement.SqlQuery
 
 /**
  * Kronos Atomic Query Task
@@ -32,6 +33,7 @@ data class KronosAtomicQueryTask(
     override var sql: String,
     override val paramMap: Map<String, Any?> = mapOf(),
     override val operationType: KOperationType = KOperationType.SELECT,
+    override val statement: SqlQuery? = null,
     val stash: MutableMap<String, Any?> = mutableMapOf()
 ) : KAtomicQueryTask {
 

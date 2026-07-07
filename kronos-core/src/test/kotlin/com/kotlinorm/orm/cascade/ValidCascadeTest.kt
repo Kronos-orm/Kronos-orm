@@ -69,7 +69,7 @@ class ValidCascadeTest : MysqlTestBase() {
 
         val result = findValidRefs(
             kClass = CascadeSelectParent::class,
-            columns = listOf(ignoreField),
+            columns = [ignoreField],
             operationType = KOperationType.SELECT,
             allowed = null,
             allowAll = true
@@ -83,7 +83,7 @@ class ValidCascadeTest : MysqlTestBase() {
         val field = kPojoFieldMapCache[CascadeSelectChild2::class]!!["parent"]!!
         val result = findValidRefs(
             kClass = CascadeSelectParent2::class,
-            columns = listOf(field),
+            columns = [field],
             operationType = KOperationType.SELECT,
             allowed = null,
             allowAll = true
@@ -102,7 +102,7 @@ class ValidCascadeTest : MysqlTestBase() {
         val field = kPojoFieldMapCache[CascadeDeleteParent::class]!!["children"]!!
         val result = findValidRefs(
             kClass = CascadeDeleteParent::class,
-            columns = listOf(field),
+            columns = [field],
             operationType = KOperationType.DELETE,
             allowed = null,
             allowAll = true
@@ -122,7 +122,7 @@ class ValidCascadeTest : MysqlTestBase() {
 
         val result = findValidRefs(
             kClass = CascadeDeleteChild2::class,
-            columns = listOf(field),
+            columns = [field],
             operationType = KOperationType.DELETE,
             allowed = null,
             allowAll = true

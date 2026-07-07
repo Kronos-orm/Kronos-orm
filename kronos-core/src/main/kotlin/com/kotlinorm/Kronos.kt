@@ -16,14 +16,11 @@
 
 package com.kotlinorm
 
-import com.kotlinorm.annotations.KronosInit
-import com.kotlinorm.beans.config.DefaultNoValueStrategy
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.config.LineHumpNamingStrategy
 import com.kotlinorm.beans.config.NoneNamingStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.BundledSimpleLoggerAdapter
-import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.parser.NoneDataSourceWrapper
 import com.kotlinorm.beans.serialize.NoneSerializeProcessor
 import com.kotlinorm.beans.task.TransactionScope
@@ -33,8 +30,6 @@ import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.interfaces.KronosNamingStrategy
 import com.kotlinorm.interfaces.KronosSerializeProcessor
-import com.kotlinorm.interfaces.NoValueStrategy
-import com.kotlinorm.plugins.LastInsertIdPlugin
 import com.kotlinorm.types.KLoggerFactory
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import java.time.ZoneId
@@ -52,10 +47,7 @@ object Kronos {
     var loggerType: KLoggerType = KLoggerType.DEFAULT_LOGGER
 
     // 日志路径
-    var logPath = listOf("console")
-
-    // 无值策略
-    var noValueStrategy: NoValueStrategy = DefaultNoValueStrategy
+    var logPath = ["console"]
 
     // 数据源
     var dataSource: () -> KronosDataSourceWrapper = { NoneDataSourceWrapper }
@@ -112,15 +104,4 @@ object Kronos {
 
     // 默认日期格式
     var defaultDateFormat = "yyyy-MM-dd HH:mm:ss"
-
-    @KronosInit
-    fun init(action: Kronos.() -> Unit) {
-        LastInsertIdPlugin.enabled = true
-        this.action()
-        defaultLogger(this).info(
-            log {
-                +"Kronos ORM Framework started."[green]
-            }
-        )
-    }
 }

@@ -1,145 +1,70 @@
-/**
- * Copyright 2022-2025 kronos-orm
+/*
+ * Copyright 2022-2026 kronos-orm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 package com.kotlinorm.database
 
 import com.kotlinorm.beans.dsl.Field
-import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.database.RegisteredDBTypeManager.getDBSupport
+import com.kotlinorm.database.mssql.MssqlStatements
+import com.kotlinorm.database.mysql.MysqlStatements
+import com.kotlinorm.database.oracle.OracleStatements
+import com.kotlinorm.database.postgres.PostgresqlStatements
+import com.kotlinorm.database.sqlite.SqliteStatements
 import com.kotlinorm.enums.DBType
-import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.enums.DBType.Mssql
+import com.kotlinorm.enums.DBType.Mysql
+import com.kotlinorm.enums.DBType.Oracle
+import com.kotlinorm.enums.DBType.Postgres
+import com.kotlinorm.enums.DBType.SQLite
 import com.kotlinorm.exceptions.UnsupportedDatabaseTypeException
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.ddl.TableColumnDiff
-import com.kotlinorm.orm.ddl.TableIndexDiff
-// Legacy imports - commented out for AST migration
-// import com.kotlinorm.orm.join.JoinClauseInfo
-// import com.kotlinorm.orm.select.SelectClauseInfo
+import com.kotlinorm.syntax.render.RenderedSql
+import com.kotlinorm.syntax.render.SqlDialect
+import com.kotlinorm.syntax.statement.SqlStatement
 
-// Used to generate SQL that is independent of database type, including dialect differences.
 object SqlManager {
-    private val DBType.dbSupport get() = getDBSupport(this)
-
-    internal fun getDBNameFrom(wrapper: KronosDataSourceWrapper) =
-        wrapper.dbType.dbSupport?.getDBNameFromUrl(wrapper) ?: throw UnsupportedDatabaseTypeException(wrapper.dbType)
-
-    fun sqlColumnType(
-        dbType: DBType, type: KColumnType, length: Int, scale: Int
-    ) = dbType.dbSupport?.getColumnType(type, length, scale) ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun getKotlinColumnType(
-        dbType: DBType, sqlType: String, length: Int, scale: Int
-    ) = dbType.dbSupport?.getKColumnType(sqlType, length, scale) ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun columnCreateDefSql(
-        dbType: DBType, column: Field
-    ) = dbType.dbSupport?.getColumnCreateSql(dbType, column) ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun indexCreateDefSql(
-        dbType: DBType, tableName: String, kTableIndex: KTableIndex
-    ) = dbType.dbSupport?.getIndexCreateSql(dbType, tableName, kTableIndex) ?: throw UnsupportedDatabaseTypeException(
-        dbType
+    private val dialects: MutableMap<DBType, SqlDialect> = mutableMapOf(
+        Mysql to SqlDialect.MySql,
+        Postgres to SqlDialect.PostgreSql,
+        SQLite to SqlDialect.SQLite,
+        Mssql to SqlDialect.SqlServer,
+        Oracle to SqlDialect.Oracle
     )
 
-    fun getTableCreateSqlList(
-        dbType: DBType, tableName: String, tableComment: String?, columns: List<Field>, indexes: List<KTableIndex>
-    ) = dbType.dbSupport?.getTableCreateSqlList(dbType, tableName, tableComment, columns, indexes)
-        ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun getTableExistenceSql(
-        dbType: DBType
-    ) = dbType.dbSupport?.getTableExistenceSql(dbType) ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun getTableTruncateSql(
-        dbType: DBType, tableName: String, restartIdentity: Boolean
-    ) = dbType.dbSupport?.getTableTruncateSql(dbType, tableName, restartIdentity)
-        ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun getTableDropSql(
-        dbType: DBType, tableName: String
-    ) = dbType.dbSupport?.getTableDropSql(dbType, tableName) ?: throw UnsupportedDatabaseTypeException(dbType)
-
-    fun getTableCommentSql(
-        dataSource: KronosDataSourceWrapper
-    ) = dataSource.dbType.dbSupport?.getTableCommentSql(dataSource.dbType) ?: throw UnsupportedDatabaseTypeException(
-        dataSource.dbType
+    private val statements: MutableMap<DBType, DatabaseStatements> = mutableMapOf(
+        Mysql to MysqlStatements,
+        Postgres to PostgresqlStatements,
+        SQLite to SqliteStatements,
+        Mssql to MssqlStatements,
+        Oracle to OracleStatements
     )
 
-    fun getTableColumns(
-        dataSource: KronosDataSourceWrapper, tableName: String
-    ) = dataSource.dbType.dbSupport?.getTableColumns(dataSource, tableName) ?: throw UnsupportedDatabaseTypeException(
-        dataSource.dbType
-    )
-
-    fun getTableIndexes(
-        dataSource: KronosDataSourceWrapper,
-        tableName: String,
-    ) = dataSource.dbType.dbSupport?.getTableIndexes(dataSource, tableName) ?: throw UnsupportedDatabaseTypeException(
-        dataSource.dbType
-    )
-
-    fun getTableSyncSqlList(
-        dataSource: KronosDataSourceWrapper, tableName: String, originalTableComment: String?, tableComment: String?, columns: TableColumnDiff, indexes: TableIndexDiff
-    ) = dataSource.dbType.dbSupport?.getTableSyncSqlList(dataSource, tableName, originalTableComment,  tableComment, columns, indexes)
-        ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    fun getOnConflictSql(
-        dataSource: KronosDataSourceWrapper, conflictResolver: ConflictResolver
-    ) = dataSource.dbType.dbSupport?.getOnConflictSql(conflictResolver) ?: throw UnsupportedDatabaseTypeException(
-        dataSource.dbType
-    )
-
-    fun Field.quoted(
-        dataSource: KronosDataSourceWrapper
-    ) = dataSource.dbType.dbSupport?.quote(this) ?: throw UnsupportedDatabaseTypeException(
-        dataSource.dbType
-    )
-
-    fun quote(
-        dataSource: KronosDataSourceWrapper,
-        tableName: String,
-        showTable: Boolean = false,
-        columnName: String? = null,
-        map: Map<String, String> = emptyMap()
-    ): String {
-        val databaseName = map[tableName]
-        val support = dataSource.dbType.dbSupport ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-        return listOfNotNull(
-            if (databaseName.isNullOrBlank()) null else support.quote(databaseName),
-            if (!showTable && databaseName.isNullOrBlank()) null else support.quote(tableName),
-            columnName?.let { support.quote(it) }
-        ).joinToString(".")
+    fun registerDialect(dbType: DBType, dialect: SqlDialect) {
+        dialects[dbType] = dialect
     }
 
-    fun quote(
+    fun registerStatements(dbType: DBType, definitions: DatabaseStatements) {
+        statements[dbType] = definitions
+    }
+
+    fun registerDatabase(dbType: DBType, dialect: SqlDialect, definitions: DatabaseStatements) {
+        registerDialect(dbType, dialect)
+        registerStatements(dbType, definitions)
+    }
+
+    fun dialectOf(dbType: DBType): SqlDialect =
+        dialects[dbType] ?: throw UnsupportedDatabaseTypeException(dbType)
+
+    fun statementsOf(dbType: DBType): DatabaseStatements =
+        statements[dbType] ?: throw UnsupportedDatabaseTypeException(dbType)
+
+    fun renderStatement(
         dataSource: KronosDataSourceWrapper,
-        field: Field,
-        showTable: Boolean = false,
-        map: Map<String, String> = emptyMap()
-    ) = quote(dataSource, field.tableName, showTable, field.columnName, map)
-
-    // Legacy methods - deprecated, use AST-based methods instead
-    // fun getSelectSql(
-    //     dataSource: KronosDataSourceWrapper, selectClause: SelectClauseInfo
-    // ) = dataSource.dbType.dbSupport?.getSelectSql(dataSource, selectClause)
-    //     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
-
-    // fun getJoinSql(
-    //     dataSource: KronosDataSourceWrapper, joinClause: JoinClauseInfo
-    // ) = dataSource.dbType.dbSupport?.getJoinSql(dataSource, joinClause)
-    //     ?: throw UnsupportedDatabaseTypeException(dataSource.dbType)
+        statement: SqlStatement,
+        parameterValues: Map<String, Any?> = emptyMap(),
+        fieldsMap: Map<String, Field> = emptyMap()
+    ): RenderedSql = statement.renderForCore(dataSource, parameterValues, fieldsMap)
 }

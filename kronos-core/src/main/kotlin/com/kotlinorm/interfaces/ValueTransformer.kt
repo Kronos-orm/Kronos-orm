@@ -30,7 +30,7 @@ interface ValueTransformer {
     fun transform(
         targetKotlinType: String,
         value: Any,
-        superTypesOfValue: List<String> = listOf(),
+        superTypesOfValue: List<String> = [],
         dateTimeFormat: String? = null,
         kClassOfValue: KClass<*> = value::class
     ): Any

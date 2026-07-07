@@ -32,7 +32,7 @@ import kotlin.time.ExperimentalTime
  * @author OUSC
  */
 object JvmDateTimeTransformer : ValueTransformer {
-    private val dateTimeTypes = listOf(
+    private val dateTimeTypes = [
         "java.sql.Date",
         "java.sql.Timestamp",
         "java.util.Date",
@@ -43,7 +43,7 @@ object JvmDateTimeTransformer : ValueTransformer {
         "java.time.ZonedDateTime",
         "java.time.OffsetDateTime",
         "kotlin.time.Instant"
-    )
+    ]
 
     override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
         return kClassOfValue.qualifiedName in dateTimeTypes ||

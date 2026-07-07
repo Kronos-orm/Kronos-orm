@@ -18,6 +18,7 @@ package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.syntax.statement.SqlStatement
 
 /**
  * Kronos Atomic Task
@@ -30,5 +31,8 @@ interface KAtomicTask {
     val sql: String
     val paramMap: Map<String, Any?>
     val operationType: KOperationType
+    val statement: SqlStatement?
+        get() = null
+
     fun parsed(): ParsedSql
 }

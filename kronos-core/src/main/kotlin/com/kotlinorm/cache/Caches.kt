@@ -22,15 +22,18 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.parser.ParsedSql
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.LRUCache
 import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KClass
 
-val fieldsMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> { kClass->
-    kPojoAllFieldsCache[kClass]!!.let { instance ->
-        instance.associateBy { it.name } + instance.associateBy { it.columnName }
-    }
+val fieldsMapCache = LRUCache<KClass<KPojo>, Map<String, Field>> { kClass ->
+    kPojoAllFieldsCache[kClass]!!.flatMap { field ->
+        listOf(field.name, field.columnName, field.name.uppercase(), field.columnName.uppercase(), field.name.lowercase(), field.columnName.lowercase())
+            .distinct()
+            .map { it to field }
+    }.toMap()
 }
 
 val insertSqlCache = LRUCache<Pair<KClass<out KPojo>, Boolean>, String>()

@@ -58,7 +58,7 @@ class TransformerManagerTest {
         val result = TransformerManager.getValueTransformed(
             targetKotlinType = "kotlin.String",
             value = value,
-            superTypes = listOf("kotlin.String"),
+            superTypes = ["kotlin.String"],
             kClassOfVal = String::class
         )
         

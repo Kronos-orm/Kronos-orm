@@ -23,7 +23,7 @@ import java.sql.Savepoint
  * Transaction Scope.
  *
  * Provides the receiver context for transactional blocks, exposing savepoint operations.
- * When used with a JDBC-based wrapper (e.g. [com.kotlinorm.KronosBasicWrapper]),
+ * When used with a JDBC-based wrapper (e.g. [com.kotlinorm.wrappers.KronosJdbcWrapper]),
  * the [connection] is set to the active transaction connection, enabling savepoint management.
  *
  * @property connection The underlying JDBC connection for the transaction, or `null` if not available.
@@ -60,6 +60,6 @@ class TransactionScope(internal val connection: Connection? = null) {
 
     private fun requireConnection(): Connection =
         connection ?: throw UnsupportedOperationException(
-            "Savepoint operations require a JDBC-based KronosDataSourceWrapper (e.g. KronosBasicWrapper)"
+            "Savepoint operations require a JDBC-based KronosDataSourceWrapper (e.g. KronosJdbcWrapper)"
         )
 }

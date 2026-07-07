@@ -72,7 +72,7 @@ object LastInsertIdPlugin : TaskEventPlugin {
                 KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.dbType)),
                 kClass = Long::class,
                 false,
-                listOf()
+                []
             ) ?: 0L) as Long
         }
     }

@@ -17,6 +17,8 @@
 package com.kotlinorm.beans.transformers
 
 import com.kotlinorm.interfaces.ValueTransformer
+import java.math.BigDecimal
+import java.math.BigInteger
 import kotlin.reflect.KClass
 
 /**
@@ -25,7 +27,7 @@ import kotlin.reflect.KClass
  * @author OUSC
  */
 object BasicTypeTransformer : ValueTransformer {
-    private val basicTypes = listOf(
+    private val basicTypes = [
         "kotlin.Int",
         "kotlin.Long",
         "kotlin.Double",
@@ -33,8 +35,10 @@ object BasicTypeTransformer : ValueTransformer {
         "kotlin.Boolean",
         "kotlin.Char",
         "kotlin.Byte",
-        "kotlin.Short"
-    )
+        "kotlin.Short",
+        "java.math.BigDecimal",
+        "java.math.BigInteger"
+    ]
 
     /**
      * Safely casts the value to the target type.
@@ -59,6 +63,33 @@ object BasicTypeTransformer : ValueTransformer {
         }
     }
 
+    private fun Any.toBigDecimal(): BigDecimal = when (this) {
+        is BigDecimal -> this
+        is BigInteger -> BigDecimal(this)
+        is Byte,
+        is Short,
+        is Int,
+        is Long -> BigDecimal.valueOf((this as Number).toLong())
+
+        is Float,
+        is Double -> BigDecimal.valueOf((this as Number).toDouble())
+
+        is Number -> BigDecimal(toString())
+        else -> BigDecimal(toString())
+    }
+
+    private fun Any.toBigInteger(): BigInteger = when (this) {
+        is BigInteger -> this
+        is BigDecimal -> toBigInteger()
+        is Byte,
+        is Short,
+        is Int,
+        is Long -> BigInteger.valueOf((this as Number).toLong())
+
+        is Number -> BigDecimal(toString()).toBigInteger()
+        else -> BigInteger(toString())
+    }
+
     override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
         return targetKotlinType in basicTypes
     }
@@ -79,6 +110,8 @@ object BasicTypeTransformer : ValueTransformer {
             "kotlin.Byte" -> value.safeCast(Number::toByte, String::toByte)
             "kotlin.Char" -> value.toChar()
             "kotlin.Boolean" -> (value is Number && value != 0) || value.toString().ifBlank { "false" }.toBoolean()
+            "java.math.BigDecimal" -> value.toBigDecimal()
+            "java.math.BigInteger" -> value.toBigInteger()
             else -> null
         } ?: throw IllegalArgumentException("Invalid type: $targetKotlinType")
     }

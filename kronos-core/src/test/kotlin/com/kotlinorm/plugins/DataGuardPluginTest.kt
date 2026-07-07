@@ -1,17 +1,23 @@
 import com.kotlinorm.beans.task.ActionEvent
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.orm.ddl.DDLInfo
-import com.kotlinorm.orm.delete.DeleteClauseInfo
-import com.kotlinorm.orm.update.UpdateClauseInfo
 import com.kotlinorm.plugins.DataGuardPlugin
+import com.kotlinorm.syntax.SqlIdentifier
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlParameter
+import com.kotlinorm.syntax.expr.SqlType
+import com.kotlinorm.syntax.statement.SqlAssignmentTarget
+import com.kotlinorm.syntax.statement.SqlColumnDefinition
+import com.kotlinorm.syntax.statement.SqlDdlStatement
+import com.kotlinorm.syntax.statement.SqlDmlStatement
+import com.kotlinorm.syntax.statement.SqlUpdateSetPair
+import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
-import kotlin.test.assertFalse
 
 class DataGuardPluginTest {
 
@@ -34,23 +40,30 @@ class DataGuardPluginTest {
         tableName: String? = null,
         whereClause: String? = null
     ): KronosAtomicActionTask {
-        val actionInfo = when (operation) {
-            KOperationType.DELETE -> DeleteClauseInfo(
-                null,
-                tableName = tableName ?: parseTableName(sql),
-                whereClause = whereClause
+        val targetTable = tableName ?: parseTableName(sql)
+        val statement = when (operation) {
+            KOperationType.DELETE -> SqlDmlStatement.Delete(
+                table = SqlTable.Ident(targetTable),
+                where = whereClause?.let { SqlExpr.UnsafeRaw(it) }
             )
 
-            KOperationType.UPDATE -> UpdateClauseInfo(
-                null,
-                tableName = tableName ?: parseTableName(sql),
-                whereClause = whereClause
+            KOperationType.UPDATE -> SqlDmlStatement.Update(
+                table = SqlTable.Ident(targetTable),
+                setPairs = listOf(
+                    SqlUpdateSetPair(
+                        SqlAssignmentTarget.Column(SqlIdentifier.of("value")),
+                        SqlExpr.Parameter(SqlParameter.Named("value"))
+                    )
+                ),
+                where = whereClause?.let { SqlExpr.UnsafeRaw(it) }
             )
 
-            KOperationType.TRUNCATE, KOperationType.DROP, KOperationType.ALTER ->
-                DDLInfo(
-                    null,
-                    tableName = tableName ?: parseTableName(sql),
+            KOperationType.TRUNCATE -> SqlDmlStatement.Truncate(SqlTable.Ident(targetTable))
+            KOperationType.DROP -> SqlDdlStatement.DropTable(SqlIdentifier.of(targetTable))
+            KOperationType.ALTER ->
+                SqlDdlStatement.AlterTable.AddColumn(
+                    SqlIdentifier.of(targetTable),
+                    SqlColumnDefinition(SqlIdentifier.of("age"), SqlType.Int)
                 )
 
             else -> throw IllegalArgumentException("Unsupported operation type")
@@ -59,7 +72,7 @@ class DataGuardPluginTest {
         return KronosAtomicActionTask(
             sql = sql,
             operationType = operation,
-            actionInfo = actionInfo
+            statement = statement
         )
     }
 
@@ -69,7 +82,7 @@ class DataGuardPluginTest {
             .trim()
             .replace(Regex("(\\s)(?i)WHERE\\b.*"), "") // 移除 WHERE 子句干扰
 
-        val patterns = listOf(
+        val patterns = [
             // 优先级 1: DELETE FROM [schema.]table
             Regex("(?i)DELETE\\s+FROM\\s+([`\"\\[\\]]?)([\\w.]+)\\1"),
             // 优先级 2: UPDATE [schema.]table
@@ -83,7 +96,7 @@ class DataGuardPluginTest {
             // 后备匹配模式
             Regex("(?i)FROM\\s+([`\"\\[\\]]?)([\\w.]+)\\1"),
             Regex("(?i)INTO\\s+([`\"\\[\\]]?)([\\w.]+)\\1")
-        )
+        ]
 
         patterns.forEach { regex ->
             regex.find(cleanedSql)?.let {
@@ -235,13 +248,13 @@ class DataGuardPluginTest {
     @Test
     fun `should disable protection when plugin off`() {
         DataGuardPlugin.disable()
-        assertFalse(ActionEvent.beforeActionEvents.contains(DataGuardPlugin.doBeforeAction))
+        assertEquals(emptyList(), ActionEvent.beforeActionEvents)
     }
 
     @Test
     fun `should enable protection when plugin on`() {
         DataGuardPlugin.enable()
-        assert(ActionEvent.beforeActionEvents.contains(DataGuardPlugin.doBeforeAction))
+        assertEquals(listOf(DataGuardPlugin.doBeforeAction), ActionEvent.beforeActionEvents)
     }
 
     @Test

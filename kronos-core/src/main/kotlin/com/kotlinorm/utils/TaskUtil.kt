@@ -35,6 +35,7 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KBatchTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.plugins.LastInsertIdPlugin
 import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 
@@ -56,6 +57,9 @@ fun KAtomicActionTask.execute(wrapper: KronosDataSourceWrapper?): KronosOperatio
         dataSource.update(task)
     }
     ActionEvent.afterActionEvents.forEach { e -> e.invoke(task, dataSource) }
+    if (task.stash["queryId"] == true && task.stash["lastInsertId"] == null) {
+        LastInsertIdPlugin.doAfterAction(task, dataSource)
+    }
     stash.putAll(task.stash)
     return logAndReturn(KronosOperationResult(affectRows).apply {
         stash.putAll(task.stash)

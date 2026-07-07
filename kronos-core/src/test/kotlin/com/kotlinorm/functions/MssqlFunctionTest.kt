@@ -1,6 +1,6 @@
 package com.kotlinorm.functions
 
-import com.kotlinorm.beans.sample.database.MysqlUser
+import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.functions.bundled.exts.MathFunctions.ceil
 import com.kotlinorm.functions.bundled.exts.MathFunctions.ln
 import com.kotlinorm.functions.bundled.exts.MathFunctions.mod
@@ -18,12 +18,12 @@ import kotlin.test.assertEquals
  * Tests functions that have different SQL generation for MSSQL (SQL Server)
  */
 class MssqlFunctionTest : MssqlTestBase() {
-    private val user by lazy { MysqlUser(1) }
+    private val user by lazy { TestUser(1) }
 
     // Math functions with MSSQL-specific behavior
     @Test
     fun testCeilInSelect() {
-        val (sql, _) = user.select { f.ceil(it.score) }.build()
+        val (sql, _) = user.select { f.ceil(it.score).alias("ceil") }.build()
         assertEquals("SELECT CEILING([score]) AS ceil FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -35,7 +35,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testLnInSelect() {
-        val (sql, _) = user.select { f.ln(it.score) }.build()
+        val (sql, _) = user.select { f.ln(it.score).alias("ln") }.build()
         assertEquals("SELECT LOG([score], EXP(1)) AS ln FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -47,7 +47,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testRandInSelect() {
-        val (sql, _) = user.select { f.rand() }.build()
+        val (sql, _) = user.select { f.rand().alias("rand") }.build()
         assertEquals("SELECT RAND() AS rand FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -59,19 +59,19 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testModInSelect() {
-        val (sql, _) = user.select { f.mod(it.score, 2) }.build()
+        val (sql, _) = user.select { (it.score % 2).alias("mod") }.build()
         assertEquals("SELECT ([score] % 2) AS mod FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
     @Test
     fun testModInWhere() {
-        val (sql, _) = user.select { it.id }.where { f.mod(it.score, 2) == 0 }.build()
+        val (sql, _) = user.select { it.id }.where { it.score % 2 == 0 }.build()
         assertEquals("SELECT [id] FROM [tb_user] WHERE ([score] % 2) = :mod AND [deleted] = 0", sql)
     }
 
     @Test
     fun testTruncInSelect() {
-        val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
+        val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
         assertEquals("SELECT ROUND([score], 2) AS trunc FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -84,7 +84,7 @@ class MssqlFunctionTest : MssqlTestBase() {
     // String functions with MSSQL-specific behavior
     @Test
     fun testLengthInSelect() {
-        val (sql, _) = user.select { f.length(it.username) }.build()
+        val (sql, _) = user.select { f.length(it.username).alias("length") }.build()
         assertEquals("SELECT LEN([username]) AS length FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 
@@ -96,7 +96,7 @@ class MssqlFunctionTest : MssqlTestBase() {
 
     @Test
     fun testRepeatInSelect() {
-        val (sql, _) = user.select { f.repeat(it.username, 3) }.build()
+        val (sql, _) = user.select { f.repeat(it.username, 3).alias("repeat") }.build()
         assertEquals("SELECT REPLICATE([username], 3) AS repeat FROM [tb_user] WHERE [deleted] = 0", sql)
     }
 

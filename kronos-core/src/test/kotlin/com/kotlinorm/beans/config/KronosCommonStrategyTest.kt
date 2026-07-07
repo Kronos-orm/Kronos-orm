@@ -8,18 +8,30 @@ import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.update.update
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import java.time.LocalDateTime
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class KronosCommonStrategyTest {
-    init {
-        Kronos.init {
+    @BeforeTest
+    fun setUp() {
+        with(Kronos) {
             dataSource = { SampleMysqlJdbcWrapper() }
             tableNamingStrategy = lineHumpNamingStrategy
             fieldNamingStrategy = lineHumpNamingStrategy
             createTimeStrategy.enabled = true
             updateTimeStrategy.enabled = true
             primaryKeyStrategy.enabled = true
+        }
+    }
+
+    @AfterTest
+    fun tearDown() {
+        with(Kronos) {
+            createTimeStrategy.enabled = false
+            updateTimeStrategy.enabled = false
+            primaryKeyStrategy.enabled = false
         }
     }
 
@@ -41,7 +53,7 @@ class KronosCommonStrategyTest {
 
     @Test
     fun testUpdateTimeStrategy() {
-        val (sql, paramMap) = TestPojo(1, "kronos").update { it.name + it.createTime }.by { it.id }.build()
+        val (sql, paramMap) = TestPojo(1, "kronos").update { [it.name, it.createTime] }.by { it.id }.build()
         assertEquals("UPDATE `test_pojo` SET `name` = :nameNew, `update_time` = :updateTimeNew WHERE `id` = :id", sql)
         assertEquals(
             mapOf(

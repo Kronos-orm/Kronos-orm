@@ -23,11 +23,3 @@ import com.kotlinorm.types.ToSelect
 fun <T : KPojo> T.update(fields: ToSelect<T, Any?> = null): UpdateClause<T> {
     return UpdateClause(this, fields)
 }
-
-fun <T : KPojo> Iterable<T>.update(fields: ToSelect<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, fields) }
-}
-
-fun <T : KPojo> Array<T>.update(fields: ToSelect<T, Any?> = null): List<UpdateClause<T>> {
-    return map { UpdateClause(it, fields) }
-}

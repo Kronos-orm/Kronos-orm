@@ -20,7 +20,6 @@ import com.kotlinorm.enums.DBType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class ExceptionsTest {
 
@@ -70,8 +69,7 @@ class ExceptionsTest {
         val dbType = DBType.Mysql
         val message = "Unsupported database type"
         val exception = UnsupportedDatabaseTypeException(dbType, message)
-        assertNotNull(exception.message)
-        assertTrue(exception.message!!.contains(message))
+        assertEquals(message, exception.message)
     }
 
     @Test
@@ -80,14 +78,6 @@ class ExceptionsTest {
         val functionName = "some_function"
         val message = "Function not supported"
         val exception = UnSupportedFunctionException(dbType, functionName, message)
-        assertNotNull(exception.message)
-        // The exception message contains the function name or database type
-        val messageStr = exception.message!!
-        assertTrue(
-            messageStr.contains(functionName) || 
-            messageStr.contains(dbType.name) ||
-            messageStr.contains(message),
-            "Exception message should contain function name, db type, or custom message"
-        )
+        assertEquals(message, exception.message)
     }
 }

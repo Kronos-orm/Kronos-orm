@@ -1,9 +1,9 @@
 package com.kotlinorm.beans.cascade
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.sample.manyToMany.Course
-import com.kotlinorm.beans.sample.manyToMany.Student
-import com.kotlinorm.beans.sample.manyToMany.StudentCourse
+import com.kotlinorm.testfixtures.cascade.manytomany.Course
+import com.kotlinorm.testfixtures.cascade.manytomany.Student
+import com.kotlinorm.testfixtures.cascade.manytomany.StudentCourse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
  */
 class KCascadeTest {
     init {
-        Kronos.init {
+        with(Kronos) {
             fieldNamingStrategy = lineHumpNamingStrategy
             tableNamingStrategy = lineHumpNamingStrategy
         }
@@ -23,18 +23,18 @@ class KCascadeTest {
     @Test
     fun testManyToManyDelegate() {
         val course = Course().apply {
-            students = listOf(
+            students = [
                 Student(name = "Alice"),
                 Student(name = "Bob")
-            )
+            ]
         }
 
         assertEquals(
             Course().apply {
-                studentCourse = listOf(
+                studentCourse = [
                     StudentCourse(student = Student(name = "Alice")),
                     StudentCourse(student = Student(name = "Bob")),
-                )
+                ]
             }, course
         )
 

@@ -25,8 +25,12 @@ import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.orm.cascade.NodeOfKPojo.Companion.toTreeNode
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.sql.toSqlParameterEq
+import com.kotlinorm.orm.statement.ParameterSource
 import com.kotlinorm.orm.update.update
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.KStack
+import com.kotlinorm.utils.LinkedHashSet
 import com.kotlinorm.utils.pop
 import com.kotlinorm.utils.push
 import kotlin.reflect.KClass
@@ -40,11 +44,11 @@ object CascadeUpdateClause {
         kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
-        whereClauseSql: String?,
+        where: SqlExpr?,
         rootTask: KronosAtomicActionTask
     ) =
         if (cascade) generateTask(
-            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, whereClauseSql, rootTask
+            cascadeAllowed, pojo, kClass, paramMap, toUpdateFields, where, rootTask
         ) else rootTask.toKronosActionTask()
 
     private fun <T : KPojo> generateTask(
@@ -53,7 +57,7 @@ object CascadeUpdateClause {
         kClass: KClass<KPojo>,
         paramMap: Map<String, Any?>,
         toUpdateFields: LinkedHashSet<Field>,
-        whereClauseSql: String?,
+        where: SqlExpr?,
         rootTask: KronosAtomicActionTask
     ): KronosActionTask {
         val toUpdateRecords: MutableList<KPojo> = mutableListOf()
@@ -68,18 +72,19 @@ object CascadeUpdateClause {
         return rootTask.toKronosActionTask().apply {
             doBeforeExecute { wrapper ->
                 if (validCascades.isEmpty()) return@doBeforeExecute // 如果没有级联，直接返回
-                // Use SelectClause.toStatement() internally via queryList()
-                // This ensures AST-based SQL generation for cascade query operations
+                val inheritedWhere = where
+                val inheritedParamMap = paramMap
+                val inheritedCascadeAllowed = cascadeAllowed
                 val selectClause = pojo.select().apply {
-                    if (!whereClauseSql.isNullOrBlank()) {
-                        where { whereClauseSql.asSql() }
+                    with(context) {
+                        andWhere(inheritedWhere, inheritedParamMap)
+                        this.cascadeAllowed = inheritedCascadeAllowed
+                        operationType = KOperationType.UPDATE
+                        logicDeleteStrategy = null
                     }
-                    patch(*paramMap.toList().toTypedArray())
-                    this.cascadeAllowed = cascadeAllowed
-                    this.operationType = KOperationType.UPDATE
                 }
                 toUpdateRecords.addAll(
-                    selectClause.queryList(wrapper) // queryList() internally calls toStatement()
+                    selectClause.queryList(wrapper)
                 )
                 if (toUpdateRecords.isEmpty()) return@doBeforeExecute
                 val forest = toUpdateRecords.map { record ->
@@ -125,14 +130,19 @@ object CascadeUpdateClause {
         paramMap: Map<String, Any?>
     ): KronosActionTask? {
         if (null == node.data) return null
-        // Use UpdateClause.toStatement() internally via build()
-        // This ensures AST-based SQL generation for cascade update operations
-        return node.kPojo.update().byNonNullValues().apply {
-            // Build patch pairs from updateParams
-            val patchPairs = node.updateParams.mapNotNull { (_, value) ->
-                val paramValue = paramMap[value + "New"]
-                if (paramValue != null) {
-                    value to paramValue
+        return node.kPojo.update().cascade(false).apply {
+            with(context) {
+                andWhereAll(this.fields.mapNotNull { field ->
+                    sourceValues[field.name]?.let { value ->
+                        bind(field.name, value, field, ParameterSource.Condition)
+                        field.toSqlParameterEq(field.name)
+                    }
+                })
+            }
+            val patchPairs = node.updateParams.mapNotNull { (fieldName, sourceFieldName) ->
+                val parameterName = sourceFieldName + "New"
+                if (paramMap.containsKey(parameterName)) {
+                    fieldName to paramMap[parameterName]
                 } else {
                     null
                 }
@@ -140,7 +150,7 @@ object CascadeUpdateClause {
             if (patchPairs.isNotEmpty()) {
                 patch(*patchPairs)
             }
-        }.build() // build() internally calls toStatement()
+        }.build()
     }
 
 }

@@ -5,8 +5,15 @@ import com.kotlinorm.Kronos.timeZone
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransformer
+import com.kotlinorm.enums.KColumnType
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
+import com.kotlinorm.wrappers.SamplePostgresJdbcWrapper
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import java.math.BigDecimal
+import java.math.BigInteger
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -17,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.reflect.KClass
 import kotlin.time.ExperimentalTime
 
 class CommonUtilTest {
@@ -53,7 +61,7 @@ class CommonUtilTest {
 
     @Test
     fun testToLinkedSet() {
-        val list = listOf(1, 2, 3, 4, 5)
+        val list = [1, 2, 3, 4, 5]
         val linkedSet = list.toLinkedSet()
         assertEquals(linkedSet, linkedSetOf(1, 2, 3, 4, 5))
     }
@@ -82,6 +90,13 @@ class CommonUtilTest {
         // 测试双精度浮点型
         assertEquals(42.0, getTypeSafeValue("kotlin.Double", 42))
         assertEquals(42.0, getTypeSafeValue("kotlin.Double", "42.0"))
+
+        // 测试精确数值类型
+        assertEquals(BigDecimal("42.50"), getTypeSafeValue("java.math.BigDecimal", "42.50"))
+        assertEquals(BigDecimal("42.5"), getTypeSafeValue("java.math.BigDecimal", 42.5))
+        assertEquals(BigDecimal("42"), getTypeSafeValue("java.math.BigDecimal", BigInteger("42")))
+        assertEquals(BigInteger("42"), getTypeSafeValue("java.math.BigInteger", "42"))
+        assertEquals(BigInteger("42"), getTypeSafeValue("java.math.BigInteger", BigDecimal("42.50")))
 
         // 测试字节型
         assertEquals(42.toByte(), getTypeSafeValue("kotlin.Byte", 42))
@@ -179,6 +194,59 @@ class CommonUtilTest {
             getTypeSafeValue("kotlin.Int", "invalid")
         }
         assertEquals(false, getTypeSafeValue("kotlin.Boolean", "invalid"))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun toDatabaseValueUsesTransformerSafeValueForFieldKClass() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val intField = Field("age", "age", kClass = Int::class as KClass<out KPojo>)
+
+        assertEquals(42, toDatabaseValue(wrapper, intField, "42"))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun toDatabaseParameterValueUsesTransformerSafeValueForSuffixedParameter() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val intField = Field("status", "status", kClass = Int::class as KClass<out KPojo>)
+
+        assertEquals(7, toDatabaseParameterValue(wrapper, mapOf("status" to intField), "status@1", "7"))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun toDatabaseValueUsesExplicitTransformerSafeValueBeforeFieldType() {
+        val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
+        val intField = Field("id", "id", kClass = Int::class as KClass<out KPojo>)
+        val pattern = TransformerSafeValue("1%", "kotlin.String")
+
+        assertEquals("1%", toDatabaseValue(wrapper, intField, pattern))
+        assertEquals("1%", toDatabaseParameterValue(wrapper, mapOf("id" to intField), "id", pattern))
+    }
+
+    @Test
+    fun toDatabaseValueUsesDialectDatetimeBinding() {
+        val wrapper = SamplePostgresJdbcWrapper()
+        val field = Field("created_at", "createdAt", type = KColumnType.DATETIME)
+
+        assertEquals(
+            java.sql.Timestamp.valueOf("2023-10-17 10:00:00"),
+            toDatabaseValue(wrapper, field, "2023-10-17T10:00:00")
+        )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun databaseBooleanValueUsesNativeBooleanOnlyForBooleanFields() {
+        val wrapper = SamplePostgresJdbcWrapper()
+        val booleanField = Field("deleted", "deleted", type = KColumnType.BIT)
+        val intField = Field("deleted", "deleted", kClass = Int::class as KClass<out KPojo>)
+
+        assertEquals(false, toDatabaseBooleanValue(wrapper, booleanField, false))
+        assertEquals(0, toDatabaseBooleanValue(wrapper, intField, false))
+        assertEquals(SqlExpr.BooleanLiteral(false), databaseBooleanLiteral(wrapper, booleanField, false))
+        assertEquals(SqlExpr.NumberLiteral("0"), databaseBooleanLiteral(wrapper, intField, false))
     }
 
     @Test

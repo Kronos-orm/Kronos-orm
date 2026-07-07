@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 class SerializableTest {
 
     init {
-        Kronos.init {
+        with(Kronos) {
             serializeProcessor = GsonProcessor
         }
     }

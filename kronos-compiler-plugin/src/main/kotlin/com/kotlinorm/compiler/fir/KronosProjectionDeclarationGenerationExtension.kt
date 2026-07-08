@@ -21,9 +21,7 @@ package com.kotlinorm.compiler.fir
 import com.kotlinorm.compiler.utils.GeneratedProjectionPackageFqName
 import com.kotlinorm.compiler.utils.KPojoClassId
 import org.jetbrains.kotlin.GeneratedDeclarationKey
-import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.KtSourceElement
-import org.jetbrains.kotlin.SuspiciousFakeSourceCheck
 import org.jetbrains.kotlin.descriptors.EffectiveVisibility
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
@@ -71,7 +69,6 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.types.ConstantValueKind
-import java.lang.reflect.Constructor
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -383,51 +380,14 @@ private fun KronosProjectionModel.symbolFor(classId: ClassId): FirRegularClassSy
 
 private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement? =
     if (KronosProjectionIdeBridge.isIdeActive()) {
-        sourceDeclaration.fakeElement()
+        sourceDeclaration
     } else {
         sourceDeclaration
     }
 
 private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement? =
     if (KronosProjectionIdeBridge.isIdeActive()) {
-        (field.source ?: anchor).fakeElement()
+        sourceDeclaration
     } else {
         field.source ?: anchor
     }
-
-@OptIn(SuspiciousFakeSourceCheck::class)
-private fun KtSourceElement.fakeElement(): KtSourceElement =
-    KronosSourceElementCompat.fakePsiSourceElement(this) ?: this
-
-@OptIn(SuspiciousFakeSourceCheck::class)
-private object KronosSourceElementCompat {
-    private val fakeSourceElementKind = KtFakeSourceElementKind.PropertyFromParameter
-
-    private val fakePsiSourceElementConstructor: Constructor<*>? by lazy {
-        classOrNull("org.jetbrains.kotlin.KtFakePsiSourceElement")
-            ?.constructors
-            ?.firstOrNull { constructor ->
-                constructor.parameterTypes.size == 2 &&
-                    constructor.parameterTypes[1].isInstance(fakeSourceElementKind)
-            }
-            ?.also { it.isAccessible = true }
-    }
-
-    fun fakePsiSourceElement(source: KtSourceElement): KtSourceElement? {
-        val psi = source.psiReflectively() ?: return null
-        val constructor = fakePsiSourceElementConstructor ?: return null
-        return runCatching {
-            constructor.newInstance(psi, fakeSourceElementKind) as? KtSourceElement
-        }.getOrNull()
-    }
-
-    private fun KtSourceElement.psiReflectively(): Any? =
-        runCatching {
-            javaClass.methods
-                .firstOrNull { method -> method.name == "getPsi" && method.parameterCount == 0 }
-                ?.invoke(this)
-        }.getOrNull()
-
-    private fun classOrNull(name: String): Class<*>? =
-        runCatching { Class.forName(name) }.getOrNull()
-}

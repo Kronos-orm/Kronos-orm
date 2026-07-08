@@ -16,23 +16,13 @@
 
 package com.kotlinorm.compiler.fir
 
-import com.intellij.lang.LighterASTNode
-import com.intellij.psi.PsiElement
-import com.intellij.util.diff.FlyweightCapableTreeStructure
-import java.lang.reflect.Proxy
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Base64
-import org.jetbrains.kotlin.KtLightSourceElement
-import org.jetbrains.kotlin.KtRealPsiSourceElement
-import org.jetbrains.kotlin.KtRealSourceElementKind
-import org.jetbrains.kotlin.KtSourceElement
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class KronosProjectionIdeBridgeTest {
@@ -141,35 +131,40 @@ class KronosProjectionIdeBridgeTest {
     }
 
     @Test
-    fun `generated projection declarations only use stable Kotlin fake source for ide member psi`() {
+    fun `generated projection declarations reuse source declaration in ide mode`() {
         val source = Files.readString(
             Paths.get("src/main/kotlin/com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtension.kt")
         )
 
-        assertTrue(source.contains("KtFakeSourceElementKind.PropertyFromParameter"))
-        assertTrue(source.contains("fakeElement"))
-        assertTrue(source.contains("Class.forName(name)"))
-        assertTrue(source.contains("classOrNull(\"org.jetbrains.kotlin.KtFakePsiSourceElement\")"))
+        assertTrue(source.contains("private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement?"))
+        assertTrue(source.contains("private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement?"))
+        assertTrue(source.contains("if (KronosProjectionIdeBridge.isIdeActive()) {\n        sourceDeclaration"))
+        assertFalse(source.contains("fakeElement"))
+        assertFalse(source.contains("KtFakeSourceElementKind"))
+        assertFalse(source.contains("Class.forName"))
+        assertFalse(source.contains("KronosSourceElementCompat"))
         assertFalse(source.contains("import org.jetbrains.kotlin.KtFakePsiSourceElement"))
         assertFalse(source.contains("import org.jetbrains.kotlin.KtPsiSourceElement"))
         assertFalse(source.contains("PluginGenerated"))
         assertFalse(source.contains("DataClassGeneratedMembers"))
         assertFalse(source.contains("SyntheticCall"))
-        assertTrue(source.contains("sourceDeclaration"))
         assertTrue(source.contains("projectionOriginForIde"))
     }
 
     @Test
-    fun `generated projection fake source avoids direct psi abi descriptors`() {
+    fun `generated projection declarations avoid fake psi source abi descriptors`() {
         val classLoader = KronosProjectionGeneratedDeclarationKey::class.java.classLoader
-        val constantPoolText = listOf(
-            "com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtensionKt.class",
-            "com/kotlinorm/compiler/fir/KronosSourceElementCompat.class",
-        ).joinToString("\n") { resource ->
-            val bytecode = checkNotNull(classLoader.getResourceAsStream(resource)).use { it.readBytes() }
-            String(bytecode, Charsets.ISO_8859_1)
-        }
+        val bytecode = checkNotNull(
+            classLoader.getResourceAsStream(
+                "com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtensionKt.class"
+            )
+        ).use { it.readBytes() }
+        val constantPoolText = String(bytecode, Charsets.ISO_8859_1)
 
+        assertFalse(
+            classLoader.getResource("com/kotlinorm/compiler/fir/KronosSourceElementCompat.class") != null,
+            "fake source compatibility helper should not be packaged"
+        )
         assertFalse(constantPoolText.contains("org/jetbrains/kotlin/KtPsiSourceElement"))
         assertFalse(constantPoolText.contains("org/jetbrains/kotlin/KtFakePsiSourceElement"))
         assertFalse(constantPoolText.contains("org/jetbrains/kotlin/com/intellij/psi/PsiElement"))
@@ -177,33 +172,15 @@ class KronosProjectionIdeBridgeTest {
     }
 
     @Test
-    fun `generated projection fake source compat handles reflective psi shapes`() {
-        val compatClass = Class.forName("com.kotlinorm.compiler.fir.KronosSourceElementCompat")
-        val compat = compatClass.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
-        val fakePsiSourceElement = compatClass
-            .getDeclaredMethod("fakePsiSourceElement", KtSourceElement::class.java)
-            .apply { isAccessible = true }
-        val psiReflectively = compatClass
-            .getDeclaredMethod("psiReflectively", KtSourceElement::class.java)
-            .apply { isAccessible = true }
-        val classOrNull = compatClass
-            .getDeclaredMethod("classOrNull", String::class.java)
-            .apply { isAccessible = true }
-        val psiSourceElement = KtRealPsiSourceElement(fakePsiElement())
-
-        assertNull(fakePsiSourceElement.invoke(compat, fakeLightSourceElement()))
-        assertNull(psiReflectively.invoke(compat, fakeLightSourceElement()))
-        assertTrue(PsiElement::class.java.isInstance(psiReflectively.invoke(compat, psiSourceElement)))
-        assertEquals(
-            "org.jetbrains.kotlin.KtFakePsiSourceElement",
-            (classOrNull.invoke(compat, "org.jetbrains.kotlin.KtFakePsiSourceElement") as Class<*>).name
+    fun `generated projection source does not reflect into kotlin psi internals`() {
+        val source = Files.readString(
+            Paths.get("src/main/kotlin/com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtension.kt")
         )
-        assertNull(classOrNull.invoke(compat, "org.jetbrains.kotlin.DoesNotExist"))
 
-        val wrapped = fakePsiSourceElement.invoke(compat, psiSourceElement)
-
-        assertNotNull(wrapped)
-        assertEquals("org.jetbrains.kotlin.KtFakePsiSourceElement", wrapped::class.qualifiedName)
+        assertFalse(source.contains("getPsi"))
+        assertFalse(source.contains("isAccessible = true"))
+        assertFalse(source.contains("javaClass.methods"))
+        assertFalse(source.contains("constructor.newInstance"))
     }
 
     private fun withCleanIdeBridgeProperties(block: () -> Unit) {
@@ -251,38 +228,3 @@ private fun encodedField(name: String, type: String): String =
 private fun String.encodeUrlBase64(): String =
     Base64.getUrlEncoder().withoutPadding().encodeToString(toByteArray(StandardCharsets.UTF_8))
 
-private fun fakeLightSourceElement(): KtLightSourceElement =
-    KtLightSourceElement(
-        fakeLighterAstNode(),
-        0,
-        0,
-        fakeTreeStructure(),
-        KtRealSourceElementKind
-    )
-
-private fun fakePsiElement(): PsiElement =
-    Proxy.newProxyInstance(
-        PsiElement::class.java.classLoader,
-        arrayOf(PsiElement::class.java)
-    ) { proxy, method, args ->
-        when (method.name) {
-            "toString" -> "fakePsiElement"
-            "hashCode" -> 1
-            "equals" -> proxy === args?.singleOrNull()
-            else -> null
-        }
-    } as PsiElement
-
-private fun fakeLighterAstNode(): LighterASTNode =
-    Proxy.newProxyInstance(
-        LighterASTNode::class.java.classLoader,
-        arrayOf(LighterASTNode::class.java)
-    ) { _, _, _ -> null } as LighterASTNode
-
-private fun fakeTreeStructure(): FlyweightCapableTreeStructure<LighterASTNode> {
-    @Suppress("UNCHECKED_CAST")
-    return Proxy.newProxyInstance(
-        FlyweightCapableTreeStructure::class.java.classLoader,
-        arrayOf(FlyweightCapableTreeStructure::class.java)
-    ) { _, _, _ -> null } as FlyweightCapableTreeStructure<LighterASTNode>
-}

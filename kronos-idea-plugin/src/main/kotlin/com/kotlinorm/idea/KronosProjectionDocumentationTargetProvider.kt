@@ -60,17 +60,20 @@ import org.jetbrains.kotlin.psi.KtSafeQualifiedExpression
  * published shape in quick documentation so the generated Context/Result is inspectable.
  */
 class KronosProjectionDocumentationTargetProvider : DocumentationTargetProvider, PsiDocumentationTargetProvider {
-    override fun documentationTargets(file: PsiFile, offset: Int): List<DocumentationTarget> {
-        return documentationTargets(file.findElementAt(offset), offset)
-    }
+    override fun documentationTargets(file: PsiFile, offset: Int): List<DocumentationTarget> =
+        KronosIdeaSafe.guard("projection documentation targets by file", emptyList()) {
+            documentationTargets(file.findElementAt(offset), offset)
+        }
 
-    override fun documentationTargets(element: PsiElement, originalElement: PsiElement?): List<DocumentationTarget> {
-        return documentationTargets(originalElement ?: element, originalElement?.textOffset ?: element.textOffset)
-    }
+    override fun documentationTargets(element: PsiElement, originalElement: PsiElement?): List<DocumentationTarget> =
+        KronosIdeaSafe.guard("projection documentation targets by element", emptyList()) {
+            documentationTargets(originalElement ?: element, originalElement?.textOffset ?: element.textOffset)
+        }
 
-    override fun documentationTarget(element: PsiElement, originalElement: PsiElement?): DocumentationTarget? {
-        return documentationTargets(element, originalElement).firstOrNull()
-    }
+    override fun documentationTarget(element: PsiElement, originalElement: PsiElement?): DocumentationTarget? =
+        KronosIdeaSafe.guard("projection documentation target", null) {
+            documentationTargets(element, originalElement).firstOrNull()
+        }
 
     private fun documentationTargets(element: PsiElement?, offset: Int): List<DocumentationTarget> {
         val property = element
@@ -188,20 +191,28 @@ private class KronosProjectionDocumentationTarget(
     private val pointer = SmartPointerManager.createPointer(element)
 
     override fun createPointer(): Pointer<out DocumentationTarget> =
-        Pointer.delegatingPointer(pointer) { element ->
-            KronosProjectionDocumentationTarget(element, subjectName, subjectType, className, fields)
+        KronosIdeaSafe.guard("projection documentation pointer", Pointer.hardPointer(this)) {
+            Pointer.delegatingPointer(pointer) { element ->
+                KronosProjectionDocumentationTarget(element, subjectName, subjectType, className, fields)
+            }
         }
 
     override fun computePresentation(): TargetPresentation =
-        TargetPresentation.builder("$subjectName: $subjectType")
-            .containerText(GeneratedProjectionPackageFqName.asString())
-            .presentation()
+        KronosIdeaSafe.guard("projection documentation presentation", TargetPresentation.builder(subjectName).presentation()) {
+            TargetPresentation.builder("$subjectName: $subjectType")
+                .containerText(GeneratedProjectionPackageFqName.asString())
+                .presentation()
+        }
 
     override fun computeDocumentationHint(): String =
-        "$subjectName: $subjectType"
+        KronosIdeaSafe.guard("projection documentation hint", subjectName) {
+            "$subjectName: $subjectType"
+        }
 
     override fun computeDocumentation(): DocumentationResult =
-        DocumentationResult.documentation(buildDocumentationHtml())
+        KronosIdeaSafe.guard("projection documentation html", DocumentationResult.documentation(subjectName.escapeHtml())) {
+            DocumentationResult.documentation(buildDocumentationHtml())
+        }
 
     private fun buildDocumentationHtml(): String = buildString {
         append("<div class='definition'><pre>")
@@ -221,17 +232,18 @@ private class KronosProjectionDocumentationTarget(
 }
 
 class KronosProjectionDocumentationLinkHandler : DocumentationLinkHandler {
-    override fun resolveLink(target: DocumentationTarget, url: String): LinkResolveResult? {
-        val fqName = url.removePrefix(ProjectionDocScheme).takeIf { it != url } ?: return null
-        val className = fqName.substringAfterLast('.')
-        val model = KronosProjectionIdeBridge.read()
-            .firstOrNull { it.name == className || it.contextName == className }
-            ?: return null
-        val fields = if (model.contextName == className) model.contextFields else model.fields
-        return LinkResolveResult.resolvedTarget(
-            KronosProjectionClassDocumentationTarget(className, fields)
-        )
-    }
+    override fun resolveLink(target: DocumentationTarget, url: String): LinkResolveResult? =
+        KronosIdeaSafe.guard("projection documentation link", null) {
+            val fqName = url.removePrefix(ProjectionDocScheme).takeIf { it != url } ?: return@guard null
+            val className = fqName.substringAfterLast('.')
+            val model = KronosProjectionIdeBridge.read()
+                .firstOrNull { it.name == className || it.contextName == className }
+                ?: return@guard null
+            val fields = if (model.contextName == className) model.contextFields else model.fields
+            LinkResolveResult.resolvedTarget(
+                KronosProjectionClassDocumentationTarget(className, fields)
+            )
+        }
 }
 
 private class KronosProjectionClassDocumentationTarget(
@@ -242,17 +254,23 @@ private class KronosProjectionClassDocumentationTarget(
         Pointer.hardPointer(this)
 
     override fun computePresentation(): TargetPresentation =
-        TargetPresentation.builder(className)
-            .containerText(GeneratedProjectionPackageFqName.asString())
-            .presentation()
+        KronosIdeaSafe.guard("projection class documentation presentation", TargetPresentation.builder(className).presentation()) {
+            TargetPresentation.builder(className)
+                .containerText(GeneratedProjectionPackageFqName.asString())
+                .presentation()
+        }
 
     override fun computeDocumentationHint(): String =
-        "${GeneratedProjectionPackageFqName.asString()}.$className"
+        KronosIdeaSafe.guard("projection class documentation hint", className) {
+            "${GeneratedProjectionPackageFqName.asString()}.$className"
+        }
 
     override fun computeDocumentation(): DocumentationResult =
-        DocumentationResult.documentation(
-            "<div class='definition'><pre>${renderProjectionClass(className, fields).toHighlightedKotlinHtml()}</pre></div>"
-        )
+        KronosIdeaSafe.guard("projection class documentation html", DocumentationResult.documentation(className.escapeHtml())) {
+            DocumentationResult.documentation(
+                "<div class='definition'><pre>${renderProjectionClass(className, fields).toHighlightedKotlinHtml()}</pre></div>"
+            )
+        }
 }
 
 private class KronosProjectionFieldDocumentationTarget(
@@ -263,32 +281,40 @@ private class KronosProjectionFieldDocumentationTarget(
     private val pointer = SmartPointerManager.createPointer(element)
 
     override fun createPointer(): Pointer<out DocumentationTarget> =
-        Pointer.delegatingPointer(pointer) { element ->
-            KronosProjectionFieldDocumentationTarget(element, className, field)
+        KronosIdeaSafe.guard("projection field documentation pointer", Pointer.hardPointer(this)) {
+            Pointer.delegatingPointer(pointer) { element ->
+                KronosProjectionFieldDocumentationTarget(element, className, field)
+            }
         }
 
     override fun computePresentation(): TargetPresentation =
-        TargetPresentation.builder("${field.name}: ${field.type.asRenderableType()}")
-            .containerText(className)
-            .presentation()
+        KronosIdeaSafe.guard("projection field documentation presentation", TargetPresentation.builder(field.name).presentation()) {
+            TargetPresentation.builder("${field.name}: ${field.type.asRenderableType()}")
+                .containerText(className)
+                .presentation()
+        }
 
     override fun computeDocumentationHint(): String =
-        "${field.name}: ${field.type.asRenderableType()}"
+        KronosIdeaSafe.guard("projection field documentation hint", field.name) {
+            "${field.name}: ${field.type.asRenderableType()}"
+        }
 
     override fun computeDocumentation(): DocumentationResult =
-        DocumentationResult.documentation(
-            buildString {
-                append("<div class='definition'><pre>")
-                append("var ")
-                append(field.name.asKotlinIdentifier().escapeHtml())
-                append(": ")
-                append(field.type.asRenderableType().escapeHtml())
-                append("</pre></div>")
-                append("<div class='content'>Declared in ")
-                append(projectionTypeLink(className))
-                append("</div>")
-            }
-        )
+        KronosIdeaSafe.guard("projection field documentation html", DocumentationResult.documentation(field.name.escapeHtml())) {
+            DocumentationResult.documentation(
+                buildString {
+                    append("<div class='definition'><pre>")
+                    append("var ")
+                    append(field.name.asKotlinIdentifier().escapeHtml())
+                    append(": ")
+                    append(field.type.asRenderableType().escapeHtml())
+                    append("</pre></div>")
+                    append("<div class='content'>Declared in ")
+                    append(projectionTypeLink(className))
+                    append("</div>")
+                }
+            )
+        }
 
     private fun projectionTypeLink(name: String): String {
         val fqName = "${GeneratedProjectionPackageFqName.asString()}.$name"

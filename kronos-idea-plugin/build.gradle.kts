@@ -104,21 +104,31 @@ intellijPlatform {
         version.set(kronosIdeaPluginVersion)
         description.set(
             """
-            <p>
-              Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ IDEA.
-              It is useful when your project already builds with the Gradle or Maven compiler plugin,
-              but you also want the editor to understand generated KPojo members, projection result types,
-              subquery shapes, and database-first code generation.
-            </p>
+            <p><b>Kronos IDEA plugin</b> brings Kronos compiler-plugin information into IntelliJ IDEA.</p>
+            <p>Use it with the Gradle or Maven compiler plugin to get editor support for:</p>
             <ul>
-              <li><b>Project model:</b> loads the bundled Kronos FIR compiler plugin during IDEA analysis.</li>
-              <li><b>Projection docs:</b> shows generated KronosSelectResult_* and KronosSelectContext_* shapes in quick documentation.</li>
-              <li><b>Editor diagnostics:</b> surfaces projection, scalar subquery, predicate subquery, and INSERT SELECT shape errors in the editor.</li>
-              <li><b>Code Generator:</b> reads IDEA Database data sources and previews or writes KPojo files.</li>
-              <li><b>Templates:</b> lets you copy the built-in KPojo template into .kronos/templates and customize generated code.</li>
+              <li>generated KPojo members;</li>
+              <li>projection result types;</li>
+              <li>subquery shapes;</li>
+              <li>database-first code generation.</li>
             </ul>
-            <p><img src="META-INF/pluginDescription/kronos-idea-code-generator.png" alt="Kronos IDEA code generator" width="820"></p>
-            <p><img src="META-INF/pluginDescription/kronos-idea-projection-docs.png" alt="Kronos IDEA projection documentation" width="820"></p>
+            <p><b>Project model</b><br>Loads the bundled Kronos FIR compiler plugin during IDEA analysis.</p>
+            <p><b>Projection docs</b><br>Shows generated projection result and context shapes in quick documentation.</p>
+            <p><b>Editor diagnostics</b><br>Reports projection, scalar subquery, predicate subquery, and INSERT SELECT shape errors in the editor.</p>
+            <p><b>Code Generator</b><br>Reads IDEA Database data sources and previews or writes KPojo files.</p>
+            <p><b>Templates</b><br>Copies the built-in KPojo template into .kronos/templates for project customization.</p>
+            <p><b>Projection completion</b><br>
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-completion.png" width="320" alt="Kronos IDEA projection completion">
+            </p>
+            <p><b>Projection context docs</b><br>
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-context-docs.png" width="320" alt="Kronos IDEA projection context documentation">
+            </p>
+            <p><b>Projection documentation</b><br>
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-docs.png" width="320" alt="Kronos IDEA projection documentation">
+            </p>
+            <p><b>Code generator</b><br>
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-code-generator.png" width="320" alt="Kronos IDEA code generator">
+            </p>
             """.trimIndent()
         )
         vendor {

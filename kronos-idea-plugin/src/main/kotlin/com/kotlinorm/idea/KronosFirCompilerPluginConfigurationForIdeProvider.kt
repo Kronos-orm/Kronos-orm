@@ -25,10 +25,14 @@ import org.jetbrains.kotlin.idea.fir.extensions.KotlinFirCompilerPluginConfigura
 @OptIn(ExperimentalCompilerApi::class)
 class KronosFirCompilerPluginConfigurationForIdeProvider : KotlinFirCompilerPluginConfigurationForIdeProvider {
     override fun isConfigurationProviderForCompilerPlugin(registrar: CompilerPluginRegistrar): Boolean =
-        registrar is KronosCompilerPluginRegistrar || registrar.pluginId == KronosCompilerPluginId
+        KronosIdeaSafe.guard("compiler plugin configuration matching", false) {
+            registrar is KronosCompilerPluginRegistrar || registrar.pluginId == KronosCompilerPluginId
+        }
 
     override fun provideCompilerConfigurationWithCustomOptions(original: CompilerConfiguration): CompilerConfiguration =
-        original
+        KronosIdeaSafe.guard("compiler plugin IDE configuration", original) {
+            original
+        }
 }
 
 internal const val KronosCompilerPluginId = "kronos-compiler-plugin"

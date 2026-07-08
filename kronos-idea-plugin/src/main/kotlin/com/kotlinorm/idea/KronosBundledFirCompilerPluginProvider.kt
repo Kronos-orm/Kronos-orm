@@ -22,14 +22,16 @@ import org.jetbrains.kotlin.idea.fir.extensions.KotlinBundledFirCompilerPluginPr
 import java.nio.file.Path
 
 class KronosBundledFirCompilerPluginProvider : KotlinBundledFirCompilerPluginProvider {
-    override fun provideBundledPluginJar(project: Project, userSuppliedPluginJar: Path): Path? {
-        KronosProjectionIdeBridge.markIdeActive()
-        return KronosIdePluginPaths.compilerPluginJar()
-    }
+    override fun provideBundledPluginJar(project: Project, userSuppliedPluginJar: Path): Path? =
+        KronosIdeaSafe.guard("bundled FIR compiler plugin lookup", null) {
+            KronosProjectionIdeBridge.markIdeActive()
+            KronosIdePluginPaths.compilerPluginJar()
+        }
 
     @Deprecated("Deprecated in Kotlin IDE API; keep for older IDE builds.")
-    override fun provideBundledPluginJar(userSuppliedPluginJar: Path): Path? {
-        KronosProjectionIdeBridge.markIdeActive()
-        return KronosIdePluginPaths.compilerPluginJar()
-    }
+    override fun provideBundledPluginJar(userSuppliedPluginJar: Path): Path? =
+        KronosIdeaSafe.guard("bundled FIR compiler plugin lookup", null) {
+            KronosProjectionIdeBridge.markIdeActive()
+            KronosIdePluginPaths.compilerPluginJar()
+        }
 }

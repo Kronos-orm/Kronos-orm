@@ -43,21 +43,26 @@ import org.jetbrains.kotlin.psi.KtElement
  */
 @OptIn(KaExperimentalApi::class, KaSpiExtensionPoint::class)
 class KronosProjectionDeclarationViewResolveExtensionProvider : KaResolveExtensionProvider() {
-    override fun provideExtensionsFor(module: KaModule): List<KaResolveExtension> {
-        return listOf(KronosProjectionDeclarationViewResolveExtension())
-    }
+    override fun provideExtensionsFor(module: KaModule): List<KaResolveExtension> =
+        KronosIdeaSafe.guard("projection resolve extension registration", emptyList()) {
+            listOf(KronosProjectionDeclarationViewResolveExtension())
+        }
 }
 
 @OptIn(KaExperimentalApi::class, KaSpiExtensionPoint::class)
 private class KronosProjectionDeclarationViewResolveExtension : KaResolveExtension() {
     override fun getKtFiles(): List<KaResolveExtensionFile> =
-        KronosProjectionIdeBridge.read()
-            .takeIf { it.isNotEmpty() }
-            ?.let { listOf(KronosProjectionDeclarationViewFile(it)) }
-            .orEmpty()
+        KronosIdeaSafe.guard("projection resolve extension files", emptyList()) {
+            KronosProjectionIdeBridge.read()
+                .takeIf { it.isNotEmpty() }
+                ?.let { listOf(KronosProjectionDeclarationViewFile(it)) }
+                .orEmpty()
+        }
 
     override fun getContainedPackages(): Set<FqName> =
-        setOf(GeneratedProjectionPackageFqName)
+        KronosIdeaSafe.guard("projection resolve extension packages", emptySet()) {
+            setOf(GeneratedProjectionPackageFqName)
+        }
 }
 
 @OptIn(KaExperimentalApi::class, KaSpiExtensionPoint::class)
@@ -68,37 +73,47 @@ private class KronosProjectionDeclarationViewFile(
     override fun getFilePackageName(): FqName = GeneratedProjectionPackageFqName
     override fun getTopLevelCallableNames(): Set<Name> = emptySet()
     override fun getTopLevelClassifierNames(): Set<Name> =
-        models.flatMap { listOf(it.name, it.contextName) }
-            .mapTo(linkedSetOf(), Name::identifier)
-
-    override fun buildFileText(): String = buildString {
-        appendLine("package ${GeneratedProjectionPackageFqName.asString()}")
-        appendLine()
-        models.forEach { model ->
-            appendProjectionClass(model.name, model.fields)
-            appendLine()
-            appendProjectionClass(model.contextName, model.contextFields)
-            appendLine()
+        KronosIdeaSafe.guard("projection classifier names", emptySet()) {
+            models.flatMap { listOf(it.name, it.contextName) }
+                .mapTo(linkedSetOf(), Name::identifier)
         }
-    }
+
+    override fun buildFileText(): String =
+        KronosIdeaSafe.guard("projection declaration file text", "package ${GeneratedProjectionPackageFqName.asString()}\n") {
+            buildString {
+                appendLine("package ${GeneratedProjectionPackageFqName.asString()}")
+                appendLine()
+                models.forEach { model ->
+                    appendProjectionClass(model.name, model.fields)
+                    appendLine()
+                    appendProjectionClass(model.contextName, model.contextFields)
+                    appendLine()
+                }
+            }
+        }
 
     override fun createNavigationTargetsProvider(): KaResolveExtensionNavigationTargetsProvider =
         object : KaResolveExtensionNavigationTargetsProvider() {
             override fun KaSession.getNavigationTargets(element: KtElement): Collection<PsiElement> =
-                listOf(element)
+                KronosIdeaSafe.guard("projection navigation targets", emptyList()) {
+                    listOf(element)
+                }
         }
 
     private fun StringBuilder.appendProjectionClass(name: String, fields: List<KronosIdeProjectionField>) {
-        append("data class ")
-        append(name)
-        appendLine("(")
-        fields.forEach { field ->
-            append("    var ")
-            append(field.name.asKotlinIdentifier())
-            append(": ")
-            append(field.type.asRenderableType())
-            appendLine(" = null,")
+        KronosIdeaSafe.guard("projection declaration rendering", Unit) {
+            append("data class ")
+            append(name)
+            appendLine("(")
+            fields.forEach { field ->
+                append("    var ")
+                append(field.name.asKotlinIdentifier())
+                append(": ")
+                append(field.type.asRenderableType())
+                appendLine(" = null,")
+            }
+            appendLine(") : com.kotlinorm.interfaces.KPojo")
+            appendLine()
         }
-        appendLine(") : com.kotlinorm.interfaces.KPojo")
     }
 }

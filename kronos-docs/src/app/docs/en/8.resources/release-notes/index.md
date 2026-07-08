@@ -7,6 +7,15 @@
 
 ## Update Logs
 
+### 0.1.1
+
+- ✨ Add projection and subquery DSL coverage for generated result-row classes, scalar subqueries, predicate subqueries, INSERT SELECT, and window-function aliases ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- ✨ Add user-facing IDEA plugin documentation for generated KPojo shapes, projection receivers, editor diagnostics, and plugin installation from GitHub Release artifacts ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 💪 Reorganize user documentation around getting started, mapping, query, mutation, database, configuration, advanced topics, and resources; refresh examples for table mapping, functions, projection, dialect behavior, and codegen workflows ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 💪 Improve release automation so formal releases publish Maven artifacts, build JVM jars and the IDEA plugin zip, attach them to a GitHub Release, and generate release notes automatically ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 🐛 Fix compiler-plugin type-parameter handling for `SelectFrom10` through `SelectFrom16` query functions and add official compiler tests for query return types and projection behavior ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 🔧 Use the official Gradle distribution URL for all wrappers to avoid CI failures caused by mirror download timeouts ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+
 ### 0.1.0
 
 - ✨ Release `0.1.0` with core module, build configuration, and README version reference updates ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204), [#207](https://github.com/Kronos-orm/Kronos-orm/pull/207), [#208](https://github.com/Kronos-orm/Kronos-orm/pull/208))

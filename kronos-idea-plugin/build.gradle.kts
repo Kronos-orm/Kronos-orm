@@ -100,17 +100,29 @@ intellijPlatform {
 
     pluginConfiguration {
         id.set("com.kotlinorm.kronos-idea-plugin")
-        name.set("Kronos-Orm")
+        name.set("Kronos-ORM")
         version.set(kronosIdeaPluginVersion)
         description.set(
             """
-            Kronos ORM IDEA plugin.
-            <br>
-            <em>Add support for code generation and K2 analysis.</em>
+            <p>
+              Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ IDEA.
+              It is useful when your project already builds with the Gradle or Maven compiler plugin,
+              but you also want the editor to understand generated KPojo members, projection result types,
+              subquery shapes, and database-first code generation.
+            </p>
+            <ul>
+              <li><b>Project model:</b> loads the bundled Kronos FIR compiler plugin during IDEA analysis.</li>
+              <li><b>Projection docs:</b> shows generated KronosSelectResult_* and KronosSelectContext_* shapes in quick documentation.</li>
+              <li><b>Editor diagnostics:</b> surfaces projection, scalar subquery, predicate subquery, and INSERT SELECT shape errors in the editor.</li>
+              <li><b>Code Generator:</b> reads IDEA Database data sources and previews or writes KPojo files.</li>
+              <li><b>Templates:</b> lets you copy the built-in KPojo template into .kronos/templates and customize generated code.</li>
+            </ul>
+            <p><img src="META-INF/pluginDescription/kronos-idea-code-generator.png" alt="Kronos IDEA code generator" width="820"></p>
+            <p><img src="META-INF/pluginDescription/kronos-idea-projection-docs.png" alt="Kronos IDEA projection documentation" width="820"></p>
             """.trimIndent()
         )
         vendor {
-            name.set("Kronos ORM")
+            name.set("Kronos-ORM")
             url.set("https://www.kotlinorm.com")
         }
     }

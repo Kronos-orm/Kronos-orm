@@ -7,6 +7,15 @@
 
 ## 📝 更新日志
 
+### 0.1.1
+
+- ✨ 补全投影和子查询 DSL 能力，包括生成结果行类、标量子查询、谓词子查询、INSERT SELECT 和窗口函数 alias 的使用说明 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- ✨ 新增 IDEA 插件用户文档，说明生成的 KPojo 形态、投影 receiver、编辑器诊断，以及从 GitHub Release 附件安装插件 zip ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 💪 重新整理用户文档结构，覆盖起步、映射、查询、修改、数据库、配置、高级主题和资源页；刷新表映射、内置函数、投影、方言行为和 codegen 工作流示例 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 💪 改进正式发版自动化：发布 Maven 构件，构建 JVM jar 和 IDEA 插件 zip，附加到 GitHub Release，并自动生成 release notes ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 🐛 修复编译器插件对 `SelectFrom10` 到 `SelectFrom16` 查询函数的类型参数处理，并补充 query return type 和投影行为的官方编译器测试 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+- 🔧 所有 Gradle wrapper 改用官方分发地址，避免镜像下载超时导致 CI 失败 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))
+
 ### 0.1.0
 
 - ✨ 发布 `0.1.0`，完成核心模块、构建配置和 README 版本引用更新 ([#204](https://github.com/Kronos-orm/Kronos-orm/pull/204), [#207](https://github.com/Kronos-orm/Kronos-orm/pull/207), [#208](https://github.com/Kronos-orm/Kronos-orm/pull/208))

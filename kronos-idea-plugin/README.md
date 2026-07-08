@@ -46,18 +46,16 @@ The packaged plugin is written to:
 kronos-idea-plugin/build/distributions/kronos-idea-plugin.zip
 ```
 
-## Canary releases
+## Release artifacts
 
-After a pull request is merged into `main`, the `Canary GitHub Release` workflow
-builds the IDEA plugin and the JVM jar artifacts, then publishes them to a
-GitHub prerelease.
+Formal release builds attach the IDEA plugin zip and JVM jar artifacts to the
+GitHub Release.
 
-The canary IDEA plugin version uses:
+The release IDEA plugin version uses the Kronos release version:
 
 ```text
-<base-project-version>-canary.<github-run-number>.<short-commit-sha>
+<release-version>
 ```
 
-The release notes record the project version, IDEA plugin version, Kotlin
-version, IntelliJ IDEA target version, IntelliJ Platform Gradle Plugin version,
-source pull request, commit SHA, branch names, workflow run URL, and checksums.
+The GitHub Release notes are generated from merged changes. The attached
+artifacts include the IDEA plugin zip, JVM jars, and checksum files.

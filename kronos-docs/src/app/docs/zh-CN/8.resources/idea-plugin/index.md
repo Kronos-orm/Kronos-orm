@@ -1,9 +1,23 @@
 {% import "../../../macros/macros-zh-CN.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+Kronos IDEA 插件会把 Kronos 编译器插件的信息接入 IntelliJ IDEA。项目已经能通过 Gradle 或 Maven 编译后，安装它可以让编辑器理解生成的 `KPojo` 成员、投影结果类型、子查询形态，以及 Database First 代码生成。
+
+| 能力 | 插件提供什么 |
+|------|--------------|
+| 项目模型 | 在 IDEA 分析阶段加载随插件打包的 Kronos FIR 编译器插件 |
+| 投影文档 | 在 quick documentation 中展示生成的 `KronosSelectResult_*` 和 `KronosSelectContext_*` 形态 |
+| 编辑器诊断 | 在编辑器里提示投影、标量子查询、谓词子查询和 INSERT SELECT 的形态错误 |
+| Code Generator | 读取 IDEA Database 数据源，预览或写入 `KPojo` 文件 |
+| Templates | 将内置 KPojo 模板复制到 `.kronos/templates`，并按项目定制生成代码 |
+
+![Kronos IDEA 插件代码生成器](/assets/images/idea-plugin/kronos-idea-code-generator.png)
+
+![Kronos IDEA 插件投影文档](/assets/images/idea-plugin/kronos-idea-projection-docs.png)
+
 ## 安装 {{ $.title("Kronos-Orm") }}
 
-IDEA 插件会打包为 `kronos-idea-plugin.zip`。可以安装下载到本地的 canary release，也可以安装本地构建出的 zip。
+IDEA 插件会打包为 `kronos-idea-plugin.zip`。可以安装从 GitHub Release 附件下载到本地的 zip，也可以安装本地构建出的 zip。
 
 ```text group="Install 1" name="IDEA"
 Settings / Preferences -> Plugins -> Install Plugin from Disk...
@@ -11,10 +25,10 @@ Settings / Preferences -> Plugins -> Install Plugin from Disk...
 重启 IntelliJ IDEA
 ```
 
-canary 构建会在代码进入 `main` 后发布为 GitHub prerelease。附件中的 release notes 会记录 Kronos 版本、IDEA 插件版本、Kotlin 版本、IntelliJ IDEA 目标版本、来源 commit 和 checksum。
+正式版本会把 IDEA 插件 zip、JVM jar 和 checksum 文件附加到 GitHub Release。GitHub Release notes 会根据已合入的变更自动生成。
 
-```text group="Install 2" name="canary version"
-<base-project-version>-canary.<github-run-number>.<short-commit-sha>
+```text group="Install 2" name="release artifact"
+kronos-idea-plugin-{{ $.kronosVersion() }}.zip
 ```
 
 从源码构建时，zip 会写入插件分发目录。
@@ -53,7 +67,7 @@ dependencies {
 BUILD SUCCESSFUL
 ```
 
-IntelliJ IDEA 和 Kotlin 插件需要支持 Kotlin 2.4.0。仓库构建出的 canary 插件目标 IntelliJ IDEA 版本为 `2026.2`。
+IntelliJ IDEA 和 Kotlin 插件需要支持 Kotlin 2.4.0。仓库构建出的正式插件目标 IntelliJ IDEA 版本为 `2026.2`。
 
 ## 配置插件
 
@@ -87,11 +101,86 @@ IntelliJ IDEA 和 Kotlin 插件需要支持 Kotlin 2.4.0。仓库构建出的 ca
 
 基于脚本生成实体请使用 {{ $.keyword("resources/codegen", ["代码生成器"]) }}。
 
+## 在 IDEA 中生成 KPojo
+
+从右侧工具窗口栏打开 `Kronos-ORM`。`Code Generator` 标签页读取 IDEA Database Tools 中已经配置的数据源，不需要再维护一份单独的连接列表。
+
+```text group="Code Generator" name="workflow"
+1. 在 IDEA Database 中配置数据库连接。
+2. 打开 Kronos-ORM -> Code Generator。
+3. 选择数据源和一个或多个表。
+4. 设置 package name 和 output directory。
+5. 选择模板。
+6. 点击 Preview 预览生成的 Kotlin。
+7. 点击 Generate 写入项目文件。
+```
+
+生成器会把表元数据转换为 Kronos 字段：表名变成 `@Table`，主键变成 `@PrimaryKey`，索引变成 `@TableIndex`，SQL 类型转换为 `KColumnType`，数据库返回列注释时会写入生成文件。
+
+```kotlin group="Code Generator" name="output" icon="kotlin"
+package com.example.entity
+
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
+
+@Table(name = "tb_user")
+data class TbUser(
+    var id: Long? = null,
+    var name: String? = null,
+) : KPojo
+```
+
+只有确实要覆盖同名文件时，才启用 `Overwrite existing files`。
+
+## 自定义模板
+
+`Templates` 标签页会列出内置模板和项目模板。使用 `Copy to Project` 可以把内置 KPojo 模板复制到 `.kronos/templates`，再按当前项目修改。
+
+项目模板可使用这些占位符：
+
+| 占位符 | 值 |
+|--------|----|
+| `{{packageName}}` | Code Generator 标签页填写的包名 |
+| `{{imports}}` | 生成注解和类型需要的 import |
+| `{{tableComment}}` | 格式化后的表注释 |
+| `{{generatedAt}}` | 生成时间 |
+| `{{tableName}}` | 来源表名 |
+| `{{className}}` | 生成的 Kotlin 类名 |
+| `{{tableIndexes}}` | 渲染后的 `@TableIndex` 注解 |
+| `{{fields}}` | 带 Kronos 注解的 Kotlin 属性 |
+
+项目 KPojo 模板需要保留这个标记，IDEA 插件会用它识别支持的模板：
+
+```kotlin group="Template" name="marker" icon="kotlin"
+// KRONOS_IDEA_TEMPLATE:KPOJO
+```
+
 ## 使用编辑器分析
 
 Kronos 有不少能力来自编译期生成信息：`KPojo` 会生成字段元数据和动态访问器，查询 DSL 会生成每个 lambda 可访问的字段，`select { ... }` 会生成查询结果行的临时 `KPojo` 投影类，子查询和 insert-select 还会根据字段形状做诊断。
 
 IntelliJ IDEA 插件会把这些编译期信息交给 IDEA K2 分析。这样，编辑器可以在 `toDataMap()`、`it.nameLength`、`it.rn`、`rows.first().totalAmount`、`insert<Target> { ... }` 这些位置给出补全、类型展示和错误提示。
+
+在生成投影 receiver 上打开 quick documentation 时，插件会渲染对应的生成类形态。你可以直接看到当前结果行有哪些字段，不需要去找内部生成源码。
+
+```kotlin group="Editor Analysis" name="projection" icon="kotlin"
+val rows = User()
+    .select {
+        [it.id, f.length(it.name).alias("nameLength")]
+    }
+    .queryList()
+
+rows.first().nameLength
+```
+
+结果类型的 quick documentation 等价于：
+
+```kotlin group="Editor Analysis" name="generated shape" icon="kotlin"
+data class KronosSelectResult_UserNameLength(
+    var id: Int? = null,
+    var nameLength: Int? = null,
+) : KPojo
+```
 
 如果 Gradle 输出中能正常编译，但编辑器没有补全，请重新加载项目，并确认已安装的插件名为 `Kronos-Orm`、插件 ID 为 `com.kotlinorm.kronos-idea-plugin`。
 

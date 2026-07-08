@@ -1,9 +1,23 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+The Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ IDEA. It is useful when your project already builds with the Gradle or Maven compiler plugin, but you also want the editor to understand generated `KPojo` members, projection result types, subquery shapes, and database-first code generation.
+
+| Area | What the plugin adds |
+|------|----------------------|
+| Project model | Loads the bundled Kronos FIR compiler plugin during IDEA analysis |
+| Projection docs | Shows generated `KronosSelectResult_*` and `KronosSelectContext_*` shapes in quick documentation |
+| Editor diagnostics | Surfaces projection, scalar subquery, predicate subquery, and INSERT SELECT shape errors in the editor |
+| Code Generator | Reads IDEA Database data sources and previews or writes `KPojo` files |
+| Templates | Lets you copy the built-in KPojo template into `.kronos/templates` and customize generated code |
+
+![Kronos IDEA plugin code generator](/assets/images/idea-plugin/kronos-idea-code-generator.png)
+
+![Kronos IDEA plugin projection documentation](/assets/images/idea-plugin/kronos-idea-projection-docs.png)
+
 ## Install {{ $.title("Kronos-Orm") }}
 
-The IDEA plugin is packaged as `kronos-idea-plugin.zip`. Install it from a downloaded canary release or from a locally built zip.
+The IDEA plugin is packaged as `kronos-idea-plugin.zip`. Install it from a downloaded GitHub Release artifact or from a locally built zip.
 
 ```text group="Install 1" name="IDEA"
 Settings / Preferences -> Plugins -> Install Plugin from Disk...
@@ -11,10 +25,10 @@ Select kronos-idea-plugin.zip
 Restart IntelliJ IDEA
 ```
 
-Canary builds are published as GitHub prereleases after changes land on `main`. The attached release notes list the Kronos version, IDEA plugin version, Kotlin version, IntelliJ IDEA target version, source commit, and checksums.
+Formal releases attach the IDEA plugin zip to the GitHub Release together with JVM jars and checksum files. The GitHub Release notes are generated from merged changes.
 
-```text group="Install 2" name="canary version"
-<base-project-version>-canary.<github-run-number>.<short-commit-sha>
+```text group="Install 2" name="release artifact"
+kronos-idea-plugin-{{ $.kronosVersion() }}.zip
 ```
 
 When building from source, the zip is written to the plugin distribution directory.
@@ -53,7 +67,7 @@ After installing the IDEA plugin, reload the Gradle project or reimport the Mave
 BUILD SUCCESSFUL
 ```
 
-Use an IntelliJ IDEA build and Kotlin plugin that support Kotlin 2.4.0. The repository build targets IntelliJ IDEA `2026.2` for canary plugin artifacts.
+Use an IntelliJ IDEA build and Kotlin plugin that support Kotlin 2.4.0. The repository build targets IntelliJ IDEA `2026.2` for release plugin artifacts.
 
 ## Configure the plugin
 
@@ -87,11 +101,86 @@ The settings page stores the config path in `KronosPluginSettings`. The default 
 
 For script-based entity generation, use {{ $.keyword("resources/codegen", ["Code Generator"]) }}.
 
+## Generate KPojo files in IDEA
+
+Open `Kronos-ORM` from the right tool-window bar. The `Code Generator` tab reads tables from IDEA Database Tools instead of asking you to maintain a separate connection list.
+
+```text group="Code Generator" name="workflow"
+1. Configure a database connection in IDEA Database.
+2. Open Kronos-ORM -> Code Generator.
+3. Select a data source and one or more tables.
+4. Set the package name and output directory.
+5. Select a template.
+6. Click Preview to inspect generated Kotlin.
+7. Click Generate to write files into the project.
+```
+
+The generator maps table metadata to Kronos fields: table names become `@Table`, primary keys become `@PrimaryKey`, indexes become `@TableIndex`, SQL types are converted to `KColumnType`, and column comments are preserved in the generated file where metadata is available.
+
+```kotlin group="Code Generator" name="output" icon="kotlin"
+package com.example.entity
+
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.interfaces.KPojo
+
+@Table(name = "tb_user")
+data class TbUser(
+    var id: Long? = null,
+    var name: String? = null,
+) : KPojo
+```
+
+Enable `Overwrite existing files` only when you want the generator to replace an existing file with the same relative path.
+
+## Customize templates
+
+The `Templates` tab lists built-in templates and project templates. Use `Copy to Project` to copy the built-in KPojo template into `.kronos/templates`, then edit it in your project.
+
+Project templates can use these placeholders:
+
+| Placeholder | Value |
+|-------------|-------|
+| `{{packageName}}` | Package entered in the Code Generator tab |
+| `{{imports}}` | Imports required by generated annotations and types |
+| `{{tableComment}}` | Formatted table comment |
+| `{{generatedAt}}` | Generation timestamp |
+| `{{tableName}}` | Source table name |
+| `{{className}}` | Generated Kotlin class name |
+| `{{tableIndexes}}` | Rendered `@TableIndex` annotations |
+| `{{fields}}` | Rendered Kotlin properties with Kronos annotations |
+
+Keep this marker in project KPojo templates so the IDEA plugin can identify supported templates:
+
+```kotlin group="Template" name="marker" icon="kotlin"
+// KRONOS_IDEA_TEMPLATE:KPOJO
+```
+
 ## Use editor analysis
 
 Many Kronos features come from compile-time generated information: `KPojo` metadata and dynamic accessors, the fields available inside each query lambda, temporary `KPojo` projection classes generated by `select { ... }`, and shape-based diagnostics for subqueries and insert-select.
 
 The IntelliJ IDEA plugin makes that generated information visible to IDEA K2 analysis. That lets the editor complete, type-check, and report errors at positions such as `toDataMap()`, `it.nameLength`, `it.rn`, `rows.first().totalAmount`, and `insert<Target> { ... }`.
+
+Quick documentation on a generated projection receiver renders the generated class shape, so you can inspect which fields are available without finding an internal generated source file.
+
+```kotlin group="Editor Analysis" name="projection" icon="kotlin"
+val rows = User()
+    .select {
+        [it.id, f.length(it.name).alias("nameLength")]
+    }
+    .queryList()
+
+rows.first().nameLength
+```
+
+Quick documentation for the result type is equivalent to:
+
+```kotlin group="Editor Analysis" name="generated shape" icon="kotlin"
+data class KronosSelectResult_UserNameLength(
+    var id: Int? = null,
+    var nameLength: Int? = null,
+) : KPojo
+```
 
 If completion works in Gradle output but not in the editor, reload the project and check that the installed plugin name is `Kronos-Orm` with plugin ID `com.kotlinorm.kronos-idea-plugin`.
 

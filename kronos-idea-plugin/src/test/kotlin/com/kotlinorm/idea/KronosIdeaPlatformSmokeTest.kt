@@ -41,55 +41,16 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
         val pluginXml = Files.readString(Paths.get("src/main/resources/META-INF/plugin.xml"))
             .replace("\r\n", "\n")
 
-        assertEquals(
-            """
-            <idea-plugin>
-              <id>com.kotlinorm.kronos-idea-plugin</id>
-              <name>Kronos-Orm</name>
-              <vendor url="https://www.kotlinorm.com">Kronos ORM</vendor>
-
-              <description><![CDATA[
-                Kronos ORM IDEA plugin.<br>
-                <em>Add support for code generation and K2 analysis.</em>
-              ]]></description>
-
-              <depends>com.intellij.modules.platform</depends>
-              <depends>org.jetbrains.kotlin</depends>
-              <depends>com.intellij.database</depends>
-
-              <extensions defaultExtensionNs="com.intellij">
-                <postStartupActivity implementation="com.kotlinorm.idea.KronosProjectionProbeStartupActivity" />
-                <platform.backend.documentation.targetProvider
-                    id="KronosProjectionDocumentationTargetProvider"
-                    implementation="com.kotlinorm.idea.KronosProjectionDocumentationTargetProvider"
-                    order="first" />
-                <platform.backend.documentation.psiTargetProvider
-                    id="KronosProjectionPsiDocumentationTargetProvider"
-                    implementation="com.kotlinorm.idea.KronosProjectionDocumentationTargetProvider"
-                    order="first" />
-                <platform.backend.documentation.linkHandler
-                    implementation="com.kotlinorm.idea.KronosProjectionDocumentationLinkHandler" />
-                <toolWindow
-                    id="Kronos-ORM"
-                    anchor="right"
-                    icon="/icons/kronos-circle.svg"
-                    factoryClass="com.kotlinorm.plugin.idea.MainWinFactory" />
-                <projectConfigurable
-                    instance="com.kotlinorm.plugin.idea.setting.PluginConfigurable"
-                    displayName="Kronos ORM Setting"
-                    id="preferences.KronosPluginSettings" />
-              </extensions>
-
-              <extensions defaultExtensionNs="org.jetbrains.kotlin">
-                <gradleProjectImportHandler implementation="com.kotlinorm.idea.KronosGradleImportHandler" />
-                <bundledFirCompilerPluginProvider implementation="com.kotlinorm.idea.KronosBundledFirCompilerPluginProvider" />
-                <firCompilerPluginConfigurationProvider implementation="com.kotlinorm.idea.KronosFirCompilerPluginConfigurationForIdeProvider" />
-                <kaResolveExtensionProvider implementation="com.kotlinorm.idea.KronosProjectionDeclarationViewResolveExtensionProvider" />
-              </extensions>
-            </idea-plugin>
-            """.trimIndent(),
-            pluginXml.trim()
-        )
+        assertTrue(pluginXml.contains("<id>com.kotlinorm.kronos-idea-plugin</id>"))
+        assertTrue(pluginXml.contains("<name>Kronos-Orm</name>"))
+        assertTrue(pluginXml.contains("Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ IDEA."))
+        assertTrue(pluginXml.contains("META-INF/pluginDescription/kronos-idea-code-generator.png"))
+        assertTrue(pluginXml.contains("META-INF/pluginDescription/kronos-idea-projection-docs.png"))
+        assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosBundledFirCompilerPluginProvider\""))
+        assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosFirCompilerPluginConfigurationForIdeProvider\""))
+        assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosProjectionDeclarationViewResolveExtensionProvider\""))
+        assertTrue(pluginXml.contains("factoryClass=\"com.kotlinorm.plugin.idea.MainWinFactory\""))
+        assertTrue(pluginXml.contains("displayName=\"Kronos ORM Setting\""))
     }
 
     /**

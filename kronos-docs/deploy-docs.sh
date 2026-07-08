@@ -1,21 +1,14 @@
 #!/usr/bin/env bash
 #
-# deploy-docs.sh — Build and merge kronos-docs + Dokka API docs into a single site.
+# deploy-docs.sh - Build and merge kronos-docs + Dokka API docs into a single site.
 #
-# Output: dist/site/
-#
-# Usage:
-#   ./deploy-docs.sh
-#
-# Requirements:
-#   - JDK 21+ (for Gradle / Dokka)
-#   - Node.js 20+ and pnpm (for Angular)
+# Output: kronos-docs/dist/site/
 #
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-SITE_DIR="$REPO_ROOT/dist/site"
-DOCS_DIR="$REPO_ROOT/kronos-docs"
+DOCS_ROOT="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$DOCS_ROOT/.." && pwd)"
+SITE_DIR="$DOCS_ROOT/dist/site"
 DOKKA_OUT="$REPO_ROOT/docs"
 GRADLE_PLUGIN_DOKKA_OUT="$REPO_ROOT/kronos-gradle-plugin/build/dokka/html"
 
@@ -34,7 +27,7 @@ if [ ! -d "$GRADLE_PLUGIN_DOKKA_OUT" ]; then
 fi
 
 echo "▸ Building kronos-docs..."
-cd "$DOCS_DIR"
+cd "$DOCS_ROOT"
 
 if [ ! -d "node_modules" ]; then
   echo "  Installing dependencies..."
@@ -43,7 +36,7 @@ fi
 
 pnpm build
 
-ANGULAR_OUT="$DOCS_DIR/docs"
+ANGULAR_OUT="$DOCS_ROOT/docs"
 if [ ! -d "$ANGULAR_OUT" ]; then
   echo "✗ Angular build output not found at $ANGULAR_OUT"
   exit 1

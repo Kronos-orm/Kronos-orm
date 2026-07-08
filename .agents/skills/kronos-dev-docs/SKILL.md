@@ -217,8 +217,8 @@ pnpm start
 For unified docs deployment build:
 
 ```bash
+cd kronos-docs
 ./deploy-docs.sh
-./deploy-docs.sh --skip-dokka
 ```
 
 When touching snippets that claim to compile, verify against source/tests where possible. If runnable snippet verification is not available, record the gap in `DOCS_REFACTOR_TASK_LIST/verification-gaps.md`.

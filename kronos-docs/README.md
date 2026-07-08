@@ -41,4 +41,20 @@ pnpm start          # serves at http://localhost:3307
 pnpm build
 ```
 
-Build output goes to `docs/`, matching the `angular.json` `outputPath` used by `deploy-docs.sh`.
+Build output goes to `docs/`, matching the `angular.json` `outputPath`.
+
+## Full Site Build
+
+```bash
+./deploy-docs.sh
+```
+
+The full site build generates Dokka API docs from the repository root, builds the Angular docs app, and merges everything into `dist/site/`.
+
+## Cloudflare Pages
+
+Use these settings when deploying the full documentation site, including Dokka API docs:
+
+- Root directory: `kronos-docs`
+- Build command: `./deploy-docs.sh`
+- Build output directory: `dist/site`

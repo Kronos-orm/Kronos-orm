@@ -408,17 +408,17 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 ## Documentation
 
-### Unified Deployment (`deploy-docs.sh`)
-A single script at the repo root builds and merges both Dokka API docs and the kronos-docs website into `dist/site/`, ready for Cloudflare Pages deployment.
+### Unified Deployment (`kronos-docs/deploy-docs.sh`)
+A single script under `kronos-docs/` builds and merges both Dokka API docs and the kronos-docs website into `kronos-docs/dist/site/`, ready for Cloudflare Pages deployment.
 
 ```bash
+cd kronos-docs
 ./deploy-docs.sh              # full build (Dokka + Angular)
-./deploy-docs.sh --skip-dokka # skip Dokka, only rebuild Angular (faster iteration)
 ```
 
 Output structure:
 ```
-dist/site/
+kronos-docs/dist/site/
 ├── index.html        (kronos-docs Angular site)
 ├── api/
 │   ├── kronos-core/
@@ -427,7 +427,7 @@ dist/site/
 └── _redirects         (Cloudflare Pages SPA routing)
 ```
 
-Deploy: `npx wrangler pages deploy dist/site --project-name=kotlinorm`
+Deploy: `npx wrangler pages deploy kronos-docs/dist/site --project-name=kotlinorm`
 
 ### Dokka API Docs
 - Convention plugin: `build-logic/src/main/kotlin/dokka-convention.gradle.kts`

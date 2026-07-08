@@ -387,7 +387,7 @@ private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement?
 
 private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement? =
     if (KronosProjectionIdeBridge.isIdeActive()) {
-        sourceDeclaration
+        field.source ?: anchor
     } else {
         field.source ?: anchor
     }

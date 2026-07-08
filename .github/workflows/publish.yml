@@ -58,20 +58,28 @@ jobs:
           git push origin HEAD:${{ github.ref_name }}
           ver=${{ steps.release_set.outputs.version }}
           if [ -z "$ver" ]; then ver=${{ steps.detect.outputs.current }}; fi
-          git tag "v$ver"
-          git push origin "v$ver"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
 
-      - name: Release 🧱 - build JVM jars and IDEA plugin
+      - name: Release 🧱 - build JVM jars
         if: steps.detect.outputs.mode == 'release'
-        env:
-          RELEASE_VERSION: ${{ steps.release_set.outputs.version }}
         run: |
           set -euo pipefail
-          bash ./gradlew --no-daemon clean assemble :kronos-idea-plugin:buildPlugin \
-            -Pkronos.idea.plugin.version="$RELEASE_VERSION" \
-            -Pkronos.idea.version="2026.2" \
+          bash ./gradlew --no-daemon clean assemble \
+            -x :kronos-idea-plugin:assemble \
+            -x :kronos-idea-plugin:buildPlugin \
+            -x :kronos-idea-plugin:instrumentCode \
             -x test
           bash ./gradlew --no-daemon -p kronos-gradle-plugin clean assemble -x test
+
+      - name: Release 🧩 - build IDEA plugin artifact
+        if: steps.detect.outputs.mode == 'release'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-daemon :kronos-idea-plugin:buildPlugin \
+            -Pkronos.idea.version="2026.2" \
+            -Pkronos.idea.java.compiler.version="261.26222.72" \
+            -x test
 
       - name: Release 🚀 - publish to Maven Central
         if: steps.detect.outputs.mode == 'release'
@@ -92,7 +100,13 @@ jobs:
             ! -path './kronos-docs/*' \
             ! -path './dist/*' \
             -exec cp '{}' dist/release/ ';'
-          cp kronos-idea-plugin/build/distributions/*.zip dist/release/
+          shopt -s nullglob
+          idea_plugin_zips=(kronos-idea-plugin/build/distributions/*.zip)
+          if [ ${#idea_plugin_zips[@]} -gt 0 ]; then
+            cp "${idea_plugin_zips[@]}" dist/release/
+          else
+            echo "IDEA plugin zip was not built; continuing release without it."
+          fi
           (
             cd dist/release
             sha256sum * > SHA256SUMS.txt
@@ -106,11 +120,19 @@ jobs:
           RELEASE_VERSION: ${{ steps.release_set.outputs.version }}
         run: |
           set -euo pipefail
-          gh release create "v$RELEASE_VERSION" dist/release/* \
-            --repo "${{ github.repository }}" \
-            --title "Kronos $RELEASE_VERSION" \
-            --generate-notes \
-            --latest=true
+          git tag -f "v$RELEASE_VERSION"
+          git push --force origin "v$RELEASE_VERSION"
+          if gh release view "v$RELEASE_VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "v$RELEASE_VERSION" dist/release/* \
+              --repo "${{ github.repository }}" \
+              --clobber
+          else
+            gh release create "v$RELEASE_VERSION" dist/release/* \
+              --repo "${{ github.repository }}" \
+              --title "Kronos $RELEASE_VERSION" \
+              --generate-notes \
+              --latest=true
+          fi
 
       - name: Release 🔼 - open next SNAPSHOT PR
         if: steps.detect.outputs.mode == 'release'

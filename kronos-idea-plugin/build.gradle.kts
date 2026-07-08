@@ -11,7 +11,7 @@ val macIdeaEapHome = "/Applications/IntelliJ IDEA 2026.2 EAP.app/Contents"
 val windowsIdeaEapExecutable = "C:/Program Files/JetBrains/IntelliJ IDEA 262.8377.35/bin/idea64.exe"
 val localIdeaEapVersion = "2026.2"
 val kronosIdeaPluginVersion = providers.gradleProperty("kronos.idea.plugin.version")
-    .orElse("0.1.1-SNAPSHOT")
+    .orElse(providers.provider { rootProject.version.toString() })
 
 version = kronosIdeaPluginVersion.get()
 
@@ -38,6 +38,8 @@ val ideaHome = providers.gradleProperty("kronos.idea.localPath")
     )
 val ideaVersion = providers.gradleProperty("kronos.idea.version")
     .orElse(localIdeaEapVersion)
+val ideaJavaCompilerVersion = providers.gradleProperty("kronos.idea.java.compiler.version")
+    .orElse("261.26222.72")
 val ideaSandboxContainer = providers.gradleProperty("kronos.idea.sandbox")
     .map { rootProject.layout.projectDirectory.dir(it) }
     .orElse(rootProject.layout.projectDirectory.dir("../Kronos-orm-idea-sandbox"))
@@ -71,7 +73,7 @@ dependencies {
         bundledPlugin("com.intellij.database")
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Plugin.Kotlin)
-        javaCompiler()
+        javaCompiler(ideaJavaCompilerVersion.get())
         pluginVerifier()
         zipSigner()
     }
@@ -105,6 +107,11 @@ intellijPlatform {
         description.set(
             """
             <p><b>Kronos IDEA plugin</b> brings Kronos compiler-plugin information into IntelliJ IDEA.</p>
+            <p>
+              <a href="https://www.kotlinorm.com/">Website</a>
+              &nbsp;|&nbsp;
+              <a href="https://www.kotlinorm.com/#/documentation/en/resources/idea-plugin">Documentation</a>
+            </p>
             <p>Use it with the Gradle or Maven compiler plugin to get editor support for:</p>
             <ul>
               <li>generated KPojo members;</li>
@@ -118,16 +125,16 @@ intellijPlatform {
             <p><b>Code Generator</b><br>Reads IDEA Database data sources and previews or writes KPojo files.</p>
             <p><b>Templates</b><br>Copies the built-in KPojo template into .kronos/templates for project customization.</p>
             <p><b>Projection completion</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-completion.png" width="320" alt="Kronos IDEA projection completion">
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-completion.png" width="640" alt="Kronos IDEA projection completion">
             </p>
             <p><b>Projection context docs</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-context-docs.png" width="320" alt="Kronos IDEA projection context documentation">
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-context-docs.png" width="640" alt="Kronos IDEA projection context documentation">
             </p>
             <p><b>Projection documentation</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-docs.png" width="320" alt="Kronos IDEA projection documentation">
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-projection-docs.png" width="640" alt="Kronos IDEA projection documentation">
             </p>
             <p><b>Code generator</b><br>
-              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-code-generator.png" width="320" alt="Kronos IDEA code generator">
+              <img src="https://raw.githubusercontent.com/Kronos-orm/Kronos-orm/docs-subquery-dsl-spec/assets/idea-plugin/kronos-idea-code-generator.png" width="640" alt="Kronos IDEA code generator">
             </p>
             """.trimIndent()
         )

@@ -131,7 +131,7 @@ class KronosProjectionIdeBridgeTest {
     }
 
     @Test
-    fun `generated projection declarations reuse source declaration in ide mode`() {
+    fun `generated projection declarations keep real member source in ide mode`() {
         val source = Files.readString(
             Paths.get("src/main/kotlin/com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtension.kt")
         )
@@ -139,6 +139,7 @@ class KronosProjectionIdeBridgeTest {
         assertTrue(source.contains("private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement?"))
         assertTrue(source.contains("private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement?"))
         assertTrue(source.contains("if (KronosProjectionIdeBridge.isIdeActive()) {\n        sourceDeclaration"))
+        assertTrue(source.contains("if (KronosProjectionIdeBridge.isIdeActive()) {\n        field.source ?: anchor"))
         assertFalse(source.contains("fakeElement"))
         assertFalse(source.contains("KtFakeSourceElementKind"))
         assertFalse(source.contains("Class.forName"))

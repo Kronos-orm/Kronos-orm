@@ -142,6 +142,11 @@ union(currentUsers, archivedUsers)
 | Kronos version | Supported Kotlin version | Notes |
 |----------------|--------------------------|-------|
 | `0.1.1` | `2.4.0+` | Recommended user documentation version |
+| `0.1.0` | `2.3.0+` | Stable release line based on Kotlin 2.3.0 |
+| `0.0.7` | `2.3.0+` | Upgraded Gradle and Kotlin in the 0.0.7 release |
+| `0.0.6` | `2.2.21+` | Added `kotlin.time.Instant` support |
+| `0.0.2` - `0.0.5` | `2.2.0+` | Early development releases before the 2.2.21 upgrade |
+| `0.0.1` | `2.1.0+` | Initial public release line |
 
 --------
 

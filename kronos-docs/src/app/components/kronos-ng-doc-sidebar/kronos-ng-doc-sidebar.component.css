@@ -10,15 +10,21 @@
     display: block;
     position: relative;
     isolation: isolate;
-    margin-right: 1rem;
-    padding: 0.9rem 0.75rem 2rem;
-    border: 1px solid color-mix(in srgb, var(--kronos-doc-rule, rgba(246, 247, 239, 0.12)), transparent 8%) !important;
+    margin-right: 0.65rem;
+    padding: 0.55rem 0.75rem 2rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--kronos-doc-rule, rgba(15, 23, 42, 0.12)), transparent 18%) !important;
+    border-right-color: color-mix(in srgb, var(--kronos-doc-rule, rgba(15, 23, 42, 0.12)), transparent 42%) !important;
     border-radius: 8px !important;
-    background: var(--kronos-doc-sidebar-bg, rgba(255, 255, 255, 0.78)) !important;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.34) 44%, rgba(255, 255, 255, 0.22)),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.055), transparent 30%, rgba(255, 255, 255, 0.2) 72%, transparent) !important;
     background-clip: padding-box;
-    box-shadow: var(--kronos-doc-sidebar-shadow, none);
-    backdrop-filter: blur(42px) saturate(1.58) contrast(1.04);
-    -webkit-backdrop-filter: blur(42px) saturate(1.58) contrast(1.04);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        inset 1px 0 0 rgba(255, 255, 255, 0.52),
+        inset -1px 0 0 rgba(255, 255, 255, 0.26);
+    backdrop-filter: blur(28px) saturate(1.42);
+    -webkit-backdrop-filter: blur(28px) saturate(1.42);
 }
 
 :host ::ng-deep .p-menu::before {
@@ -29,9 +35,16 @@
     border-radius: inherit;
     pointer-events: none;
     background:
-        linear-gradient(115deg, rgba(255, 255, 255, 0.34), transparent 22%, transparent 68%, rgba(255, 255, 255, 0.1)),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 24%);
-    opacity: 0.72;
+        radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.52), transparent 28%),
+        linear-gradient(118deg, rgba(255, 255, 255, 0.38), transparent 18%, transparent 62%, rgba(255, 255, 255, 0.18)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 34%);
+    opacity: 0.78;
+    transition: opacity 220ms ease, transform 260ms ease;
+}
+
+:host ::ng-deep .p-menu:hover::before {
+    opacity: 0.92;
+    transform: translateY(-1px);
 }
 
 :host ::ng-deep .p-menu > * {
@@ -40,9 +53,9 @@
 }
 
 :host ::ng-deep .p-menu .p-menu-submenu-label {
-    color: var(--kronos-doc-primary, #dfff67);
+    color: var(--kronos-doc-heading, #0f172a);
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-weight: 500;
+    font-weight: 650;
     font-size: 0.78rem;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -63,12 +76,12 @@
 }
 
 :host ::ng-deep .p-menu .p-submenu-header .p-menu-header-action {
-    color: var(--kronos-doc-text, rgba(246, 247, 239, 0.78));
+    color: var(--kronos-doc-heading, #0f172a);
     padding: 0.75rem 0.85rem !important;
 }
 
 :host ::ng-deep .p-menu .p-submenu-header .p-menuitem-text {
-    font-weight: 600;
+    font-weight: 650;
     font-size: 14px;
     font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
 }
@@ -85,7 +98,7 @@
 :host ::ng-deep i.p-menuitem-icon.pi.pi-circle-on {
     font-size: 5px;
     margin-right: 1rem;
-    color: var(--kronos-doc-muted, rgba(246, 247, 239, 0.22));
+    color: color-mix(in srgb, var(--kronos-doc-muted, #475569), transparent 18%);
 }
 
 :host ::ng-deep .p-menu-item-content {
@@ -93,28 +106,54 @@
 }
 
 :host ::ng-deep a.p-menuitem-link.p-menuitem-link-active {
-    color: var(--kronos-doc-heading, #ffffff);
+    color: var(--kronos-doc-heading, #0f172a);
 }
 
 :host ::ng-deep a.p-menuitem-link {
-    padding: 0.34rem 0.85rem !important;
+    position: relative;
+    overflow: hidden;
+    padding: 0.38rem 0.85rem !important;
     border-radius: 6px !important;
     display: block;
     font-size: 14px;
+    font-weight: 520;
+    line-height: 1.45;
     width: 100%;
     border-left: 1px solid transparent;
-    color: var(--kronos-doc-muted, rgba(246, 247, 239, 0.64));
-    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+    color: color-mix(in srgb, var(--kronos-doc-heading, #0f172a), transparent 24%);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.32);
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease, text-shadow 180ms ease;
+}
+
+:host ::ng-deep a.p-menuitem-link::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+        linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.36), transparent 62%);
+    opacity: 0;
+    transform: translateX(-28%);
+    transition: opacity 220ms ease, transform 260ms ease;
 }
 
 :host ::ng-deep a.p-menuitem-link:hover {
-    background-color: var(--kronos-doc-control-hover-bg, rgba(223, 255, 103, 0.08)) !important;
-    border-left-color: color-mix(in srgb, var(--kronos-doc-primary, #dfff67), transparent 62%);
-    color: var(--kronos-doc-heading, #ffffff) !important;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--kronos-doc-primary, #2563eb), transparent 88%), rgba(255, 255, 255, 0.18)) !important;
+    border-left-color: color-mix(in srgb, var(--kronos-doc-primary, #2563eb), transparent 38%);
+    color: var(--kronos-doc-heading, #0f172a) !important;
+}
+
+:host ::ng-deep a.p-menuitem-link:hover::before,
+:host ::ng-deep a.p-menuitem-link:focus-visible::before {
+    opacity: 1;
+    transform: translateX(18%);
 }
 
 :host ::ng-deep a.p-menuitem-link-active {
-    background-color: var(--kronos-doc-control-hover-bg, rgba(223, 255, 103, 0.12)) !important;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--kronos-doc-primary, #2563eb), transparent 84%), rgba(255, 255, 255, 0.22)) !important;
     border-left-color: var(--kronos-doc-primary, #dfff67);
 }
 
@@ -126,7 +165,45 @@
 
 :host ::ng-deep a.p-menuitem-link-active .p-menuitem-text {
     color: var(--kronos-doc-primary, var(--ng-doc-link-color)) !important;
-    font-weight: 400;
+    font-weight: 650;
+}
+
+:host-context(.dark) ::ng-deep .p-menu,
+:host-context([data-theme="dark"]) ::ng-deep .p-menu {
+    background:
+        linear-gradient(140deg, rgba(246, 247, 239, 0.105), rgba(255, 255, 255, 0.034) 42%, rgba(5, 6, 6, 0.18)),
+        linear-gradient(90deg, rgba(223, 255, 103, 0.075), transparent 30%, rgba(246, 247, 239, 0.045) 78%, transparent) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(246, 247, 239, 0.17),
+        inset 1px 0 0 rgba(246, 247, 239, 0.1),
+        inset -1px 0 0 rgba(246, 247, 239, 0.05);
+}
+
+:host-context(.dark) ::ng-deep a.p-menuitem-link,
+:host-context([data-theme="dark"]) ::ng-deep a.p-menuitem-link {
+    color: rgba(246, 247, 239, 0.76);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.34);
+}
+
+:host-context(.dark) ::ng-deep a.p-menuitem-link:hover,
+:host-context([data-theme="dark"]) ::ng-deep a.p-menuitem-link:hover {
+    color: var(--kronos-doc-heading, #ffffff) !important;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--kronos-doc-primary, #dfff67), transparent 88%), rgba(246, 247, 239, 0.045)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :host ::ng-deep .p-menu::before,
+    :host ::ng-deep a.p-menuitem-link,
+    :host ::ng-deep a.p-menuitem-link::before {
+        transition: none;
+    }
+
+    :host ::ng-deep .p-menu:hover::before,
+    :host ::ng-deep a.p-menuitem-link:hover::before,
+    :host ::ng-deep a.p-menuitem-link:focus-visible::before {
+        transform: none;
+    }
 }
 
 :host ::ng-deep .p-toggleable-content.p-menu-expanded {

@@ -11,11 +11,25 @@ The Kronos IDEA plugin brings Kronos compiler-plugin information into IntelliJ I
 | Code Generator | Reads IDEA Database data sources and previews or writes `KPojo` files |
 | Templates | Lets you copy the built-in KPojo template into `.kronos/templates` and customize generated code |
 
-![Kronos IDEA plugin code generator](/assets/images/idea-plugin/kronos-idea-code-generator.png)
+## UI preview
 
-![Kronos IDEA plugin projection documentation](/assets/images/idea-plugin/kronos-idea-projection-docs.png)
+Projection completion uses the generated result or context shape, so aliases such as `nameLength`, `rn`, and aggregate fields are available in the editor.
 
-## Install {{ $.title("Kronos-Orm") }}
+<img src="/assets/images/idea-plugin/kronos-idea-projection-completion.png" alt="Kronos IDEA plugin projection completion" style="width: 100%; max-width: 640px; height: auto;" />
+
+Quick documentation on the current query context renders the generated context class, including aliases that can be used by `orderBy { ... }`.
+
+<img src="/assets/images/idea-plugin/kronos-idea-projection-context-docs.png" alt="Kronos IDEA plugin projection context documentation" style="width: 100%; max-width: 640px; height: auto;" />
+
+Quick documentation on a local result value renders the generated result-row class, including field names and Kotlin types.
+
+<img src="/assets/images/idea-plugin/kronos-idea-projection-docs.png" alt="Kronos IDEA plugin projection documentation" style="width: 100%; max-width: 640px; height: auto;" />
+
+The `Kronos-ORM` tool window includes the Code Generator tab for choosing IDEA Database data sources, selecting tables, previewing generated Kotlin, and writing KPojo files.
+
+<img src="/assets/images/idea-plugin/kronos-idea-code-generator.png" alt="Kronos IDEA plugin code generator" style="width: 100%; max-width: 640px; height: auto;" />
+
+## Install {{ $.title("Kronos-ORM") }}
 
 The IDEA plugin is packaged as `kronos-idea-plugin.zip`. Install it from a downloaded GitHub Release artifact or from a locally built zip.
 
@@ -140,14 +154,14 @@ Project templates can use these placeholders:
 
 | Placeholder | Value |
 |-------------|-------|
-| `{{packageName}}` | Package entered in the Code Generator tab |
-| `{{imports}}` | Imports required by generated annotations and types |
-| `{{tableComment}}` | Formatted table comment |
-| `{{generatedAt}}` | Generation timestamp |
-| `{{tableName}}` | Source table name |
-| `{{className}}` | Generated Kotlin class name |
-| `{{tableIndexes}}` | Rendered `@TableIndex` annotations |
-| `{{fields}}` | Rendered Kotlin properties with Kronos annotations |
+| {{ $.templatePlaceholder("packageName") }} | Package entered in the Code Generator tab |
+| {{ $.templatePlaceholder("imports") }} | Imports required by generated annotations and types |
+| {{ $.templatePlaceholder("tableComment") }} | Formatted table comment |
+| {{ $.templatePlaceholder("generatedAt") }} | Generation timestamp |
+| {{ $.templatePlaceholder("tableName") }} | Source table name |
+| {{ $.templatePlaceholder("className") }} | Generated Kotlin class name |
+| {{ $.templatePlaceholder("tableIndexes") }} | Rendered `@TableIndex` annotations |
+| {{ $.templatePlaceholder("fields") }} | Rendered Kotlin properties with Kronos annotations |
 
 Keep this marker in project KPojo templates so the IDEA plugin can identify supported templates:
 
@@ -182,7 +196,7 @@ data class KronosSelectResult_UserNameLength(
 ) : KPojo
 ```
 
-If completion works in Gradle output but not in the editor, reload the project and check that the installed plugin name is `Kronos-Orm` with plugin ID `com.kotlinorm.kronos-idea-plugin`.
+If completion works in Gradle output but not in the editor, reload the project and check that the installed plugin name is `Kronos-ORM` with plugin ID `com.kotlinorm.kronos-idea-plugin`.
 
 ## Three KPojo shapes in one query
 

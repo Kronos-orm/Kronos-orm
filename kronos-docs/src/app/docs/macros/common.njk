@@ -60,6 +60,10 @@
     {{ title('@' + name) }}
 {%- endmacro %}
 
+{% macro templatePlaceholder(name) -%}
+    <code class="ngde">{{ "{{" }}{{ name | escape }}{{ "}}" }}</code>
+{%- endmacro %}
+
 {% macro required() -%}
     <span style="color: red;line-height: 1;font-size: 14px;font-family: SimSun, sans-serif;margin-right: 4px;display: inline-block;vertical-align: middle;">*</span>
 {%- endmacro %}

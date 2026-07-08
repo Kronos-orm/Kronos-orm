@@ -35,7 +35,7 @@ jobs:
           cache-dependency-path: kronos-docs/pnpm-lock.yaml
 
       - name: Build merged documentation site
-        run: bash deploy-docs.sh
+        run: bash kronos-docs/deploy-docs.sh
 
       - name: Configure SSH
         env:
@@ -58,4 +58,4 @@ jobs:
           CN_DOCS_PORT: ${{ secrets.CN_DOCS_PORT }}
         run: |
           set -euo pipefail
-          rsync -az --delete -e "ssh -p ${CN_DOCS_PORT:-22}" dist/site/ "$CN_DOCS_USER@$CN_DOCS_HOST:$CN_DOCS_PATH/"
+          rsync -az --delete -e "ssh -p ${CN_DOCS_PORT:-22}" kronos-docs/dist/site/ "$CN_DOCS_USER@$CN_DOCS_HOST:$CN_DOCS_PATH/"

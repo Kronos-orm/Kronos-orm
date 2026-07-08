@@ -1,0 +1,135 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Verifies no-value strategies, takeIf, run-wrapped conditions, and negated OR lowering.
+
+import com.kotlinorm.Kronos
+import com.kotlinorm.annotations.Table
+import com.kotlinorm.beans.dsl.KTableForCondition.Companion.afterFilter
+import com.kotlinorm.enums.NoValueStrategyType
+import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlParameter
+import com.kotlinorm.types.ToFilter
+
+@Table(name = "tb_condition_no_value_matrix")
+data class NoValueMatrixUser(
+    var id: Int? = null,
+    var name: String? = null,
+    var age: Int? = null,
+) : KPojo
+
+data class CapturedNoValueMatrix(
+    val expr: SqlExpr?,
+    val parameters: Map<String, Any?>
+)
+
+fun noValueMatrixWhere(
+    user: NoValueMatrixUser,
+    block: ToFilter<NoValueMatrixUser, Boolean?>,
+): CapturedNoValueMatrix {
+    var result: CapturedNoValueMatrix? = null
+    user.afterFilter {
+        sourceValues = user.toDataMap()
+        block!!(it)
+        result = CapturedNoValueMatrix(sqlExpr, parameterValues.toMap())
+    }
+    return result ?: CapturedNoValueMatrix(null, emptyMap())
+}
+
+fun noValueMatrixParameter(actual: CapturedNoValueMatrix, expr: SqlExpr?): Any? {
+    val name = ((expr as? SqlExpr.Parameter)?.parameter as? SqlParameter.Named)?.name ?: return null
+    return actual.parameters[name]
+}
+
+fun expectNoValueMatrix(condition: Boolean, message: () -> String): String? =
+    if (condition) null else "Fail: ${message()}"
+
+fun box(): String {
+    with(Kronos) {
+        fieldNamingStrategy = lineHumpNamingStrategy
+        tableNamingStrategy = lineHumpNamingStrategy
+    }
+
+    val user = NoValueMatrixUser(id = 1, name = "Ada", age = 36)
+    val nullName = user.copy(name = null)
+
+    val runWrapped = noValueMatrixWhere(user) { run { it.age > 18 } }
+    val runExpr = runWrapped.expr as? SqlExpr.Binary
+
+    val negatedOr = noValueMatrixWhere(user) { !(it.age > 18 || it.name == "Ada") }
+    val negatedOrRoot = negatedOr.expr as? SqlExpr.Binary
+    val negatedLeft = negatedOrRoot?.left as? SqlExpr.Binary
+    val negatedRight = negatedOrRoot?.right as? SqlExpr.Binary
+
+    val takeIfTrue = noValueMatrixWhere(user) { (it.id == 1).takeIf(true) }
+    val takeIfExpr = takeIfTrue.expr as? SqlExpr.Binary
+
+    val noValueTrue = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.True) }
+    val noValueFalse = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.False) }
+    val noValueJudgeNull = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.JudgeNull) }
+    val noValueAuto = noValueMatrixWhere(nullName) { it.name.eq.ifNoValue(NoValueStrategyType.Auto) }
+
+    val judgeNullExpr = noValueJudgeNull.expr as? SqlExpr.Binary
+    val judgeNullColumn = judgeNullExpr?.left as? SqlExpr.Column
+    val failures = listOfNotNull(
+        expectNoValueMatrix((runExpr?.left as? SqlExpr.Column)?.columnName == "age") {
+            "run field was ${runExpr?.left}"
+        },
+        expectNoValueMatrix(runExpr?.operator == SqlBinaryOperator.GreaterThan) {
+            "run operator was ${runExpr?.operator}"
+        },
+        expectNoValueMatrix(noValueMatrixParameter(runWrapped, runExpr?.right) == 18) {
+            "run value was ${noValueMatrixParameter(runWrapped, runExpr?.right)}"
+        },
+        expectNoValueMatrix(negatedOrRoot?.operator == SqlBinaryOperator.And) {
+            "negated OR root was ${negatedOrRoot?.operator}"
+        },
+        expectNoValueMatrix(negatedLeft?.operator == SqlBinaryOperator.LessThanEqual) {
+            "negated left operator was ${negatedLeft?.operator}"
+        },
+        expectNoValueMatrix(negatedRight?.operator == SqlBinaryOperator.NotEqual) {
+            "negated right operator was ${negatedRight?.operator}"
+        },
+        expectNoValueMatrix((takeIfExpr?.left as? SqlExpr.Column)?.columnName == "id") {
+            "takeIf field was ${takeIfExpr?.left}"
+        },
+        expectNoValueMatrix(takeIfExpr?.operator == SqlBinaryOperator.Equal) {
+            "takeIf operator was ${takeIfExpr?.operator}"
+        },
+        expectNoValueMatrix((noValueTrue.expr as? SqlExpr.BooleanLiteral)?.boolean == true) {
+            "noValue true was ${noValueTrue.expr}"
+        },
+        expectNoValueMatrix((noValueFalse.expr as? SqlExpr.BooleanLiteral)?.boolean == false) {
+            "noValue false was ${noValueFalse.expr}"
+        },
+        expectNoValueMatrix(judgeNullColumn?.columnName == "name") {
+            "judgeNull field was ${judgeNullExpr?.left}"
+        },
+        expectNoValueMatrix(judgeNullExpr?.operator == SqlBinaryOperator.Is(false)) {
+            "judgeNull operator was ${judgeNullExpr?.operator}"
+        },
+        expectNoValueMatrix(judgeNullExpr?.right == SqlExpr.NullLiteral) {
+            "judgeNull right was ${judgeNullExpr?.right}"
+        },
+        expectNoValueMatrix(noValueAuto.expr == null) {
+            "auto condition was ${noValueAuto.expr}"
+        },
+    )
+
+    return failures.firstOrNull() ?: "OK"
+}

@@ -2,10 +2,12 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
     alias(libs.plugins.kronos.publishing)
+    alias(libs.plugins.kronos.dokka)
 }
 
 dependencies {
     implementation(libs.kotlin.gradle.plugin.api)
+    implementation(libs.kotlin.gradle.plugin)
 }
 
 java {

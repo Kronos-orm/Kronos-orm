@@ -1,0 +1,61 @@
+name: Deploy CN Docs
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: kronos-docs/pnpm-lock.yaml
+
+      - name: Build merged documentation site
+        run: bash deploy-docs.sh
+
+      - name: Configure SSH
+        env:
+          CN_DOCS_HOST: ${{ secrets.CN_DOCS_HOST }}
+          CN_DOCS_SSH_KEY: ${{ secrets.CN_DOCS_SSH_KEY }}
+          CN_DOCS_PORT: ${{ secrets.CN_DOCS_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$CN_DOCS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${CN_DOCS_PORT:-22}" "$CN_DOCS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy to cn.kotlinorm.com server
+        env:
+          CN_DOCS_HOST: ${{ secrets.CN_DOCS_HOST }}
+          CN_DOCS_USER: ${{ secrets.CN_DOCS_USER }}
+          CN_DOCS_PATH: ${{ secrets.CN_DOCS_PATH }}
+          CN_DOCS_PORT: ${{ secrets.CN_DOCS_PORT }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete -e "ssh -p ${CN_DOCS_PORT:-22}" dist/site/ "$CN_DOCS_USER@$CN_DOCS_HOST:$CN_DOCS_PATH/"

@@ -19,6 +19,7 @@ package com.kotlinorm.database
 import com.kotlinorm.beans.task.KronosAtomicActionTask
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.beans.task.KronosQueryTask.Companion.typedMappingMetadata
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 
 object SqlHandler {
@@ -37,7 +38,8 @@ object SqlHandler {
         isKPojo: Boolean = false,
         superTypes: List<String> = emptyList()
     ): List<T> {
-        return this.forList(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as List<T>
+        val mapping = typedMappingMetadata<T>(isKPojo, superTypes)
+        return this.forList(KronosAtomicQueryTask(sql, paramMap), T::class, mapping.isKPojo, mapping.superTypes) as List<T>
     }
 
     inline fun <reified T> KronosDataSourceWrapper.queryOne(
@@ -45,7 +47,8 @@ object SqlHandler {
         isKPojo: Boolean = false,
         superTypes: List<String> = emptyList()
     ): T {
-        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?
+        val mapping = typedMappingMetadata<T>(isKPojo, superTypes)
+        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, mapping.isKPojo, mapping.superTypes) as T?
             ?: throw NoSuchElementException("No result found")
     }
 
@@ -55,7 +58,8 @@ object SqlHandler {
         isKPojo: Boolean = false,
         superTypes: List<String> = emptyList()
     ): T? {
-        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, isKPojo, superTypes) as T?
+        val mapping = typedMappingMetadata<T>(isKPojo, superTypes)
+        return this.forObject(KronosAtomicQueryTask(sql, paramMap), T::class, mapping.isKPojo, mapping.superTypes) as T?
     }
 
     fun KronosDataSourceWrapper.execute(sql: String, paramMap: Map<String, Any?> = emptyMap()): Int {

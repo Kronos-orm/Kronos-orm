@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 @import url("primeicons/primeicons.css");
 @import url('@ng-doc/app/styles/themes/dark.css');
 
@@ -39,6 +40,17 @@ h1, h2, h3, h4, h5, h6 {
     --p-menu-background: var(--ng-doc-sidebar-background) !important;
     --p-menu-item-color: var(--ng-doc-text) !important;
     --p-megamenu-item-active-background: rgba(127, 82, 255, 0.15) !important;
+}
+
+:root.dark,
+.dark {
+    --ng-doc-mermaid-viewer-background: #080909;
+}
+
+.dark .ng-doc-mermaid-viewer,
+.dark ng-doc-mermaid,
+.dark .mermaid {
+    background: var(--ng-doc-mermaid-viewer-background) !important;
 }
 
 img {
@@ -89,6 +101,13 @@ code {
 
 *:not(pre) > code.ngde {
     white-space: normal;
+}
+
+article *:not(pre) > code.ngde:not(.title) {
+    display: inline-flex;
+    align-items: center;
+    line-height: inherit;
+    vertical-align: 0.08em;
 }
 
 code .line::before {

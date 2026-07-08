@@ -27,7 +27,7 @@ abstract class KronosTestBase(dbType: DBType) {
         @Synchronized
         fun ensureInitialized(dbType: DBType) {
             if (!initialized) {
-                Kronos.init {
+                with(Kronos) {
                     fieldNamingStrategy = lineHumpNamingStrategy
                     tableNamingStrategy = lineHumpNamingStrategy
                     dataSource = { wrapperFor(dbType) }

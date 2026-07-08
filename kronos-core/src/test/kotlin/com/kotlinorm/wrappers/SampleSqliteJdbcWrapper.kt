@@ -18,7 +18,7 @@ object SampleSqliteJdbcWrapper : KronosDataSourceWrapper {
         get() = DBType.SQLite
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-        return listOf(
+        return [
             mapOf(
                 "Field" to "id",
                 "Type" to "Int",
@@ -44,11 +44,11 @@ object SampleSqliteJdbcWrapper : KronosDataSourceWrapper {
                 "Field" to "deleted",
                 "Type" to "Boolean"
             )
-        )
+        ]
     }
 
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
-        return listOf()
+        return []
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {

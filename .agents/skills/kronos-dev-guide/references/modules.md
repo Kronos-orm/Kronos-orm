@@ -6,7 +6,6 @@
 3. [kronos-jdbc-wrapper](#kronos-jdbc-wrapper)
 4. [kronos-gradle-plugin](#kronos-gradle-plugin)
 5. [kronos-maven-plugin](#kronos-maven-plugin)
-6. [kronos-compiler-plugin-legacy](#kronos-compiler-plugin-legacy)
 
 ---
 
@@ -188,7 +187,7 @@ private fun obtainConnection(): Pair<Connection, Boolean> {
 - `forList(task)` → `List<Map<String, Any>>` — maps ResultSet to list of maps
 - `forMap(task)` → `Map<String, Any>?` — single row
 - `forObject(task, kClass, isKPojo, superTypes)` → `Any?` — maps to KPojo or scalar
-- KPojo instantiation: uses `kClassCreator` map (from @KronosInit) or `createInstance()` fallback
+- KPojo instantiation: uses generated `KPojoFactoryProvider` registrations loaded by `createInstance()`
 
 ### Action Methods
 - `update(task)` → `Int` — returns affected rows
@@ -261,11 +260,3 @@ class KronosMavenPlugin : KotlinMavenPluginExtension {
 - Dependencies: `api(project(":kronos-compiler-plugin"))`, `kotlin-maven-plugin`, `maven-core`
 - Copies `META-INF/services` from kronos-compiler-plugin so Maven discovers the `ComponentRegistrar`
 
----
-
-## kronos-compiler-plugin-legacy
-
-Pre-K2 Kotlin compiler plugin. Same transformation goals, older internal structure.
-- Maintained for backward compatibility with older Kotlin versions
-- Same IR approach: KPojo augmentation, DSL lambda parsing
-- Not actively developed — new features go into `kronos-compiler-plugin`

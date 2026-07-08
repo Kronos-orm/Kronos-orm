@@ -121,9 +121,6 @@ fun extractDeclarationComment(lines: List<String>, range: IntRange): String? {
                     comment = line.trim(commentIgnore) + comment
                     continue
                 }
-                if (line.startsWith("@")) {
-                    continue
-                }
                 break
             }
         }

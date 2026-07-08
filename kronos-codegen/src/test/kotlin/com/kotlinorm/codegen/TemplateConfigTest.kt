@@ -27,7 +27,7 @@ class TemplateConfigTest {
     @BeforeTest
     fun setup() {
         codeGenConfig = null
-        Kronos.init {
+        with(Kronos) {
             fieldNamingStrategy = Kronos.lineHumpNamingStrategy
             tableNamingStrategy = Kronos.lineHumpNamingStrategy
             createTimeStrategy = KronosCommonStrategy(true, Field("create_time", "createTime"))
@@ -41,7 +41,7 @@ class TemplateConfigTest {
     fun getPackageNameReturnsOutputPackageName() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(TableConfig("tb_user", "User")),
+            table = [TableConfig("tb_user", "User")],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -60,7 +60,7 @@ class TemplateConfigTest {
     fun getTargetDirReturnsOutputTargetDir() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(TableConfig("tb_user", "User")),
+            table = [TableConfig("tb_user", "User")],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -79,7 +79,7 @@ class TemplateConfigTest {
     fun getTableCommentLineWordsDefaultsToMax() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(TableConfig("tb_user", "User")),
+            table = [TableConfig("tb_user", "User")],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -98,10 +98,10 @@ class TemplateConfigTest {
     fun toKronosConfigsReturnsCorrectSize() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(
+            table = [
                 TableConfig("tb_user", "User"),
                 TableConfig("tb_order", "Order")
-            ),
+            ],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -133,7 +133,7 @@ class TemplateConfigTest {
     fun packageNameFallsBackToTargetDirPath() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(TableConfig("tb_user", "User")),
+            table = [TableConfig("tb_user", "User")],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -152,7 +152,7 @@ class TemplateConfigTest {
     fun packageNameFallsBackToDefaultWhenNoMainKotlin() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(TableConfig("tb_user", "User")),
+            table = [TableConfig("tb_user", "User")],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -172,7 +172,7 @@ class TemplateConfigTest {
     fun classNameDerivedFromTableNameWhenNotSpecified() {
         val wrapper = createMockWrapper()
         val config = TemplateConfig(
-            table = listOf(TableConfig("tb_user", null)),
+            table = [TableConfig("tb_user", null)],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null
@@ -193,7 +193,7 @@ class TemplateConfigTest {
     fun templateHappyPathReturnsKronosConfigs() {
         val wrapper = createMockWrapper()
         codeGenConfig = TemplateConfig(
-            table = listOf(TableConfig("tb_user", "User")),
+            table = [TableConfig("tb_user", "User")],
             strategy = StrategyConfig(
                 Kronos.lineHumpNamingStrategy, Kronos.lineHumpNamingStrategy,
                 null, null, null, null, null

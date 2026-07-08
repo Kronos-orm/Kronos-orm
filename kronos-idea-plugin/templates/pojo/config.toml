@@ -1,0 +1,16 @@
+[[table]]
+name = "tb_user"
+className = "User"
+
+[[table]]
+name = "student"
+
+[dataSource]
+dataSourceClassName = "com.alibaba.druid.pool.DruidDataSource"
+url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
+username = "root"
+password = "Leinbo2103221541@"
+driverClassName = "com.mysql.cj.jdbc.Driver"
+
+[output]
+targetDir = "../../src/main/kotlin/com/kotlinorm/orm/pojo"

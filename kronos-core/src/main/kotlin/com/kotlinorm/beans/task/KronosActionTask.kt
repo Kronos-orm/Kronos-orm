@@ -39,6 +39,23 @@ class KronosActionTask {
         return this
     }
 
+    internal fun appendPrepared(
+        task: KronosActionTask,
+        wrapper: KronosDataSourceWrapper,
+        transform: (KronosAtomicActionTask) -> KronosAtomicActionTask = { it }
+    ) {
+        task.beforeExecute?.invoke(task, wrapper)
+        atomicTasks.addAll(task.atomicTasks.map(transform))
+        val currentAfterExecute = afterExecute
+        val nextAfterExecute = task.afterExecute
+        if (nextAfterExecute != null) {
+            afterExecute = { dataSource ->
+                currentAfterExecute?.invoke(this, dataSource)
+                nextAfterExecute.invoke(this, dataSource)
+            }
+        }
+    }
+
     /**
      * Groups a list of KronosAtomicActionTask by their SQL statements.
      *
@@ -76,7 +93,7 @@ class KronosActionTask {
                     first.sql,
                     it.map { task -> task.paramMap }.toTypedArray(),
                     first.operationType,
-                    first.actionInfo
+                    first.statement
                 )
             } else { //如果只有一个任务
                 first
@@ -91,10 +108,10 @@ class KronosActionTask {
         } as List<KronosOperationResult>
         val affectRows = results.sumOf { it.affectedRows } //受影响的行数
         return KronosOperationResult(affectRows).apply {
-            afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
             if(results.isNotEmpty()) {
                 stash.putAll(results.last().stash) //将最后一个结果的stash放入当前结果
             }
+            afterExecute?.invoke(this, dataSource) //在执行之后执行的操作
         }
     }
 

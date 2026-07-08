@@ -23,6 +23,14 @@ pluginManagement {
         maven("https://maven.aliyun.com/repository/public")
     }
 
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "org.jetbrains.intellij.platform") {
+                useVersion("2.17.0")
+            }
+        }
+    }
+
     includeBuild("build-logic")
     includeBuild("kronos-gradle-plugin")
 }
@@ -35,9 +43,10 @@ rootProject.name = "kronos-orm"
 
 include("kronos-codegen")
 include("kronos-compiler-plugin")
-include("kronos-compiler-plugin-legacy")
 include("kronos-core")
+include("kronos-idea-plugin")
 include("kronos-jdbc-wrapper")
 include("kronos-logging")
 include("kronos-maven-plugin")
+include("kronos-syntax")
 include("kronos-testing")

@@ -6,8 +6,9 @@
 
 --------
 
-In version 0.0.3 of `Kronos`, we introduced support for code generators. This feature helps developers generate `Kronos`
--related code more quickly, reducing the amount of manual coding required.
+Kronos Codegen provides the Database First path for projects that already have database tables. It reads table metadata,
+applies naming and annotation strategies, and writes Kotlin `KPojo` classes from a `toml` configuration and a Kotlin
+script template.
 
 ## Database First
 
@@ -43,7 +44,7 @@ flexible code generation.
 The usage of the code generator is very simple, just configure the configuration file and template file, and then run
 the code generator.
 
-### 配置文件
+### Configuration file
 
 ```toml
 [[table]]
@@ -62,7 +63,7 @@ logicDeleteStrategy = "deleted"
 optimisticLockStrategy = "version"
 
 [dataSource]
-wrapperClassName = "com.kotlinorm.KronosBasicWrapper"
+wrapperClassName = "com.kotlinorm.wrappers.KronosJdbcWrapper"
 dataSourceClassName = "com.alibaba.druid.pool.DruidDataSource"
 url = "jdbc:mysql://localhost:3306/kronos_testing?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&useServerPrepStmts=true&rewriteBatchedStatements=true"
 username = "root"
@@ -95,7 +96,7 @@ Configuration Explanation:
     - `optimisticLockStrategy`: Optimistic Locking Strategy, default is `NoneNamingStrategy`.
 - `dataSource`: Define the database connection information, including the data source class name, connection URL,
   username, password, etc.
-    - `wrapperClassName`: Data source wrapper class, default is `com.kotlinorm.KronosBasicWrapper`.
+    - `wrapperClassName`: Data source wrapper class, default is `com.kotlinorm.wrappers.KronosJdbcWrapper`.
     - `dataSourceClassName`: Data source class name.
     - `url`: Database connection URL.
     - `username`: Database username.
@@ -112,6 +113,9 @@ Configuration Explanation:
 
 The template file is written in `kts` format and can use string templates to generate code. The following is an example
 template file:
+
+Use the latest stable MySQL Connector/J and connection pool versions that match your database server and JDK.
+
 **example.main.kts**
 
 ```kotlin
@@ -119,11 +123,11 @@ template file:
 
 @file:Repository("https://central.sonatype.com/repository/maven-snapshots/")
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.1.0")
-@file:DependsOn("com.kotlinorm:kronos-core:0.1.0")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.1.0")
-@file:DependsOn("com.mysql:mysql-connector-j:9.2.0")
-@file:DependsOn("com.alibaba:druid:1.2.24")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.1.1")
+@file:DependsOn("com.kotlinorm:kronos-core:0.1.1")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.1.1")
+@file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
+@file:DependsOn("com.alibaba:druid:<latest-stable>")
 
 import com.kotlinorm.codegen.KronosConfig.Companion.write
 import com.kotlinorm.codegen.TemplateConfig.Companion.template
@@ -143,7 +147,7 @@ template {
     +"// @author: Kronos-Codegen"
     +"// @date: $now"
     +""
-    +"@Table(name = \"$tableName\")"
+    +"@Table(\"$tableName\")"
     +indexes.toAnnotations()
     +"data class $className("
     fields.forEach { field ->

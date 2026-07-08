@@ -10,58 +10,49 @@ jobs:
   high-level-tests:
     name: Run integration tests
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        # postgres-version: [17, 16, 15, 14, 13]
-        postgres-version: [17]
-        # mysql-version: [8.4, 8.0]
-        mysql-version: [8.0]
-        # sqlserver-version: [2022, 2019]
-        sqlserver-version: [2022]
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: Set up JDK 21 ☕️
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           java-version: 21
           distribution: 'adopt'
 
-      - name: Set up MySQL 8.0 🐬
-        uses: ankane/setup-mysql@v1
-        with:
-          mysql-version: ${{ matrix.mysql-version }}
-          user: kronos
-          database: kronos_testing
-
-      - name: Test MySQL connection 🔗
-        run: mysql -u kronos -D kronos_testing -e 'SELECT VERSION()'
-
-      - name: Setup PostgreSQL 🐘
-        uses: ankane/setup-postgres@v1
-        with:
-            postgres-version: ${{ matrix.postgres-version }}
-            user: kronos
-            database: kronos_testing
-        id: postgres
-
-      - name: Test PostgreSQL connection 🔗
-        run: psql -U kronos -d kronos_testing -c 'SHOW server_version'
-
-      - name: Setup Sqlserver 🛢️
-        uses: ankane/setup-sqlserver@v1
-        with:
-          accept-eula: true
-          sqlserver-version: ${{ matrix.sqlserver-version }}
-
-      - name: Test Sqlserver connection 🔗
-        run: sqlcmd -S localhost -U SA -P 'YourStrong!Passw0rd' -Q "SELECT @@version"
-
-      - name: Run tests 🧪
+      - name: Export integration environment
         run: |
-          export MYSQL_USERNAME=kronos
-          export POSTGRES_USERNAME=kronos
-          ./gradlew :kronos-testing:test --info --stacktrace
+          source ./envsetup.sh
+          {
+            echo "MYSQL_USERNAME=${MYSQL_USERNAME}"
+            echo "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+            echo "MYSQL_DATABASE=${MYSQL_DATABASE}"
+            echo "POSTGRES_USERNAME=${POSTGRES_USERNAME}"
+            echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+            echo "POSTGRES_DATABASE=${POSTGRES_DATABASE}"
+            echo "SQLSERVER_USERNAME=${SQLSERVER_USERNAME}"
+            echo "SQLSERVER_PASSWORD=${SQLSERVER_PASSWORD}"
+            echo "SQLSERVER_DATABASE=${SQLSERVER_DATABASE}"
+            echo "SQLSERVER_JDBC_URL=${SQLSERVER_JDBC_URL}"
+            echo "ORACLE_JDBC_URL=${ORACLE_JDBC_URL}"
+            echo "ORACLE_USERNAME=${ORACLE_USERNAME}"
+            echo "ORACLE_PASSWORD=${ORACLE_PASSWORD}"
+            echo "ORACLE_SYS_PASSWORD=${ORACLE_SYS_PASSWORD}"
+          } >> "$GITHUB_ENV"
+
+      - name: Start integration databases
+        run: docker compose -f kronos-testing/docker-compose.integration.yml up -d --wait
+
+      - name: Prepare SQL Server database
+        run: |
+          docker exec kronos-testing-sqlserver bash -lc \
+            "/opt/mssql-tools18/bin/sqlcmd -S localhost -U '${SQLSERVER_USERNAME}' -P '${SQLSERVER_PASSWORD}' -C -Q \"IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}; SELECT DB_NAME(DB_ID('${SQLSERVER_DATABASE}'));\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U '${SQLSERVER_USERNAME}' -P '${SQLSERVER_PASSWORD}' -Q \"IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}; SELECT DB_NAME(DB_ID('${SQLSERVER_DATABASE}'));\""
+
+      - name: Run integration tests
+        run: ./gradlew :kronos-testing:test --info --stacktrace --console=plain
+
+      - name: Stop integration databases
+        if: always()
+        run: docker compose -f kronos-testing/docker-compose.integration.yml down -v

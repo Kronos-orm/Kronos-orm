@@ -2,7 +2,6 @@
 .kiro
 .cursor
 .kotlin/
-envsetup.sh
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -10,6 +9,7 @@ build/
 
 ### IntelliJ IDEA ###
 .idea/
+.intellijPlatform/
 *.iws
 *.iml
 *.ipr
@@ -41,6 +41,13 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Python ###
+__pycache__/
+*.py[cod]
+
+### Local temporary files ###
+.tmp/
 
 ### Build artifacts ###
 /docs/

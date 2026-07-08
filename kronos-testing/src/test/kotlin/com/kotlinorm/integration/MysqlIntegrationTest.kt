@@ -1,0 +1,29 @@
+package com.kotlinorm.integration
+
+import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
+import com.kotlinorm.integration.suites.CascadeIntegrationSuite
+import com.kotlinorm.integration.suites.CodegenIntegrationSuite
+import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
+import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.ErrorIntegrationSuite
+import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
+import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.SchemaIntegrationSuite
+import com.kotlinorm.integration.suites.TransactionIntegrationSuite
+import com.kotlinorm.integration.suites.UpsertIntegrationSuite
+import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
+import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
+import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.mysql
+
+class MysqlSchemaIntegrationTest : SchemaIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlCrudWhereIntegrationTest : CrudWhereIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlQueryIntegrationTest : QueryIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlUpsertIntegrationTest : UpsertIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlErrorIntegrationTest : ErrorIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlWrapperSqlIntegrationTest : WrapperSqlIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlCascadeIntegrationTest : CascadeIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlValueTypeIntegrationTest : ValueTypeIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlTransactionIntegrationTest : TransactionIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlCodegenIntegrationTest : CodegenIntegrationSuite(mysql)

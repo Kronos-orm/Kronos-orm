@@ -1,0 +1,288 @@
+{% import "../../../macros/macros-en.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
+## Projection
+
+Projection is the field list passed to `select { ... }` or `join { select { ... } }`. Use it to choose result columns, name expressions with `alias`, and shape the rows returned by `query()`, `queryList()`, `queryOne()`, and join queries.
+
+Result methods and nullable single-row methods are covered in {{ $.keyword("query/result-methods", ["Result Methods"]) }}.
+
+## Select fields
+
+Use one field for a scalar result, or `[]` for a row with multiple fields.
+
+```kotlin group="Field projection 1" name="kotlin" icon="kotlin"
+val names: List<String> = User()
+    .select { it.name }
+    .queryList<String>()
+
+val rows = User()
+    .select { [it.id, it.name] }
+    .queryList()
+```
+
+```sql group="Field projection 1" name="Mysql" icon="mysql"
+SELECT `name`
+FROM `user`
+
+SELECT `id`, `name`
+FROM `user`
+```
+
+The multi-field query returns a generated projection with the selected field names. You usually do not name this class. The compiler creates a result type for this select call, and Kotlin type inference lets you read its properties directly.
+
+```kotlin group="Field projection 2" name="result shape" icon="kotlin"
+data class UserProjection(
+    val id: Int?,
+    val name: String?
+)
+```
+
+```kotlin group="Field projection 2" name="consume result" icon="kotlin"
+val first = rows.first()
+val id: Int? = first.id
+val name: String? = first.name
+```
+
+The generated class is an internal `KronosSelectResult_...` type at runtime. Treat its public shape as the selected property list, not as a stable class name.
+
+## Use alias for result property names
+
+Use `.alias("name")` when the selected column, function, aggregate, scalar subquery, or raw SQL expression should have a specific result name.
+
+```kotlin group="Alias projection 1" name="kotlin" icon="kotlin"
+val rows = User()
+    .select {
+        [
+            it.id,
+            it.name.alias("username"),
+            f.length(it.name).alias("nameLength"),
+            "1".alias("constantValue")
+        ]
+    }
+    .queryList()
+```
+
+```sql group="Alias projection 1" name="Mysql" icon="mysql"
+SELECT `id`,
+       `name` AS `username`,
+       LENGTH(`name`) AS `nameLength`,
+       1 AS `constantValue`
+FROM `user`
+```
+
+The alias becomes the map key for `query()` and the property name for generated projections.
+
+```kotlin group="Alias projection 2" name="result shape" icon="kotlin"
+mapOf(
+    "id" to 1,
+    "username" to "Ada",
+    "nameLength" to 3,
+    "constantValue" to 1
+)
+
+data class UserAliasProjection(
+    val id: Int?,
+    val username: String?,
+    val nameLength: Int?,
+    val constantValue: Int?
+)
+```
+
+Selected names must be unique in the result shape. Alias computed items when the selected item is not a direct field, or when a direct field should use a different result property name.
+
+## Use raw SQL select items
+
+String expressions can be used as raw SQL select items. Use `.alias("name")` when the raw expression should be returned as a map key or generated projection property.
+
+```kotlin group="Raw SQL projection" name="kotlin" icon="kotlin"
+val rows = User()
+    .select {
+        [
+            "count(*)".alias("total"),
+            "now()"
+        ]
+    }
+    .query()
+
+val first = rows.first()
+val total = first["total"]
+```
+
+```sql group="Raw SQL projection" name="Mysql" icon="mysql"
+SELECT count(*) AS total, now()
+FROM `user`
+```
+
+`"count(*)".alias("total")` keeps `count(*)` as the SQL expression and uses `total` as the result name. Raw select items are useful for database-specific expressions that do not have a typed function helper. Keep parameters in `where { ... }` plus `patch(...)` when values should be bound.
+
+## Consume projection results
+
+Use `query()` when each row should be a map. The map keys are field names and aliases.
+
+```kotlin group="Consume projection 1" name="map" icon="kotlin"
+val maps: List<Map<String, Any>> = User()
+    .select { [it.id, it.name.alias("username")] }
+    .query()
+
+val first = maps.first()
+val id = first["id"]
+val username = first["username"]
+```
+
+Use `queryList()` or `queryOne()` without a generic argument when you want the generated projection type.
+
+```kotlin group="Consume projection 2" name="generated" icon="kotlin"
+val rows = User()
+    .select { [it.id, f.length(it.name).alias("nameLength")] }
+    .queryList()
+
+val nameLength: Int? = rows.first().nameLength
+
+val one = User()
+    .select { [it.id, it.name.alias("username")] }
+    .where { it.id == 1 }
+    .queryOne()
+
+val username: String? = one.username
+```
+
+Use a DTO class when the result type should be named in your code. Pass the class to `select(...)`, then use the normal result methods.
+
+```kotlin group="Consume projection 3" name="dto" icon="kotlin"
+data class UserSummary(
+    var id: Int? = null,
+    var username: String? = null
+) : KPojo
+
+val rows: List<UserSummary> = User()
+    .select(UserSummary::class) {
+        [it.id, it.name.alias("username")]
+    }
+    .queryList()
+```
+
+The selected output names must match the DTO property names you want to fill.
+
+## Exclude columns from a full projection
+
+Pass the current KPojo to select all columns, then use `-` to remove fields.
+
+```kotlin group="Exclude projection" name="kotlin" icon="kotlin"
+val rows = User()
+    .select { it - it.age }
+    .queryList()
+```
+
+```sql group="Exclude projection" name="Mysql" icon="mysql"
+SELECT `id`, `name`
+FROM `user`
+```
+
+Use this when most table columns should be returned and only a few columns should be skipped.
+
+## Project from join queries
+
+Inside a join block, `select { ... }` can read fields from each joined table. Use aliases when two tables expose the same field name or when a row type should have stable property names.
+
+```kotlin group="Join projection" name="kotlin" icon="kotlin"
+data class UserOrderRow(
+    val userId: Int?,
+    val username: String?,
+    val orderId: Int?,
+    val status: Int?
+)
+
+val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
+    leftJoin(order) { user.id == order.userId }
+    select {
+        [
+            user.id.alias("userId"),
+            user.name.alias("username"),
+            order.id.alias("orderId"),
+            order.status
+        ]
+    }
+}.queryList<UserOrderRow>()
+```
+
+```sql group="Join projection" name="Mysql" icon="mysql"
+SELECT `user`.`id` AS `userId`,
+       `user`.`name` AS `username`,
+       `order`.`id` AS `orderId`,
+       `order`.`status`
+FROM `user`
+LEFT JOIN `order`
+ON `user`.`id` = `order`.`user_id`
+```
+
+Join syntax and join filtering are covered in {{ $.keyword("query/join", ["Join"]) }}.
+
+## Project scalar subqueries
+
+A scalar subquery can be part of the select list when it returns one column. Use `limit(1)` and give the subquery an alias.
+
+```kotlin group="Scalar projection" name="kotlin" icon="kotlin"
+val rows = User()
+    .select { user ->
+        [
+            user.id,
+            user.name,
+            Order()
+                .select { order -> order.status }
+                .where { order -> order.userId == user.id }
+                .orderBy { order -> order.id.desc() }
+                .limit(1)
+                .alias("lastOrderStatus")
+        ]
+    }
+    .queryList()
+```
+
+```sql group="Scalar projection" name="Mysql" icon="mysql"
+SELECT `id`,
+       `name`,
+       (
+           SELECT `status`
+           FROM `order`
+           WHERE `order`.`user_id` = `user`.`id`
+           ORDER BY `id` DESC
+           LIMIT 1
+       ) AS `lastOrderStatus`
+FROM `user`
+```
+
+Subquery forms, derived query sources, and projection visibility rules are covered in {{ $.keyword("query/subqueries", ["Subqueries"]) }}.
+
+## Project from derived query sources
+
+A selected projection can become the source for the next query layer. This is useful when an alias should be filtered, grouped, or paged after it has been selected.
+
+```kotlin group="Derived projection" name="kotlin" icon="kotlin"
+val nameLengths = User()
+    .select {
+        [
+            it.id,
+            it.name,
+            f.length(it.name).alias("nameLength")
+        ]
+    }
+
+val rows = nameLengths
+    .select { [it.id, it.nameLength] }
+    .where { it.nameLength > 8 }
+    .queryList()
+```
+
+```sql group="Derived projection" name="Mysql" icon="mysql"
+SELECT `q`.`id`, `q`.`nameLength`
+FROM (
+    SELECT `id`, `name`, LENGTH(`name`) AS `nameLength`
+    FROM `user`
+) AS `q`
+WHERE `q`.`nameLength` > :nameLengthMin
+```
+
+Use {{ $.keyword("query/sorting-pagination-aggregation", ["Sorting, Pagination, and Aggregation"]) }} when the projection is sorted, paged, grouped, or aggregated.
+
+The receiver in the second `select { ... }` is the generated projection from the first query. It exposes `id`, `name`, and `nameLength`; it does not expose source fields that were not selected.

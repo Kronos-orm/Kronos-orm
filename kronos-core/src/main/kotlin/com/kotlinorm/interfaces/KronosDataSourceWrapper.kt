@@ -18,9 +18,11 @@ package com.kotlinorm.interfaces
 
 import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.TransactionScope
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.NoDataSourceException
+import com.kotlinorm.syntax.render.SqlDialect
 import kotlin.reflect.KClass
 
 /**
@@ -68,6 +70,9 @@ interface KronosDataSourceWrapper {
      * after it has been set, thereby promoting immutability and consistency within the application.
      */
     val dbType: DBType
+
+    val sqlDialect: SqlDialect
+        get() = SqlManager.dialectOf(dbType)
 
     /**
      * Executes a SQL query and returns the results as a list of maps, with each map representing a row of the result set.

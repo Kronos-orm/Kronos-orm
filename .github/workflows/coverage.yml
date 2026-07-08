@@ -10,16 +10,12 @@ on:
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
 jobs:
   kronos-core-coverage:
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        postgres-version: [17]
-        mysql-version: [8.0]
-        sqlserver-version: [2022]
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
@@ -32,47 +28,43 @@ jobs:
           java-version: 21
           distribution: 'adopt'
 
-      - name: Set up MySQL 8.0 🐬
-        uses: ankane/setup-mysql@v1
-        with:
-          mysql-version: ${{ matrix.mysql-version }}
-          user: kronos
-          database: kronos_testing
+      - name: Export integration environment
+        run: |
+          source ./envsetup.sh
+          {
+            echo "MYSQL_USERNAME=${MYSQL_USERNAME}"
+            echo "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+            echo "MYSQL_DATABASE=${MYSQL_DATABASE}"
+            echo "POSTGRES_USERNAME=${POSTGRES_USERNAME}"
+            echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+            echo "POSTGRES_DATABASE=${POSTGRES_DATABASE}"
+            echo "SQLSERVER_USERNAME=${SQLSERVER_USERNAME}"
+            echo "SQLSERVER_PASSWORD=${SQLSERVER_PASSWORD}"
+            echo "SQLSERVER_DATABASE=${SQLSERVER_DATABASE}"
+            echo "SQLSERVER_JDBC_URL=${SQLSERVER_JDBC_URL}"
+            echo "ORACLE_JDBC_URL=${ORACLE_JDBC_URL}"
+            echo "ORACLE_USERNAME=${ORACLE_USERNAME}"
+            echo "ORACLE_PASSWORD=${ORACLE_PASSWORD}"
+            echo "ORACLE_SYS_PASSWORD=${ORACLE_SYS_PASSWORD}"
+          } >> "$GITHUB_ENV"
 
-      - name: Test MySQL connection 🔗
-        run: mysql -u kronos -D kronos_testing -e 'SELECT VERSION()'
+      - name: Start integration databases
+        run: docker compose -f kronos-testing/docker-compose.integration.yml up -d --wait
 
-      - name: Setup PostgreSQL 🐘
-        uses: ankane/setup-postgres@v1
-        with:
-          postgres-version: ${{ matrix.postgres-version }}
-          user: kronos
-          database: kronos_testing
-        id: postgres
-
-      - name: Test PostgreSQL connection 🔗
-        run: psql -U kronos -d kronos_testing -c 'SHOW server_version'
-
-      - name: Setup Sqlserver 🛢️
-        uses: ankane/setup-sqlserver@v1
-        with:
-          accept-eula: true
-          sqlserver-version: ${{ matrix.sqlserver-version }}
-
-      - name: Test Sqlserver connection 🔗
-        run: sqlcmd -S localhost -U SA -P 'YourStrong!Passw0rd' -Q "SELECT @@version"
+      - name: Prepare SQL Server database
+        run: |
+          docker exec kronos-testing-sqlserver bash -lc \
+            "/opt/mssql-tools18/bin/sqlcmd -S localhost -U '${SQLSERVER_USERNAME}' -P '${SQLSERVER_PASSWORD}' -C -Q \"IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}; SELECT DB_NAME(DB_ID('${SQLSERVER_DATABASE}'));\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U '${SQLSERVER_USERNAME}' -P '${SQLSERVER_PASSWORD}' -Q \"IF DB_ID('${SQLSERVER_DATABASE}') IS NULL CREATE DATABASE ${SQLSERVER_DATABASE}; SELECT DB_NAME(DB_ID('${SQLSERVER_DATABASE}'));\""
 
       - name: Create badges dir if not exists 📁
         run: |
           mkdir -p coverage/kronos-core
+          mkdir -p coverage/kronos-syntax
           mkdir -p coverage/kronos-compiler-plugin
           mkdir -p coverage/kronos-codegen
 
       - name: Run Core Test Coverage 🧪
         id: core-coverage
-        env:
-          MYSQL_USERNAME: kronos
-          POSTGRES_USERNAME: kronos
         run: |
           ./gradlew :kronos-core:koverLog
           ./gradlew :kronos-core:koverXmlReport
@@ -98,11 +90,36 @@ jobs:
           echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
           echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
 
+      - name: Run Syntax Test Coverage 🧪
+        id: syntax-coverage
+        run: |
+          ./gradlew :kronos-syntax:koverLog
+          ./gradlew :kronos-syntax:koverXmlReport
+          ./gradlew :kronos-syntax:koverHtmlReport
+          ./gradlew :kronos-syntax:koverVerify
+          cat kronos-syntax/build/kover/coverage.txt
+          cp -rf kronos-syntax/build/reports/kover/html/* coverage/kronos-syntax
+          # 提取行覆盖率
+          LINE_COVERAGE="$(cat kronos-syntax/build/kover/coverage.txt | grep 'application line coverage' | cut -d' ' -f4)"
+          # 从XML报告提取分支覆盖率
+          if [ -f "kronos-syntax/build/reports/kover/report.xml" ]; then
+            BRANCH_DATA=$(grep -o 'BRANCH.*missed="[0-9]*".*covered="[0-9]*"' kronos-syntax/build/reports/kover/report.xml | tail -1)
+            BRANCH_MISSED=$(echo "$BRANCH_DATA" | grep -o 'missed="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_COVERED=$(echo "$BRANCH_DATA" | grep -o 'covered="[0-9]*"' | cut -d'"' -f2)
+            BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+            if [ $BRANCH_TOTAL -gt 0 ]; then
+              BRANCH_COVERAGE=$(echo "scale=2; $BRANCH_COVERED * 100 / $BRANCH_TOTAL" | bc)
+            else
+              BRANCH_COVERAGE="0.00"
+            fi
+          else
+            BRANCH_COVERAGE="N/A"
+          fi
+          echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
+
       - name: Run Compiler Plugin Test Coverage 🧪
         id: compiler-plugin-coverage
-        env:
-          MYSQL_USERNAME: kronos
-          POSTGRES_USERNAME: kronos
         run: |
           ./gradlew :kronos-compiler-plugin:koverLog
           ./gradlew :kronos-compiler-plugin:koverXmlReport
@@ -130,9 +147,6 @@ jobs:
 
       - name: Run Codegen Test Coverage 🧪
         id: codegen-coverage
-        env:
-          MYSQL_USERNAME: kronos
-          POSTGRES_USERNAME: kronos
         run: |
           ./gradlew :kronos-codegen:koverLog
           ./gradlew :kronos-codegen:koverXmlReport
@@ -158,6 +172,10 @@ jobs:
           echo "lines=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
           echo "branch=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
 
+      - name: Stop integration databases
+        if: always()
+        run: docker compose -f kronos-testing/docker-compose.integration.yml down -v
+
       # ── PR 触发：将覆盖率结果评论到 PR ──────────────────────────────────────
       - name: Comment coverage on PR 💬
         if: github.event_name == 'pull_request'
@@ -165,26 +183,40 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const coreLines   = '${{ steps.core-coverage.outputs.lines }}';
-            const coreBranch  = '${{ steps.core-coverage.outputs.branch }}';
-            const pluginLines = '${{ steps.compiler-plugin-coverage.outputs.lines }}';
-            const pluginBranch= '${{ steps.compiler-plugin-coverage.outputs.branch }}';
-            const codegenLines= '${{ steps.codegen-coverage.outputs.lines }}';
-            const codegenBranch='${{ steps.codegen-coverage.outputs.branch }}';
+            const formatCoverage = (value) => {
+              if (!value || value === 'N/A') return 'N/A';
+              return value.trim().endsWith('%') ? value.trim() : `${value.trim()}%`;
+            };
+
+            const modules = [
+              {
+                name: 'kronos-syntax',
+                lines: formatCoverage('${{ steps.syntax-coverage.outputs.lines }}'),
+                branch: formatCoverage('${{ steps.syntax-coverage.outputs.branch }}'),
+              },
+              {
+                name: 'kronos-codegen',
+                lines: formatCoverage('${{ steps.codegen-coverage.outputs.lines }}'),
+                branch: formatCoverage('${{ steps.codegen-coverage.outputs.branch }}'),
+              },
+              {
+                name: 'kronos-core',
+                lines: formatCoverage('${{ steps.core-coverage.outputs.lines }}'),
+                branch: formatCoverage('${{ steps.core-coverage.outputs.branch }}'),
+              },
+              {
+                name: 'kronos-compiler-plugin',
+                lines: formatCoverage('${{ steps.compiler-plugin-coverage.outputs.lines }}'),
+                branch: formatCoverage('${{ steps.compiler-plugin-coverage.outputs.branch }}'),
+              },
+            ];
 
             const body = [
               '## 📊 Test Coverage Report',
               '',
               '| Module | Line Coverage | Branch Coverage |',
               '|--------|:-------------:|:---------------:|',
-              `| \`kronos-core\`            | ${coreLines}    | ${coreBranch}      |`,
-              `| \`kronos-compiler-plugin\` | ${pluginLines}  | ${pluginBranch}    |`,
-              `| \`kronos-codegen\`         | ${codegenLines} | ${codegenBranch}   |`,
-              '',
-              '### 📈 Coverage Analysis',
-              `- **kronos-core**: Branch coverage ${coreBranch}, consider adding more conditional statement tests`,
-              `- **kronos-compiler-plugin**: Branch coverage ${pluginBranch}, suggest testing more transformation scenarios`,
-              `- **kronos-codegen**: Branch coverage ${codegenBranch}, good performance`,
+              ...modules.map(({ name, lines, branch }) => `| \`${name}\` | ${lines} | ${branch} |`),
               '',
               `> Generated for commit \`${{ github.event.pull_request.head.sha }}\``,
             ].join('\n');
@@ -225,6 +257,15 @@ jobs:
           status: ${{ steps.core-coverage.outputs.lines }}
           color: 'blue,555,daf'
           path: 'coverage/coverage-core.svg'
+
+      - name: Generate the badge SVG image for Syntax
+        if: github.event_name != 'pull_request'
+        uses: emibcn/badge-action@v2.0.3
+        with:
+          label: 'syntax coverage'
+          status: ${{ steps.syntax-coverage.outputs.lines }}
+          color: 'blue,555,daf'
+          path: 'coverage/coverage-syntax.svg'
 
       - name: Generate the badge SVG image for Compiler Plugin
         if: github.event_name != 'pull_request'

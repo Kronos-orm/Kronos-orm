@@ -6,7 +6,7 @@ K2 Kotlin compiler plugin for Kronos ORM. Performs compile-time IR transformatio
 
 1. **KPojo class augmentation** — generates method bodies for `toDataMap`, `fromMapData`, `kronosColumns`, `get`/`set`, strategy methods, table metadata
 2. **DSL lambda transformation** — rewrites `KTableForCondition/Select/Set/Sort/Reference` lambdas into `Criteria`/`Field` IR
-3. **@KronosInit handling** — generates `kClassCreator` maps for reflection-free instance creation
+3. **KPojo factory shards** — generates reflection-free factory shards for generic KPojo instantiation
 4. **Typed query parameter injection** — injects `isKPojo` + `superTypes` into `queryList`/`queryOne` calls
 
 ## Architecture
@@ -17,7 +17,7 @@ KronosCommandLineProcessor → KronosCompilerPluginRegistrar (supportsK2 = true)
     → KronosParserTransformer (single module-level IR traversal)
       → KronosIrClassTransformer + KronosClassBodyGenerator (KPojo augmentation)
       → SelectTransformer / SetTransformer / ConditionTransformer / SortTransformer / ReferenceTransformer
-      → KClassMapGenerator (@KronosInit)
+      → KPojo factory shard generation
       → TypeParameterFixer (typed queries)
 ```
 
@@ -36,3 +36,4 @@ KronosCommandLineProcessor → KronosCompilerPluginRegistrar (supportsK2 = true)
 - `compileOnly`: kotlin-compiler-embeddable, auto-service
 - `implementation`: kotlinx-serialization
 - Coverage: Kover with 80% minimum bound
+

@@ -1,6 +1,6 @@
 package com.kotlinorm.functions
 
-import com.kotlinorm.beans.sample.database.MysqlUser
+import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.functions.bundled.exts.MathFunctions.mod
 import com.kotlinorm.functions.bundled.exts.MathFunctions.rand
 import com.kotlinorm.functions.bundled.exts.MathFunctions.trunc
@@ -14,12 +14,12 @@ import kotlin.test.assertEquals
  * Test functions that have different SQL generation for SQLite
  */
 class SqliteFunctionTest : SqliteTestBase() {
-    private val user by lazy { MysqlUser(1) }
+    private val user by lazy { TestUser(1) }
 
     // Math functions with SQLite-specific behavior
     @Test
     fun testRandInSelect() {
-        val (sql, _) = user.select { f.rand() }.build()
+        val (sql, _) = user.select { f.rand().alias("rand") }.build()
         assertEquals("""SELECT RANDOM() AS rand FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
@@ -31,19 +31,19 @@ class SqliteFunctionTest : SqliteTestBase() {
 
     @Test
     fun testModInSelect() {
-        val (sql, _) = user.select { f.mod(it.score, 2) }.build()
+        val (sql, _) = user.select { (it.score % 2).alias("mod") }.build()
         assertEquals("""SELECT ("score" % 2) AS mod FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 
     @Test
     fun testModInWhere() {
-        val (sql, _) = user.select { it.id }.where { f.mod(it.score, 2) == 0 }.build()
+        val (sql, _) = user.select { it.id }.where { it.score % 2 == 0 }.build()
         assertEquals("""SELECT "id" FROM "tb_user" WHERE ("score" % 2) = :mod AND "deleted" = 0""", sql)
     }
 
     @Test
     fun testTruncInSelect() {
-        val (sql, _) = user.select { f.trunc(it.score, 2) }.build()
+        val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
         assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "deleted" = 0""", sql)
     }
 

@@ -1,5 +1,7 @@
 # Compiler Plugin Deep Dive
 
+Before making compiler plugin architecture changes, adding FIR/frontend extensions, changing IR/backend generation, adding diagnostics, or changing compiler-plugin tests, first read and apply `.agents/skills/kronos-dev-kcp/SKILL.md`. That skill documents Kotlin's native KCP/FIR/IR extension model and test infrastructure; this file only describes Kronos-specific implementation details.
+
 ## Table of Contents
 1. [Entry Point Chain](#entry-point-chain)
 2. [KronosParserTransformer — The Main Pass](#kronospartransformer)
@@ -8,7 +10,7 @@
 5. [FieldAnalysis — How Fields Are Parsed](#fieldanalysis)
 6. [ConditionAnalysis — How Conditions Are Parsed](#conditionanalysis)
 7. [TypeParameterFixer](#typeparameterfixer)
-8. [@KronosInit and KClassMapGenerator](#kronosinit)
+8. [KPojoFactoryGenerator](#kpojofactorygenerator)
 9. [Symbols and Constants](#symbols-and-constants)
 10. [Debugging IR Output](#debugging-ir-output)
 
@@ -26,8 +28,9 @@ KronosCompilerPluginRegistrar (@AutoService(CompilerPluginRegistrar), supportsK2
     ↓
 KronosIrGenerationExtension.generate(moduleFragment, pluginContext)
   1. Creates KronosParserTransformer, runs moduleFragment.transform(transformer, null)
-  2. Post-processes initCallSiteLambdas (for cross-module @KronosInit)
-  3. Optionally dumps IR to files for debugging
+  2. Materializes generated projection/context classes
+  3. Generates the module-local KPojo factory provider
+  4. Optionally dumps IR to files for debugging
 ```
 
 ## KronosParserTransformer
@@ -35,7 +38,7 @@ KronosIrGenerationExtension.generate(moduleFragment, pluginContext)
 Single `IrElementTransformerVoidWithContext` traversing the entire module. Five responsibilities:
 
 ### Task 1: Collect KPojo Classes
-Sources: `visitClassNew()` (superTypes check), `visitClassReference()` (::class), `visitConstructorCall()`, `visitCall()` (type arguments). All discovered KPojo classes are stored for later use by `KClassMapGenerator`.
+Sources: `visitClassNew()` (superTypes check), `visitClassReference()` (::class), `visitConstructorCall()`, `visitCall()` (type arguments). All discovered KPojo classes are stored for later use by `KPojoFactoryGenerator`.
 
 ### Task 2: Transform KPojo Classes
 In `visitClassNew()`, when a class implements `KPojo`:
@@ -56,10 +59,7 @@ when (extensionReceiverFqName) {
 ```
 Each transformer is applied via `transformWith()` which wraps the function body in a new `irBlockBody`.
 
-### Task 4: Handle @KronosInit
-Functions annotated with `@KronosInit` → `KClassMapGenerator.generate()` injects a `kClassCreator` map (KClass → constructor lambda) for all collected KPojo classes. Call-site lambdas are collected into `initCallSiteLambdas` for post-processing.
-
-### Task 5: Fix Typed Query Parameters
+### Task 4: Fix Typed Query Parameters
 In `visitCall()`, after standard traversal, `TypeParameterFixer.shouldFix()` checks if the call is `queryList`/`queryOne`/`queryOneOrNull` on `KronosQueryTask`, `SelectClause`, `SelectFrom*`, or `SqlHandler`. If so, injects two compile-time arguments:
 - `isKPojo: Boolean` — whether `T` implements `KPojo`
 - `superTypes: List<String>` — full type hierarchy as FQN strings
@@ -118,8 +118,8 @@ Each transformer handles a specific `KTableFor*<T>` lambda. The compiler plugin 
 ### SelectTransformer
 Handles `KTableForSelect<T>` lambdas (used in `select { }` blocks).
 - On `visitReturn`, analyzes the return expression via `FieldAnalysis.analyzeAndBuildFieldList()`
-- Converts `it.name + it.age` into `listOf(Field("name"), Field("age"))`
-- Handles aliasing: `it.name as_ "n"` → `Field("name", alias="n")`
+- Converts `[it.name, it.age]` into `listOf(Field("name"), Field("age"))`
+- Handles aliasing: `it.name.alias("n")` → `Field("name", alias="n")`
 - Handles functions: `f.count(it.id)` → `FunctionField("count", [Field("id")])`
 
 ### SetTransformer
@@ -134,7 +134,7 @@ Handles `KTableForCondition<T>` lambdas (used in `where { }`, `having { }`, `on 
 
 ### SortTransformer
 Handles `KTableForSort<T>` lambdas (used in `orderBy { }` blocks).
-- Converts `it.age.desc() + it.name.asc()` into sorted field list
+- Converts `[it.age.desc(), it.name.asc()]` into sorted field list
 
 ### ReferenceTransformer
 Handles `KTableForReference<T>` lambdas (used in `cascade { }` blocks).
@@ -150,9 +150,9 @@ Key method: `analyzeAndBuildFieldList(expression, irBuilder)` → `List<IrExpres
 
 Handles:
 - **Property access**: `it.name` → `Field("name_col", "name", VARCHAR, ...)`
-- **Plus operator**: `it.name + it.age` → two fields concatenated
-- **Unary plus**: `+it.name` → single field
-- **Aliasing**: `it.name as_ "alias"` → field with alias set
+- **Collection literal**: `[it.name, it.age]` → two selected fields
+- **Single expression**: `it.name` → single selected field
+- **Aliasing**: `it.name.alias("alias")` → field with alias set
 - **Function calls**: `f.count(it.id)` → `FunctionField("count", [(Field("id"), null)])`
 - **Minus operator**: `it - it.id` → all fields except id (exclusion)
 - **All fields**: `it.eq` → all columns of the entity
@@ -201,22 +201,28 @@ This avoids runtime reflection for type checking during result mapping.
 
 ---
 
-## @KronosInit and KClassMapGenerator
+## KPojoFactoryGenerator
 
-`@KronosInit` marks initialization functions (typically `Kronos.init { }`). The compiler plugin generates a `kClassCreator` map inside these functions:
+`KPojoFactoryGenerator` creates a module-local provider class under `com.kotlinorm.generated.factory`. The provider registers a single factory function that maps `KClass<out KPojo>` to direct constructor calls:
 
 ```kotlin
 // Generated code (conceptual):
-kClassCreator = mapOf(
-    User::class to { User() },
-    Order::class to { Order() },
-    // ... all discovered KPojo classes
-)
+class KronosGeneratedKPojoFactoryProvider : KPojoFactoryProvider {
+    override fun register() {
+        registerKPojoFactory { kClass ->
+            when (kClass) {
+                User::class -> User()
+                Order::class -> Order()
+                else -> null
+            }
+        }
+    }
+}
 ```
 
-This map enables `fromMapData()` to create instances without reflection.
+The Gradle plugin writes `META-INF/services/com.kotlinorm.utils.KPojoFactoryProvider`, and runtime `createInstance()` loads providers through `ServiceLoader` on first use. This enables generic KPojo instantiation without reflection and without binding the factory map to a user init call site.
 
-For cross-module compilation (test module using entities from main module), `initCallSiteLambdas` are post-processed: the call-site lambda is also injected with the kClassCreator map.
+Generated provider methods must be real instance members. If a function is added with `addFunction`, make sure it has a copied dispatch receiver owned by the function, not the class `thisReceiver` node itself.
 
 ---
 
@@ -234,7 +240,7 @@ Key symbol groups:
 
 ### Constants.kt
 All `FqName` and `ClassId` constants organized by category:
-- Annotations: `Table`, `PrimaryKey`, `Column`, `ColumnType`, `CreateTime`, `UpdateTime`, `LogicDelete`, `Version`, `TableIndex`, `Cascade`, `KronosInit`, `NotColumn`, `Ignore`, `Serialize`, `DateTimeFormat`, `Necessary`, `Default`
+- Annotations: `Table`, `PrimaryKey`, `Column`, `ColumnType`, `CreateTime`, `UpdateTime`, `LogicDelete`, `Version`, `TableIndex`, `Cascade`, `NotColumn`, `Ignore`, `Serialize`, `DateTimeFormat`, `Necessary`, `Default`
 - DSL classes: `KTableForSelect`, `KTableForSet`, `KTableForCondition`, `KTableForSort`, `KTableForReference`
 - Core types: `Field`, `FunctionField`, `Criteria`, `KCascade`, `KPojo`
 - Enums: `KColumnType`, `ConditionType`, `PrimaryKeyType`, `NoValueStrategyType`, `IgnoreAction`

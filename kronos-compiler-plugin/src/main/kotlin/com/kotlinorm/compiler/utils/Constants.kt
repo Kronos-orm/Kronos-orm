@@ -17,7 +17,9 @@
 package com.kotlinorm.compiler.utils
 
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 
 /**
  * FQN constants for Kronos classes and interfaces
@@ -28,24 +30,111 @@ val KPojoFqName = FqName("com.kotlinorm.interfaces.KPojo")
 
 // DSL classes
 val FieldFqName = FqName("com.kotlinorm.beans.dsl.Field")
-val FunctionFieldFqName = FqName("com.kotlinorm.beans.dsl.FunctionField")
+val KronosFunctionExprFqName = FqName("com.kotlinorm.beans.dsl.KronosFunctionExpr")
+val KronosFunctionExpressionsFqName = FqName("com.kotlinorm.functions.KronosFunctionExpressions")
 val KCascadeFqName = FqName("com.kotlinorm.beans.dsl.KCascade")
-val CriteriaFqName = FqName("com.kotlinorm.beans.dsl.Criteria")
 val KTableForSelectFqName = FqName("com.kotlinorm.beans.dsl.KTableForSelect")
+val KTableForInsertSelectFqName = FqName("com.kotlinorm.beans.dsl.KTableForInsertSelect")
 val KTableForSetFqName = FqName("com.kotlinorm.beans.dsl.KTableForSet")
 val KTableForConditionFqName = FqName("com.kotlinorm.beans.dsl.KTableForCondition")
 val KTableForSortFqName = FqName("com.kotlinorm.beans.dsl.KTableForSort")
 val KTableForReferenceFqName = FqName("com.kotlinorm.beans.dsl.KTableForReference")
+val KSelectableFqName = FqName("com.kotlinorm.beans.dsl.KSelectable")
+val SyntaxExprPackageFqName = FqName("com.kotlinorm.syntax.expr")
+val SyntaxSqlExprFqName = FqName("com.kotlinorm.syntax.expr.SqlExpr")
+val SyntaxSqlExprColumnFqName = FqName("com.kotlinorm.syntax.expr.SqlExpr.Column")
+val SqlWindowFqName = FqName("com.kotlinorm.syntax.expr.SqlWindow")
+val SqlOrderingItemFqName = FqName("com.kotlinorm.syntax.order.SqlOrderingItem")
+val SqlOrderingFqName = FqName("com.kotlinorm.syntax.order.SqlOrdering")
 
-// Kotlin standard library
 val PairFqName = FqName("kotlin.Pair")
 val StringFqName = FqName("kotlin.String")
+val KotlinListOfFunctionName = Name.identifier("listOf")
 val FunctionHandlerFqName = FqName("com.kotlinorm.functions.FunctionHandler")
+val KronosFunctionAnnotationFqName = FqName("com.kotlinorm.annotations.KronosFunction")
+
+val InsertFunctionName = Name.identifier("insert")
+val InsertClauseFqName = FqName("com.kotlinorm.orm.insert.InsertClause")
+
+// Select operation and generated projection support
+val SelectPackageFqName = FqName("com.kotlinorm.orm.select")
+val JoinPackageFqName = FqName("com.kotlinorm.orm.join")
+val SelectFunctionName = Name.identifier("select")
+val SelectAliasFunctionName = "alias"
+val SelectAliasFunctionNameIdentifier = Name.identifier(SelectAliasFunctionName)
+val SelectLimitFunctionName = Name.identifier("limit")
+val SelectGroupByFunctionName = Name.identifier("groupBy")
+val SelectGeneratedProjectionFunctionName = Name.identifier("selectGeneratedProjection")
+val SelectFunctionFqName = FqName("com.kotlinorm.orm.select.select")
+val SelectGeneratedProjectionCallableId = CallableId(
+    SelectPackageFqName,
+    null,
+    SelectGeneratedProjectionFunctionName
+)
+val JoinSelectGeneratedProjectionCallableId = CallableId(
+    JoinPackageFqName,
+    null,
+    SelectGeneratedProjectionFunctionName
+)
+val SelectClauseFqName = FqName("com.kotlinorm.orm.select.SelectClause")
+val SelectFromFqName = FqName("com.kotlinorm.orm.join.SelectFrom")
+val GeneratedProjectionPackageFqName = FqName("com.kotlinorm.generated.projection")
+val GeneratedFactoryPackageFqName = FqName("com.kotlinorm.generated.factory")
+val GeneratedProjectionClassPrefix = "KronosSelectResult_"
+val GeneratedContextClassPrefix = "KronosSelectContext_"
+val GeneratedProjectionFieldIdentifierRegex = Regex("[A-Za-z_][A-Za-z0-9_]*")
+val QueryListFunctionName = "queryList"
+val QueryOneFunctionName = "queryOne"
+val QueryOneOrNullFunctionName = "queryOneOrNull"
+val SelectQueryFunctionNames = setOf(QueryListFunctionName, QueryOneFunctionName, QueryOneOrNullFunctionName)
+val CompareToFunctionName = Name.identifier("compareTo")
+val ContainsFunctionName = Name.identifier("contains")
+val EqualsFunctionName = Name.identifier("equals")
+val SortAscendingFunctionName = Name.identifier("asc")
+val SortDescendingFunctionName = Name.identifier("desc")
+val WindowOverFunctionName = "over"
+val WindowPartitionByFunctionName = "partitionBy"
+val WindowOrderByFunctionName = "orderBy"
+val PlainAggregateFunctionNames = setOf("count", "sum", "avg", "min", "max")
+val SubqueryQuantifierFunctionNames = setOf(
+    Name.identifier("any"),
+    Name.identifier("some"),
+    Name.identifier("all")
+)
+val KPojoTableNamePropertyName = Name.identifier("__tableName")
+val KPojoTableCommentPropertyName = Name.identifier("__tableComment")
+val TypedQueryFunctionFqNames = setOf(
+    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryListFunctionName"),
+    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryOneFunctionName"),
+    FqName("com.kotlinorm.beans.task.KronosQueryTask.$QueryOneOrNullFunctionName"),
+    FqName("com.kotlinorm.orm.select.SelectClause.$QueryListFunctionName"),
+    FqName("com.kotlinorm.orm.select.SelectClause.$QueryOneFunctionName"),
+    FqName("com.kotlinorm.orm.select.SelectClause.$QueryOneOrNullFunctionName"),
+    FqName("com.kotlinorm.database.SqlHandler.$QueryListFunctionName"),
+    FqName("com.kotlinorm.database.SqlHandler.$QueryOneFunctionName"),
+    FqName("com.kotlinorm.database.SqlHandler.$QueryOneOrNullFunctionName")
+)
+fun isSelectFromQueryFunctionFqName(fqName: String): Boolean {
+    val prefix = "com.kotlinorm.orm.join.SelectFrom"
+    if (!fqName.startsWith(prefix)) return false
+
+    val tail = fqName.removePrefix(prefix)
+    val separatorIndex = tail.indexOf('.')
+    if (separatorIndex <= 0) return false
+
+    val arity = tail.substring(0, separatorIndex)
+    if (arity.any { !it.isDigit() }) return false
+
+    return when (tail.substring(separatorIndex + 1)) {
+        QueryListFunctionName,
+        QueryOneFunctionName,
+        QueryOneOrNullFunctionName -> true
+        else -> false
+    }
+}
 
 // Enums
 val KColumnTypeFqName = FqName("com.kotlinorm.enums.KColumnType")
-val ConditionTypeFqName = FqName("com.kotlinorm.enums.ConditionType")
-val NoValueStrategyTypeFqName = FqName("com.kotlinorm.enums.NoValueStrategyType")
 
 // Annotations
 val TableAnnotationFqName = FqName("com.kotlinorm.annotations.Table")
@@ -56,11 +145,11 @@ val PrimaryKeyAnnotationFqName = FqName("com.kotlinorm.annotations.PrimaryKey")
 val CascadeAnnotationFqName = FqName("com.kotlinorm.annotations.Cascade")
 val DateTimeFormatAnnotationFqName = FqName("com.kotlinorm.annotations.DateTimeFormat")
 val DefaultValueAnnotationFqName = FqName("com.kotlinorm.annotations.Default")
-val NecessaryAnnotationFqName = FqName("com.kotlinorm.annotations.Necessary")
+val NonNullAnnotationFqName = FqName("com.kotlinorm.annotations.NonNull")
 val SerializeAnnotationFqName = FqName("com.kotlinorm.annotations.Serialize")
-val KronosInitAnnotationFqName = FqName("com.kotlinorm.annotations.KronosInit")
 val KronosCommonStrategyFqName = FqName("com.kotlinorm.beans.config.KronosCommonStrategy")
 val KronosObjectFqName = FqName("com.kotlinorm.Kronos")
+val KPojoFactoryProviderFqName = FqName("com.kotlinorm.utils.KPojoFactoryProvider")
 
 // Annotation FqNames grouped for class transformer
 object AnnotationFqNames {
@@ -72,7 +161,7 @@ object AnnotationFqNames {
     val Cascade = CascadeAnnotationFqName
     val DateTimeFormat = DateTimeFormatAnnotationFqName
     val Default = DefaultValueAnnotationFqName
-    val Necessary = NecessaryAnnotationFqName
+    val NonNull = NonNullAnnotationFqName
     val Serialize = SerializeAnnotationFqName
     val CreateTime = FqName("com.kotlinorm.annotations.CreateTime")
     val UpdateTime = FqName("com.kotlinorm.annotations.UpdateTime")
@@ -90,14 +179,22 @@ val KPojoClassId = ClassId.topLevel(KPojoFqName)
 
 // DSL classes
 val FieldClassId = ClassId.topLevel(FieldFqName)
-val FunctionFieldClassId = ClassId.topLevel(FunctionFieldFqName)
+val KronosFunctionExprClassId = ClassId.topLevel(KronosFunctionExprFqName)
+val KronosFunctionExpressionsClassId = ClassId.topLevel(KronosFunctionExpressionsFqName)
 val KCascadeClassId = ClassId.topLevel(KCascadeFqName)
-val CriteriaClassId = ClassId.topLevel(CriteriaFqName)
 val KTableForSelectClassId = ClassId.topLevel(KTableForSelectFqName)
+val KTableForInsertSelectClassId = ClassId.topLevel(KTableForInsertSelectFqName)
 val KTableForSetClassId = ClassId.topLevel(KTableForSetFqName)
 val KTableForConditionClassId = ClassId.topLevel(KTableForConditionFqName)
 val KTableForSortClassId = ClassId.topLevel(KTableForSortFqName)
 val KTableForReferenceClassId = ClassId.topLevel(KTableForReferenceFqName)
+val KSelectableClassId = ClassId.topLevel(KSelectableFqName)
+val InsertClauseClassId = ClassId.topLevel(InsertClauseFqName)
+val SyntaxSqlExprClassId = ClassId.topLevel(SyntaxSqlExprFqName)
+val SyntaxSqlExprColumnClassId = ClassId(SyntaxExprPackageFqName, FqName("SqlExpr.Column"), isLocal = false)
+val SqlWindowClassId = ClassId.topLevel(SqlWindowFqName)
+val SqlOrderingItemClassId = ClassId.topLevel(SqlOrderingItemFqName)
+val SqlOrderingClassId = ClassId.topLevel(SqlOrderingFqName)
 
 // Kotlin standard library
 val PairClassId = ClassId.topLevel(PairFqName)
@@ -105,9 +202,17 @@ val StringClassId = ClassId.topLevel(StringFqName)
 
 // Enums
 val KColumnTypeClassId = ClassId.topLevel(KColumnTypeFqName)
-val ConditionTypeClassId = ClassId.topLevel(ConditionTypeFqName)
-val NoValueStrategyTypeClassId = ClassId.topLevel(NoValueStrategyTypeFqName)
+
+// Annotation class ids
+val CascadeAnnotationClassId = ClassId.topLevel(CascadeAnnotationFqName)
+val IgnoreAnnotationClassId = ClassId.topLevel(IgnoreAnnotationFqName)
+val PrimaryKeyAnnotationClassId = ClassId.topLevel(PrimaryKeyAnnotationFqName)
+val SerializeAnnotationClassId = ClassId.topLevel(SerializeAnnotationFqName)
 
 // Config
 val KronosCommonStrategyClassId = ClassId.topLevel(KronosCommonStrategyFqName)
 val KronosObjectClassId = ClassId.topLevel(KronosObjectFqName)
+
+// Select operation and generated projection support
+val SelectClauseClassId = ClassId.topLevel(SelectClauseFqName)
+val SelectFromClassId = ClassId.topLevel(SelectFromFqName)

@@ -18,10 +18,10 @@ package com.kotlinorm.codegen
 import com.kotlinorm.Kronos
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableIndex
-import com.kotlinorm.database.SqlManager.getTableColumns
-import com.kotlinorm.database.SqlManager.getTableIndexes
+import com.kotlinorm.beans.task.KronosAtomicQueryTask
+import com.kotlinorm.database.SqlManager
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.orm.ddl.queryTableComment
+import com.kotlinorm.syntax.statement.SqlQuery
 import java.io.File.separator
 
 class TemplateConfig(
@@ -32,6 +32,7 @@ class TemplateConfig(
 ) {
 
     val wrapper = dataSource
+    private val statements by lazy { SqlManager.statementsOf(wrapper.dbType) }
     val tableCommentLineWords: Int
     val packageName: String
     val targetDir: String
@@ -45,30 +46,30 @@ class TemplateConfig(
     }
     val tableComments: List<String> by lazy {
         table.map {
-            queryTableComment(it.name, wrapper)
+            queryTableComment(it.name)
         }
     }
     val fields: List<List<Field>> by lazy {
         table.map {
-            getTableColumns(wrapper, it.name)
+            val rows = wrapper.forList(queryTask(statements.tableColumns(it.name), it.name))
+            statements.mapColumns(it.name, rows)
         }
     }
     val indexes: List<List<KTableIndex>> by lazy {
         table.map {
-            getTableIndexes(wrapper, it.name)
+            val rows = wrapper.forList(queryTask(statements.tableIndexes(it.name), it.name))
+            statements.mapIndexes(it.name, rows)
         }
     }
 
     init {
-        Kronos.init {
-            Kronos.tableNamingStrategy = strategy.tableNamingStrategy ?: lineHumpNamingStrategy
-            Kronos.fieldNamingStrategy = strategy.fieldNamingStrategy ?: lineHumpNamingStrategy
-            Kronos.createTimeStrategy = strategy.createTimeStrategy ?: Kronos.createTimeStrategy
-            Kronos.updateTimeStrategy = strategy.updateTimeStrategy ?: Kronos.updateTimeStrategy
-            Kronos.logicDeleteStrategy = strategy.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
-            Kronos.optimisticLockStrategy = strategy.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
-            Kronos.dataSource = { wrapper }
-        }
+        Kronos.tableNamingStrategy = strategy.tableNamingStrategy ?: Kronos.lineHumpNamingStrategy
+        Kronos.fieldNamingStrategy = strategy.fieldNamingStrategy ?: Kronos.lineHumpNamingStrategy
+        Kronos.createTimeStrategy = strategy.createTimeStrategy ?: Kronos.createTimeStrategy
+        Kronos.updateTimeStrategy = strategy.updateTimeStrategy ?: Kronos.updateTimeStrategy
+        Kronos.logicDeleteStrategy = strategy.logicDeleteStrategy ?: Kronos.logicDeleteStrategy
+        Kronos.optimisticLockStrategy = strategy.optimisticLockStrategy ?: Kronos.optimisticLockStrategy
+        Kronos.dataSource = { wrapper }
         targetDir = output.targetDir
         tableCommentLineWords = output.tableCommentLineWords ?: MAX_COMMENT_LINE_WORDS
         packageName = output.packageName ?: targetDir.split("main/kotlin/").lastOrNull()?.replace('/', '.')
@@ -84,6 +85,24 @@ class TemplateConfig(
             fields = fields[index],
             indexes = indexes[index],
             tableCommentLineWords = tableCommentLineWords
+        )
+    }
+
+    private fun queryTableComment(tableName: String): String {
+        val statement = statements.tableComment() ?: return ""
+        return wrapper.forObject(queryTask(statement, tableName), String::class, false, emptyList()) as String? ?: ""
+    }
+
+    private fun queryTask(statement: SqlQuery, tableName: String): KronosAtomicQueryTask {
+        val parameters = mapOf(
+            "tableName" to tableName,
+            "dbName" to statements.databaseName(wrapper)
+        )
+        val rendered = SqlManager.renderStatement(wrapper, statement, parameters)
+        return KronosAtomicQueryTask(
+            rendered.sql,
+            rendered.parameters,
+            statement = statement
         )
     }
 

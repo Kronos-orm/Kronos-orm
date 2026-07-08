@@ -22,10 +22,10 @@ import com.kotlinorm.enums.IgnoreAction
  * Ignore
  *
  * Annotation to specify the property in KPojo to be ignored in some scenarios, such as cascade query.
- * The priority is lower than the .cascade(vararg [kotlin.reflect.KProperty]<*>) method.
+ * The priority is lower than the `cascade { [Entity::relation] }` reference selection DSL.
  *
  * 注解用于指定KPojo中的某个属性在某些场景下是否被忽略，例如级联查询。
- * 优先级低于.cascade(vararg [kotlin.reflect.KProperty]<*>)方法。
+ * 优先级低于 `cascade { [Entity::relation] }` 引用选择 DSL。
  *
  * @author OUSC
  */

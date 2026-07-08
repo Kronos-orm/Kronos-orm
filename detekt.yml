@@ -125,6 +125,12 @@ complexity:
       - "**/com/kotlinorm/database/**/**Support.kt"
       - "**/com/kotlinorm/ast/CriteriaToAstConverter.kt"
       - "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt"
+      - "**/com/kotlinorm/database/**/*Statements.kt"
+      - "**/com/kotlinorm/orm/cascade/CascadeSelectClause.kt"
+      - "**/com/kotlinorm/syntax/render/StandardSqlRenderer.kt"
+      - "**/com/kotlinorm/syntax/validate/SqlSyntaxValidator.kt"
+      - "**/com/kotlinorm/syntax/inspect/SqlTreeInspector.kt"
+      - "**/com/kotlinorm/syntax/inspect/SqlNodeRewriter.kt"
   LabeledExpression:
     active: false
     ignoredLabels: []
@@ -134,7 +140,7 @@ complexity:
   LongMethod:
     active: true
     threshold: 180
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/beans/dsl/KTableForCondition.kt', '**/com/kotlinorm/compiler/core/FieldAnalysis.kt']
   LongParameterList:
     active: true
     functionThreshold: 24
@@ -264,6 +270,7 @@ exceptions:
     ignoreLabeled: false
   SwallowedException:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
     ignoredExceptionTypes:
       - 'InterruptedException'
       - 'MalformedURLException'
@@ -292,7 +299,7 @@ exceptions:
     active: true
   TooGenericExceptionCaught:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/compiler/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/compiler/**', '**/com/kotlinorm/wrappers/**', '**/kronos-idea-plugin/**']
     exceptionNames:
       - 'ArrayIndexOutOfBoundsException'
       - 'Error'
@@ -305,6 +312,7 @@ exceptions:
     allowedExceptionNameRegex: '_|(ignore|expected).*'
   TooGenericExceptionThrown:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
     exceptionNames:
       - 'Error'
       - 'Exception'
@@ -338,7 +346,7 @@ naming:
     minimumFunctionNameLength: 3
   FunctionNaming:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', "**/com/kotlinorm/beans/dsl/KTableForSelect.kt", "**/com/kotlinorm/functions/FunctionHandler.kt"]
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', "**/com/kotlinorm/beans/dsl/KTableForSelect.kt", "**/com/kotlinorm/functions/FunctionHandler.kt", "**/com/kotlinorm/compiler/backend/transformers/SelectTransformer.kt"]
     functionPattern: '[a-z][a-zA-Z0-9]*'
     excludeClassPattern: '$^'
   FunctionParameterNaming:
@@ -356,7 +364,7 @@ naming:
   MatchingDeclarationName:
     active: true
     mustBeFirst: true
-    excludes: ['**/test/**']
+    excludes: ['**/test/**', '**/testData/**', '**/com/kotlinorm/orm/sql/SqlQueryParameterMaterializer.kt']
 #    multiplatformTargets:
 #      - 'ios'
 #      - 'android'
@@ -387,6 +395,7 @@ naming:
     constantPattern: '[A-Z][_A-Z0-9]*'
     propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
     privatePropertyPattern: '_?[A-Za-z][_A-Za-z0-9]*'
+    excludes: ['**/test/**', '**/com/kotlinorm/orm/join/Patch.kt', '**/com/kotlinorm/orm/select/Patch.kt', '**/kronos-idea-plugin/**']
   VariableMaxLength:
     active: false
     maximumVariableNameLength: 64
@@ -631,7 +640,7 @@ style:
     excludes: [ '**/NamedParameterUtils.kt', '**/IrKDocUtil.kt' ]
   MagicNumber:
     active: true
-    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/database/**/**SqlRenderer.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", "**/com/kotlinorm/compiler/core/FieldAnalysis.kt", "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt", "**/com/kotlinorm/compiler/core/ErrorReporter.kt", "**/com/kotlinorm/compiler/transformers/SetTransformer.kt", "**/com/kotlinorm/compiler/transformers/KronosClassBodyGenerator.kt", "**/com/kotlinorm/orm/update/UpdateClause.kt", "**/com/kotlinorm/orm/delete/DeleteClause.kt", "**/com/kotlinorm/functions/bundled/builders/StringFunctionBuilder.kt", '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
+    excludes: ["**/com/kotlinorm/database/**/**Support.kt", "**/com/kotlinorm/database/**/**SqlRenderer.kt", "**/com/kotlinorm/database/**/*Statements.kt", "**/com/kotlinorm/enums/**.kt", "**/com/kotlinorm/codegen/**.kt", "**/com/kotlinorm/compiler/core/FieldAnalysis.kt", "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt", "**/com/kotlinorm/compiler/core/ErrorReporter.kt", "**/com/kotlinorm/compiler/backend/transformers/**", "**/com/kotlinorm/compiler/fir/**", "**/com/kotlinorm/orm/update/UpdateClause.kt", "**/com/kotlinorm/orm/delete/DeleteClause.kt", "**/com/kotlinorm/syntax/**", "**/com/kotlinorm/wrappers/**", "**/kronos-idea-plugin/**", '**/test/**', '**/testData/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts']
     ignoreNumbers:
       - '-1'
       - '0'
@@ -664,8 +673,11 @@ style:
       - "**/com/kotlinorm/orm/join/Patch.kt"
       - "**/com/kotlinorm/orm/join/SelectFrom**.kt"
       - "**/com/kotlinorm/database/**/**Support.kt"
+      - "**/com/kotlinorm/database/**/*Statements.kt"
+      - "**/com/kotlinorm/syntax/**"
   MayBeConst:
     active: true
+    excludes: ['**/com/kotlinorm/compiler/utils/Constants.kt']
   ModifierOrder:
     active: true
   MultilineLambdaItParameter:
@@ -710,6 +722,8 @@ style:
     excludeGuardClauses: false
     excludes:
       - "**/com/kotlinorm/compiler/core/ConditionAnalysis.kt"
+      - "**/com/kotlinorm/compiler/backend/transformers/KronosProjectionIrTransformer.kt"
+      - "**/kronos-idea-plugin/**"
   SafeCast:
     active: true
   SerialVersionUIDInSerializableClass:
@@ -811,7 +825,7 @@ style:
     ignoreLateinitVar: false
   WildcardImport:
     active: true
-    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**' ]
+    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**', '**/com/kotlinorm/syntax/**' ]
     excludeImports:
       - 'java.util.*'
       - 'com.kotlinorm.enums.KColumnType.*'

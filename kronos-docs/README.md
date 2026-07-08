@@ -4,7 +4,7 @@ Official documentation website for Kronos ORM, hosted at [kotlinorm.com](https:/
 
 ## Tech Stack
 
-- Angular 21 with SSR (`@angular/ssr`)
+- Angular 21
 - ng-doc for documentation rendering
 - Transloco for i18n (English + Chinese)
 - PrimeNG + Tailwind CSS for UI
@@ -41,4 +41,4 @@ pnpm start          # serves at http://localhost:3307
 pnpm build
 ```
 
-SSR output goes to `dist/kronos-orm-pro/`.
+Build output goes to `docs/`, matching the `angular.json` `outputPath` used by `deploy-docs.sh`.

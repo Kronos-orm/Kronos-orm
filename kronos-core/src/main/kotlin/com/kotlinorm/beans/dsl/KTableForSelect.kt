@@ -18,38 +18,42 @@ package com.kotlinorm.beans.dsl
 
 import com.kotlinorm.functions.FunctionHandler
 import com.kotlinorm.interfaces.KPojo
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.statement.SqlSelectItemAliasMetadata
+import com.kotlinorm.syntax.statement.SqlSelectItemSourceScope
 
 /**
  * KTable
  *
  * DSL Class of Kronos, which the compiler plugin use to generate the `select` code.
  * to add Fields, you can use following:
- * 1. `it.<field1> + it.<field2>`
- * 2. `it.<field1> + it.<field2>.as_("<alias>")`
+ * 1. `[it.<field1>, it.<field2>]`
+ * 2. `[it.<field1>, it.<field2>.alias("<alias>")]`
  * 3. `addField(Field(columnName, optionalName))`
  * 4. `Field(columnName, optionalName).setAlias("<alias>")`
- * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).as_("<alias>")`
+ * 5. `count(it.<field>)` or `count(1)` or `count(it.<field>).alias("<alias>")`
  *
  * @param T the type of the table
  */
 open class KTableForSelect<T : KPojo> {
     val fields: MutableList<Field> = mutableListOf()
+    val selectItems: MutableList<SqlSelectItem> = mutableListOf()
+    internal val projectionItems: MutableList<ProjectionItem> = mutableListOf()
     val f: FunctionHandler = FunctionHandler
 
-    /**
-     * Overloaded operator function that adds two objects of type Any?.
-     *
-     * @param other the object to be added to this object.
-     * @return an integer value of 1.
-     */
-    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Int = 1
+    @Suppress("UNUSED_PARAMETER")
+    operator fun get(vararg fields: Any?): Unit = Unit
 
-    /**
-     * Overloaded operator function that adds two objects of type Any?.
-     *
-     * @return an integer value of 1.
-     */
-    operator fun Any?.unaryPlus(): Int = 1
+    operator fun Any?.plus(@Suppress("UNUSED_PARAMETER") other: Any?): Any? = null
+
+    operator fun Any?.minus(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.times(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.div(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
+
+    operator fun Any?.rem(@Suppress("UNUSED_PARAMETER") other: Any?): Number? = null
 
     /**
      * Overloaded operator function that minus two objects of type Any?.
@@ -66,7 +70,25 @@ open class KTableForSelect<T : KPojo> {
      * @return the provided alias
      */
     @Suppress("UNUSED")
-    infix fun Any?.as_(alias: String): String = alias
+    fun Field.alias(@Suppress("UNUSED_PARAMETER") alias: String): Field = this
+
+    @Suppress("UNUSED")
+    fun KronosFunctionExpr.alias(alias: String): KronosFunctionExpr = copy(alias = alias)
+
+    @Suppress("UNUSED")
+    fun SqlExpr.alias(alias: String): KronosFunctionExpr = KronosFunctionExpr(this, "expr", alias)
+
+    @Suppress("UNUSED")
+    fun <R> R.alias(@Suppress("UNUSED_PARAMETER") alias: String): R = this
+
+    /**
+     * Adds a SQL window `OVER (...)` clause to a function expression.
+     */
+    @Suppress("UNUSED")
+    fun <R> R.over(block: KTableForWindow<T>.() -> Unit): R {
+        KTableForWindow<T>().block()
+        return this
+    }
 
     /**
      * Adds a field to the collection of fields.
@@ -76,6 +98,43 @@ open class KTableForSelect<T : KPojo> {
     @Suppress("MemberVisibilityCanBePrivate")
     fun addField(property: Field) {
         fields += property
+        projectionItems += ProjectionItem.FieldItem(property)
+    }
+
+    fun addFunction(function: KronosFunctionExpr) {
+        val alias = function.alias ?: function.functionName.lowercase()
+        val item = SqlSelectItem.Expr(
+            expr = function.expr,
+            alias = alias,
+            metadata = SqlSelectItemAliasMetadata(
+                outputName = alias,
+                expression = function.expr,
+                scope = SqlSelectItemSourceScope.Aggregate
+            )
+        )
+        selectItems += item
+        projectionItems += ProjectionItem.SelectItemValue(item)
+    }
+
+    fun addRawSql(sql: String, alias: String? = null) {
+        val item = rawSqlSelectItem(sql, alias)
+        selectItems += item
+        projectionItems += ProjectionItem.SelectItemValue(item)
+    }
+
+    fun addScalarSubquery(query: KSelectable<*>, alias: String) {
+        val expr = SqlExpr.Subquery(query.toSqlQuery())
+        val item = SqlSelectItem.Expr(
+            expr = expr,
+            alias = alias,
+            metadata = SqlSelectItemAliasMetadata(
+                outputName = alias,
+                expression = expr,
+                scope = SqlSelectItemSourceScope.Selected
+            )
+        )
+        selectItems += item
+        projectionItems += ProjectionItem.ScalarSubqueryValue(query, alias, item)
     }
 
     fun Field.setAlias(alias: String): Field {
@@ -93,4 +152,39 @@ open class KTableForSelect<T : KPojo> {
          */
         fun <T : KPojo> T.afterSelect(block: KTableForSelect<T>.(T) -> Unit) = KTableForSelect<T>().block(this)
     }
+
+    internal sealed class ProjectionItem {
+        data class FieldItem(val field: Field) : ProjectionItem()
+        data class SelectItemValue(val item: SqlSelectItem) : ProjectionItem()
+        data class ScalarSubqueryValue(
+            val query: KSelectable<*>,
+            val alias: String,
+            val item: SqlSelectItem
+        ) : ProjectionItem()
+    }
 }
+
+internal fun rawSqlSelectItem(sql: String, alias: String? = null): SqlSelectItem.Expr {
+    val expr = sql.toRawSqlExpr()
+    return SqlSelectItem.Expr(
+        expr = expr,
+        alias = alias,
+        metadata = alias?.let {
+            SqlSelectItemAliasMetadata(
+                outputName = it,
+                expression = expr,
+                scope = SqlSelectItemSourceScope.Selected,
+                userReferenceable = true
+            )
+        }
+    )
+}
+
+internal fun String.toRawSqlExpr(): SqlExpr =
+    when {
+        toIntOrNull() != null -> SqlExpr.NumberLiteral(this)
+        toDoubleOrNull() != null -> SqlExpr.NumberLiteral(this)
+        equals("true", ignoreCase = true) || equals("false", ignoreCase = true) -> SqlExpr.BooleanLiteral(toBoolean())
+        equals("null", ignoreCase = true) -> SqlExpr.NullLiteral
+        else -> SqlExpr.UnsafeRaw(this)
+    }

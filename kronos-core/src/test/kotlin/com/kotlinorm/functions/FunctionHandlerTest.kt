@@ -16,17 +16,54 @@
 
 package com.kotlinorm.functions
 
+import com.kotlinorm.syntax.SqlIdentifier
+import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlWindow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 
 class FunctionHandlerTest {
 
     @Test
     fun testAsThrowsException() {
         val exception = assertFailsWith<UnsupportedOperationException> {
-            FunctionHandler.as_("alias")
+            FunctionHandler.alias("alias")
         }
         assertEquals("You will never want to alias an empty function handle.", exception.message)
+    }
+
+    @Test
+    fun `kronos function expressions stay syntax native`() {
+        val count = KronosFunctionExpressions.callArgs("count", listOf(1))
+        assertEquals(
+            SqlExpr.Function(
+                name = SqlIdentifier.of("COUNT"),
+                args = listOf(SqlExpr.NumberLiteral("1"))
+            ),
+            count.expr
+        )
+
+        val add = KronosFunctionExpressions.callArgs("add", listOf(1, 2, 3))
+        assertEquals(
+            SqlExpr.Binary(
+                SqlExpr.Binary(
+                    SqlExpr.NumberLiteral("1"),
+                    SqlBinaryOperator.Plus,
+                    SqlExpr.NumberLiteral("2")
+                ),
+                SqlBinaryOperator.Plus,
+                SqlExpr.NumberLiteral("3")
+            ),
+            add.expr
+        )
+
+        val window = SqlWindow(partitionBy = listOf(SqlExpr.Column(columnName = "user_id")))
+        val rowNumber = KronosFunctionExpressions.callWindowArgs("rowNumber", window = window)
+        val windowExpr = assertIs<SqlExpr.Window>(rowNumber.expr)
+        assertEquals(SqlIdentifier.of("ROW_NUMBER"), (windowExpr.expr as SqlExpr.Function).name)
+        assertEquals(window, windowExpr.window)
     }
 }

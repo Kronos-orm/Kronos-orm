@@ -7,11 +7,22 @@
             </a>
             <span style="width:1px; height:1.2rem; background: var(--ng-doc-base-4); opacity:0.5;"></span>
             <a ng-doc-button-icon
+               class="sidebar-toggle-button"
                [ngDocTooltip]="sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'"
                size="large"
-               (click)="sidebarCollapsed = !sidebarCollapsed"
-               style="border: 0; opacity: 0.75;">
-                <i class="pi" [class.pi-angle-double-right]="sidebarCollapsed" [class.pi-angle-double-left]="!sidebarCollapsed" style="font-size: 1.2rem"></i>
+               (click)="sidebarCollapsed = !sidebarCollapsed">
+                <svg class="sidebar-toggle-icon"
+                     [class.sidebar-toggle-icon-collapsed]="sidebarCollapsed"
+                     width="22"
+                     height="22"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     aria-hidden="true">
+                    <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/>
+                    <path class="sidebar-toggle-rail" d="M9 5.75V18.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path class="sidebar-toggle-line" d="M13 10H16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path class="sidebar-toggle-line" d="M13 14H16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
             </a>
         </div>
         <div ngDocNavbarRight>

@@ -16,11 +16,7 @@
 
 package com.kotlinorm.utils
 
-import com.kotlinorm.beans.dsl.Criteria
-import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.interfaces.KPojo
-import com.kotlinorm.enums.ConditionType
-import com.kotlinorm.enums.ConditionType.Companion.And
 import kotlin.reflect.KClass
 
 object Extensions {
@@ -82,18 +78,6 @@ object Extensions {
                 try { this[k] = v } catch (_: NoSuchElementException) {}
             }
         }.mapperTo(kClass) as KPojo
-    }
-
-    internal fun List<Criteria>.toCriteria(): Criteria {
-        return Criteria(type = And, children = toMutableList())
-    }
-
-    internal infix fun Field.eq(value: Any?): Criteria {
-        return Criteria(this, ConditionType.EQUAL, false, value)
-    }
-
-    internal fun String.asSql(): Criteria {
-        return Criteria(type = ConditionType.SQL, value = this)
     }
 
     internal fun Any?.isEmptyArrayOrCollection(): Boolean {

@@ -2,11 +2,15 @@
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
 # What is Kronos?
-Kronos is a modern ORM framework designed for Kotlin based on the compiler plugin, which is suitable for both backend and mobile applications, support multi-database. Powerful, high performance, easy to use.
+Kronos is a modern ORM framework designed for Kotlin. It uses a compiler plugin to provide type-safe SQL DSL support and works with multiple databases.
 
 We support both {{ $.noun("Code First") }} and {{ $.noun("Database First") }} schemas, which provide **auto-creation of database table structures, auto-synchronization, as well as support for table structures, indexes and code generation**.
 
-KCP implementation of the expression tree analysis support as well as Kotlin itself generic, higher-order functions, extended functions and other syntactic features, so that Kronos has powerful expressive power and concise , semantic writing to make the operation of the database has become more simple.
+Kronos analyzes Kotlin expressions and keeps common database operations close to Kotlin syntax. You can use `==`, `>`, `<`, `in`, field references, projection DSL, and table operations without writing string SQL for ordinary CRUD flows.
+
+## Recommended reading path
+
+New users should start with {{ $.keyword("getting-started/installation", ["Installation"]) }}, then follow {{ $.keyword("getting-started/first-query", ["First Query"]) }} for the smallest model, table creation, insert, and select flow. After that, read {{ $.keyword("mapping/kpojo", ["KPojo"]) }} for entity mapping, {{ $.keyword("query/select", ["Select"]) }} for reads, {{ $.keyword("mutation/insert", ["Insert"]) }} for writes, and {{ $.keyword("database/connect-to-db", ["Connect to DB"]) }} for production data source setup.
 
 ```mermaid
 graph LR
@@ -19,7 +23,7 @@ graph LR
     C --> E[Kronos-gradle-plugin]
     A --> F[Kronos-data-source-wrapper]
     F --> G[DataSource]
-    G --> H[Mysql, Sqlite, Postgresql, Oracle, SqlServer, etc.]
+    G --> H[MySQL, SQLite, PostgreSQL, Oracle, SQL Server, etc.]
     A --> K[Kronos-logging, Kronos-codegen and Other Plugins]
 ```
 
@@ -32,7 +36,7 @@ graph LR
 * Strong type checking.
 * Supports **transactions**, **complex cascading operations without foreign keys (one-to-one, one-to-many, many-to-many)**, **serialization and deserialization**, **cross-database queries**, and **database table/index/remarks creation and structure synchronization**, etc.
 * Supports **Logical Deletion**, **Optimistic Lock**, **Creation Time**, **Update Time**, and offers flexible customization settings.
-* **Easily integrate with any third-party framework** such as `Spring`, `Ktor`, `Vert.x`, `Solon`, etc. See more information in the sample projects plz.
+* **Easily integrate with third-party frameworks** such as `Spring`, `Ktor`, `Vert.x`, and `Solon`. See the sample projects for framework-specific usage.
 * **Native SQL database manipulation based on named parameters**.
 * Supports easy conversion of **data entity classes to Map or from Map to data entity classes** via compile-time operations with **NO reflection, near-zero overhead**.
 * Data classes can be treated as database table models, **significantly reducing additional class definitions**.
@@ -43,11 +47,20 @@ graph LR
 > Here is a simple example.
 
 ```kotlin name="demo" icon="kotlin"
-val wrapper = KronosBasicWrapper(
-    MysqlDataSource("jdbc:mysql://localhost:3306/test")
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper = KronosJdbcWrapper(
+    BasicDataSource().apply {
+        driverClassName = "com.mysql.cj.jdbc.Driver"
+        url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
+        username = "user"
+        password = "******"
+    }
 )
 
-Kronos.init {
+with(Kronos) {
     dataSource = { wrapper }
 }
 
@@ -58,27 +71,27 @@ val user: User = User(
     age = 18
 )
 
-// Create the table if it does not exist, otherwise synchronize the table structure, including table columns, indexes, notes, etc.
-dataSource.table.syncTable(user)
+// Create the table if it does not exist, otherwise synchronize columns and indexes.
+wrapper.table.syncTable(user)
 
 // Insert data
 user.insert().execute()
 
 // Update the name field according to the id.
-user.update().set { it.name = "Kronos ORM" }.by{ it.id }.execute()
+user.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
 // or
-user.update{ it.name }.by{ it.id }.execute()
+user.update { it.name }.by { it.id }.execute()
 
 // Query records based on object value
-val name: User = user.select().by { it.id }.queryOne()
+val selectedUser: User = user.select().by { it.id }.queryOne()
 
 // Query name field by id
-val name: String = user.select{ it.name }.where{ it.id == 1 }.queryOne<String>()
+val selectedName: String = user.select { it.name }.where { it.id == 1 }.queryOne<String>()
 
 // Delete data with id 1
-User().delete().where{ it.id == 1 }.execute()
+User().delete().where { it.id == 1 }.execute()
 // or
-User(1).delete().by { it.id }.execute()
+User(id = 1).delete().by { it.id }.execute()
 ```
 
 {{ NgDocActions.demo("FeatureCardsComponent", {container: false}) }}

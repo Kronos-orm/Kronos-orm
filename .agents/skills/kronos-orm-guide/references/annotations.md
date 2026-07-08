@@ -16,12 +16,25 @@ data class User(val id: Int? = null) : KPojo
 
 ## @PrimaryKey
 
-标记主键字段。`identity = true` 表示自增主键。
+标记主键字段。不设置参数时为手动主键；设置 `identity`、`uuid`、`snowflake` 或 `custom` 时，字段分别映射为对应的 `PrimaryKeyType`。
 
 ```kotlin
 @Target(AnnotationTarget.PROPERTY)
-annotation class PrimaryKey(val identity: Boolean = false)
+annotation class PrimaryKey(
+    val identity: Boolean = false,
+    val uuid: Boolean = false,
+    val snowflake: Boolean = false,
+    val custom: Boolean = false
+)
 ```
+
+| 写法 | PrimaryKeyType | 插入行为 |
+|------|----------------|----------|
+| `@PrimaryKey` | `DEFAULT` | 使用 KPojo 上已有的字段值 |
+| `@PrimaryKey(identity = true)` | `IDENTITY` | 主键值为 `null` 时排除该列，由数据库生成 |
+| `@PrimaryKey(uuid = true)` | `UUID` | 插入前写入 `UUIDGenerator.nextId()` |
+| `@PrimaryKey(snowflake = true)` | `SNOWFLAKE` | 插入前写入 `SnowflakeIdGenerator.nextId()` |
+| `@PrimaryKey(custom = true)` | `CUSTOM` | 插入前写入 `customIdGenerator?.nextId()` |
 
 ```kotlin
 data class User(
@@ -30,40 +43,79 @@ data class User(
 ) : KPojo
 ```
 
+```kotlin
+data class UuidUser(
+    @PrimaryKey(uuid = true)
+    var id: String? = null
+) : KPojo
+```
+
+```kotlin
+import com.kotlinorm.beans.generator.customIdGenerator
+import com.kotlinorm.interfaces.KIdGenerator
+
+object TicketIdGenerator : KIdGenerator<String> {
+    override fun nextId(): String = "ticket-${System.currentTimeMillis()}"
+}
+
+fun configureTicketIds() {
+    customIdGenerator = TicketIdGenerator
+}
+```
+
+`identity` 推荐用于 `Int` 或 `Long` 字段，`uuid` 推荐用于 `String` 字段，`snowflake` 推荐用于 `Long` 字段，`custom` 字段类型应和生成器返回值一致。插入 `custom` 主键前必须设置 `customIdGenerator`，否则主键参数为 `null`。
+
 ## @Column
 
-指定列名、长度、精度等属性。
+指定列名。
 
 ```kotlin
 @Target(AnnotationTarget.PROPERTY)
-annotation class Column(
-    val name: String = "",
-    val length: Int = 0,
-    val precision: Int = 0,
-    val scale: Int = 0,
-    val nullable: Boolean = true,
-    val defaultValue: String = ""
-)
+annotation class Column(val name: String)
 ```
 
 ```kotlin
 data class User(
-    @Column("user_name", length = 100)
+    @Column("user_name")
     var name: String? = null
 ) : KPojo
 ```
 
 ## @ColumnType
 
-显式指定列的数据库类型。
+显式指定列的数据库类型。没有此注解时，编译器插件按 Kotlin 属性类型推断 `KColumnType`；有此注解时，`type`、`length`、`scale` 会进入 `kronosColumns()`，并由表操作按当前数据库方言渲染 DDL。
 
 ```kotlin
-@ColumnType(CHAR)
-var name: String? = null
-
-@ColumnType(TEXT)
-var description: String? = null
+@Target(AnnotationTarget.PROPERTY)
+annotation class ColumnType(
+    val type: KColumnType,
+    val length: Int = 0,
+    val scale: Int = 0
+)
 ```
+
+```kotlin
+@ColumnType(KColumnType.VARCHAR, length = 80)
+var title: String? = null
+
+@ColumnType(KColumnType.DECIMAL, length = 12, scale = 2)
+var amount: java.math.BigDecimal? = null
+
+@ColumnType(KColumnType.TEXT)
+var description: String? = null
+
+@Serialize
+@ColumnType(KColumnType.JSON)
+var payload: Map<String, Any?>? = null
+```
+
+常见渲染结果：
+
+| 设置 | MySQL | PostgreSQL | SQLite | SQL Server | Oracle |
+|------|-------|------------|--------|------------|--------|
+| `VARCHAR, length = 80` | `VARCHAR(80)` | `VARCHAR(80)` | `TEXT` | `VARCHAR(80)` | `VARCHAR2(80)` |
+| `DECIMAL, length = 12, scale = 2` | `DECIMAL(12,2)` | `DECIMAL(12,2)` | `NUMERIC` | `DECIMAL(12,2)` | `NUMBER(12,2)` |
+| `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` |
 
 ## @Default
 
@@ -95,7 +147,7 @@ data class User(var id: Int? = null) : KPojo
 
 ## @Version
 
-标记乐观锁版本字段。update 时自动检查并递增版本号。
+标记乐观锁版本字段。insert 会初始化版本号，update 和逻辑删除会递增版本号。需要按读取时的版本匹配时，在 `where { ... }` 中显式加入版本条件。
 
 ```kotlin
 data class User(
@@ -138,7 +190,15 @@ var updateTime: String? = null
 annotation class Cascade(
     val properties: Array<String>,
     val targetProperties: Array<String>,
-    val onDelete: String = "NO ACTION"
+    val onDelete: CascadeDeleteAction = CascadeDeleteAction.NO_ACTION,
+    val defaultValue: Array<String> = [],
+    val usage: Array<KOperationType> = [
+        KOperationType.INSERT,
+        KOperationType.UPDATE,
+        KOperationType.DELETE,
+        KOperationType.SELECT,
+        KOperationType.UPSERT
+    ]
 )
 ```
 
@@ -193,10 +253,12 @@ annotation class TableIndex(
 ```
 
 ```kotlin
-@TableIndex("idx_name", ["name"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
+@TableIndex("idx_name", ["name"], "UNIQUE", "BTREE")
 @TableIndex("idx_age", ["age"])
 data class User(...) : KPojo
 ```
+
+`type = "UNIQUE"` 标记唯一索引；`method = "BTREE"` 等值会在支持的方言中渲染为索引方法；`concurrently = true` 面向 PostgreSQL，并发索引语句会放在事务性 DDL 批次之外执行。当前源码没有公开 `@ColumnIndex` 注解，单列索引也使用类级别 `@TableIndex(columns = ["name"])`。
 
 ## @Serialize
 
@@ -211,11 +273,11 @@ data class User(
 ) : KPojo
 ```
 
-需要配置 `serializeProcessor`（如 `GsonProcessor`、`JacksonProcessor`）。
+需要通过 `with(Kronos)` 配置 `serializeProcessor`（如 `GsonProcessor`、`JacksonProcessor`）。
 
 ## @Ignore
 
-忽略字段，不参与 ORM 操作。可指定忽略的操作类型。
+忽略字段，可指定忽略的操作类型。默认 `@Ignore` 等价于 `@Ignore([IgnoreAction.ALL])`。`@Ignore` 优先级低于显式的 `cascade { [Entity::relation] }` 引用选择 DSL。
 
 ```kotlin
 data class User(
@@ -224,13 +286,23 @@ data class User(
 ) : KPojo
 ```
 
-## @Necessary
+常用目标：
 
-标记字段为必填（DDL 中生成 NOT NULL）。
+- `IgnoreAction.ALL`：属性不是数据库列。
+- `IgnoreAction.TO_MAP`：`toDataMap()` 跳过该属性。
+- `IgnoreAction.FROM_MAP`：`fromMapData()` 和 `safeFromMapData()` 跳过该属性。
+- `IgnoreAction.SELECT`：默认 `select()` 字段列表跳过该属性。
+- `IgnoreAction.CASCADE_SELECT`：级联查询跳过该关系属性。
+
+空 `where()` 的 query-by-example 条件也会排除逻辑删除字段、级联字段、非数据库列和被忽略字段。
+
+## @NonNull
+
+标记字段为必填，DDL 中生成 `NOT NULL`。
 
 ```kotlin
 data class User(
-    @Necessary
+    @NonNull
     var name: String? = null
 ) : KPojo
 ```

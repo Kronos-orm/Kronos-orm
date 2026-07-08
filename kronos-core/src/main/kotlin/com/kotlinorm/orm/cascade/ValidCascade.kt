@@ -82,17 +82,17 @@ fun findValidRefs(
     return columns.asSequence().filter { !it.isColumn && (allowed == null || it.name in allowed || allowAll) && it.kClass != null }.map { col ->
         //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
         if (col.ignore?.contains(CASCADE_SELECT) == true && allowAll && operationType == KOperationType.SELECT) {
-            return@map listOf()
+            return@map []
         }
 
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
         return@map if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
-            if (operationType == KOperationType.DELETE) return@map listOf() // 插入操作不允许子级向上级级联
+            if (operationType == KOperationType.DELETE) return@map [] // 插入操作不允许子级向上级级联
             val ref =
                 col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
-            listOf(
+            [
                 ValidCascade(col, col.cascade, ref, col.tableName)
-            ) // 若有级联映射，返回引用
+            ] // 若有级联映射，返回引用
         } else {
             val ref =
                 col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>

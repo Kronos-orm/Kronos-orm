@@ -156,23 +156,20 @@ data class NodeOfKPojo(
     private fun patchFromParent() {
         if (data == null || !data.updateReferenceValue || data.parent?.insertIgnore != false) return
         val validRef = data.parent!!.validCascades.find { it.field == data.fieldOfParent } ?: return
-        val listOfPair = validRef.kCascade.targetProperties.mapIndexedNotNull { index, name ->
-            if (tableName == validRef.tableName) {
-                validRef.kCascade.properties[index] to (data.parent!!.dataMap[name]
-                    ?: return@mapIndexedNotNull null)
+        val patches = validRef.kCascade.targetProperties.mapIndexedNotNull { index, name ->
+            val prop = if (tableName == validRef.tableName) {
+                validRef.kCascade.properties[index]
             } else {
-                name to (data.parent!!.dataMap[name] ?: return@mapIndexedNotNull null)
+                name
             }
+            val value = data.parent!!.dataMap[name] ?: return@mapIndexedNotNull null
+            Triple(prop, name, value)
         }
-        listOfPair.forEach { (prop, value) ->
+        patches.forEach { (prop, parentProp, value) ->
+            data.parent!!.updateParams[parentProp]?.let { updateParams[prop] = it }
             if (kPojo[prop] != value) {
                 kPojo[prop] = value
                 dataMap[prop] = value
-                validRef.kCascade.targetProperties.forEachIndexed { index, field ->
-                    if (data.parent!!.updateParams[field] != null) {
-                        updateParams[validRef.kCascade.properties[index]] = data.parent!!.updateParams[field]!!
-                    }
-                }
             }
         }
         if (validCascades.filter { it.mapperByThis }.groupBy { it.field.tableName }
@@ -260,7 +257,8 @@ data class NodeOfKPojo(
                             NodeInfo(
                                 data?.updateReferenceValue == true,
                                 this,
-                                cascade.field
+                                cascade.field,
+                                cascade.kCascade
                             ),
                             cascadeAllowed,
                             operationType,

@@ -1,0 +1,242 @@
+{% import "../../../macros/macros-en.njk" as $ %}
+{{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
+
+Kronos executes database operations through {{ $.keyword("database/datasource-wrapper", ["Data source wrapper"]) }}. `KronosJdbcWrapper` accepts any JDBC `DataSource`, reads database metadata, and provides the wrapper used by `Kronos.dataSource`.
+
+## Add `kronos-jdbc-wrapper`
+
+Use `kronos-jdbc-wrapper` when the project already has a JDBC `DataSource` or can create one from a connection pool.
+
+```kotlin group="kronos-jdbc-wrapper" name="gradle(kts)" icon="gradlekts"
+dependencies {
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}")
+}
+```
+
+```groovy group="kronos-jdbc-wrapper" name="gradle(groovy)" icon="gradle"
+dependencies {
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:{{ $.kronosVersion() }}'
+}
+```
+
+```xml group="kronos-jdbc-wrapper" name="maven" icon="maven"
+<dependency>
+    <groupId>com.kotlinorm</groupId>
+    <artifactId>kronos-jdbc-wrapper</artifactId>
+    <version>{{ $.kronosVersion() }}</version>
+</dependency>
+```
+
+## Add a connection pool and JDBC driver
+
+Choose the latest stable connection pool and JDBC driver version that matches your database server and JDK.
+
+```kotlin group="Driver" name="gradle(kts)" icon="gradlekts"
+dependencies {
+    implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
+}
+```
+
+```xml group="Driver" name="maven" icon="maven"
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-dbcp2</artifactId>
+    <version>${commons-dbcp2.version}</version>
+</dependency>
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <version>${mysql-connector-j.version}</version>
+</dependency>
+```
+
+> **Note**
+> Replace `<latest-stable>` or the Maven properties with the current stable version from the connection pool and driver maintainers.
+
+## Production connection checklist
+
+Before assigning the wrapper to `Kronos.dataSource`, configure the `DataSource` with the same production settings your application uses for direct JDBC access.
+
+| Item | What to check |
+|------|---------------|
+| Pool size | Set the initial, idle, and max pool size for the application's request concurrency and database limits. |
+| Timeouts | Configure connection, socket or network, query, and idle timeout values in the pool or JDBC driver. |
+| Validation | Enable a validation query or JDBC validation method, and test both borrow-time and idle validation settings. |
+| SSL and certificates | Use the JDBC URL or driver properties required by the server, including TLS mode, trust store, and certificate validation. |
+| Secrets | Load username, password, and certificate paths from the deployment secret manager or environment. |
+| Time zone and encoding | Set JDBC URL options such as server time zone, Unicode, and character encoding where the driver requires them. |
+| Driver version | Pick the stable driver line that supports your database server version, JDK, and enabled authentication or TLS features. |
+
+## Configure MySQL
+
+Create a `BasicDataSource`, wrap it with `KronosJdbcWrapper`, and assign it to `Kronos.dataSource`.
+
+```kotlin group="MySQL" name="MysqlKronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "com.mysql.cj.jdbc.Driver"
+            url = "jdbc:mysql://localhost:3306/kronos?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC"
+            username = "root"
+            password = "******"
+        }
+    )
+}
+
+with(Kronos) {
+    dataSource = { wrapper }
+}
+```
+
+```kotlin group="MySQL" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
+}
+```
+
+## Configure PostgreSQL
+
+Use the PostgreSQL JDBC driver class and a PostgreSQL JDBC URL.
+
+```kotlin group="PostgreSQL" name="PostgreSQLKronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "org.postgresql.Driver"
+            url = "jdbc:postgresql://localhost:5432/kronos"
+            username = "postgres"
+            password = "******"
+        }
+    )
+}
+
+with(Kronos) {
+    dataSource = { wrapper }
+}
+```
+
+```kotlin group="PostgreSQL" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("org.postgresql:postgresql:<latest-stable>")
+}
+```
+
+## Configure SQLite
+
+SQLite uses a file path in the JDBC URL and does not require a username or password.
+
+```kotlin group="SQLite" name="SQLiteKronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "org.sqlite.JDBC"
+            url = "jdbc:sqlite:/path/to/kronos.db"
+        }
+    )
+}
+
+with(Kronos) {
+    dataSource = { wrapper }
+}
+```
+
+```kotlin group="SQLite" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("org.xerial:sqlite-jdbc:<latest-stable>")
+}
+```
+
+## Configure SQL Server
+
+Use the SQL Server JDBC driver and include the encryption options required by your server.
+
+```kotlin group="SQL Server" name="SQLServerKronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+            url = "jdbc:sqlserver://localhost:1433;databaseName=kronos;encrypt=true;trustServerCertificate=true"
+            username = "sa"
+            password = "******"
+        }
+    )
+}
+
+with(Kronos) {
+    dataSource = { wrapper }
+}
+```
+
+```kotlin group="SQL Server" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.microsoft.sqlserver:mssql-jdbc:<latest-stable>")
+}
+```
+
+## Configure Oracle
+
+Use the Oracle JDBC driver and the service name or PDB URL used by your database.
+
+```kotlin group="Oracle" name="OracleKronosConfig.kt" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+import org.apache.commons.dbcp2.BasicDataSource
+
+val wrapper by lazy {
+    KronosJdbcWrapper(
+        BasicDataSource().apply {
+            driverClassName = "oracle.jdbc.OracleDriver"
+            url = "jdbc:oracle:thin:@localhost:1521/FREEPDB1"
+            username = "system"
+            password = "******"
+        }
+    )
+}
+
+with(Kronos) {
+    dataSource = { wrapper }
+}
+```
+
+```kotlin group="Oracle" name="Driver coordinate" icon="gradlekts"
+dependencies {
+    implementation("com.oracle.database.jdbc:ojdbc8:<latest-stable>")
+}
+```
+
+## Check the active database
+
+`KronosJdbcWrapper` reads the JDBC metadata and exposes `dbType` and `sqlDialect`.
+
+```kotlin group="Check" name="kotlin" icon="kotlin"
+println(wrapper.url)
+println(wrapper.userName)
+println(wrapper.dbType)
+println(wrapper.sqlDialect.family)
+```
+
+```text group="Check" name="output"
+jdbc:mysql://localhost:3306/kronos
+root@localhost
+Mysql
+MySql
+```
+
+For dialect behavior, SQL rendering, and database support examples, see {{ $.keyword("database/dialect-support", ["Database Support"]) }}.

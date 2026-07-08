@@ -6,4 +6,7 @@ plugins {
 
 dependencies {
     compileOnly(project(":kronos-core"))
+    testImplementation(project(":kronos-core"))
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
 }

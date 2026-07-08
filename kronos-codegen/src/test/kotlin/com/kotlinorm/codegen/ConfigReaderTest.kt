@@ -134,7 +134,7 @@ class ConfigReaderTest {
         val kronosConfig = config.toKronosConfigs()
         val tbUserConfig = kronosConfig[0]
         assertEquals(
-            tbUserConfig.formatedComment, "// Sample Table Comment",
+            "// Sample Table Comment", tbUserConfig.formatedComment,
             "Expected comment to contain 'Sample Table Comment', but got '${tbUserConfig.formatedComment}'"
         )
 

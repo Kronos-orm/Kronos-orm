@@ -21,11 +21,12 @@ import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
+import com.kotlinorm.beans.parser.NamedParameterUtils
 import com.kotlinorm.beans.transformers.TransformerManager.getValueTransformed
-import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import kotlin.reflect.KClass
 
@@ -52,7 +53,7 @@ fun KronosCommonStrategy.execute(
     )
 }
 
-fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply { addAll(this@toLinkedSet) }
+fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = LinkedHashSet(this)
 
 
 /**
@@ -68,7 +69,7 @@ fun <T> Collection<T>.toLinkedSet(): LinkedHashSet<T> = linkedSetOf<T>().apply {
 fun getTypeSafeValue(
     kotlinType: String,
     value: Any,
-    superTypes: List<String> = listOf(),
+    superTypes: List<String> = [],
     dateTimeFormat: String? = null,
     kClassOfVal: KClass<*> = value::class
 ): Any = getValueTransformed(
@@ -160,38 +161,100 @@ fun extractNumberInParentheses(input: String): Pair<Int, Int> {
     return Pair(0, 0) // Returns default values if no match is found.
 }
 
-internal fun Field.isTimestampOrPostgresDatetime(wrapper: KronosDataSourceWrapper): Boolean {
-    return type == KColumnType.TIMESTAMP ||
-            (wrapper.dbType == DBType.Postgres && type == KColumnType.DATETIME)
+fun referencedParameterNames(sql: String): Set<String> =
+    NamedParameterUtils.parseSqlStatement(sql).parameterNames.toSet()
+
+fun Map<String, Field>.fieldForParameter(parameterName: String): Field? =
+    this[parameterName] ?: parameterName
+        .substringBefore('@')
+        .takeIf { it != parameterName }
+        ?.let { this[it] }
+
+data class TransformerSafeValue(
+    val value: Any?,
+    val kotlinType: String,
+    val superTypes: List<String> = [],
+    val dateTimeFormat: String? = null
+)
+
+private fun TransformerSafeValue.toTypeSafeValue(): Any? =
+    value?.let { getTypeSafeValue(kotlinType, it, superTypes, dateTimeFormat) }
+
+fun toDatabaseParameterValue(
+    wrapper: KronosDataSourceWrapper,
+    fieldsMap: Map<String, Field>,
+    parameterName: String,
+    value: Any?,
+    explicitParameterFields: Map<String, Field> = emptyMap()
+): Any? {
+    if (value is TransformerSafeValue) {
+        return value.toTypeSafeValue()
+    }
+    val field = explicitParameterFields[parameterName] ?: fieldsMap.fieldForParameter(parameterName)
+    return if (field != null && value != null) {
+        toDatabaseValue(wrapper, field, value)
+    } else {
+        value
+    }
 }
 
-fun processParams(
+fun toDatabaseValue(
     wrapper: KronosDataSourceWrapper,
     field: Field,
     value: Any?
 ): Any? {
     if (value == null) return null
+    if (value is TransformerSafeValue) return value.toTypeSafeValue()
     if (field.serializable) return serializeProcessor.serialize(value)
+    if (value is Boolean && !field.acceptsNativeBoolean(wrapper) && field.storesBooleanValue()) {
+        return toDatabaseBooleanValue(wrapper, field, value)
+    }
 
+    val targetKotlinType = field.databaseTargetKotlinType(wrapper)
+
+    return targetKotlinType
+        ?.let { getTypeSafeValue(it, value, field.superTypes, field.dateFormat) }
+        ?: value
+}
+
+private fun Field.databaseTargetKotlinType(wrapper: KronosDataSourceWrapper): String? {
+    val dialect = wrapper.sqlDialect
     return when {
-        field.isTimestampOrPostgresDatetime(wrapper) ->
-            getTypeSafeValue("java.sql.Timestamp", value, field.superTypes, field.dateFormat)
+        type == KColumnType.TIMESTAMP && dialect.timestampParametersAsSqlTimestamp ->
+            "java.sql.Timestamp"
 
-        wrapper.dbType == DBType.Postgres && field.type == KColumnType.BIT ->
-            getTypeSafeValue("kotlin.Boolean", value, field.superTypes, field.dateFormat)
+        type == KColumnType.DATETIME && dialect.datetimeParametersAsSqlTimestamp ->
+            "java.sql.Timestamp"
 
-        else -> value
+        acceptsNativeBoolean(wrapper) ->
+            "kotlin.Boolean"
+
+        type == KColumnType.BIT -> null
+
+        else -> kClass?.qualifiedName
     }
 }
 
-fun getDefaultBoolean(
+private fun Field.acceptsNativeBoolean(wrapper: KronosDataSourceWrapper): Boolean =
+    wrapper.sqlDialect.nativeBooleanValues && storesBooleanValue()
+
+private fun Field.storesBooleanValue(): Boolean =
+    type == KColumnType.BIT || kClass?.qualifiedName == "kotlin.Boolean"
+
+fun toDatabaseBooleanValue(
     wrapper: KronosDataSourceWrapper,
+    field: Field,
     boolean: Boolean
 ): Any {
-    return when (wrapper.dbType) {
-        DBType.Postgres -> boolean
-        else -> {
-            if (boolean) 1 else 0
-        }
-    }
+    return if (field.acceptsNativeBoolean(wrapper)) boolean else if (boolean) 1 else 0
+}
+
+fun databaseBooleanLiteral(
+    wrapper: KronosDataSourceWrapper,
+    field: Field,
+    boolean: Boolean
+): SqlExpr = if (field.acceptsNativeBoolean(wrapper)) {
+    SqlExpr.BooleanLiteral(boolean)
+} else {
+    SqlExpr.NumberLiteral(if (boolean) "1" else "0")
 }

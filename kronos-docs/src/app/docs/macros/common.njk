@@ -4,6 +4,12 @@
     {{ str | lower | replace("@", "") | replace("（", "") | replace("）", "") | replace(".", "") | replace(" ", "-") | replace("(", "") | replace(")", "") | replace("/", "") }}
 {%- endmacro %}
 
+{% macro kronosVersion() -%}0.1.1{%- endmacro %}
+
+{% macro kronosSnapshotVersion() -%}0.1.1-SNAPSHOT{%- endmacro %}
+
+{% macro kronosSnapshotBadgeVersion() -%}0.1.1--SNAPSHOT{%- endmacro %}
+
 {% macro parseString(input) -%}
     {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 and input.indexOf('>') == input.length - 1 -%}
         {%- set prefix = input.split('<')[0] -%}
@@ -18,14 +24,9 @@
     {%- set label = page[0] if page.length == 1 else page[0] + " - " + page[1] -%}
     {%- set anchor = extract(label) if page.length == 1 else extract(page[1]) -%}
     <code class="ngde ng-doc-code-with-link">
-        {%- if url.startsWith('concept') -%}
-            {%- set id = url.replace("concept/", "") -%}
-            {{- noun(id, language, label, anchor) -}}
-        {%- else -%}
-            <a class="ngde" href="/documentation/{{ language }}/{{ url }}#{{ anchor }}">
-                {{- '📚' + label -}}
-            </a>
-        {%- endif -%}
+        <a class="ngde" href="/documentation/{{ language }}/{{ url }}#{{ anchor }}">
+            {{- '📚' + label -}}
+        </a>
     </code>
 {%- endmacro %}
 
@@ -57,6 +58,10 @@
 
 {% macro annotation(name) -%}
     {{ title('@' + name) }}
+{%- endmacro %}
+
+{% macro templatePlaceholder(name) -%}
+    <code class="ngde">{{ "{{" }}{{ name | escape }}{{ "}}" }}</code>
 {%- endmacro %}
 
 {% macro required() -%}

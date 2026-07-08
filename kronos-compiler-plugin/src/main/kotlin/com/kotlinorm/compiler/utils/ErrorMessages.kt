@@ -45,7 +45,7 @@ object ErrorMessages {
     // ========================================================================
     const val CANNOT_BUILD_EQUALITY =
         "Cannot build equality condition: neither side is a KPojo property access.\n" +
-        "Suggestion: Use 'it.field == value' or 'it.field.eq(value)' syntax."
+        "Suggestion: Use 'it.field == value' for explicit values, or 'it.field.eq' / 'it.eq' for current KPojo values."
     const val CANNOT_RESOLVE_KPOJO_CLASS = "Cannot resolve KPojo class for equality comparison."
 
     // ========================================================================
@@ -54,8 +54,8 @@ object ErrorMessages {
     const val MISSING_RECEIVER_NOT_CALL = "Missing receiver for 'not()' call"
     const val MISSING_RECEIVER_ISNULL = "Missing receiver for 'isNull()' call"
     const val MISSING_RECEIVER_NOTNULL = "Missing receiver for 'notNull()' call"
-    const val MISSING_RECEIVER_EQ = "Missing receiver for 'eq()' call"
-    const val MISSING_RECEIVER_NEQ = "Missing receiver for 'neq()' call"
+    const val MISSING_RECEIVER_EQ = "Missing receiver for 'eq' condition"
+    const val MISSING_RECEIVER_NEQ = "Missing receiver for 'neq' condition"
     const val MISSING_RECEIVER_STARTSWITH = "Missing receiver for 'startsWith()' call"
     const val MISSING_RECEIVER_ENDSWITH = "Missing receiver for 'endsWith()' call"
     const val MISSING_RECEIVER_CONTAINS = "Missing receiver for 'contains()' call"
@@ -80,15 +80,16 @@ object ErrorMessages {
         "IR dump: $irDump\n" +
         "Suggestion: Use supported condition operators (==, !=, &&, ||, isNull, between, like, etc.)"
 
-    fun debugAnalyzeCallCriteria(origin: Any?, funcName: String) =
-        "analyzeCallCriteria else: origin=$origin, funcName=$funcName"
-
-    fun debugAnalyzeWhenCriteria(resultDump: String, condDump: String) =
-        "analyzeWhenCriteria: branch.result=$resultDump branch.condition=$condDump"
+    fun debugAnalyzeCallCondition(origin: Any?, funcName: String) =
+        "analyzeCallSqlExpr else: origin=$origin, funcName=$funcName"
 
     fun unrecognizedConditionFunction(funcName: String) =
         "Unrecognized condition function '$funcName'. This call will be ignored in the generated SQL.\n" +
-        "Suggestion: Use supported condition functions (eq, neq, lt, gt, le, ge, isNull, notNull, between, like, contains, asSql, etc.)"
+        "Suggestion: Use Kotlin comparison operators (==, !=, >, >=, <, <=), no-arg condition properties (eq, neq, lt, gt, le, ge), or supported condition functions (isNull, notNull, between, like, contains, asSql, etc.)"
+
+    fun parameterizedConditionFunctionUnsupported(funcName: String) =
+        "Parameterized condition function '$funcName(...)' is not supported.\n" +
+        "Suggestion: Use Kotlin comparison operators (==, !=, >, >=, <, <=) for explicit values, or '.$funcName' only when comparing with current KPojo values."
 
     fun kpojoNoColumnProperties(className: Any?) =
         "KPojo class '$className' has no column properties for equality comparison."
@@ -115,6 +116,14 @@ object ErrorMessages {
         "No column properties found in class $className for minus operation. " +
         "Make sure the class has properties annotated as columns."
 
+    const val UNSUPPORTED_FIELD_OPERATOR =
+        "Operator expressions are no longer supported in Kronos field DSL."
+
+    const val UNSUPPORTED_FIELD_OPERATOR_FIX =
+        "Use a collection literal for multiple fields, for example: [it.field1, it.field2]. " +
+        "Use a single property directly for one field, for example: it.field1. " +
+        "Use explicit Kronos function APIs instead of binary operators for computed fields."
+
     // ========================================================================
     // ConditionTransformer
     // ========================================================================
@@ -122,8 +131,8 @@ object ErrorMessages {
         "Failed to transform condition expression: $message"
 
     // ========================================================================
-    // KClassMapGenerator
+    // KPojo factory generation
     // ========================================================================
     fun kpojoNoNoArgConstructor(fqName: Any?) =
-        "KPojo class '$fqName' has no no-arg constructor and will be excluded from kClassCreator."
+        "KPojo class '$fqName' has no no-arg constructor and will be excluded from generated KPojo factories."
 }

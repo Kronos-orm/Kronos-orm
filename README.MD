@@ -19,17 +19,19 @@ A modern ORM framework designed for Kotlin.
 
 Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, strong typing, multi-database support. Built for both server-side and mobile applications.
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.3.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-%237f52ff.svg?logo=kotlin)](http://kotlinlang.org)
 [![Awesome Kotlin Badge](https://kotlin.link/awesome-kotlin.svg)](https://github.com/Heapy/awesome-kotlin)
 [![License](https://img.shields.io/:license-apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/eb64ca7cb21949c4a469c8a4bc095938)](https://app.codacy.com/gh/Kronos-orm/Kronos-orm/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-compiler-plugin.svg)](https://coverage.kotlinorm.com/kronos-compiler-plugin)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-core.svg)](https://coverage.kotlinorm.com/kronos-core)
+[![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-syntax.svg)](https://coverage.kotlinorm.com/kronos-syntax)
 [![Coverage](https://github.com/Kronos-orm/Kronos-orm/raw/coverage/coverage-codegen.svg)](https://coverage.kotlinorm.com/kronos-codegen)
 
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/detekt.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-core-testing.yml)
+[![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-syntax-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-compiler-plugin-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-codegen-testing.yml)
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
@@ -46,7 +48,7 @@ Kronos is a compiler-plugin-powered ORM framework for Kotlin. Zero reflection, s
 
 - **Zero reflection** — Compiler plugin generates all mapping code at build time. No runtime overhead, no GC pressure.
 - **Kotlin-native DSL** — Write conditions with `==`, `>`, `<`, `in`, `like` directly. No `.eq()`, `.gt()`, `.lt()` boilerplate.
-- **Multi-database** — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, DB2, H2, OceanBase, DM8, GaussDB and more.
+- **Multi-database** — Built-in dialects for MySQL, PostgreSQL, SQLite, SQL Server and Oracle.
 - **Full-featured** — Transactions, cascading (1:1 / 1:N / M:N), schema sync, serialization, cross-database joins.
 - **Built-in strategies** — Logical deletion, optimistic lock, create/update timestamps. All configurable.
 - **Framework agnostic** — Spring Boot, Ktor, Vert.x, Solon, Android. Plug in anywhere.
@@ -79,27 +81,67 @@ User(id = id, age = 19).update().by { it.id }.execute()
 User(id = id).delete().by { it.id }.execute()
 ```
 
+## Projection and Subquery Example
+
+Kronos adds compiler-generated projection types to Kotlin queries, so selected aliases can be consumed by the next query layer.
+
+```kotlin
+val rankedOrders = Order()
+    .select {
+        [
+            it.id,
+            it.userId,
+            it.amount,
+            f.rowNumber()
+                .over {
+                    partitionBy(it.userId)
+                    orderBy(it.createTime.desc())
+                }
+                .alias("rn")
+        ]
+    }
+
+val latestOrders = rankedOrders
+    .select { [it.id, it.userId, it.amount] }
+    .where { it.rn == 1 }
+    .queryList()
+
+Order()
+    .select { [it.userId, f.count(it.id).alias("orderCount")] }
+    .groupBy { it.userId }
+    .insert<UserOrderSummary> { [it.userId, it.orderCount] }
+    .execute()
+
+val activeUsers = User()
+    .select { [it.id, it.name, it.status] }
+    .where { it.status == ACTIVE }
+
+dataSource.table.createTable(UserArchive(), activeUsers)
+
+val currentUsers = User().select { [it.id, it.name] }.where { it.enabled == true }
+val archivedUsers = ArchivedUser().select { [it.id, it.name] }
+
+union(currentUsers, archivedUsers)
+    .select { [it.id, it.name] }
+    .queryList()
+```
+
 ## Requirements
 
 | Dependency | Version |
 |------------|---------|
 | JDK | 8+ |
-| Kotlin | 2.3.0+ |
-| Gradle | 6.8.3+ |
-| Maven | 3.6.3+ |
+| Kotlin | 2.4.0+ |
+| Gradle | A version supported by Kotlin 2.4.0 |
+| Maven | 3.9+ |
 
-> Ensure your IDE's Kotlin plugin supports Kotlin 2.3.0 or higher.
+> Ensure your IDE's Kotlin plugin supports Kotlin 2.4.0 or higher.
 
 ## Kotlin Compatibility
 
 | Kronos version | Supported Kotlin version | Notes |
 |----------------|--------------------------|-------|
-| `0.1.1` | `2.4.x` | Planned next development line |
-| `0.1.0` | `2.3.0+` | Stable release line based on Kotlin 2.3.0 |
-| `0.0.7` | `2.3.0+` | Upgraded Gradle and Kotlin in the 0.0.7 release |
-| `0.0.6` | `2.2.21+` | Added `kotlin.time.Instant` support |
-| `0.0.2` - `0.0.5` | `2.2.0+` | Early development releases before the 2.2.21 upgrade |
-| `0.0.1` | `2.1.0+` | Initial public release line |
+| `0.1.1` | `2.4.0+` | Recommended user documentation version |
 
 --------
 
@@ -110,11 +152,13 @@ User(id = id).delete().by { it.id }.execute()
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.0"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.1"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.0")
+    implementation("com.kotlinorm:kronos-core:0.1.1")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.1")
+    implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
 
@@ -125,11 +169,13 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.0'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.1'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.1.0'
+    implementation 'com.kotlinorm:kronos-core:0.1.1'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.1.1'
+    implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
 
@@ -144,7 +190,17 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.1.0</version>
+            <version>0.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kotlinorm</groupId>
+            <artifactId>kronos-jdbc-wrapper</artifactId>
+            <version>0.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql-connector-j.version}</version>
         </dependency>
     </dependencies>
 
@@ -163,7 +219,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.1.0</version>
+                        <version>0.1.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -176,9 +232,9 @@ dependencies {
 
 ## Supported Databases
 
-MySQL | PostgreSQL | SQLite | Oracle | SQL Server | DB2 | Sybase | H2 | OceanBase | DM8 | GaussDB
+MySQL | PostgreSQL | SQLite | SQL Server | Oracle
 
-> The core DSL provides cross-database compatibility. Integration tests currently focus on MySQL and PostgreSQL.
+> Kronos selects SQL rendering and table-structure statements from the active database dialect.
 
 --------
 
@@ -187,22 +243,23 @@ MySQL | PostgreSQL | SQLite | Oracle | SQL Server | DB2 | Sybase | H2 | OceanBas
 ### Connect to Database
 
 ```kotlin
-Kronos.init {
-    dataSource = { KronosBasicWrapper(SomeDataSource()) }
-}
+import com.kotlinorm.Kronos
+import com.kotlinorm.wrappers.KronosJdbcWrapper
+
+Kronos.dataSource = { KronosJdbcWrapper(SomeDataSource()) }
 ```
 
-See [Connect to Database](https://kotlinorm.com/#/documentation/en/database/connect-to-db) for dynamic / multiple data sources.
+`KronosJdbcWrapper` can also receive `databaseType = DBType.Mysql` and a configuration block for JDBC statement settings, warning handling, parameter binding, and result mapping. See [Connect to Database](https://kotlinorm.com/#/documentation/en/database/connect-to-db) for dynamic / multiple data sources.
 
 ### Model Definition
 
 ```kotlin
-@Table(name = "tb_movie")
-@TableIndex("idx_name", ["name"], Mysql.KIndexType.UNIQUE, Mysql.KIndexMethod.BTREE)
+@Table("tb_movie")
+@TableIndex("idx_name", ["name"], "UNIQUE", "BTREE")
 data class Movie(
     @PrimaryKey(identity = true)
     val id: Long? = null,
-    @Necessary val name: String? = null,
+    @NonNull val name: String? = null,
     val directorId: Long? = null,
     @Cascade(["directorId"], ["id"])
     val director: Director? = null,
@@ -234,7 +291,7 @@ dataSource.table.dropTable<Movie>()
 
 ```kotlin
 val listOfUser: List<User> = User()
-    .select { it.id + it.username }
+    .select { [it.id, it.username] }
     .where { it.id < 10 && it.age >= 18 }
     .distinct()
     .groupBy { it.id }
@@ -243,7 +300,7 @@ val listOfUser: List<User> = User()
 
 // Pagination
 val (total, list) = User()
-    .select { it.id + it.username }
+    .select { [it.id, it.username] }
     .where { it.id < 10 && it.username like "a%" }
     .page(1, 10)
     .withTotal()
@@ -253,8 +310,8 @@ val (total, list) = User()
 val listOfMap = User().join(UserRelation(), UserRole()) { user, relation, role ->
     on { user.id == relation.userId && user.id == role.userId }
     select {
-        user.id + user.username + relation.id.as_("relationId") +
-                role.role + f.count(1).as_("count")
+        [user.id, user.username, relation.id.alias("relationId"),
+                role.role, f.count(1).alias("count")]
     }
     where { user.id < 10 }
 }.query()
@@ -281,7 +338,7 @@ user.update()
     .by { it.id }
     .execute()
 
-user.update { it.username + it.gender }
+user.update { [it.username, it.gender] }
     .by { it.id }
     .execute()
 ```

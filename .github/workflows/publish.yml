@@ -1,8 +1,7 @@
 name: Publish Kronos
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [ main ]
 
 permissions:
@@ -12,7 +11,6 @@ permissions:
 jobs:
   publish:
     name: Publish 🚀
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -57,11 +55,23 @@ jobs:
       - name: Release 🏷️ - tag and push version commit
         if: steps.detect.outputs.mode == 'release'
         run: |
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git push origin HEAD:${{ github.ref_name }}
           ver=${{ steps.release_set.outputs.version }}
           if [ -z "$ver" ]; then ver=${{ steps.detect.outputs.current }}; fi
           git tag "v$ver"
           git push origin "v$ver"
+
+      - name: Release 🧱 - build JVM jars and IDEA plugin
+        if: steps.detect.outputs.mode == 'release'
+        env:
+          RELEASE_VERSION: ${{ steps.release_set.outputs.version }}
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-daemon clean assemble :kronos-idea-plugin:buildPlugin \
+            -Pkronos.idea.plugin.version="$RELEASE_VERSION" \
+            -Pkronos.idea.version="2026.2" \
+            -x test
+          bash ./gradlew --no-daemon -p kronos-gradle-plugin clean assemble -x test
 
       - name: Release 🚀 - publish to Maven Central
         if: steps.detect.outputs.mode == 'release'
@@ -71,7 +81,36 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: |
-          bash ./gradlew --no-daemon clean publishAllToMavenCentral -x test
+          bash ./gradlew --no-daemon publishAllToMavenCentral -x test
+
+      - name: Release 📦 - collect GitHub release artifacts
+        if: steps.detect.outputs.mode == 'release'
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          find . -path '*/build/libs/*.jar' -type f \
+            ! -path './kronos-docs/*' \
+            ! -path './dist/*' \
+            -exec cp '{}' dist/release/ ';'
+          cp kronos-idea-plugin/build/distributions/*.zip dist/release/
+          (
+            cd dist/release
+            sha256sum * > SHA256SUMS.txt
+            ls -1 > ARTIFACTS.txt
+          )
+
+      - name: Release 📝 - create GitHub release
+        if: steps.detect.outputs.mode == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.release_set.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "v$RELEASE_VERSION" dist/release/* \
+            --repo "${{ github.repository }}" \
+            --title "Kronos $RELEASE_VERSION" \
+            --generate-notes \
+            --latest=true
 
       - name: Release 🔼 - open next SNAPSHOT PR
         if: steps.detect.outputs.mode == 'release'
@@ -85,7 +124,7 @@ jobs:
           git commit -m "chore(version): start $NEXT_SNAPSHOT [skip ci]" || echo "No changes to commit"
           git push origin "$BRANCH_NAME"
           gh pr create \
-            --base "${{ github.event.pull_request.base.ref }}" \
+            --base "${{ github.ref_name }}" \
             --head "$BRANCH_NAME" \
             --title "chore(version): start $NEXT_SNAPSHOT" \
             --body "Start the next development cycle after publishing ${{ steps.release_set.outputs.version }} by bumping release configuration to $NEXT_SNAPSHOT."

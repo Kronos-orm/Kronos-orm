@@ -47,13 +47,13 @@ import com.kotlinorm.interfaces.KPojo
  */
 object NamedParameterUtils {
     /** SQL 中的引号和注释配对 */
-    private val QUOTE_PAIRS = listOf(
+    private val QUOTE_PAIRS = [
         "'" to "'",      // 单引号字符串
         "\"" to "\"",    // 双引号字符串
         "--" to "\n",    // 单行注释
         "/*" to "*/",    // 多行注释
         "`" to "`"       // 反引号标识符
-    )
+    ]
 
     /** 参数分隔符字符集 */
     private const val PARAMETER_SEPARATORS = "\"':&,;()|=+-*%/\\<>^"
@@ -589,7 +589,7 @@ object NamedParameterUtils {
      * @return 转换后的列表
      */
     private fun Any?.asListValue(): List<Any?> = when (this) {
-        null -> listOf(null)
+        null -> [null]
         is Iterable<*> -> this.toList()
         is Array<*> -> this.toList()
         is IntArray -> this.toList()
@@ -599,6 +599,6 @@ object NamedParameterUtils {
         is DoubleArray -> this.toList()
         is FloatArray -> this.toList()
         is BooleanArray -> this.toList()
-        else -> listOf(this)
+        else -> [this]
     }
 }

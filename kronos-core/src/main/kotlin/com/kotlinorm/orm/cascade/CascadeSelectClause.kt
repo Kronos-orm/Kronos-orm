@@ -17,14 +17,12 @@
 package com.kotlinorm.orm.cascade
 
 import com.kotlinorm.Kronos
-import com.kotlinorm.beans.dsl.Criteria
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.logging.log
 import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.cache.kPojoAllFieldsCache
-import com.kotlinorm.enums.ConditionType
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.enums.QueryType.QueryOne
@@ -32,7 +30,12 @@ import com.kotlinorm.enums.QueryType.QueryOneOrNull
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.select.select
+import com.kotlinorm.syntax.expr.SqlBinaryOperator
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.expr.SqlInRightOperand
+import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.utils.Extensions.patchTo
+import com.kotlinorm.utils.LinkedHashSet
 import kotlin.reflect.KClass
 
 /**
@@ -45,6 +48,14 @@ import kotlin.reflect.KClass
  * 该对象用于为数据库操作构建级联查询子句
  */
 object CascadeSelectClause {
+    private const val MAX_CASCADE_SELECT_PARAMETERS = 900
+
+    private fun Field.matches(other: Field): Boolean =
+        name == other.name && tableName == other.tableName
+
+    private fun Collection<Field>.containsField(field: Field): Boolean =
+        any { it.matches(field) }
+
     /**
      * Build a cascade select clause.
      *
@@ -68,15 +79,18 @@ object CascadeSelectClause {
         selectFields: LinkedHashSet<Field>,
         operationType: KOperationType,
         cascadeSelectedProps: Set<Field>
-    ) = if (cascade) generateTask(
-        cascadeAllowed,
-        pojo,
-        kClass,
-        kPojoAllFieldsCache[kClass]!!.filter { selectFields.contains(it) },
-        operationType,
-        rootTask,
-        cascadeSelectedProps
-    ) else rootTask.toKronosQueryTask()
+    ) = if (cascade) {
+        val selectedFieldNames = selectFields.map { it.name }.toSet()
+        generateTask(
+            cascadeAllowed,
+            pojo,
+            kClass,
+            kPojoAllFieldsCache[kClass]!!.filter { it.name in selectedFieldNames },
+            operationType,
+            rootTask,
+            cascadeSelectedProps
+        )
+    } else rootTask.toKronosQueryTask()
 
     /**
      * Generate a task for the cascade select operation.
@@ -102,13 +116,14 @@ object CascadeSelectClause {
         cascadeSelectedProps: Set<Field>
     ): KronosQueryTask {
         val tableName = pojo.__tableName
+        val selectedCascadeProps = cascadeSelectedProps.filter { it.tableName == tableName }
         val validCascades = findValidRefs(
             kClass,
             columns,
             operationType,
             cascadeAllowed?.filter { it.tableName == tableName }?.map { it.name }?.toSet(), // 获取当前Pojo内允许级联的属性
             cascadeAllowed.isNullOrEmpty() // 是否允许所有属性级联
-        ) // 获取所有的非数据库列、有关联注解且用于删除操作
+        ).filter { operationType == KOperationType.SELECT || !it.mapperByThis } // 获取所有的非数据库列、有关联注解且用于删除/更新操作
         return prevTask.toKronosQueryTask().apply {
             // 若没有关联信息，返回空（在deleteClause的build中，有对null值的判断和默认值处理）
             // 为何不直接返回deleteTask: 因为此处的deleteTask构建sql语句时带有表名，而普通的deleteTask不带表名，因此需要重新构建
@@ -120,8 +135,8 @@ object CascadeSelectClause {
                             val lastStepResult = this as List<KPojo> // this为主表查询的结果
                             if (lastStepResult.isEmpty()) return@forEach // 若该级联属性查询结果为空，不进行级联查询
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
-                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
-                            if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
+                            if (selectedCascadeProps.isNotEmpty() && !selectedCascadeProps.containsField(prop)) return@forEach // 若该级联属性未被select，不进行级联查询
+                            if (!cascadeAllowed.isNullOrEmpty() && !cascadeAllowed.containsField(prop)) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
                             setValues(
                                 lastStepResult,
                                 prop.name,
@@ -140,10 +155,10 @@ object CascadeSelectClause {
                             val lastStepResult = this as KPojo? // this为主表查询的结果
                             if (lastStepResult == null) return@forEach // 若该级联属性查询结果为空，不进行级联查询
                             val prop = validRef.field // 获取级联字段的属性如：GroupClass.students
-                            if (cascadeSelectedProps.contains(validRef.field)) return@forEach // 若该级联属性未被select，不进行级联查询
-                            if (!cascadeAllowed.isNullOrEmpty() && prop !in cascadeAllowed) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
+                            if (selectedCascadeProps.isNotEmpty() && !selectedCascadeProps.containsField(prop)) return@forEach // 若该级联属性未被select，不进行级联查询
+                            if (!cascadeAllowed.isNullOrEmpty() && !cascadeAllowed.containsField(prop)) return@forEach // 若设置了级联忽略，且该属性不在白名单内，不进行级联查询
                             setValues(
-                                listOf(lastStepResult),
+                                [lastStepResult],
                                 prop.name,
                                 validRef,
                                 cascadeAllowed,
@@ -214,10 +229,8 @@ object CascadeSelectClause {
             return
         }
         val isCollection = propField.cascadeIsCollectionOrArray
-        val tableName = parentFirst.__tableName
-
         // 确定 FK 映射方向：本地属性 → 远程属性
-        val isLocalTable = tableName == validRef.tableName
+        val isLocalTable = validRef.mapperByThis
         val (localProps, remoteProps) = if (isLocalTable) {
             validRef.kCascade.properties to validRef.kCascade.targetProperties
         } else {
@@ -226,13 +239,21 @@ object CascadeSelectClause {
 
         // 构建级联查询的 SelectClause
         fun cascadeSelect(refPojo: KPojo) = refPojo.select().apply {
-            this.operationType = operationType
-            this.cascadeAllowed = cascadeAllowed
-            this.cascadeSelectedProps = cascadeSelectedProps
+            val inheritedOperationType = operationType
+            val inheritedCascadeAllowed = cascadeAllowed
+            val inheritedCascadeSelectedProps = cascadeSelectedProps
+            with(context) {
+                this.operationType = inheritedOperationType
+                this.cascadeAllowed = inheritedCascadeAllowed
+                this.cascadeSelectedProps = inheritedCascadeSelectedProps
+            }
+            if (inheritedOperationType == KOperationType.SELECT) {
+                cascade(false)
+            }
         }
 
         // 从父行 dataMap 中提取 FK 键值对，用于填充子 POJO 查询条件
-        fun buildFkPairs(dataMap: Map<String, Any?>): List<Pair<String, Any>>? {
+        fun buildFkPairs(dataMap: Map<String, Any?>): List<Pair<String, Any?>>? {
             return validRef.kCascade.targetProperties.mapIndexed { index, targetProp ->
                 val (key, valueProp) = if (isLocalTable) {
                     targetProp to validRef.kCascade.properties[index]
@@ -245,11 +266,48 @@ object CascadeSelectClause {
 
         // 单行或复合键：逐行查询
         if (parentRows.size == 1 || localProps.size > 1) {
+            if (parentRows.size > 1 && localProps.size > 1) {
+                val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
+                val remoteFields = remoteProps.map { remoteProp ->
+                    refPojo.kronosColumns().first { it.name == remoteProp }
+                }
+                val parentsByKey = linkedMapOf<CascadeKey, MutableList<KPojo>>()
+                for (row in parentRows) {
+                    val fkPairs = buildFkPairs(row.toDataMap()) ?: continue
+                    parentsByKey.getOrPut(CascadeKey(fkPairs.map { it.second })) { mutableListOf() }.add(row)
+                }
+                if (parentsByKey.isEmpty()) return
+
+                val chunkSize = maxOf(1, MAX_CASCADE_SELECT_PARAMETERS / remoteFields.size)
+                val allChildren = mutableListOf<KPojo>()
+                parentsByKey.keys.chunked(chunkSize).forEach { keyChunk ->
+                    val condition = compositeFkCondition(remoteFields, keyChunk)
+                    allChildren += cascadeSelect(refPojo).apply {
+                        context.andWhere(condition.expr, condition.parameters)
+                    }.queryList(wrapper)
+                }
+
+                val childrenByKey = allChildren.groupBy { child ->
+                    CascadeKey(remoteProps.map { remoteProp -> child.toDataMap()[remoteProp] })
+                }
+                for ((key, rows) in parentsByKey) {
+                    val matched = childrenByKey[key].orEmpty()
+                    for (row in rows) {
+                        row[prop] = if (isCollection) matched else matched.firstOrNull()
+                    }
+                }
+                return
+            }
+
             for (row in parentRows) {
                 val fkPairs = buildFkPairs(row.toDataMap()) ?: continue
                 val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class, *fkPairs.toTypedArray())
-                row[prop] = if (isCollection) cascadeSelect(refPojo).queryList(wrapper)
-                else cascadeSelect(refPojo).queryOneOrNull(wrapper)
+                val remoteFields = refPojo.kronosColumns().filter { field -> fkPairs.any { it.first == field.name } }
+                val clause = cascadeSelect(refPojo).apply {
+                    context.addFieldConditions(remoteFields, fkPairs.toMap())
+                }
+                row[prop] = if (isCollection) clause.queryList(wrapper)
+                else clause.queryOneOrNull(wrapper)
             }
             return
         }
@@ -267,14 +325,13 @@ object CascadeSelectClause {
 
         val refPojo = validRef.refPojo.patchTo(validRef.refPojo::class)
         val remoteField = refPojo.kronosColumns().first { it.name == remoteProp }
-        val allChildren = cascadeSelect(refPojo).where {
-            criteria = Criteria(
-                field = remoteField,
-                type = ConditionType.IN,
-                value = parentsByFk.keys.toList()
-            )
-            true
-        }.queryList(wrapper)
+        val allChildren = mutableListOf<KPojo>()
+        parentsByFk.keys.chunked(MAX_CASCADE_SELECT_PARAMETERS).forEach { keyChunk ->
+            val condition = singleFkCondition(remoteField, keyChunk)
+            allChildren += cascadeSelect(refPojo).apply {
+                context.andWhere(condition.expr, condition.parameters)
+            }.queryList(wrapper)
+        }
 
         val childrenByFk = allChildren.groupBy { it.toDataMap()[remoteProp] }
         for ((fkValue, rows) in parentsByFk) {
@@ -284,4 +341,52 @@ object CascadeSelectClause {
             }
         }
     }
+
+    private data class CascadeKey(val values: List<Any?>)
+
+    private data class CascadeCondition(
+        val expr: SqlExpr,
+        val parameters: Map<String, Any?>
+    )
+
+    private fun singleFkCondition(field: Field, values: List<Any>): CascadeCondition {
+        val parameters = linkedMapOf<String, Any?>()
+        val parameterExprs = values.mapIndexed { index, value ->
+            val parameterName = suffixedParameterName(field.name, index)
+            parameters[parameterName] = value
+            SqlExpr.Parameter(SqlParameter.Named(parameterName))
+        }
+        return CascadeCondition(
+            SqlExpr.In(
+                expr = SqlExpr.Column(columnName = field.columnName),
+                `in` = SqlInRightOperand.Values(parameterExprs)
+            ),
+            parameters
+        )
+    }
+
+    private fun compositeFkCondition(fields: List<Field>, keys: List<CascadeKey>): CascadeCondition {
+        val parameters = linkedMapOf<String, Any?>()
+        val keyExpressions = keys.mapIndexed { keyIndex, key ->
+            fields.mapIndexed { fieldIndex, field ->
+                val parameterName = suffixedParameterName(field.name, keyIndex)
+                parameters[parameterName] = key.values[fieldIndex]
+                SqlExpr.Binary(
+                    SqlExpr.Column(columnName = field.columnName),
+                    SqlBinaryOperator.Equal,
+                    SqlExpr.Parameter(SqlParameter.Named(parameterName))
+                )
+            }.andAll()
+        }
+        return CascadeCondition(keyExpressions.orAll(), parameters)
+    }
+
+    private fun suffixedParameterName(baseName: String, index: Int): String =
+        if (index == 0) baseName else "$baseName@$index"
+
+    private fun List<SqlExpr>.andAll(): SqlExpr =
+        drop(1).fold(first()) { left, right -> SqlExpr.Binary(left, SqlBinaryOperator.And, right) }
+
+    private fun List<SqlExpr>.orAll(): SqlExpr =
+        drop(1).fold(first()) { left, right -> SqlExpr.Binary(left, SqlBinaryOperator.Or, right) }
 }

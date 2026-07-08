@@ -17,6 +17,7 @@
 package com.kotlinorm.types
 
 import com.kotlinorm.beans.dsl.KTableForCondition
+import com.kotlinorm.beans.dsl.KTableForInsertSelect
 import com.kotlinorm.beans.dsl.KTableForReference
 import com.kotlinorm.beans.dsl.KTableForSelect
 import com.kotlinorm.beans.dsl.KTableForSet
@@ -24,6 +25,7 @@ import com.kotlinorm.beans.dsl.KTableForSort
 
 
 typealias ToSelect<T, R> = (KTableForSelect<T>.(it: T) -> R)?
+typealias ToInsertSelect<T, R> = (KTableForInsertSelect<T>.(it: T) -> R)?
 typealias ToSet<T, R> = (KTableForSet<T>.(it: T) -> R)?
 typealias ToSort<T, R> = (KTableForSort<T>.(it: T) -> R)?
 typealias ToFilter<T, R> = (KTableForCondition<T>.(it: T) -> R)?

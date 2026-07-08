@@ -1,0 +1,134 @@
+/**
+ * Copyright 2022-2026 kronos-orm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.kotlinorm.compiler.backend.transformers
+
+import com.kotlinorm.compiler.core.ErrorReporter
+import com.kotlinorm.compiler.core.KTableTransformer
+import com.kotlinorm.compiler.core.addRefFieldSymbol
+import com.kotlinorm.compiler.core.buildFieldFromPropertyRef
+import com.kotlinorm.compiler.utils.extensionReceiver
+import com.kotlinorm.compiler.utils.funcName
+import com.kotlinorm.compiler.utils.valueArguments
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
+import org.jetbrains.kotlin.ir.builders.irBlock
+import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrPropertyReference
+import org.jetbrains.kotlin.ir.expressions.IrReturn
+import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
+import org.jetbrains.kotlin.ir.expressions.IrVararg
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+
+private val ReferenceCollectionFunctionNames = setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")
+
+/**
+ * Reference Transformer
+ *
+ * A Kotlin compiler plugin transformer that manipulates IR elements related to table fields.
+ * @author: OUSC
+ *
+ * Roughly speaking, the transform will turn the following:
+ *
+ *     // file: Foo.kt
+ *     ```kotlin
+ *     fun <T: KPojo> T.foo() {
+ *          val action: (KTableForReference<T>.(T) -> Unit) = { it: T ->
+ *              [it::prop1, Entity::prop2, it::prop3]
+ *          }
+ *          KTable<T>().action(this)
+ *     }
+ *     ```
+ *
+ * into the following equivalent representation:
+ *
+ *    // file: Foo.kt
+ *    ```kotlin
+ *     fun <T: KPojo> foo() {
+ *          val action: (KTableForReference<T>.(T) -> Unit) = { it: T ->
+ *              addField(Field("prop1",...))
+ *              addField(Field("prop2",...))
+ *              addField(Field("prop3",...))
+ *              [it::prop1, Entity::prop2, it::prop3]
+ *          }
+ *          KTable<T>().action(this)
+ *    }
+ *    ```
+ */
+class ReferenceTransformer(
+    private val pluginContext: IrPluginContext,
+    irFunction: IrFunction,
+    errorReporter: ErrorReporter
+) : KTableTransformer(irFunction, errorReporter) {
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitReturn(expression: IrReturn): IrExpression {
+        if (!shouldProcessReturn(expression)) {
+            return super.visitReturn(expression)
+        }
+
+        return with(pluginContext) {
+            DeclarationIrBuilder(pluginContext, irFunction.symbol).irBlock {
+                val receiver = irFunction.parameters.extensionReceiver
+                    ?: return@irBlock run { +expression }
+                val fields = collectReferences(expression.value)
+                if (fields.isEmpty()) {
+                    +expression
+                } else {
+                    fields.forEach { fieldExpr ->
+                        +irCall(addRefFieldSymbol).apply {
+                            dispatchReceiver = irGet(receiver)
+                            arguments[1] = fieldExpr
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    context(context: IrPluginContext, builder: IrBlockBuilder)
+    private fun collectReferences(expression: IrExpression): List<IrExpression> {
+        val result = mutableListOf<IrExpression>()
+        when {
+            expression is IrPropertyReference -> {
+                result += buildFieldFromPropertyRef(expression, errorReporter)
+            }
+            expression is IrCall && expression.symbol.owner.name.asString() in ReferenceCollectionFunctionNames -> {
+                expression.valueArguments.filterIsInstance<IrExpression>().forEach { arg ->
+                    result += collectReferenceArgument(arg)
+                }
+            }
+            expression is IrTypeOperatorCall -> {
+                result += collectReferences(expression.argument)
+            }
+        }
+        return result
+    }
+
+    context(context: IrPluginContext, builder: IrBlockBuilder)
+    private fun collectReferenceArgument(expression: IrExpression): List<IrExpression> =
+        if (expression is IrVararg) {
+            expression.elements.filterIsInstance<IrExpression>().flatMap { collectReferences(it) }
+        } else {
+            collectReferences(expression)
+        }
+}

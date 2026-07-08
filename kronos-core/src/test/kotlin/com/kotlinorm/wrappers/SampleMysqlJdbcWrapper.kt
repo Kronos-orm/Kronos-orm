@@ -20,7 +20,7 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
         get() = DBType.Mysql
 
     override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-        return listOf(
+        return [
             mapOf(
                 "COLUMN_NAME" to "id",
                 "DATA_TYPE" to "Int",
@@ -46,11 +46,11 @@ open class SampleMysqlJdbcWrapper : KronosDataSourceWrapper {
                 "COLUMN_NAME" to "deleted",
                 "DATA_TYPE" to "Boolean"
             )
-        )
+        ]
     }
 
     override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
-        return listOf()
+        return []
     }
 
     override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {

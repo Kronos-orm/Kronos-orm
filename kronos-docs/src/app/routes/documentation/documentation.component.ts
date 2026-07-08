@@ -46,12 +46,15 @@ export class DocumentationComponent implements OnDestroy {
         private router: Router,
         public elementRef: ElementRef) {
         this.wikiMode = window.frames.length !== parent.frames.length;
+        this.syncLanguageFromRoute();
 
         // Setup turndown (HTML → Markdown)
         this.turndown = new TurndownService({headingStyle: 'atx', codeBlockStyle: 'fenced'});
         this.turndown.use(gfm);
         // Skip ng-doc UI elements
         this.turndown.remove(['ng-doc-breadcrumb', 'ng-doc-page-navigation', 'ng-doc-toc', 'style', 'script'] as any[]);
+
+        this.ensureDefaultTheme();
 
         // Apply current theme immediately on init
         this.applyDarkClass(this.themeService.currentTheme);
@@ -64,7 +67,10 @@ export class DocumentationComponent implements OnDestroy {
         // Inject copy-markdown button on every navigation
         this.router.events
             .pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => this.injectCopyButton());
+            .subscribe(() => {
+                this.syncLanguageFromRoute();
+                this.injectCopyButton();
+            });
 
         // Also try on first load
         this.injectCopyButton();
@@ -84,6 +90,23 @@ export class DocumentationComponent implements OnDestroy {
         const isDark = theme === 'dark' ||
             (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', isDark);
+    }
+
+    private ensureDefaultTheme(): void {
+        if (localStorage.getItem('ng-doc-theme-id') !== null) {
+            return;
+        }
+
+        localStorage.setItem('ng-doc-theme-id', 'dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
+    private syncLanguageFromRoute(): void {
+        const routeLanguage = this.router.url.split("/")[2];
+        if (routeLanguage === "en" || routeLanguage === "zh-CN") {
+            this.appService.language = routeLanguage;
+            this.translocoService.setActiveLang(routeLanguage);
+        }
     }
 
     private injectCopyButton(): void {

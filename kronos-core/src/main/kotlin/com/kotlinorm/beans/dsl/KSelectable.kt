@@ -16,26 +16,39 @@
 
 package com.kotlinorm.beans.dsl
 
-import com.kotlinorm.ast.SelectStatement
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.orm.insert.InsertClause
+import com.kotlinorm.orm.sql.SqlQueryPlan
+import com.kotlinorm.syntax.statement.SqlQuery
+import com.kotlinorm.types.ToInsertSelect
+import com.kotlinorm.utils.createInstance
+import kotlin.reflect.KClass
 
-abstract class KSelectable<T : KPojo>(
-    internal open val pojo: T
+abstract class KSelectable<Selected : KPojo>(
+    internal open val pojo: KPojo,
+    internal open val selectedKClass: KClass<Selected>
 ) {
-    open var selectFields: LinkedHashSet<Field> = linkedSetOf()
-    abstract var selectAll: Boolean
-    abstract var pageEnabled: Boolean
-    abstract var limitCapacity: Int
     abstract fun build(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask
-    
+
+    @PublishedApi
+    internal abstract fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper? = null): SqlQueryPlan
+
+    internal open fun buildTotalCountTask(wrapper: KronosDataSourceWrapper? = null): KronosQueryTask =
+        error("Total count is not supported for ${this::class.simpleName}.")
+
+    open fun toSqlQuery(wrapper: KronosDataSourceWrapper? = null): SqlQuery = toSqlQueryPlan(wrapper).query
+
+    @Suppress("UNUSED")
+    fun alias(@Suppress("UNUSED_PARAMETER") alias: String): KSelectable<Selected> = this
+
     /**
-     * Converts this clause to a SelectStatement AST node.
-     * This is used to build the UNION AST.
-     *
-     * @param wrapper Optional data source wrapper for database-specific logic
-     * @return SelectStatement representing this query
+     * Builds an INSERT SELECT clause using this query's Selected row type as the value-mapping receiver.
      */
-    abstract fun toStatement(wrapper: KronosDataSourceWrapper? = null): SelectStatement
+    inline fun <reified Target : KPojo> insert(
+        noinline values: ToInsertSelect<Selected, Any?> = null
+    ): InsertClause<Target> {
+        return InsertClause(Target::class.createInstance()).fromSource(this, values)
+    }
 }

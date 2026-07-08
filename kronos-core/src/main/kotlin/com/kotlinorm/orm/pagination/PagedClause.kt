@@ -16,62 +16,51 @@
 
 package com.kotlinorm.orm.pagination
 
-import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.enums.KColumnType.CUSTOM_CRITERIA_SQL
 import com.kotlinorm.enums.QueryType.QueryList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn
 
-class PagedClause<K : KPojo, T : KSelectable<K>>(
-    private val selectClause: T
+class PagedClause<Source : KPojo, Selected : KPojo, Clause : KSelectable<Selected>>(
+    private val selectClause: Clause
 ) {
     fun query(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Map<String, Any>>> {
         val tasks = this.build(wrapper)
-        val total = tasks.first.queryOne<Int>()
-        val records = tasks.second.query()
+        val total = tasks.first.queryOne<Int>(wrapper)
+        val records = tasks.second.query(wrapper)
         return total to records
     }
 
     inline fun <reified E : KPojo> queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<E>> {
         val tasks = this.build(wrapper)
-        val total = tasks.first.queryOne<Int>()
-        val records = tasks.second.queryList<E>()
+        val total = tasks.first.queryOne<Int>(wrapper)
+        val records = tasks.second.queryList<E>(wrapper)
         return total to records
     }
 
     @JvmName("queryForList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<K>> {
-        val tasks = this.build()
-        val total = tasks.first.queryOne<Int>()
+    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Selected>> {
+        val tasks = this.build(wrapper)
+        val total = tasks.first.queryOne<Int>(wrapper)
         with(tasks.second) {
             beforeQuery?.invoke(this)
             val records =
                 atomicTask.logAndReturn(
-                    wrapper.orDefault().forList(atomicTask, selectClause.pojo::class, true, listOf()), QueryList
+                    wrapper.orDefault().forList(atomicTask, selectClause.selectedKClass, true, []), QueryList
                 )
 
             afterQuery?.invoke(records, QueryList, wrapper.orDefault())
-            return total to records as List<K>
+            return total to records as List<Selected>
         }
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
         val recordsTask = selectClause.build(wrapper)
-        selectClause.pageEnabled = false
-        selectClause.limitCapacity = 0
-        if(selectClause.selectAll || selectClause.selectFields.none { it.type == CUSTOM_CRITERIA_SQL }) {
-            // 不能直接将 select字段变成1，因为查询的字段可能在where条件中使用
-            // 例如：select (select count(1) from table1) as count from table2 where count > 0
-            // 只有查询的字段为空或者没有自定义sql时才能将select字段变成1
-            selectClause.selectFields = linkedSetOf(Field("1", type = CUSTOM_CRITERIA_SQL))
-            selectClause.selectAll = false
-        }
-        val cntTask = selectClause.build(wrapper)
+        val cntTask = selectClause.buildTotalCountTask(wrapper)
         cntTask.atomicTask.sql = "SELECT COUNT(*) FROM (${cntTask.atomicTask.sql}) AS total_count"
         cntTask.beforeQuery = null
         cntTask.afterQuery = null

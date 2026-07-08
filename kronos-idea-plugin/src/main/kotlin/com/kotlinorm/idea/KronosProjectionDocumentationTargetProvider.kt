@@ -110,6 +110,21 @@ class KronosProjectionDocumentationTargetProvider : DocumentationTargetProvider,
             if (fieldTargets.isNotEmpty()) return fieldTargets
         }
 
+        val referenceProjectionType = reference.kronosProjectionType()
+        if (referenceProjectionType != null && reference.getReferencedName() != "it") {
+            val model = referenceProjectionType.findModel() ?: return emptyList()
+            val fields = if (referenceProjectionType.className == model.contextName) model.contextFields else model.fields
+            return listOf(
+                KronosProjectionDocumentationTarget(
+                    reference,
+                    reference.getReferencedName(),
+                    referenceProjectionType.subjectType,
+                    referenceProjectionType.className,
+                    fields
+                )
+            )
+        }
+
         val expression = reference.parent as? KtExpression ?: reference
         val expressionProjectionType = expression.kronosProjectionType() ?: expression.parentExpressionProjectionType()
         if (expressionProjectionType != null && reference.getReferencedName() != "it") {
@@ -178,7 +193,10 @@ private fun KtNameReferenceExpression.isProjectionDocumentationCandidate(): Bool
         is KtSafeQualifiedExpression -> qualified.receiverExpression.takeIf { qualified.selectorExpression == this }
         else -> null
     }
-    return receiver != null || name.startsWith("KronosSelectResult_") || name.startsWith("KronosSelectContext_")
+    return receiver != null ||
+        name.startsWith("KronosSelectResult_") ||
+        name.startsWith("KronosSelectContext_") ||
+        kronosProjectionType() != null
 }
 
 private class KronosProjectionDocumentationTarget(

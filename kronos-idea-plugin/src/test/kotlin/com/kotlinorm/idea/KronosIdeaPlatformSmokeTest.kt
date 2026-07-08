@@ -38,16 +38,23 @@ class KronosIdeaPlatformSmokeTest : BasePlatformTestCase() {
      * Ensures plugin.xml exposes the bundled FIR compiler plugin provider used for generated projections.
      */
     fun testPluginXmlRegistersKronosFirCompilerPluginProvider() {
-        val pluginXml = Files.readString(Paths.get("src/main/resources/META-INF/plugin.xml"))
+        val pluginXml = Files.readString(Paths.get("build/resources/test/META-INF/plugin.xml"))
             .replace("\r\n", "\n")
 
         assertTrue(pluginXml.contains("<id>com.kotlinorm.kronos-idea-plugin</id>"))
-        assertTrue(pluginXml.contains("<name>Kronos-Orm</name>"))
+        assertTrue(pluginXml.contains("<name>Kronos-ORM</name>"))
         assertTrue(pluginXml.contains("<b>Kronos IDEA plugin</b> brings Kronos compiler-plugin information into IntelliJ IDEA."))
+        assertTrue(pluginXml.contains("href=\"https://www.kotlinorm.com/\""))
+        assertTrue(pluginXml.contains("href=\"https://www.kotlinorm.com/#/documentation/en/resources/idea-plugin\""))
         assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-projection-completion.png"))
         assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-projection-context-docs.png"))
         assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-code-generator.png"))
         assertTrue(pluginXml.contains("assets/idea-plugin/kronos-idea-projection-docs.png"))
+        assertTrue(pluginXml.contains("kronos-idea-projection-completion.png\" width=\"640\""))
+        assertTrue(pluginXml.contains("kronos-idea-projection-context-docs.png\" width=\"640\""))
+        assertTrue(pluginXml.contains("kronos-idea-projection-docs.png\" width=\"640\""))
+        assertTrue(pluginXml.contains("kronos-idea-code-generator.png\" width=\"640\""))
+        assertFalse(pluginXml.contains("width=\"320\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosBundledFirCompilerPluginProvider\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosFirCompilerPluginConfigurationForIdeProvider\""))
         assertTrue(pluginXml.contains("implementation=\"com.kotlinorm.idea.KronosProjectionDeclarationViewResolveExtensionProvider\""))

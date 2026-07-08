@@ -107,6 +107,9 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
                         processResourcesTask.dependsOn(task)
                     }
                 }
+            target.tasks.matching { it.name == "sourcesJar" }.configureEach { sourcesJar ->
+                sourcesJar.dependsOn(task)
+            }
         }
     }
 }

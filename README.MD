@@ -401,14 +401,18 @@ All operations are resolved at compile time. No reflection.
 
 ## AI Coding Assistant Integration
 
-Kronos provides an AI skill guide that helps coding assistants understand and generate Kronos code. Install it with a single command:
+Kronos provides an AI skill guide that helps coding assistants understand and generate Kronos code. Install the skill directly from the `main` branch:
 
 | Tool | Command |
 |------|---------|
-| **Cursor** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
-| **Default / Generic** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
+| **Claude** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
+| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| **Cursor** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
+| **Default / Generic** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 
-Use the default command for Windsurf and other tools that read agent skills from `.agents/skills/`.
+If the target directory already exists, add `--force` after `degit`.
+
+Claude Code loads project skills from `.claude/skills/`; Codex loads project skills from `.agents/skills/`. Use the default command for Windsurf and other tools that read agent skills from `.agents/skills/`.
 
 --------
 

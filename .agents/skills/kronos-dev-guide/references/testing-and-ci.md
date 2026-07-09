@@ -281,7 +281,6 @@ All workflows in `.github/workflows/`:
 | `detekt.yml` | push to main/master/releases/*, all PRs | Static analysis via `alaegin/Detekt-Action@v1.23.8` |
 | `coverage.yml` | push/merge_group to `main` | Kover coverage reports + badge generation for core, compiler-plugin, codegen |
 | `publish.yml` | push to `main` | Snapshot or release publishing to Maven Central |
-| `sync-skills.yml` | push to `main` that changes `.agents/**` | Syncs `kronos-orm-guide` files to `release/llm` branch |
 | `greetings.yml` | new issues/PRs | Bilingual welcome messages |
 | `stale.yml` | daily 15:40 UTC | Marks stale issues (60d) and PRs, closes after grace period |
 

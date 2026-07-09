@@ -3,7 +3,7 @@
 
 ## What is {{ $.title("kronos-orm-guide") }}
 
-{{ $.code("kronos-orm-guide") }} is an AI skill published from the Kronos repository's {{ $.code("release/llm") }} branch. It helps AI coding assistants understand {{ $.title("Kronos ORM") }} APIs and generate correct ORM code for your project.
+{{ $.code("kronos-orm-guide") }} is an AI skill published from the Kronos repository's {{ $.code("main") }} branch. It helps AI coding assistants understand {{ $.title("Kronos ORM") }} APIs and generate correct ORM code for your project.
 
 The skill teaches assistants how to:
 
@@ -17,26 +17,32 @@ The skill teaches assistants how to:
 
 ## Install with one command
 
-Clone the {{ $.code("release/llm") }} branch into the location expected by your AI tool:
+Install the skill from the {{ $.code("main") }} branch into the location expected by your AI tool:
 
 | Tool | Command |
 |------|---------|
-| {{ $.title("Cursor") }} | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
-| {{ $.title("Default / Generic") }} | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
+| {{ $.title("Claude") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
+| {{ $.title("Codex") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| {{ $.title("Cursor") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
+| {{ $.title("Default / Generic") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 
-Use the default command for Windsurf and other tools that can read agent skill files from {{ $.code(".agents/skills/") }}.
+If the target directory already exists, add {{ $.code("--force") }} after {{ $.code("degit") }}.
+
+Claude Code loads project skills from {{ $.code(".claude/skills/") }}. Codex loads project skills from {{ $.code(".agents/skills/") }}. Use the default command for Windsurf and other tools that can read agent skill files from {{ $.code(".agents/skills/") }}.
 
 ## Prepare project context
 
 Ask the assistant to read the skill and the project files that decide the Kronos setup before it writes code.
 
 ```text group="Context" name="files"
-.agents/skills/kronos-orm-guide/SKILL.md
-.agents/skills/kronos-orm-guide/references/advanced.md
-.agents/skills/kronos-orm-guide/references/annotations.md
+<skill-dir>/kronos-orm-guide/SKILL.md
+<skill-dir>/kronos-orm-guide/references/advanced.md
+<skill-dir>/kronos-orm-guide/references/annotations.md
 build.gradle.kts or pom.xml
 src/main/kotlin/... existing KPojo classes
 ```
+
+Use {{ $.code(".claude/skills") }} as {{ $.code("<skill-dir>") }} for Claude, {{ $.code(".agents/skills") }} for Codex and generic agents, and {{ $.code(".cursor/skills") }} for Cursor.
 
 For docs-backed tasks, add the relevant page link instead of pasting large examples. These pages cover the most common generation targets:
 

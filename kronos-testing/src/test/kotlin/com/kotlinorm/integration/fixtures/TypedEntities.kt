@@ -56,6 +56,45 @@ data class IntegrationFunctionRecord(
     val scoreMod: Int?,
 )
 
+data class IntegrationFunctionProjection(
+    var id: Int? = null,
+    var nameLength: Int? = null,
+    var displayName: String? = null,
+    var upperName: String? = null,
+    var lowerName: String? = null,
+    var scoreMod: Int? = null,
+) : KPojo
+
+data class IntegrationAggregateProjection(
+    var total: Int? = null,
+    var scoreSum: Long? = null,
+    var minScore: Int? = null,
+    var maxScore: Int? = null,
+) : KPojo
+
+data class IntegrationDslEdgeProjection(
+    var id: Int? = null,
+    var userId: Int? = null,
+    var name: String? = null,
+    var amount: Int? = null,
+    var totalAmount: Int? = null,
+    var orderCount: Int? = null,
+    var rn: Int? = null,
+    var status: Int? = null,
+) : KPojo
+
+data class IntegrationPageProjection(
+    var id: Int? = null,
+    var name: String? = null,
+    var score: Int? = null,
+) : KPojo
+
+data class IntegrationAliasProjection(
+    var id: Int? = null,
+    var userName: String? = null,
+    var userScore: Int? = null,
+) : KPojo
+
 data class IntegrationAggregateRecord(
     val total: Int?,
     val scoreSum: Long?,

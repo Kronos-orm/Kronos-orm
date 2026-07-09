@@ -5,9 +5,12 @@ import com.kotlinorm.integration.suites.CascadeIntegrationSuite
 import com.kotlinorm.integration.suites.CodegenIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
@@ -20,6 +23,8 @@ class MysqlSchemaIntegrationTest : SchemaIntegrationSuite(mysql, StandardIntegra
 class MysqlSchemaSyncRegressionTest : SchemaSyncRegressionSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlCrudWhereIntegrationTest : CrudWhereIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlQueryIntegrationTest : QueryIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlUpsertIntegrationTest : UpsertIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlErrorIntegrationTest : ErrorIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
@@ -28,4 +33,5 @@ class MysqlCascadeIntegrationTest : CascadeIntegrationSuite(mysql, StandardInteg
 class MysqlValueTypeIntegrationTest : ValueTypeIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlTransactionIntegrationTest : TransactionIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlCodegenIntegrationTest : CodegenIntegrationSuite(mysql)

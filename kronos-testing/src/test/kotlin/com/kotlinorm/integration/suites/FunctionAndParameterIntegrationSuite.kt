@@ -8,15 +8,14 @@ import com.kotlinorm.functions.bundled.exts.PolymerizationFunctions.sum
 import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.functions.bundled.exts.StringFunctions.lower
 import com.kotlinorm.functions.bundled.exts.StringFunctions.upper
+import com.kotlinorm.integration.fixtures.IntegrationAggregateProjection
 import com.kotlinorm.integration.fixtures.IntegrationAggregateRecord
+import com.kotlinorm.integration.fixtures.IntegrationFunctionProjection
 import com.kotlinorm.integration.fixtures.IntegrationFunctionRecord
-import com.kotlinorm.integration.fixtures.IntegrationTypedValue
 import com.kotlinorm.integration.fixtures.IntegrationUser
 import com.kotlinorm.integration.profiles.IntegrationScenarioProfile
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironment
 import com.kotlinorm.integration.support.IntegrationSuiteSupport
-import com.kotlinorm.orm.ddl.table
-import com.kotlinorm.orm.insert.insert
 import com.kotlinorm.orm.select.select
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,14 +46,14 @@ abstract class FunctionAndParameterIntegrationSuite(
                 }
                 .where { it.id in [1, 4] }
                 .orderBy { it.id.asc() }
-                .queryList()
+                .queryList<IntegrationFunctionProjection>()
                 .map {
                     IntegrationFunctionRecord(
                         id = it.id,
-                        nameLength = it.nameLength.toIntValue(),
-                        upperName = it.upperName?.toString(),
-                        lowerName = it.lowerName?.toString(),
-                        scoreMod = it.scoreMod.toIntValue(),
+                        nameLength = it.nameLength,
+                        upperName = it.upperName,
+                        lowerName = it.lowerName,
+                        scoreMod = it.scoreMod,
                     )
                 },
         )
@@ -70,30 +69,80 @@ abstract class FunctionAndParameterIntegrationSuite(
                         f.max(it.score).alias("maxScore")
                     ]
                 }
-                .queryList()
+                .queryList<IntegrationAggregateProjection>()
                 .single()
                 .let {
                     IntegrationAggregateRecord(
-                        total = it.total.toIntValue(),
-                        scoreSum = it.scoreSum.toLongValue(),
-                        minScore = it.minScore.toIntValue(),
-                        maxScore = it.maxScore.toIntValue(),
+                        total = it.total,
+                        scoreSum = it.scoreSum,
+                        minScore = it.minScore,
+                        maxScore = it.maxScore,
                     )
                 },
         )
     }
 
-    private fun Any?.toIntValue(): Int? =
-        when (this) {
-            null -> null
-            is Number -> toInt()
-            else -> toString().toInt()
-        }
+    @Test
+    fun selectedAliasesCanBeUsedInOrderByAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
 
-    private fun Any?.toLongValue(): Long? =
-        when (this) {
-            null -> null
-            is Number -> toLong()
-            else -> toString().toLong()
-        }
+        assertEquals(
+            listOf(3, 5, 5, 7),
+            IntegrationUser()
+                .select { f.length(x = it.name).alias("nameLength") }
+                .orderBy { it.nameLength }
+                .queryList<IntegrationFunctionProjection>()
+                .map { it.nameLength },
+        )
+
+        assertEquals(
+            listOf("Ada", "Grace", "Linus", "NoOrder"),
+            IntegrationUser()
+                .select { [it.id, it.name.alias("displayName")] }
+                .orderBy { it.displayName.asc() }
+                .queryList<IntegrationFunctionProjection>()
+                .map { it.displayName },
+        )
+
+        assertEquals(
+            listOf(4, 1, 2, 3),
+            IntegrationUser()
+                .select { [it.id, (it.score % 2).alias("scoreMod"), f.length(it.name).alias("nameLength")] }
+                .orderBy { [it.scoreMod.desc(), it.nameLength.asc(), it.id.asc()] }
+                .queryList<IntegrationFunctionProjection>()
+                .map { it.id },
+        )
+    }
+
+    @Test
+    fun aggregateScalarFunctionsMapDirectlyToRequestedTypesAgainstRealDatabase() {
+        recreateTables()
+        profile.seedUsersAndOrders()
+
+        assertEquals(
+            4,
+            IntegrationUser()
+                .select { f.count(1).alias("total") }
+                .queryOne<Int>(),
+        )
+        assertEquals(
+            65L,
+            IntegrationUser()
+                .select { f.sum(it.score).alias("scoreSum") }
+                .queryOne<Long>(),
+        )
+        assertEquals(
+            5,
+            IntegrationUser()
+                .select { f.min(it.score).alias("minScore") }
+                .queryOne<Int>(),
+        )
+        assertEquals(
+            30,
+            IntegrationUser()
+                .select { f.max(it.score).alias("maxScore") }
+                .queryOne<Int>(),
+        )
+    }
 }

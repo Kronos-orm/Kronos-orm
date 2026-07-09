@@ -76,14 +76,12 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.expressions.IrVararg
-import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetEnumValueImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.isString
-import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
@@ -519,47 +517,13 @@ fun buildFieldFromProperty(irProperty: IrProperty, metadataClass: IrClass? = nul
         builder.irNull()
     }
 
-    val arrayOrCollectionFqNames = arrayOf(
-        FqName("kotlin.collections.Collection"),
-        FqName("kotlin.collections.Iterator"),
-        FqName("kotlin.Array"),
-        FqName("kotlin.IntArray"),
-        FqName("kotlin.LongArray"),
-        FqName("kotlin.ShortArray"),
-        FqName("kotlin.DoubleArray"),
-        FqName("kotlin.FloatArray"),
-        FqName("kotlin.CharArray"),
-        FqName("kotlin.ByteArray"),
-        FqName("kotlin.BooleanArray"),
-    )
-    val cascadeIsCollectionOrArray = propertyType.superTypes().any { it.classFqName in arrayOrCollectionFqNames }
-
-    val propKClass = propertyType.classOrNull
-    val kClassExpr: IrExpression = if (irProperty.isDelegated) {
+    val kTypeExpr: IrExpression = if (irProperty.isDelegated) {
         builder.irNull()
     } else {
-        val targetClassSymbol = if (cascadeIsCollectionOrArray) {
-            propertyType.firstTypeArgument()?.classOrNull
-        } else {
-            propKClass
-        }
-        if (targetClassSymbol != null) {
-            val classType = targetClassSymbol.defaultType
-            IrClassReferenceImpl(
-                builder.startOffset, builder.endOffset,
-                context.irBuiltIns.kClassClass.typeWith(classType),
-                targetClassSymbol,
-                classType
-            )
-        } else {
-            builder.irNull()
+        builder.irCall(typeOfFunctionSymbol).apply {
+            typeArguments[0] = propertyType
         }
     }
-
-    val superTypesExprs = propKClass?.owner?.superTypes?.mapNotNull {
-        it.classFqName?.asString()?.let { fqn -> builder.irString(fqn) }
-    } ?: emptyList()
-    val superTypesExpr = irListOf(context.irBuiltIns.stringType, superTypesExprs)
 
     val ignoreExpr: IrExpression = cloneEnumVararg(ignoreAnnotation.arg(0)) ?: builder.irNull()
 
@@ -574,16 +538,14 @@ fun buildFieldFromProperty(irProperty: IrProperty, metadataClass: IrClass? = nul
         arguments[4] = dateFormatExpr                          // dateFormat
         arguments[5] = tableNameExpr                           // tableName
         arguments[6] = cascadeExpr                             // cascade
-        arguments[7] = builder.irBoolean(cascadeIsCollectionOrArray) // cascadeIsCollectionOrArray
-        arguments[8] = kClassExpr                              // kClass
-        arguments[9] = superTypesExpr                          // superTypes
-        arguments[10] = ignoreExpr                             // ignore
-        arguments[11] = builder.irBoolean(isColumn)            // isColumn
-        if (columnLengthExpr != null) arguments[12] = columnLengthExpr  // length
-        if (columnScaleExpr != null) arguments[13] = columnScaleExpr    // scale
-        arguments[14] = defaultValueExpr                       // defaultValue
-        arguments[15] = builder.irBoolean(nullable)            // nullable
-        arguments[16] = builder.irBoolean(serializable)        // serializable
+        arguments[7] = kTypeExpr                               // kType
+        arguments[8] = ignoreExpr                              // ignore
+        arguments[9] = builder.irBoolean(isColumn)             // isColumn
+        if (columnLengthExpr != null) arguments[10] = columnLengthExpr  // length
+        if (columnScaleExpr != null) arguments[11] = columnScaleExpr    // scale
+        arguments[12] = defaultValueExpr                       // defaultValue
+        arguments[13] = builder.irBoolean(nullable)            // nullable
+        arguments[14] = builder.irBoolean(serializable)        // serializable
     }
 }
 

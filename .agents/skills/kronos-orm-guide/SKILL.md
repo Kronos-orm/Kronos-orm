@@ -205,7 +205,7 @@ data class Invoice(
 | `DECIMAL, length = 12, scale = 2` | `DECIMAL(12,2)` | `DECIMAL(12,2)` | `NUMERIC` | `DECIMAL(12,2)` | `NUMBER(12,2)` |
 | `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` |
 
-`@Serialize` 负责对象和数据库值之间的 JSON 转换；`@ColumnType(KColumnType.JSON)` 只决定表结构中的列类型。
+`@Serialize` 负责对象和数据库值之间的 JSON 转换；`@ColumnType(KColumnType.JSON)` 只决定表结构中的列类型。序列化处理器使用字段声明上的 `KType`，因此可以正确处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段。
 
 ---
 

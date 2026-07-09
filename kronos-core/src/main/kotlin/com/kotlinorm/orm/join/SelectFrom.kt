@@ -30,6 +30,7 @@ import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.QueryType
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.functions.KronosFunctionExpressions.withQualifiedFieldArgs
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
@@ -185,7 +186,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         if (null == someFields) return this
 
         t1.afterSelect {
-            someFields(t1)
+            withQualifiedFieldArgs { someFields(t1) }
             if (fields.isEmpty() && selectItems.isEmpty()) {
                 throw EmptyFieldsException()
             }
@@ -232,7 +233,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
 
         context.orderEnabled = true
         (context.receiverPojo as Context).afterSort {
-            someFields(context.receiverPojo as Context)
+            withQualifiedFieldArgs { someFields(context.receiverPojo as Context) }
             context.orderByItems = sortedItems.toList()
         }
     }
@@ -249,7 +250,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (null == someFields) throw EmptyFieldsException()
         t1.afterSelect {
-            someFields(t1)
+            withQualifiedFieldArgs { someFields(t1) }
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
             }
@@ -332,7 +333,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
             t1.afterFilter {
                 sourceValues = context.paramMap
                 operationType = context.operationType
-                selectCondition(t1) // 执行用户提供的条件函数
+                withQualifiedFieldArgs { selectCondition(t1) } // 执行用户提供的条件函数
                 parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
                 context.andWhere(sqlExpr)
             }
@@ -355,7 +356,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         t1.afterFilter {
             sourceValues = context.paramMap // 设置属性参数映射
             operationType = context.operationType
-            selectCondition(t1) // 执行传入的条件函数
+            withQualifiedFieldArgs { selectCondition(t1) } // 执行传入的条件函数
             parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
             context.andHaving(sqlExpr)
         }

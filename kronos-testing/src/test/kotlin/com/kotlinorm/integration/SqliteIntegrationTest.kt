@@ -4,9 +4,12 @@ import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.suites.CascadeIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
@@ -19,6 +22,8 @@ class SqliteSchemaIntegrationTest : SchemaIntegrationSuite(sqlite, StandardInteg
 class SqliteSchemaSyncRegressionTest : SchemaSyncRegressionSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteCrudWhereIntegrationTest : CrudWhereIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteQueryIntegrationTest : QueryIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteUpsertIntegrationTest : UpsertIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteErrorIntegrationTest : ErrorIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
@@ -27,3 +32,4 @@ class SqliteCascadeIntegrationTest : CascadeIntegrationSuite(sqlite, StandardInt
 class SqliteValueTypeIntegrationTest : ValueTypeIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteTransactionIntegrationTest : TransactionIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)

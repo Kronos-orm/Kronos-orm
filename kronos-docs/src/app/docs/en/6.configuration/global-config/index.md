@@ -308,20 +308,25 @@ with(Kronos) {
 ```
 
 ```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
+import com.google.gson.Gson
+import com.kotlinorm.interfaces.KronosSerializeProcessor
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
+
 object GsonProcessor : KronosSerializeProcessor {
     // Use GSON to serialize objects
-    override fun serialize(obj: Any): String {
+    override fun serialize(obj: Any, kType: KType): String {
         return Gson().toJson(obj)
     }
     
     // Use GSON to deserialize strings
-    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
-        return Gson().fromJson(serializedStr, kClass.java)
+    override fun deserialize(serializedStr: String, kType: KType): Any {
+        return Gson().fromJson(serializedStr, kType.javaType)
     }
 }
 ```
 
-Here we are using `GSON` library to implement serialization deserialization parser, you can use any library you like like like `Kotlinx.serialization`, `Jackson`, `Moshi`, `FastJson` etc.
+Here we are using `GSON` library to implement serialization deserialization parser. You can also use libraries such as `Kotlinx.serialization`, `Jackson`, `Moshi`, or `FastJson`; processors receive the field declaration `KType` so generic fields can be handled explicitly.
 
 ## Log output path and switch
 

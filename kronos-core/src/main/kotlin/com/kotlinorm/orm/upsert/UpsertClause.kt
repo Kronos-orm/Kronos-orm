@@ -36,6 +36,7 @@ import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
@@ -198,7 +199,10 @@ class UpsertClause<T : KPojo>(
         val dataSource = wrapper.orDefault()
 
         if (toInsertFields.isEmpty()) {
-            toInsertFields = allFields.filter { null != paramMap[it.name] }.toLinkedSet()
+            toInsertFields = allFields.filter { field ->
+                if (field.primaryKey == PrimaryKeyType.IDENTITY && paramMap[field.name] == null) return@filter false
+                field.isColumn && (paramMap[field.name] != null || field.defaultValue == null)
+            }.toLinkedSet()
         }
 
         if (toUpdateFields.isEmpty()) {
@@ -225,7 +229,7 @@ class UpsertClause<T : KPojo>(
             // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
             logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
                 toInsertFields += field
-                paramMap[field.name] = toDatabaseBooleanValue(dataSource, field, false)
+                paramMap[field.name] = toDatabaseParameterValue(dataSource, fieldMap, field.name, false, mapOf(field.name to field))
             }
 
             createTimeStrategy?.execute{ field, value ->

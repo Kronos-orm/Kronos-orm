@@ -4,9 +4,12 @@ import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.suites.CascadeIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
@@ -19,6 +22,8 @@ class SqlServerSchemaIntegrationTest : SchemaIntegrationSuite(sqlServer, Standar
 class SqlServerSchemaSyncRegressionTest : SchemaSyncRegressionSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerCrudWhereIntegrationTest : CrudWhereIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerQueryIntegrationTest : QueryIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerUpsertIntegrationTest : UpsertIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerErrorIntegrationTest : ErrorIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
@@ -27,3 +32,4 @@ class SqlServerCascadeIntegrationTest : CascadeIntegrationSuite(sqlServer, Stand
 class SqlServerValueTypeIntegrationTest : ValueTypeIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
 class SqlServerTransactionIntegrationTest : TransactionIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)
+class SqlServerEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(sqlServer, StandardIntegrationScenarioProfile)

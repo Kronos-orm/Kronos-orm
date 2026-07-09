@@ -245,6 +245,45 @@ with(Kronos) {
 }
 ```
 
+自定义处理器实现 `KronosSerializeProcessor` 时，`serialize` 和 `deserialize` 都会收到字段声明上的 `KType`。处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段时，不要只看运行时 `KClass`。
+
+Kotlinx Serialization 接入示例：
+
+```kotlin
+import com.kotlinorm.interfaces.KronosSerializeProcessor
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+import kotlin.reflect.KType
+
+object KotlinxSerializeProcessor : KronosSerializeProcessor {
+    private val json = Json {
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
+
+    override fun serialize(obj: Any, kType: KType): String {
+        @Suppress("UNCHECKED_CAST")
+        val valueSerializer = serializer(kType) as KSerializer<Any>
+        return json.encodeToString(valueSerializer, obj)
+    }
+
+    override fun deserialize(serializedStr: String, kType: KType): Any {
+        return json.decodeFromString(serializer(kType), serializedStr)
+            ?: error("Kotlinx serialization returned null for $kType")
+    }
+}
+
+@Serializable
+data class ProfileSetting(
+    val theme: String,
+    val shortcuts: List<String>
+)
+```
+
+交给 Kotlinx Serialization 的类型需要有 serializer；data class 通常加 `@Serializable`，集合元素类型也要可序列化。
+
 ---
 
 ## 原生SQL

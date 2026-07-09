@@ -6,7 +6,6 @@ import com.kotlinorm.beans.config.KronosCommonStrategy
 import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.transformers.TransformerManager.registerValueTransformer
 import com.kotlinorm.enums.KColumnType
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
 import com.kotlinorm.wrappers.SamplePostgresJdbcWrapper
@@ -24,7 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 import kotlin.time.ExperimentalTime
 
 class CommonUtilTest {
@@ -196,29 +195,29 @@ class CommonUtilTest {
         assertEquals(false, getTypeSafeValue("kotlin.Boolean", "invalid"))
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun toDatabaseValueUsesTransformerSafeValueForFieldKClass() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
-        val intField = Field("age", "age", kClass = Int::class as KClass<out KPojo>)
+        val intField = Field("age", "age", kType = typeOf<Int>())
 
         assertEquals(42, toDatabaseValue(wrapper, intField, "42"))
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun toDatabaseParameterValueUsesTransformerSafeValueForSuffixedParameter() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
-        val intField = Field("status", "status", kClass = Int::class as KClass<out KPojo>)
+        val intField = Field("status", "status", kType = typeOf<Int>())
 
         assertEquals(7, toDatabaseParameterValue(wrapper, mapOf("status" to intField), "status@1", "7"))
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun toDatabaseValueUsesExplicitTransformerSafeValueBeforeFieldType() {
         val wrapper = SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper
-        val intField = Field("id", "id", kClass = Int::class as KClass<out KPojo>)
+        val intField = Field("id", "id", kType = typeOf<Int>())
         val pattern = TransformerSafeValue("1%", "kotlin.String")
 
         assertEquals("1%", toDatabaseValue(wrapper, intField, pattern))
@@ -236,12 +235,12 @@ class CommonUtilTest {
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun databaseBooleanValueUsesNativeBooleanOnlyForBooleanFields() {
         val wrapper = SamplePostgresJdbcWrapper()
         val booleanField = Field("deleted", "deleted", type = KColumnType.BIT)
-        val intField = Field("deleted", "deleted", kClass = Int::class as KClass<out KPojo>)
+        val intField = Field("deleted", "deleted", kType = typeOf<Int>())
 
         assertEquals(false, toDatabaseBooleanValue(wrapper, booleanField, false))
         assertEquals(0, toDatabaseBooleanValue(wrapper, intField, false))

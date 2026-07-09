@@ -16,6 +16,7 @@
 package com.kotlinorm.interfaces
 
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * ValueTransformer
@@ -27,6 +28,12 @@ import kotlin.reflect.KClass
 interface ValueTransformer {
     fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean
 
+    fun isMatch(targetKotlinType: KType, kClassOfValue: KClass<*>): Boolean {
+        val targetKClass = targetKotlinType.classifier as? KClass<*> ?: return false
+        val targetName = targetKClass.qualifiedName ?: return false
+        return isMatch(targetName, emptyList(), kClassOfValue)
+    }
+
     fun transform(
         targetKotlinType: String,
         value: Any,
@@ -34,4 +41,17 @@ interface ValueTransformer {
         dateTimeFormat: String? = null,
         kClassOfValue: KClass<*> = value::class
     ): Any
+
+    fun transform(
+        targetKotlinType: KType,
+        value: Any,
+        dateTimeFormat: String? = null,
+        kClassOfValue: KClass<*> = value::class
+    ): Any {
+        val targetKClass = targetKotlinType.classifier as? KClass<*>
+            ?: throw IllegalArgumentException("Invalid type: $targetKotlinType")
+        val targetName = targetKClass.qualifiedName ?: targetKClass.simpleName
+            ?: throw IllegalArgumentException("Invalid type: $targetKotlinType")
+        return transform(targetName, value, emptyList(), dateTimeFormat, kClassOfValue)
+    }
 }

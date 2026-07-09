@@ -24,7 +24,7 @@ class MysqlInsertSqlTest : MysqlTestBase() {
     fun testInsert() {
         val (sql, paramMap) = user.insert().build()
         assertEquals(
-            "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
+            "INSERT INTO `tb_user` (`id`, `username`, `score`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :createTime, :updateTime, :deleted)",
             sql
         )
         assertEquals(
@@ -32,7 +32,6 @@ class MysqlInsertSqlTest : MysqlTestBase() {
                 "id" to 1,
                 "username" to null,
                 "score" to null,
-                "gender" to 0,
                 "createTime" to paramMap["createTime"],
                 "updateTime" to paramMap["updateTime"],
                 "deleted" to 0
@@ -47,7 +46,7 @@ class MysqlInsertSqlTest : MysqlTestBase() {
         }.merge().atomicTasks
         tasks.forEachIndexed { id, (sql, paramMap) ->
             assertEquals(
-                "INSERT INTO `tb_user` (`id`, `username`, `score`, `gender`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :gender, :createTime, :updateTime, :deleted)",
+                "INSERT INTO `tb_user` (`id`, `username`, `score`, `create_time`, `update_time`, `deleted`) VALUES (:id, :username, :score, :createTime, :updateTime, :deleted)",
                 sql
             )
             assertEquals(
@@ -55,7 +54,6 @@ class MysqlInsertSqlTest : MysqlTestBase() {
                     "id" to id + 1,
                     "username" to null,
                     "score" to null,
-                    "gender" to 0,
                     "createTime" to paramMap["createTime"],
                     "updateTime" to paramMap["updateTime"],
                     "deleted" to 0

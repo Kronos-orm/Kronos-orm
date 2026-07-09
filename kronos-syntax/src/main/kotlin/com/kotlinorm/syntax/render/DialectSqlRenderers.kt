@@ -310,6 +310,22 @@ open class PostgresqlSqlRenderer : StandardSqlRenderer(SqlDialect.PostgreSql) {
 }
 
 open class SqliteSqlRenderer : StandardSqlRenderer(SqlDialect.SQLite) {
+    override fun renderSetQuery(query: SqlQuery.Set): String = buildString {
+        append(renderSqliteSetOperand(query.left))
+        append(" ${renderSetOperator(query.operator)} ")
+        append(renderSqliteSetOperand(query.right))
+        if (query.orderBy.isNotEmpty()) {
+            append(query.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })
+        }
+        query.limit?.let { append(" ${renderLimit(it)}") }
+    }
+
+    private fun renderSqliteSetOperand(query: SqlQuery): String =
+        when (query) {
+            is SqlQuery.Set -> "(${renderSetQuery(query)})"
+            else -> renderQuery(query)
+        }
+
     override fun renderDdl(statement: SqlDdlStatement): String = when (statement) {
         is SqlDdlStatement.Vacuum -> buildString {
             append("VACUUM")

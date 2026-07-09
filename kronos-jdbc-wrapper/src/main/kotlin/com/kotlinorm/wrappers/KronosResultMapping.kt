@@ -16,6 +16,7 @@
 
 package com.kotlinorm.wrappers
 
+import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.Kronos.strictSetValue
 import com.kotlinorm.beans.UnsupportedTypeException
 import com.kotlinorm.beans.dsl.Field
@@ -159,6 +160,7 @@ class KronosColumnMapperRegistry private constructor(
 }
 
 internal object KronosResultMappers {
+    @Suppress("UNCHECKED_CAST")
     fun toMapList(resultSet: ResultSet, context: KronosStatementContext): List<Map<String, Any>> =
         mapRows(resultSet, context) { row ->
             val metaData = resultSet.metaData
@@ -172,9 +174,10 @@ internal object KronosResultMappers {
             row.overrideValues.forEach { (position, value) ->
                 values[metaData.getColumnLabel(position)] = value
             }
-            values.filterValues { it != null }.mapValues { it.value as Any }
+            values as Map<String, Any>
         }
 
+    @Suppress("UNCHECKED_CAST")
     fun toObjectList(
         resultSet: ResultSet,
         kClass: KClass<*>,
@@ -183,7 +186,7 @@ internal object KronosResultMappers {
     ): List<Any> =
         mapRows(resultSet, context) {
             context.config.columnMappers.map(resultSet, 1, kClass, superTypes, context)
-        }.filterNotNull()
+        } as List<Any>
 
     @Suppress("UNCHECKED_CAST")
     fun toKPojoList(
@@ -215,13 +218,21 @@ internal object KronosResultMappers {
                 } else if (position in row.skipColumns) {
                     continue
                 } else {
-                    context.config.columnMappers.map(
+                    val targetType = field.kClass ?: Any::class
+                    val jdbcValue = context.config.columnMappers.map(
                         resultSet,
                         position,
-                        field.kClass!!,
-                        field.superTypes,
+                        targetType,
+                        targetType.localSuperTypes(),
                         context
                     )
+                    if (field.serializable && jdbcValue != null) {
+                        val kType = field.kType
+                            ?: error("Serializable field '${field.name}' requires KType metadata for deserialization")
+                        serializeProcessor.deserialize(jdbcValue.toString(), kType)
+                    } else {
+                        jdbcValue
+                    }
                 }
                 this[field.name] = value
             }
@@ -274,4 +285,18 @@ internal object KronosResultMappers {
         val skipColumns: Set<Int> = emptySet(),
         val overrideValues: Map<Int, Any?> = emptyMap()
     )
+}
+
+private fun KClass<*>.localSuperTypes(): List<String> {
+    val result = linkedSetOf<String>()
+    fun collect(type: Class<*>) {
+        type.genericSuperclass?.typeName?.let(result::add)
+        type.interfaces.forEach {
+            result += it.name
+            collect(it)
+        }
+        type.superclass?.takeIf { it != Any::class.java }?.let(::collect)
+    }
+    collect(java)
+    return result.toList()
 }

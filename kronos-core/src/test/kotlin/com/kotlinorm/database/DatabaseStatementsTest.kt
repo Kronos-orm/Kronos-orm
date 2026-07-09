@@ -1130,9 +1130,23 @@ class DatabaseStatementsTest {
         assertEquals(
             listOf(
                 StatementShape("DropIndex", null, indexName = "idx_old", ifExists = true),
-                StatementShape("AddColumn", "account", columns = listOf(ColumnShape("nickname", "TEXT", true, "NotPrimary", "'nick'"))),
-                StatementShape("ModifyColumn", "account", columns = listOf(ColumnShape("name", "TEXT", false, "NotPrimary", "'new'"))),
-                StatementShape("DropColumn", "account", columnName = "legacy"),
+                StatementShape(
+                    "CreateTable",
+                    "account__kronos_tmp",
+                    columns = listOf(
+                        ColumnShape("id", "INTEGER", true, "NotPrimary", null),
+                        ColumnShape("name", "TEXT", false, "NotPrimary", "'new'"),
+                        ColumnShape("nickname", "TEXT", true, "NotPrimary", "'nick'")
+                    )
+                ),
+                StatementShape(
+                    "Insert",
+                    "account__kronos_tmp",
+                    columns = listOf("id", "name"),
+                    query = QueryShape(select = listOf("\"id\"", "\"name\""), from = listOf("account"), where = null)
+                ),
+                StatementShape("DropTable", "account", ifExists = true),
+                StatementShape("RenameTable", "account__kronos_tmp", newName = "account"),
                 StatementShape("CreateIndex", "account", indexName = "idx_new", columns = listOf("nickname"), method = "BTREE")
             ),
             SqliteStatements.syncTable(syncInput()).map { it.toStatementShape() }
@@ -1252,6 +1266,8 @@ class DatabaseStatementsTest {
         val position: String? = null,
         val defaultValue: String? = null,
         val nullable: Boolean? = null,
+        val newName: String? = null,
+        val query: QueryShape? = null,
         val operation: String? = null,
         val condition: String? = null
     )
@@ -1321,6 +1337,11 @@ class DatabaseStatementsTest {
             table = tableName.canonical,
             columnName = columnName.canonical
         )
+        is SqlDdlStatement.AlterTable.RenameTable -> StatementShape(
+            kind = "RenameTable",
+            table = tableName.canonical,
+            newName = newName.canonical
+        )
         is SqlDdlStatement.AlterTable.AlterColumnDefault -> StatementShape(
             kind = "AlterColumnDefault",
             table = tableName.canonical,
@@ -1366,6 +1387,12 @@ class DatabaseStatementsTest {
             kind = "Delete",
             table = table.toTableShape(),
             condition = where?.toExprShape()
+        )
+        is SqlDmlStatement.Insert -> StatementShape(
+            kind = "Insert",
+            table = table.toTableShape(),
+            columns = columns.map { it.canonical },
+            query = (mode as? com.kotlinorm.syntax.statement.SqlInsertMode.Subquery)?.query?.toQueryShape()
         )
         else -> StatementShape(kind = this::class.simpleName ?: "Unknown", table = null)
     }
@@ -1507,6 +1534,16 @@ class DatabaseStatementsTest {
         tableName = "account",
         originalTableComment = "old accounts",
         tableComment = "accounts",
+        expectedColumns = listOf(
+            statementField("id", KColumnType.INT),
+            statementField("name", KColumnType.VARCHAR, length = 64, nullable = false, defaultValue = "'new'", kDoc = "new display"),
+            statementField("nickname", KColumnType.VARCHAR, length = 16, defaultValue = "'nick'")
+        ),
+        currentColumns = listOf(
+            statementField("id", KColumnType.INT),
+            statementField("name", KColumnType.VARCHAR, length = 32, nullable = true, defaultValue = "'old'", kDoc = "old display"),
+            statementField("legacy", KColumnType.TEXT)
+        ),
         columns = TableColumnDiff(
             toAdd = listOf(statementField("nickname", KColumnType.VARCHAR, length = 16, defaultValue = "'nick'") to statementField("name", KColumnType.VARCHAR)),
             toModified = listOf(
@@ -1518,6 +1555,8 @@ class DatabaseStatementsTest {
             ),
             toDelete = listOf(statementField("legacy", KColumnType.TEXT))
         ),
+        expectedIndexes = listOf(KTableIndex("idx_new", arrayOf("nickname"), "NORMAL", "BTREE")),
+        currentIndexes = listOf(KTableIndex("idx_old", arrayOf("legacy"), "NORMAL", "BTREE")),
         indexes = TableIndexDiff(
             toAdd = listOf(KTableIndex("idx_new", arrayOf("nickname"), "NORMAL", "BTREE")),
             toDelete = listOf(KTableIndex("idx_old", arrayOf("legacy"), "NORMAL", "BTREE"))

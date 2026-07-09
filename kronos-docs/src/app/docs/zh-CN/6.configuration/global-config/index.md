@@ -348,20 +348,25 @@ with(Kronos) {
 ```
 
 ```kotlin group="GsonProcessor" name="GsonProcessor.kt" icon="kotlin"
+import com.google.gson.Gson
+import com.kotlinorm.interfaces.KronosSerializeProcessor
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
+
 object GsonProcessor : KronosSerializeProcessor {
     // 使用GSON序列化对象
-    override fun serialize(obj: Any): String {
+    override fun serialize(obj: Any, kType: KType): String {
         return Gson().toJson(obj)
     }
     
     // 使用GSON反序列化对象
-    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
-        return Gson().fromJson(serializedStr, kClass.java)
+    override fun deserialize(serializedStr: String, kType: KType): Any {
+        return Gson().fromJson(serializedStr, kType.javaType)
     }
 }
 ```
 
-这里我们使用`GSON`库来实现序列化反序列化解析器，您可以使用任何您喜欢的库如`Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson`等。
+这里使用 `GSON` 库实现序列化反序列化解析器。你也可以使用 `Kotlinx.serialization`、`Jackson`、`Moshi`、`FastJson` 等库；处理器会收到字段声明上的 `KType`，因此可以显式处理泛型字段。
 
 ## 日志输出路径及开关
 

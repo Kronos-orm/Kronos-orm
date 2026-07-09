@@ -29,6 +29,7 @@ import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.utils.DateTimeUtil.currentDateTime
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 
 /**
@@ -80,6 +81,18 @@ fun getTypeSafeValue(
     kClassOfVal
 )
 
+fun getTypeSafeValue(
+    kotlinType: KType,
+    value: Any,
+    dateTimeFormat: String? = null,
+    kClassOfVal: KClass<*> = value::class
+): Any = getValueTransformed(
+    kotlinType,
+    value,
+    dateTimeFormat,
+    kClassOfVal
+)
+
 /**
  * getSafeValue
  * 1.类型转换 Any->String,Long->Int, Short->Int, Int->Short, Int->Boolean...
@@ -110,15 +123,16 @@ fun getSafeValue(
     if (strictSetValue) {
         return map[key]
     }
+    val column = kPojo.kronosColumns().find { it.name == key }
     return map[key]?.let { value ->
         val kClassOfVal = value::class
         if (kClass != kClassOfVal) {
             if (serializable) {
-                serializeProcessor.deserialize(
-                    value.toString(), kClass
-                )
+                val kType = column?.kType
+                    ?: error("Serializable field '$key' requires KType metadata for deserialization")
+                serializeProcessor.deserialize(value.toString(), kType)
             } else {
-                val column = kPojo.kronosColumns().find { it.name == key }!!
+                val column = column!!
                 getTypeSafeValue(
                     kClass.qualifiedName!!,
                     value,
@@ -131,6 +145,21 @@ fun getSafeValue(
             value
         }
     }
+}
+
+@Suppress("UNUSED")
+fun getSafeValue(
+    kPojo: KPojo,
+    kType: KType,
+    map: Map<String, Any?>,
+    key: String,
+    serializable: Boolean
+): Any? {
+    if (strictSetValue) {
+        return map[key]
+    }
+    val kClass = kType.classifier as? KClass<*> ?: return map[key]
+    return getSafeValue(kPojo, kClass, emptyList(), map, key, serializable)
 }
 
 fun String.trimWhitespace(): String {
@@ -205,15 +234,23 @@ fun toDatabaseValue(
 ): Any? {
     if (value == null) return null
     if (value is TransformerSafeValue) return value.toTypeSafeValue()
-    if (field.serializable) return serializeProcessor.serialize(value)
+    if (field.serializable) {
+        val kType = field.kType
+            ?: error("Serializable field '${field.name}' requires KType metadata for serialization")
+        return serializeProcessor.serialize(value, kType)
+    }
     if (value is Boolean && !field.acceptsNativeBoolean(wrapper) && field.storesBooleanValue()) {
         return toDatabaseBooleanValue(wrapper, field, value)
+    }
+    if (value is Number && !field.acceptsNativeBoolean(wrapper) && field.storesBooleanValue()) {
+        return value
     }
 
     val targetKotlinType = field.databaseTargetKotlinType(wrapper)
 
     return targetKotlinType
-        ?.let { getTypeSafeValue(it, value, field.superTypes, field.dateFormat) }
+        ?.let { getTypeSafeValue(it, value, field.kClass.superTypeNames(), field.dateFormat) }
+        ?: field.kType?.let { getTypeSafeValue(it, value, field.dateFormat) }
         ?: value
 }
 
@@ -231,7 +268,7 @@ private fun Field.databaseTargetKotlinType(wrapper: KronosDataSourceWrapper): St
 
         type == KColumnType.BIT -> null
 
-        else -> kClass?.qualifiedName
+        else -> null
     }
 }
 
@@ -240,6 +277,12 @@ private fun Field.acceptsNativeBoolean(wrapper: KronosDataSourceWrapper): Boolea
 
 private fun Field.storesBooleanValue(): Boolean =
     type == KColumnType.BIT || kClass?.qualifiedName == "kotlin.Boolean"
+
+private fun KClass<*>?.superTypeNames(): List<String> =
+    this?.supertypes
+        ?.mapNotNull { it.classifier as? KClass<*> }
+        ?.mapNotNull { it.qualifiedName }
+        ?: emptyList()
 
 fun toDatabaseBooleanValue(
     wrapper: KronosDataSourceWrapper,

@@ -23,7 +23,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.reflect.typeOf
 
 class FieldTest {
 
@@ -139,4 +141,46 @@ class FieldTest {
         assertFalse(field.nullable)
         assertTrue(field.serializable)
     }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldDerivesKTypeMetadataForScalarType() {
+        val field = Field(columnName = "age", name = "age", kType = typeOf<Int?>())
+
+        assertEquals(typeOf<Int?>(), field.kType)
+        assertEquals(Int::class, field.kClass)
+        assertFalse(field.cascadeIsCollectionOrArray)
+        assertNull(field.elementKType)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldDerivesElementMetadataForCollectionType() {
+        val field = Field(columnName = "items", name = "items", kType = typeOf<List<FieldTestChild>?>())
+
+        assertEquals(typeOf<FieldTestChild>(), field.elementKType)
+        assertEquals(List::class, field.kClass)
+        assertTrue(field.cascadeIsCollectionOrArray)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun testFieldDerivesElementMetadataForPrimitiveArrayType() {
+        val field = Field(columnName = "numbers", name = "numbers", kType = typeOf<IntArray>())
+
+        assertEquals(typeOf<Int>(), field.elementKType)
+        assertTrue(field.cascadeIsCollectionOrArray)
+    }
+
+    @Test
+    fun testDatabaseMetadataFieldAllowsNullKType() {
+        val field = Field(columnName = "db_only")
+
+        assertNull(field.kType)
+        assertNull(field.kClass)
+        assertNull(field.elementKType)
+        assertFalse(field.cascadeIsCollectionOrArray)
+    }
+
+    data class FieldTestChild(val id: Int? = null)
 }

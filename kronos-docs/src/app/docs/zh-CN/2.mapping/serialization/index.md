@@ -52,26 +52,70 @@ profile.setting == ProfileSetting("dark", listOf("search", "save"))
 import com.google.gson.Gson
 import com.kotlinorm.Kronos
 import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
 
 object GsonProcessor : KronosSerializeProcessor {
     private val gson = Gson()
 
-    override fun serialize(obj: Any): String =
+    override fun serialize(obj: Any, kType: KType): String =
         gson.toJson(obj)
 
-    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any =
-        gson.fromJson(serializedStr, kClass.java)
+    override fun deserialize(serializedStr: String, kType: KType): Any =
+        gson.fromJson(serializedStr, kType.javaType)
 }
 
 Kronos.serializeProcessor = GsonProcessor
 ```
 
+## 接入 Kotlinx Serialization
+
+序列化字段包含 Kotlin data class、嵌套对象，或 `List<String>` 这类泛型集合时，可以使用 Kotlinx Serialization。Kronos 会把字段声明上的 `KType` 传给处理器，因此处理器能保留泛型元素类型。
+
+```kotlin group="Serialization 3" name="processor" icon="kotlin"
+import com.kotlinorm.Kronos
+import com.kotlinorm.interfaces.KronosSerializeProcessor
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+import kotlin.reflect.KType
+
+private val json = Json {
+    encodeDefaults = true
+    ignoreUnknownKeys = true
+}
+
+object KotlinxSerializeProcessor : KronosSerializeProcessor {
+    override fun serialize(obj: Any, kType: KType): String {
+        @Suppress("UNCHECKED_CAST")
+        val valueSerializer = serializer(kType) as KSerializer<Any>
+        return json.encodeToString(valueSerializer, obj)
+    }
+
+    override fun deserialize(serializedStr: String, kType: KType): Any {
+        return json.decodeFromString(serializer(kType), serializedStr)
+            ?: error("Kotlinx serialization returned null for $kType")
+    }
+}
+
+Kronos.serializeProcessor = KotlinxSerializeProcessor
+
+@Serializable
+data class ProfileSetting(
+    val theme: String,
+    val shortcuts: List<String>
+)
+```
+
+> **Note**
+> 交给 Kotlinx Serialization 处理的类仍然需要 `@Serializable`。如果字段是 `List<ProfileSetting>`，集合元素类型也需要可序列化。
+
 ## 使用委托暴露序列化视图
 
 已有字符串列需要保留为 `String?` 时，可以把存储列留在类中，再用 `serialize(::column)` 委托暴露类型化属性。
 
-```kotlin group="Serialization 3" name="delegate" icon="kotlin"
+```kotlin group="Serialization 4" name="delegate" icon="kotlin"
 import com.kotlinorm.annotations.Table
 import com.kotlinorm.beans.serialize.serialize
 import com.kotlinorm.interfaces.KPojo

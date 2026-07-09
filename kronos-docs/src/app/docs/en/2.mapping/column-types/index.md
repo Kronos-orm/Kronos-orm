@@ -139,15 +139,16 @@ import com.kotlinorm.annotations.Table
 import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
 
 data class AuditPayload(val ip: String, val tags: List<String>)
 
 object GsonProcessor : KronosSerializeProcessor {
     private val gson = Gson()
-    override fun serialize(obj: Any): String = gson.toJson(obj)
-    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any =
-        gson.fromJson(serializedStr, kClass.java)
+    override fun serialize(obj: Any, kType: KType): String = gson.toJson(obj)
+    override fun deserialize(serializedStr: String, kType: KType): Any =
+        gson.fromJson(serializedStr, kType.javaType)
 }
 
 Kronos.serializeProcessor = GsonProcessor

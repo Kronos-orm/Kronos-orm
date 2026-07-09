@@ -16,29 +16,30 @@
 
 package com.kotlinorm.interfaces
 
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Kronos Serialize Resolver
  *
- * Serialize and deserialize object with specific class.
+ * Serialize and deserialize object with full Kotlin declaration type metadata.
  * @author: OUSC
  */
 interface KronosSerializeProcessor {
     /**
-     * Deserializes a string into an object of type T.
+     * Deserializes a string using the full Kotlin declaration type.
      *
      * @param serializedStr the string to deserialize
-     * @param kClass the class of the object to deserialize into
-     * @return the deserialized object of type T
+     * @param kType the Kotlin declaration type of the object to deserialize into
+     * @return the deserialized object
      */
-    fun deserialize(serializedStr: String, kClass: KClass<*>): Any
+    fun deserialize(serializedStr: String, kType: KType): Any
 
     /**
-     * Serializes an object of type T into a string.
+     * Serializes an object using the field declaration type.
      *
      * @param obj the object to serialize
+     * @param kType the Kotlin declaration type of the object to serialize
      * @return the serialized string
      */
-    fun serialize(obj: Any): String
+    fun serialize(obj: Any, kType: KType): String
 }

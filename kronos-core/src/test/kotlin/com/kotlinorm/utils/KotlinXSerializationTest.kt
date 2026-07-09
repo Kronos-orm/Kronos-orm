@@ -12,8 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializer
-import kotlin.reflect.KClass
-import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.KType
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -45,7 +44,13 @@ class KotlinXSerializationTest {
     data class SerializableHolder(
         var id: Int? = null,
         @Serialize
-        var payload: SerializableEnvelope? = null
+        var payload: SerializableEnvelope? = null,
+        @Serialize
+        var profileData: SerializableProfile? = null,
+        @Serialize
+        var listData: List<Int>? = null,
+        @Serialize
+        var matrixData: List<List<String>>? = null
     ) : KPojo
 
     private object KotlinXSerializeProcessor : KronosSerializeProcessor {
@@ -54,14 +59,14 @@ class KotlinXSerializationTest {
             ignoreUnknownKeys = true
         }
 
-        override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
-            return json.decodeFromString(serializer(kClass.starProjectedType), serializedStr)
-                ?: error("Kotlinx serialization returned null for ${kClass.qualifiedName}")
+        override fun deserialize(serializedStr: String, kType: KType): Any {
+            return json.decodeFromString(serializer(kType), serializedStr)
+                ?: error("Kotlinx serialization returned null for $kType")
         }
 
-        override fun serialize(obj: Any): String {
+        override fun serialize(obj: Any, kType: KType): String {
             @Suppress("UNCHECKED_CAST")
-            val valueSerializer = serializer(obj::class.starProjectedType) as KSerializer<Any>
+            val valueSerializer = serializer(kType) as KSerializer<Any>
             return json.encodeToString(valueSerializer, obj)
         }
     }
@@ -97,11 +102,37 @@ class KotlinXSerializationTest {
         )
         val holder = SerializableHolder(id = 1, payload = payload)
         val payloadField = holder.kronosColumns().single { it.name == "payload" }
+        val profileDataField = holder.kronosColumns().single { it.name == "profileData" }
+        val listDataField = holder.kronosColumns().single { it.name == "listData" }
+        val matrixDataField = holder.kronosColumns().single { it.name == "matrixData" }
 
         assertTrue(payloadField.serializable)
         assertEquals(
             """{"profile":{"name":"Ada","tags":["orm","json"]},"active":false}""",
             toDatabaseValue(SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper, payloadField, payload)
+        )
+        assertTrue(profileDataField.serializable)
+        assertEquals(
+            """{"name":"Ada","tags":["orm","json"]}""",
+            toDatabaseValue(
+                SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper,
+                profileDataField,
+                SerializableProfile("Ada", listOf("orm", "json"))
+            )
+        )
+        assertTrue(listDataField.serializable)
+        assertEquals(
+            """[1,2,3]""",
+            toDatabaseValue(SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper, listDataField, listOf(1, 2, 3))
+        )
+        assertTrue(matrixDataField.serializable)
+        assertEquals(
+            """[["read","write"],["sync"]]""",
+            toDatabaseValue(
+                SampleMysqlJdbcWrapper.sampleMysqlJdbcWrapper,
+                matrixDataField,
+                listOf(listOf("read", "write"), listOf("sync"))
+            )
         )
     }
 
@@ -113,11 +144,33 @@ class KotlinXSerializationTest {
         )
         val serialized = """{"profile":{"name":"Lin","tags":["db"]},"active":true}"""
         val hydrated = SerializableHolder().safeFromMapData<SerializableHolder>(
-            mapOf("id" to 7, "payload" to serialized)
+            mapOf(
+                "id" to 7,
+                "payload" to serialized,
+                "profileData" to """{"name":"Lin","tags":["db"]}""",
+                "listData" to "[4,5,6]",
+                "matrixData" to """[["north","south"],["east"]]"""
+            )
         )
 
         assertEquals(7, hydrated.id)
         assertNotNull(hydrated.payload)
         assertEquals(payload, hydrated.payload)
+        assertEquals(SerializableProfile("Lin", listOf("db")), hydrated.profileData)
+        assertEquals(listOf(4, 5, 6), hydrated.listData)
+        assertEquals(listOf(listOf("north", "south"), listOf("east")), hydrated.matrixData)
+    }
+
+    @Test
+    fun kotlinxSerializationProcessorCanDeserializeDataClassFieldFromGeneratedMapHydration() {
+        val hydrated = SerializableHolder().safeFromMapData<SerializableHolder>(
+            mapOf(
+                "id" to 8,
+                "profileData" to """{"name":"Grace","tags":["compiler","orm"]}"""
+            )
+        )
+
+        assertEquals(8, hydrated.id)
+        assertEquals(SerializableProfile("Grace", listOf("compiler", "orm")), hydrated.profileData)
     }
 }

@@ -26,7 +26,11 @@ data class DatabaseSyncTable(
     val tableName: String,
     val originalTableComment: String?,
     val tableComment: String?,
+    val expectedColumns: List<Field>,
+    val currentColumns: List<Field>,
     val columns: TableColumnDiff,
+    val expectedIndexes: List<KTableIndex>,
+    val currentIndexes: List<KTableIndex>,
     val indexes: TableIndexDiff
 )
 

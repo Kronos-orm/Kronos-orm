@@ -2,8 +2,10 @@ package com.kotlinorm.integration.fixtures
 
 import com.kotlinorm.annotations.ColumnType
 import com.kotlinorm.annotations.CreateTime
+import com.kotlinorm.annotations.Default
 import com.kotlinorm.annotations.PrimaryKey
 import com.kotlinorm.annotations.Table
+import com.kotlinorm.enums.KColumnType.INT
 import com.kotlinorm.annotations.UpdateTime
 import com.kotlinorm.enums.KColumnType.BIGINT
 import com.kotlinorm.enums.KColumnType.DATETIME
@@ -41,4 +43,30 @@ data class SchemaSyncUserV2(
     @UpdateTime
     @ColumnType(DATETIME)
     var updateTime: LocalDateTime? = null,
+) : KPojo
+
+@Table("kt_schema_sync_shape")
+data class SchemaSyncShapeV1(
+    @PrimaryKey(custom = true)
+    @ColumnType(VARCHAR, 64)
+    var id: String? = null,
+    @ColumnType(INT)
+    var legacyScore: Int? = null,
+    @ColumnType(INT)
+    var mutableScore: Int? = null,
+    @ColumnType(VARCHAR, 40)
+    @Default("'draft'")
+    var status: String? = null,
+) : KPojo
+
+@Table("kt_schema_sync_shape")
+data class SchemaSyncShapeV2(
+    @PrimaryKey(custom = true)
+    @ColumnType(VARCHAR, 64)
+    var id: String? = null,
+    @ColumnType(BIGINT)
+    var mutableScore: Long? = null,
+    @ColumnType(VARCHAR, 40)
+    @Default("'active'")
+    var status: String? = null,
 ) : KPojo

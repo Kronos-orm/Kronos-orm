@@ -27,8 +27,8 @@ import com.kotlinorm.compiler.core.kronosCommonStrategyConstructorSymbol
 import com.kotlinorm.compiler.core.kronosObjectSymbol
 import com.kotlinorm.compiler.core.k2dbFunctionSymbol
 import com.kotlinorm.compiler.core.tableNamingStrategyGetterSymbol
-import com.kotlinorm.compiler.core.kClassSymbol
 import com.kotlinorm.compiler.core.pairClassSymbol
+import com.kotlinorm.compiler.core.typeOfFunctionSymbol
 import com.kotlinorm.compiler.utils.AnnotationFqNames
 import com.kotlinorm.compiler.utils.IgnoreAnnotationFqName
 import com.kotlinorm.compiler.utils.SerializeAnnotationFqName
@@ -74,7 +74,6 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrTypeOperatorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.isNullable
@@ -85,7 +84,6 @@ import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -412,28 +410,18 @@ fun DeclarationIrBuilder.createSafeFromMapData(irClass: IrClass, irFunction: IrF
             .filter { it.backingField != null && !it.isDelegated && !it.isIgnoredForAll() && !it.isIgnoredForFromMap() }
             .forEach { prop ->
                 val fieldType = prop.backingField!!.type
-                // Build: getSafeValue(this, FieldType::class, listOf(supertype1, ...), map, "propName", isSerializable)
-                val kClassRef = IrClassReferenceImpl(
-                    startOffset, endOffset,
-                    kClassSymbol.typeWith(fieldType),
-                    fieldType.classOrNull ?: context.irBuiltIns.anyClass,
-                    fieldType
-                )
-                val superTypesList = buildListOf(
-                    context.irBuiltIns.stringType,
-                    (fieldType.classOrNull?.owner?.superTypes ?: emptyList()).mapNotNull { st ->
-                        st.classFqName?.asString()?.let { irString(it) }
-                    }
-                )
+                // Build: getSafeValue(this, typeOf<FieldType>(), map, "propName", isSerializable)
+                val kTypeExpr = irCall(typeOfFunctionSymbol).apply {
+                    typeArguments[0] = fieldType
+                }
                 val isSerializable = irBoolean(prop.hasAnnotation(SerializeAnnotationFqName))
 
                 val safeValueCall = irCall(getSafeValueSymbol).apply {
                     arguments[0] = dispatcher()
-                    arguments[1] = kClassRef
-                    arguments[2] = superTypesList
-                    arguments[3] = mapParam()
-                    arguments[4] = irString(prop.name.asString())
-                    arguments[5] = isSerializable
+                    arguments[1] = kTypeExpr
+                    arguments[2] = mapParam()
+                    arguments[3] = irString(prop.name.asString())
+                    arguments[4] = isSerializable
                 }
 
                 val castType = if (fieldType.isNullable()) fieldType else fieldType.makeNullable()

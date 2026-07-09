@@ -38,15 +38,15 @@ class InsertClauseSyntaxTest : MysqlTestBase() {
             .toSqlStatement()
 
         assertEquals(
-            listOf("id", "username", "score", "gender", "create_time", "update_time", "deleted"),
+            listOf("id", "username", "score", "create_time", "update_time", "deleted"),
             statement.columns.map { it.last }
         )
     }
 
     private fun expectedColumnIdentifiers(): List<SqlIdentifier> =
-        listOf("id", "username", "score", "gender", "create_time", "update_time", "deleted")
+        listOf("id", "username", "score", "create_time", "update_time", "deleted")
             .map(SqlIdentifier::of)
 
     private fun expectedParameterNames(): List<String> =
-        listOf("id", "username", "score", "gender", "createTime", "updateTime", "deleted")
+        listOf("id", "username", "score", "createTime", "updateTime", "deleted")
 }

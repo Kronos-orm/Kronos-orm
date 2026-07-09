@@ -85,8 +85,8 @@
   --kronos-doc-rule: rgba(246, 247, 239, 0.12);
   --kronos-doc-soft-bg: rgba(255, 255, 255, 0.02);
   --kronos-doc-sidebar-bg:
-    linear-gradient(150deg, rgba(246, 247, 239, 0.08), rgba(255, 255, 255, 0.025) 38%, rgba(5, 6, 6, 0.1)),
-    linear-gradient(90deg, rgba(223, 255, 103, 0.08), transparent 32%, rgba(246, 247, 239, 0.035) 78%, transparent),
+    linear-gradient(150deg, rgba(246, 247, 239, 0.06), rgba(255, 255, 255, 0.02) 38%, rgba(5, 6, 6, 0.12)),
+    linear-gradient(90deg, rgba(246, 247, 239, 0.025), transparent 32%, rgba(246, 247, 239, 0.025) 78%, transparent),
     rgba(5, 6, 6, 0.44);
   --kronos-doc-sidebar-shadow:
     0 26px 72px rgba(0, 0, 0, 0.3),

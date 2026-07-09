@@ -3,7 +3,7 @@
 
 ## 什么是 {{ $.title("kronos-orm-guide") }}
 
-{{ $.code("kronos-orm-guide") }} 是从 Kronos 仓库 {{ $.code("release/llm") }} 分支发布的 AI 技能。它帮助 AI 编程助手理解 {{ $.title("Kronos ORM") }} API，并为你的项目生成正确的 ORM 代码。
+{{ $.code("kronos-orm-guide") }} 是从 Kronos 仓库 {{ $.code("main") }} 分支发布的 AI 技能。它帮助 AI 编程助手理解 {{ $.title("Kronos ORM") }} API，并为你的项目生成正确的 ORM 代码。
 
 该技能会教会 AI 助手：
 
@@ -17,26 +17,32 @@
 
 ## 一键安装
 
-将 {{ $.code("release/llm") }} 分支克隆到 AI 工具约定的技能目录：
+从 {{ $.code("main") }} 分支把 skill 安装到 AI 工具约定的技能目录：
 
 | 工具 | 命令 |
 |------|------|
-| {{ $.title("Cursor") }} | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
-| {{ $.title("默认 / 通用") }} | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
+| {{ $.title("Claude") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
+| {{ $.title("Codex") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| {{ $.title("Cursor") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
+| {{ $.title("默认 / 通用") }} | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 
-Windsurf 和其他可读取 {{ $.code(".agents/skills/") }} 的工具使用默认命令。
+如果目标目录已存在，在 {{ $.code("degit") }} 后添加 {{ $.code("--force") }}。
+
+Claude Code 从 {{ $.code(".claude/skills/") }} 读取项目 skill。Codex 从 {{ $.code(".agents/skills/") }} 读取项目 skill。Windsurf 和其他可读取 {{ $.code(".agents/skills/") }} 的工具使用默认命令。
 
 ## 准备项目上下文
 
 让 AI 助手先读取 skill 和决定 Kronos 配置的项目文件，再开始生成代码。
 
 ```text group="Context" name="files"
-.agents/skills/kronos-orm-guide/SKILL.md
-.agents/skills/kronos-orm-guide/references/advanced.md
-.agents/skills/kronos-orm-guide/references/annotations.md
+<skill-dir>/kronos-orm-guide/SKILL.md
+<skill-dir>/kronos-orm-guide/references/advanced.md
+<skill-dir>/kronos-orm-guide/references/annotations.md
 build.gradle.kts 或 pom.xml
 src/main/kotlin/... 现有 KPojo 类
 ```
+
+Claude 使用 {{ $.code(".claude/skills") }} 作为 {{ $.code("<skill-dir>") }}，Codex 和通用 agent 使用 {{ $.code(".agents/skills") }}，Cursor 使用 {{ $.code(".cursor/skills") }}。
 
 需要结合 docs 生成代码时，优先给相关页面链接，不要粘贴大段示例。常见任务对应这些页面：
 

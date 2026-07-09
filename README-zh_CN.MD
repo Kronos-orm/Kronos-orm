@@ -401,14 +401,18 @@ instance["fieldName"] = "value"
 
 ## AI 编程助手集成
 
-Kronos 提供 AI 技能指南，帮助编程助手理解和生成 Kronos 代码。一条命令即可安装：
+Kronos 提供 AI 技能指南，帮助编程助手理解和生成 Kronos 代码。可以直接从 `main` 分支安装 skill：
 
 | 工具 | 命令 |
 |------|------|
-| **Cursor** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .cursor/skills/kronos-orm-guide && rm -rf .cursor/skills/kronos-orm-guide/.git` |
-| **默认 / 通用** | `git clone -b release/llm --depth 1 https://github.com/Kronos-orm/Kronos-orm.git .agents/skills/kronos-orm-guide && rm -rf .agents/skills/kronos-orm-guide/.git` |
+| **Claude** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .claude/skills/kronos-orm-guide` |
+| **Codex** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
+| **Cursor** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .cursor/skills/kronos-orm-guide` |
+| **默认 / 通用** | `npx degit Kronos-orm/Kronos-orm/.agents/skills/kronos-orm-guide#main .agents/skills/kronos-orm-guide` |
 
-Windsurf 和其他读取 `.agents/skills/` 的工具使用默认命令。
+如果目标目录已存在，在 `degit` 后添加 `--force`。
+
+Claude Code 从 `.claude/skills/` 读取项目 skill；Codex 从 `.agents/skills/` 读取项目 skill。Windsurf 和其他读取 `.agents/skills/` 的工具使用默认命令。
 
 --------
 

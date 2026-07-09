@@ -60,7 +60,7 @@ internal fun Field.sameDefinitionAs(other: Field): Boolean =
         length == other.length &&
         scale == other.scale &&
         nullable == other.nullable &&
-        primaryKey == other.primaryKey &&
+        primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &&
         defaultValue.orEmpty() == other.defaultValue.orEmpty() &&
         kDoc.orEmpty() == other.kDoc.orEmpty()
 
@@ -69,19 +69,32 @@ internal fun Field.sameDefinitionAs(other: Field, dbType: DBType): Boolean =
         DBType.SQLite -> {
             sqliteStorageClass(type) == sqliteStorageClass(other.type) &&
                 nullable == other.nullable &&
-                primaryKey == other.primaryKey &&
+                primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &&
                 defaultValue.orEmpty() == other.defaultValue.orEmpty()
         }
 
         DBType.Oracle -> {
             oracleEquivalentType(type, length, scale, other.type, other.length, other.scale) &&
                 nullable == other.nullable &&
-                primaryKey == other.primaryKey &&
+                primaryKey.sameDatabasePrimaryKeyModeAs(other.primaryKey) &&
                 defaultValue.orEmpty() == other.defaultValue.orEmpty() &&
                 kDoc.orEmpty() == other.kDoc.orEmpty()
         }
 
         else -> sameDefinitionAs(other)
+    }
+
+private fun PrimaryKeyType.sameDatabasePrimaryKeyModeAs(other: PrimaryKeyType): Boolean =
+    databasePrimaryKeyMode() == other.databasePrimaryKeyMode()
+
+private fun PrimaryKeyType.databasePrimaryKeyMode(): String =
+    when (this) {
+        PrimaryKeyType.NOT -> "none"
+        PrimaryKeyType.IDENTITY -> "identity"
+        PrimaryKeyType.DEFAULT,
+        PrimaryKeyType.UUID,
+        PrimaryKeyType.SNOWFLAKE,
+        PrimaryKeyType.CUSTOM -> "primary"
     }
 
 private fun sqliteStorageClass(type: KColumnType): String = when (type) {

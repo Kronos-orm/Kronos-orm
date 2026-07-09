@@ -122,7 +122,7 @@ fun columnDiffer(
         } else null
     }
 
-    val need2Move = moveColumn(expect, current)
+    val need2Move = if (dbType == DBType.SQLite) emptyList() else moveColumn(expect, current)
     val toModified = expect.mapIndexedNotNull { index, col ->
         val tableColumn = currentByName[col.columnName.columnKey()]
         if (tableColumn != null && (!col.sameDefinitionAs(tableColumn, dbType) || col.columnName in need2Move)

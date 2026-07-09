@@ -9,6 +9,7 @@ import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
+import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
@@ -16,6 +17,7 @@ import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.mysql
 
 class MysqlSchemaIntegrationTest : SchemaIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
+class MysqlSchemaSyncRegressionTest : SchemaSyncRegressionSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlCrudWhereIntegrationTest : CrudWhereIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlQueryIntegrationTest : QueryIntegrationSuite(mysql, StandardIntegrationScenarioProfile)
 class MysqlDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(mysql, StandardIntegrationScenarioProfile)

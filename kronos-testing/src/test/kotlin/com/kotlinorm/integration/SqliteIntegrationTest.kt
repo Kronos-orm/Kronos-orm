@@ -8,6 +8,7 @@ import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
+import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
 import com.kotlinorm.integration.suites.UpsertIntegrationSuite
 import com.kotlinorm.integration.suites.ValueTypeIntegrationSuite
@@ -15,6 +16,7 @@ import com.kotlinorm.integration.suites.WrapperSqlIntegrationSuite
 import com.kotlinorm.integration.support.IntegrationDatabaseEnvironments.sqlite
 
 class SqliteSchemaIntegrationTest : SchemaIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
+class SqliteSchemaSyncRegressionTest : SchemaSyncRegressionSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteCrudWhereIntegrationTest : CrudWhereIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteQueryIntegrationTest : QueryIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)
 class SqliteDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(sqlite, StandardIntegrationScenarioProfile)

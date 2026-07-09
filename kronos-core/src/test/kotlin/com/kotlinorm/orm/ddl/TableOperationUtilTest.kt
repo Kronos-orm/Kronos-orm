@@ -104,6 +104,29 @@ class TableOperationUtilTest {
     }
 
     @Test
+    fun `column differ ignores sqlite column order after appended add column`() {
+        val expected = listOf(
+            field("id", KColumnType.VARCHAR, length = 64, primaryKey = PrimaryKeyType.CUSTOM, nullable = false),
+            field("name", KColumnType.VARCHAR, length = 80),
+            field("age", KColumnType.BIGINT),
+            field("create_time", KColumnType.DATETIME),
+            field("update_time", KColumnType.DATETIME)
+        )
+        val current = listOf(
+            field("id", KColumnType.TEXT, primaryKey = PrimaryKeyType.DEFAULT, nullable = false),
+            field("name", KColumnType.TEXT),
+            field("create_time", KColumnType.TEXT),
+            field("update_time", KColumnType.TEXT),
+            field("age", KColumnType.INT)
+        )
+
+        assertEquals(
+            TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
+            columnDiffer(DBType.SQLite, expected, current)
+        )
+    }
+
+    @Test
     fun `column differ matches oracle metadata columns case insensitively`() {
         val expected = listOf(
             field("id", KColumnType.INT, nullable = false),
@@ -137,6 +160,39 @@ class TableOperationUtilTest {
             TableColumnDiff(toAdd = emptyList(), toModified = emptyList(), toDelete = emptyList()),
             columnDiffer(DBType.Oracle, expected, current)
         )
+    }
+
+    @Test
+    fun `column differ treats generated and custom primary keys as database primary keys`() {
+        val dbTypes = listOf(DBType.Mysql, DBType.Postgres, DBType.SQLite, DBType.Mssql, DBType.Oracle)
+
+        dbTypes.forEach { dbType ->
+            val expected = listOf(
+                field("id", KColumnType.VARCHAR, length = 64, primaryKey = PrimaryKeyType.CUSTOM, nullable = false),
+                field("name", KColumnType.VARCHAR, length = 80),
+                field("age", KColumnType.BIGINT),
+                field("create_time", KColumnType.DATETIME),
+                field("update_time", KColumnType.DATETIME)
+            )
+            val current = listOf(
+                field(
+                    if (dbType == DBType.Oracle) "ID" else "id",
+                    KColumnType.VARCHAR,
+                    length = 64,
+                    primaryKey = PrimaryKeyType.DEFAULT,
+                    nullable = false
+                ),
+                field(if (dbType == DBType.Oracle) "NAME" else "name", KColumnType.VARCHAR, length = 80),
+                field(if (dbType == DBType.Oracle) "CREATE_TIME" else "create_time", KColumnType.DATETIME),
+                field(if (dbType == DBType.Oracle) "UPDATE_TIME" else "update_time", KColumnType.DATETIME)
+            )
+
+            val diff = columnDiffer(dbType, expected, current)
+
+            assertEquals(listOf(expected[2] to expected[1]), diff.toAdd, "toAdd for $dbType")
+            assertEquals(emptyList(), diff.toModified, "toModified for $dbType")
+            assertEquals(emptyList(), diff.toDelete, "toDelete for $dbType")
+        }
     }
 
     @Test

@@ -7,6 +7,14 @@
 
 ## Update Logs
 
+### 0.1.2
+
+- 🐛 Fix `syncTable()` schema diffing for custom string primary keys so database metadata primary keys and KPojo `@PrimaryKey(custom = true)` definitions are treated as the same database primary-key mode ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))
+- 🐛 Fix SQLite repeated schema sync after `ADD COLUMN` by ignoring column-order-only diffs that SQLite cannot apply with `ALTER COLUMN` ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))
+- 💪 Add cross-database integration regression coverage for create V1 table, sync V2 with a new `age` column, verify primary-key metadata, and run a second idempotent sync across MySQL, PostgreSQL, SQLite, SQL Server, and Oracle ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))
+- 💪 Simplify AI skill installation docs and keep Claude, Codex, Cursor, and generic agent installation paths on the `main` branch ([#228](https://github.com/Kronos-orm/Kronos-orm/pull/228))
+- 🔧 Fix docs deployment on newer JDKs and bootstrap Java for the docs deployment workflow ([#226](https://github.com/Kronos-orm/Kronos-orm/pull/226), [#227](https://github.com/Kronos-orm/Kronos-orm/pull/227))
+
 ### 0.1.1
 
 - ✨ Add projection and subquery DSL coverage for generated result-row classes, scalar subqueries, predicate subqueries, INSERT SELECT, and window-function aliases ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))

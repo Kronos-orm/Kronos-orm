@@ -7,6 +7,14 @@
 
 ## 📝 更新日志
 
+### 0.1.2
+
+- 🐛 修复 `syncTable()` 表结构差异比较：数据库 metadata 回读的普通主键与 KPojo 中的 `@PrimaryKey(custom = true)` 自定义主键会按同一种数据库主键模式处理 ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))
+- 🐛 修复 SQLite 在 `ADD COLUMN` 后重复执行表结构同步的问题；SQLite 只能把新增列追加到表尾，因此同步时会忽略仅由列顺序造成的差异，避免生成不支持的 `ALTER COLUMN` ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))
+- 💪 新增跨数据库集成回归测试：先创建 V1 表，再用新增 `age` 字段的 V2 执行 `syncTable()`，校验主键 metadata，并再次同步验证幂等；覆盖 MySQL、PostgreSQL、SQLite、SQL Server 和 Oracle ([#229](https://github.com/Kronos-orm/Kronos-orm/pull/229))
+- 💪 简化 AI skill 安装文档，并统一覆盖 Claude、Codex、Cursor 和通用 agent 的 `main` 分支安装路径 ([#228](https://github.com/Kronos-orm/Kronos-orm/pull/228))
+- 🔧 修复新版 JDK 下的文档部署，并在 docs 部署 workflow 中补充 Java 环境初始化 ([#226](https://github.com/Kronos-orm/Kronos-orm/pull/226), [#227](https://github.com/Kronos-orm/Kronos-orm/pull/227))
+
 ### 0.1.1
 
 - ✨ 补全投影和子查询 DSL 能力，包括生成结果行类、标量子查询、谓词子查询、INSERT SELECT 和窗口函数 alias 的使用说明 ([#222](https://github.com/Kronos-orm/Kronos-orm/pull/222))

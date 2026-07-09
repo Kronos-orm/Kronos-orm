@@ -4,11 +4,11 @@
     {{ str | lower | replace("@", "") | replace("（", "") | replace("）", "") | replace(".", "") | replace(" ", "-") | replace("(", "") | replace(")", "") | replace("/", "") }}
 {%- endmacro %}
 
-{% macro kronosVersion() -%}0.1.1{%- endmacro %}
+{% macro kronosVersion() -%}0.1.2{%- endmacro %}
 
-{% macro kronosSnapshotVersion() -%}0.1.1-SNAPSHOT{%- endmacro %}
+{% macro kronosSnapshotVersion() -%}0.1.3-SNAPSHOT{%- endmacro %}
 
-{% macro kronosSnapshotBadgeVersion() -%}0.1.1--SNAPSHOT{%- endmacro %}
+{% macro kronosSnapshotBadgeVersion() -%}0.1.3--SNAPSHOT{%- endmacro %}
 
 {% macro parseString(input) -%}
     {%- if input.indexOf('<') > -1 and input.indexOf('>') > -1 and input.indexOf('>') == input.length - 1 -%}

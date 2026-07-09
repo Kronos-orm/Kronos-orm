@@ -37,7 +37,7 @@ Kronos 是基于编译器插件的 Kotlin ORM 框架。零反射、强类型、�
 [![CI](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml/badge.svg)](https://github.com/kronos-orm/kronos-orm/actions/workflows/kronos-testing.yml)
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.kotlinorm/kronos-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:com.kotlinorm)
-[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.1.1--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
+[![Maven Central Snapshots](https://img.shields.io/badge/Maven%20Central%20Snapshots-v0.1.3--SNAPSHOT-blue?link=https%3A%2F%2Fcentral.sonatype.com%2Fservice%2Frest%2Frepository%2Fbrowse%2Fmaven-snapshots%2Fcom%2Fkotlinorm%2F)](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/kotlinorm/)
 
 [官网](https://www.kotlinorm.com) | [中文文档](https://kotlinorm.com/#/documentation/zh-CN/getting-started/quick-start) | [Discord](https://discord.gg/Vn8EzxRX) | [QQ群](https://qm.qq.com/q/V821JzFUcM)
 </div>
@@ -141,7 +141,8 @@ union(currentUsers, archivedUsers)
 
 | Kronos 版本 | 支持的 Kotlin 版本 | 说明 |
 |-------------|--------------------|------|
-| `0.1.1` | `2.4.0+` | 用户文档推荐版本 |
+| `0.1.2` | `2.4.0+` | 用户文档推荐版本 |
+| `0.1.1` | `2.4.0+` | 补充投影文档、IDEA 插件文档与发版自动化改进 |
 | `0.1.0` | `2.3.0+` | 基于 Kotlin 2.3.0 的正式发布版本 |
 | `0.0.7` | `2.3.0+` | 在 0.0.7 中升级 Gradle 和 Kotlin |
 | `0.0.6` | `2.2.21+` | 添加 `kotlin.time.Instant` 支持 |
@@ -157,12 +158,12 @@ union(currentUsers, archivedUsers)
 
 ```kotlin
 plugins {
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.1"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.2"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.1")
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.1")
+    implementation("com.kotlinorm:kronos-core:0.1.2")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.2")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
 }
 ```
@@ -174,12 +175,12 @@ dependencies {
 
 ```groovy
 plugins {
-    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.1'
+    id 'com.kotlinorm.kronos-gradle-plugin' version '0.1.2'
 }
 
 dependencies {
-    implementation 'com.kotlinorm:kronos-core:0.1.1'
-    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.1.1'
+    implementation 'com.kotlinorm:kronos-core:0.1.2'
+    implementation 'com.kotlinorm:kronos-jdbc-wrapper:0.1.2'
     implementation 'com.mysql:mysql-connector-j:<latest-stable>'
 }
 ```
@@ -195,12 +196,12 @@ dependencies {
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-core</artifactId>
-            <version>0.1.1</version>
+            <version>0.1.2</version>
         </dependency>
         <dependency>
             <groupId>com.kotlinorm</groupId>
             <artifactId>kronos-jdbc-wrapper</artifactId>
-            <version>0.1.1</version>
+            <version>0.1.2</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -224,7 +225,7 @@ dependencies {
                     <dependency>
                         <groupId>com.kotlinorm</groupId>
                         <artifactId>kronos-maven-plugin</artifactId>
-                        <version>0.1.1</version>
+                        <version>0.1.2</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -440,3 +441,4 @@ Kronos-ORM 遵循 [Apache 2.0 许可证](https://www.apache.org/licenses/LICENSE
 [![QQ群](https://img.shields.io/badge/QQ%E7%BE%A4-991790071-red?logo=qq)](https://qm.qq.com/q/V821JzFUcM)
 
 ![QRCode](https://github.com/Kronos-orm/Kronos-orm/blob/main/assets/invitation_qrcode.jpg?raw=true)
+

@@ -216,9 +216,9 @@ jobs:
               ? fs.readFileSync(reportPath, 'utf8').trim()
               : [
                   marker,
-                  '## Test Coverage Report',
+                  '## :bar_chart: Test Coverage Report',
                   '',
-                  'Coverage comparison was not generated. Check the coverage workflow logs.',
+                  '> :warning: **Coverage report unavailable.** Comparison output was not generated; check the workflow logs.',
                 ].join('\n');
             const body = [
               comparison,

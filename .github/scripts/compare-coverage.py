@@ -383,6 +383,27 @@ def delta_label(value: Decimal | None) -> str:
     return f"{indicator} {rounded_delta(value)}"
 
 
+def status_summary(rows: list[dict[str, Any]]) -> str:
+    counts = {
+        status: sum(row["status"] == status for row in rows)
+        for status in ("PASS", "DOWN", "NEW", "MISSING")
+    }
+    return (
+        "**Modules:** "
+        f":green_circle: {counts['PASS']} PASS · "
+        f":red_circle: {counts['DOWN']} DOWN · "
+        f":blue_circle: {counts['NEW']} NEW · "
+        f":yellow_circle: {counts['MISSING']} MISSING"
+    )
+
+
+def metric_transition(
+    baseline: dict[str, Any] | None,
+    current: dict[str, Any] | None,
+) -> str:
+    return f"{rounded(percent_value(baseline))} → {rounded(percent_value(current))}"
+
+
 def markdown_report(rows: list[dict[str, Any]], failed: bool) -> str:
     if failed:
         gate_summary = (
@@ -397,17 +418,19 @@ def markdown_report(rows: list[dict[str, Any]], failed: bool) -> str:
 
     lines = [
         MARKER,
-        "## Test Coverage Report",
+        "## :bar_chart: Test Coverage Report",
         "",
         gate_summary,
         "",
+        status_summary(rows),
+        "",
         (
-            "**Status:** :green_circle: PASS · :red_circle: DOWN · "
-            ":blue_circle: NEW · :yellow_circle: MISSING"
+            "**Trend:** :green_circle: ↑ increase · :red_circle: ↓ decrease · "
+            ":white_circle: → unchanged · :warning: ↔ unavailable"
         ),
         "",
-        "| Module | Line old | Line current | Line delta | Branch old | Branch current | Branch delta | Status |",
-        "|--------|---------:|-------------:|-----------:|-----------:|---------------:|-------------:|:------:|",
+        "| Module | Line (base → head) | Δ | Branch (base → head) | Δ | Status |",
+        "|--------|--------------------:|--:|----------------------:|--:|:------:|",
     ]
 
     for row in rows:
@@ -417,11 +440,9 @@ def markdown_report(rows: list[dict[str, Any]], failed: bool) -> str:
         lines.append(
             "| "
             f"`{row['module']}` | "
-            f"{rounded(percent_value(baseline['line']))} | "
-            f"{rounded(percent_value(current['line']))} | "
+            f"{metric_transition(baseline['line'], current['line'])} | "
             f"{delta_label(decimal_value(delta['line']))} | "
-            f"{rounded(percent_value(baseline['branch']))} | "
-            f"{rounded(percent_value(current['branch']))} | "
+            f"{metric_transition(baseline['branch'], current['branch'])} | "
             f"{delta_label(decimal_value(delta['branch']))} | "
             f"{status_label(row['status'])} |"
         )

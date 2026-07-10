@@ -89,15 +89,31 @@ class CoverageReportTest(unittest.TestCase):
         report = compare_coverage.markdown_report(rows, failed=True)
 
         self.assertIn(compare_coverage.MARKER, report)
+        self.assertIn("## :bar_chart: Test Coverage Report", report)
         self.assertIn(":x: **Coverage gate failed.**", report)
         self.assertIn(":green_circle: **PASS**", report)
         self.assertIn(":red_circle: **DOWN**", report)
         self.assertIn(":blue_circle: **NEW**", report)
         self.assertIn(":yellow_circle: **MISSING**", report)
+        self.assertIn(
+            "**Modules:** :green_circle: 1 PASS · :red_circle: 1 DOWN · "
+            ":blue_circle: 1 NEW · :yellow_circle: 1 MISSING",
+            report,
+        )
+        self.assertIn(
+            "**Trend:** :green_circle: ↑ increase · :red_circle: ↓ decrease · "
+            ":white_circle: → unchanged · :warning: ↔ unavailable",
+            report,
+        )
         self.assertIn(":green_circle: ↑ +1.00pp", report)
         self.assertIn(":red_circle: ↓ -1.00pp", report)
         self.assertIn(":white_circle: → +0.00pp", report)
         self.assertIn(":warning: ↔ N/A", report)
+        self.assertIn(
+            "| Module | Line (base → head) | Δ | Branch (base → head) | Δ | Status |",
+            report,
+        )
+        self.assertIn("| `passing` | 80.00% → 81.00% |", report)
 
     def test_markdown_highlights_a_passing_gate(self) -> None:
         baseline = complete("core", "80", "70")

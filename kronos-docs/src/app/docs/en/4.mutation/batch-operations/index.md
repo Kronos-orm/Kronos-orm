@@ -3,12 +3,12 @@
 
 ## Execute one SQL statement with many parameter sets
 
-Use `SqlHandler.batchExecute` when the same SQL statement should run for multiple rows. It creates a `KronosAtomicBatchTask` and calls the active `KronosDataSourceWrapper.batchUpdate(...)`.
+Use `SqlExecutor.batchExecute` when the same SQL statement should run for multiple rows. It creates a `KronosAtomicBatchTask` and calls the active `KronosDataSourceWrapper.batchUpdate(...)`.
 
 ```kotlin group="Batch execute" name="kotlin" icon="kotlin"
-import com.kotlinorm.database.SqlHandler
+import com.kotlinorm.database.SqlExecutor
 
-val affectedRows: IntArray = with(SqlHandler) {
+val affectedRows: IntArray = with(SqlExecutor) {
     wrapper.batchExecute(
         "UPDATE user SET name = :name WHERE id = :id",
         arrayOf(
@@ -74,7 +74,7 @@ jdbcParams.map { it.toList() } == listOf(
 Batch insert uses the same batch task shape. Keep the column list fixed and pass one parameter map per row.
 
 ```kotlin group="Batch insert" name="kotlin" icon="kotlin"
-with(SqlHandler) {
+with(SqlExecutor) {
     wrapper.batchExecute(
         "INSERT INTO user (name, age) VALUES (:name, :age)",
         arrayOf(

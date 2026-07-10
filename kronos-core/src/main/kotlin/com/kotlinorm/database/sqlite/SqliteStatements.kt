@@ -26,6 +26,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.syntax.statement.SqlDdlStatement
 import com.kotlinorm.syntax.statement.SqlDmlStatement
+import com.kotlinorm.syntax.statement.SqlInsertMode
 import com.kotlinorm.syntax.statement.SqlQuery
 import com.kotlinorm.syntax.statement.SqlSelectItem
 import com.kotlinorm.syntax.statement.SqlStatement
@@ -145,16 +146,53 @@ object SqliteStatements : DatabaseStatements() {
 
     override fun syncTable(input: DatabaseSyncTable): List<SqlStatement> {
         val table = SqlIdentifier.of(input.tableName)
+        val rebuildRequired = input.columns.toModified.isNotEmpty() || input.columns.toDelete.isNotEmpty()
+        if (rebuildRequired) {
+            return rebuildTable(input)
+        }
         return buildList {
             addAll(input.indexes.toDelete.map { SqlDdlStatement.DropIndex(SqlIdentifier.of(it.name), ifExists = true) })
             addAll(input.columns.toAdd.map {
                 SqlDdlStatement.AlterTable.AddColumn(table, it.first.toColumnDefinition(::getColumnType))
             })
-            addAll(input.columns.toModified.map {
-                SqlDdlStatement.AlterTable.ModifyColumn(table, it.first.toColumnDefinition(::getColumnType))
-            })
-            addAll(input.columns.toDelete.map { SqlDdlStatement.AlterTable.DropColumn(table, SqlIdentifier.of(it.columnName)) })
             addAll(input.indexes.toAdd.map { it.toCreateIndexStatement(table) })
+        }
+    }
+
+    private fun rebuildTable(input: DatabaseSyncTable): List<SqlStatement> {
+        val originalTable = SqlIdentifier.of(input.tableName)
+        val temporaryTableName = "${input.tableName}__kronos_tmp"
+        val temporaryTable = SqlIdentifier.of(temporaryTableName)
+        val currentColumnNames = input.currentColumns.map { it.columnName.lowercase() }.toSet()
+        val copiedColumns = input.expectedColumns
+            .filter { it.columnName.lowercase() in currentColumnNames }
+            .map { SqlIdentifier.of(it.columnName) }
+
+        return buildList {
+            addAll(input.currentIndexes.map { SqlDdlStatement.DropIndex(SqlIdentifier.of(it.name), ifExists = true) })
+            add(
+                SqlDdlStatement.CreateTable(
+                    tableName = temporaryTable,
+                    columns = input.expectedColumns.map { it.toColumnDefinition(::getColumnType) }
+                )
+            )
+            if (copiedColumns.isNotEmpty()) {
+                add(
+                    SqlDmlStatement.Insert(
+                        table = SqlTable.Ident(temporaryTableName),
+                        columns = copiedColumns,
+                        mode = SqlInsertMode.Subquery(
+                            SqlQuery.Select(
+                                select = copiedColumns.map { SqlSelectItem.Expr(SqlExpr.Column(columnName = it.canonical)) },
+                                from = listOf(SqlTable.Ident(input.tableName))
+                            )
+                        )
+                    )
+                )
+            }
+            add(SqlDdlStatement.DropTable(originalTable, ifExists = true))
+            add(SqlDdlStatement.AlterTable.RenameTable(temporaryTable, originalTable))
+            addAll(input.expectedIndexes.map { it.toCreateIndexStatement(originalTable) })
         }
     }
 

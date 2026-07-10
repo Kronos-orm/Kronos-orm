@@ -24,6 +24,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.time.ExperimentalTime
 
 /**
@@ -45,23 +46,21 @@ object JvmDateTimeTransformer : ValueTransformer {
         "kotlin.time.Instant"
     ]
 
-    override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
-        return kClassOfValue.qualifiedName in dateTimeTypes ||
-                superTypesOfValue.intersect(dateTimeTypes).isNotEmpty() ||
-                targetKotlinType in dateTimeTypes
+    override fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean {
+        return sourceValueClass.qualifiedName in dateTimeTypes || targetKotlinType.classifierName() in dateTimeTypes
     }
 
     @OptIn(ExperimentalTime::class)
     override fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String>,
         dateTimeFormat: String?,
-        kClassOfValue: KClass<*>
+        sourceValueClass: KClass<*>
     ): Any {
+        val targetTypeName = targetKotlinType.classifierName()
         val pattern = dateTimeFormat ?: defaultDateFormat
         val localDateTime = if (value is Number) {
-            if (targetKotlinType == "java.time.Instant") {
+            if (targetTypeName == "java.time.Instant") {
                 Instant.ofEpochMilli(value.toLong())
             }
             LocalDateTime.ofInstant(Instant.ofEpochMilli(value.toLong()), timeZone)
@@ -80,7 +79,7 @@ object JvmDateTimeTransformer : ValueTransformer {
                 LocalDateTime.parse(value.toString())
             }
         }
-        return when (targetKotlinType) {
+        return when (targetTypeName) {
             "java.time.LocalDateTime" -> localDateTime
             "kotlin.String" -> DateTimeFormatter.ofPattern(pattern).format(localDateTime)
             "kotlin.Long" -> localDateTime.atZone(timeZone).toInstant().toEpochMilli()
@@ -96,4 +95,7 @@ object JvmDateTimeTransformer : ValueTransformer {
             else -> null
         } ?: throw IllegalArgumentException("Unsupported target type: $targetKotlinType")
     }
+
+    private fun KType.classifierName(): String? =
+        (classifier as? KClass<*>)?.qualifiedName
 }

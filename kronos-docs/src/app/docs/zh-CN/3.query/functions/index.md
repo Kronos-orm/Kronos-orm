@@ -16,7 +16,7 @@ val rows = User()
     }
     .where { f.length(it.name) > 3 && f.abs(it.score) > 10 }
     .orderBy { it.nameLength.desc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Function entry 1" name="MySQL" icon="mysql"
@@ -29,7 +29,7 @@ WHERE LENGTH(`name`) > :nameLength
 ORDER BY `nameLength` DESC
 ```
 
-函数表达式出现在 `select { ... }` 中时，通常要使用 `.alias("name")`。alias 会成为 `query()` 的 Map key、生成投影的属性名，也可以被同层 `orderBy` 读取。投影结果形态见 {{ $.keyword("query/projection", ["投影"]) }}。
+函数表达式出现在 `select { ... }` 中时，通常要使用 `.alias("name")`。alias 会成为 `toMapList()` 的 Map key、生成投影的属性名，也可以被同层 `orderBy` 读取。投影结果形态见 {{ $.keyword("query/projection", ["投影"]) }}。
 
 ```kotlin group="Function entry 2" name="consume result" icon="kotlin"
 val first = rows.first()
@@ -54,7 +54,7 @@ val rows = Order()
     }
     .groupBy { it.userId }
     .having { f.count(it.id) > 1 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Aggregate functions" name="MySQL" icon="mysql"
@@ -97,7 +97,7 @@ val rows = User()
             f.trunc(it.score, 2).alias("scoreTrunc")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Math functions" name="MySQL" icon="mysql"
@@ -146,7 +146,7 @@ val users = User()
         ]
     }
     .where { f.length(it.name) > 3 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="String functions" name="MySQL" icon="mysql"
@@ -198,7 +198,7 @@ val ranked = Order()
 
 val rows = ranked
     .orderBy { it.rn.asc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Window function 1" name="MySQL" icon="mysql"
@@ -221,7 +221,7 @@ val rowNumber: Int? = first.rn
 val firstPerUser = ranked
     .select { [it.id, it.userId, it.status, it.rn] }
     .where { it.rn == 1 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Window function 2" name="filter sql" icon="mysql"
@@ -246,7 +246,7 @@ import com.kotlinorm.functions.bundled.exts.PostgresFunctions.any
 val rows = User()
     .select()
     .where { it.id == f.any(intArrayOf(1, 2, 3)) }
-    .queryList()
+    .toList()
 ```
 
 ## 自定义函数

@@ -16,6 +16,8 @@
 
 package com.kotlinorm.interfaces
 
+import kotlin.reflect.KType
+
 /**
  * Kronos Atomic Task
  *
@@ -23,4 +25,9 @@ package com.kotlinorm.interfaces
  *
  * @author OUSC
  */
-interface KAtomicQueryTask : KAtomicTask
+interface KAtomicQueryTask : KAtomicTask {
+    val targetType: KType
+
+    val resultColumnTypes: Map<String, KType>
+        get() = emptyMap()
+}

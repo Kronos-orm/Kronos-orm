@@ -26,7 +26,6 @@ import com.kotlinorm.syntax.statement.SqlUpdateSetPair
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.utils.databaseBooleanLiteral
 import com.kotlinorm.utils.execute
-import com.kotlinorm.utils.toDatabaseBooleanValue
 
 internal class DeletePlanner<T : KPojo>(
     private val context: OrmContext<T>
@@ -72,7 +71,7 @@ internal class DeletePlanner<T : KPojo>(
 
         updateTimeStrategy?.execute(true) { field, value -> bindStrategyField(field, value) }
         logicDeleteStrategy?.execute(defaultValue = true) { field, _ ->
-            bindStrategyField(field, toDatabaseBooleanValue(dataSource, field, true))
+            bindStrategyField(field, true)
         }
 
         optimisticStrategy?.execute { field, _ ->

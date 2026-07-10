@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.utils.LinkedHashSet
 import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -397,6 +398,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeDeleteBehaviorParent>(),
             kClass = CascadeDeleteBehaviorParent::class as KClass<KPojo>,
             pojo = CascadeDeleteBehaviorParent(id = 7),
             where = null,
@@ -433,6 +435,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeLogicDeleteParent>(),
             kClass = CascadeLogicDeleteParent::class as KClass<KPojo>,
             pojo = CascadeLogicDeleteParent(id = 7),
             where = inheritedWhere,
@@ -471,6 +474,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             pojo = CascadeDeleteBehaviorParent(id = 7),
+            targetType = typeOf<CascadeDeleteBehaviorParent>(),
             kClass = CascadeDeleteBehaviorParent::class as KClass<KPojo>,
             paramMap = mapOf("id" to 7, "idNew" to 8),
             toUpdateFields = LinkedHashSet<Field>().also { it.add(idField) },
@@ -508,6 +512,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             pojo = CascadeActionParent(id = 7),
+            targetType = typeOf<CascadeActionParent>(),
             kClass = CascadeActionParent::class as KClass<KPojo>,
             paramMap = mapOf("id" to 7, "id@1" to 8, "idNew" to 9),
             toUpdateFields = LinkedHashSet<Field>().also { it.add(idField) },
@@ -549,6 +554,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
             cascade = true,
             cascadeAllowed = null,
             pojo = CascadeActionParent(id = 7),
+            targetType = typeOf<CascadeActionParent>(),
             kClass = CascadeActionParent::class as KClass<KPojo>,
             paramMap = mapOf("id" to 7, "idNew" to 8),
             toUpdateFields = LinkedHashSet<Field>().also { it.add(idField) },
@@ -594,6 +600,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeActionParent>(),
             kClass = CascadeActionParent::class as KClass<KPojo>,
             pojo = CascadeActionParent(id = 7),
             where = null,
@@ -688,6 +695,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeSingleSetNullParent>(),
             kClass = CascadeSingleSetNullParent::class as KClass<KPojo>,
             pojo = CascadeSingleSetNullParent(id = 7),
             where = null,
@@ -744,6 +752,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeSetNullParent>(),
             kClass = CascadeSetNullParent::class as KClass<KPojo>,
             pojo = CascadeSetNullParent(id = 7),
             where = null,
@@ -790,6 +799,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeSetDefaultParent>(),
             kClass = CascadeSetDefaultParent::class as KClass<KPojo>,
             pojo = CascadeSetDefaultParent(id = 7),
             where = null,
@@ -836,6 +846,7 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         val task = CascadeDeleteClause.build(
             cascade = true,
             cascadeAllowed = null,
+            targetType = typeOf<CascadeRestrictParent>(),
             kClass = CascadeRestrictParent::class as KClass<KPojo>,
             pojo = CascadeRestrictParent(id = 7),
             where = null,
@@ -924,25 +935,13 @@ class CascadeClauseBehaviorTest : MysqlTestBase() {
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
 
-        override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-            querySql += task.sql
-            queryParams += task.paramMap
-            return emptyList()
-        }
-
-        override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> {
+        override fun toList(task: KAtomicQueryTask): List<Any?> {
             querySql += task.sql
             queryParams += task.paramMap
             return queryResults.removeFirstOrNull().orEmpty()
         }
 
-        override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-            querySql += task.sql
-            queryParams += task.paramMap
-            return null
-        }
-
-        override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? {
+        override fun first(task: KAtomicQueryTask): Any? {
             querySql += task.sql
             queryParams += task.paramMap
             return objectResults.removeFirstOrNull()

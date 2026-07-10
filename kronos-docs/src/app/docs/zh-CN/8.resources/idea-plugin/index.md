@@ -182,7 +182,7 @@ val rows = User()
     .select {
         [it.id, f.length(it.name).alias("nameLength")]
     }
-    .queryList()
+    .toList()
 
 rows.first().nameLength
 ```
@@ -212,7 +212,7 @@ data class User(
     var status: Int? = null,
 ) : KPojo
 
-// 2. Kronos 编译期生成：queryList() 返回的每一行
+// 2. Kronos 编译期生成：toList() 返回的每一行
 // 这里用易读名称展示，业务代码不需要引用真实类名
 data class UserNameLengthRow(
     var id: Int? = null,
@@ -249,7 +249,7 @@ val query = User()
         it.nameLength.desc()
     }
 
-val rows = query.queryList()
+val rows = query.toList()
 // rows: List<UserNameLengthRow>
 
 rows.first().id
@@ -272,7 +272,7 @@ User()
         // User 里没有 nameLength
         it.nameLength > 8
     }
-    .queryList()
+    .toList()
 ```
 
 ## 查询结果继续查询
@@ -296,7 +296,7 @@ val filtered = query
         // it: UserNameLengthRow
         it.nameLength > 8
     }
-    .queryList()
+    .toList()
 ```
 
 有子查询、多次 `.select { ... }`、join 子查询或 insert-select 时，也会继续产生更多类似的结果行类和排序上下文类。业务代码不需要引用这些类名，IDEA 插件会把它们用于补全和检查。
@@ -346,7 +346,7 @@ val firstOrders = ranked
         // it: RankedOrderRow
         it.rn == 1
     }
-    .queryList()
+    .toList()
 ```
 
 如果直接在 `ranked` 的同一个查询里写 `where { it.rn == 1 }`，IDEA 会把 `rn` 标红，因为这个 `where` 的 `it` 仍然是 `Order`。
@@ -354,7 +354,7 @@ val firstOrders = ranked
 上面的代码会生成类似这两个类：
 
 ```kotlin name="window-result-shapes" icon="kotlin"
-// Kronos 编译期生成：ranked.queryList() 的结果行
+// Kronos 编译期生成：ranked.toList() 的结果行
 data class RankedOrderRow(
     var id: Int? = null,
     var userId: Int? = null,
@@ -395,7 +395,7 @@ User()
         on { user.id == totals.userId }
         select { [user.id, user.name, totals.totalAmount] }
     }
-    .queryList()
+    .toList()
 ```
 
 右侧结果行可以理解为：
@@ -492,7 +492,7 @@ val users = User()
         ]
     }
 
-val rows = users.queryList()
+val rows = users.toList()
 // rows 的元素包含 id 和 lastAmount
 ```
 

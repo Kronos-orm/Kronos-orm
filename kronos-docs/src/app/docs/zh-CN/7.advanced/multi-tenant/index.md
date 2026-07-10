@@ -48,7 +48,7 @@ fun configureKronosTenantSource() {
 class UserController {
     @GetMapping("/users")
     fun getUsers(pi: Int, ps: Int): Pair<Int, List<User>> {
-        return User().select().page(pi, ps).withTotal().queryList()
+        return User().select().page(pi, ps).withTotal().toList()
     }
 }
 ```
@@ -68,7 +68,7 @@ fun loadTenantUsers(tenantId: String, pi: Int, ps: Int): Pair<Int, List<User>> {
         .select()
         .page(pi, ps)
         .withTotal()
-        .queryList(wrapper)
+        .toList(wrapper)
 }
 
 fun updateTenantUser(tenantId: String, id: Int, name: String) {
@@ -101,7 +101,7 @@ fun main(args: Array<String>) {
                 .select()
                 .page(pi, ps)
                 .withTotal()
-                .queryList(wrapper)
+                .toList(wrapper)
         }
     }
 }

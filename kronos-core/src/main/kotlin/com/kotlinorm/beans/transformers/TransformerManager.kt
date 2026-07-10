@@ -18,6 +18,7 @@ package com.kotlinorm.beans.transformers
 
 import com.kotlinorm.interfaces.ValueTransformer
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Manager for transformers.
@@ -39,23 +40,23 @@ object TransformerManager {
     }
 
     fun getValueTransformed(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypes: List<String> = [],
         dateTimeFormat: String? = null,
-        kClassOfVal: KClass<*> = value::class
+        sourceValueClass: KClass<*> = value::class
     ): Any {
-        if (targetKotlinType in superTypes + kClassOfVal.qualifiedName) return value
+        val targetKClass = targetKotlinType.classifier as? KClass<*> ?: return value
+        if (targetKClass == sourceValueClass) return value
         val transformer = (registeredValueTransformers + ToStringTransformer).firstOrNull {
-            it.isMatch(targetKotlinType, superTypes, kClassOfVal)
+            it.isMatch(targetKotlinType, sourceValueClass)
         } ?: return value
 
         return transformer.transform(
             targetKotlinType,
             value,
-            superTypes,
             dateTimeFormat,
-            kClassOfVal
+            sourceValueClass
         )
     }
+
 }

@@ -4,8 +4,9 @@ import com.kotlinorm.GsonProcessor
 import com.kotlinorm.Kronos
 import io.mockk.every
 import io.mockk.mockk
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty0
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -26,8 +27,8 @@ class SerializableTest {
         assertEquals("property", result::class.java.getDeclaredField("toSerialize").apply {
             isAccessible = true
         }.get(result) as String)
-        assertEquals(Map::class, result::class.java.getDeclaredField("targetKClass").apply {
+        assertEquals(typeOf<Map<String, String>>(), result::class.java.getDeclaredField("targetKType").apply {
             isAccessible = true
-        }.get(result) as KClass<*>)
+        }.get(result) as KType)
     }
 }

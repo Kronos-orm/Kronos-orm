@@ -134,12 +134,12 @@ class MysqlJoinSqlTest : MysqlTestBase() {
 
         assertEquals(
             """
-               SELECT COUNT(*) FROM (SELECT 1
+               SELECT COUNT(*) FROM (SELECT 1 AS count_value
                     FROM `tb_user`
                     LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` AND `tb_user`.`gender` = `user_relation`.`gender`
                     RIGHT JOIN `movie` ON `movie`.`year` = `tb_user`.`id` AND `movie`.`deleted` = 0
                     FULL JOIN `tb_address` ON `tb_address`.`user_id` = `tb_user`.`id` AND `tb_address`.`deleted` = 0
-                    WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 ORDER BY `tb_user`.`id` DESC) AS total_count
+                    WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0) AS `total_count`
             """.trimWhitespace(),
             sql
         )
@@ -195,5 +195,36 @@ class MysqlJoinSqlTest : MysqlTestBase() {
         )
 
         assertEquals(mapOf("id" to 1), paramMap)
+    }
+
+    @Test
+    fun `join aggregate function argument keeps source table qualifier`() {
+        val (sql, paramMap) = TestUser(1).join(
+            UserRelation(1, "123", 1, 1),
+        ) { user, relation ->
+            leftJoin(relation) { user.id == relation.id2 }
+            select {
+                [
+                    user.id,
+                    f.count(relation.id).alias("relationCount"),
+                ]
+            }
+            groupBy { user.id }
+            having { f.count(relation.id) > 0 }
+            where { user.id == 1 }
+        }.build()
+
+        assertEquals(
+            """
+                SELECT COUNT(`user_relation`.`id`) AS relationCount, `tb_user`.`id` AS `id` FROM `tb_user`
+                LEFT JOIN `user_relation`
+                ON `tb_user`.`id` = `user_relation`.`id2`
+                WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0
+                GROUP BY `tb_user`.`id`
+                HAVING COUNT(`user_relation`.`id`) > :countMin
+            """.trimWhitespace(),
+            sql
+        )
+        assertEquals(mapOf("countMin" to 0, "id" to 1), paramMap)
     }
 }

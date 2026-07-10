@@ -18,52 +18,66 @@ package com.kotlinorm.orm.pagination
 
 import com.kotlinorm.beans.dsl.KSelectable
 import com.kotlinorm.beans.task.KronosQueryTask
-import com.kotlinorm.enums.QueryType.QueryList
+import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
+import com.kotlinorm.syntax.expr.SqlExpr
+import com.kotlinorm.syntax.statement.SqlQuery
+import com.kotlinorm.syntax.statement.SqlSelectItem
+import com.kotlinorm.syntax.table.SqlTable
+import com.kotlinorm.syntax.table.SqlTableAlias
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.logAndReturn
 
 class PagedClause<Source : KPojo, Selected : KPojo, Clause : KSelectable<Selected>>(
     private val selectClause: Clause
 ) {
-    fun query(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Map<String, Any>>> {
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Map<String, Any?>>> {
         val tasks = this.build(wrapper)
-        val total = tasks.first.queryOne<Int>(wrapper)
-        val records = tasks.second.query(wrapper)
+        val total = tasks.first.first<Int>(wrapper)
+        val records = tasks.second.toMapList(wrapper)
         return total to records
     }
 
-    inline fun <reified E : KPojo> queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<E>> {
+    inline fun <reified E : KPojo> toList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<E>> {
         val tasks = this.build(wrapper)
-        val total = tasks.first.queryOne<Int>(wrapper)
-        val records = tasks.second.queryList<E>(wrapper)
+        val total = tasks.first.first<Int>(wrapper)
+        val records = tasks.second.toList<E>(wrapper)
         return total to records
     }
 
-    @JvmName("queryForList")
+    @JvmName("toProjectionList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Selected>> {
+    fun toList(wrapper: KronosDataSourceWrapper? = null): Pair<Int, List<Selected>> {
         val tasks = this.build(wrapper)
-        val total = tasks.first.queryOne<Int>(wrapper)
-        with(tasks.second) {
-            beforeQuery?.invoke(this)
-            val records =
-                atomicTask.logAndReturn(
-                    wrapper.orDefault().forList(atomicTask, selectClause.selectedKClass, true, []), QueryList
-                )
-
-            afterQuery?.invoke(records, QueryList, wrapper.orDefault())
-            return total to records as List<Selected>
-        }
+        val total = tasks.first.first<Int>(wrapper)
+        val records = tasks.second.toList(wrapper, selectClause.selectedType) as List<Selected>
+        return total to records
     }
 
     fun build(wrapper: KronosDataSourceWrapper? = null): Pair<KronosQueryTask, KronosQueryTask> {
-        val recordsTask = selectClause.build(wrapper)
-        val cntTask = selectClause.buildTotalCountTask(wrapper)
-        cntTask.atomicTask.sql = "SELECT COUNT(*) FROM (${cntTask.atomicTask.sql}) AS total_count"
-        cntTask.beforeQuery = null
-        cntTask.afterQuery = null
-        return cntTask to recordsTask
+        val dataSource = wrapper.orDefault()
+        val recordsTask = selectClause.build(dataSource)
+        val countTask = selectClause.buildTotalCountTask(dataSource)
+        val innerQuery = requireNotNull(countTask.atomicTask.statement) {
+            "Paged total-count tasks must retain their SQL query AST."
+        }
+        val countQuery = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(SqlExpr.CountAsteriskFunc())),
+            from = listOf(
+                SqlTable.Subquery(
+                    query = innerQuery,
+                    alias = SqlTableAlias("total_count")
+                )
+            )
+        )
+        val rendered = renderStatement(dataSource, countQuery, countTask.atomicTask.paramMap)
+        val finalCountTask = KronosQueryTask(
+            countTask.atomicTask.copy(
+                sql = rendered.sql,
+                paramMap = rendered.parameters,
+                statement = countQuery
+            )
+        )
+        return finalCountTask to recordsTask
     }
 }

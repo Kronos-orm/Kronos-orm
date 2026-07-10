@@ -17,16 +17,15 @@
 package com.kotlinorm.beans.task
 
 import com.kotlinorm.enums.QueryType
-import com.kotlinorm.enums.QueryType.Query
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryMap
-import com.kotlinorm.enums.QueryType.QueryMapOrNull
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.First
+import com.kotlinorm.enums.QueryType.ToList
+import com.kotlinorm.enums.QueryType.ToMap
+import com.kotlinorm.enums.QueryType.ToMapList
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.logAndReturn
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * KronosQueryTask class represents a collection of Kronos atomic query tasks used to execute SELECT operations.
@@ -49,90 +48,77 @@ class KronosQueryTask(val atomicTask: KronosAtomicQueryTask) { //原子任务
     inline fun <T> executeQuery(
         wrapper: KronosDataSourceWrapper?,
         queryType: QueryType,
-        crossinline queryAction: (KronosDataSourceWrapper) -> T
+        task: KronosAtomicQueryTask = atomicTask,
+        crossinline queryAction: (KronosDataSourceWrapper, KronosAtomicQueryTask) -> T
     ): T {
         val dataSource = wrapper.orDefault()
         beforeQuery?.invoke(this)
-        QueryEvent.beforeQueryEvents.forEach { it(atomicTask, dataSource) }
+        QueryEvent.beforeQueryEvents.forEach { it(task, dataSource) }
 
-        val result = atomicTask.logAndReturn(queryAction(dataSource), queryType)
+        val result = task.logAndReturn(queryAction(dataSource, task), queryType)
 
-        QueryEvent.afterQueryEvents.forEach { it(atomicTask, dataSource) }
+        QueryEvent.afterQueryEvents.forEach { it(task, dataSource) }
         afterQuery?.invoke(result, queryType, dataSource)
         return result
     }
 
-    fun query(wrapper: KronosDataSourceWrapper? = null) = executeQuery(wrapper, Query) {
-        it.forList(atomicTask)
+    fun toList(
+        wrapper: KronosDataSourceWrapper?,
+        targetType: KType,
+        queryType: QueryType = ToList
+    ): List<Any?> {
+        val task = atomicTask.copy(targetType = targetType)
+        return executeQuery(wrapper, queryType, task) { dataSource, queryTask ->
+            dataSource.toList(queryTask)
+        }
+    }
+
+    fun first(
+        wrapper: KronosDataSourceWrapper?,
+        targetType: KType,
+        queryType: QueryType = First,
+        required: Boolean = !targetType.isMarkedNullable
+    ): Any? {
+        val task = atomicTask.copy(targetType = targetType)
+        val result = executeQuery(wrapper, queryType, task) { dataSource, queryTask ->
+            dataSource.first(queryTask)
+        }
+        if (result == null && required) {
+            throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+        }
+        return result
     }
 
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> queryList(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = emptyList()
-    ): List<T> {
-        val mapping = typedMappingMetadata<T>(isKPojo, superTypes)
-        return executeQuery(wrapper, QueryList) {
-            it.forList(atomicTask, T::class, mapping.isKPojo, mapping.superTypes) as List<T>
-        }
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
+        return toList(wrapper, typeOf<Map<String, Any?>>(), ToMapList) as List<Map<String, Any?>>
     }
 
-    fun queryMap(
-        wrapper: KronosDataSourceWrapper? = null
-    ) = executeQuery(wrapper, QueryMap) {
-        it.forMap(atomicTask) ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> toList(wrapper: KronosDataSourceWrapper? = null): List<T> {
+        return toList(wrapper, typeOf<T>()) as List<T>
     }
 
-    fun queryMapOrNull(
-        wrapper: KronosDataSourceWrapper? = null
-    ) = executeQuery(wrapper, QueryMapOrNull) {
-        it.forMap(atomicTask)
+    @Suppress("UNCHECKED_CAST")
+    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
+        return first(wrapper, typeOf<Map<String, Any?>>(), ToMap) as Map<String, Any?>
     }
 
-    inline fun <reified T> queryOne(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
-    ): T {
-        val mapping = typedMappingMetadata<T>(isKPojo, superTypes)
-        return executeQuery(wrapper, QueryOne) {
-            it.forObject(atomicTask, T::class, mapping.isKPojo, mapping.superTypes) as T?
-                ?: throw NoSuchElementException("No result found for query: ${atomicTask.sql}")
-        }
+    @Suppress("UNCHECKED_CAST")
+    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
+        return first(wrapper, typeOf<Map<String, Any?>?>(), ToMap) as Map<String, Any?>?
     }
 
-    inline fun <reified T> queryOneOrNull(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
-    ): T? {
-        val mapping = typedMappingMetadata<T>(isKPojo, superTypes)
-        return executeQuery(wrapper, QueryOneOrNull) {
-            it.forObject(atomicTask, T::class, mapping.isKPojo, mapping.superTypes) as T?
-        }
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> first(wrapper: KronosDataSourceWrapper? = null): T {
+        return first(wrapper, typeOf<T>()) as T
     }
 
-    data class TypedMappingMetadata(
-        val isKPojo: Boolean,
-        val superTypes: List<String>,
-    )
+    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
+        return first(wrapper, typeOf<T?>()) as T?
+    }
 
     companion object {
-        inline fun <reified T> typedMappingMetadata(
-            isKPojo: Boolean,
-            superTypes: List<String>,
-        ): TypedMappingMetadata {
-            val runtimeIsKPojo = KPojo::class.java.isAssignableFrom(T::class.java)
-            val resolvedIsKPojo = isKPojo || runtimeIsKPojo
-            val resolvedSuperTypes = if (resolvedIsKPojo && KPojo::class.java.name !in superTypes) {
-                superTypes + KPojo::class.java.name
-            } else {
-                superTypes
-            }
-            return TypedMappingMetadata(resolvedIsKPojo, resolvedSuperTypes)
-        }
-
         fun KronosAtomicQueryTask.toKronosQueryTask(): KronosQueryTask {
             return KronosQueryTask(this)
         }

@@ -8,7 +8,6 @@ import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import org.apache.commons.dbcp2.BasicDataSource
-import kotlin.reflect.KClass
 
 open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataSourceWrapper {
     override val url: String = dataSource.url
@@ -16,7 +15,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
     override val dbType: DBType
         get() = DBType.Mysql
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
         if (task.sql.startsWith("SELECT DISTINCT INDEX_NAME")) {
             return [
                 mapOf(
@@ -57,25 +56,7 @@ open class SampleMysqlJdbcWrapper(val dataSource: BasicDataSource) : KronosDataS
         ]
     }
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
-        return []
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        return null
-    }
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? {
+    override fun first(task: KAtomicQueryTask): Any? {
         val normalizedSql = task.sql.replace("`", "").uppercase()
         if (normalizedSql.startsWith("SELECT TABLE_COMMENT") && normalizedSql.contains("INFORMATION_SCHEMA.TABLES")) {
             return "Sample Table Comment"

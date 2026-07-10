@@ -20,6 +20,7 @@ import com.kotlinorm.compiler.core.ErrorReporter
 import com.kotlinorm.compiler.core.KTableTransformer
 import com.kotlinorm.compiler.core.addRefFieldSymbol
 import com.kotlinorm.compiler.core.buildFieldFromPropertyRef
+import com.kotlinorm.compiler.utils.DslCollectionFunctionNames
 import com.kotlinorm.compiler.utils.extensionReceiver
 import com.kotlinorm.compiler.utils.funcName
 import com.kotlinorm.compiler.utils.valueArguments
@@ -37,8 +38,6 @@ import org.jetbrains.kotlin.ir.expressions.IrReturn
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-
-private val ReferenceCollectionFunctionNames = setOf("get", "of", "listOf", "mutableListOf", "setOf", "arrayOf")
 
 /**
  * Reference Transformer
@@ -112,7 +111,7 @@ class ReferenceTransformer(
             expression is IrPropertyReference -> {
                 result += buildFieldFromPropertyRef(expression, errorReporter)
             }
-            expression is IrCall && expression.symbol.owner.name.asString() in ReferenceCollectionFunctionNames -> {
+            expression is IrCall && expression.symbol.owner.name.asString() in DslCollectionFunctionNames -> {
                 expression.valueArguments.filterIsInstance<IrExpression>().forEach { arg ->
                     result += collectReferenceArgument(arg)
                 }

@@ -16,6 +16,7 @@
 package com.kotlinorm.interfaces
 
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * ValueTransformer
@@ -25,13 +26,12 @@ import kotlin.reflect.KClass
  * @author OUSC
  */
 interface ValueTransformer {
-    fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean
+    fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean
 
     fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String> = [],
         dateTimeFormat: String? = null,
-        kClassOfValue: KClass<*> = value::class
+        sourceValueClass: KClass<*> = value::class
     ): Any
 }

@@ -11,6 +11,7 @@ import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -22,24 +23,22 @@ object KotlinXDateTimeTransformer : ValueTransformer {
         "kotlinx.datetime.LocalTime",
     ]
 
-    override fun isMatch(targetKotlinType: String, superTypesOfValue: List<String>, kClassOfValue: KClass<*>): Boolean {
-        return kClassOfValue.qualifiedName in dateTimeTypes ||
-                superTypesOfValue.intersect(dateTimeTypes).isNotEmpty() ||
-                targetKotlinType in dateTimeTypes
+    override fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean {
+        return sourceValueClass.qualifiedName in dateTimeTypes || targetKotlinType.classifierName() in dateTimeTypes
     }
 
     @OptIn(FormatStringsInDatetimeFormats::class, ExperimentalTime::class)
     override fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String>,
         dateTimeFormat: String?,
-        kClassOfValue: KClass<*>
+        sourceValueClass: KClass<*>
     ): Any {
+        val targetTypeName = targetKotlinType.classifierName()
         val pattern = LocalDateTime.Format { byUnicodePattern(dateTimeFormat ?: defaultDateFormat) }
         val localDateTime = if (value is Number) {
             val instant = Instant.fromEpochMilliseconds(value.toLong())
-            if (targetKotlinType == "kotlinx.datetime.Instant") {
+            if (targetTypeName == "kotlinx.datetime.Instant") {
                 return instant
             }
             instant.toLocalDateTime(TimeZone.of(timeZone.id))
@@ -50,7 +49,7 @@ object KotlinXDateTimeTransformer : ValueTransformer {
                 LocalDateTime.parse(value.toString())
             }
         }
-        return when (targetKotlinType) {
+        return when (targetTypeName) {
             "kotlinx.datetime.LocalDateTime" -> localDateTime
             "kotlinx.datetime.Instant" -> localDateTime.toInstant(TimeZone.of(timeZone.id))
             "kotlin.String" -> localDateTime.format(pattern)
@@ -60,4 +59,7 @@ object KotlinXDateTimeTransformer : ValueTransformer {
             else -> null
         } ?: throw IllegalArgumentException("Unsupported target type: $targetKotlinType")
     }
+
+    private fun KType.classifierName(): String? =
+        (classifier as? KClass<*>)?.qualifiedName
 }

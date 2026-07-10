@@ -40,7 +40,7 @@ fun projectionIdeProbeRows() =
             ]
         }
         .orderBy { it.rn }
-        .queryList()
+        .toList()
 
 fun projectionIdeProbeResultAlias(): Int? =
     projectionIdeProbeRows().firstOrNull()?.rn
@@ -57,7 +57,7 @@ fun projectionIdeProbeLocalRows(): Int? {
                     .alias("rn")
             ]
         }
-        .queryList()
+        .toList()
     val row = rows.firstOrNull()
     return row?.rn
 }

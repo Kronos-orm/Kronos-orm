@@ -36,7 +36,7 @@ User().select {
     ]
 }.where {
     f.jsonExtract(it.payload, "$.status") == "enabled"
-}.queryList()
+}.toList()
 ```
 
 ```sql group="Custom function" name="mysql" icon="mysql"

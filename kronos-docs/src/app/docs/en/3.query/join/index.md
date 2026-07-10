@@ -12,7 +12,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ## Join a selectable source
@@ -27,7 +27,7 @@ val paidOrders = Order()
 val users = User().join(paidOrders) { user, order ->
     leftJoin(order) { user.id == order.userId }
     select { [user.id, user.name, order.status] }
-}.queryList()
+}.toList()
 ```
 
 ```sql group="Join source 1" name="Mysql" icon="mysql"
@@ -51,7 +51,7 @@ val (total, rows) = User().join(paidOrders) { user, order ->
     orderBy { order.status.desc() }
     page(1, 10)
     select { [user.id, user.name, order.status] }
-}.withTotal().query()
+}.withTotal().toMapList()
 ```
 
 ```sql group="Join source 2" name="paged sql" icon="mysql"
@@ -79,7 +79,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 You can specify both the join method and the join condition with the `leftJoin`, `rightJoin`, `innerJoin`, `crossJoin`, and `fullJoin` functions.
@@ -90,7 +90,7 @@ val users: List<User> =
         leftJoin { user.id == userInfo.userId }
         innerJoin { user.id == userTeam.userId }
         select { [user.id, user.name, userInfo.age, userTeam.teamId] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="join type sql" icon="mysql"
@@ -115,7 +115,7 @@ val users: List<User> =
         on { user.id == userInfo.userId && user.id == userTeam.userId && user.id == userRole.userId }
         db(userInfo to "user_info_database", userRole to "user_role_database")
         select { [user.id, user.name, userInfo.age, userTeam.teamId, userRole.roleName] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="cross database sql" icon="mysql"
@@ -147,7 +147,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ```text name="result shape"
@@ -166,7 +166,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         select { [user - user.id, userInfo.age] }
     }
-        .queryList()
+        .toList()
 ```
 
 ## {{ $.title("by") }}Specifying Query Fields
@@ -178,7 +178,7 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         by { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ## {{ $.title("where") }}Specify the query conditions
@@ -191,7 +191,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         where { user.id == 1 }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="where sql" icon="mysql"
@@ -209,7 +209,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         where { user.eq }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 Kronos supports the minus operator `-` to exclude fields from the explicit `.eq` expansion.
@@ -220,7 +220,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         where { (user - user.id).eq }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ## {{ $.title("patch") }}Add parameters to custom query conditions
@@ -234,7 +234,7 @@ val users: List<User> =
         select { [user.id, user.name, userInfo.age] }
         where { "user.id = :id".asSql() }
         patch("id" to 1)
-    }.queryList()
+    }.toList()
 ```
 
 ## {{ $.title("groupBy") }}, {{ $.title("having") }}Set grouping and aggregation conditions
@@ -248,7 +248,7 @@ val users: List<User> =
         groupBy { [user.id, userInfo.age] }
         having { userInfo.age > 18 }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="group sql" icon="mysql"
@@ -269,7 +269,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         orderBy { [user.id.asc(), userInfo.age.desc()] }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="order sql" icon="mysql"
@@ -289,7 +289,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         limit(10)
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="limit sql" icon="mysql"
@@ -309,7 +309,7 @@ val users: List<User> =
         on { user.id == userInfo.userId }
         distinct()
         select { [user.id, user.name, userInfo.age] }
-    }.queryList()
+    }.toList()
 ```
 
 ```sql name="distinct sql" icon="mysql"
@@ -335,7 +335,7 @@ val (total, list) =
         on { user.id == userInfo.userId }
         page(1, 10)
         select { [user.id, user.name, userInfo.age] }
-    }.withTotal().query()
+    }.withTotal().toMapList()
 ```
 
 ```sql name="page sql" icon="mysql"
@@ -357,17 +357,17 @@ OFFSET 0
 Join queries use the same terminal result methods as select queries.
 
 ```kotlin name="Result methods" icon="kotlin"
-val mapRows: List<Map<String, Any>> =
+val mapRows: List<Map<String, Any?>> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { [user.id, user.name, userInfo.age] }
-    }.query()
+    }.toMapList()
 
 val typedRows: List<UserInfoRow> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList<UserInfoRow>()
+    }.toList<UserInfoRow>()
 ```
 
 Result shapes, single-row methods, pagination totals, and custom wrappers are covered in {{ $.keyword("query/result-methods", ["Result Methods"]) }}.
@@ -383,5 +383,5 @@ val users: List<User> =
     User().join(UserInfo()) { user, userInfo ->
         on { user.id == userInfo.userId }
         select { [user.id, user.name, userInfo.age] }
-    }.queryList(customWrapper)
+    }.toList(customWrapper)
 ```

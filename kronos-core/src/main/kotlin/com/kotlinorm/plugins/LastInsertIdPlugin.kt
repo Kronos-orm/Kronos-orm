@@ -26,6 +26,7 @@ import com.kotlinorm.interfaces.TaskEventPlugin
 import com.kotlinorm.orm.insert.InsertClause
 import com.kotlinorm.types.ActionTaskEvent
 import com.kotlinorm.types.QueryTaskEvent
+import kotlin.reflect.typeOf
 
 object LastInsertIdPlugin : TaskEventPlugin {
     private var loaded = false
@@ -68,11 +69,11 @@ object LastInsertIdPlugin : TaskEventPlugin {
             (task.stash["queryId"] == true || (task.stash["queryId"] == null && enabled))
             && task.stash["useIdentity"] == true // 目前仅支持自增主键
         ) {
-            task.stash["lastInsertId"] = (wrapper.forObject(
-                KronosAtomicQueryTask(lastInsertIdObtainSql(wrapper.dbType, task.stash)),
-                kClass = Long::class,
-                false,
-                []
+            task.stash["lastInsertId"] = (wrapper.first(
+                KronosAtomicQueryTask(
+                    lastInsertIdObtainSql(wrapper.dbType, task.stash),
+                    targetType = typeOf<Long?>()
+                )
             ) ?: 0L) as Long
         }
     }

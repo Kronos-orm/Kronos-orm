@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_method_criteria")
 data class MethodCriteriaUser(
@@ -81,7 +82,7 @@ fun box(): String {
 
     val failures = listOfNotNull(
         expectMethod(likeColumn?.columnName == "name") { "like field was ${likeColumn?.columnName}" },
-        expectMethod(methodParameterValue(like, likeExpr?.pattern) == TransformerSafeValue("A%", "kotlin.String")) {
+        expectMethod(methodParameterValue(like, likeExpr?.pattern) == TransformerSafeValue("A%", typeOf<String>())) {
             "like value was ${methodParameterValue(like, likeExpr?.pattern)}"
         },
         expectMethod(notBetweenColumn?.columnName == "age") { "notBetween field was ${notBetweenColumn?.columnName}" },

@@ -85,9 +85,8 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
 
   ```kotlin
   fun isMatch(
-      targetKotlinType: String,
-      superTypesOfValue: List<String>,
-      kClassOfValue: KClass<*>
+      targetKotlinType: KType,
+      sourceValueClass: KClass<*>
   ): Boolean
   ```
 
@@ -96,17 +95,17 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
    ```kotlin
   class TestTransformer : ValueTransformer {
       override fun isMatch(
-          targetKotlinType: String,
-          superTypesOfValue: List<String>,
-          kClassOfValue: KClass<*>
+          targetKotlinType: KType,
+          sourceValueClass: KClass<*>
       ): Boolean {
-          return targetKotlinType == "com.example.Test" && kClassOfValue == String::class
+          return targetKotlinType.classifier == Test::class && sourceValueClass == String::class
+      }
   }
    ```
 
 - **参数**
 
-  {{$.params([['targetKotlinType', '目标类型', 'String'], ['superTypesOfValue', '值的超类', 'List<String>'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
+  {{$.params([['targetKotlinType', '包含泛型参数和可空性的目标类型', 'KType'], ['sourceValueClass', '源值的运行时类型', 'KClass<*>']]) }}
 
 - **返回值**
 
@@ -120,11 +119,10 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
 
   ```kotlin
   fun transform(
-      targetKotlinType: String,
+      targetKotlinType: KType,
       value: Any,
-      superTypesOfValue: List<String>,
       dateTimeFormat: String?,
-      kClassOfValue: KClass<*>
+      sourceValueClass: KClass<*>
   ): Any
   ```
 
@@ -133,11 +131,10 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
   ```kotlin
   class TestTransformer : ValueTransformer {
       override fun transform(
-          targetKotlinType: String,
+          targetKotlinType: KType,
           value: Any,
-          superTypesOfValue: List<String>,
           dateTimeFormat: String?,
-          kClassOfValue: KClass<*>
+          sourceValueClass: KClass<*>
       ): Any {
           return Test(value as String)
       }
@@ -146,7 +143,7 @@ val res1: String = getTypeSafeValue("kotlin.String", someObject)
 
 - **参数**
 
-  {{ $.params([['targetKotlinType', '目标类型', 'String'], ['value', '值', 'Any'], ['superTypesOfValue', '值的超类', 'List<String>'], ['dateTimeFormat', '日期格式', 'String?'], ['kClassOfValue', '值的KClass', 'KClass<*>']]) }}
+  {{ $.params([['targetKotlinType', '包含泛型参数和可空性的目标类型', 'KType'], ['value', '源值', 'Any'], ['dateTimeFormat', '日期格式', 'String?'], ['sourceValueClass', '源值的运行时类型', 'KClass<*>']]) }}
 
 - **返回值**
 
@@ -186,20 +183,18 @@ data class TestPojo(
 // 自定义枚举类型转换器
 class TestEnumTransformer : ValueTransformer {
     override fun isMatch(
-        targetKotlinType: String,
-        superTypesOfValue: List<String>,
-        kClassOfValue: KClass<*>
+        targetKotlinType: KType,
+        sourceValueClass: KClass<*>
     ): Boolean {
         // 判断是否为TestEnum类型，且值类型为String
-        return targetKotlinType == TestEnum::class.qualifiedName && kClassOfValue == String::class
+        return targetKotlinType.classifier == TestEnum::class && sourceValueClass == String::class
     }
 
     override fun transform(
-        targetKotlinType: String,
+        targetKotlinType: KType,
         value: Any,
-        superTypesOfValue: List<String>,
         dateTimeFormat: String?,
-        kClassOfValue: KClass<*>
+        sourceValueClass: KClass<*>
     ): Any {
         return TestEnum.valueOf(value as String)
     }

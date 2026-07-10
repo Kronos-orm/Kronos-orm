@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_condition_string_matrix")
 data class StringMatrixUser(
@@ -100,37 +101,37 @@ fun box(): String {
         expectParameterizedLike(
             "like",
             stringMatrixWhere(user) { it.name like "A%" },
-            TransformerSafeValue("A%", "kotlin.String"),
+            TransformerSafeValue("A%", typeOf<String>()),
             not = false
         ),
         expectParameterizedLike(
             "notLike",
             stringMatrixWhere(user) { it.name notLike "A%" },
-            TransformerSafeValue("A%", "kotlin.String"),
+            TransformerSafeValue("A%", typeOf<String>()),
             not = true
         ),
         expectParameterizedLike(
             "startsWith",
             stringMatrixWhere(user) { it.name.startsWith("A") },
-            TransformerSafeValue("A%", "kotlin.String"),
+            TransformerSafeValue("A%", typeOf<String>()),
             not = false
         ),
         expectParameterizedLike(
             "negatedLike",
             stringMatrixWhere(user) { !(it.name like "A%") },
-            TransformerSafeValue("A%", "kotlin.String"),
+            TransformerSafeValue("A%", typeOf<String>()),
             not = true
         ),
         expectParameterizedLike(
             "endsWith",
             stringMatrixWhere(user) { it.name.endsWith("a") },
-            TransformerSafeValue("%a", "kotlin.String"),
+            TransformerSafeValue("%a", typeOf<String>()),
             not = false
         ),
         expectParameterizedLike(
             "contains",
             stringMatrixWhere(user) { it.name.contains("d") },
-            TransformerSafeValue("%d%", "kotlin.String"),
+            TransformerSafeValue("%d%", typeOf<String>()),
             not = false
         ),
         expectParameterizedRegexp(

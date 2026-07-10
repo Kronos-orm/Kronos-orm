@@ -18,12 +18,14 @@ package com.kotlinorm.orm.union
 
 import com.kotlinorm.testfixtures.entities.TestUser
 import com.kotlinorm.interfaces.KAtomicQueryTask
+import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.orm.union.unionAll
 import com.kotlinorm.syntax.order.SqlOrdering
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -39,6 +41,7 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
         val task = unionClause.build()
 
         assertEquals(unionClause.toSqlQuery(), task.atomicTask.statement)
+        assertEquals(typeOf<Int?>(), task.atomicTask.resultColumnTypes["id"])
     }
 
     @Test
@@ -94,21 +97,21 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
             objectResult = user
         )
 
-        assertEquals(listOf(row), baseUnion().query(wrapper))
-        assertEquals(scalar, baseUnion().queryMap(wrapper))
-        assertEquals(scalar, baseUnion().queryMapOrNull(wrapper))
-        assertEquals(listOf(user), baseUnion().queryList<TestUser>(wrapper, true, listOf("Marker")))
-        assertEquals(user, baseUnion().queryOne<TestUser>(wrapper, true, listOf("Marker")))
-        assertEquals(user, baseUnion().queryOneOrNull<TestUser>(wrapper, true, listOf("Marker")))
+        assertEquals(listOf(row), baseUnion().toMapList(wrapper))
+        assertEquals(scalar, baseUnion().toMap(wrapper))
+        assertEquals(scalar, baseUnion().toMapOrNull(wrapper))
+        assertEquals(listOf(user), baseUnion().toList<TestUser>(wrapper))
+        assertEquals(user, baseUnion().first<TestUser>(wrapper))
+        assertEquals(user, baseUnion().firstOrNull<TestUser>(wrapper))
 
         assertEquals(
             listOf<UnionQueryCall>(
-                UnionQueryCall.ForListMap,
-                UnionQueryCall.ForMap,
-                UnionQueryCall.ForMap,
-                UnionQueryCall.ForListTyped(TestUser::class, true, listOf("kotlin.Any", "com.kotlinorm.interfaces.KPojo")),
-                UnionQueryCall.ForObject(TestUser::class, true, listOf("kotlin.Any", "com.kotlinorm.interfaces.KPojo")),
-                UnionQueryCall.ForObject(TestUser::class, true, listOf("kotlin.Any", "com.kotlinorm.interfaces.KPojo"))
+                UnionQueryCall.ToList(typeOf<Map<String, Any?>>()),
+                UnionQueryCall.First(typeOf<Map<String, Any?>>()),
+                UnionQueryCall.First(typeOf<Map<String, Any?>?>()),
+                UnionQueryCall.ToList(typeOf<TestUser>()),
+                UnionQueryCall.First(typeOf<TestUser>()),
+                UnionQueryCall.First(typeOf<TestUser?>())
             ),
             wrapper.calls
         )
@@ -122,54 +125,30 @@ class UnionClauseBehaviorTest : MysqlTestBase() {
 
 private class CapturingUnionMysqlWrapper(
     private val mapRows: List<Map<String, Any>> = emptyList(),
-    private val typedRows: List<Any> = emptyList(),
+    private val typedRows: List<Any?> = emptyList(),
     private val mapResult: Map<String, Any>? = null,
     private val objectResult: Any? = null
 ) : SampleMysqlJdbcWrapper() {
     val calls = mutableListOf<UnionQueryCall>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-        calls += UnionQueryCall.ForListMap
-        return mapRows
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        calls += UnionQueryCall.ToList(task.targetType)
+        return if (task.targetType == typeOf<Map<String, Any?>>()) mapRows else typedRows
     }
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
-        calls += UnionQueryCall.ForListTyped(kClass, isKPojo, superTypes)
-        return typedRows
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        calls += UnionQueryCall.ForMap
-        return mapResult
-    }
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? {
-        calls += UnionQueryCall.ForObject(kClass, isKPojo, superTypes)
-        return objectResult
+    override fun first(task: KAtomicQueryTask): Any? {
+        calls += UnionQueryCall.First(task.targetType)
+        return if (task.targetType == typeOf<Map<String, Any?>>() ||
+            task.targetType == typeOf<Map<String, Any?>?>()
+        ) {
+            mapResult
+        } else {
+            objectResult
+        }
     }
 }
 
 private sealed interface UnionQueryCall {
-    object ForListMap : UnionQueryCall
-    object ForMap : UnionQueryCall
-    data class ForListTyped(
-        val kClass: KClass<*>,
-        val isKPojo: Boolean,
-        val superTypes: List<String>
-    ) : UnionQueryCall
-    data class ForObject(
-        val kClass: KClass<*>,
-        val isKPojo: Boolean,
-        val superTypes: List<String>
-    ) : UnionQueryCall
+    data class ToList(val targetType: KType) : UnionQueryCall
+    data class First(val targetType: KType) : UnionQueryCall
 }

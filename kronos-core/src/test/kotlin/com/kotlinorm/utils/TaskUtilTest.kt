@@ -13,11 +13,11 @@ import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.reflect.typeOf
 
 class TaskUtilTest {
 
@@ -106,7 +106,8 @@ class TaskUtilTest {
         val logged = mutableListOf<LoggedResult>()
         val task = KronosAtomicQueryTask(
             sql = "SELECT * FROM user WHERE id = :id",
-            paramMap = mapOf("id" to 1)
+            paramMap = mapOf("id" to 1),
+            targetType = typeOf<Map<String, Any?>>()
         )
         val result = listOf(mapOf("id" to 1))
         handleLogResult = { atomicTask, value, queryType ->
@@ -114,9 +115,9 @@ class TaskUtilTest {
         }
 
         try {
-            assertSame(result, task.logAndReturn(result, QueryType.QueryList))
+            assertSame(result, task.logAndReturn(result, QueryType.ToList))
             assertEquals(
-                listOf(LoggedResult("SELECT * FROM user WHERE id = :id", 1, QueryType.QueryList)),
+                listOf(LoggedResult("SELECT * FROM user WHERE id = :id", 1, QueryType.ToList)),
                 logged
             )
         } finally {
@@ -128,7 +129,8 @@ class TaskUtilTest {
     fun `default log handler covers select action and batch result shapes`() {
         val queryTask = KronosAtomicQueryTask(
             sql = "SELECT * FROM user",
-            operationType = KOperationType.SELECT
+            operationType = KOperationType.SELECT,
+            targetType = typeOf<Map<String, Any?>>()
         )
         val actionTask = KronosAtomicActionTask(
             sql = "INSERT INTO user(name) VALUES (:name)",
@@ -147,8 +149,8 @@ class TaskUtilTest {
         val batchResult = KronosOperationResult(3)
         val queryRows = listOf(1, 2)
 
-        assertSame(queryRows, queryTask.logAndReturn(queryRows, QueryType.Query))
-        assertEquals(mapOf("id" to 1), queryTask.logAndReturn(mapOf("id" to 1), QueryType.QueryMap))
+        assertSame(queryRows, queryTask.logAndReturn(queryRows, QueryType.ToMapList))
+        assertEquals(mapOf("id" to 1), queryTask.logAndReturn(mapOf("id" to 1), QueryType.ToMap))
         assertSame(actionResult, actionTask.logAndReturn(actionResult))
         assertSame(batchResult, batchTask.logAndReturn(batchResult))
     }
@@ -165,23 +167,9 @@ class TaskUtilTest {
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
 
-        override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
+        override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
-        override fun forList(
-            task: KAtomicQueryTask,
-            kClass: KClass<*>,
-            isKPojo: Boolean,
-            superTypes: List<String>
-        ): List<Any> = emptyList()
-
-        override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-        override fun forObject(
-            task: KAtomicQueryTask,
-            kClass: KClass<*>,
-            isKPojo: Boolean,
-            superTypes: List<String>
-        ): Any? = null
+        override fun first(task: KAtomicQueryTask): Any? = null
 
         override fun update(task: KAtomicActionTask): Int {
             actions += task

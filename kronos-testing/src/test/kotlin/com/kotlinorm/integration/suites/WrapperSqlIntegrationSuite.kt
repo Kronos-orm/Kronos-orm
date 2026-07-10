@@ -1,10 +1,10 @@
 package com.kotlinorm.integration.suites
 
-import com.kotlinorm.database.SqlHandler.batchExecute
-import com.kotlinorm.database.SqlHandler.query
-import com.kotlinorm.database.SqlHandler.queryList
-import com.kotlinorm.database.SqlHandler.queryOne
-import com.kotlinorm.database.SqlHandler.queryOneOrNull
+import com.kotlinorm.database.SqlExecutor.batchExecute
+import com.kotlinorm.database.SqlExecutor.query
+import com.kotlinorm.database.SqlExecutor.queryList
+import com.kotlinorm.database.SqlExecutor.queryOne
+import com.kotlinorm.database.SqlExecutor.queryOneOrNull
 import com.kotlinorm.enums.DBType
 import com.kotlinorm.integration.fixtures.IntegrationTypedValue
 import com.kotlinorm.integration.fixtures.IntegrationUser
@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Raw SQL integration coverage for SqlHandler and KronosDataSourceWrapper.
+ * Raw SQL integration coverage for SqlExecutor and KronosDataSourceWrapper.
  *
  * Other integration suites exercise ORM DSL behavior. This suite intentionally
  * keeps hand-written SQL here so wrapper parameter binding, typed mapping, and
@@ -31,7 +31,7 @@ abstract class WrapperSqlIntegrationSuite(
     profile: IntegrationScenarioProfile,
 ) : IntegrationSuiteSupport(environment, profile) {
     @Test
-    fun sqlHandlerBatchListKPojoMapPrimitiveAndNullMappingExecuteAgainstRealDatabase() {
+    fun sqlExecutorBatchListKPojoMapPrimitiveAndNullMappingExecuteAgainstRealDatabase() {
         recreateTables()
 
         val records = listOf(
@@ -40,16 +40,18 @@ abstract class WrapperSqlIntegrationSuite(
             IntegrationUserRecord(id = 32, name = "Batch-C", score = null, status = 8),
         )
 
-        assertEquals(listOf(1, 1, 1), insertUsersBySqlHandlerBatch(records))
-        assertEquals(records, selectUsersBySqlHandlerKPojoList())
-        assertEquals(records[1], selectUserBySqlHandlerKPojo(id = 31))
-        assertEquals(records[2], selectUserBySqlHandlerMap(id = 32))
-        assertEquals(3, selectSqlHandlerPrimitiveCount())
-        assertEquals(null, selectNullableScoreBySqlHandlerPrimitive(id = 32))
+        assertEquals(listOf(1, 1, 1), insertUsersBySqlExecutorBatch(records))
+        assertEquals(records, selectUsersBySqlExecutorKPojoList())
+        assertEquals(records[1], selectUserBySqlExecutorKPojo(id = 31))
+        val nullableScoreRow = selectUserMapBySqlExecutor(id = 32)
+        assertEquals(true, nullableScoreRow.keys.any { it.equals("score", ignoreCase = true) })
+        assertEquals(records[2], nullableScoreRow.toUserRecord())
+        assertEquals(3, selectSqlExecutorPrimitiveCount())
+        assertEquals(null, selectNullableScoreBySqlExecutorPrimitive(id = 32))
     }
 
     @Test
-    fun sqlHandlerListArrayPrimitiveArrayRepeatedAndNullParametersExecuteAgainstRealDatabase() {
+    fun sqlExecutorListArrayPrimitiveArrayRepeatedAndNullParametersExecuteAgainstRealDatabase() {
         recreateTypedValueTable()
         seedTypedValues()
 
@@ -79,7 +81,7 @@ abstract class WrapperSqlIntegrationSuite(
     }
 
     @Test
-    fun sqlHandlerMissingTableErrorsAreVisibleAgainstRealDatabase() {
+    fun sqlExecutorMissingTableErrorsAreVisibleAgainstRealDatabase() {
         recreateTables()
 
         val missingTableError = assertFailsWith<Throwable> {
@@ -88,7 +90,7 @@ abstract class WrapperSqlIntegrationSuite(
         assertEquals(false, missingTableError.message.isNullOrBlank())
     }
 
-    private fun insertUsersBySqlHandlerBatch(records: List<IntegrationUserRecord>): List<Int> =
+    private fun insertUsersBySqlExecutorBatch(records: List<IntegrationUserRecord>): List<Int> =
         wrapper.batchExecute(
             """
             INSERT INTO ${table("kt_integration_user")}
@@ -98,27 +100,26 @@ abstract class WrapperSqlIntegrationSuite(
             records.map { it.toParamMap() }.toTypedArray(),
         ).toList().map { it.normalizedBatchCount() }
 
-    private fun selectUsersBySqlHandlerKPojoList(): List<IntegrationUserRecord> =
-        wrapper.queryList<IntegrationUser>(selectUserSql(orderBy = quote("id")), isKPojo = true)
+    private fun selectUsersBySqlExecutorKPojoList(): List<IntegrationUserRecord> =
+        wrapper.queryList<IntegrationUser>(selectUserSql(orderBy = quote("id")))
             .map { it.toRecord() }
 
-    private fun selectUserBySqlHandlerKPojo(id: Int): IntegrationUserRecord =
+    private fun selectUserBySqlExecutorKPojo(id: Int): IntegrationUserRecord =
         wrapper.queryOne<IntegrationUser>(
             selectUserSql(where = "${quote("id")} = :id"),
             mapOf("id" to id),
-            isKPojo = true,
         ).toRecord()
 
-    private fun selectUserBySqlHandlerMap(id: Int): IntegrationUserRecord =
+    private fun selectUserMapBySqlExecutor(id: Int): Map<String, Any?> =
         wrapper.query(
             selectUserSql(where = "${quote("id")} = :id"),
             mapOf("id" to id),
-        ).single().toUserRecord()
+        ).single()
 
-    private fun selectSqlHandlerPrimitiveCount(): Int =
+    private fun selectSqlExecutorPrimitiveCount(): Int =
         wrapper.queryOne<Number>("SELECT COUNT(*) FROM ${table("kt_integration_user")}").toInt()
 
-    private fun selectNullableScoreBySqlHandlerPrimitive(id: Int): Int? =
+    private fun selectNullableScoreBySqlExecutorPrimitive(id: Int): Int? =
         wrapper.queryOneOrNull(
             "SELECT ${quote("score")} FROM ${table("kt_integration_user")} WHERE ${quote("id")} = :id",
             mapOf("id" to id),
@@ -184,7 +185,7 @@ abstract class WrapperSqlIntegrationSuite(
     private fun IntegrationUser.toRecord(): IntegrationUserRecord =
         IntegrationUserRecord(id = id, name = name, score = score, status = status)
 
-    private fun Map<String, Any>.toUserRecord(): IntegrationUserRecord =
+    private fun Map<String, Any?>.toUserRecord(): IntegrationUserRecord =
         IntegrationUserRecord(
             id = intValue("id"),
             name = stringValue("name"),
@@ -192,14 +193,14 @@ abstract class WrapperSqlIntegrationSuite(
             status = intValue("status"),
         )
 
-    private fun Map<String, Any>.intValue(label: String): Int? =
+    private fun Map<String, Any?>.intValue(label: String): Int? =
         when (val value = value(label)) {
             null -> null
             is Number -> value.toInt()
             else -> value.toString().toInt()
         }
 
-    private fun Map<String, Any>.stringValue(label: String): String? =
+    private fun Map<String, Any?>.stringValue(label: String): String? =
         value(label)?.toString()
 
     private fun Int.normalizedBatchCount(): Int =

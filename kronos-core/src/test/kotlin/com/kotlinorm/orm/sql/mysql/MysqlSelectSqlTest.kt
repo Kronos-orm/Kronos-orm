@@ -103,7 +103,7 @@ class MysqlSelectSqlTest : MysqlTestBase() {
         assertEquals(emptyMap(), paramMap)
 
         assertEquals(
-            "SELECT COUNT(*) FROM (SELECT 1 FROM `tb_user` WHERE `deleted` = 0) AS total_count",
+            "SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM `tb_user` WHERE `deleted` = 0) AS `total_count`",
             sql2
         )
         assertEquals(emptyMap(), paramMap2)
@@ -236,7 +236,7 @@ class MysqlSelectSqlTest : MysqlTestBase() {
             ), paramMap
         )
 
-        task.query()
+        task.toMapList()
     }
 
     @Test

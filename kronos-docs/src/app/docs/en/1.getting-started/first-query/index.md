@@ -29,7 +29,7 @@ For mapping rules, see {{ $.keyword("mapping/kpojo", ["KPojo"]) }}, {{ $.keyword
 
 ## Configure a wrapper
 
-Set the default wrapper once before using operations that call `execute()` or `query*()`.
+Set the default wrapper once before using terminal methods such as `execute()`, `toList()`, and `first()`.
 
 ```kotlin group="Wrapper" name="Main.kt" icon="kotlin"
 import com.kotlinorm.Kronos
@@ -98,7 +98,7 @@ An empty `where()` uses non-empty values on the receiver object as query-by-exam
 val user = User(name = "Kronos")
     .select()
     .where()
-    .queryOne()
+    .first()
 ```
 
 ```sql group="Select 1" name="mysql" icon="mysql"
@@ -113,7 +113,7 @@ Use `where { ... }` when the condition should be expressed explicitly.
 val users = User()
     .select()
     .where { it.name == "Kronos" }
-    .queryList()
+    .toList()
 ```
 
 More query behavior is documented in {{ $.keyword("query/select", ["Select"]) }} and {{ $.keyword("query/conditions", ["Conditions"]) }}.

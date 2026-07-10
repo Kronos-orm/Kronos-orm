@@ -51,20 +51,13 @@ class DirectCascadeProjectionWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
         mappedClasses += kClass
         return [mapOf("profileId" to 7).mapperTo(kClass as KClass<out KPojo>)]
     }
 
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? = null
+    override fun first(task: KAtomicQueryTask): Any? = null
     override fun update(task: KAtomicActionTask): Int = 0
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray = intArrayOf()
     override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? = null
@@ -74,7 +67,7 @@ fun box(): String {
     val wrapper = DirectCascadeProjectionWrapper()
     Kronos.dataSource = { wrapper }
 
-    val rows = DirectCascadeUser().select { it.profile }.cascade(false).queryList(wrapper)
+    val rows = DirectCascadeUser().select { it.profile }.cascade(false).toList(wrapper)
     val row = rows.singleOrNull()
     val columns = row?.kronosColumns().orEmpty()
     val fields = row?.toDataMap().orEmpty()

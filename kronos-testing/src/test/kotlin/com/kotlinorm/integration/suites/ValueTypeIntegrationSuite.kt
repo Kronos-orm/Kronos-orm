@@ -56,7 +56,7 @@ abstract class ValueTypeIntegrationSuite(
             IntegrationTypedValue()
                 .select()
                 .orderBy { it.id.asc() }
-                .queryList<IntegrationTypedValue>(isKPojo = true)
+                .toList<IntegrationTypedValue>()
                 .map { it.toRecord() },
         )
     }

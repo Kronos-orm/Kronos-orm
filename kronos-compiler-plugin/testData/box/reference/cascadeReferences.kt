@@ -23,6 +23,7 @@ import com.kotlinorm.beans.dsl.Field
 import com.kotlinorm.beans.dsl.KTableForReference.Companion.afterReference
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToReference
+import kotlin.reflect.KClass
 
 @Table(name = "tb_ref_carrier")
 data class RefCarrier(
@@ -72,12 +73,23 @@ fun box(): String {
     val names = result.map { it.name }
     val tables = result.map { it.tableName }
     val cascadeColumns = result.map { it.isColumn }
+    val carsKType = result[0].kType
+    val carsClassifier = carsKType?.classifier as? KClass<*>
+    val carsElementType = carsKType?.arguments?.singleOrNull()?.type
+    val carsElementClassifier = carsElementType?.classifier as? KClass<*>
+    val carsDerivedElementType = result[0].elementKType
+    val carsDerivedElementClassifier = carsDerivedElementType?.classifier as? KClass<*>
 
     return when {
         names != listOf("cars", "door", "lock") -> "Fail: refs were $names"
         tables != listOf("tb_ref_carrier", "tb_ref_car", "tb_ref_door") -> "Fail: tables were $tables"
         cascadeColumns != listOf(false, false, false) -> "Fail: cascade column flags were $cascadeColumns"
         !result[0].cascadeIsCollectionOrArray -> "Fail: cars should be marked as collection cascade"
+        carsClassifier != List::class -> "Fail: cars kType classifier was $carsClassifier"
+        carsElementClassifier != RefCar::class -> "Fail: cars kType element was $carsElementType"
+        carsDerivedElementType != carsElementType -> "Fail: cars elementKType was $carsDerivedElementType, expected $carsElementType"
+        carsDerivedElementClassifier != RefCar::class -> "Fail: cars elementKType classifier was $carsDerivedElementClassifier"
+        carsDerivedElementType?.arguments?.isNotEmpty() == true -> "Fail: cars elementKType arguments were ${carsDerivedElementType.arguments}"
         else -> "OK"
     }
 }

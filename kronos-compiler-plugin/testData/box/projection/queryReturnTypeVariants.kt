@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Verifies queryList/queryOne/queryOneOrNull all refine to the generated projection row type.
+// Verifies toList/first/firstOrNull all refine to the generated projection row type.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
@@ -43,26 +43,14 @@ class ProjectionReturnWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): List<Any> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
         mappedClasses += kClass
         return listOf(rowData(1).mapperTo(kClass as KClass<out KPojo>))
     }
 
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): Any {
+    override fun first(task: KAtomicQueryTask): Any? {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return null
         mappedClasses += kClass
         return rowData(mappedClasses.size).mapperTo(kClass as KClass<out KPojo>)
     }
@@ -88,18 +76,18 @@ fun box(): String {
     val clause = ProjectionReturnSource()
         .select { [it.id, it.name.alias("aliasName")] }
 
-    val listRow = clause.queryList(wrapper).singleOrNull()
-    val one = clause.queryOne(wrapper)
-    val oneOrNull = clause.queryOneOrNull(wrapper)
+    val listRow = clause.toList(wrapper).singleOrNull()
+    val one = clause.first(wrapper)
+    val oneOrNull = clause.firstOrNull(wrapper)
     val fieldNames = one.kronosColumns().map { it.name }.toSet()
 
     val failures = listOfNotNull(
-        expect(listRow?.id == 1) { "queryList id was ${listRow?.id}" },
-        expect(listRow?.aliasName == "Ada1") { "queryList alias was ${listRow?.aliasName}" },
-        expect(one.id == 2) { "queryOne id was ${one.id}" },
-        expect(one.aliasName == "Ada2") { "queryOne alias was ${one.aliasName}" },
-        expect(oneOrNull?.id == 3) { "queryOneOrNull id was ${oneOrNull?.id}" },
-        expect(oneOrNull?.aliasName == "Ada3") { "queryOneOrNull alias was ${oneOrNull?.aliasName}" },
+        expect(listRow?.id == 1) { "toList id was ${listRow?.id}" },
+        expect(listRow?.aliasName == "Ada1") { "toList alias was ${listRow?.aliasName}" },
+        expect(one.id == 2) { "first id was ${one.id}" },
+        expect(one.aliasName == "Ada2") { "first alias was ${one.aliasName}" },
+        expect(oneOrNull?.id == 3) { "firstOrNull id was ${oneOrNull?.id}" },
+        expect(oneOrNull?.aliasName == "Ada3") { "firstOrNull alias was ${oneOrNull?.aliasName}" },
         expect(fieldNames == setOf("id", "aliasName")) { "field names were $fieldNames" },
         expect(wrapper.mappedClasses.size == 3) { "mapped classes were ${wrapper.mappedClasses}" },
         expect(wrapper.mappedClasses.all { it != ProjectionReturnSource::class }) {

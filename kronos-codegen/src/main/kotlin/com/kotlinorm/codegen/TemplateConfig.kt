@@ -23,6 +23,8 @@ import com.kotlinorm.database.SqlManager
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.syntax.statement.SqlQuery
 import java.io.File.separator
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class TemplateConfig(
     val table: List<TableConfig>,
@@ -51,13 +53,13 @@ class TemplateConfig(
     }
     val fields: List<List<Field>> by lazy {
         table.map {
-            val rows = wrapper.forList(queryTask(statements.tableColumns(it.name), it.name))
+            val rows = queryMapRows(statements.tableColumns(it.name), it.name)
             statements.mapColumns(it.name, rows)
         }
     }
     val indexes: List<List<KTableIndex>> by lazy {
         table.map {
-            val rows = wrapper.forList(queryTask(statements.tableIndexes(it.name), it.name))
+            val rows = queryMapRows(statements.tableIndexes(it.name), it.name)
             statements.mapIndexes(it.name, rows)
         }
     }
@@ -90,10 +92,19 @@ class TemplateConfig(
 
     private fun queryTableComment(tableName: String): String {
         val statement = statements.tableComment() ?: return ""
-        return wrapper.forObject(queryTask(statement, tableName), String::class, false, emptyList()) as String? ?: ""
+        return wrapper.first(queryTask(statement, tableName, typeOf<String?>())) as String? ?: ""
     }
 
-    private fun queryTask(statement: SqlQuery, tableName: String): KronosAtomicQueryTask {
+    @Suppress("UNCHECKED_CAST")
+    private fun queryMapRows(statement: SqlQuery, tableName: String): List<Map<String, Any>> {
+        return wrapper.toList(queryTask(statement, tableName)) as List<Map<String, Any>>
+    }
+
+    private fun queryTask(
+        statement: SqlQuery,
+        tableName: String,
+        targetType: KType = typeOf<Map<String, Any?>>()
+    ): KronosAtomicQueryTask {
         val parameters = mapOf(
             "tableName" to tableName,
             "dbName" to statements.databaseName(wrapper)
@@ -102,7 +113,8 @@ class TemplateConfig(
         return KronosAtomicQueryTask(
             rendered.sql,
             rendered.parameters,
-            statement = statement
+            statement = statement,
+            targetType = targetType
         )
     }
 

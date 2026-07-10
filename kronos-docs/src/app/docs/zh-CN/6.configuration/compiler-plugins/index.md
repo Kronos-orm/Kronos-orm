@@ -132,7 +132,7 @@ data class User(
 val names = User()
     .select { [it.id, it.name] }
     .where { it.name like "A%" }
-    .queryList()
+    .toList()
 ```
 
 最快的检查方式是编译拥有这些源码的模块。
@@ -243,7 +243,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 投影、子查询和生成结果形态示例见 {{ $.keyword("query/projection", ["投影"]) }} 和 {{ $.keyword("query/subqueries", ["子查询"]) }}。

@@ -225,7 +225,17 @@ class TableOperation(private val wrapper: KronosDataSourceWrapper) {
         val diffIndexes = indexDiffer(kronosIndexes, tableIndexes)
 
         val statements = statementsOf(dataSource.dbType).syncTable(
-            DatabaseSyncTable(tableName, originalTableComment, tableComment, diffColumns, diffIndexes)
+            DatabaseSyncTable(
+                tableName,
+                originalTableComment,
+                tableComment,
+                kronosColumns,
+                tableColumns,
+                diffColumns,
+                kronosIndexes,
+                tableIndexes,
+                diffIndexes
+            )
         )
         executeDdlStatements(statements, KOperationType.ALTER)
         return true

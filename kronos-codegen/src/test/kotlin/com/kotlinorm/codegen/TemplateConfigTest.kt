@@ -114,6 +114,7 @@ class TemplateConfigTest {
             dataSource = wrapper
         )
         val templates = config.toKronosConfigs()
+        assertEquals(listOf("tb_user", "tb_order"), config.tableNames)
         assertEquals(2, templates.size)
         assertEquals("User", templates[0].className)
         assertEquals("Order", templates[1].className)

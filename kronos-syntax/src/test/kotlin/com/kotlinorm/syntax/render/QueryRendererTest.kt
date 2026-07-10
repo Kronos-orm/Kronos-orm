@@ -69,6 +69,26 @@ class QueryRendererTest {
     }
 
     @Test
+    fun rendersUserReferenceableMixedCaseAliasConsistentlyInPostgresOrderBy() {
+        val aliasMetadata = com.kotlinorm.syntax.statement.SqlSelectItemAliasMetadata(
+            outputName = "nameLength",
+            expression = SqlExpr.Function(name = id("LENGTH"), args = listOf(col("name"))),
+            scope = com.kotlinorm.syntax.statement.SqlSelectItemSourceScope.Aggregate,
+            userReferenceable = true
+        )
+        val query = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(aliasMetadata.expression, alias = "nameLength", metadata = aliasMetadata)),
+            from = listOf(table("kt_integration_user")),
+            orderBy = listOf(SqlOrderingItem(col("nameLength"), SqlOrdering.Asc))
+        )
+
+        assertEquals(
+            """SELECT LENGTH("name") AS "nameLength" FROM "kt_integration_user" ORDER BY "nameLength" ASC""",
+            query.toSql(SqlDialect.PostgreSql)
+        )
+    }
+
+    @Test
     fun rendersWithSetValuesAndSubqueryPredicates() {
         val values = SqlQuery.Values(
             listOf(
@@ -99,6 +119,32 @@ class QueryRendererTest {
         assertEquals(
             """WITH "ids" ("id", "name") AS (VALUES (1, 'Ada'), (2, 'Grace')) (SELECT "id" FROM "user" WHERE "id" IN (VALUES (1, 'Ada'), (2, 'Grace'))) UNION ALL (SELECT "id" FROM "archived_user")""",
             with.toSql()
+        )
+    }
+
+    @Test
+    fun rendersNestedSetOrderingAndLimitWithoutWrappingSqliteSelectOperands() {
+        fun selectFrom(tableName: String) = SqlQuery.Select(
+            select = listOf(SqlSelectItem.Expr(col("id"))),
+            from = listOf(table(tableName))
+        )
+
+        val nested = SqlQuery.Set(
+            left = selectFrom("active_user"),
+            operator = SqlSetOperator.Union(SqlQuantifier.All),
+            right = selectFrom("archived_user")
+        )
+        val query = SqlQuery.Set(
+            left = nested,
+            operator = SqlSetOperator.Union(),
+            right = selectFrom("pending_user"),
+            orderBy = listOf(SqlOrderingItem(col("id"), SqlOrdering.Desc)),
+            limit = SqlLimit.limit(5)
+        )
+
+        assertEquals(
+            """(SELECT "id" FROM "active_user" UNION ALL SELECT "id" FROM "archived_user") UNION SELECT "id" FROM "pending_user" ORDER BY "id" DESC LIMIT 5""",
+            query.toSql(SqlDialect.SQLite)
         )
     }
 

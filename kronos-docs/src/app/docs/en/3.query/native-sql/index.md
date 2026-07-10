@@ -1,6 +1,16 @@
 {% import "../../../macros/macros-en.njk" as $ %}
 {{ NgDocActions.demo("AnimateLogoComponent", {container: false}) }}
 
+Raw SQL methods are extensions declared by `SqlExecutor`. Import the extension you use, for example:
+
+```kotlin group="Native SQL import" name="kotlin" icon="kotlin"
+import com.kotlinorm.database.SqlExecutor.query
+import com.kotlinorm.database.SqlExecutor.queryList
+import com.kotlinorm.database.SqlExecutor.queryMap
+import com.kotlinorm.database.SqlExecutor.queryOne
+import com.kotlinorm.database.SqlExecutor.queryOneOrNull
+```
+
 ## 1. {{ $.title("query") }} Query Map List
 
 Execute SQL statements, query multiple records, and return a list of maps.
@@ -8,7 +18,7 @@ Execute SQL statements, query multiple records, and return a list of maps.
 - **Function Declaration**
 
     ```kotlin
-    fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any>>
+    fun query(sql: String, params: Map<String, Any?> = emptyMap()): List<Map<String, Any?>>
     ```
 
 - **Usage Example**
@@ -16,7 +26,7 @@ Execute SQL statements, query multiple records, and return a list of maps.
     ```kotlin
     val sql = "SELECT * FROM table WHERE column = :value"
     val params = mapOf("value" to "some value")
-    val result: List<Map<String, Any>> = wrapper.query(sql, params)
+    val result: List<Map<String, Any?>> = wrapper.query(sql, params)
     ```
 
 - **Parameters**:
@@ -28,7 +38,7 @@ Execute SQL statements, query multiple records, and return a list of maps.
 
 - **Return Value**:
 
-    `List<Map<String, Any>>` Query result list
+    `List<Map<String, Any?>>` query result list. Selected SQL `NULL` values remain present under their column keys.
 
 {{ $.hr() }}
 
@@ -81,7 +91,7 @@ Execute SQL statements, query a single record, and return a map.
 - **Function Declaration**
 
     ```kotlin
-    fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any>?
+    fun queryMap(sql: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>?
     ```
 
 - **Usage Example**
@@ -89,7 +99,7 @@ Execute SQL statements, query a single record, and return a map.
     ```kotlin
     val sql = "SELECT * FROM table WHERE column = :value"
     val params = mapOf("value" to "some value")
-    val result: Map<String, Any>? = wrapper.queryMap(sql, params)
+    val result: Map<String, Any?>? = wrapper.queryMap(sql, params)
     ```
 
 - **Parameters**:
@@ -101,7 +111,7 @@ Execute SQL statements, query a single record, and return a map.
 
 - **Return Value**:
 
-    `Map<String, Any>?` Query result
+    `Map<String, Any?>?` Query result
 
 {{ $.hr() }}
 

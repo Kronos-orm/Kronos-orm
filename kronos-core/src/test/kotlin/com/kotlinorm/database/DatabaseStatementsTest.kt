@@ -32,7 +32,6 @@ import com.kotlinorm.syntax.statement.SqlServerExtendedPropertyOperation
 import com.kotlinorm.syntax.statement.SqlStatement
 import com.kotlinorm.syntax.table.SqlTable
 import com.kotlinorm.syntax.token.SqlUnsafeToken
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -807,6 +806,17 @@ class DatabaseStatementsTest {
                     "PRIMARY_KEY" to "NO",
                     "IDENTITY" to "NO",
                     "COLUMN_DEFAULT" to "1"
+                ),
+                mapOf(
+                    "COLUMN_NAME" to "status",
+                    "DATA_TYPE" to "varchar",
+                    "LENGTH" to 20,
+                    "SCALE" to 0,
+                    "COLUMN_TYPE" to "varchar(20)",
+                    "IS_NULLABLE" to "YES",
+                    "PRIMARY_KEY" to "NO",
+                    "IDENTITY" to "NO",
+                    "COLUMN_DEFAULT" to "active"
                 )
             )
         ).map { it.toFieldShape() }
@@ -823,7 +833,8 @@ class DatabaseStatementsTest {
         assertEquals(
             listOf(
                 FieldShape("id", KColumnType.INT, 11, 0, "account", false, PrimaryKeyType.IDENTITY, null, "identifier"),
-                FieldShape("enabled", KColumnType.BIT, 1, 0, "account", true, PrimaryKeyType.NOT, "1", null)
+                FieldShape("enabled", KColumnType.BIT, 1, 0, "account", true, PrimaryKeyType.NOT, "1", null),
+                FieldShape("status", KColumnType.VARCHAR, 20, 0, "account", true, PrimaryKeyType.NOT, "'active'", null)
             ),
             fields
         )
@@ -858,6 +869,15 @@ class DatabaseStatementsTest {
                     "SCALE" to 0,
                     "IS_NULLABLE" to true,
                     "PRIMARY_KEY" to false
+                ),
+                mapOf(
+                    "COLUMN_NAME" to "status",
+                    "DATA_TYPE" to "VARCHAR",
+                    "LENGTH" to 20,
+                    "SCALE" to 0,
+                    "IS_NULLABLE" to true,
+                    "PRIMARY_KEY" to false,
+                    "COLUMN_DEFAULT" to "'active'::character varying"
                 )
             )
         ).map { it.toFieldShape() }
@@ -873,7 +893,8 @@ class DatabaseStatementsTest {
         assertEquals(
             listOf(
                 FieldShape("id", KColumnType.INT, 0, 0, "account", false, PrimaryKeyType.IDENTITY, null, "identifier"),
-                FieldShape("payload", KColumnType.BLOB, 0, 0, "account", true, PrimaryKeyType.NOT, null, null)
+                FieldShape("payload", KColumnType.BLOB, 0, 0, "account", true, PrimaryKeyType.NOT, null, null),
+                FieldShape("status", KColumnType.VARCHAR, 20, 0, "account", true, PrimaryKeyType.NOT, "'active'", null)
             ),
             fields
         )
@@ -1130,9 +1151,23 @@ class DatabaseStatementsTest {
         assertEquals(
             listOf(
                 StatementShape("DropIndex", null, indexName = "idx_old", ifExists = true),
-                StatementShape("AddColumn", "account", columns = listOf(ColumnShape("nickname", "TEXT", true, "NotPrimary", "'nick'"))),
-                StatementShape("ModifyColumn", "account", columns = listOf(ColumnShape("name", "TEXT", false, "NotPrimary", "'new'"))),
-                StatementShape("DropColumn", "account", columnName = "legacy"),
+                StatementShape(
+                    "CreateTable",
+                    "account__kronos_tmp",
+                    columns = listOf(
+                        ColumnShape("id", "INTEGER", true, "NotPrimary", null),
+                        ColumnShape("name", "TEXT", false, "NotPrimary", "'new'"),
+                        ColumnShape("nickname", "TEXT", true, "NotPrimary", "'nick'")
+                    )
+                ),
+                StatementShape(
+                    "Insert",
+                    "account__kronos_tmp",
+                    columns = listOf("id", "name"),
+                    query = QueryShape(select = listOf("\"id\"", "\"name\""), from = listOf("account"), where = null)
+                ),
+                StatementShape("DropTable", "account", ifExists = true),
+                StatementShape("RenameTable", "account__kronos_tmp", newName = "account"),
                 StatementShape("CreateIndex", "account", indexName = "idx_new", columns = listOf("nickname"), method = "BTREE")
             ),
             SqliteStatements.syncTable(syncInput()).map { it.toStatementShape() }
@@ -1170,7 +1205,8 @@ class DatabaseStatementsTest {
                 StatementShape("DropColumn", "dbo.account", columnName = "legacy"),
                 StatementShape("AddColumn", "dbo.account", columns = listOf(ColumnShape("nickname", "VARCHAR(16)", true, "NotPrimary", "'nick'"))),
                 StatementShape("SqlServerDropDefaultConstraint", "dbo.account", columnName = "name"),
-                StatementShape("ModifyColumn", "dbo.account", columns = listOf(ColumnShape("name", "VARCHAR(64)", false, "NotPrimary", "'new'"))),
+                StatementShape("ModifyColumn", "dbo.account", columns = listOf(ColumnShape("name", "VARCHAR(64)", false, "NotPrimary", null))),
+                StatementShape("AlterColumnDefault", "dbo.account", columnName = "name", defaultValue = "'new'"),
                 StatementShape("SqlServerExtendedPropertyComment", "dbo.account", columnName = "name", comment = "new display", operation = "Update"),
                 StatementShape("CreateIndex", "dbo.account", indexName = "idx_new", columns = listOf("nickname"), method = "BTREE")
             ),
@@ -1252,6 +1288,8 @@ class DatabaseStatementsTest {
         val position: String? = null,
         val defaultValue: String? = null,
         val nullable: Boolean? = null,
+        val newName: String? = null,
+        val query: QueryShape? = null,
         val operation: String? = null,
         val condition: String? = null
     )
@@ -1321,6 +1359,11 @@ class DatabaseStatementsTest {
             table = tableName.canonical,
             columnName = columnName.canonical
         )
+        is SqlDdlStatement.AlterTable.RenameTable -> StatementShape(
+            kind = "RenameTable",
+            table = tableName.canonical,
+            newName = newName.canonical
+        )
         is SqlDdlStatement.AlterTable.AlterColumnDefault -> StatementShape(
             kind = "AlterColumnDefault",
             table = tableName.canonical,
@@ -1366,6 +1409,12 @@ class DatabaseStatementsTest {
             kind = "Delete",
             table = table.toTableShape(),
             condition = where?.toExprShape()
+        )
+        is SqlDmlStatement.Insert -> StatementShape(
+            kind = "Insert",
+            table = table.toTableShape(),
+            columns = columns.map { it.canonical },
+            query = (mode as? com.kotlinorm.syntax.statement.SqlInsertMode.Subquery)?.query?.toQueryShape()
         )
         else -> StatementShape(kind = this::class.simpleName ?: "Unknown", table = null)
     }
@@ -1507,6 +1556,16 @@ class DatabaseStatementsTest {
         tableName = "account",
         originalTableComment = "old accounts",
         tableComment = "accounts",
+        expectedColumns = listOf(
+            statementField("id", KColumnType.INT),
+            statementField("name", KColumnType.VARCHAR, length = 64, nullable = false, defaultValue = "'new'", kDoc = "new display"),
+            statementField("nickname", KColumnType.VARCHAR, length = 16, defaultValue = "'nick'")
+        ),
+        currentColumns = listOf(
+            statementField("id", KColumnType.INT),
+            statementField("name", KColumnType.VARCHAR, length = 32, nullable = true, defaultValue = "'old'", kDoc = "old display"),
+            statementField("legacy", KColumnType.TEXT)
+        ),
         columns = TableColumnDiff(
             toAdd = listOf(statementField("nickname", KColumnType.VARCHAR, length = 16, defaultValue = "'nick'") to statementField("name", KColumnType.VARCHAR)),
             toModified = listOf(
@@ -1518,6 +1577,8 @@ class DatabaseStatementsTest {
             ),
             toDelete = listOf(statementField("legacy", KColumnType.TEXT))
         ),
+        expectedIndexes = listOf(KTableIndex("idx_new", arrayOf("nickname"), "NORMAL", "BTREE")),
+        currentIndexes = listOf(KTableIndex("idx_old", arrayOf("legacy"), "NORMAL", "BTREE")),
         indexes = TableIndexDiff(
             toAdd = listOf(KTableIndex("idx_new", arrayOf("nickname"), "NORMAL", "BTREE")),
             toDelete = listOf(KTableIndex("idx_old", arrayOf("legacy"), "NORMAL", "BTREE"))
@@ -1598,10 +1659,8 @@ class DatabaseStatementsTest {
             override val url: String = url
             override val userName: String = userName
             override val dbType: DBType = dbType
-            override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-            override fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any> = emptyList()
-            override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-            override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? = null
+            override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
+            override fun first(task: KAtomicQueryTask): Any? = null
             override fun update(task: KAtomicActionTask): Int = 0
             override fun batchUpdate(task: KronosAtomicBatchTask): IntArray = intArrayOf()
             override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? = null

@@ -17,7 +17,7 @@
 package com.kotlinorm.beans.serialize
 
 import com.kotlinorm.interfaces.KronosSerializeProcessor
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * None Serialize Resolver
@@ -27,11 +27,11 @@ import kotlin.reflect.KClass
  * @author OUSC
  */
 object NoneSerializeProcessor : KronosSerializeProcessor {
-    override fun deserialize(serializedStr: String, kClass: KClass<*>): Any {
+    override fun deserialize(serializedStr: String, kType: KType): Any {
         throw UnsupportedOperationException()
     }
 
-    override fun serialize(obj: Any): String {
+    override fun serialize(obj: Any, kType: KType): String {
         throw UnsupportedOperationException()
     }
 }

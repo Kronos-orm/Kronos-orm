@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.expr.SqlInRightOperand
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_contains_membership")
 data class ContainsMembershipUser(
@@ -80,11 +81,11 @@ fun box(): String {
     return when {
         containsColumn?.columnName != "name" -> "Fail: contains field was ${containsColumn?.columnName}"
         containsExpr?.withNot == true -> "Fail: contains should not be negated"
-        containsParameterValue(contains, containsExpr?.pattern) != TransformerSafeValue("%d%", "kotlin.String") ->
+        containsParameterValue(contains, containsExpr?.pattern) != TransformerSafeValue("%d%", typeOf<String>()) ->
             "Fail: contains value was ${containsParameterValue(contains, containsExpr?.pattern)}"
         negatedContainsColumn?.columnName != "name" -> "Fail: negated contains field was ${negatedContainsColumn?.columnName}"
         negatedContainsExpr?.withNot != true -> "Fail: negated contains should be negated"
-        containsParameterValue(negatedContains, negatedContainsExpr?.pattern) != TransformerSafeValue("%d%", "kotlin.String") ->
+        containsParameterValue(negatedContains, negatedContainsExpr?.pattern) != TransformerSafeValue("%d%", typeOf<String>()) ->
             "Fail: negated contains value was ${containsParameterValue(negatedContains, negatedContainsExpr?.pattern)}"
         membershipColumn?.columnName != "id" -> "Fail: membership field was ${membershipColumn?.columnName}"
         membership?.withNot == true -> "Fail: membership should not be negated"

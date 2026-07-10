@@ -4,9 +4,12 @@ import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.suites.CascadeIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
@@ -19,6 +22,8 @@ class OracleSchemaIntegrationTest : SchemaIntegrationSuite(oracle, StandardInteg
 class OracleSchemaSyncRegressionTest : SchemaSyncRegressionSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleCrudWhereIntegrationTest : CrudWhereIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleQueryIntegrationTest : QueryIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
+class OracleResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
+class OracleDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleUpsertIntegrationTest : UpsertIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleErrorIntegrationTest : ErrorIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
@@ -27,3 +32,4 @@ class OracleCascadeIntegrationTest : CascadeIntegrationSuite(oracle, StandardInt
 class OracleValueTypeIntegrationTest : ValueTypeIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
 class OracleTransactionIntegrationTest : TransactionIntegrationSuite(oracle, StandardIntegrationScenarioProfile)
+class OracleEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(oracle, StandardIntegrationScenarioProfile)

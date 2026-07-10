@@ -22,8 +22,9 @@ import com.kotlinorm.enums.KColumnType
 import com.kotlinorm.enums.KColumnType.UNDEFINED
 import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
-import com.kotlinorm.interfaces.KPojo
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * Field
@@ -37,8 +38,10 @@ import kotlin.reflect.KClass
  * @property dateFormat the format of the date field
  * @property tableName the name of the table
  * @property cascade the cascade of the field
+ * @property kType the Kotlin declaration type of the field, or null for database metadata fields
+ * @property elementKType the element type of collection and array fields
  * @property cascadeIsCollectionOrArray whether the cascade field is a collection or array
- * @property kClass the class of the cascade field
+ * @property kClass the raw class of the field
  * @property isColumn whether the field is a column of database, KPojo/Collection<KPojo> fields are not columns of database
  * @property length the length of the field
  * @property defaultValue the default value of the field
@@ -55,9 +58,7 @@ open class Field(
     val dateFormat: String? = null,
     var tableName: String = "",
     val cascade: KCascade? = null,
-    val cascadeIsCollectionOrArray: Boolean = false,
-    val kClass: KClass<out KPojo>? = null,
-    val superTypes: List<String> = emptyList(),
+    val kType: KType? = null,
     val ignore: Array<IgnoreAction>? = null,
     val isColumn: Boolean = true,
     val length: Int = 0,
@@ -67,6 +68,19 @@ open class Field(
     val serializable: Boolean = false,
     val kDoc: String? = null
 ) {
+    val elementKType: KType? by lazy(LazyThreadSafetyMode.NONE) {
+        kType?.primitiveArrayElementType()
+            ?: kType?.arguments?.firstOrNull()?.type
+    }
+
+    val kClass: KClass<*>? by lazy(LazyThreadSafetyMode.NONE) {
+        kType?.classifier as? KClass<*>
+    }
+
+    val cascadeIsCollectionOrArray: Boolean by lazy(LazyThreadSafetyMode.NONE) {
+        kClass.isCollectionOrArrayClassifier()
+    }
+
     // Returns the name of the field as a string
     override fun toString(): String {
         return name
@@ -107,7 +121,21 @@ open class Field(
      */
     operator fun plus(other: String?): Field = Field(
         columnName,
-        name + other
+        name + other,
+        type,
+        primaryKey,
+        dateFormat,
+        tableName,
+        cascade,
+        kType,
+        ignore,
+        isColumn,
+        length,
+        scale,
+        defaultValue,
+        nullable,
+        serializable,
+        kDoc
     )
 
     fun refUseFor(usage: KOperationType): Boolean {
@@ -122,15 +150,15 @@ open class Field(
         dateFormat: String? = this.dateFormat,
         tableName: String = this.tableName,
         cascade: KCascade? = this.cascade,
-        cascadeIsCollectionOrArray: Boolean = this.cascadeIsCollectionOrArray,
-        kClass: KClass<out KPojo>? = this.kClass,
-        superTypes: List<String> = this.superTypes,
+        kType: KType? = this.kType,
         ignore: Array<IgnoreAction>? = this.ignore,
         isColumn: Boolean = this.isColumn,
         length: Int = this.length,
         scale: Int = this.scale,
         defaultValue: String? = this.defaultValue,
-        nullable: Boolean = this.nullable
+        nullable: Boolean = this.nullable,
+        serializable: Boolean = this.serializable,
+        kDoc: String? = this.kDoc
     ): Field {
         return Field(
             columnName,
@@ -140,15 +168,52 @@ open class Field(
             dateFormat,
             tableName,
             cascade,
-            cascadeIsCollectionOrArray,
-            kClass,
-            superTypes,
+            kType,
             ignore,
             isColumn,
             length,
             scale,
             defaultValue,
-            nullable
+            nullable,
+            serializable,
+            kDoc
+        )
+    }
+
+    private fun KType.primitiveArrayElementType(): KType? = when (classifier) {
+        BooleanArray::class -> typeOf<Boolean>()
+        ByteArray::class -> typeOf<Byte>()
+        CharArray::class -> typeOf<Char>()
+        DoubleArray::class -> typeOf<Double>()
+        FloatArray::class -> typeOf<Float>()
+        IntArray::class -> typeOf<Int>()
+        LongArray::class -> typeOf<Long>()
+        ShortArray::class -> typeOf<Short>()
+        else -> null
+    }
+
+    private fun KClass<*>?.isCollectionOrArrayClassifier(): Boolean {
+        if (this == null) return false
+        return this in collectionOrArrayClassifiers
+    }
+
+    private companion object {
+        val collectionOrArrayClassifiers = setOf(
+            Collection::class,
+            Iterable::class,
+            List::class,
+            MutableList::class,
+            Set::class,
+            MutableSet::class,
+            Array::class,
+            BooleanArray::class,
+            ByteArray::class,
+            CharArray::class,
+            DoubleArray::class,
+            FloatArray::class,
+            IntArray::class,
+            LongArray::class,
+            ShortArray::class,
         )
     }
 }

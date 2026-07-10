@@ -134,7 +134,7 @@ class KronosProjectionIdeBridgeTest {
     fun `generated projection declarations keep real member source in ide mode`() {
         val source = Files.readString(
             Paths.get("src/main/kotlin/com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtension.kt")
-        )
+        ).replace("\r\n", "\n")
 
         assertTrue(source.contains("private fun KronosProjectionModel.generatedDeclarationSource(): KtSourceElement?"))
         assertTrue(source.contains("private fun KronosProjectionModel.generatedMemberSource(field: KronosProjectionField): KtSourceElement?"))
@@ -176,7 +176,7 @@ class KronosProjectionIdeBridgeTest {
     fun `generated projection source does not reflect into kotlin psi internals`() {
         val source = Files.readString(
             Paths.get("src/main/kotlin/com/kotlinorm/compiler/fir/KronosProjectionDeclarationGenerationExtension.kt")
-        )
+        ).replace("\r\n", "\n")
 
         assertFalse(source.contains("getPsi"))
         assertFalse(source.contains("isAccessible = true"))

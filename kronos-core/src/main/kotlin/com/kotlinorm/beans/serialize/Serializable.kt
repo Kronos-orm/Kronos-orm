@@ -19,24 +19,26 @@ package com.kotlinorm.beans.serialize
 import com.kotlinorm.Kronos.serializeProcessor
 import com.kotlinorm.interfaces.KPojo
 import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty0
+import kotlin.reflect.typeOf
 
 
+@OptIn(ExperimentalStdlibApi::class)
 inline fun <reified T> serialize(toSerialize: KProperty0<String?>): Serialize<T?> {
-    return Serialize(toSerialize.name, T::class)
+    return Serialize(toSerialize.name, typeOf<T>())
 }
 
 // 自定义委托类
 class Serialize<T>(
     private val toSerialize: String,
-    private val targetKClass: KClass<*>
+    private val targetKType: KType
 ) : ReadWriteProperty<Any, T?> {
     @Suppress("UNCHECKED_CAST")
     override fun getValue(thisRef: Any, property: KProperty<*>): T? {
         if ((thisRef as KPojo)[toSerialize] == null) return null
-        return serializeProcessor.deserialize(thisRef[toSerialize] as String, targetKClass) as T?
+        return serializeProcessor.deserialize(thisRef[toSerialize] as String, targetKType) as T?
     }
 
     override fun setValue(thisRef: Any, property: KProperty<*>, value: T?) {
@@ -44,6 +46,6 @@ class Serialize<T>(
             (thisRef as KPojo)[toSerialize] = null
             return
         }
-        (thisRef as KPojo)[toSerialize] = serializeProcessor.serialize(value)
+        (thisRef as KPojo)[toSerialize] = serializeProcessor.serialize(value, targetKType)
     }
 }

@@ -8,7 +8,7 @@ Kronos 条件 DSL 用在 `where`、`having` 和 `on` 块中。你可以在同一
 val users = User()
     .select { [it.id, it.name, it.age] }
     .where { (it.age >= 18 && it.name like "Ada%") || it.id == 1 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Condition entry" name="Mysql" icon="mysql"
@@ -24,7 +24,7 @@ WHERE (`user`.`age` >= :ageMin AND `user`.`name` LIKE :name) OR `user`.`id` = :i
 ```kotlin group="Where calls 1" name="select" icon="kotlin"
 val users = User(id = 1)
     .select()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 1" name="select sql" icon="mysql"
@@ -38,7 +38,7 @@ FROM `user`
 val users = User(id = 1)
     .select()
     .where()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 2" name="empty where sql" icon="mysql"
@@ -53,7 +53,7 @@ WHERE `user`.`id` = :id
 val users = User(id = 1, name = "A", email = null)
     .select()
     .where()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 3" name="dynamic sql" icon="mysql"
@@ -69,7 +69,7 @@ WHERE `user`.`id` = :id
 val users = User()
     .select()
     .where { it.email.isNull }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 4" name="null value sql" icon="mysql"
@@ -84,7 +84,7 @@ WHERE `user`.`email` IS NULL
 val users = User(id = 1)
     .select()
     .where { it.name == "A" }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 5" name="lambda where sql" icon="mysql"
@@ -100,7 +100,7 @@ val users = User(id = 1)
     .select()
     .where()
     .where { it.name == "A" }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 6" name="append where sql" icon="mysql"
@@ -117,7 +117,7 @@ val users = User(id = 1)
     .select()
     .where()
     .where { it.name == "A" || it.age > 18 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 7" name="grouped where sql" icon="mysql"
@@ -133,7 +133,7 @@ WHERE `user`.`id` = :id
 val users = User()
     .select()
     .where()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Where calls 8" name="empty object sql" icon="mysql"
@@ -179,7 +179,7 @@ val users = User()
             it.age >= 18 &&
             it.score < 100
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Compare" name="Mysql" icon="mysql"
@@ -198,7 +198,7 @@ val probe = User(name = "Ada", age = 18)
 val users = probe
     .select()
     .where { it.name.eq && it.age.ge }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Compare from object" name="Mysql" icon="mysql"
@@ -221,7 +221,7 @@ val users = User()
         (it.status == 1 || it.status == 2) &&
             !(it.name like "test%")
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Boolean" name="Mysql" icon="mysql"
@@ -241,7 +241,7 @@ Kronos 会保留表达式组合顺序，并为重复字段参数追加 `status@1
 val users = User()
     .select()
     .where { it.id in listOf(1, 2, 3) }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="In list" name="Mysql" icon="mysql"
@@ -256,7 +256,7 @@ WHERE `user`.`id` IN (:idList)
 val users = User()
     .select()
     .where { it.id in arrayOf(1, 2, 3) }
-    .queryList()
+    .toList()
 ```
 
 当集合来自另一张表时，把可查询对象放在右侧。
@@ -269,7 +269,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="In subquery" name="Mysql" icon="mysql"
@@ -292,7 +292,7 @@ WHERE `user`.`id` IN (
 val users = User()
     .select()
     .where { it.age between 18..40 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Between" name="Mysql" icon="mysql"
@@ -305,7 +305,7 @@ WHERE `user`.`age` BETWEEN 18 AND 40
 val users = User()
     .select()
     .where { it.age notBetween 1..17 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Not between" name="Mysql" icon="mysql"
@@ -322,7 +322,7 @@ WHERE `user`.`age` NOT BETWEEN 1 AND 17
 val users = User()
     .select()
     .where { it.name like "Ada%" }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Like" name="Mysql" icon="mysql"
@@ -341,7 +341,7 @@ val users = User()
             it.name.endsWith("son") ||
             it.name.contains("ron")
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="String helpers" name="Mysql" icon="mysql"
@@ -358,7 +358,7 @@ WHERE `user`.`name` LIKE :name
 val users = User()
     .select()
     .where { it.name regexp "^A.*" }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Regexp" name="Mysql" icon="mysql"
@@ -377,7 +377,7 @@ val probe = User(name = "Ada")
 val users = probe
     .select()
     .where { it.name.startsWith }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Object string value" name="Mysql" icon="mysql"
@@ -396,7 +396,7 @@ WHERE `user`.`name` LIKE :name
 val users = User()
     .select()
     .where { it.deletedAt.isNull || it.email.notNull }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Null" name="Mysql" icon="mysql"
@@ -413,7 +413,7 @@ WHERE `user`.`deleted_at` IS NULL OR `user`.`email` IS NOT NULL
 val users = User()
     .select()
     .where { it.age == it.otherAge }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Field value" name="Mysql" icon="mysql"
@@ -430,7 +430,7 @@ val probe = User(otherAge = 40)
 val users = User()
     .select()
     .where { it.age == probe.otherAge.value }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Kotlin value" name="Mysql" icon="mysql"
@@ -450,7 +450,7 @@ val users = User()
         it.score + 10 > it.score - 10 &&
             f.length(it.name) > 5
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Expression" name="Mysql" icon="mysql"
@@ -474,7 +474,7 @@ val probe = User(id = 1, name = "Ada", age = 36)
 val users = probe
     .select()
     .where { it.eq }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="KPojo eq" name="Mysql" icon="mysql"
@@ -493,7 +493,7 @@ val probe = User(id = 1, name = "Ada", age = 36)
 val users = probe
     .select()
     .where { (it - it.age).eq }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="KPojo eq exclude" name="Mysql" icon="mysql"
@@ -512,7 +512,7 @@ val users = User()
     .select()
     .where { "`name` = :name AND `age` > :age".asSql() }
     .patch("name" to "Ada", "age" to 18)
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Raw SQL" name="Mysql" icon="mysql"
@@ -533,7 +533,7 @@ val minAge: Int? = null
 val users = User()
     .select()
     .where { (it.age >= minAge).ifNoValue(NoValueStrategyType.Ignore) }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="No value" name="Mysql" icon="mysql"
@@ -548,11 +548,11 @@ FROM `user`
 `having` 使用和 `where` 相同的条件 DSL。
 
 ```kotlin group="Having" name="kotlin" icon="kotlin"
-val rows: List<Map<String, Any>> = Order()
+val rows: List<Map<String, Any?>> = Order()
     .select { [it.userId, f.count(1).alias("orderCount")] }
     .groupBy { it.userId }
     .having { f.count(1) > 3 }
-    .query()
+    .toMapList()
 ```
 
 ```sql group="Having" name="Mysql" icon="mysql"
@@ -570,7 +570,7 @@ HAVING COUNT(1) > :countMin
 val rows = User().join(Order()) { user, order ->
     leftJoin(order) { user.id == order.userId && order.status == 1 }
     select { [user.id, user.name, order.status] }
-}.queryList()
+}.toList()
 ```
 
 ```sql group="On" name="Mysql" icon="mysql"

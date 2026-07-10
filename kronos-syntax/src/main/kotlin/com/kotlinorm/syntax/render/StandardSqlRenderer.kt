@@ -127,7 +127,7 @@ open class StandardSqlRenderer(
         query.limit?.let { append(" ${renderLimit(it)}") }
     }
 
-    private fun renderSetQuery(query: SqlQuery.Set): String = buildString {
+    protected open fun renderSetQuery(query: SqlQuery.Set): String = buildString {
         append("(${renderQuery(query.left)}) ${renderSetOperator(query.operator)} (${renderQuery(query.right)})")
         if (query.orderBy.isNotEmpty()) {
             append(query.orderBy.joinToString(", ", " ORDER BY ") { renderOrderingItem(it) })

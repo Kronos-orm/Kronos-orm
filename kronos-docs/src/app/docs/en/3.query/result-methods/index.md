@@ -7,18 +7,18 @@
 
 Projection fields and aliases are covered in {{ $.keyword("query/projection", ["Projection"]) }}. Pagination result pairs are covered in {{ $.keyword("query/sorting-pagination-aggregation", ["Sorting, Pagination, and Aggregation"]) }}.
 
-## {{ $.title("query") }} returns a map list
+## {{ $.title("toMapList") }} returns a map list
 
-Use `query()` when you want each row as `Map<String, Any>`.
+Use `toMapList()` when you want each row as `Map<String, Any?>`; it is equivalent to `toList<Map<String, Any?>>()`.
 
-```kotlin group="query" name="kotlin" icon="kotlin"
-val rows: List<Map<String, Any>> = User()
+```kotlin group="toMapList" name="kotlin" icon="kotlin"
+val rows: List<Map<String, Any?>> = User()
     .select { [it.id, it.name] }
     .where { it.age >= 18 }
-    .query()
+    .toMapList()
 ```
 
-```sql group="query" name="Mysql" icon="mysql"
+```sql group="toMapList" name="Mysql" icon="mysql"
 SELECT `id`, `name`
 FROM `user`
 WHERE `user`.`age` >= :ageMin
@@ -26,25 +26,25 @@ WHERE `user`.`age` >= :ageMin
 
 The result shape is a list of maps.
 
-```kotlin group="query result" name="kotlin" icon="kotlin"
+```kotlin group="toMapList result" name="kotlin" icon="kotlin"
 listOf(
     mapOf("id" to 1, "name" to "Ada"),
     mapOf("id" to 2, "name" to "Grace")
 )
 ```
 
-## {{ $.title("queryList") }} returns a typed list
+## {{ $.title("toList") }} returns a typed list
 
-Use `queryList()` when the selected columns map to the query projection type.
+Use `toList()` when the selected columns map to the query projection type.
 
-```kotlin group="queryList" name="kotlin" icon="kotlin"
+```kotlin group="toList" name="kotlin" icon="kotlin"
 val users: List<User> = User()
     .select()
     .where { it.age >= 18 }
-    .queryList()
+    .toList()
 ```
 
-```sql group="queryList" name="Mysql" icon="mysql"
+```sql group="toList" name="Mysql" icon="mysql"
 SELECT `id`, `name`, `age`
 FROM `user`
 WHERE `user`.`age` >= :ageMin
@@ -52,29 +52,29 @@ WHERE `user`.`age` >= :ageMin
 
 Use a generic argument for scalar or custom row types.
 
-```kotlin group="queryList generic" name="kotlin" icon="kotlin"
+```kotlin group="toList generic" name="kotlin" icon="kotlin"
 val ids: List<Int> = User()
     .select { it.id }
-    .queryList<Int>()
+    .toList<Int>()
 
 val rows: List<UserSummary> = User()
     .select { [it.id, it.name] }
-    .queryList<UserSummary>()
+    .toList<UserSummary>()
 ```
 
 Generated projections can also be returned directly.
 
-```kotlin group="queryList projection 1" name="kotlin" icon="kotlin"
+```kotlin group="toList projection 1" name="kotlin" icon="kotlin"
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
-    .queryList()
+    .toList()
 
 val firstLength = rows.first().nameLength
 ```
 
 The no-argument call above returns a compiler-generated projection type. Use `select(UserSummary::class) { ... }` when you want a named DTO in your code.
 
-```kotlin group="queryList projection 2" name="dto" icon="kotlin"
+```kotlin group="toList projection 2" name="dto" icon="kotlin"
 data class UserSummary(
     var id: Int? = null,
     var nameLength: Int? = null
@@ -84,62 +84,62 @@ val summaries: List<UserSummary> = User()
     .select(UserSummary::class) {
         [it.id, f.length(it.name).alias("nameLength")]
     }
-    .queryList()
+    .toList()
 ```
 
 Projection alias rules and generated result shapes are covered in {{ $.keyword("query/projection", ["Projection"]) }}.
 
-## {{ $.title("queryMap") }} returns one map
+## {{ $.title("toMap") }} returns one map
 
-Use `queryMap()` when you expect one row as a map. Kronos applies `LIMIT 1` to the query.
+Use `toMap()` when you expect one row as a map; `first<Map<String, Any?>>()` is equivalent. Kronos applies `LIMIT 1` to the query.
 
-```kotlin group="queryMap" name="kotlin" icon="kotlin"
-val row: Map<String, Any> = User()
+```kotlin group="toMap" name="kotlin" icon="kotlin"
+val row: Map<String, Any?> = User()
     .select { [it.id, it.name] }
     .where { it.id == 1 }
-    .queryMap()
+    .toMap()
 ```
 
-```sql group="queryMap" name="Mysql" icon="mysql"
+```sql group="toMap" name="Mysql" icon="mysql"
 SELECT `id`, `name`
 FROM `user`
 WHERE `user`.`id` = :id
 LIMIT 1
 ```
 
-`queryMap()` returns the first row as a map.
+`toMap()` returns the first row as a map.
 
-```kotlin group="queryMap result" name="kotlin" icon="kotlin"
+```kotlin group="toMap result" name="kotlin" icon="kotlin"
 mapOf("id" to 1, "name" to "Ada")
 ```
 
-## {{ $.title("queryMapOrNull") }} returns one nullable map
+## {{ $.title("toMapOrNull") }} returns one nullable map
 
-Use `queryMapOrNull()` when an empty result is an expected outcome.
+Use `toMapOrNull()` when an empty result is an expected outcome; `firstOrNull<Map<String, Any?>>()` and `first<Map<String, Any?>?>()` are equivalent. In general, `firstOrNull<T>()` is equivalent to `first<T?>()`.
 
-```kotlin group="queryMapOrNull" name="kotlin" icon="kotlin"
-val row: Map<String, Any>? = User()
+```kotlin group="toMapOrNull" name="kotlin" icon="kotlin"
+val row: Map<String, Any?>? = User()
     .select { [it.id, it.name] }
     .where { it.id == 404 }
-    .queryMapOrNull()
+    .toMapOrNull()
 ```
 
-```kotlin group="queryMapOrNull result" name="kotlin" icon="kotlin"
+```kotlin group="toMapOrNull result" name="kotlin" icon="kotlin"
 null
 ```
 
-## {{ $.title("queryOne") }} returns one typed row
+## {{ $.title("first") }} returns one typed row
 
-Use `queryOne()` when you expect one row mapped to a type. Kronos applies `LIMIT 1` to the query.
+Use `first()` when you expect one row mapped to a type. Kronos applies `LIMIT 1` to the query.
 
-```kotlin group="queryOne" name="kotlin" icon="kotlin"
+```kotlin group="first" name="kotlin" icon="kotlin"
 val user: User = User()
     .select()
     .where { it.id == 1 }
-    .queryOne()
+    .first()
 ```
 
-```sql group="queryOne" name="Mysql" icon="mysql"
+```sql group="first" name="Mysql" icon="mysql"
 SELECT `id`, `name`, `age`
 FROM `user`
 WHERE `user`.`id` = :id
@@ -148,38 +148,38 @@ LIMIT 1
 
 Use a generic argument for scalar or custom row types.
 
-```kotlin group="queryOne generic" name="kotlin" icon="kotlin"
+```kotlin group="first generic" name="kotlin" icon="kotlin"
 val name: String = User()
     .select { it.name }
     .where { it.id == 1 }
-    .queryOne<String>()
+    .first<String>()
 ```
 
 Generated projections work with single-row methods as well.
 
-```kotlin group="queryOne projection" name="kotlin" icon="kotlin"
+```kotlin group="first projection" name="kotlin" icon="kotlin"
 val row = User()
     .select { [it.id, it.name.alias("username")] }
     .where { it.id == 1 }
-    .queryOne()
+    .first()
 
 val username = row.username
 ```
 
 The generated row behaves like a small result object whose properties are the selected fields and aliases.
 
-## {{ $.title("queryOneOrNull") }} returns one nullable typed row
+## {{ $.title("firstOrNull") }} returns one nullable typed row
 
-Use `queryOneOrNull()` when an empty result should return `null`.
+Use `firstOrNull()` when an empty result should return `null`.
 
-```kotlin group="queryOneOrNull" name="kotlin" icon="kotlin"
+```kotlin group="firstOrNull" name="kotlin" icon="kotlin"
 val user: User? = User()
     .select()
     .where { it.id == 404 }
-    .queryOneOrNull()
+    .firstOrNull()
 ```
 
-```kotlin group="queryOneOrNull result" name="kotlin" icon="kotlin"
+```kotlin group="firstOrNull result" name="kotlin" icon="kotlin"
 null
 ```
 
@@ -191,7 +191,7 @@ Join queries use the same result methods as `select`.
 val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
     leftJoin(order) { user.id == order.userId }
     select { [user.id, user.name, order.status] }
-}.queryList<UserOrderRow>()
+}.toList<UserOrderRow>()
 ```
 
 ```sql group="Join result" name="Mysql" icon="mysql"
@@ -206,17 +206,17 @@ ON `user`.`id` = `order`.`user_id`
 Use `withTotal()` when the page result should include a total row count.
 
 ```kotlin group="Page query" name="kotlin" icon="kotlin"
-val (total, rows): Pair<Int, List<Map<String, Any>>> = User()
+val (total, rows): Pair<Int, List<Map<String, Any?>>> = User()
     .select { [it.id, it.name] }
     .page(1, 20)
     .withTotal()
-    .query()
+    .toMapList()
 
 val (typedTotal, users): Pair<Int, List<User>> = User()
     .select()
     .page(1, 20)
     .withTotal()
-    .queryList()
+    .toList()
 ```
 
 ## Use a specific data source
@@ -229,7 +229,7 @@ val customWrapper = CustomWrapper()
 val users: List<User> = User()
     .select()
     .where { it.age >= 18 }
-    .queryList(customWrapper)
+    .toList(customWrapper)
 ```
 
 Wrapper configuration is covered in {{ $.keyword("database/datasource-wrapper", ["Kronos Data Source Wrapper"]) }}.

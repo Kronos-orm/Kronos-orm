@@ -83,10 +83,10 @@ user.update().set { it.name = "Kronos ORM" }.by { it.id }.execute()
 user.update { it.name }.by { it.id }.execute()
 
 // Query records based on object value
-val selectedUser: User = user.select().by { it.id }.queryOne()
+val selectedUser: User = user.select().by { it.id }.first()
 
 // Query name field by id
-val selectedName: String = user.select { it.name }.where { it.id == 1 }.queryOne<String>()
+val selectedName: String = user.select { it.name }.where { it.id == 1 }.first<String>()
 
 // Delete data with id 1
 User().delete().where { it.id == 1 }.execute()

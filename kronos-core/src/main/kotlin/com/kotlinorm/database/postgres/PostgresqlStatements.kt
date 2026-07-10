@@ -91,7 +91,7 @@ object PostgresqlStatements : DatabaseStatements() {
         rows.map {
             val length = it.cell("LENGTH").asInt()
             val scale = it.cell("SCALE").asInt()
-            val defaultValue = it.cell("COLUMN_DEFAULT")?.toString()
+            val defaultValue = normalizeDefaultValue(it.cell("COLUMN_DEFAULT")?.toString())
             Field(
                 columnName = it.cell("COLUMN_NAME").toString(),
                 type = getKColumnType(it.cell("DATA_TYPE").toString(), length, scale),
@@ -189,6 +189,9 @@ object PostgresqlStatements : DatabaseStatements() {
                 definition
             }
         }
+
+    private fun normalizeDefaultValue(defaultValue: String?): String? =
+        defaultValue?.replace(Regex("""::[\w\s]+"""), "")
 
     private fun getColumnType(type: KColumnType, length: Int, scale: Int): String = when (type) {
         BIT -> "BOOLEAN"

@@ -24,7 +24,8 @@ import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.testutils.MysqlTestBase
 import com.kotlinorm.wrappers.SampleMysqlJdbcWrapper
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -44,6 +45,18 @@ class SelectFromBehaviorTest : MysqlTestBase() {
     }
 
     @Test
+    fun `build carries joined column types beyond root selected type`() {
+        val task = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
+            leftJoin(relation) { user.id == relation.id2 }
+            select { [user.id, relation.id2] }
+        }.build().atomicTask
+
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id"])
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["id2"])
+        assertEquals(typeOf<Int?>(), task.resultColumnTypes["ID2"])
+    }
+
+    @Test
     fun `join selectable currently keeps source class as selected type`() {
         val wrapper = CapturingMysqlWrapper()
         val selectFrom = TestUser(1).join(UserRelation(1, "test", 1, 1)) { user, relation ->
@@ -51,11 +64,11 @@ class SelectFromBehaviorTest : MysqlTestBase() {
             select { [user.id, relation.gender] }
         }
 
-        selectFrom.queryList(wrapper)
+        selectFrom.toList(wrapper)
 
-        assertEquals(TestUser::class, selectFrom.selectedKClass)
+        assertEquals(typeOf<TestUser>(), selectFrom.selectedType)
         assertEquals(
-            listOf<QueryCall>(QueryCall.ForListTyped(TestUser::class, true, emptyList<String>())),
+            listOf<QueryCall>(QueryCall.ToList(typeOf<TestUser>())),
             wrapper.calls
         )
     }
@@ -175,55 +188,58 @@ class SelectFromBehaviorTest : MysqlTestBase() {
             objectResult = user
         )
 
-        assertEquals(listOf(row), joinQuery().query(wrapper))
-        assertEquals(scalar, joinQuery().queryMap(wrapper))
-        assertEquals(scalar, joinQuery().queryMapOrNull(wrapper))
-        assertEquals(listOf(user), joinQuery().queryList<TestUser>(wrapper, true, listOf("Marker")))
-        val defaultList: List<TestUser> = joinQuery().queryList(wrapper)
+        assertEquals(listOf(row), joinQuery().toMapList(wrapper))
+        assertEquals(scalar, joinQuery().toMap(wrapper))
+        assertEquals(scalar, joinQuery().toMapOrNull(wrapper))
+        assertEquals(listOf(user), joinQuery().toList<TestUser>(wrapper))
+        val defaultList: List<TestUser> = joinQuery().toList(wrapper)
         assertEquals(listOf(user), defaultList)
-        assertEquals(user, joinQuery().queryOne<TestUser>(wrapper, true, listOf("Marker")))
-        val defaultOne: TestUser = joinQuery().queryOne(wrapper)
+        assertEquals(user, joinQuery().first<TestUser>(wrapper))
+        val defaultOne: TestUser = joinQuery().first(wrapper)
         assertEquals(user, defaultOne)
-        assertEquals(user, joinQuery().queryOneOrNull<TestUser>(wrapper, true, listOf("Marker")))
-        val defaultOneOrNull: TestUser? = joinQuery().queryOneOrNull(wrapper)
+        assertEquals(user, joinQuery().firstOrNull<TestUser>(wrapper))
+        val defaultOneOrNull: TestUser? = joinQuery().firstOrNull(wrapper)
         assertEquals(user, defaultOneOrNull)
 
         assertEquals(
             listOf<QueryCall>(
-                QueryCall.ForListMap,
-                QueryCall.ForMap,
-                QueryCall.ForMap,
-                QueryCall.ForListTyped(TestUser::class, true, listOf("kotlin.Any", "com.kotlinorm.interfaces.KPojo")),
-                QueryCall.ForListTyped(TestUser::class, true, emptyList<String>()),
-                QueryCall.ForObject(TestUser::class, true, listOf("kotlin.Any", "com.kotlinorm.interfaces.KPojo")),
-                QueryCall.ForObject(TestUser::class, true, emptyList<String>()),
-                QueryCall.ForObject(TestUser::class, true, listOf("kotlin.Any", "com.kotlinorm.interfaces.KPojo")),
-                QueryCall.ForObject(TestUser::class, true, emptyList<String>())
+                QueryCall.ToList(typeOf<Map<String, Any?>>()),
+                QueryCall.First(typeOf<Map<String, Any?>>()),
+                QueryCall.First(typeOf<Map<String, Any?>?>()),
+                QueryCall.ToList(typeOf<TestUser>()),
+                QueryCall.ToList(typeOf<TestUser>()),
+                QueryCall.First(typeOf<TestUser>()),
+                QueryCall.First(typeOf<TestUser>()),
+                QueryCall.First(typeOf<TestUser?>()),
+                QueryCall.First(typeOf<TestUser?>())
             ),
             wrapper.calls
         )
     }
 
     @Test
-    fun `queryMapOrNull returns null without throwing`() {
+    fun `toMapOrNull returns null without throwing`() {
         val wrapper = CapturingMysqlWrapper(mapResult = null)
 
-        assertEquals(null, joinQuery().queryMapOrNull(wrapper))
-        assertEquals(listOf<QueryCall>(QueryCall.ForMap), wrapper.calls)
+        assertEquals(null, joinQuery().toMapOrNull(wrapper))
+        assertEquals(listOf<QueryCall>(QueryCall.First(typeOf<Map<String, Any?>?>())), wrapper.calls)
     }
 
     @Test
-    fun `default queryOne reports no record when wrapper returns null`() {
+    fun `default first reports no record when wrapper returns null`() {
         val wrapper = CapturingMysqlWrapper(objectResult = null)
 
-        val error = assertFailsWith<NullPointerException> {
-            val result: TestUser = joinQuery().queryOne(wrapper)
+        val error = assertFailsWith<NoSuchElementException> {
+            val result: TestUser = joinQuery().first(wrapper)
             result
         }
 
-        assertEquals("No such record", error.message)
         assertEquals(
-            listOf<QueryCall>(QueryCall.ForObject(TestUser::class, true, emptyList<String>())),
+            "No result found for query: SELECT `tb_user`.`id` AS `id`, `user_relation`.`gender` AS `gender` FROM `tb_user` LEFT JOIN `user_relation` ON `tb_user`.`id` = `user_relation`.`id2` WHERE `tb_user`.`id` = :id AND `tb_user`.`deleted` = 0 LIMIT 1",
+            error.message
+        )
+        assertEquals(
+            listOf<QueryCall>(QueryCall.First(typeOf<TestUser>())),
             wrapper.calls
         )
     }
@@ -237,54 +253,30 @@ class SelectFromBehaviorTest : MysqlTestBase() {
 
 private class CapturingMysqlWrapper(
     private val mapRows: List<Map<String, Any>> = emptyList(),
-    private val typedRows: List<Any> = emptyList(),
+    private val typedRows: List<Any?> = emptyList(),
     private val mapResult: Map<String, Any>? = null,
     private val objectResult: Any? = null
 ) : SampleMysqlJdbcWrapper() {
     val calls = mutableListOf<QueryCall>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> {
-        calls += QueryCall.ForListMap
-        return mapRows
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        calls += QueryCall.ToList(task.targetType)
+        return if (task.targetType == typeOf<Map<String, Any?>>()) mapRows else typedRows
     }
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
-        calls += QueryCall.ForListTyped(kClass, isKPojo, superTypes)
-        return typedRows
-    }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? {
-        calls += QueryCall.ForMap
-        return mapResult
-    }
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? {
-        calls += QueryCall.ForObject(kClass, isKPojo, superTypes)
-        return objectResult
+    override fun first(task: KAtomicQueryTask): Any? {
+        calls += QueryCall.First(task.targetType)
+        return if (task.targetType == typeOf<Map<String, Any?>>() ||
+            task.targetType == typeOf<Map<String, Any?>?>()
+        ) {
+            mapResult
+        } else {
+            objectResult
+        }
     }
 }
 
 private sealed interface QueryCall {
-    object ForListMap : QueryCall
-    object ForMap : QueryCall
-    data class ForListTyped(
-        val kClass: KClass<*>,
-        val isKPojo: Boolean,
-        val superTypes: List<String>
-    ) : QueryCall
-    data class ForObject(
-        val kClass: KClass<*>,
-        val isKPojo: Boolean,
-        val superTypes: List<String>
-    ) : QueryCall
+    data class ToList(val targetType: KType) : QueryCall
+    data class First(val targetType: KType) : QueryCall
 }

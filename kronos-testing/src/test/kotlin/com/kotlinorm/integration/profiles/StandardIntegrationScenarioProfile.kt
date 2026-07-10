@@ -70,14 +70,14 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
         IntegrationUser()
             .select()
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun selectUserById(id: Int): IntegrationUserRecord =
         IntegrationUser()
             .select()
             .where { it.id == id }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .single()
             .toRecord()
 
@@ -86,7 +86,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
             .select()
             .where()
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun selectUsersWithLambdaWhereOverride(): List<IntegrationUserRecord> =
@@ -94,7 +94,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
             .select()
             .where { it.status == 2 }
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun selectUsersWithChainedWhere(): List<IntegrationUserRecord> =
@@ -103,7 +103,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
             .where()
             .where { it.score > 15 }
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun updateUserScore(id: Int, score: Int): Int =
@@ -128,14 +128,14 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
             .where { it.status == status }
             .orderBy { it.score.desc() }
             .limit(limit)
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun countUsersByStatus(status: Int): Int =
         IntegrationUser()
             .select { f.count(it.id).alias("total") }
             .where { it.status == status }
-            .queryOne<Int>()
+            .first<Int>()
 
     override fun selectUsersScoreHigherThanUser(id: Int): List<IntegrationUserRecord> =
         IntegrationUser()
@@ -147,7 +147,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
                     .limit(1)
             }
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun selectUsersWithPaidOrdersByInSubquery(): List<IntegrationUserRecord> =
@@ -159,7 +159,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
                     .where { order -> order.status == PAID_STATUS }
             }
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun selectUsersWithLargePaidOrdersByExistsSubquery(): List<IntegrationUserRecord> =
@@ -173,7 +173,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
                 )
             }
             .orderBy { it.id.asc() }
-            .queryList<IntegrationUser>(isKPojo = true)
+            .toList<IntegrationUser>()
             .map { it.toRecord() }
 
     override fun selectPaidOrderJoinRecords(): List<IntegrationJoinRecord> =
@@ -190,7 +190,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
                 where { order.status == PAID_STATUS }
                 orderBy { user.id.asc() }
             }
-            .queryList<IntegrationJoinProjection>(isKPojo = true)
+            .toList<IntegrationJoinProjection>()
             .map { it.toRecord() }
 
     override fun updateScoresFromPaidOrders(): Int =
@@ -238,7 +238,7 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
         IntegrationArchive()
             .select()
             .orderBy { it.id.asc() }
-            .queryList<IntegrationArchive>(isKPojo = true)
+            .toList<IntegrationArchive>()
             .map { it.toRecord() }
 
     override fun upsertUser(record: IntegrationUserRecord) {
@@ -266,16 +266,16 @@ object StandardIntegrationScenarioProfile : BaseIntegrationScenarioProfile() {
 
     private fun IntegrationUser.countRows(): Int =
         select { f.count(1).alias("total") }
-            .queryOne<Long>()
+            .first<Long>()
             .toInt()
 
     private fun IntegrationOrder.countRows(): Int =
         select { f.count(1).alias("total") }
-            .queryOne<Long>()
+            .first<Long>()
             .toInt()
 
     private fun IntegrationArchive.countRows(): Int =
         select { f.count(1).alias("total") }
-            .queryOne<Long>()
+            .first<Long>()
             .toInt()
 }

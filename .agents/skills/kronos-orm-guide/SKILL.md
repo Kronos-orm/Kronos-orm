@@ -68,13 +68,13 @@ Kronos 是一个基于 Kotlin 编译器插件的现代 ORM 框架，零反射、
 ```kotlin
 plugins {
     kotlin("jvm") version "2.4.0"
-    id("com.kotlinorm.kronos-gradle-plugin") version "0.1.2"
+    id("com.kotlinorm.kronos-gradle-plugin") version "0.2.0"
 }
 
 dependencies {
-    implementation("com.kotlinorm:kronos-core:0.1.2")
+    implementation("com.kotlinorm:kronos-core:0.2.0")
     // JDBC 包装器（可选，提供开箱即用的数据源支持）
-    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.1.2")
+    implementation("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
     // JDBC Driver 与连接池使用和数据库/JDK 匹配的最新稳定版
     implementation("org.apache.commons:commons-dbcp2:<latest-stable>")
     implementation("com.mysql:mysql-connector-j:<latest-stable>")
@@ -87,7 +87,7 @@ dependencies {
 <dependency>
     <groupId>com.kotlinorm</groupId>
     <artifactId>kronos-core</artifactId>
-    <version>0.1.2</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ dependencies {
 
 要求：JDK 8+，Kotlin 2.4.0+
 
-技能中的 Kronos 推荐稳定版本直接写 `0.1.2`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
+技能中的 Kronos 推荐稳定版本直接写 `0.2.0`。`kronos-docs` Markdown 的版本宏只用于 docs 源文件，不用于本使用指南。
 
 ---
 
@@ -205,7 +205,24 @@ data class Invoice(
 | `DECIMAL, length = 12, scale = 2` | `DECIMAL(12,2)` | `DECIMAL(12,2)` | `NUMERIC` | `DECIMAL(12,2)` | `NUMBER(12,2)` |
 | `JSON` | `JSON` | `JSONB` | `TEXT` | `JSON` | `JSON` |
 
-`@Serialize` 负责对象和数据库值之间的 JSON 转换；`@ColumnType(KColumnType.JSON)` 只决定表结构中的列类型。
+`@Serialize` 负责对象和数据库值之间的 JSON 转换；`@ColumnType(KColumnType.JSON)` 只决定表结构中的列类型。序列化处理器使用字段声明上的 `KType`，因此可以正确处理 `List<String>`、`List<List<String>>`、`List<Profile>` 等泛型字段。
+
+自定义值转换器同样使用完整目标类型，但源值类型仍是数据库或Map返回对象的运行时`KClass`：
+
+```kotlin
+interface ValueTransformer {
+    fun isMatch(targetKotlinType: KType, sourceValueClass: KClass<*>): Boolean
+
+    fun transform(
+        targetKotlinType: KType,
+        value: Any,
+        dateTimeFormat: String? = null,
+        sourceValueClass: KClass<*> = value::class
+    ): Any
+}
+```
+
+`targetKotlinType`包含泛型参数和可空性；`sourceValueClass`只表示实际源值的运行时类型，不要把它当成带泛型信息的`KType`。
 
 ---
 
@@ -213,7 +230,7 @@ data class Invoice(
 
 配置优先级：
 
-- 必须：`Kronos.dataSource = { wrapper }`，没有显式 wrapper 的 `execute()` / `query*()` 会读取它。
+- 必须：`Kronos.dataSource = { wrapper }`，没有显式 wrapper 的 `execute()`、`toList()`、`first()` 等终端方法会读取它。
 - 常用：`tableNamingStrategy`、`fieldNamingStrategy`、`defaultDateFormat`、`timeZone`、`logPath`。
 - 按业务启用：`createTimeStrategy`、`updateTimeStrategy`、`logicDeleteStrategy`、`optimisticLockStrategy`、`serializeProcessor`、`strictSetValue`。
 
@@ -285,7 +302,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.1.2")
+    implementation("com.kotlinorm:kronos-logging:0.2.0")
 }
 ```
 
@@ -305,7 +322,7 @@ with(Kronos) {
 
 ```kotlin
 dependencies {
-    implementation("com.kotlinorm:kronos-logging:0.1.2")
+    implementation("com.kotlinorm:kronos-logging:0.2.0")
     implementation("commons-logging:commons-logging:<latest-stable>")
 }
 ```
@@ -428,15 +445,15 @@ DataGuardPlugin.disable()
 
 `kronos-codegen` 用于 Database First 项目，从数据库表结构生成 Kotlin `KPojo` 实体类。
 
-脚本依赖使用 Kronos `0.1.2`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
+脚本依赖使用 Kronos `0.2.0`，JDBC Driver 和连接池使用与数据库、JDK 匹配的最新稳定版：
 
 ```kotlin
 #!/usr/bin/env kotlin
 
 @file:Repository("https://repo1.maven.org/maven2")
-@file:DependsOn("com.kotlinorm:kronos-codegen:0.1.2")
-@file:DependsOn("com.kotlinorm:kronos-core:0.1.2")
-@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.1.2")
+@file:DependsOn("com.kotlinorm:kronos-codegen:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-core:0.2.0")
+@file:DependsOn("com.kotlinorm:kronos-jdbc-wrapper:0.2.0")
 @file:DependsOn("org.apache.commons:commons-dbcp2:<latest-stable>")
 @file:DependsOn("com.mysql:mysql-connector-j:<latest-stable>")
 ```
@@ -612,7 +629,7 @@ val wrapper = KronosJdbcWrapper(dataSource) {
 }
 ```
 
-连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.1.2`。
+连接池和 JDBC Driver 推荐使用对应厂商发布的最新稳定版，并按数据库服务端版本和 JDK 选择兼容构件。Kronos 自身依赖示例使用 `0.2.0`。
 
 生产连接检查要覆盖连接池大小、连接/网络/查询/空闲超时、validation query 或 JDBC validation method、SSL/TLS 与证书配置、secret 来源、时区/编码 URL 参数，以及数据库服务端、JDK、认证和 TLS 能力对应的 driver 稳定分支。
 
@@ -636,10 +653,8 @@ val userName: String
 val dbType: DBType
 val sqlDialect: SqlDialect
 
-fun forList(task: KAtomicQueryTask): List<Map<String, Any>>
-fun forList(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): List<Any>
-fun forMap(task: KAtomicQueryTask): Map<String, Any>?
-fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any?
+fun toList(task: KAtomicQueryTask): List<Any?>
+fun first(task: KAtomicQueryTask): Any?
 fun update(task: KAtomicActionTask): Int
 fun batchUpdate(task: KronosAtomicBatchTask): IntArray
 fun transact(isolation: TransactionIsolation? = null, timeout: Int? = null, block: TransactionScope.() -> Any?): Any?
@@ -842,32 +857,32 @@ User().update().set { it.age = 20 }.where { it.name == "Kronos" }.execute()
 
 ```kotlin
 // 查询单条
-val user: User = User(id = 1).select().where().queryOne()
+val user: User = User(id = 1).select().where().first()
 
 // 查询列表
-val users: List<User> = User().select().where { it.age > 18 }.queryList()
+val users: List<User> = User().select().where { it.age > 18 }.toList()
 
 // 选择特定字段
-val name: String = User().select { it.name }.where { it.id == 1 }.queryOne<String>()
+val name: String = User().select { it.name }.where { it.id == 1 }.first<String>()
 
 // 排序 + 分页
 val users = User().select()
     .where { it.age > 18 }
     .orderBy { it.age.desc() }
     .page(1, 10)
-    .queryList()
+    .toList()
 
 // 分组 + 聚合
 val result = User().select { [it.age, f.count(it.id)] }
     .groupBy { it.age }
     .having { f.count(it.id) > 5 }
-    .queryList()
+    .toList()
 
 // 去重
-User().select { it.name }.distinct().queryList()
+User().select { it.name }.distinct().toList()
 ```
 
-内置函数通过查询 DSL 中的 `f` 访问。函数表达式用于投影结果时要使用 `.alias("name")`，alias 会成为 `query()` 的 Map key 和生成投影属性名。常用数学函数包括 `f.abs(...)`、`f.ceil(...)`、`f.round(...)`、`f.trunc(...)`；向上取整和截断分别使用 `ceil`、`trunc` 这两个函数名。
+内置函数通过查询 DSL 中的 `f` 访问。函数表达式用于投影结果时要使用 `.alias("name")`，alias 会成为 `toMapList()` 的 Map key 和生成投影属性名。常用数学函数包括 `f.abs(...)`、`f.ceil(...)`、`f.round(...)`、`f.trunc(...)`；向上取整和截断分别使用 `ceil`、`trunc` 这两个函数名。
 
 函数 SQL 由当前数据库方言渲染。回答跨数据库输出时，优先链接或参考 docs 的 `database/dialect-support` 口径。
 
@@ -893,7 +908,7 @@ val ranked = Order()
 
 val rows = ranked
     .orderBy { it.rn.asc() }
-    .queryList()
+    .toList()
 
 val rowNumber: Int? = rows.first().rn
 ```
@@ -904,28 +919,28 @@ val rowNumber: Int? = rows.first().rn
 
 ```kotlin
 // Map 列表
-val rows: List<Map<String, Any>> = User()
+val rows: List<Map<String, Any?>> = User()
     .select { [it.id, it.name] }
-    .query()
+    .toMapList()
 
 // 类型列表
 val users: List<User> = User()
     .select()
-    .queryList()
+    .toList()
 
 // 单行可空
 val userOrNull: User? = User()
     .select()
     .where { it.id == 1 }
-    .queryOneOrNull()
+    .firstOrNull()
 
 // 单列或自定义行类型
 val ids: List<Int> = User()
     .select { it.id }
-    .queryList<Int>()
+    .toList<Int>()
 ```
 
-`query()` 返回 `List<Map<String, Any>>`。`queryList()` 返回类型列表。`queryMap()` / `queryOne()` 返回一行，空结果会抛错。`queryMapOrNull()` / `queryOneOrNull()` 在空结果时返回 `null`。所有结果方法都可以传入 `KronosDataSourceWrapper`。
+`toMapList()` 返回 `List<Map<String, Any?>>`，等价于 `toList<Map<String, Any?>>()`。`toList()` 返回类型列表。`toMap()` 等价于 `first<Map<String, Any?>>()`，空结果会抛错；`toMapOrNull()` 等价于 `firstOrNull<Map<String, Any?>>()` 或 `first<Map<String, Any?>?>()`，空结果返回 `null`。一般情况下，`firstOrNull<T>()` 等价于 `first<T?>()`。所有结果方法都可以传入 `KronosDataSourceWrapper`。
 
 ---
 
@@ -933,20 +948,35 @@ val ids: List<Int> = User()
 
 `select { ... }` 返回自定义字段列表时，Kronos 会把字段和 alias 暴露为生成投影。直接字段保留字段名，函数、聚合、标量子查询和窗口函数等非直接字段要显式 `.alias("name")`。
 
+显式投影中的 `it` 会展开当前 KPojo 的全部数据库列，并生成投影结果类型。它可以直接返回、放进 `[]`、通过 `-` 排除字段，或与 alias 一起组合：
+
+```kotlin
+val allDirect = User().select { it }.toList()
+val allInList = User().select { [it] }.toList()
+val withoutId = User().select { it - it.id }.toList()
+val withoutIdInList = User().select { [it - it.id] }.toList()
+
+val withAlias = User()
+    .select { [it, it.id.alias("sourceId")] }
+    .toList()
+```
+
+`[]` 是推荐形式。`listOf<Any?>`、`arrayOf<Any?>`、`mutableListOf<Any?>` 和 `setOf<Any?>` 也可以构造投影列表，并支持 `listOf<Any?>(it, it.id.alias("sourceId"))` 这样的完整字段展开。投影输出名必须唯一。
+
 ```kotlin
 val nameLengths = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
 
-val generatedRows = nameLengths.queryList()
+val generatedRows = nameLengths.toList()
 val firstLength: Int? = generatedRows.first().nameLength
 
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
-无参 `queryList()` / `queryOne()` 会返回编译器生成的投影类型，运行时类名是内部 `KronosSelectResult_...`，使用时按选中的字段和 alias 访问属性。需要在业务代码中命名结果类型时，定义 DTO 并传给 `select(...)`：
+无参 `toList()` / `first()` 会返回编译器生成的投影类型，运行时类名是内部 `KronosSelectResult_...`，使用时按选中的字段和 alias 访问属性。需要在业务代码中命名结果类型时，定义 DTO 并传给 `select(...)`：
 
 ```kotlin
 data class UserSummary(
@@ -958,17 +988,17 @@ val summaries: List<UserSummary> = User()
     .select(UserSummary::class) {
         [it.id, f.length(it.name).alias("nameLength")]
     }
-    .queryList()
+    .toList()
 ```
 
-`query()` 返回 `List<Map<String, Any>>`，Map key 同样来自字段名和 alias。生成投影或 DTO 的属性名必须唯一。
+`toMapList()` 返回 `List<Map<String, Any?>>`，Map key 同样来自字段名和 alias。生成投影或 DTO 的属性名必须唯一。
 
 原生 SQL select item 使用字符串表达式，alias 决定 Map key 或生成投影属性名：
 
 ```kotlin
 val rows = User()
     .select { ["count(*)".alias("total")] }
-    .query()
+    .toMapList()
 
 val total = rows.first()["total"]
 ```
@@ -998,7 +1028,7 @@ val ranked = Order()
 val firstOrders = ranked
     .select { [it.id, it.userId, it.status] }
     .where { it.rn == 1 }
-    .queryList()
+    .toList()
 ```
 
 投影结果可以作为下一层查询源，也可以作为 CTAS 的列来源：
@@ -1012,7 +1042,7 @@ val activeUsers = User()
 val rows = activeUsers
     .orderBy { it.orderCount.desc() }
     .page(1, 20)
-    .queryList()
+    .toList()
 ```
 
 排序使用 `orderBy { ... }`，分页使用 `limit(size)` 或 `page(pageIndex, pageSize)`；需要总数时调用 `withTotal()`。
@@ -1024,7 +1054,7 @@ val (total, users) = User()
     .orderBy { it.id.desc() }
     .page(1, 20)
     .withTotal()
-    .queryList<User>()
+    .toList<User>()
 ```
 
 标量子查询可以作为 select 字段或 where 比较值使用。
@@ -1044,7 +1074,7 @@ val users = User()
                 .alias("lastOrderStatus")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 谓词子查询可以用于 `in`、`!in`、`exists`、`!exists`、`any`、`some`、`all` 和 row-value tuple 条件。
@@ -1057,7 +1087,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 `KSelectable` 可以作为下一层查询源，也可以作为 join source。
@@ -1070,7 +1100,7 @@ val paidOrders = Order()
 val users = User().join(paidOrders) { user, order ->
     leftJoin(order) { user.id == order.userId }
     select { [user.id, user.name, order.status] }
-}.queryList()
+}.toList()
 ```
 
 `KSelectable<Selected>.insert<Target>()` 用于 INSERT SELECT。
@@ -1204,12 +1234,12 @@ User(id = 1, name = "seed")
 
 ## 批量操作
 
-同一条 SQL 需要用多组参数执行时，使用 `SqlHandler.batchExecute` 或直接创建 `KronosAtomicBatchTask`。
+同一条 SQL 需要用多组参数执行时，使用 `SqlExecutor.batchExecute` 或直接创建 `KronosAtomicBatchTask`。
 
 ```kotlin
-import com.kotlinorm.database.SqlHandler
+import com.kotlinorm.database.SqlExecutor
 
-val affectedRows: IntArray = with(SqlHandler) {
+val affectedRows: IntArray = with(SqlExecutor) {
     wrapper.batchExecute(
         "UPDATE user SET name = :name WHERE id = :id",
         arrayOf(
@@ -1373,29 +1403,29 @@ val result = User().join(Order()) { user, order ->
     on { user.id == order.userId }
     select { [user.name, order.amount] }
     where { user.age > 18 }
-}.queryList()
+}.toList()
 
 // 左连接
 User().leftJoin(Order()) { user, order ->
     on { user.id == order.userId }
     select { [user.name, order.amount] }
-}.queryList()
+}.toList()
 
 // 右连接
-User().rightJoin(Order()) { ... }.queryList()
+User().rightJoin(Order()) { ... }.toList()
 
 // 多表连接
 User().join(Order(), Product()) { user, order, product ->
     on { user.id == order.userId }
     on { order.productId == product.id }
     select { [user.name, product.name, order.amount] }
-}.queryList()
+}.toList()
 
 // 跨数据库连接
 User().join(Order()) { user, order ->
     on { user.id == order.userId }
     select { [user.name, order.amount] }
-}.withTotal().queryList()  // 同时返回总数
+}.withTotal().toList()  // 同时返回总数
 ```
 
 ---
@@ -1499,7 +1529,7 @@ val (sql, params, atomicTasks) = truncateTask
 
 ## 故障排查入口
 
-- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.1.2`、`com.kotlinorm:kronos-jdbc-wrapper:0.1.2` 和数据库 driver 的当前稳定版。
+- 依赖坐标无法解析：检查 `com.kotlinorm:kronos-core:0.2.0`、`com.kotlinorm:kronos-jdbc-wrapper:0.2.0` 和数据库 driver 的当前稳定版。
 - 编译插件未生效：编译声明 `KPojo` 或 Kronos DSL 的模块，确认输出包含 `[Kronos] Kronos compiler plugin K2 initialized`；每个相关 source set 都要启用 Gradle 或 Maven 插件。
 - 检查 KPojo generated members：`__tableName`、`toDataMap()`、`kronosColumns()` 依赖编译插件生成；出现 `__tableName must be overridden by the compiler plugin` 时检查 `configuration/compiler-plugins`。
 - projection alias / 标量子查询诊断：函数、聚合、窗口函数、原生 SQL 和标量子查询 select item 使用 `.alias("name")`；标量子查询作为值时选择一个字段并使用 `.limit(1)`。

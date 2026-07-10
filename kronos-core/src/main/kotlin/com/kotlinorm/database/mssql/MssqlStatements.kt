@@ -189,7 +189,16 @@ object MssqlStatements : DatabaseStatements() {
             }
             input.columns.toModified.forEach { (column, _, current) ->
                 add(SqlDdlStatement.SqlServerDropDefaultConstraint(table, SqlIdentifier.of(column.columnName)))
-                add(SqlDdlStatement.AlterTable.ModifyColumn(table, column.toColumnDefinition(::getColumnType)))
+                add(SqlDdlStatement.AlterTable.ModifyColumn(table, column.copy(defaultValue = null).toColumnDefinition(::getColumnType)))
+                if (column.defaultValue.orEmpty() != current.defaultValue.orEmpty() && column.defaultValue != null) {
+                    add(
+                        SqlDdlStatement.AlterTable.AlterColumnDefault(
+                            table,
+                            SqlIdentifier.of(column.columnName),
+                            SqlExpr.UnsafeRaw(column.defaultValue)
+                        )
+                    )
+                }
                 if (column.kDoc.orEmpty() != current.kDoc.orEmpty()) {
                     add(
                         SqlDdlStatement.SqlServerExtendedPropertyComment(

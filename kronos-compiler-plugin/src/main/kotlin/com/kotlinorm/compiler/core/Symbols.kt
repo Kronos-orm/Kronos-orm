@@ -548,6 +548,15 @@ val stringClassSymbol: IrClassSymbol
     get() = requiredClass(StringClassId, "kotlin.String not found in classpath")
 
 /**
+ * kotlin.reflect.typeOf function symbol.
+ */
+context(context: IrPluginContext)
+val typeOfFunctionSymbol: IrSimpleFunctionSymbol
+    get() = context.referenceFunctions(
+        CallableId(FqName("kotlin.reflect"), null, Name.identifier("typeOf"))
+    ).firstRequired("kotlin.reflect.typeOf function not found in classpath")
+
+/**
  * String.plus function symbol
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -562,7 +571,8 @@ context(context: IrPluginContext)
 val getSafeValueSymbol: IrSimpleFunctionSymbol
     get() = context.referenceFunctions(
         CallableId(FqName("com.kotlinorm.utils"), null, Name.identifier("getSafeValue"))
-    ).firstRequired("getSafeValue function not found in com.kotlinorm.utils")
+    ).firstOrNull { it.owner.parameters.valueParameters.size == 5 }
+        ?: error("KType getSafeValue overload not found in com.kotlinorm.utils")
 
 /**
  * registerKPojoFactory function symbol from com.kotlinorm.utils.KClassFactory

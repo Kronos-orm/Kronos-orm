@@ -75,29 +75,32 @@ data class ValidCascade(
  * @param allowAll A boolean flag indicating whether not specifying any allowed columns means all columns are allowed.
  * @return A list of [ValidCascade] objects representing valid cascades for the specified operation type.
  */
+@Suppress("UNCHECKED_CAST")
 fun findValidRefs(
     kClass: KClass<out KPojo>, columns: Collection<Field>, operationType: KOperationType, allowed: Set<String>?, allowAll: Boolean
 ): List<ValidCascade> {
     //columns 为的非数据库列、有关联注解且用于删除操作的Field
-    return columns.asSequence().filter { !it.isColumn && (allowed == null || it.name in allowed || allowAll) && it.kClass != null }.map { col ->
+    return columns.asSequence().mapNotNull { col ->
+        val targetKClass = col.elementKType?.classifier as? KClass<*> ?: col.kClass ?: return@mapNotNull null
+        if (col.isColumn || (allowed != null && col.name !in allowed && !allowAll)) return@mapNotNull null
         //如果是Select并且该列有Ignore[cascadeSelect] ，且没有明确指定允许当前列，直接返回空
         if (col.ignore?.contains(CASCADE_SELECT) == true && allowAll && operationType == KOperationType.SELECT) {
-            return@map []
+            return@mapNotNull []
         }
 
         //否则首先判断该列是否是维护级联映射的，如果是，直接返回引用 / SELECT时不区分是否为维护端，需要用户手动指定Ignore或者cascade的属性
-        return@map if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
-            if (operationType == KOperationType.DELETE) return@map [] // 插入操作不允许子级向上级级联
+        return@mapNotNull if ((col.cascade != null && col.refUseFor(operationType)) || (operationType == KOperationType.SELECT && col.cascade != null)) {
+            if (operationType == KOperationType.DELETE) return@mapNotNull [] // 插入操作不允许子级向上级级联
             val ref =
-                col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
+                (targetKClass as KClass<out KPojo>).createInstance() // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             [
                 ValidCascade(col, col.cascade, ref, col.tableName)
             ] // 若有级联映射，返回引用
         } else {
             val ref =
-                col.kClass!!.createInstance() // 通过反射创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
+                (targetKClass as KClass<out KPojo>).createInstance() // 通过工厂创建引用的类的POJO，支持类型为KPojo/Collections<KPojo>
             val tableName = ref.__tableName // 获取引用所在的表名
-            kPojoAllFieldsCache[col.kClass]!!.asSequence().filter {
+            kPojoAllFieldsCache[ref.kClass()]!!.asSequence().filter {
                 it.cascade != null && it.tableName == tableName && it.refUseFor(operationType) && it.kClass == kClass
             }.map {
                 ValidCascade(col, it.cascade!!, ref, tableName, false)

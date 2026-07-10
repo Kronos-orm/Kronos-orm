@@ -28,8 +28,8 @@ import com.kotlinorm.beans.task.KronosAtomicQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType
 import com.kotlinorm.exceptions.EmptyFieldsException
+import com.kotlinorm.functions.KronosFunctionExpressions.withQualifiedFieldArgs
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.cascade.CascadeJoinClause
@@ -41,9 +41,10 @@ import com.kotlinorm.types.ToReference
 import com.kotlinorm.types.ToSelect
 import com.kotlinorm.types.ToSort
 import com.kotlinorm.utils.DataSourceUtil.orDefault
-import com.kotlinorm.utils.logAndReturn
 import com.kotlinorm.utils.toLinkedSet
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * Select From
@@ -57,12 +58,28 @@ import kotlin.reflect.KClass
 @Suppress("UNCHECKED_CAST")
 open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
     val t1: T1
-) : KSelectable<Selected>(t1, t1.kClass() as KClass<Selected>) {
+) : KSelectable<Selected>(t1) {
     internal val context = SelectFromContext<T1, Selected, Context>(t1)
     private val planner = SelectFromPlanner(context)
 
-    override val selectedKClass: KClass<Selected>
-        get() = context.selectedKClass
+    override val selectedType: KType
+        get() = context.projectionType
+
+    override val nullableSelectedType: KType
+        get() = context.nullableProjectionType
+
+    @PublishedApi
+    internal fun initializeProjection(type: KType, nullableType: KType, receiverPojo: KPojo = t1) {
+        context.projectionType = type
+        context.nullableProjectionType = nullableType
+        context.receiverPojo = receiverPojo
+    }
+
+    @PublishedApi
+    internal fun registerDerivedJoin(tableName: String, query: KSelectable<*>, alias: String) {
+        context.derivedJoinQueries[tableName] = query to alias
+        context.derivedJoinAliasOverrides[tableName] = alias
+    }
 
     fun on(on: ToFilter<T1, Boolean?>) {
         if (null == on) throw EmptyFieldsException()
@@ -185,7 +202,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         if (null == someFields) return this
 
         t1.afterSelect {
-            someFields(t1)
+            withQualifiedFieldArgs { someFields(t1) }
             if (fields.isEmpty() && selectItems.isEmpty()) {
                 throw EmptyFieldsException()
             }
@@ -232,7 +249,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
 
         context.orderEnabled = true
         (context.receiverPojo as Context).afterSort {
-            someFields(context.receiverPojo as Context)
+            withQualifiedFieldArgs { someFields(context.receiverPojo as Context) }
             context.orderByItems = sortedItems.toList()
         }
     }
@@ -249,7 +266,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         // 检查 someFields 参数是否为空，如果为空则抛出异常
         if (null == someFields) throw EmptyFieldsException()
         t1.afterSelect {
-            someFields(t1)
+            withQualifiedFieldArgs { someFields(t1) }
             if (fields.isEmpty()) {
                 throw EmptyFieldsException()
             }
@@ -332,7 +349,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
             t1.afterFilter {
                 sourceValues = context.paramMap
                 operationType = context.operationType
-                selectCondition(t1) // 执行用户提供的条件函数
+                withQualifiedFieldArgs { selectCondition(t1) } // 执行用户提供的条件函数
                 parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
                 context.andWhere(sqlExpr)
             }
@@ -355,7 +372,7 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         t1.afterFilter {
             sourceValues = context.paramMap // 设置属性参数映射
             operationType = context.operationType
-            selectCondition(t1) // 执行传入的条件函数
+            withQualifiedFieldArgs { selectCondition(t1) } // 执行传入的条件函数
             parameterValues.forEach { (name, value) -> context.paramMap[name] = value }
             context.andHaving(sqlExpr)
         }
@@ -365,95 +382,56 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         context.paramMap.putAll(pairs)
     }
 
-    /**
-     * Queries the data source using the provided data source wrapper and returns a list of maps representing the results.
-     *
-     * @param wrapper the data source wrapper to use for the query. Defaults to null. If null, the default data source wrapper is used.
-     * @return a list of maps representing the results of the query.
-     */
-    fun query(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any>> {
-        return this.build(wrapper).query(wrapper)
+    fun toMapList(wrapper: KronosDataSourceWrapper? = null): List<Map<String, Any?>> {
+        return this.build(wrapper).toMapList(wrapper)
     }
 
-    inline fun <reified T> queryList(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
+    inline fun <reified T> toList(
+        wrapper: KronosDataSourceWrapper? = null
     ): List<T> {
-        return this.build(wrapper).queryList(wrapper, isKPojo, superTypes)
+        return this.build(wrapper).toList(wrapper)
     }
 
-    @JvmName("queryForList")
+    @JvmName("toProjectionList")
     @Suppress("UNCHECKED_CAST")
-    fun queryList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
-        with(this.build(wrapper)) {
-            beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forList(atomicTask, selectedKClass, true, []) as List<Selected>,
-                QueryType.QueryList
-            )
-            afterQuery?.invoke(result, QueryType.QueryList, wrapper.orDefault())
-            return result
-        }
+    fun toList(wrapper: KronosDataSourceWrapper? = null): List<Selected> {
+        return this.build(wrapper).toList(wrapper, selectedType) as List<Selected>
     }
 
-    fun queryMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any> {
+    fun toMap(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?> {
         limit(1)
-        return this.build(wrapper).queryMap(wrapper)
+        return this.build(wrapper).toMap(wrapper)
     }
 
-    fun queryMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any>? {
+    fun toMapOrNull(wrapper: KronosDataSourceWrapper? = null): Map<String, Any?>? {
         limit(1)
-        return this.build(wrapper).queryMapOrNull(wrapper)
+        return this.build(wrapper).toMapOrNull(wrapper)
     }
 
-    inline fun <reified T> queryOne(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
+    inline fun <reified T> first(
+        wrapper: KronosDataSourceWrapper? = null
     ): T {
         limit(1)
-        return this.build(wrapper).queryOne(wrapper, isKPojo, superTypes)
+        return this.build(wrapper).first(wrapper)
     }
 
-    @JvmName("queryForObject")
+    @JvmName("firstProjection")
     @Suppress("UNCHECKED_CAST")
-    fun queryOne(wrapper: KronosDataSourceWrapper? = null): Selected {
+    fun first(wrapper: KronosDataSourceWrapper? = null): Selected {
         limit(1)
-        with(this.build(wrapper)) {
-            beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                (wrapper.orDefault().forObject(atomicTask, selectedKClass, true, [])
-                    ?: throw NullPointerException("No such record")) as Selected,
-                QueryType.QueryOne
-            )
-            afterQuery?.invoke(result, QueryType.QueryOne, wrapper.orDefault())
-            return result
-        }
+        return this.build(wrapper).first(wrapper, selectedType) as Selected
     }
 
-    inline fun <reified T> queryOneOrNull(
-        wrapper: KronosDataSourceWrapper? = null,
-        isKPojo: Boolean = false,
-        superTypes: List<String> = []
-    ): T? {
+    inline fun <reified T> firstOrNull(wrapper: KronosDataSourceWrapper? = null): T? {
         limit(1)
-        return this.build(wrapper).queryOneOrNull(wrapper, isKPojo, superTypes)
+        return this.build(wrapper).firstOrNull(wrapper)
     }
 
-    @JvmName("queryForObjectOrNull")
+    @JvmName("firstProjectionOrNull")
     @Suppress("UNCHECKED_CAST")
-    fun queryOneOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
+    fun firstOrNull(wrapper: KronosDataSourceWrapper? = null): Selected? {
         limit(1)
-        with(this.build(wrapper)) {
-            beforeQuery?.invoke(this)
-            val result = atomicTask.logAndReturn(
-                wrapper.orDefault().forObject(atomicTask, selectedKClass, true, []) as Selected?,
-                QueryType.QueryOneOrNull
-            )
-            afterQuery?.invoke(result, QueryType.QueryOneOrNull, wrapper.orDefault())
-            return result
-        }
+        return this.build(wrapper).first(wrapper, nullableSelectedType, required = false) as Selected?
     }
 
     internal override fun toSqlQueryPlan(wrapper: KronosDataSourceWrapper?): SqlQueryPlan {
@@ -464,13 +442,18 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
         val dataSource = wrapper.orDefault()
         val plan = toSqlQueryPlan(dataSource)
         val renderedSql = renderStatement(dataSource, plan.query, plan.parameters, context.fieldsMap())
+        val resultFieldsByLabel = context.selectedFieldsByAlias.ifEmpty {
+            context.allFields.associateByTo(linkedMapOf()) { it.name }
+        }
 
         return CascadeJoinClause.build(
             context.cascadeEnabled, context.cascadeAllowed, context.listOfPojo, KronosAtomicQueryTask(
                 sql = renderedSql.sql,
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
-                statement = plan.query
+                statement = plan.query,
+                targetType = selectedType,
+                resultColumnTypes = resultColumnTypes(resultFieldsByLabel)
             ), context.operationType, context.selectedFieldsByAlias, context.cascadeSelectedProps ?: mutableSetOf()
         )
     }
@@ -485,7 +468,8 @@ open class SelectFrom<T1 : KPojo, Selected : KPojo, Context : KPojo>(
                 sql = renderedSql.sql,
                 paramMap = renderedSql.parameters,
                 operationType = KOperationType.SELECT,
-                statement = plan.query
+                statement = plan.query,
+                targetType = typeOf<Int>()
             )
         )
     }

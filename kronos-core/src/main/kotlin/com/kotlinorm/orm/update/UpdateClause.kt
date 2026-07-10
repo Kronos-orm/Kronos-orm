@@ -48,9 +48,11 @@ import com.kotlinorm.types.ToSet
 import com.kotlinorm.utils.DataSourceUtil.orDefault
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.reflect.KType
 
 class UpdateClause<T : KPojo>(
     pojo: T,
+    private val targetType: KType,
     setUpdateFields: ToSelect<T, Any?> = null
 ) {
     internal val context = OrmContext(
@@ -218,6 +220,7 @@ class UpdateClause<T : KPojo>(
             context.cascadeEnabled,
             context.cascadeAllowed,
             context.pojo,
+            targetType,
             context.kClass,
             paramMap,
             toUpdateFields,

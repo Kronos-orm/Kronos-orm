@@ -19,7 +19,7 @@ val nameLengths = User()
         ]
     }
 
-val rows = nameLengths.queryList()
+val rows = nameLengths.toList()
 ```
 
 The returned projection is used like this shape:
@@ -54,7 +54,7 @@ val activeUsers = User()
 val rows = activeUsers
     .select { [it.id, it.name] }
     .where { it.name like "A%" }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Derived source" name="Mysql" icon="mysql"
@@ -86,7 +86,7 @@ val users = User()
                 .alias("lastOrderStatus")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Scalar subquery 1" name="Mysql" icon="mysql"
@@ -127,7 +127,7 @@ val users = User()
             .where { order -> order.status == 1 }
             .limit(1)
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Scalar comparison" name="Mysql" icon="mysql"
@@ -153,7 +153,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="IN subquery 1" name="Mysql" icon="mysql"
@@ -176,7 +176,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 4 }
     }
-    .queryList()
+    .toList()
 ```
 
 ## Filter with EXISTS and NOT EXISTS
@@ -193,7 +193,7 @@ val users = User()
                 .where { order -> order.userId == user.id && order.status == 1 }
         )
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="EXISTS subquery 1" name="Mysql" icon="mysql"
@@ -219,7 +219,7 @@ val users = User()
                 .where { order -> order.userId == user.id }
         )
     }
-    .queryList()
+    .toList()
 ```
 
 ## Use ANY, SOME, and ALL comparisons
@@ -236,7 +236,7 @@ val orders = Order()
                 .where { order -> order.userId == 27 }
         )
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Quantified subquery 1" name="Mysql" icon="mysql"
@@ -274,7 +274,7 @@ val orders = Order()
             .select { order -> [order.userId, order.status] }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Tuple subquery" name="Mysql" icon="mysql"
@@ -305,7 +305,7 @@ val users = User()
             SqlOrdering.Desc
         )
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Sort subquery 1" name="Mysql" icon="mysql"
@@ -327,7 +327,7 @@ ORDER BY (
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
     .orderBy { it.nameLength.desc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Sort subquery 2" name="selected alias sql" icon="mysql"
@@ -350,7 +350,7 @@ val (total, rows) = nameLengths
     .orderBy { it.nameLength.desc() }
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Paged source" name="Mysql" icon="mysql"
@@ -400,7 +400,7 @@ val ranked = Order()
 val firstOrders = ranked
     .select { [it.id, it.userId, it.status] }
     .where { it.rn == 1 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Window source" name="Mysql" icon="mysql"
@@ -427,7 +427,7 @@ val paidOrders = Order()
 val users = User().join(paidOrders) { user, order ->
     leftJoin(order) { user.id == order.userId }
     select { [user.id, user.name, order.status] }
-}.queryList()
+}.toList()
 ```
 
 ```sql group="Join source" name="Mysql" icon="mysql"
@@ -458,7 +458,7 @@ val shipped = Order()
 
 val rows = union(paid, shipped)
     .select { [it.id, it.userId, it.status] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Union source 1" name="Mysql" icon="mysql"
@@ -477,7 +477,7 @@ The union result also supports ordering and limiting before the terminal method.
 val latest = union(paid, shipped)
     .orderBy("id" to SqlOrdering.Desc)
     .limit(10)
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Union source 2" name="order and limit sql" icon="mysql"
@@ -758,7 +758,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 The next layer exposes `nameLength` as a source field:

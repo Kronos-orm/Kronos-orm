@@ -26,6 +26,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_condition_user")
 data class ConditionUser(
@@ -110,7 +111,7 @@ fun box(): String {
             "notLike",
             conditionUserWhere(user) { it.name notLike "%bot%" },
             "name",
-            TransformerSafeValue("%bot%", "kotlin.String"),
+            TransformerSafeValue("%bot%", typeOf<String>()),
             withNot = true
         ),
     )

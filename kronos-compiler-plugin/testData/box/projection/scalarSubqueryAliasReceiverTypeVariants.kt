@@ -53,26 +53,14 @@ class ProjectionScalarVariantWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): List<Any> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
         mappedClasses += kClass
         return listOf(row(1).mapperTo(kClass as KClass<out KPojo>))
     }
 
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): Any {
+    override fun first(task: KAtomicQueryTask): Any? {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return null
         mappedClasses += kClass
         return row(mappedClasses.size).mapperTo(kClass as KClass<out KPojo>)
     }
@@ -126,9 +114,9 @@ fun box(): String {
             )
         }
 
-    val directRow = direct.queryOne(wrapper)
-    val collectionRow = collection.queryOne(wrapper)
-    val listRow = list.queryOne(wrapper)
+    val directRow = direct.first(wrapper)
+    val collectionRow = collection.first(wrapper)
+    val listRow = list.first(wrapper)
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {

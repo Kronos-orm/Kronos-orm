@@ -51,20 +51,13 @@ class CascadeProjectionWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> {
+    override fun toList(task: KAtomicQueryTask): List<Any?> {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return emptyList()
         mappedClasses.add(kClass)
         return [mapOf("id" to 42).mapperTo(kClass as KClass<out KPojo>)]
     }
 
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-    override fun forObject(task: KAtomicQueryTask, kClass: KClass<*>, isKPojo: Boolean, superTypes: List<String>): Any? = null
+    override fun first(task: KAtomicQueryTask): Any? = null
     override fun update(task: KAtomicActionTask): Int = 0
     override fun batchUpdate(task: KronosAtomicBatchTask): IntArray = intArrayOf()
     override fun transact(isolation: TransactionIsolation?, timeout: Int?, block: TransactionScope.() -> Any?): Any? = null
@@ -76,7 +69,7 @@ fun box(): String {
         dataSource = { wrapper }
     }
 
-    val rows = ProjectionParent().select { it.children }.cascade(false).queryList(wrapper)
+    val rows = ProjectionParent().select { it.children }.cascade(false).toList(wrapper)
     val row = rows.singleOrNull()
 
     val columns = row?.kronosColumns().orEmpty()

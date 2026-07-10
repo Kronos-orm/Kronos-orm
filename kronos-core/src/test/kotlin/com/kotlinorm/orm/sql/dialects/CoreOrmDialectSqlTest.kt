@@ -59,6 +59,48 @@ class CoreOrmDialectSqlTest {
     }
 
     @Test
+    fun `paged count renders legal sql for every supported dialect`() {
+        initializeCoreSqlTestDefaults()
+
+        val expected = mapOf(
+            DBType.Mysql to ExpectedTask(
+                "SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM `tb_user` WHERE `tb_user`.`id` = :id AND `deleted` = 0) AS `total_count`",
+                mapOf("id" to 1)
+            ),
+            DBType.Postgres to ExpectedTask(
+                """SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = FALSE) AS "total_count"""",
+                mapOf("id" to 1)
+            ),
+            DBType.SQLite to ExpectedTask(
+                """SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0) AS "total_count"""",
+                mapOf("id" to 1)
+            ),
+            DBType.Mssql to ExpectedTask(
+                "SELECT COUNT(*) FROM (SELECT 1 AS count_value FROM [tb_user] WHERE [tb_user].[id] = :id AND [deleted] = 0) AS [total_count]",
+                mapOf("id" to 1)
+            ),
+            DBType.Oracle to ExpectedTask(
+                """SELECT COUNT(*) FROM (SELECT 1 AS COUNT_VALUE FROM "TB_USER" WHERE "TB_USER"."ID" = :id AND "DELETED" = 0) "TOTAL_COUNT"""",
+                mapOf("id" to 1)
+            )
+        )
+
+        coreSqlDialects.forEach { dialect ->
+            val countTask = DialectUser(id = 1)
+                .select { it.id }
+                .where { it.id == 1 }
+                .orderBy { it.id.desc() }
+                .page(1, 10)
+                .withTotal()
+                .build(dialect.wrapper)
+                .first
+                .atomicTask
+
+            assertTaskEquals(expected.getValue(dialect.dbType), countTask, dialect.label)
+        }
+    }
+
+    @Test
     fun `insert renders complete sql for every supported dialect`() {
         initializeCoreSqlTestDefaults()
 
@@ -167,24 +209,24 @@ class CoreOrmDialectSqlTest {
 
         val expected = mapOf(
             DBType.Mysql to ExpectedTask(
-                "INSERT INTO `tb_user` (`id`, `username`, `deleted`) VALUES (:id, :username, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
-                mapOf("id" to 1, "username" to "neo", "deleted" to 0)
+                "INSERT INTO `tb_user` (`id`, `username`, `score`, `deleted`) VALUES (:id, :username, :score, :deleted) ON DUPLICATE KEY UPDATE `username` = :username",
+                mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             ),
             DBType.Postgres to ExpectedTask(
-                """INSERT INTO "tb_user" ("id", "username", "deleted") VALUES (:id, :username, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username""",
-                mapOf("id" to 1, "username" to "neo", "deleted" to false)
+                """INSERT INTO "tb_user" ("id", "username", "score", "deleted") VALUES (:id, :username, :score, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username""",
+                mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to false)
             ),
             DBType.SQLite to ExpectedTask(
-                """INSERT INTO "tb_user" ("id", "username", "deleted") VALUES (:id, :username, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username""",
-                mapOf("id" to 1, "username" to "neo", "deleted" to 0)
+                """INSERT INTO "tb_user" ("id", "username", "score", "deleted") VALUES (:id, :username, :score, :deleted) ON CONFLICT ("id") DO UPDATE SET "username" = :username""",
+                mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             ),
             DBType.Mssql to ExpectedTask(
-                "MERGE INTO [tb_user] AS [t1] USING (SELECT :id AS [id], :username AS [username], :deleted AS [deleted]) AS [t2] ON ([t1].[id] = [t2].[id]) WHEN MATCHED THEN UPDATE SET [t1].[username] = :username WHEN NOT MATCHED THEN INSERT ([id], [username], [deleted]) VALUES (:id, :username, :deleted)",
-                mapOf("id" to 1, "username" to "neo", "deleted" to 0)
+                "MERGE INTO [tb_user] AS [t1] USING (SELECT :id AS [id], :username AS [username], :score AS [score], :deleted AS [deleted]) AS [t2] ON ([t1].[id] = [t2].[id]) WHEN MATCHED THEN UPDATE SET [t1].[username] = :username WHEN NOT MATCHED THEN INSERT ([id], [username], [score], [deleted]) VALUES (:id, :username, :score, :deleted);",
+                mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             ),
             DBType.Oracle to ExpectedTask(
-                """MERGE INTO "TB_USER" "T1" USING (SELECT :id AS "ID", :username AS "USERNAME", :deleted AS "DELETED") "T2" ON ("T1"."ID" = "T2"."ID") WHEN MATCHED THEN UPDATE SET "T1"."USERNAME" = :username WHEN NOT MATCHED THEN INSERT ("ID", "USERNAME", "DELETED") VALUES (:id, :username, :deleted)""",
-                mapOf("id" to 1, "username" to "neo", "deleted" to 0)
+                """MERGE INTO "TB_USER" "T1" USING (SELECT :id AS "ID", :username AS "USERNAME", :score AS "SCORE", :deleted AS "DELETED") "T2" ON ("T1"."ID" = "T2"."ID") WHEN MATCHED THEN UPDATE SET "T1"."USERNAME" = :username WHEN NOT MATCHED THEN INSERT ("ID", "USERNAME", "SCORE", "DELETED") VALUES (:id, :username, :score, :deleted)""",
+                mapOf("id" to 1, "username" to "neo", "score" to null, "deleted" to 0)
             )
         )
 
@@ -257,7 +299,7 @@ class CoreOrmDialectSqlTest {
                 mapOf("id" to 1, "id@1" to 2)
             ),
             DBType.SQLite to ExpectedTask(
-                """(SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0) UNION (SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = 0) LIMIT 5 OFFSET 2""",
+                """SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id AND "deleted" = 0 UNION SELECT "id" FROM "tb_user" WHERE "tb_user"."id" = :id@1 AND "deleted" = 0 LIMIT 5 OFFSET 2""",
                 mapOf("id" to 1, "id@1" to 2)
             ),
             DBType.Mssql to ExpectedTask(

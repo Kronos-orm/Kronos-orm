@@ -23,7 +23,7 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testRandInSelect() {
         val (sql, _) = user.select { f.rand().alias("rand") }.build()
-        assertEquals("""SELECT RANDOM() AS rand FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT RANDOM() AS "rand" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test
@@ -35,7 +35,7 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testModInSelect() {
         val (sql, _) = user.select { (it.score % 2).alias("mod") }.build()
-        assertEquals("""SELECT ("score" % 2) AS mod FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT ("score" % 2) AS "mod" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test
@@ -47,7 +47,7 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testTruncInSelect() {
         val (sql, _) = user.select { f.trunc(it.score, 2).alias("trunc") }.build()
-        assertEquals("""SELECT TRUNC("score", 2) AS trunc FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT TRUNC("score", 2) AS "trunc" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test
@@ -60,7 +60,7 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testSubstrInSelect() {
         val (sql, _) = user.select { f.substr(it.username, 1, 5).alias("substr") }.build()
-        assertEquals("""SELECT SUBSTRING("username" FROM 1 FOR 5) AS substr FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT SUBSTRING("username" FROM 1 FOR 5) AS "substr" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test
@@ -72,7 +72,7 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testLeftInSelect() {
         val (sql, _) = user.select { f.left(it.username, 5).alias("left") }.build()
-        assertEquals("""SELECT SUBSTRING("username" FROM 1 FOR 5) AS left FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT SUBSTRING("username" FROM 1 FOR 5) AS "left" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test
@@ -84,7 +84,7 @@ class PostgresFunctionTest : PostgresTestBase() {
     @Test
     fun testRightInSelect() {
         val (sql, _) = user.select { f.right(it.username, 5).alias("right") }.build()
-        assertEquals("""SELECT SUBSTRING("username" FROM -5) AS right FROM "tb_user" WHERE "deleted" = FALSE""", sql)
+        assertEquals("""SELECT SUBSTRING("username" FROM -5) AS "right" FROM "tb_user" WHERE "deleted" = FALSE""", sql)
     }
 
     @Test

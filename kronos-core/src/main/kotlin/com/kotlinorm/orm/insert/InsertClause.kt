@@ -60,6 +60,7 @@ import com.kotlinorm.utils.createInstance
 import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.allocateBindParameterName
 import com.kotlinorm.utils.toDatabaseBooleanValue
+import kotlin.reflect.KClass
 
 class InsertClause<T : KPojo>(val pojo: T) {
     private val paramMap = pojo.toDataMap()
@@ -106,7 +107,7 @@ class InsertClause<T : KPojo>(val pojo: T) {
         if (sourceQuery != null || sourceUnion != null) {
             return buildSourceInsert(wrapper)
         }
-        val toInsertFields = prepareInsertFields(dataSource)
+        val toInsertFields = prepareInsertFields(dataSource, includeUnsetDefaultValueFields = false)
         val finalStatement = toSqlInsertStatement(toInsertFields)
         val renderedSql = renderStatement(dataSource, finalStatement, paramMap, fieldsMapCache[kClass]!!)
         val sql = renderedSql.sql
@@ -129,7 +130,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
 
     private fun buildSourceInsert(wrapper: KronosDataSourceWrapper?): KronosActionTask {
         val dataSource = wrapper.orDefault()
-        val toInsertFields = prepareInsertFields(dataSource)
+        val toInsertFields = prepareInsertFields(
+            dataSource,
+            includeUnsetDefaultValueFields = sourceValueProvider != null
+        )
         val parameterValues = linkedMapOf<String, Any?>()
         val statement = buildSourceInsertStatement(dataSource, toInsertFields, parameterValues)
         val renderedSql = renderStatement(dataSource, statement, parameterValues, fieldsMapCache[kClass]!!)
@@ -152,7 +156,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
         wrapper: KronosDataSourceWrapper? = null
     ): SqlDmlStatement.Insert {
         val dataSource = wrapper.orDefault()
-        val toInsertFields = prepareInsertFields(dataSource)
+        val toInsertFields = prepareInsertFields(
+            dataSource,
+            includeUnsetDefaultValueFields = sourceValueProvider != null
+        )
         if (sourceQuery != null || sourceUnion != null) {
             return buildSourceInsertStatement(dataSource, toInsertFields, parameterValues)
         }
@@ -206,7 +213,9 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
         sourceValueProvider = values?.let { insertValues ->
             {
-                val source = query.selectedKClass.createInstance()
+                @Suppress("UNCHECKED_CAST")
+                val selectedClass = query.selectedType.classifier as KClass<S>
+                val source = selectedClass.createInstance()
                 source.afterInsertSelect { insertValues(it) }
             }
         }
@@ -239,7 +248,10 @@ class InsertClause<T : KPojo>(val pojo: T) {
             )
         )
 
-    private fun prepareInsertFields(dataSource: KronosDataSourceWrapper): MutableList<Field> {
+    private fun prepareInsertFields(
+        dataSource: KronosDataSourceWrapper,
+        includeUnsetDefaultValueFields: Boolean
+    ): MutableList<Field> {
         var useIdentity = false
         val toInsertFields = mutableListOf<Field>()
         val primaryKeyField = kPojoPrimaryKeyCache[kClass]!!
@@ -260,18 +272,6 @@ class InsertClause<T : KPojo>(val pojo: T) {
             stash["identityColumn"] = primaryKeyField.columnName
         }
 
-        allColumns.forEach {
-            if (it.defaultValue != null && paramMap[it.name] == null) {
-                paramMap[it.name] = it.defaultValue
-            }
-            if (it.isColumn && !(it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null)) {
-                toInsertFields.add(it)
-            }
-        }
-        if (useIdentity && !paramMap.containsKey(primaryKeyField.name)) {
-            toInsertFields.remove(primaryKeyField)
-        }
-
         arrayOf(
             createTimeStrategy to true,
             updateTimeStrategy to true,
@@ -283,6 +283,13 @@ class InsertClause<T : KPojo>(val pojo: T) {
         }
         logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
             paramMap[field.name] = toDatabaseBooleanValue(dataSource, field, false)
+        }
+
+        allColumns.forEach {
+            if (!it.isColumn) return@forEach
+            if (it.primaryKey == PrimaryKeyType.IDENTITY && paramMap[it.name] == null) return@forEach
+            if (!includeUnsetDefaultValueFields && it.defaultValue != null && paramMap[it.name] == null) return@forEach
+            toInsertFields.add(it)
         }
         return toInsertFields
     }

@@ -8,7 +8,7 @@
 字段列表、alias、生成投影对象和 join 投影示例见 {{ $.keyword("query/projection", ["投影"]) }}。
 
 ```kotlin group="Case 1" name="kotlin" icon="kotlin" {1}
-val users: List<User> = User().select().queryList()
+val users: List<User> = User().select().toList()
 ```
 
 ```sql group="Case 1" name="Mysql" icon="mysql"
@@ -47,11 +47,11 @@ Kronos支持直接传入字符串作为查询字段。
 字段投影、alias、生成结果形态和 DTO 消费方式见 {{ $.keyword("query/projection", ["投影"]) }}。派生查询源、标量子查询、谓词子查询和窗口函数结果过滤见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
 
 ```kotlin group="Case 1-1" name="kotlin" icon="kotlin" {1-5}
-val rows: List<Map<String, Any>> = User()
+val rows: List<Map<String, Any?>> = User()
     .select {
         [it.id, it.name.alias("username"), "count(*) as total", "1"]
     }
-    .query()
+    .toMapList()
 ```
 
 ```sql group="Case 1-1" name="Mysql" icon="mysql"
@@ -81,15 +81,28 @@ FROM "user"
 
 ### 查询全部字段、排除部分列
 
-可以传入`KPojo`查询全部列，使用`-`排除列，并使用`[]`组合最终查询字段列表。
+在显式投影中返回 `it` 会展开当前 KPojo 的全部数据库列；`it` 可以直接返回，也可以放进 `[]`。使用 `-` 可以从完整投影中排除列。
 
 > **Note**
-> 请注意，`-`必须用在`KPojo`之后。
+> `select()` 返回源 KPojo 类型；`select { it }` 和 `select { [it] }` 返回包含全部列的生成投影类型。`-` 必须用在 KPojo 之后。
+
+```kotlin name="kotlin" icon="kotlin"
+val allDirect = User().select { it }.toList()
+val allInList = User().select { [it] }.toList()
+val withoutId = User().select { it - it.id }.toList()
+val withoutIdInList = User().select { [it - it.id] }.toList()
+
+val withAlias = User()
+    .select { [it, it.id.alias("sourceId")] }
+    .toList()
+```
+
+`[]` 是推荐写法。`listOf`、`arrayOf`、`mutableListOf` 和 `setOf` 也可以构造同样的投影列表，例如 `select { arrayOf<Any?>(it, it.id.alias("sourceId")) }`。完整矩阵和生成结果属性见 {{ $.keyword("query/projection", ["投影"]) }}。
 
 ```kotlin group="Case 1-2" name="kotlin" icon="kotlin"
-val rows: List<Map<String, Any>> = User()
+val rows: List<Map<String, Any?>> = User()
     .select { [it - it.id, "count(*) as total"] }
-    .query()
+    .toMapList()
 ```
 
 ```sql group="Case 1-2" name="Mysql" icon="mysql"
@@ -139,7 +152,7 @@ val users = User()
             .select { order -> order.userId }
             .where { order -> order.status == 1 }
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 1-3" name="Mysql" icon="mysql"
@@ -157,7 +170,7 @@ WHERE `user`.`id` IN (
 )
 ```
 
-生成投影可以由无参 `queryList()` 或 `queryOne()` 直接返回，也可以作为下一层查询源使用。
+生成投影可以由无参 `toList()` 或 `first()` 直接返回，也可以作为下一层查询源使用。
 
 ```kotlin group="Case 1-4" name="kotlin" icon="kotlin"
 val nameLengths = User()
@@ -166,7 +179,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 生成投影消费方式见 {{ $.keyword("query/projection", ["投影"]) }}。派生查询源、标量子查询、谓词子查询和窗口函数结果过滤见 {{ $.keyword("query/subqueries", ["子查询"]) }}。
@@ -176,12 +189,12 @@ val rows = nameLengths
 空 `where()` 会读取当前 KPojo 对象中的可查询非空字段，并生成等值查询条件。
 
 > **Warning**
-> `select().queryList()` 按当前表读取数据。空 `where()` 和 `by { ... }` 会读取对象字段值；`where { ... }` 使用你在 lambda 中写出的条件。
+> `select().toList()` 按当前表读取数据。空 `where()` 和 `by { ... }` 会读取对象字段值；`where { ... }` 使用你在 lambda 中写出的条件。
 
 ```kotlin group="Case 2" name="kotlin" icon="kotlin" {1,3}
 val user: User = User(name = "Kronos", age = null)
 
-val listOfUser: List<User> = user.select().where().queryList()
+val listOfUser: List<User> = user.select().where().toList()
 ```
 
 ```sql group="Case 2" name="Mysql" icon="mysql"
@@ -227,7 +240,7 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().by { it.id }.queryOneOrNull()
+val kronos: User? = user.select().by { it.id }.firstOrNull()
 ```
 
 ```sql group="Case 3" name="Mysql" icon="mysql"
@@ -269,7 +282,7 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().by { [it.id, it.name] }.queryOneOrNull()
+val kronos: User? = user.select().by { [it.id, it.name] }.firstOrNull()
 ```
 
 ```sql group="Case 3-1" name="Mysql" icon="mysql"
@@ -316,11 +329,11 @@ val user: User = User(
     age = 18
 )
 
-val kronos: User? = user.select().where { it.id }.queryOneOrNull()
+val kronos: User? = user.select().where { it.id }.firstOrNull()
 
 val listOfUser: List<User> = user.select()
     .where { it.id > 1 && it.age < 20 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 4" name="Mysql" icon="mysql"
@@ -386,7 +399,7 @@ val user: User = User(
     status = 2
 )
 
-user.select().where { it.eq && it.status > 1 }.queryOneOrNull()
+user.select().where { it.eq && it.status > 1 }.firstOrNull()
 ```
 
 ```sql group="Case 4-2" name="Mysql" icon="mysql"
@@ -441,7 +454,7 @@ val user: User = User(
     name = "Kronos"
 )
 
-user.select().where { (it - it.name).eq && it.status == 1 }.queryOneOrNull()
+user.select().where { (it - it.name).eq && it.status == 1 }.firstOrNull()
 ```
 
 ```sql group="Case 4-3" name="Mysql" icon="mysql"
@@ -493,7 +506,7 @@ WHERE "id" = :id
 val user = User().select()
     .where { "id = :id".asSql() }
     .patch("id" to 1)
-    .queryOneOrNull()
+    .firstOrNull()
 ```
 
 ```sql group="Case 19" name="Mysql" icon="mysql"
@@ -539,7 +552,7 @@ WHERE id = :id
 ```kotlin group="Case 5" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()
     .orderBy { [it.id.desc(), it.name.asc()] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 5" name="Mysql" icon="mysql"
@@ -578,7 +591,7 @@ selected alias 和标量子查询也可以作为排序项。
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
     .orderBy { it.nameLength.desc() }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 5-1" name="Mysql" icon="mysql"
@@ -601,7 +614,7 @@ ORDER BY `nameLength` DESC
 val listOfUser: List<User> = User().select()
     .groupBy { it.age }
     .having { it.age > 18 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 6" name="Mysql" icon="mysql"
@@ -646,7 +659,7 @@ HAVING "age" > :age
 ```kotlin group="Case 7" name="kotlin" icon="kotlin" {1-3}
 val listOfUser: List<User> = User().select()
     .limit(10)
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 7" name="Mysql" icon="mysql"
@@ -687,11 +700,11 @@ WHERE ROWNUM <= 10
 ```kotlin group="Case 18" name="kotlin" icon="kotlin"
 val listOfUser: List<User> = User().select()
     .lock() // SqlLock.Update()
-    .queryList()
+    .toList()
 
 val listOfUser: List<User> = User().select()
     .lock(SqlLock.Share())
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 18" name="Mysql" icon="mysql"
@@ -743,7 +756,7 @@ FROM "user" LOCK IN SHARE MODE
 val (total, listOfUser) = User().select()
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
 
 // total: Int, listOfUser: List<User>
 ```
@@ -789,7 +802,7 @@ val (total, rows) = nameLengths
     .where { it.nameLength > 8 }
     .page(1, 10)
     .withTotal()
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Case 8-1" name="Mysql" icon="mysql"
@@ -813,13 +826,13 @@ OFFSET 0
 val listOfUser: List<User> = User()
     .db("user_database")
     .select { [it.id, it.username] }
-    .queryList()
+    .toList()
 
 // 或者db方法可以直接在select后面调用
 // val listOfUser: List<User> = User()
 //            .select { [it.id, it.username] }
 //            .db("user_database")
-//            .queryList()
+//            .toList()
 ```
 
 ```sql group="Case 20" name="Mysql" icon="mysql"
@@ -854,16 +867,16 @@ FROM [user_database].[user]
 ```kotlin group="Result methods" name="kotlin" icon="kotlin"
 val users: List<User> = User()
     .select()
-    .queryList()
+    .toList()
 
 val row: User? = User()
     .select()
     .where { it.id == 1 }
-    .queryOneOrNull()
+    .firstOrNull()
 
-val mapRows: List<Map<String, Any>> = User()
+val mapRows: List<Map<String, Any?>> = User()
     .select { [it.id, it.name] }
-    .query()
+    .toMapList()
 ```
 
 结果形态、可空单行查询、生成投影返回值、分页总数和自定义 wrapper 见 {{ $.keyword("query/result-methods", ["结果方法"]) }}。
@@ -873,7 +886,7 @@ val mapRows: List<Map<String, Any>> = User()
 查询链需要在终端方法前添加单行限制时，使用 `single()`。
 
 ```kotlin group="Single" name="kotlin" icon="kotlin" {1}
-val user: User = User().select().single().queryOne()
+val user: User = User().select().single().first()
 ```
 
 ```sql group="Single" name="Mysql" icon="mysql"
@@ -894,5 +907,5 @@ FROM `user` LIMIT 1
 ```kotlin group="Case 17" name="kotlin" icon="kotlin" {1}
 val customWrapper = CustomWrapper()
 
-val listOfUser: List<User> = User().select().queryList(customWrapper)
+val listOfUser: List<User> = User().select().toList(customWrapper)
 ```

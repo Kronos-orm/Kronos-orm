@@ -4,9 +4,12 @@ import com.kotlinorm.integration.profiles.StandardIntegrationScenarioProfile
 import com.kotlinorm.integration.suites.CascadeIntegrationSuite
 import com.kotlinorm.integration.suites.CrudWhereIntegrationSuite
 import com.kotlinorm.integration.suites.DmlSubqueryIntegrationSuite
+import com.kotlinorm.integration.suites.DslEdgeCaseIntegrationSuite
+import com.kotlinorm.integration.suites.EdgeCaseIntegrationSuite
 import com.kotlinorm.integration.suites.ErrorIntegrationSuite
 import com.kotlinorm.integration.suites.FunctionAndParameterIntegrationSuite
 import com.kotlinorm.integration.suites.QueryIntegrationSuite
+import com.kotlinorm.integration.suites.ResultMethodEdgeIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaIntegrationSuite
 import com.kotlinorm.integration.suites.SchemaSyncRegressionSuite
 import com.kotlinorm.integration.suites.TransactionIntegrationSuite
@@ -19,6 +22,8 @@ class PostgresSchemaIntegrationTest : SchemaIntegrationSuite(postgres, StandardI
 class PostgresSchemaSyncRegressionTest : SchemaSyncRegressionSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresCrudWhereIntegrationTest : CrudWhereIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresQueryIntegrationTest : QueryIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresResultMethodEdgeIntegrationTest : ResultMethodEdgeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresDslEdgeCaseIntegrationTest : DslEdgeCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresDmlSubqueryIntegrationTest : DmlSubqueryIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresUpsertIntegrationTest : UpsertIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresErrorIntegrationTest : ErrorIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
@@ -27,3 +32,4 @@ class PostgresCascadeIntegrationTest : CascadeIntegrationSuite(postgres, Standar
 class PostgresValueTypeIntegrationTest : ValueTypeIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresFunctionAndParameterIntegrationTest : FunctionAndParameterIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
 class PostgresTransactionIntegrationTest : TransactionIntegrationSuite(postgres, StandardIntegrationScenarioProfile)
+class PostgresEdgeCaseIntegrationTest : EdgeCaseIntegrationSuite(postgres, StandardIntegrationScenarioProfile)

@@ -110,4 +110,18 @@ class DdlRendererTest {
 
         assertEquals("DIALECT VACUUM", renderer.renderStatement(SqlDdlStatement.Vacuum()))
     }
+
+    @Test
+    fun rendersSqlServerColumnDefaultChanges() {
+        assertEquals(
+            "ALTER TABLE [user] ADD DEFAULT 1 FOR [status]",
+            SqlDdlStatement.AlterTable.AlterColumnDefault(id("user"), id("status"), num("1"))
+                .toSql(SqlDialect.SqlServer)
+        )
+        assertEquals(
+            "ALTER TABLE [user] DROP DEFAULT FOR [status]",
+            SqlDdlStatement.AlterTable.AlterColumnDefault(id("user"), id("status"), null)
+                .toSql(SqlDialect.SqlServer)
+        )
+    }
 }

@@ -218,7 +218,7 @@ abstract class CascadeIntegrationSuite(
             .select()
             .cascade { [CascadeInsertDepartment::employees] }
             .orderBy { it.id.asc() }
-            .queryList<CascadeInsertDepartment>(isKPojo = true)
+            .toList<CascadeInsertDepartment>()
             .map { department ->
                 CascadeDepartmentRecord(
                     id = department.id,
@@ -234,7 +234,7 @@ abstract class CascadeIntegrationSuite(
             .select()
             .cascade(false)
             .orderBy { it.id.asc() }
-            .queryList<CascadeInsertDepartment>(isKPojo = true)
+            .toList<CascadeInsertDepartment>()
             .map { department ->
                 CascadeDepartmentRecord(
                     id = department.id,
@@ -249,7 +249,7 @@ abstract class CascadeIntegrationSuite(
         CascadeInsertEmployee()
             .select { [it.id, it.departmentId, it.name] }
             .orderBy { it.id.asc() }
-            .queryList<CascadeInsertEmployee>(isKPojo = true)
+            .toList<CascadeInsertEmployee>()
             .map { CascadeEmployeeRecord(id = it.id, departmentId = it.departmentId, name = it.name) }
 
     private fun selectDepartmentRecords(): List<CascadeDepartmentRecord> =
@@ -257,7 +257,7 @@ abstract class CascadeIntegrationSuite(
             .select()
             .cascade { [CascadeDepartment::employees] }
             .orderBy { it.id.asc() }
-            .queryList<CascadeDepartment>(isKPojo = true)
+            .toList<CascadeDepartment>()
             .map { department ->
                 CascadeDepartmentRecord(
                     id = department.id,
@@ -272,7 +272,7 @@ abstract class CascadeIntegrationSuite(
         CascadeEmployee()
             .select { [it.id, it.departmentId, it.name] }
             .orderBy { it.id.asc() }
-            .queryList<CascadeEmployee>(isKPojo = true)
+            .toList<CascadeEmployee>()
             .map { CascadeEmployeeRecord(id = it.id, departmentId = it.departmentId, name = it.name) }
 
     private fun selectProjectRecords(): List<CascadeProjectRecord> =
@@ -280,7 +280,7 @@ abstract class CascadeIntegrationSuite(
             .select()
             .cascade { [CascadeProject::tasks] }
             .orderBy { it.id.asc() }
-            .queryList<CascadeProject>(isKPojo = true)
+            .toList<CascadeProject>()
             .map { project ->
                 CascadeProjectRecord(
                     id = project.id,
@@ -295,6 +295,6 @@ abstract class CascadeIntegrationSuite(
         CascadeTask()
             .select { [it.id, it.projectId, it.name] }
             .orderBy { it.id.asc() }
-            .queryList<CascadeTask>(isKPojo = true)
+            .toList<CascadeTask>()
             .map { CascadeTaskRecord(id = it.id, projectId = it.projectId, name = it.name) }
 }

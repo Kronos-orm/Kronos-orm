@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_no_arg_string_match")
 data class NoArgStringMatchUser(
@@ -97,31 +98,31 @@ fun box(): String {
 
     val user = NoArgStringMatchUser(name = "Ada", pattern = "^A.*")
     val failures = listOfNotNull(
-        expectLikeCondition("like", noArgStringWhere(user) { it.name.like }, "name", TransformerSafeValue("Ada", "kotlin.String")),
+        expectLikeCondition("like", noArgStringWhere(user) { it.name.like }, "name", TransformerSafeValue("Ada", typeOf<String>())),
         expectLikeCondition(
             "notLike",
             noArgStringWhere(user) { it.name.notLike },
             "name",
-            TransformerSafeValue("Ada", "kotlin.String"),
+            TransformerSafeValue("Ada", typeOf<String>()),
             not = true
         ),
         expectLikeCondition(
             "startsWith",
             noArgStringWhere(user) { it.name.startsWith },
             "name",
-            TransformerSafeValue("Ada%", "kotlin.String")
+            TransformerSafeValue("Ada%", typeOf<String>())
         ),
         expectLikeCondition(
             "endsWith",
             noArgStringWhere(user) { it.name.endsWith },
             "name",
-            TransformerSafeValue("%Ada", "kotlin.String")
+            TransformerSafeValue("%Ada", typeOf<String>())
         ),
         expectLikeCondition(
             "contains",
             noArgStringWhere(user) { it.name.contains },
             "name",
-            TransformerSafeValue("%Ada%", "kotlin.String")
+            TransformerSafeValue("%Ada%", typeOf<String>())
         ),
         expectRegexpCondition(
             "regexp",

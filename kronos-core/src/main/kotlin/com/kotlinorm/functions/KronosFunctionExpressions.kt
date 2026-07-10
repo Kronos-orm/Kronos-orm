@@ -16,6 +16,18 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlWindow
 
 object KronosFunctionExpressions {
+    private val qualifyFieldArgs = ThreadLocal.withInitial { false }
+
+    fun <T> withQualifiedFieldArgs(block: () -> T): T {
+        val previous = qualifyFieldArgs.get()
+        qualifyFieldArgs.set(true)
+        return try {
+            block()
+        } finally {
+            qualifyFieldArgs.set(previous)
+        }
+    }
+
     fun call(functionName: String, args: List<SqlExpr> = emptyList()): KronosFunctionExpr {
         operatorExpr(functionName, args)?.let {
             return KronosFunctionExpr(expr = it, functionName = functionName)
@@ -48,7 +60,7 @@ object KronosFunctionExpressions {
     private fun Any?.asFunctionArgExpr(): SqlExpr = when (this) {
         is SqlExpr -> this
         is KronosFunctionExpr -> expr
-        is Field -> toSqlExpr()
+        is Field -> toSqlExpr(useTableAlias = qualifyFieldArgs.get())
         null -> SqlExpr.NullLiteral
         is String -> SqlExpr.StringLiteral(this)
         is Boolean -> SqlExpr.BooleanLiteral(this)

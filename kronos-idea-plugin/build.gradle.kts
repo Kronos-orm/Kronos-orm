@@ -85,7 +85,7 @@ tasks.withType<Test>().configureEach {
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
+        jvmTarget.set(JvmTarget.JVM_25)
     }
 }
 

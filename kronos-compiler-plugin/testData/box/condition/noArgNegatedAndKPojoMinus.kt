@@ -25,6 +25,7 @@ import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
 import com.kotlinorm.types.ToFilter
 import com.kotlinorm.utils.TransformerSafeValue
+import kotlin.reflect.typeOf
 
 @Table(name = "tb_condition_no_arg_negated")
 data class NoArgNegatedUser(
@@ -110,7 +111,7 @@ fun box(): String {
         expectNoArg(minusValues == mapOf("id" to 1, "name" to "Ada")) { "minus values were $minusValues" },
         expectNoArg(containsColumn?.columnName == "name") { "contains field was ${containsColumn?.columnName}" },
         expectNoArg(contains?.withNot == true) { "contains not was ${contains?.withNot}" },
-        expectNoArg(noArgNegatedParameter(negatedContains, contains?.pattern) == TransformerSafeValue("%Ada%", "kotlin.String")) {
+        expectNoArg(noArgNegatedParameter(negatedContains, contains?.pattern) == TransformerSafeValue("%Ada%", typeOf<String>())) {
             "contains value was ${noArgNegatedParameter(negatedContains, contains?.pattern)}"
         },
     )

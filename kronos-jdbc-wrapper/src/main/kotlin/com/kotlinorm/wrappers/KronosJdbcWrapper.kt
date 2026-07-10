@@ -24,7 +24,6 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicQueryTask
-import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.plugins.LastInsertIdPlugin
 import java.sql.Connection
@@ -32,7 +31,7 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 import javax.sql.DataSource
-import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 class KronosJdbcWrapper @JvmOverloads constructor(
     val dataSource: DataSource,
@@ -69,43 +68,13 @@ class KronosJdbcWrapper @JvmOverloads constructor(
         }
     }
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> =
+    override fun toList(task: KAtomicQueryTask): List<Any?> =
         query(task) { resultSet, context ->
-            KronosResultMappers.toMapList(resultSet, context)
+            KronosResultMappers.toList(resultSet, task, context)
         }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any> =
-        query(task) { resultSet, context ->
-            if (isKPojo) {
-                KronosResultMappers.toKPojoList(resultSet, kClass as KClass<out KPojo>, context)
-            } else {
-                KronosResultMappers.toObjectList(resultSet, kClass, superTypes, context)
-            }
-        }
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? =
-        forList(task).firstOrNull()
-
-    @Suppress("UNCHECKED_CAST")
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any? =
-        query(task) { resultSet, context ->
-            if (isKPojo) {
-                KronosResultMappers.toKPojoList(resultSet, kClass as KClass<out KPojo>, context).firstOrNull()
-            } else {
-                KronosResultMappers.toObjectList(resultSet, kClass, superTypes, context).firstOrNull()
-            }
-        }
+    override fun first(task: KAtomicQueryTask): Any? =
+        toList(task).firstOrNull()
 
     override fun update(task: KAtomicActionTask): Int {
         val parsed = task.parsed()
@@ -262,7 +231,7 @@ class KronosJdbcWrapper @JvmOverloads constructor(
     ) {
         statement.generatedKeys.use { keys ->
             while (keys.next()) {
-                context.generatedKeys.add(context.config.columnMappers.map(keys, 1, Any::class, emptyList(), context))
+                context.generatedKeys.add(context.config.columnMappers.map(keys, 1, typeOf<Any?>(), context))
             }
         }
         if (context.generatedKeys.isEmpty()) return

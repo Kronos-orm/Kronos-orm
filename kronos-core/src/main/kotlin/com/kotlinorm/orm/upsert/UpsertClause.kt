@@ -36,15 +36,16 @@ import com.kotlinorm.cache.kPojoOptimisticLockCache
 import com.kotlinorm.cache.kPojoUpdateTimeCache
 import com.kotlinorm.database.SqlManager.renderStatement
 import com.kotlinorm.enums.KOperationType
+import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.exceptions.EmptyFieldsException
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.orm.insert.insert
-import com.kotlinorm.orm.select.select
+import com.kotlinorm.orm.select.selectWithType
 import com.kotlinorm.orm.sql.materializeSqlQuery
 import com.kotlinorm.orm.sql.toSqlParameterEq
 import com.kotlinorm.orm.statement.ParameterSource
-import com.kotlinorm.orm.update.update
+import com.kotlinorm.orm.update.updateWithType
 import com.kotlinorm.syntax.SqlIdentifier
 import com.kotlinorm.syntax.expr.SqlExpr
 import com.kotlinorm.syntax.expr.SqlParameter
@@ -65,6 +66,7 @@ import com.kotlinorm.utils.execute
 import com.kotlinorm.utils.toDatabaseBooleanValue
 import com.kotlinorm.utils.toDatabaseParameterValue
 import com.kotlinorm.utils.toLinkedSet
+import kotlin.reflect.KType
 
 /**
  * Update Clause
@@ -79,6 +81,7 @@ import com.kotlinorm.utils.toLinkedSet
  */
 class UpsertClause<T : KPojo>(
     private val pojo: T,
+    private val targetType: KType,
     private var setUpsertFields: ToSelect<T, Any?> = null
 ) {
     private var paramMap = pojo.toDataMap()
@@ -198,7 +201,10 @@ class UpsertClause<T : KPojo>(
         val dataSource = wrapper.orDefault()
 
         if (toInsertFields.isEmpty()) {
-            toInsertFields = allFields.filter { null != paramMap[it.name] }.toLinkedSet()
+            toInsertFields = allFields.filter { field ->
+                if (field.primaryKey == PrimaryKeyType.IDENTITY && paramMap[field.name] == null) return@filter false
+                field.isColumn && (paramMap[field.name] != null || field.defaultValue == null)
+            }.toLinkedSet()
         }
 
         if (toUpdateFields.isEmpty()) {
@@ -225,7 +231,7 @@ class UpsertClause<T : KPojo>(
             // 设置逻辑删除策略，将被逻辑删除的字段从更新字段中移除，并更新条件语句
             logicDeleteStrategy?.execute(defaultValue = false) { field, _ ->
                 toInsertFields += field
-                paramMap[field.name] = toDatabaseBooleanValue(dataSource, field, false)
+                paramMap[field.name] = toDatabaseParameterValue(dataSource, fieldMap, field.name, false, mapOf(field.name to field))
             }
 
             createTimeStrategy?.execute{ field, value ->
@@ -256,7 +262,7 @@ class UpsertClause<T : KPojo>(
 
                 lock = lock ?: SqlLock.Update().takeIf { optimisticStrategy?.enabled != true }
 
-                val selectClause = pojo.select()
+                val selectClause = pojo.selectWithType(targetType)
                     .cascade(enabled = false)
                     .lock(lock)
                     .apply {
@@ -277,8 +283,8 @@ class UpsertClause<T : KPojo>(
                     logicDeleteStrategy = null
                 }
 
-                val fallbackTask = if ((selectClause.queryOneOrNull<Int>(dataSource) ?: 0) > 0) {
-                    val updateClause = pojo.update().cascade(cascadeEnabled)
+                val fallbackTask = if ((selectClause.firstOrNull<Int>(dataSource) ?: 0) > 0) {
+                    val updateClause = pojo.updateWithType(targetType).cascade(cascadeEnabled)
                         .apply {
                             with(context) {
                                 cascadeAllowed = this@UpsertClause.cascadeAllowed

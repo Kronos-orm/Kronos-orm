@@ -132,7 +132,7 @@ data class User(
 val names = User()
     .select { [it.id, it.name] }
     .where { it.name like "A%" }
-    .queryList()
+    .toList()
 ```
 
 The fastest check is to compile the module that owns the source files.
@@ -243,7 +243,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 Projection, subquery, and generated result-shape examples are covered in {{ $.keyword("query/projection", ["Projection"]) }} and {{ $.keyword("query/subqueries", ["Subqueries"]) }}.

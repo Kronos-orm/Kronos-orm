@@ -269,11 +269,13 @@ data class User(
     @Serialize
     var tags: List<String>? = null,
     @Serialize
+    var nestedTags: List<List<String>>? = null,
+    @Serialize
     var profile: Profile? = null
 ) : KPojo
 ```
 
-需要通过 `with(Kronos)` 配置 `serializeProcessor`（如 `GsonProcessor`、`JacksonProcessor`）。
+需要通过 `with(Kronos)` 配置 `serializeProcessor`（如 `GsonProcessor`、`JacksonProcessor`、Kotlinx Serialization 处理器）。处理器会收到字段声明 `KType`，可用于保留集合和嵌套集合的泛型信息。
 
 ## @Ignore
 

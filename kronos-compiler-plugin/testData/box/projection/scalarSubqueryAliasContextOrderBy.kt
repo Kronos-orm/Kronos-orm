@@ -61,7 +61,7 @@ fun box(): String {
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {
-        val selected = clause.queryOne()
+        val selected = clause.first()
         val aliasValue: Int? = selected.lastAmount
         return "Fail: selected alias unexpectedly evaluated as $aliasValue"
     }

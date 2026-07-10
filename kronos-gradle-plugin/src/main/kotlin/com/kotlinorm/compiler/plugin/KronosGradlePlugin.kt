@@ -38,7 +38,7 @@ class KronosGradlePlugin : KotlinCompilerPluginSupportPlugin {
         pluginId = "kronos-compiler-plugin"
         group = "com.kotlinorm"
         artifactId = "kronos-compiler-plugin"
-        version = "0.1.3-SNAPSHOT"
+        version = "0.2.0"
         configureKotlinIncrementalCompilation(target)
         configureKPojoFactoryProviderService(target)
     }

@@ -86,107 +86,48 @@ val wrapper = KronosJdbcWrapper(dataSource) {
         }
     })
 
-    columnMappers.register(UUID::class) { resultSet, position, _, _, _ ->
+    columnMappers.register(UUID::class) { resultSet, position, _, _ ->
         resultSet.getString(position)?.let(UUID::fromString)
     }
 }
 ```
 
-## 使用{{ $.title("forList(task)") }}查询Map列表
+## 使用{{ $.title("toList(task)") }}查询列表
 
-`forList(task)`执行select task，并把每一行返回为`Map<String, Any>`。
+`toList(task)`执行select task，并根据`task.targetType`映射每一行。`KType`会保留泛型参数和可空性，因此wrapper不再需要额外接收`KClass`、`isKPojo`或父类型参数。
 
-```kotlin group="forList maps" name="signature" icon="kotlin"
-fun forList(task: KAtomicQueryTask): List<Map<String, Any>>
+```kotlin group="Query task list" name="signature" icon="kotlin"
+fun toList(task: KAtomicQueryTask): List<Any?>
 ```
 
-```kotlin group="forList maps" name="kotlin" icon="kotlin"
-val rows = wrapper.forList(
+```kotlin group="Query task list" name="kotlin" icon="kotlin"
+val users = wrapper.toList(
     KronosAtomicQueryTask(
         sql = "SELECT id, name FROM user WHERE age > :age",
-        paramMap = mapOf("age" to 18)
+        paramMap = mapOf("age" to 18),
+        targetType = typeOf<User>()
     )
 )
 ```
 
-```text group="forList maps" name="result"
-[
-  {id=1, name=Ada},
-  {id=2, name=Linus}
-]
+内置JDBC wrapper会根据目标`KType`识别标量类型、`Map<String, Any?>`和`KPojo`类型。
+
+## 使用{{ $.title("first(task)") }}查询单个值
+
+`first(task)`使用相同的目标类型，空结果返回`null`。上层`first<T>()`会根据请求类型是否可空决定空结果是否抛出异常。
+
+```kotlin group="Query task first" name="signature" icon="kotlin"
+fun first(task: KAtomicQueryTask): Any?
 ```
 
-## 使用{{ $.title("forList(task, kClass, isKPojo, superTypes)") }}查询对象列表
-
-类型化查询API会把目标类型和映射提示传给wrapper。
-
-```kotlin group="forList objects" name="signature" icon="kotlin"
-fun forList(
-    task: KAtomicQueryTask,
-    kClass: KClass<*>,
-    isKPojo: Boolean,
-    superTypes: List<String>
-): List<Any>
-```
-
-```kotlin group="forList objects" name="kotlin" icon="kotlin"
-val users = wrapper.forList(
-    KronosAtomicQueryTask("SELECT id, name FROM user WHERE age > :age", mapOf("age" to 18)),
-    User::class,
-    isKPojo = true,
-    superTypes = listOf("com.kotlinorm.interfaces.KPojo")
-)
-```
-
-```text group="forList objects" name="result"
-[User(id=1, name=Ada), User(id=2, name=Linus)]
-```
-
-## 使用{{ $.title("forMap(task)") }}查询单行Map
-
-`forMap(task)`读取第一行，空结果返回`null`。
-
-```kotlin group="forMap" name="signature" icon="kotlin"
-fun forMap(task: KAtomicQueryTask): Map<String, Any>?
-```
-
-```kotlin group="forMap" name="kotlin" icon="kotlin"
-val row = wrapper.forMap(
+```kotlin group="Query task first" name="kotlin" icon="kotlin"
+val user = wrapper.first(
     KronosAtomicQueryTask(
         sql = "SELECT id, name FROM user WHERE id = :id",
-        paramMap = mapOf("id" to 1)
+        paramMap = mapOf("id" to 1),
+        targetType = typeOf<User?>()
     )
 )
-```
-
-```text group="forMap" name="result"
-{id=1, name=Ada}
-```
-
-## 使用{{ $.title("forObject(task, kClass, isKPojo, superTypes)") }}查询单个对象
-
-`forObject(...)`把第一行映射为指定类型，空结果返回`null`。
-
-```kotlin group="forObject" name="signature" icon="kotlin"
-fun forObject(
-    task: KAtomicQueryTask,
-    kClass: KClass<*>,
-    isKPojo: Boolean,
-    superTypes: List<String>
-): Any?
-```
-
-```kotlin group="forObject" name="kotlin" icon="kotlin"
-val user = wrapper.forObject(
-    KronosAtomicQueryTask("SELECT id, name FROM user WHERE id = :id", mapOf("id" to 1)),
-    User::class,
-    isKPojo = true,
-    superTypes = listOf("com.kotlinorm.interfaces.KPojo")
-)
-```
-
-```text group="forObject" name="result"
-User(id=1, name=Ada)
 ```
 
 ## 使用{{ $.title("update(task)") }}执行写入
@@ -275,7 +216,8 @@ val result = wrapper.transact(
 ```kotlin group="parsed" name="query task" icon="kotlin"
 val task = KronosAtomicQueryTask(
     sql = "SELECT id, name FROM user WHERE id = :id AND status = :status",
-    paramMap = mapOf("id" to 1, "status" to "ACTIVE")
+    paramMap = mapOf("id" to 1, "status" to "ACTIVE"),
+    targetType = typeOf<Map<String, Any?>>()
 )
 
 val parsed = task.parsed()

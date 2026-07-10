@@ -35,6 +35,7 @@ import com.kotlinorm.enums.KOperationType
 import com.kotlinorm.enums.PrimaryKeyType
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.types.ToSelect
+import kotlin.reflect.KClass
 
 data class MetadataProjectionChild(
     var id: Int? = null,
@@ -120,6 +121,12 @@ fun box(): String {
     val transientValue = fields["transientValue"]
     val child = fields["child"]
     val children = fields["children"]
+    val childrenKType = children?.kType
+    val childrenClassifier = childrenKType?.classifier as? KClass<*>
+    val childrenElementType = childrenKType?.arguments?.singleOrNull()?.type
+    val childrenElementClassifier = childrenElementType?.classifier as? KClass<*>
+    val childrenDerivedElementType = children?.elementKType
+    val childrenDerivedElementClassifier = childrenDerivedElementType?.classifier as? KClass<*>
 
     val failures = listOfNotNull(
         expectMetadata(id?.primaryKey == PrimaryKeyType.IDENTITY) { "id primaryKey was ${id?.primaryKey}" },
@@ -167,7 +174,17 @@ fun box(): String {
         expectMetadata(children?.cascadeIsCollectionOrArray == true) {
             "children collection flag was ${children?.cascadeIsCollectionOrArray}"
         },
-        expectMetadata(children?.kClass == MetadataProjectionChild::class) { "children kClass was ${children?.kClass}" },
+        expectMetadata(children?.kClass == List::class) { "children kClass was ${children?.kClass}" },
+        expectMetadata(childrenClassifier == List::class) { "children kType classifier was $childrenClassifier" },
+        expectMetadata(childrenElementClassifier == MetadataProjectionChild::class) {
+            "children kType element was $childrenElementType"
+        },
+        expectMetadata(childrenDerivedElementType == childrenElementType) {
+            "children elementKType was $childrenDerivedElementType, expected $childrenElementType"
+        },
+        expectMetadata(childrenDerivedElementClassifier == MetadataProjectionChild::class) {
+            "children elementKType classifier was $childrenDerivedElementClassifier"
+        },
     )
 
     return failures.firstOrNull() ?: "OK"

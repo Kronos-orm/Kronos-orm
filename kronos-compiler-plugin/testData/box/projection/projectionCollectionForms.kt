@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-// Verifies listOf projection forms feed generated Selected and Context receivers.
+// Verifies supported collection constructors feed generated Selected and Context receivers.
 
 import com.kotlinorm.Kronos
 import com.kotlinorm.annotations.Table
-import com.kotlinorm.functions.bundled.exts.StringFunctions.length
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.select.select
 import com.kotlinorm.syntax.expr.SqlExpr
@@ -42,25 +41,104 @@ fun box(): String {
         tableNamingStrategy = lineHumpNamingStrategy
     }
 
+    val arrayClause = ProjectionCollectionFormsUser()
+        .select { arrayOf<Any?>(it, it.id.alias("arrayId")) }
+        .orderBy { it.arrayId.desc() }
+    val mutableListClause = ProjectionCollectionFormsUser()
+        .select { mutableListOf<Any?>(it, it.id.alias("mutableId")) }
+        .orderBy { it.mutableId.asc() }
+    val setClause = ProjectionCollectionFormsUser()
+        .select { setOf<Any?>(it, it.id.alias("setId")) }
+        .orderBy { it.setId.desc() }
+    val singleLiteralClause = ProjectionCollectionFormsUser()
+        .select { [it.id.alias("singleId")] }
+        .orderBy { it.singleId.asc() }
+    val multiLiteralClause = ProjectionCollectionFormsUser()
+        .select { [it, it.id.alias("literalId")] }
+        .orderBy { it.literalId.desc() }
     val listClause = ProjectionCollectionFormsUser()
-        .select { listOf(it.id.alias("uid"), f.length(it.username).alias("nameLength")) }
-        .orderBy { it.uid.asc() }
+        .select { listOf<Any?>(it, it.id.alias("listId")) }
+        .orderBy { it.listId.asc() }
 
     @Suppress("UNREACHABLE_CODE")
     if (false) {
-        val listSelected = listClause.queryOne()
-        val uid: Int? = listSelected.uid
-        val nameLength: Any? = listSelected.nameLength
-        return "Fail: selected values unexpectedly evaluated as $uid/$nameLength"
+        val arraySelected = arrayClause.first()
+        val arraySourceId: Int? = arraySelected.id
+        val arrayUsername: String? = arraySelected.username
+        val arrayStatus: Int? = arraySelected.status
+        val arrayId: Int? = arraySelected.arrayId
+        val mutableSelected = mutableListClause.first()
+        val mutableSourceId: Int? = mutableSelected.id
+        val mutableUsername: String? = mutableSelected.username
+        val mutableSourceStatus: Int? = mutableSelected.status
+        val mutableId: Int? = mutableSelected.mutableId
+        val setSelected = setClause.first()
+        val setSourceId: Int? = setSelected.id
+        val setUsername: String? = setSelected.username
+        val setStatus: Int? = setSelected.status
+        val setId: Int? = setSelected.setId
+        val singleLiteralSelected = singleLiteralClause.first()
+        val singleId: Int? = singleLiteralSelected.singleId
+        val multiLiteralSelected = multiLiteralClause.first()
+        val literalSourceId: Int? = multiLiteralSelected.id
+        val literalUsername: String? = multiLiteralSelected.username
+        val literalStatus: Int? = multiLiteralSelected.status
+        val literalId: Int? = multiLiteralSelected.literalId
+        val listSelected = listClause.first()
+        val listSourceId: Int? = listSelected.id
+        val listUsername: String? = listSelected.username
+        val listStatus: Int? = listSelected.status
+        val listId: Int? = listSelected.listId
+        return "Fail: selected values unexpectedly evaluated as " +
+            "$arraySourceId/$arrayUsername/$arrayStatus/$arrayId/" +
+            "$mutableSourceId/$mutableUsername/$mutableSourceStatus/$mutableId/" +
+            "$setSourceId/$setUsername/$setStatus/$setId/$singleId/" +
+            "$literalSourceId/$literalUsername/$literalStatus/$literalId/" +
+            "$listSourceId/$listUsername/$listStatus/$listId"
     }
 
+    val arrayStatement = arrayClause.toSqlQuery() as SqlQuery.Select
+    val mutableListStatement = mutableListClause.toSqlQuery() as SqlQuery.Select
+    val setStatement = setClause.toSqlQuery() as SqlQuery.Select
+    val singleLiteralStatement = singleLiteralClause.toSqlQuery() as SqlQuery.Select
+    val multiLiteralStatement = multiLiteralClause.toSqlQuery() as SqlQuery.Select
     val listStatement = listClause.toSqlQuery() as SqlQuery.Select
 
     val failures = listOfNotNull(
-        expect(listStatement.selectAliases() == listOf("uid", "nameLength")) {
+        expect(arrayStatement.selectAliases() == listOf("id", "username", "status", "arrayId")) {
+            "array aliases were ${arrayStatement.selectAliases()}"
+        },
+        expect(arrayStatement.hasOrderByColumn("arrayId", SqlOrdering.Desc)) {
+            "array order by was ${arrayStatement.allOrderBy()}"
+        },
+        expect(mutableListStatement.selectAliases() == listOf("id", "username", "status", "mutableId")) {
+            "mutable list aliases were ${mutableListStatement.selectAliases()}"
+        },
+        expect(mutableListStatement.hasOrderByColumn("mutableId", SqlOrdering.Asc)) {
+            "mutable list order by was ${mutableListStatement.allOrderBy()}"
+        },
+        expect(setStatement.selectAliases() == listOf("id", "username", "status", "setId")) {
+            "set aliases were ${setStatement.selectAliases()}"
+        },
+        expect(setStatement.hasOrderByColumn("setId", SqlOrdering.Desc)) {
+            "set order by was ${setStatement.allOrderBy()}"
+        },
+        expect(singleLiteralStatement.selectAliases() == listOf("singleId")) {
+            "single literal aliases were ${singleLiteralStatement.selectAliases()}"
+        },
+        expect(singleLiteralStatement.hasOrderByColumn("singleId", SqlOrdering.Asc)) {
+            "single literal order by was ${singleLiteralStatement.allOrderBy()}"
+        },
+        expect(multiLiteralStatement.selectAliases() == listOf("id", "username", "status", "literalId")) {
+            "multi literal aliases were ${multiLiteralStatement.selectAliases()}"
+        },
+        expect(multiLiteralStatement.hasOrderByColumn("literalId", SqlOrdering.Desc)) {
+            "multi literal order by was ${multiLiteralStatement.allOrderBy()}"
+        },
+        expect(listStatement.selectAliases() == listOf("id", "username", "status", "listId")) {
             "list aliases were ${listStatement.selectAliases()}"
         },
-        expect(listStatement.hasOrderByColumn("uid", SqlOrdering.Asc)) {
+        expect(listStatement.hasOrderByColumn("listId", SqlOrdering.Asc)) {
             "list order by was ${listStatement.allOrderBy()}"
         },
     )

@@ -64,8 +64,6 @@ import org.jetbrains.kotlin.ir.util.superTypes
  *    KTableForCondition, KTableForSort, KTableForReference) and delegates
  *    to the corresponding transformer ([SelectTransformer], [SetTransformer],
  *    [ConditionTransformer], [SortTransformer], [ReferenceTransformer]).
- * 4. Fixes typed query parameters (isKPojo + superTypes injection) via
- *    [TypeParameterFixer].
  */
 class KronosParserTransformer(
     private val pluginContext: IrPluginContext,
@@ -94,12 +92,7 @@ class KronosParserTransformer(
         for (i in 0 until expression.typeArguments.size) {
             collectKPojoFactoryCandidate(expression.typeArguments[i]?.getClass())
         }
-        // Fix typed query parameters (isKPojo + superTypes injection)
-        val result = super.visitCall(expression) as IrCall
-        if (TypeParameterFixer.shouldFix(result)) {
-            return TypeParameterFixer.fix(pluginContext, result, kPojoClasses)
-        }
-        return result
+        return super.visitCall(expression) as IrCall
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)

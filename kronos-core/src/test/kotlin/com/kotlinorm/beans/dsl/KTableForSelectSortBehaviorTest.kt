@@ -17,6 +17,7 @@ import com.kotlinorm.beans.dsl.KTableForSelect.Companion.afterSelect
 import com.kotlinorm.beans.dsl.KTableForSort.Companion.afterSort
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.reflect.typeOf
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
@@ -155,9 +156,10 @@ class KTableForSelectSortBehaviorTest {
 data class SelectSortRuntimePojo(val id: Int? = null) : KPojo
 
 private class SelectSortSelectable : KSelectable<SelectSortRuntimePojo>(
-    SelectSortRuntimePojo(),
-    SelectSortRuntimePojo::class
+    SelectSortRuntimePojo()
 ) {
+    override val selectedType = typeOf<SelectSortRuntimePojo>()
+
     val query = SqlQuery.Select(
         select = listOf(SqlSelectItem.Expr(SqlExpr.NumberLiteral("1"))),
         from = listOf(SqlTable.Ident("select_sort_runtime_pojo"))

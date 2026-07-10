@@ -22,9 +22,8 @@ import com.kotlinorm.beans.task.KronosQueryTask
 import com.kotlinorm.beans.task.KronosQueryTask.Companion.toKronosQueryTask
 import com.kotlinorm.cache.kPojoAllFieldsCache
 import com.kotlinorm.enums.KOperationType
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.First
+import com.kotlinorm.enums.QueryType.ToList
 import com.kotlinorm.interfaces.KPojo
 import com.kotlinorm.orm.cascade.CascadeSelectClause.setValues
 import kotlin.reflect.KClass
@@ -119,7 +118,7 @@ object CascadeJoinClause {
             doAfterQuery { queryType, wrapper ->
                 validReferences.forEach { validRef ->
                     when (queryType) {
-                        QueryList -> { // 若是查询KPojo列表
+                        ToList -> { // 若是查询KPojo列表
                             val lastStepResult = this as List<KPojo> // this为主表查询的结果
                             if (lastStepResult.isEmpty()) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students
@@ -134,7 +133,7 @@ object CascadeJoinClause {
                             )
                         }
 
-                        QueryOne, QueryOneOrNull -> {
+                        First -> {
                             val lastStepResult = this as KPojo? // this为主表查询的结果
                             if (lastStepResult == null) return@forEach // 如果没有查询结果，直接返回
                             val propName = validRef.field.name // 获取级联字段的属性如：GroupClass.students

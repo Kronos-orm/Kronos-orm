@@ -25,12 +25,10 @@ import com.kotlinorm.beans.task.KronosAtomicBatchTask
 import com.kotlinorm.beans.task.KronosOperationResult
 import com.kotlinorm.enums.KOperationType.SELECT
 import com.kotlinorm.enums.QueryType
-import com.kotlinorm.enums.QueryType.Query
-import com.kotlinorm.enums.QueryType.QueryList
-import com.kotlinorm.enums.QueryType.QueryMap
-import com.kotlinorm.enums.QueryType.QueryMapOrNull
-import com.kotlinorm.enums.QueryType.QueryOne
-import com.kotlinorm.enums.QueryType.QueryOneOrNull
+import com.kotlinorm.enums.QueryType.First
+import com.kotlinorm.enums.QueryType.ToList
+import com.kotlinorm.enums.QueryType.ToMap
+import com.kotlinorm.enums.QueryType.ToMapList
 import com.kotlinorm.interfaces.KAtomicActionTask
 import com.kotlinorm.interfaces.KAtomicTask
 import com.kotlinorm.interfaces.KBatchTask
@@ -70,12 +68,12 @@ var handleLogResult: (task: KAtomicTask, result: Any?, queryType: QueryType?) ->
     fun resultArr(): Array<KLogMessage> {
         return when (task.operationType) {
             SELECT -> when (queryType) {
-                QueryList, Query -> log {
+                ToList, ToMapList -> log {
                     -"Found rows: ${(result as List<*>?)!!.size}"[black, bold]
                 }
 
-                QueryMap, QueryMapOrNull, QueryOne, QueryOneOrNull -> log {
-                    -"Found rows: 1"[black, bold]
+                ToMap, First -> log {
+                    -"Found rows: ${if (result == null) 0 else 1}"[black, bold]
                 }
 
                 else -> arrayOf()

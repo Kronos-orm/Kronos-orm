@@ -41,23 +41,10 @@ class StringLiteralProjectionWrapper : KronosDataSourceWrapper {
     override val dbType: DBType = DBType.Mysql
     val mappedClasses = mutableListOf<KClass<*>>()
 
-    override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
+    override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
-    override fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): List<Any> = emptyList()
-
-    override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-    override fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>,
-    ): Any {
+    override fun first(task: KAtomicQueryTask): Any? {
+        val kClass = task.targetType.classifier as? KClass<*> ?: return null
         mappedClasses += kClass
         return mapOf("computedAlias" to "ready").mapperTo(kClass as KClass<out KPojo>)
     }
@@ -77,7 +64,7 @@ fun box(): String {
     val wrapper = StringLiteralProjectionWrapper()
     val row = StringLiteralProjectionUser()
         .select { "computedAlias" }
-        .queryOne(wrapper)
+        .first(wrapper)
     val fieldNames = row.kronosColumns().map { it.name }
 
     val failures = listOfNotNull(

@@ -14,7 +14,6 @@ import com.kotlinorm.interfaces.KAtomicQueryTask
 import com.kotlinorm.interfaces.KronosDataSourceWrapper
 import com.kotlinorm.plugins.LastInsertIdPlugin.lastInsertId
 import com.kotlinorm.utils.execute
-import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -201,22 +200,9 @@ class LastInsertIdTest {
         override val userName: String = "kronos"
         override val dbType: DBType = DBType.Mysql
 
-        override fun forList(task: KAtomicQueryTask): List<Map<String, Any>> = emptyList()
-        override fun forList(
-            task: KAtomicQueryTask,
-            kClass: KClass<*>,
-            isKPojo: Boolean,
-            superTypes: List<String>
-        ): List<Any> = emptyList()
+        override fun toList(task: KAtomicQueryTask): List<Any?> = emptyList()
 
-        override fun forMap(task: KAtomicQueryTask): Map<String, Any>? = null
-
-        override fun forObject(
-            task: KAtomicQueryTask,
-            kClass: KClass<*>,
-            isKPojo: Boolean,
-            superTypes: List<String>
-        ): Any? {
+        override fun first(task: KAtomicQueryTask): Any? {
             querySql += task.sql
             return objectResult
         }

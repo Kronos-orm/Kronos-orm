@@ -86,107 +86,48 @@ val wrapper = KronosJdbcWrapper(dataSource) {
         }
     })
 
-    columnMappers.register(UUID::class) { resultSet, position, _, _, _ ->
+    columnMappers.register(UUID::class) { resultSet, position, _, _ ->
         resultSet.getString(position)?.let(UUID::fromString)
     }
 }
 ```
 
-## Query maps with {{ $.title("forList(task)") }}
+## Query lists with {{ $.title("toList(task)") }}
 
-`forList(task)` executes a select task and returns every row as `Map<String, Any>`.
+`toList(task)` executes a select task and maps every row according to `task.targetType`. The `KType` keeps generic arguments and nullability, so wrappers do not need separate `KClass`, `isKPojo`, or supertype parameters.
 
-```kotlin group="forList maps" name="signature" icon="kotlin"
-fun forList(task: KAtomicQueryTask): List<Map<String, Any>>
+```kotlin group="Query task list" name="signature" icon="kotlin"
+fun toList(task: KAtomicQueryTask): List<Any?>
 ```
 
-```kotlin group="forList maps" name="kotlin" icon="kotlin"
-val rows = wrapper.forList(
+```kotlin group="Query task list" name="kotlin" icon="kotlin"
+val users = wrapper.toList(
     KronosAtomicQueryTask(
         sql = "SELECT id, name FROM user WHERE age > :age",
-        paramMap = mapOf("age" to 18)
+        paramMap = mapOf("age" to 18),
+        targetType = typeOf<User>()
     )
 )
 ```
 
-```text group="forList maps" name="result"
-[
-  {id=1, name=Ada},
-  {id=2, name=Linus}
-]
+The built-in JDBC wrapper recognizes scalar types, `Map<String, Any?>`, and `KPojo` types from this target `KType`.
+
+## Query one value with {{ $.title("first(task)") }}
+
+`first(task)` uses the same target type and returns `null` for an empty result. Higher-level `first<T>()` decides whether an empty result should throw based on the requested type's nullability.
+
+```kotlin group="Query task first" name="signature" icon="kotlin"
+fun first(task: KAtomicQueryTask): Any?
 ```
 
-## Query objects with {{ $.title("forList(task, kClass, isKPojo, superTypes)") }}
-
-Typed query APIs pass the target class and mapping hints to the wrapper.
-
-```kotlin group="forList objects" name="signature" icon="kotlin"
-fun forList(
-    task: KAtomicQueryTask,
-    kClass: KClass<*>,
-    isKPojo: Boolean,
-    superTypes: List<String>
-): List<Any>
-```
-
-```kotlin group="forList objects" name="kotlin" icon="kotlin"
-val users = wrapper.forList(
-    KronosAtomicQueryTask("SELECT id, name FROM user WHERE age > :age", mapOf("age" to 18)),
-    User::class,
-    isKPojo = true,
-    superTypes = listOf("com.kotlinorm.interfaces.KPojo")
-)
-```
-
-```text group="forList objects" name="result"
-[User(id=1, name=Ada), User(id=2, name=Linus)]
-```
-
-## Query one map with {{ $.title("forMap(task)") }}
-
-`forMap(task)` reads the first row and returns `null` for an empty result.
-
-```kotlin group="forMap" name="signature" icon="kotlin"
-fun forMap(task: KAtomicQueryTask): Map<String, Any>?
-```
-
-```kotlin group="forMap" name="kotlin" icon="kotlin"
-val row = wrapper.forMap(
+```kotlin group="Query task first" name="kotlin" icon="kotlin"
+val user = wrapper.first(
     KronosAtomicQueryTask(
         sql = "SELECT id, name FROM user WHERE id = :id",
-        paramMap = mapOf("id" to 1)
+        paramMap = mapOf("id" to 1),
+        targetType = typeOf<User?>()
     )
 )
-```
-
-```text group="forMap" name="result"
-{id=1, name=Ada}
-```
-
-## Query one object with {{ $.title("forObject(task, kClass, isKPojo, superTypes)") }}
-
-`forObject(...)` maps the first row to the requested type and returns `null` for an empty result.
-
-```kotlin group="forObject" name="signature" icon="kotlin"
-fun forObject(
-    task: KAtomicQueryTask,
-    kClass: KClass<*>,
-    isKPojo: Boolean,
-    superTypes: List<String>
-): Any?
-```
-
-```kotlin group="forObject" name="kotlin" icon="kotlin"
-val user = wrapper.forObject(
-    KronosAtomicQueryTask("SELECT id, name FROM user WHERE id = :id", mapOf("id" to 1)),
-    User::class,
-    isKPojo = true,
-    superTypes = listOf("com.kotlinorm.interfaces.KPojo")
-)
-```
-
-```text group="forObject" name="result"
-User(id=1, name=Ada)
 ```
 
 ## Execute writes with {{ $.title("update(task)") }}
@@ -275,7 +216,8 @@ val result = wrapper.transact(
 ```kotlin group="parsed" name="query task" icon="kotlin"
 val task = KronosAtomicQueryTask(
     sql = "SELECT id, name FROM user WHERE id = :id AND status = :status",
-    paramMap = mapOf("id" to 1, "status" to "ACTIVE")
+    paramMap = mapOf("id" to 1, "status" to "ACTIVE"),
+    targetType = typeOf<Map<String, Any?>>()
 )
 
 val parsed = task.parsed()

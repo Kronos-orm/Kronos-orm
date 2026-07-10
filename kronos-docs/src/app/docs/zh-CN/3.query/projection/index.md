@@ -3,7 +3,7 @@
 
 ## 投影
 
-投影是传给 `select { ... }` 或 `join { select { ... } }` 的字段列表。它用于选择返回列、用 `alias` 命名表达式，并决定 `query()`、`queryList()`、`queryOne()` 和 join 查询的结果形态。
+投影是传给 `select { ... }` 或 `join { select { ... } }` 的字段列表。它用于选择返回列、用 `alias` 命名表达式，并决定 `toMapList()`、`toList()`、`first()` 和 join 查询的结果形态。
 
 结果方法和可空单行方法见 {{ $.keyword("query/result-methods", ["结果方法"]) }}。
 
@@ -14,11 +14,11 @@
 ```kotlin group="Field projection 1" name="kotlin" icon="kotlin"
 val names: List<String> = User()
     .select { it.name }
-    .queryList<String>()
+    .toList<String>()
 
 val rows = User()
     .select { [it.id, it.name] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Field projection 1" name="Mysql" icon="mysql"
@@ -60,7 +60,7 @@ val rows = User()
             "1".alias("constantValue")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Alias projection 1" name="Mysql" icon="mysql"
@@ -71,7 +71,7 @@ SELECT `id`,
 FROM `user`
 ```
 
-alias 会成为 `query()` 的 Map key，也会成为生成投影的属性名。
+alias 会成为 `toMapList()` 的 Map key，也会成为生成投影的属性名。
 
 ```kotlin group="Alias projection 2" name="result shape" icon="kotlin"
 mapOf(
@@ -103,7 +103,7 @@ val rows = User()
             "now()"
         ]
     }
-    .query()
+    .toMapList()
 
 val first = rows.first()
 val total = first["total"]
@@ -118,31 +118,31 @@ FROM `user`
 
 ## 消费投影结果
 
-需要每行作为 Map 时，使用 `query()`。Map key 来自字段名和 alias。
+需要每行作为 Map 时，使用 `toMapList()`。Map key 来自字段名和 alias。
 
 ```kotlin group="Consume projection 1" name="map" icon="kotlin"
-val maps: List<Map<String, Any>> = User()
+val maps: List<Map<String, Any?>> = User()
     .select { [it.id, it.name.alias("username")] }
-    .query()
+    .toMapList()
 
 val first = maps.first()
 val id = first["id"]
 val username = first["username"]
 ```
 
-需要编译器生成投影类型时，`queryList()` 或 `queryOne()` 不传泛型。
+需要编译器生成投影类型时，`toList()` 或 `first()` 不传泛型。
 
 ```kotlin group="Consume projection 2" name="generated" icon="kotlin"
 val rows = User()
     .select { [it.id, f.length(it.name).alias("nameLength")] }
-    .queryList()
+    .toList()
 
 val nameLength: Int? = rows.first().nameLength
 
 val one = User()
     .select { [it.id, it.name.alias("username")] }
     .where { it.id == 1 }
-    .queryOne()
+    .first()
 
 val username: String? = one.username
 ```
@@ -159,19 +159,27 @@ val rows: List<UserSummary> = User()
     .select(UserSummary::class) {
         [it.id, it.name.alias("username")]
     }
-    .queryList()
+    .toList()
 ```
 
 select 输出名需要和要填充的 DTO 属性名对应。
 
-## 从完整投影中排除列
+## 完整投影、排除列与集合形式
 
-传入当前 KPojo 可以选择全部列，再使用 `-` 排除字段。
+无 lambda 的 `select()` 返回源 KPojo 类型。在显式 `select { ... }` 中，`it` 表示当前 KPojo 的完整数据库列集合，并生成对应的投影结果类型。直接返回和放入 `[]` 的行为相同；`-` 可以排除一个或多个字段。
+
+```kotlin name="kotlin" icon="kotlin"
+val allDirect = User().select { it }.toList()
+val allInList = User().select { [it] }.toList()
+
+val withoutAge = User().select { it - it.age }.toList()
+val withoutAgeInList = User().select { [it - it.age] }.toList()
+```
 
 ```kotlin group="Exclude projection" name="kotlin" icon="kotlin"
 val rows = User()
     .select { it - it.age }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Exclude projection" name="Mysql" icon="mysql"
@@ -179,7 +187,40 @@ SELECT `id`, `name`
 FROM `user`
 ```
 
-多数表字段都需要返回、只跳过少数字段时，可以使用这个写法。
+完整投影还可以和普通字段、alias 或函数投影放在同一个列表中。展开后的字段保持原顺序，后续项继续追加到生成结果类型。
+
+```kotlin group="Mixed full projection" name="kotlin" icon="kotlin"
+val rows = User()
+    .select { [it, it.id.alias("sourceId")] }
+    .toList()
+
+val id: Int? = rows.first().id
+val sourceId: Int? = rows.first().sourceId
+```
+
+```sql group="Mixed full projection" name="Mysql" icon="mysql"
+SELECT `id`, `name`, `age`, `id` AS `sourceId`
+FROM `user`
+```
+
+`[]` 是推荐写法。以下 Kotlin 集合构造函数也会按相同规则展开 `it`，并生成相同的投影属性：
+
+```kotlin name="kotlin" icon="kotlin"
+val fromList = User().select {
+    listOf<Any?>(it, it.id.alias("sourceId"))
+}
+val fromArray = User().select {
+    arrayOf<Any?>(it, it.id.alias("sourceId"))
+}
+val fromMutableList = User().select {
+    mutableListOf<Any?>(it, it.id.alias("sourceId"))
+}
+val fromSet = User().select {
+    setOf<Any?>(it, it.id.alias("sourceId"))
+}
+```
+
+多数表字段都需要返回、只跳过少数字段，或需要在完整字段后追加 alias 时，可以使用这些写法。投影项的最终输出名必须唯一。
 
 ## 在 join 查询中投影
 
@@ -203,7 +244,7 @@ val rows: List<UserOrderRow> = User().join(Order()) { user, order ->
             order.status
         ]
     }
-}.queryList<UserOrderRow>()
+}.toList<UserOrderRow>()
 ```
 
 ```sql group="Join projection" name="Mysql" icon="mysql"
@@ -236,7 +277,7 @@ val rows = User()
                 .alias("lastOrderStatus")
         ]
     }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Scalar projection" name="Mysql" icon="mysql"
@@ -271,7 +312,7 @@ val nameLengths = User()
 val rows = nameLengths
     .select { [it.id, it.nameLength] }
     .where { it.nameLength > 8 }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Derived projection" name="Mysql" icon="mysql"

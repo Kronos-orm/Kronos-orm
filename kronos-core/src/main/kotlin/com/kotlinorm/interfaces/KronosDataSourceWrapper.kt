@@ -23,7 +23,6 @@ import com.kotlinorm.enums.DBType
 import com.kotlinorm.enums.TransactionIsolation
 import com.kotlinorm.exceptions.NoDataSourceException
 import com.kotlinorm.syntax.render.SqlDialect
-import kotlin.reflect.KClass
 
 /**
  * Kronos Data Source Wrapper.
@@ -74,69 +73,9 @@ interface KronosDataSourceWrapper {
     val sqlDialect: SqlDialect
         get() = SqlManager.dialectOf(dbType)
 
-    /**
-     * Executes a SQL query and returns the results as a list of maps, with each map representing a row of the result set.
-     * Each key in the map corresponds to a column name, and the associated value is the value of that column for the row.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @return A list of maps, where each map represents a row of the result set. Each key in the map is a column name, and the
-     *         associated value is the value of that column for that row. If the query returns no rows, this method returns an
-     *         empty list.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forList(task: KAtomicQueryTask): List<Map<String, Any>>
+    fun toList(task: KAtomicQueryTask): List<Any?>
 
-    /**
-     * Executes a SQL query and returns the results as a list of objects. The type of objects in the list is determined
-     * by the specified class type parameter (`kClass`). Each object in the list represents a row of the result set,
-     * instantiated or converted according to the `kClass` parameter.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @param kClass The Kotlin class (`KClass`) that specifies the type of objects to be returned in the list. The method
-     *               will attempt to instantiate or convert each row of the result set into an instance of this class.
-     * @return A list of objects of the type specified by `kClass`, where each object represents a row of the result set.
-     *         If the query returns no rows, or if instantiation/conversion to the specified type fails, this method
-     *         returns an empty list.
-     * @throws InstantiationException If there is an error instantiating objects of the specified type from the query
-     *                                results, such as due to a mismatch between the query result structure and the
-     *                                expected class fields or constructor parameters.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forList(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): List<Any>
-
-    /**
-     * Executes a SQL query and returns the result as a map, with each entry representing a column of the single row
-     * in the result set. The key in the map corresponds to a column name, and the associated value is the value of
-     * that column for the row.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @return A map representing a single row of the result set, where each key is a column name and the associated
-     *         value is the value of that column for that row. If the query returns no rows, this method returns `null`.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forMap(task: KAtomicQueryTask): Map<String, Any>?
-
-    /**
-     * Executes a SQL query and attempts to convert the result set's single row into an instance of the specified Java class.
-     * The conversion aims to map the columns of the result set to the fields of the specified class, based on their names and types.
-     *
-     * @param task The [KAtomicQueryTask] that contains the SQL query to be executed and the parameters to be bound to the query.
-     * @return An object of the specified type that represents the converted row of the result set. If the query results in no rows,
-     *         or if the conversion cannot be successfully performed (due to type mismatches, missing fields, etc.), this method
-     *         may return `null` or throw a relevant exception.
-     * @throws NoDataSourceException If there is no data source configured for the current environment.
-     */
-    fun forObject(
-        task: KAtomicQueryTask,
-        kClass: KClass<*>,
-        isKPojo: Boolean,
-        superTypes: List<String>
-    ): Any?
+    fun first(task: KAtomicQueryTask): Any?
 
     /**
      * Executes an SQL update operation (such as INSERT, UPDATE, or DELETE) using the provided SQL string and a map of parameters.

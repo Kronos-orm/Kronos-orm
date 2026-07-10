@@ -51,7 +51,7 @@ println(wrapper.sqlDialect)
 ```kotlin group="Identifier Quote" name="kotlin" icon="kotlin"
 val users = User()
     .select { [it.id, it.name] }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Identifier Quote" name="Mysql" icon="mysql"
@@ -88,7 +88,7 @@ val users = User()
     .select { [it.id, it.name] }
     .orderBy { it.id.asc() }
     .page(2, 20)
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Pagination" name="Mysql" icon="mysql"
@@ -255,7 +255,7 @@ changed == true   // Kronos 按差异同步已有表
 ```kotlin group="Functions" name="kotlin" icon="kotlin"
 val rows = User()
     .select { f.rand().alias("rand") }
-    .queryList()
+    .toList()
 ```
 
 ```sql group="Functions" name="Mysql" icon="mysql"
